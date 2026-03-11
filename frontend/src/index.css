@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased text-brand-900 bg-white;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply uppercase tracking-tight font-black;
+  }
+}
+
+@layer utilities {
+  .btn-primary {
+    @apply bg-brand-accent hover:bg-brand-accentHover text-brand-950 font-bold uppercase tracking-wider px-6 py-3 transition-colors border-2 border-transparent;
+  }
+
+  .btn-outline {
+    @apply bg-transparent hover:bg-brand-950 text-brand-950 hover:text-brand-accent border-2 border-brand-950 font-bold uppercase tracking-wider px-6 py-3 transition-all;
+  }
+
+  .section-pad {
+    @apply py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto;
+  }
+}
+
+/* Custom scrollbar - Industrial Look */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f2f2f2;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #262626;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FFB612;
+}
