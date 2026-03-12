@@ -1,17 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
+import { loadModels, detectFaceAndLiveness } from '../../utils/faceApiUtils';
 
 const AttendanceScanner = () => {
-    const { user, token } = useAuthStore();
-    const [status, setStatus] = useState('idle'); // idle, scanning, verifying, success, error
+    const { user, login } = useAuthStore();
+    const [status, setStatus] = useState('idle'); // idle, loading, scanning, verifying, success, error
     const [message, setMessage] = useState('');
     const videoRef = useRef(null);
+    const canvasRef = useRef(null);
     const streamRef = useRef(null);
+    const scanActiveRef = useRef(false);
 
     // Cleanup camera stream when unmounting
     useEffect(() => {
         return () => {
+            scanActiveRef.current = false;
             stopCamera();
         };
     }, []);
@@ -24,6 +28,16 @@ const AttendanceScanner = () => {
     };
 
     const startScan = async () => {
+        setStatus('loading');
+        setMessage('LOADING AI VERIFICATION MODELS...');
+
+        const modelsReady = await loadModels();
+        if (!modelsReady) {
+            setStatus('error');
+            setMessage('FAILED TO LOAD LOCAL AI MODELS.');
+            return;
+        }
+
         setStatus('scanning');
         setMessage('INITIALIZING CAMERA HARDWARE...');
 
@@ -34,48 +48,89 @@ const AttendanceScanner = () => {
 
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
-                videoRef.current.play();
+                await videoRef.current.play();
             }
+
+            scanActiveRef.current = true;
+            let blinkDetected = false;
+            let highestScore = 0;
+            let bestDescriptor = null;
 
             setMessage('ANALYZING FACIAL TOPOLOGY...');
 
-            // Mocking the scan duration while camera is on
-            setTimeout(() => {
-                setStatus('verifying');
-                setMessage('MATCHING WITH DATABASE RECORD...');
+            const scanLoop = async () => {
+                if (!scanActiveRef.current) return;
 
-                // Mocking the backend verification call
-                setTimeout(async () => {
-                    stopCamera(); // Stop camera once we verify
-                    try {
-                        const response = await axios.post('/api/attendance',
-                            {
-                                userId: user._id,
-                                status: 'Present',
-                                faceVerified: true
-                            },
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${token}`
-                                }
-                            }
-                        );
+                const result = await detectFaceAndLiveness(videoRef, canvasRef);
 
-                        setStatus('success');
-                        setMessage(`IDENTITY CONFIRMED: ${user.name.toUpperCase()}. SHIFT LOGGED.`);
-                    } catch (error) {
-                        setStatus('error');
-                        setMessage('AUTHORIZATION FAILED OR DB OFFLINE. TRY AGAIN.');
+                if (result) {
+                    if (!blinkDetected && result.isBlinking) {
+                        blinkDetected = true;
+                        setMessage('LIVENESS VERIFIED. KEEP STILL...');
                     }
-                }, 2000);
-            }, 3000);
 
+                    if (blinkDetected && !result.isBlinking && result.score > 0.8) {
+                        if (result.score > highestScore) {
+                            highestScore = result.score;
+                            bestDescriptor = result.descriptor;
+                        }
+                    }
+
+                    // Proceed once we have a very clear shot
+                    if (bestDescriptor && highestScore > 0.85) {
+                        scanActiveRef.current = false;
+                        if (canvasRef.current) {
+                            canvasRef.current.getContext('2d').clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+                        }
+                        verifyIdentity(bestDescriptor);
+                        return;
+                    } else if (!blinkDetected && result.score > 0.6) {
+                        setMessage('PLEASE BLINK TO VERIFY LIVENESS.');
+                    }
+                } else {
+                    setMessage('POSITION FACE IN FRAME...');
+                }
+
+                if (scanActiveRef.current) {
+                    requestAnimationFrame(scanLoop);
+                }
+            };
+
+            scanLoop();
         } catch (err) {
             setStatus('error');
-            setMessage('CAMERA ACCESS DENIED OR HARDWARE FAILURE.');
+            setMessage('CAMERA ACCESS DENIED.');
             console.error("Camera error:", err);
         }
     };
+
+    const verifyIdentity = async (descriptor) => {
+        setStatus('verifying');
+        setMessage('MATCHING WITH BIOMETRIC DATABASE...');
+
+        try {
+            // Backend verify-face handles both verification AND attendance logging now
+            const res = await api.post('/auth/verify-face', { descriptor });
+
+            if (res.data.success) {
+                const matchedUser = res.data.user;
+                // Sync session if needed
+                if (!user) {
+                    login(matchedUser, matchedUser.token);
+                }
+                
+                stopCamera();
+                setStatus('success');
+                setMessage(`IDENTITY VERIFIED: ${matchedUser.full_name.toUpperCase()}`);
+            }
+        } catch (error) {
+            stopCamera();
+            setStatus('error');
+            const errorMsg = error.response?.data?.message || 'AUTHORIZATION FAILED. TRY AGAIN.';
+            setMessage(errorMsg);
+        }
+    };
+
 
     return (
         <div className="bg-white border-4 border-brand-950 p-8 shadow-solid">
@@ -87,7 +142,7 @@ const AttendanceScanner = () => {
                 <span className="bg-brand-950 text-brand-accent font-black text-[10px] uppercase tracking-widest px-3 py-1">AI SYS.ONLINE</span>
             </div>
 
-            <p className="text-brand-600 mb-8 font-medium">Please initiate biometric scan for daily attendance logging. Requires hardware camera access.</p>
+            <p className="text-brand-600 mb-8 font-medium">Please initiate biometric scan for daily attendance logging. Liveness verification (BLINK) is strictly required to prevent spoofing.</p>
 
             {/* Scanner UI block */}
             <div className="bg-black p-4 border-4 border-brand-800 mb-8 flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden">
@@ -102,6 +157,12 @@ const AttendanceScanner = () => {
                     playsInline
                 />
 
+                {/* Tracking Canvas Overlay */}
+                <canvas
+                    ref={canvasRef}
+                    className={`absolute inset-0 w-full h-full object-cover z-20 ${status === 'scanning' ? 'opacity-100' : 'opacity-0 hidden'}`}
+                />
+
                 {status === 'idle' && (
                     <div className="text-brand-500 font-black uppercase tracking-widest text-xl text-center z-20">
                         CAMERA STANDBY<br />
@@ -109,8 +170,8 @@ const AttendanceScanner = () => {
                     </div>
                 )}
 
-                {(status === 'scanning' || status === 'verifying') && (
-                    <div className="z-20 flex flex-col items-center absolute inset-0 justify-center">
+                {(status === 'loading' || status === 'scanning' || status === 'verifying') && (
+                    <div className="z-30 flex flex-col items-center absolute inset-0 justify-center pointer-events-none">
                         <div className="w-48 h-48 border-4 border-brand-accent border-dashed rounded-full animate-[spin_4s_linear_infinite] flex items-center justify-center mb-4">
                             <div className="w-32 h-32 border-4 border-brand-400 opacity-50 border-dotted rounded-full animate-[spin_2s_linear_infinite_reverse]"></div>
                         </div>
@@ -146,7 +207,7 @@ const AttendanceScanner = () => {
             <div className="flex flex-col sm:flex-row gap-6">
                 <button
                     onClick={startScan}
-                    disabled={status === 'scanning' || status === 'verifying' || status === 'success'}
+                    disabled={status === 'loading' || status === 'scanning' || status === 'verifying' || status === 'success'}
                     className={`font-black uppercase tracking-widest py-4 px-8 border-4 border-brand-950 shadow-[4px_4px_0_0_#000] active:translate-y-[4px] active:translate-x-[4px] active:shadow-none transition-all flex-1 text-center ${status === 'success'
                         ? 'bg-brand-50 text-brand-400 cursor-not-allowed border-brand-200 shadow-none'
                         : 'bg-brand-accent hover:bg-brand-400 text-brand-950'

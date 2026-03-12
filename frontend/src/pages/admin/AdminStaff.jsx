@@ -1,73 +1,347 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
+import FaceCapture from '../../components/FaceCapture';
+import { 
+  Users, UserPlus, Search, Filter, Mail, Phone, Briefcase, 
+  Trash2, Edit, Camera, X, Check, Loader2, AlertCircle, ChevronRight 
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminStaff = () => {
-    // Mock Data
-    const staff = [
-        { id: 'STF-01', name: 'Field Operator 01', role: 'Welding Specialist', status: 'Active Shift', currProject: 'PRJ-9942-B', attendance: '100% (Face Verified)' },
-        { id: 'STF-02', name: 'Field Operator 02', role: 'Heavy Machinery Driver', status: 'Off Duty', currProject: 'N/A', attendance: '85% (Sick Leave Oct 12)' },
-        { id: 'STF-03', name: 'Site Supervisor A', role: 'Project Manager', status: 'Active Shift', currProject: 'PRJ-1082-A', attendance: '100% (Face Verified)' },
-    ];
+    const [staff, setStaff] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showFaceModal, setShowFaceModal] = useState(false);
+    const [selectedStaff, setSelectedStaff] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterDept, setFilterDept] = useState('');
+
+    const [formData, setFormData] = useState({
+        staff_id: '',
+        full_name: '',
+        phone_number: '',
+        email: '',
+        department: '',
+        designation: '',
+        username: '',
+        password: '',
+        role: 'staff',
+        status: 'active'
+    });
+
+    useEffect(() => {
+        fetchStaff();
+    }, [searchQuery, filterDept]);
+
+    const fetchStaff = async () => {
+        setLoading(true);
+        try {
+            const res = await api.get(`/staff?search=${searchQuery}&department=${filterDept}`);
+            setStaff(res.data);
+        } catch (err) {
+            setError("Failed to fetch staff data.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddStaff = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await api.post('/staff', formData);
+            fetchStaff();
+            setShowAddModal(false);
+            setFormData({
+                staff_id: '', full_name: '', phone_number: '', email: '', 
+                department: '', designation: '', username: '', password: '', 
+                role: 'staff', status: 'active'
+            });
+        } catch (err) {
+            alert(err.response?.data?.message || "Failed to add staff.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this staff member? All related data will be lost.")) return;
+        try {
+            await api.delete(`/staff/${id}`);
+            fetchStaff();
+        } catch (err) {
+            alert("Failed to delete staff.");
+        }
+    };
+
+    const handleFaceRegister = async (descriptor) => {
+        setLoading(true);
+        try {
+            await api.post(`/staff/${selectedStaff._id}/register-face`, { descriptor });
+            alert("Face registered successfully!");
+            setShowFaceModal(false);
+            fetchStaff();
+        } catch (err) {
+            alert("Failed to register face.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const departments = [...new Set(staff.map(s => s.department))];
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans">
-            <div className="flex justify-between items-center mb-8 border-b-4 border-brand-950 pb-4">
+        <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-brand-500 mb-1">Human Resources</div>
-                    <h2 className="text-3xl font-black uppercase tracking-tighter text-brand-950">Personnel Deployment</h2>
+                    <h1 className="text-4xl font-black text-slate-900 flex items-center gap-3">
+                        <Users className="w-10 h-10 text-indigo-600" />
+                        Staff Management
+                    </h1>
+                    <p className="text-slate-500 mt-2 font-medium">Manage your workforce, track attendance, and register biometrics.</p>
                 </div>
-                <button className="bg-brand-950 hover:bg-brand-800 text-white font-black uppercase tracking-widest text-xs py-3 px-6 border-4 border-brand-950 shadow-solid active:translate-y-1 active:translate-x-1 active:shadow-none transition-all">
-                    Access AI Attendance Logs
+                
+                <button 
+                    onClick={() => setShowAddModal(true)}
+                    className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
+                >
+                    <UserPlus className="w-5 h-5" /> Add New Staff
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {staff.map((person, i) => (
-                    <motion.div
-                        key={person.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className={`border-4 border-brand-950 p-6 flex flex-col justify-between ${person.status === 'Active Shift' ? 'bg-white shadow-[8px_8px_0_0_rgba(0,0,0,1)]' : 'bg-brand-50 opacity-80'
-                            }`}
-                    >
-                        <div>
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="w-16 h-16 bg-brand-200 border-2 border-brand-950 flex items-center justify-center font-black text-2xl text-brand-500 mb-4">
-                                    {person.name.charAt(0)}
-                                </div>
-                                <span className={`px-2 py-1 text-[10px] uppercase font-black tracking-widest ${person.status === 'Active Shift' ? 'bg-green-100 border border-green-500 text-green-700' : 'bg-brand-200 border border-brand-400 text-brand-600'
-                                    }`}>
-                                    {person.status}
-                                </span>
-                            </div>
-
-                            <h3 className="text-xl font-black text-brand-950 uppercase tracking-tighter mb-1">{person.name}</h3>
-                            <p className="text-xs font-bold text-brand-500 uppercase tracking-widest mb-6">ID: {person.id} | {person.role}</p>
-
-                            <div className="space-y-3 mb-6">
-                                <div className="bg-brand-50 p-3 border-l-4 border-brand-950">
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-brand-500 mb-1">Current Assignment</div>
-                                    <div className="font-bold text-brand-950">{person.currProject}</div>
-                                </div>
-                                <div className="bg-brand-50 p-3 border-l-4 border-brand-accent">
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-brand-500 mb-1">Attendance Record (Past 30d)</div>
-                                    <div className="font-bold text-brand-950">{person.attendance}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-2 border-t-2 border-brand-100 pt-4 mt-auto">
-                            <button className="flex-1 bg-white hover:bg-brand-50 text-brand-950 font-black uppercase tracking-widest text-[10px] py-2 border-2 border-brand-950 transition-colors">
-                                Profile
-                            </button>
-                            <button className="flex-1 bg-brand-accent hover:bg-brand-400 text-brand-950 font-black uppercase tracking-widest text-[10px] py-2 border-2 border-brand-950 transition-colors">
-                                Re-Assign
-                            </button>
-                        </div>
-                    </motion.div>
+            {/* Stats Bar */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[
+                    { label: 'Total Staff', value: staff.length, color: 'indigo' },
+                    { label: 'Active', value: staff.filter(s => s.status === 'active').length, color: 'emerald' },
+                    { label: 'Face Registered', value: staff.filter(s => s.face_descriptor?.length > 0).length, color: 'amber' },
+                    { label: 'Departments', value: departments.length, color: 'purple' }
+                ].map((stat, i) => (
+                    <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                        <p className="text-slate-500 font-semibold text-sm uppercase tracking-wider">{stat.label}</p>
+                        <p className={`text-3xl font-black text-${stat.color}-600 mt-1`}>{stat.value}</p>
+                    </div>
                 ))}
             </div>
+
+            {/* Filter Bar */}
+            <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
+                <div className="flex-1 relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input 
+                        type="text" 
+                        placeholder="Search by name, ID or email..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition"
+                    />
+                </div>
+                <div className="md:w-64 relative">
+                    <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <select 
+                        value={filterDept}
+                        onChange={(e) => setFilterDept(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl appearance-none focus:ring-2 focus:ring-indigo-500/20 outline-none transition"
+                    >
+                        <option value="">All Departments</option>
+                        {departments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
+                    </select>
+                </div>
+            </div>
+
+            {/* Staff Table */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50/50 border-b border-slate-200 text-left">
+                                <th className="px-6 py-5 font-bold text-slate-600">ID / Name</th>
+                                <th className="px-6 py-5 font-bold text-slate-600">Department / Role</th>
+                                <th className="px-6 py-5 font-bold text-slate-600">Contact</th>
+                                <th className="px-6 py-5 font-bold text-slate-600 text-center">Face Data</th>
+                                <th className="px-6 py-5 font-bold text-slate-600">Status</th>
+                                <th className="px-6 py-5 font-bold text-slate-600 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan="6" className="px-6 py-20 text-center">
+                                        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mx-auto mb-4" />
+                                        <p className="text-slate-500 font-medium font-mono">Synchronizing staff data...</p>
+                                    </td>
+                                </tr>
+                            ) : staff.length === 0 ? (
+                                <tr>
+                                    <td colSpan="6" className="px-6 py-20 text-center text-slate-500">
+                                        <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                                        No staff members found matching your search criteria.
+                                    </td>
+                                </tr>
+                            ) : staff.map((member) => (
+                                <tr key={member._id} className="hover:bg-indigo-50/30 transition-colors group">
+                                    <td className="px-6 py-4">
+                                        <div>
+                                            <p className="text-sm font-mono text-indigo-600 font-bold">{member.staff_id}</p>
+                                            <p className="text-lg font-bold text-slate-900 capitalize leading-tight mt-1">{member.full_name}</p>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col">
+                                            <span className="flex items-center gap-1.5 text-slate-700 font-semibold">
+                                                <Briefcase className="w-4 h-4 text-slate-400" />
+                                                {member.designation}
+                                            </span>
+                                            <span className="text-sm text-slate-500">{member.department}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm font-medium">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="flex items-center gap-2 text-slate-600 group-hover:text-indigo-600 transition-colors">
+                                                <Mail className="w-3.5 h-3.5" /> {member.email}
+                                            </span>
+                                            <span className="flex items-center gap-2 text-slate-600">
+                                                <Phone className="w-3.5 h-3.5" /> {member.phone_number}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        {member.face_descriptor?.length > 0 ? (
+                                            <div className="flex items-center justify-center gap-2 text-emerald-600 bg-emerald-50 py-1.5 px-3 rounded-full border border-emerald-100 mx-auto w-fit">
+                                                <Check className="w-4 h-4" />
+                                                <span className="text-xs font-bold uppercase tracking-tighter">Registered</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-center gap-2 text-amber-600 bg-amber-50 py-1.5 px-3 rounded-full border border-amber-100 mx-auto w-fit">
+                                                <Camera className="w-4 h-4" />
+                                                <span className="text-xs font-bold uppercase tracking-tighter">Pending</span>
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={`inline-flex px-3 py-1 rounded-lg text-xs font-bold uppercase ${
+                                            member.status === 'active' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'
+                                        }`}>
+                                            {member.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button 
+                                                title="Register Face"
+                                                onClick={() => { setSelectedStaff(member); setShowFaceModal(true); }}
+                                                className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                            >
+                                                <Camera className="w-5 h-5" />
+                                            </button>
+                                            <button 
+                                                title="Delete"
+                                                onClick={() => handleDelete(member._id)}
+                                                className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Modals */}
+            <AnimatePresence>
+                {showAddModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900">Register New Staff</h2>
+                                    <p className="text-slate-500 font-medium">Create a new profile for the recruitment system.</p>
+                                </div>
+                                <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
+                                    <X className="w-6 h-6 text-slate-400" />
+                                </button>
+                            </div>
+                            <form onSubmit={handleAddStaff} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Staff ID*</label>
+                                    <input required type="text" placeholder="STF-001" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.staff_id} onChange={e => setFormData({...formData, staff_id: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Full Name*</label>
+                                    <input required type="text" placeholder="John Doe" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Email*</label>
+                                    <input required type="email" placeholder="john@example.com" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Phone*</label>
+                                    <input required type="tel" placeholder="+91 99999 99999" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.phone_number} onChange={e => setFormData({...formData, phone_number: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Department*</label>
+                                    <input required type="text" placeholder="Engineering" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Designation*</label>
+                                    <input required type="text" placeholder="Software Architect" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.designation} onChange={e => setFormData({...formData, designation: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Username*</label>
+                                    <input required type="text" placeholder="johndoe.stf" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Default Password*</label>
+                                    <input required type="password" placeholder="••••••••" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+                                </div>
+                                <div className="md:col-span-2 pt-6 flex gap-4">
+                                    <button type="submit" className="flex-1 bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-600/30 hover:bg-indigo-700 transition active:scale-[0.98]">
+                                        Create Staff Account
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+
+                {showFaceModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl p-10 flex flex-col items-center"
+                        >
+                            <div className="w-20 h-20 bg-indigo-50 rounded-[2rem] flex items-center justify-center mb-6">
+                                <Camera className="w-10 h-10 text-indigo-600" />
+                            </div>
+                            <h2 className="text-3xl font-black text-slate-900 text-center">Facial Biometrics</h2>
+                            <p className="text-slate-500 text-center mt-2 font-medium mb-10 max-w-sm">Registering face for <span className="text-indigo-600 font-bold">{selectedStaff?.full_name}</span>. Ensure proper lighting.</p>
+                            
+                            <FaceCapture 
+                                onCapture={handleFaceRegister} 
+                                buttonText="Scan and Save Descriptor"
+                            />
+                            
+                            <button 
+                                onClick={() => setShowFaceModal(false)}
+                                className="mt-8 text-slate-400 font-bold hover:text-slate-600 transition uppercase tracking-widest text-xs py-2"
+                            >
+                                Cancel Process
+                            </button>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

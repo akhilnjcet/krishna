@@ -7,6 +7,7 @@ import Projects from './pages/Projects';
 import Quote from './pages/Quote';
 import Blog from './pages/Blog';
 import Login from './pages/Login';
+import StaffLogin from './pages/StaffLogin';
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -23,13 +24,13 @@ const Layout = ({ children }) => (
 
 import StaffDashboard from './pages/staff/StaffDashboard';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
-
 import InvoiceView from './pages/customer/InvoiceView';
 
 import AdminProjects from './pages/admin/AdminProjects';
 import AdminQuotes from './pages/admin/AdminQuotes';
 import AdminStaff from './pages/admin/AdminStaff';
 import AdminInvoices from './pages/admin/AdminInvoices';
+import AttendanceLogs from './pages/admin/AttendanceLogs';
 
 const App = () => {
   return (
@@ -42,6 +43,7 @@ const App = () => {
           <Route path="/quote" element={<Quote />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/staff-login" element={<StaffLogin />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>
@@ -50,6 +52,7 @@ const App = () => {
             <Route path="quotes" element={<AdminQuotes />} />
             <Route path="staff" element={<AdminStaff />} />
             <Route path="invoices" element={<AdminInvoices />} />
+            <Route path="logs" element={<AttendanceLogs />} />
           </Route>
 
           <Route path="/staff" element={<StaffDashboard />} />
@@ -65,3 +68,4 @@ const App = () => {
 };
 
 export default App;
+

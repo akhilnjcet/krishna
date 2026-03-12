@@ -30,10 +30,13 @@ const Login = () => {
                 navigate('/customer');
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'AUTHORIZATION FAILED');
+            const msg = err.response?.data?.message || 
+                        (err.code === 'ERR_NETWORK' ? 'DATABASE_OFFLINE_ERROR' : 'AUTHORIZATION FAILED');
+            setError(msg);
         } finally {
             setLoading(false);
         }
+
     };
 
     return (

@@ -15,8 +15,10 @@ const AdminLayout = () => {
         { name: 'Active Projects', path: '/admin/projects', icon: '☰' },
         { name: 'Quote Requests', path: '/admin/quotes', icon: '¥' },
         { name: 'Staff Roster', path: '/admin/staff', icon: '♙' },
+        { name: 'Verification Logs', path: '/admin/logs', icon: '☷' },
         { name: 'Financials', path: '/admin/invoices', icon: '$' },
     ];
+
 
     return (
         <div className="min-h-screen bg-brand-50 flex font-sans">

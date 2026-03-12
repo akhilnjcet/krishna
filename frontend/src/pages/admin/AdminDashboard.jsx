@@ -1,133 +1,169 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
+import { 
+  Users, Calendar, Clock, Lock, ArrowUpRight, 
+  TrendingUp, Activity, UserCheck, ShieldCheck, Mail, Briefcase 
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const AdminDashboard = () => {
+    const [stats, setStats] = useState({
+        totalStaff: 0,
+        activeStaff: 0,
+        todayLogs: 0,
+        registeredFaces: 0
+    });
+    const [recentLogs, setRecentLogs] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        setLoading(true);
+        try {
+            const [staffRes, logsRes] = await Promise.all([
+                api.get('/staff'),
+                api.get('/attendance')
+            ]);
+            
+            const staffList = staffRes.data;
+            const logsList = logsRes.data;
+            const today = new Date().toISOString().split('T')[0];
+
+            setStats({
+                totalStaff: staffList.length,
+                activeStaff: staffList.filter(s => s.status === 'active').length,
+                todayLogs: logsList.filter(l => l.date === today && l.status === 'success').length,
+                registeredFaces: staffList.filter(s => s.face_descriptor?.length > 0).length
+            });
+
+            setRecentLogs(logsList.slice(0, 5));
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-        <div className="max-w-7xl mx-auto space-y-8 font-sans">
-
-            {/* Heavy Top Metrics Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-                <div className="bg-white p-6 border-4 border-brand-950 shadow-[4px_4px_0_0_#000] flex flex-col justify-between relative overflow-hidden group hover:-translate-y-1 transition-transform">
-                    <div className="absolute top-0 right-0 w-12 h-12 bg-brand-100 border-b-4 border-l-4 border-brand-950 flex items-center justify-center font-black text-xl text-brand-500 group-hover:bg-brand-accent group-hover:text-brand-950 transition-colors">🏗</div>
-                    <div>
-                        <p className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-2">Active Projects</p>
-                        <h3 className="text-5xl font-black text-brand-950 tracking-tighter">12</h3>
-                    </div>
-                    <div className="mt-6 w-full h-1 bg-brand-100"><div className="w-[60%] h-full bg-brand-950"></div></div>
-                </div>
-
-                <div className="bg-white p-6 border-4 border-brand-950 shadow-[4px_4px_0_0_#000] flex flex-col justify-between relative overflow-hidden group hover:-translate-y-1 transition-transform">
-                    <div className="absolute top-0 right-0 w-12 h-12 bg-brand-100 border-b-4 border-l-4 border-brand-950 flex items-center justify-center font-black text-xl text-brand-500 group-hover:bg-brand-accent group-hover:text-brand-950 transition-colors">¥</div>
-                    <div>
-                        <p className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-2">Pending Quotes</p>
-                        <h3 className="text-5xl font-black text-brand-950 tracking-tighter">5</h3>
-                    </div>
-                    <div className="mt-6 text-xs font-bold text-brand-500 uppercase">+2 since yesterday</div>
-                </div>
-
-                <div className="bg-white p-6 border-4 border-brand-950 shadow-[4px_4px_0_0_#000] flex flex-col justify-between relative overflow-hidden group hover:-translate-y-1 transition-transform">
-                    <div className="absolute top-0 right-0 w-12 h-12 bg-brand-100 border-b-4 border-l-4 border-brand-950 flex items-center justify-center font-black text-xl text-brand-500 group-hover:bg-brand-accent group-hover:text-brand-950 transition-colors">♙</div>
-                    <div>
-                        <p className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-2">Attendance Today</p>
-                        <h3 className="text-5xl font-black text-brand-950 tracking-tighter">42<span className="text-xl text-brand-400 font-bold ml-1">/45</span></h3>
-                    </div>
-                    <div className="mt-6 text-xs font-bold text-red-500 uppercase">3 absent (FaceAPI log)</div>
-                </div>
-
-                <div className="bg-brand-950 text-white p-6 border-4 border-brand-accent shadow-[4px_4px_0_0_#FFB612] flex flex-col justify-between relative overflow-hidden group hover:-translate-y-1 transition-transform">
-                    <div className="absolute top-0 right-0 w-12 h-12 bg-brand-800 border-b-4 border-l-4 border-brand-accent flex items-center justify-center font-black text-xl text-brand-accent">$</div>
-                    <div>
-                        <p className="text-[10px] font-black text-brand-400 uppercase tracking-widest mb-2">Unpaid Invoices</p>
-                        <h3 className="text-5xl font-black tracking-tighter text-brand-accent">84<span className="text-2xl ml-1">K</span></h3>
-                    </div>
-                    <Link to="/admin/invoices" className="mt-6 text-xs font-black uppercase tracking-widest hover:text-white transition-colors">Review Ledgers &rarr;</Link>
-                </div>
-
+        <div className="p-10 space-y-12 bg-slate-50 min-h-screen">
+            {/* Header */}
+            <div>
+                <h1 className="text-4xl font-black text-slate-900 leading-tight">
+                    Welcome back, <span className="text-indigo-600">Administrator</span>.
+                </h1>
+                <p className="text-slate-500 mt-2 font-medium flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-indigo-400" />
+                    Here's what's happening at Krishna Engineering today.
+                </p>
             </div>
 
-            {/* Main Content Area */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                    { label: 'Total Workforce', value: stats.totalStaff, icon: Users, color: 'indigo' },
+                    { label: 'Today Verified', value: stats.todayLogs, icon: UserCheck, color: 'emerald' },
+                    { label: 'Biometrics Active', value: stats.registeredFaces, icon: ShieldCheck, color: 'amber' },
+                    { label: 'Access Requests', value: recentLogs.length, icon: Clock, color: 'purple' }
+                ].map((item, i) => (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        key={i} 
+                        className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50 group hover:border-indigo-500/30 transition-all duration-300"
+                    >
+                        <div className={`w-14 h-14 bg-${item.color}-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                            <item.icon className={`w-7 h-7 text-${item.color}-600`} />
+                        </div>
+                        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-1">{item.label}</p>
+                        <p className={`text-4xl font-black text-slate-900`}>{item.value}</p>
+                    </motion.div>
+                ))}
+            </div>
 
-                {/* Recent Projects Table */}
-                <div className="bg-white col-span-1 lg:col-span-2 border-4 border-brand-950 shadow-solid">
-                    <div className="p-5 border-b-4 border-brand-950 flex justify-between items-center bg-brand-50">
-                        <h3 className="font-black text-brand-950 text-xl uppercase tracking-tighter">Active Projects Array</h3>
-                        <button className="text-[10px] font-black uppercase tracking-widest text-brand-600 hover:text-brand-950 border-2 border-brand-300 hover:border-brand-950 px-3 py-1 transition-all">View Full List</button>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                {/* Recent Activity */}
+                <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl p-10">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                            <TrendingUp className="w-8 h-8 text-indigo-600" />
+                            Recent Verification Activity
+                        </h2>
+                        <button className="text-indigo-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">
+                            View All <ArrowUpRight className="w-4 h-4" />
+                        </button>
                     </div>
-                    <div className="p-0 overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-brand-950 text-white text-[10px] uppercase font-black tracking-widest">
-                                    <th className="p-4">Project Ident</th>
-                                    <th className="p-4">Client</th>
-                                    <th className="p-4">Status</th>
-                                    <th className="p-4">Progress</th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-sm text-brand-900 divide-y-4 divide-brand-100">
-                                <tr className="hover:bg-brand-50 transition-colors">
-                                    <td className="p-4 font-black uppercase text-brand-950">National Stadium Truss</td>
-                                    <td className="p-4 font-bold">Apex Builders</td>
-                                    <td className="p-4">
-                                        <span className="bg-brand-950 text-brand-accent px-2 py-1 text-[10px] font-black uppercase tracking-widest border-2 border-brand-950">Active Sys</span>
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="w-full bg-brand-100 h-3 border-2 border-brand-950"><div className="bg-brand-accent h-full border-r-2 border-brand-950" style={{ width: '60%' }}></div></div>
-                                    </td>
-                                </tr>
-                                <tr className="hover:bg-brand-50 transition-colors">
-                                    <td className="p-4 font-black uppercase text-brand-950">Warehouse Pipeline TIG</td>
-                                    <td className="p-4 font-bold">ChemCorp</td>
-                                    <td className="p-4">
-                                        <span className="bg-white text-brand-950 px-2 py-1 text-[10px] font-black uppercase tracking-widest border-2 border-brand-950">Awaiting Mat.</span>
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="w-full bg-brand-100 h-3 border-2 border-brand-950"><div className="bg-brand-accent h-full border-r-2 border-brand-950" style={{ width: '10%' }}></div></div>
-                                    </td>
-                                </tr>
-                                <tr className="hover:bg-brand-50 transition-colors">
-                                    <td className="p-4 font-black uppercase text-brand-950">Automotive Plant Roof</td>
-                                    <td className="p-4 font-bold">Ford Motors</td>
-                                    <td className="p-4">
-                                        <span className="bg-green-500 text-white px-2 py-1 text-[10px] font-black uppercase tracking-widest border-2 border-green-600">Near Finish</span>
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="w-full bg-brand-100 h-3 border-2 border-brand-950"><div className="bg-green-500 h-full border-r-2 border-green-600" style={{ width: '90%' }}></div></div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+
+                    <div className="space-y-4">
+                        {loading ? (
+                             <div className="h-64 flex items-center justify-center text-slate-400">Loading data...</div>
+                        ) : recentLogs.length === 0 ? (
+                            <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-4">
+                                <Activity className="w-12 h-12 opacity-20" />
+                                No login activity yet today.
+                            </div>
+                        ) : recentLogs.map((log, i) => (
+                            <div key={i} className="flex items-center justify-between p-6 bg-slate-50 border border-slate-100 rounded-3xl hover:bg-indigo-50/50 transition duration-300 border-l-4 border-l-indigo-500">
+                                <div className="flex items-center gap-5">
+                                    <div className="w-12 h-12 bg-white border border-slate-200 rounded-full flex items-center justify-center font-bold text-indigo-600 shadow-sm">
+                                        {log.full_name.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <p className="font-extrabold text-slate-900">{log.full_name}</p>
+                                        <p className="text-sm text-slate-500 font-medium">Verified from {log.device_ip}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-black text-indigo-600 text-sm">{(log.face_match_confidence * 100).toFixed(1)}% Match</p>
+                                    <p className="text-xs text-slate-400 uppercase font-bold mt-1">{new Date(log.login_time).toLocaleTimeString()}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
-                {/* System Alerts */}
-                <div className="bg-white col-span-1 border-4 border-red-600 shadow-[4px_4px_0_0_#DC2626]">
-                    <div className="p-5 border-b-4 border-red-600 bg-red-50 flex items-center gap-3">
-                        <span className="text-red-600 font-black text-2xl animate-pulse">!</span>
-                        <h3 className="font-black text-red-700 text-xl uppercase tracking-tighter">System Priority</h3>
+                {/* Quick Info / Security */}
+                <div className="space-y-6">
+                    <div className="bg-indigo-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-indigo-600/30 relative overflow-hidden">
+                        <Lock className="absolute -right-5 -bottom-5 w-48 h-48 opacity-10" />
+                        <h3 className="text-2xl font-black mb-4">Security Advisory</h3>
+                        <p className="text-indigo-100 font-medium leading-relaxed mb-6"> Ensure all staff members have registered their biometrics to maintain full attendance accuracy. </p>
+                        <ul className="space-y-3 font-bold text-sm">
+                            <li className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-indigo-300 rounded-full" />
+                                Review pending descriptors
+                            </li>
+                            <li className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-indigo-300 rounded-full" />
+                                Audit last 48h logs
+                            </li>
+                            <li className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-indigo-300 rounded-full" />
+                                Manage admin credentials
+                            </li>
+                        </ul>
                     </div>
-                    <div className="p-6 space-y-6">
 
-                        <div className="border-l-4 border-red-500 pl-4">
-                            <h4 className="font-black text-brand-950 uppercase text-sm mb-1">3 Staff Absent W.O.L.</h4>
-                            <p className="text-brand-600 text-xs font-bold leading-relaxed">System log: Face-API rollcall failed at 09:00 AM.</p>
-                            <button className="mt-3 bg-red-50 text-red-600 border-2 border-red-200 hover:border-red-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest transition-colors">
-                                Audit Log &rarr;
-                            </button>
+                    <div className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-xl">
+                        <h3 className="text-xl font-black text-slate-900 mb-6">Quick Links</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            {[
+                                { name: 'Add Staff', icon: Users, color: 'emerald' },
+                                { name: 'Audit Logs', icon: Clock, color: 'indigo' },
+                                { name: 'Reports', icon: TrendingUp, color: 'amber' },
+                                { name: 'Settings', icon: Activity, color: 'slate' }
+                            ].map((link, i) => (
+                                <button key={i} className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-100 opacity-60 hover:opacity-100 hover:bg-indigo-50/50 hover:border-indigo-200 transition-all group">
+                                    <link.icon className="w-5 h-5 mb-2 text-slate-600 group-hover:text-indigo-600" />
+                                    <span className="text-xs font-black uppercase text-slate-500 group-hover:text-indigo-600 tracking-tighter">{link.name}</span>
+                                </button>
+                            ))}
                         </div>
-
-                        <div className="border-l-4 border-brand-100 pt-4 border-t-2 border-t-brand-100 pl-4 mt-4">
-                            <h4 className="font-black text-brand-950 uppercase text-sm mb-1">New Quote Request</h4>
-                            <p className="text-brand-600 text-xs font-bold leading-relaxed">AI Pre-Calc: $45,000.<br />Location: Texas Sector.</p>
-                            <button className="mt-3 bg-brand-50 text-brand-950 border-2 border-brand-200 hover:border-brand-950 px-3 py-1 text-[10px] font-black uppercase tracking-widest transition-colors">
-                                Review File &rarr;
-                            </button>
-                        </div>
-
                     </div>
                 </div>
-
             </div>
         </div>
     );

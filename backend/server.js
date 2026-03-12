@@ -18,21 +18,26 @@ app.use('/api/leave', require('./routes/leaveRoutes'));
 app.use('/api/invoices', require('./routes/invoiceRoutes'));
 app.use('/api/uploads', require('./routes/uploadRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/staff', require('./routes/staffRoutes'));
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
 });
 
 // Database connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/krishna-erp';
-mongoose.connect(MONGODB_URI)
-    .then(() => {
-        console.log('Connected to MongoDB');
-    })
-    .catch(err => {
-        console.error('Failed to connect to MongoDB (Running in DB-offline mode)');
-    });
+const connectDB = require('./config/database');
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+const startServer = async () => {
+    try {
+        await connectDB();
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error('CRITICAL: Server failed to start due to database connection failure.');
+        process.exit(1);
+    }
+};
+
+startServer();
+

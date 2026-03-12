@@ -1,41 +1,42 @@
 const Attendance = require('../models/Attendance');
 
-exports.markAttendance = async (req, res) => {
+exports.getAttendanceLogs = async (req, res) => {
     try {
-        const today = new Date().toISOString().split('T')[0];
+        const { staff_id, date, status } = req.query;
+        let query = {};
 
-        // Optional: verification boolean sent from frontend face-api logic
-        const { faceVerified } = req.body;
+        if (staff_id) query.staff_id = staff_id;
+        if (date) query.date = date;
+        if (status) query.status = status;
 
-        try {
-            const attendance = await Attendance.create({
-                staffId: req.user.id,
-                date: today,
-                faceVerified: faceVerified || false
-            });
-            return res.status(201).json(attendance);
-        } catch (dbError) {
-            if (dbError.code === 11000) {
-                return res.status(400).json({ message: 'Attendance already marked for today' });
-            }
-            // Bypassing for UI preview
-            console.log("DB offline, mocking attendance success");
-            return res.status(201).json({ _id: 'mock-att-123', staffId: req.user.id, date: today });
-        }
+        const logs = await Attendance.find(query)
+            .populate('staff_id', 'staff_id full_name email department designation')
+            .sort({ login_time: -1 });
+            
+        res.json(logs);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-exports.getAttendance = async (req, res) => {
+exports.getStaffLogs = async (req, res) => {
     try {
-        let filter = {};
-        if (req.user.role === 'staff') {
-            filter.staffId = req.user.id;
-        }
-        const attendanceRecords = await Attendance.find(filter).populate('staffId', 'name email');
-        res.json(attendanceRecords);
+        const logs = await Attendance.find({ staff_id: req.user.id })
+            .sort({ login_time: -1 });
+        res.json(logs);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.deleteLog = async (req, res) => {
+    try {
+        const log = await Attendance.findById(req.params.id);
+        if (!log) return res.status(404).json({ message: 'Log not found' });
+        await log.deleteOne();
+        res.json({ message: 'Log deleted' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
