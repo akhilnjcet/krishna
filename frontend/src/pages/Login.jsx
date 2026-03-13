@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import useAuthStore from '../stores/authStore';
 
 const Login = () => {
-    const [email, setEmail] = useState('');
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -19,7 +19,10 @@ const Login = () => {
         setError('');
 
         try {
-            const response = await axios.post('/api/auth/login', { email, password });
+            const response = await api.post('/auth/login', { 
+                username: identifier, 
+                password 
+            });
             login(response.data, response.data.token);
 
             if (response.data.role === 'admin') {
@@ -36,7 +39,6 @@ const Login = () => {
         } finally {
             setLoading(false);
         }
-
     };
 
     return (
@@ -73,14 +75,14 @@ const Login = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-[10px] uppercase tracking-widest font-black text-brand-600 mb-2">Operator ID [Email]</label>
+                            <label className="block text-[10px] uppercase tracking-widest font-black text-brand-600 mb-2">Operator ID [Email/Username]</label>
                             <input
-                                type="email"
+                                type="text"
                                 required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                value={identifier}
+                                onChange={(e) => setIdentifier(e.target.value)}
                                 className="w-full px-4 py-3 border-4 border-brand-200 focus:border-brand-950 outline-none transition-colors bg-brand-50 font-bold text-brand-950 text-sm placeholder-brand-300 rounded-none shadow-inner"
-                                placeholder="ADMIN@KRISHNAENGG.COM"
+                                placeholder="ADMIN OR ADMIN@KRISHNAENGG.COM"
                             />
                         </div>
                         <div>

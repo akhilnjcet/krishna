@@ -57,7 +57,10 @@ const StaffDashboard = () => {
                         <AttendanceScanner />
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-8">
-                            <div className="bg-white border-4 border-brand-950 p-6 flex flex-col items-center justify-center text-center shadow-solid hover:-translate-y-1 transition-transform cursor-pointer">
+                            <div 
+                                onClick={() => navigate('/staff/tasks')}
+                                className="bg-white border-4 border-brand-950 p-6 flex flex-col items-center justify-center text-center shadow-solid hover:-translate-y-1 transition-transform cursor-pointer"
+                            >
                                 <div className="w-16 h-16 bg-brand-100 flex items-center justify-center font-black text-3xl text-brand-950 mb-4 border-2 border-brand-950">
                                     ☰
                                 </div>
@@ -65,7 +68,10 @@ const StaffDashboard = () => {
                                 <p className="text-xs text-brand-600 font-bold">Review active structural assignments.</p>
                             </div>
 
-                            <div className="bg-white border-4 border-brand-950 p-6 flex flex-col items-center justify-center text-center shadow-solid hover:-translate-y-1 transition-transform cursor-pointer">
+                            <div 
+                                onClick={() => navigate('/staff/leave')}
+                                className="bg-white border-4 border-brand-950 p-6 flex flex-col items-center justify-center text-center shadow-solid hover:-translate-y-1 transition-transform cursor-pointer"
+                            >
                                 <div className="w-16 h-16 bg-brand-100 flex items-center justify-center font-black text-3xl text-brand-950 mb-4 border-2 border-brand-950">
                                     ⚕
                                 </div>

@@ -12,6 +12,7 @@ const AdminStaff = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [showFaceModal, setShowFaceModal] = useState(false);
     const [selectedStaff, setSelectedStaff] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -19,8 +20,8 @@ const AdminStaff = () => {
 
     const [formData, setFormData] = useState({
         staff_id: '',
-        full_name: '',
-        phone_number: '',
+        name: '',
+        phone: '',
         email: '',
         department: '',
         designation: '',
@@ -53,16 +54,36 @@ const AdminStaff = () => {
             await api.post('/staff', formData);
             fetchStaff();
             setShowAddModal(false);
-            setFormData({
-                staff_id: '', full_name: '', phone_number: '', email: '', 
-                department: '', designation: '', username: '', password: '', 
-                role: 'staff', status: 'active'
-            });
+            resetForm();
         } catch (err) {
             alert(err.response?.data?.message || "Failed to add staff.");
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleEditStaff = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await api.put(`/staff/${selectedStaff._id}`, formData);
+            fetchStaff();
+            setShowEditModal(false);
+            resetForm();
+        } catch (err) {
+            alert(err.response?.data?.message || "Failed to update staff.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            staff_id: '', name: '', phone: '', email: '', 
+            department: '', designation: '', username: '', password: '', 
+            role: 'staff', status: 'active'
+        });
+        setSelectedStaff(null);
     };
 
     const handleDelete = async (id) => {
@@ -103,7 +124,7 @@ const AdminStaff = () => {
                 </div>
                 
                 <button 
-                    onClick={() => setShowAddModal(true)}
+                    onClick={() => { resetForm(); setShowAddModal(true); }}
                     className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
                 >
                     <UserPlus className="w-5 h-5" /> Add New Staff
@@ -115,7 +136,7 @@ const AdminStaff = () => {
                 {[
                     { label: 'Total Staff', value: staff.length, color: 'indigo' },
                     { label: 'Active', value: staff.filter(s => s.status === 'active').length, color: 'emerald' },
-                    { label: 'Face Registered', value: staff.filter(s => s.face_descriptor?.length > 0).length, color: 'amber' },
+                    { label: 'Face Registered', value: staff.filter(s => s.faceDescriptor?.length > 0).length, color: 'amber' },
                     { label: 'Departments', value: departments.length, color: 'purple' }
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
@@ -184,7 +205,7 @@ const AdminStaff = () => {
                                     <td className="px-6 py-4">
                                         <div>
                                             <p className="text-sm font-mono text-indigo-600 font-bold">{member.staff_id}</p>
-                                            <p className="text-lg font-bold text-slate-900 capitalize leading-tight mt-1">{member.full_name}</p>
+                                            <p className="text-lg font-bold text-slate-900 capitalize leading-tight mt-1">{member.name}</p>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -202,12 +223,12 @@ const AdminStaff = () => {
                                                 <Mail className="w-3.5 h-3.5" /> {member.email}
                                             </span>
                                             <span className="flex items-center gap-2 text-slate-600">
-                                                <Phone className="w-3.5 h-3.5" /> {member.phone_number}
+                                                <Phone className="w-3.5 h-3.5" /> {member.phone}
                                             </span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        {member.face_descriptor?.length > 0 ? (
+                                        {member.faceDescriptor?.length > 0 ? (
                                             <div className="flex items-center justify-center gap-2 text-emerald-600 bg-emerald-50 py-1.5 px-3 rounded-full border border-emerald-100 mx-auto w-fit">
                                                 <Check className="w-4 h-4" />
                                                 <span className="text-xs font-bold uppercase tracking-tighter">Registered</span>
@@ -236,6 +257,20 @@ const AdminStaff = () => {
                                                 <Camera className="w-5 h-5" />
                                             </button>
                                             <button 
+                                                title="Edit"
+                                                onClick={() => { 
+                                                    setSelectedStaff(member); 
+                                                    setFormData({
+                                                        ...member,
+                                                        password: ''
+                                                    });
+                                                    setShowEditModal(true); 
+                                                }}
+                                                className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                            >
+                                                <Edit className="w-5 h-5" />
+                                            </button>
+                                            <button 
                                                 title="Delete"
                                                 onClick={() => handleDelete(member._id)}
                                                 className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
@@ -253,7 +288,7 @@ const AdminStaff = () => {
 
             {/* Modals */}
             <AnimatePresence>
-                {showAddModal && (
+                {(showAddModal || showEditModal) && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
                         <motion.div 
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -263,21 +298,21 @@ const AdminStaff = () => {
                         >
                             <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900">Register New Staff</h2>
-                                    <p className="text-slate-500 font-medium">Create a new profile for the recruitment system.</p>
+                                    <h2 className="text-2xl font-black text-slate-900">{showEditModal ? 'Update' : 'Register'} Staff</h2>
+                                    <p className="text-slate-500 font-medium">Capture profile details for the system.</p>
                                 </div>
-                                <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
+                                <button onClick={() => { setShowAddModal(false); setShowEditModal(false); }} className="p-2 hover:bg-slate-200 rounded-full transition">
                                     <X className="w-6 h-6 text-slate-400" />
                                 </button>
                             </div>
-                            <form onSubmit={handleAddStaff} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
+                            <form onSubmit={showEditModal ? handleEditStaff : handleAddStaff} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Staff ID*</label>
                                     <input required type="text" placeholder="STF-001" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.staff_id} onChange={e => setFormData({...formData, staff_id: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Full Name*</label>
-                                    <input required type="text" placeholder="John Doe" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Name*</label>
+                                    <input required type="text" placeholder="John Doe" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Email*</label>
@@ -285,7 +320,7 @@ const AdminStaff = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Phone*</label>
-                                    <input required type="tel" placeholder="+91 99999 99999" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.phone_number} onChange={e => setFormData({...formData, phone_number: e.target.value})} />
+                                    <input required type="tel" placeholder="+91 99999 99999" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Department*</label>
@@ -293,19 +328,21 @@ const AdminStaff = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Designation*</label>
-                                    <input required type="text" placeholder="Software Architect" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.designation} onChange={e => setFormData({...formData, designation: e.target.value})} />
+                                    <input required type="text" placeholder="Field Engineer" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.designation} onChange={e => setFormData({...formData, designation: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Username*</label>
                                     <input required type="text" placeholder="johndoe.stf" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Default Password*</label>
-                                    <input required type="password" placeholder="••••••••" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
-                                </div>
+                                {!showEditModal && (
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Default Password*</label>
+                                        <input required type="password" placeholder="••••••••" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+                                    </div>
+                                )}
                                 <div className="md:col-span-2 pt-6 flex gap-4">
                                     <button type="submit" className="flex-1 bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-600/30 hover:bg-indigo-700 transition active:scale-[0.98]">
-                                        Create Staff Account
+                                        {showEditModal ? 'Apply Updates' : 'Create Staff Account'}
                                     </button>
                                 </div>
                             </form>
@@ -325,7 +362,7 @@ const AdminStaff = () => {
                                 <Camera className="w-10 h-10 text-indigo-600" />
                             </div>
                             <h2 className="text-3xl font-black text-slate-900 text-center">Facial Biometrics</h2>
-                            <p className="text-slate-500 text-center mt-2 font-medium mb-10 max-w-sm">Registering face for <span className="text-indigo-600 font-bold">{selectedStaff?.full_name}</span>. Ensure proper lighting.</p>
+                            <p className="text-slate-500 text-center mt-2 font-medium mb-10 max-w-sm">Registering face for <span className="text-indigo-600 font-bold">{selectedStaff?.name}</span>. Ensure proper lighting.</p>
                             
                             <FaceCapture 
                                 onCapture={handleFaceRegister} 

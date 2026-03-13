@@ -19,6 +19,9 @@ app.use('/api/invoices', require('./routes/invoiceRoutes'));
 app.use('/api/uploads', require('./routes/uploadRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/staff', require('./routes/staffRoutes'));
+app.use('/api/tasks', require('./routes/taskRoutes'));
+app.use('/api/reports', require('./routes/reportRoutes'));
+app.use('/api/settings', require('./routes/settingRoutes'));
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });

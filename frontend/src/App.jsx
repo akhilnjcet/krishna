@@ -23,14 +23,20 @@ const Layout = ({ children }) => (
 );
 
 import StaffDashboard from './pages/staff/StaffDashboard';
+import StaffTasks from './pages/staff/StaffTasks';
+import StaffLeave from './pages/staff/StaffLeave';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import InvoiceView from './pages/customer/InvoiceView';
+import Register from './pages/Register';
 
 import AdminProjects from './pages/admin/AdminProjects';
 import AdminQuotes from './pages/admin/AdminQuotes';
 import AdminStaff from './pages/admin/AdminStaff';
 import AdminInvoices from './pages/admin/AdminInvoices';
 import AttendanceLogs from './pages/admin/AttendanceLogs';
+import AdminReports from './pages/admin/AdminReports';
+import AdminLeave from './pages/admin/AdminLeave';
+import AdminSettings from './pages/admin/AdminSettings';
 
 const App = () => {
   return (
@@ -43,6 +49,7 @@ const App = () => {
           <Route path="/quote" element={<Quote />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/staff-login" element={<StaffLogin />} />
 
           {/* Admin Routes */}
@@ -53,9 +60,15 @@ const App = () => {
             <Route path="staff" element={<AdminStaff />} />
             <Route path="invoices" element={<AdminInvoices />} />
             <Route path="logs" element={<AttendanceLogs />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="leave" element={<AdminLeave />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
 
           <Route path="/staff" element={<StaffDashboard />} />
+          <Route path="/staff/tasks" element={<StaffTasks />} />
+          <Route path="/staff/leave" element={<StaffLeave />} />
+          
           <Route path="/customer" element={<CustomerDashboard />} />
           <Route path="/customer/invoice/:id" element={<InvoiceView />} />
 

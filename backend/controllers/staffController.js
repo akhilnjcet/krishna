@@ -1,23 +1,28 @@
-const Staff = require('../models/Staff');
+const User = require('../models/User');
 const bcrypt = require('bcrypt');
 
 exports.getStaff = async (req, res) => {
     try {
         const { search, department, status } = req.query;
-        let query = {};
+        let query = { role: 'staff' };
 
         if (search) {
-            query.$or = [
-                { full_name: { $regex: search, $options: 'i' } },
-                { staff_id: { $regex: search, $options: 'i' } },
-                { email: { $regex: search, $options: 'i' } }
+            query.$and = [
+                { role: 'staff' },
+                {
+                    $or: [
+                        { name: { $regex: search, $options: 'i' } },
+                        { staff_id: { $regex: search, $options: 'i' } },
+                        { email: { $regex: search, $options: 'i' } }
+                    ]
+                }
             ];
         }
 
         if (department) query.department = department;
         if (status) query.status = status;
 
-        const staff = await Staff.find(query).select('-password').sort({ created_at: -1 });
+        const staff = await User.find(query).select('-password').sort({ createdAt: -1 });
         res.json(staff);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -26,7 +31,7 @@ exports.getStaff = async (req, res) => {
 
 exports.getStaffById = async (req, res) => {
     try {
-        const staff = await Staff.findById(req.params.id).select('-password');
+        const staff = await User.findOne({ _id: req.params.id, role: 'staff' }).select('-password');
         if (!staff) return res.status(404).json({ message: 'Staff member not found' });
         res.json(staff);
     } catch (error) {
@@ -36,24 +41,24 @@ exports.getStaffById = async (req, res) => {
 
 exports.addStaff = async (req, res) => {
     try {
-        const { staff_id, full_name, phone_number, email, department, designation, username, password, role, status } = req.body;
+        const { staff_id, full_name, name, phone_number, phone, email, department, designation, username, password, role, status } = req.body;
 
-        const staffExists = await Staff.findOne({ $or: [{ email }, { username }, { staff_id }] });
-        if (staffExists) {
-            return res.status(400).json({ message: 'Staff with this email, username, or ID already exists' });
+        const userExists = await User.findOne({ $or: [{ email }, { username }, { staff_id }] });
+        if (userExists) {
+            return res.status(400).json({ message: 'User with this email, username, or ID already exists' });
         }
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const staff = await Staff.create({
+        const staff = await User.create({
             staff_id,
-            full_name,
-            phone_number,
+            name: name || full_name,
+            phone: phone || phone_number,
             email,
             department,
             designation,
-            username,
+            username: username || email,
             password: hashedPassword,
             role: role || 'staff',
             status: status || 'active'
@@ -67,13 +72,13 @@ exports.addStaff = async (req, res) => {
 
 exports.updateStaff = async (req, res) => {
     try {
-        const staff = await Staff.findById(req.params.id);
+        const staff = await User.findOne({ _id: req.params.id, role: 'staff' });
         if (!staff) return res.status(404).json({ message: 'Staff member not found' });
 
-        const { full_name, phone_number, email, department, designation, status, role } = req.body;
+        const { full_name, name, phone_number, phone, email, department, designation, status, role } = req.body;
 
-        staff.full_name = full_name || staff.full_name;
-        staff.phone_number = phone_number || staff.phone_number;
+        staff.name = name || full_name || staff.name;
+        staff.phone = phone || phone_number || staff.phone;
         staff.email = email || staff.email;
         staff.department = department || staff.department;
         staff.designation = designation || staff.designation;
@@ -89,7 +94,7 @@ exports.updateStaff = async (req, res) => {
 
 exports.deleteStaff = async (req, res) => {
     try {
-        const staff = await Staff.findById(req.params.id);
+        const staff = await User.findOne({ _id: req.params.id, role: 'staff' });
         if (!staff) return res.status(404).json({ message: 'Staff member not found' });
 
         await staff.deleteOne();
@@ -102,10 +107,10 @@ exports.deleteStaff = async (req, res) => {
 exports.registerFace = async (req, res) => {
     try {
         const { descriptor } = req.body;
-        const staff = await Staff.findById(req.params.id);
+        const staff = await User.findOne({ _id: req.params.id, role: 'staff' });
         if (!staff) return res.status(404).json({ message: 'Staff member not found' });
 
-        staff.face_descriptor = descriptor;
+        staff.faceDescriptor = descriptor;
         await staff.save();
 
         res.json({ message: 'Face data registered successfully', success: true });

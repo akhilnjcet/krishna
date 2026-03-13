@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, Calendar, Clock, Lock, ArrowUpRight, 
   TrendingUp, Activity, UserCheck, ShieldCheck, Mail, Briefcase 
@@ -7,11 +8,13 @@ import {
 import { motion } from 'framer-motion';
 
 const AdminDashboard = () => {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({
         totalStaff: 0,
         activeStaff: 0,
         todayLogs: 0,
-        registeredFaces: 0
+        registeredFaces: 0,
+        pendingLeaves: 0
     });
     const [recentLogs, setRecentLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -23,20 +26,23 @@ const AdminDashboard = () => {
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            const [staffRes, logsRes] = await Promise.all([
+            const [staffRes, logsRes, leaveRes] = await Promise.all([
                 api.get('/staff'),
-                api.get('/attendance')
+                api.get('/attendance'),
+                api.get('/leave')
             ]);
             
             const staffList = staffRes.data;
             const logsList = logsRes.data;
+            const leaveList = leaveRes.data;
             const today = new Date().toISOString().split('T')[0];
 
             setStats({
                 totalStaff: staffList.length,
                 activeStaff: staffList.filter(s => s.status === 'active').length,
                 todayLogs: logsList.filter(l => l.date === today && l.status === 'success').length,
-                registeredFaces: staffList.filter(s => s.face_descriptor?.length > 0).length
+                registeredFaces: staffList.filter(s => s.faceDescriptor?.length > 0).length,
+                pendingLeaves: leaveList.filter(l => l.status === 'pending').length
             });
 
             setRecentLogs(logsList.slice(0, 5));
@@ -66,7 +72,7 @@ const AdminDashboard = () => {
                     { label: 'Total Workforce', value: stats.totalStaff, icon: Users, color: 'indigo' },
                     { label: 'Today Verified', value: stats.todayLogs, icon: UserCheck, color: 'emerald' },
                     { label: 'Biometrics Active', value: stats.registeredFaces, icon: ShieldCheck, color: 'amber' },
-                    { label: 'Access Requests', value: recentLogs.length, icon: Clock, color: 'purple' }
+                    { label: 'Pending Requests', value: stats.pendingLeaves, icon: Calendar, color: 'rose' }
                 ].map((item, i) => (
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
@@ -92,7 +98,10 @@ const AdminDashboard = () => {
                             <TrendingUp className="w-8 h-8 text-indigo-600" />
                             Recent Verification Activity
                         </h2>
-                        <button className="text-indigo-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">
+                        <button 
+                            onClick={() => navigate('/admin/logs')}
+                            className="text-indigo-600 font-bold flex items-center gap-1 hover:gap-2 transition-all"
+                        >
                             View All <ArrowUpRight className="w-4 h-4" />
                         </button>
                     </div>
@@ -109,10 +118,10 @@ const AdminDashboard = () => {
                             <div key={i} className="flex items-center justify-between p-6 bg-slate-50 border border-slate-100 rounded-3xl hover:bg-indigo-50/50 transition duration-300 border-l-4 border-l-indigo-500">
                                 <div className="flex items-center gap-5">
                                     <div className="w-12 h-12 bg-white border border-slate-200 rounded-full flex items-center justify-center font-bold text-indigo-600 shadow-sm">
-                                        {log.full_name.charAt(0)}
+                                        {(log.full_name || log.name || 'S').charAt(0)}
                                     </div>
                                     <div>
-                                        <p className="font-extrabold text-slate-900">{log.full_name}</p>
+                                        <p className="font-extrabold text-slate-900">{log.full_name || log.name}</p>
                                         <p className="text-sm text-slate-500 font-medium">Verified from {log.device_ip}</p>
                                     </div>
                                 </div>
@@ -151,12 +160,17 @@ const AdminDashboard = () => {
                         <h3 className="text-xl font-black text-slate-900 mb-6">Quick Links</h3>
                         <div className="grid grid-cols-2 gap-4">
                             {[
-                                { name: 'Add Staff', icon: Users, color: 'emerald' },
-                                { name: 'Audit Logs', icon: Clock, color: 'indigo' },
-                                { name: 'Reports', icon: TrendingUp, color: 'amber' },
-                                { name: 'Settings', icon: Activity, color: 'slate' }
+                                { name: 'Add Staff', icon: Users, color: 'emerald', path: '/admin/staff' },
+                                { name: 'Audit Logs', icon: Clock, color: 'indigo', path: '/admin/logs' },
+                                { name: 'Reports', icon: TrendingUp, color: 'amber', path: '/admin/reports' },
+                                { name: 'Leave Reg', icon: Calendar, color: 'rose', path: '/admin/leave' },
+                                { name: 'Settings', icon: Activity, color: 'slate', path: '/admin/settings' }
                             ].map((link, i) => (
-                                <button key={i} className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-100 opacity-60 hover:opacity-100 hover:bg-indigo-50/50 hover:border-indigo-200 transition-all group">
+                                <button 
+                                    key={i} 
+                                    onClick={() => navigate(link.path)}
+                                    className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-100 opacity-60 hover:opacity-100 hover:bg-indigo-50/50 hover:border-indigo-200 transition-all group"
+                                >
                                     <link.icon className="w-5 h-5 mb-2 text-slate-600 group-hover:text-indigo-600" />
                                     <span className="text-xs font-black uppercase text-slate-500 group-hover:text-indigo-600 tracking-tighter">{link.name}</span>
                                 </button>

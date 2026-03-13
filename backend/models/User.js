@@ -1,12 +1,21 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    username: { type: String }, // alias or unique ID if needed
-    name: { type: String, required: true }, // full name, used by frontend
+    username: { type: String, unique: true, sparse: true },
+    name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['admin', 'staff', 'customer'], default: 'customer' },
-    faceDescriptor: { type: [Number], default: [] }, // Array of numbers from face-api.js
+    
+    // Staff specific fields
+    staff_id: { type: String, unique: true, sparse: true },
+    phone: { type: String },
+    department: { type: String },
+    designation: { type: String },
+    status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    faceDescriptor: { type: [Number], default: [] },
+    profilePhoto: { type: String },
+
     createdAt: { type: Date, default: Date.now },
     last_login: { type: Date }
 });

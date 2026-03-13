@@ -1,25 +1,26 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const Staff = require('./models/Staff');
+const User = require('./models/User');
 
 const seedDB = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/krishna-erp');
         console.log('Connected to MongoDB');
 
-        // Clear existing staff for clean seed
-        await Staff.deleteMany({});
+        // Clear existing users
+        await User.deleteMany({});
 
         const salt = await bcrypt.genSalt(10);
         const adminPassword = await bcrypt.hash('admin123', salt);
         const staffPassword = await bcrypt.hash('staff123', salt);
+        const customerPassword = await bcrypt.hash('customer123', salt);
 
         // Seed Admin
-        await Staff.create({
+        await User.create({
             staff_id: 'ADM-001',
-            full_name: 'System Administrator',
-            phone_number: '+91 00000 00000',
+            name: 'System Administrator',
+            phone: '+91 00000 00000',
             email: 'admin@krishnaengg.com',
             department: 'IT',
             designation: 'Super Admin',
@@ -30,10 +31,10 @@ const seedDB = async () => {
         });
 
         // Seed Sample Staff
-        await Staff.create({
+        await User.create({
             staff_id: 'STF-001',
-            full_name: 'John Staff',
-            phone_number: '+91 11111 11111',
+            name: 'John Staff',
+            phone: '+91 11111 11111',
             email: 'staff@krishnaengg.com',
             department: 'Engineering',
             designation: 'Field Engineer',
@@ -43,9 +44,20 @@ const seedDB = async () => {
             status: 'active'
         });
 
+        // Seed Sample Customer
+        await User.create({
+            name: 'Acme Corp Client',
+            phone: '+91 22222 22222',
+            email: 'customer@acme.com',
+            username: 'customer',
+            password: customerPassword,
+            role: 'customer'
+        });
+
         console.log('--- DATABASE SEEDED ---');
         console.log('Admin -> User: admin | Pass: admin123');
         console.log('Staff -> User: staff | Pass: staff123');
+        console.log('Customer -> User: customer | Pass: customer123');
 
         process.exit(0);
     } catch (err) {
@@ -55,4 +67,3 @@ const seedDB = async () => {
 };
 
 seedDB();
-
