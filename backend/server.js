@@ -33,14 +33,21 @@ const connectDB = require('./config/database');
 const startServer = async () => {
     try {
         await connectDB();
-        app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
-        });
+        if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+            app.listen(PORT, () => {
+                console.log(`Server running on port ${PORT}`);
+            });
+        }
     } catch (error) {
         console.error('CRITICAL: Server failed to start due to database connection failure.');
-        process.exit(1);
+        if (process.env.NODE_ENV !== 'production') {
+            process.exit(1);
+        }
     }
 };
 
 startServer();
+
+// Export for Vercel
+module.exports = app;
 
