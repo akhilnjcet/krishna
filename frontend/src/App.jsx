@@ -38,6 +38,8 @@ import AttendanceLogs from './pages/admin/AttendanceLogs';
 import AdminReports from './pages/admin/AdminReports';
 import AdminLeave from './pages/admin/AdminLeave';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminProgress from './pages/admin/AdminProgress';
+import StaffProgress from './pages/staff/StaffProgress';
 
 const App = () => {
   return (
@@ -65,11 +67,13 @@ const App = () => {
             <Route path="reports" element={<AdminReports />} />
             <Route path="leave" element={<AdminLeave />} />
             <Route path="settings" element={<AdminSettings />} />
+            <Route path="progress" element={<AdminProgress />} />
           </Route>
 
           <Route path="/staff" element={<StaffDashboard />} />
           <Route path="/staff/tasks" element={<StaffTasks />} />
           <Route path="/staff/leave" element={<StaffLeave />} />
+          <Route path="/staff/progress" element={<StaffProgress />} />
           
           <Route path="/customer" element={<CustomerDashboard />} />
           <Route path="/customer/invoice/:id" element={<InvoiceView />} />

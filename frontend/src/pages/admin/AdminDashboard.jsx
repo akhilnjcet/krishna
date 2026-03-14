@@ -164,6 +164,7 @@ const AdminDashboard = () => {
                                 { name: 'Audit Logs', icon: Clock, color: 'indigo', path: '/admin/logs' },
                                 { name: 'Reports', icon: TrendingUp, color: 'amber', path: '/admin/reports' },
                                 { name: 'Leave Reg', icon: Calendar, color: 'rose', path: '/admin/leave' },
+                                { name: 'Site Logs', icon: Briefcase, color: 'emerald', path: '/admin/progress' },
                                 { name: 'Settings', icon: Activity, color: 'slate', path: '/admin/settings' }
                             ].map((link, i) => (
                                 <button 

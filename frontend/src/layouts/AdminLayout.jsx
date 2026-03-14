@@ -14,6 +14,7 @@ const AdminLayout = () => {
         { name: 'Control Center', path: '/admin', icon: '◧' },
         { name: 'Active Projects', path: '/admin/projects', icon: '☰' },
         { name: 'Work Gallery', path: '/admin/portfolio', icon: '◙' },
+        { name: 'Production Log', path: '/admin/progress', icon: '◰' },
         { name: 'Quote Requests', path: '/admin/quotes', icon: '¥' },
         { name: 'Staff Roster', path: '/admin/staff', icon: '♙' },
         { name: 'Verification Logs', path: '/admin/logs', icon: '☷' },

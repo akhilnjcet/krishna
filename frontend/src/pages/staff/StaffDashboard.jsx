@@ -78,6 +78,17 @@ const StaffDashboard = () => {
                                 <h3 className="font-black text-brand-950 uppercase tracking-tight text-lg mb-2">Leave Request</h3>
                                 <p className="text-xs text-brand-600 font-bold">Submit time-off authorization.</p>
                             </div>
+
+                            <div 
+                                onClick={() => navigate('/staff/progress')}
+                                className="bg-white border-4 border-brand-950 p-6 flex flex-col items-center justify-center text-center shadow-solid hover:-translate-y-1 transition-transform cursor-pointer sm:col-span-2"
+                            >
+                                <div className="w-16 h-16 bg-brand-accent flex items-center justify-center font-black text-3xl text-brand-950 mb-4 border-2 border-brand-950">
+                                    ⚙
+                                </div>
+                                <h3 className="font-black text-brand-950 uppercase tracking-tight text-lg mb-2">Work Progress</h3>
+                                <p className="text-xs text-brand-600 font-bold">Report site daily updates & upload photos.</p>
+                            </div>
                         </div>
 
                     </div>

@@ -1,19 +1,13 @@
-const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    DisconnectReason,
-    Browsers,
-    makeCacheableSignalKeyStore,
-    fetchLatestBaileysVersion
-} = require('@whiskeysockets/baileys');
 const { Boom } = require('@hapi/boom');
 const qrcode = require('qrcode-terminal');
 const path = require('path');
 const fs = require('fs');
 const pino = require('pino');
 
+// State variables
 let sock;
 let isConnecting = false;
+let baileys = null; // To store dynamically imported module
 
 // Completely silent logs to see only our messages
 const logger = pino({ level: 'silent' });
@@ -23,7 +17,26 @@ async function startWhatsAppConnection() {
     isConnecting = true;
 
     try {
-        const authPath = path.join(__dirname, '../whatsapp_auth_info');
+        // Dynamic import for ESM module in CJS environment
+        if (!baileys) {
+            baileys = await import('@whiskeysockets/baileys');
+        }
+
+        const {
+            default: makeWASocket,
+            useMultiFileAuthState,
+            DisconnectReason,
+            Browsers,
+            makeCacheableSignalKeyStore,
+            fetchLatestBaileysVersion
+        } = baileys;
+
+        // Use /tmp for auth on Vercel/Serverless as other dirs are read-only
+        const isVercel = process.env.VERCEL === '1';
+        const authPath = isVercel 
+            ? path.join('/tmp', 'whatsapp_auth_info')
+            : path.join(__dirname, '../whatsapp_auth_info');
+
         if (!fs.existsSync(authPath)) fs.mkdirSync(authPath, { recursive: true });
 
         const { state, saveCreds } = await useMultiFileAuthState(authPath);
@@ -76,7 +89,7 @@ async function startWhatsAppConnection() {
                     console.log(`WhatsApp connection closed (Code: ${statusCode}). Reconnecting in ${waitTime/1000}s...`);
                 }
 
-                if (statusCode !== DisconnectReason.loggedOut) {
+                if (statusCode !== baileys.DisconnectReason.loggedOut) {
                     setTimeout(() => {
                         startWhatsAppConnection().catch(err => console.log('Retry error:', err.message));
                     }, waitTime);

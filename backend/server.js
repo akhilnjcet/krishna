@@ -23,6 +23,7 @@ app.use('/api/staff', require('./routes/staffRoutes'));
 app.use('/api/tasks', require('./routes/taskRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/settings', require('./routes/settingRoutes'));
+app.use('/api/progress', require('./routes/progressRoutes'));
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
