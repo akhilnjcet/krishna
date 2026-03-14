@@ -175,3 +175,14 @@ exports.getMe = async (req, res) => {
     }
 };
 
+exports.getUsersByRole = async (req, res) => {
+    try {
+        const { role } = req.query;
+        const query = role ? { role } : {};
+        const users = await User.find(query).select('_id name email role');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+

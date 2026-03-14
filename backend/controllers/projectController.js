@@ -3,10 +3,25 @@ const { sendProgressUpdate } = require('../services/whatsappService');
 
 exports.createProject = async (req, res) => {
     try {
-        const project = await Project.create(req.body);
-        res.status(201).json(project);
+        const { title, customerId, serviceType } = req.body;
+        
+        if (!title || !customerId || !serviceType) {
+            return res.status(400).json({ 
+                message: "Title, Customer ID, and Service Type are required." 
+            });
+        }
+
+        const project = new Project(req.body);
+        const savedProject = await project.save();
+        
+        console.log(`✅ Project Created: ${savedProject.title}`);
+        res.status(201).json(savedProject);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('❌ Project Creation Error:', error);
+        res.status(500).json({ 
+            message: error.message,
+            tip: "Check if Customer ID is a valid MongoDB ID"
+        });
     }
 };
 

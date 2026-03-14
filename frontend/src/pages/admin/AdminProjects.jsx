@@ -35,11 +35,11 @@ const AdminProjects = () => {
 
     const fetchCustomers = async () => {
         try {
-            // Need a customer fetching endpoint or filter from User
-            const res = await api.get('/staff'); // Backend currently has getStaff which filters role:staff
-            // Let's assume we can get users here or just use IDs for now.
-            // Actually, I should probably add an /api/users endpoint for this.
-        } catch (err) { }
+            const res = await api.get('/auth/users?role=customer');
+            setCustomers(res.data);
+        } catch (err) {
+            console.error('Fetch Customers Error:', err);
+        }
     };
 
     const handleCreateProject = async (e) => {
@@ -49,8 +49,11 @@ const AdminProjects = () => {
             fetchProjects();
             setShowModal(false);
             setFormData({ title: '', customerId: '', serviceType: '', budget: '', deadline: '' });
+            alert("Project created successfully!");
         } catch (err) {
-            alert("Failed to create project.");
+            const msg = err.response?.data?.message || "Failed to create project.";
+            const tip = err.response?.data?.tip || "";
+            alert(`${msg}\n${tip}`);
         }
     };
 
@@ -164,8 +167,18 @@ const AdminProjects = () => {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Customer ID*</label>
-                                        <input required value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="USER_ID" />
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Select Customer*</label>
+                                        <select 
+                                            required 
+                                            value={formData.customerId} 
+                                            onChange={e => setFormData({...formData, customerId: e.target.value})} 
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none appearance-none"
+                                        >
+                                            <option value="">Select a Client</option>
+                                            {customers.map(c => (
+                                                <option key={c._id} value={c._id}>{c.name} ({c.email})</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div>
                                         <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Service Type</label>
