@@ -1,8 +1,19 @@
 const Task = require('../models/Task');
+const User = require('../models/User');
+const { sendTaskAssignment } = require('../services/whatsappService');
 
 exports.createTask = async (req, res) => {
     try {
         const task = await Task.create(req.body);
+        
+        // Notify Staff
+        if (task.assignedStaff) {
+            const staff = await User.findById(task.assignedStaff);
+            if (staff) {
+                sendTaskAssignment(staff, task).catch(err => console.error('WhatsApp Error:', err));
+            }
+        }
+
         res.status(201).json(task);
     } catch (error) {
         res.status(500).json({ message: error.message });

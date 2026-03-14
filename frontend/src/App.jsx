@@ -30,6 +30,7 @@ import InvoiceView from './pages/customer/InvoiceView';
 import Register from './pages/Register';
 
 import AdminProjects from './pages/admin/AdminProjects';
+import AdminPortfolio from './pages/admin/AdminPortfolio';
 import AdminQuotes from './pages/admin/AdminQuotes';
 import AdminStaff from './pages/admin/AdminStaff';
 import AdminInvoices from './pages/admin/AdminInvoices';
@@ -56,6 +57,7 @@ const App = () => {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="projects" element={<AdminProjects />} />
+            <Route path="portfolio" element={<AdminPortfolio />} />
             <Route path="quotes" element={<AdminQuotes />} />
             <Route path="staff" element={<AdminStaff />} />
             <Route path="invoices" element={<AdminInvoices />} />

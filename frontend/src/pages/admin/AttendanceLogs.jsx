@@ -44,7 +44,7 @@ const AttendanceLogs = () => {
             log.staff_id?.staff_id || 'N/A',
             log.full_name,
             log.date,
-            new Date(log.login_time).toLocaleTimeString(),
+            log.login_time ? new Date(log.login_time).toLocaleTimeString() : 'N/A',
             (log.face_match_confidence * 100).toFixed(2) + '%',
             log.status,
             log.device_ip
@@ -150,7 +150,7 @@ const AttendanceLogs = () => {
                                             </span>
                                             <span className="flex items-center gap-2 text-slate-500 font-medium text-sm mt-1">
                                                 <Clock className="w-4 h-4 text-slate-400" />
-                                                {new Date(log.login_time).toLocaleTimeString()}
+                                                {log.login_time ? new Date(log.login_time).toLocaleTimeString() : 'N/A'}
                                             </span>
                                         </div>
                                     </td>

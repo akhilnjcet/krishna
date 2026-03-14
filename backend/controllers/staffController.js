@@ -55,6 +55,7 @@ exports.addStaff = async (req, res) => {
             staff_id,
             name: name || full_name,
             phone: phone || phone_number,
+            phoneNumber: phone || phone_number,
             email,
             department,
             designation,
@@ -63,6 +64,12 @@ exports.addStaff = async (req, res) => {
             role: role || 'staff',
             status: status || 'active'
         });
+
+        // Send Welcome Message via WhatsApp
+        const { sendWhatsAppMessage } = require('../services/whatsappService');
+        const welcomeMsg = `*Welcome to Krishna Engineering*\n\nHello *${staff.name}*,\nYour staff account has been created.\n\n*ID:* ${staff.staff_id}\n*Role:* ${staff.designation}\n\nPlease register your biometrics on your first day.`;
+        console.log(`Attempting to send welcome message to: ${staff.phoneNumber}`);
+        sendWhatsAppMessage(staff.phoneNumber, welcomeMsg).catch(err => console.error('WhatsApp Welcome Error:', err));
 
         res.status(201).json(staff);
     } catch (error) {
@@ -79,6 +86,7 @@ exports.updateStaff = async (req, res) => {
 
         staff.name = name || full_name || staff.name;
         staff.phone = phone || phone_number || staff.phone;
+        staff.phoneNumber = phone || phone_number || staff.phoneNumber;
         staff.email = email || staff.email;
         staff.department = department || staff.department;
         staff.designation = designation || staff.designation;
@@ -104,16 +112,53 @@ exports.deleteStaff = async (req, res) => {
     }
 };
 
+const FaceData = require('../models/FaceData');
+
 exports.registerFace = async (req, res) => {
     try {
         const { descriptor } = req.body;
-        const staff = await User.findOne({ _id: req.params.id, role: 'staff' });
+        const userId = req.params.id;
+
+        // 1. One Face Per User Rule: Check if face already exists
+        const existingFace = await FaceData.findOne({ userId });
+        if (existingFace) {
+            return res.status(400).json({ 
+                message: 'Face already registered for this user. Admin must delete old face before re-registering.' 
+            });
+        }
+
+        const staff = await User.findOne({ _id: userId, role: 'staff' });
         if (!staff) return res.status(404).json({ message: 'Staff member not found' });
 
+        // 2. Store in FaceData collection
+        await FaceData.create({
+            userId: userId,
+            faceEmbedding: descriptor
+        });
+
+        // Keep a reference in User model for convenience if needed, 
+        // but the core logic will now use FaceData
         staff.faceDescriptor = descriptor;
         await staff.save();
 
         res.json({ message: 'Face data registered successfully', success: true });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.deleteFaceData = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        await FaceData.deleteOne({ userId });
+        
+        const staff = await User.findById(userId);
+        if (staff) {
+            staff.faceDescriptor = [];
+            await staff.save();
+        }
+
+        res.json({ message: 'Face data removed successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

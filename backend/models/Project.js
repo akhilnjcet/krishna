@@ -8,6 +8,11 @@ const projectSchema = new mongoose.Schema({
     deadline: { type: Date },
     status: { type: String, enum: ['pending', 'in-progress', 'completed', 'cancelled'], default: 'pending' },
     budget: { type: Number, default: 0 },
+    progress: { type: Number, default: 0 },
+    sitePhotos: [{ type: String }],
+    location: { type: String },
+    updateNotes: { type: String },
+    nextNotes: { type: String },
     createdAt: { type: Date, default: Date.now }
 });
 

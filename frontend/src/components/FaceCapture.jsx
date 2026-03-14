@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { loadModels, detectFaceAndLiveness } from '../utils/faceApiUtils';
+import * as faceapi from 'face-api.js';
+import { loadModels, detectFaceAndLiveness, detectBlink } from '../utils/faceApiUtils';
 import { Camera, RefreshCw, CheckCircle, AlertCircle, ShieldCheck } from 'lucide-react';
 
 const FaceCapture = ({ onCapture, buttonText = "Enroll Identity" }) => {
@@ -41,27 +42,49 @@ const FaceCapture = ({ onCapture, buttonText = "Enroll Identity" }) => {
             }
             
             scanActiveRef.current = true;
-            let blinkDetected = false;
+            let capturedFrames = [];
             
             const scanLoop = async () => {
                 if (!scanActiveRef.current) return;
-                const result = await detectFaceAndLiveness(videoRef, canvasRef);
                 
-                if (result) {
-                    if (!blinkDetected && result.isBlinking) {
-                        blinkDetected = true;
-                        setMessage('LIVENESS VERIFIED. HOLD STILL...');
+                // Detect all faces to ensure only one is present
+                const detections = await faceapi.detectAllFaces(videoRef.current)
+                    .withFaceLandmarks()
+                    .withFaceDescriptors();
+
+                if (detections.length > 1) {
+                    setMessage('ERROR: ONLY ONE PERSON ALLOWED DURING REGISTRATION.');
+                    requestAnimationFrame(scanLoop);
+                    return;
+                }
+
+                if (detections.length === 1) {
+                    const result = detections[0];
+                    const isBlinking = await detectBlink(result.landmarks);
+                    
+                    if (isBlinking) {
+                        setMessage(`CAPTURING BIOMETRICS... [${capturedFrames.length + 1}/3]`);
+                        capturedFrames.push(Array.from(result.descriptor));
+                        
+                        // Wait a bit between frames
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    } else {
+                        setMessage('PLEASE BLINK TO INITIATE CAPTURE');
                     }
 
-                    if (blinkDetected && !result.isBlinking && result.score > 0.85) {
+                    if (capturedFrames.length >= 3) {
                         scanActiveRef.current = false;
-                        setCapturedDescriptor(result.descriptor);
+                        
+                        // Average the descriptors for a stronger "Master Embedding"
+                        const averagedDescriptor = capturedFrames[0].map((_, i) => 
+                            capturedFrames.reduce((acc, frame) => acc + frame[i], 0) / capturedFrames.length
+                        );
+
+                        setCapturedDescriptor(averagedDescriptor);
                         setStatus('success');
-                        setMessage('IDENTITY SECURED');
+                        setMessage('ADVANCED IDENTITY PROFILE GENERATED');
                         stopVideo();
                         return;
-                    } else if (!blinkDetected) {
-                        setMessage('PLEASE BLINK TO VERIFY LIVENESS');
                     }
                 } else {
                     setMessage('POSITION FACE IN FRAME');

@@ -121,12 +121,14 @@ const AttendanceScanner = () => {
                 
                 stopCamera();
                 setStatus('success');
-                setMessage(`IDENTITY VERIFIED: ${matchedUser.full_name.toUpperCase()}`);
+                setMessage(`ATTENDANCE MARKED SUCCESSFULLY: ${matchedUser.name.toUpperCase()}`);
             }
         } catch (error) {
             stopCamera();
             setStatus('error');
-            const errorMsg = error.response?.data?.message || 'AUTHORIZATION FAILED. TRY AGAIN.';
+            const errorMsg = error.response?.data?.message === 'Face Not Recognized' 
+                ? 'FACE NOT RECOGNIZED. PLEASE ALIGN YOUR FACE AND TRY AGAIN.' 
+                : 'AUTHORIZATION FAILED. TRY AGAIN.';
             setMessage(errorMsg);
         }
     };
@@ -137,12 +139,19 @@ const AttendanceScanner = () => {
             <div className="flex justify-between items-center mb-6 border-b-4 border-brand-950 pb-4">
                 <h2 className="text-2xl font-black uppercase tracking-tighter text-brand-950">
                     <span className="text-brand-accent mr-3">■</span>
-                    Time & Attendance
+                    Biometric Shift Log
                 </h2>
-                <span className="bg-brand-950 text-brand-accent font-black text-[10px] uppercase tracking-widest px-3 py-1">AI SYS.ONLINE</span>
+                <span className="bg-brand-950 text-brand-accent font-black text-[10px] uppercase tracking-widest px-3 py-1">LIVENESS SYSTEM V2.4</span>
             </div>
 
-            <p className="text-brand-600 mb-8 font-medium">Please initiate biometric scan for daily attendance logging. Liveness verification (BLINK) is strictly required to prevent spoofing.</p>
+            <div className="bg-brand-50 border-l-4 border-brand-accent p-4 mb-8">
+                <p className="text-brand-950 font-black text-xs uppercase tracking-widest mb-1">Authorization Protocol:</p>
+                <p className="text-brand-600 text-xs font-bold leading-relaxed">
+                    1. Align face in frame. <br/>
+                    2. Perform one clear <span className="text-brand-950 underline">BLINK</span> for liveness proof. <br/>
+                    3. System will auto-verify once human presence is confirmed.
+                </p>
+            </div>
 
             {/* Scanner UI block */}
             <div className="bg-black p-4 border-4 border-brand-800 mb-8 flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden">

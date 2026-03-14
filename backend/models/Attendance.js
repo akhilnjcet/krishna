@@ -7,7 +7,8 @@ const attendanceSchema = new mongoose.Schema({
     date: { type: String, required: true }, // Format: YYYY-MM-DD
     face_match_confidence: { type: Number, default: 0 },
     device_ip: { type: String },
-    status: { type: String, enum: ['success', 'fail'], default: 'success' }
+    status: { type: String, enum: ['success', 'fail'], default: 'success' },
+    face_verified: { type: Boolean, default: false }
 });
 
 // We might want multiple logs per day if it's "verification logs", or just one for attendance.

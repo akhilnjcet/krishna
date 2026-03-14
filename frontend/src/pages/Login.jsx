@@ -33,8 +33,9 @@ const Login = () => {
                 navigate('/customer');
             }
         } catch (err) {
+            console.error('Login Error:', err);
             const msg = err.response?.data?.message || 
-                        (err.code === 'ERR_NETWORK' ? 'DATABASE_OFFLINE_ERROR' : 'AUTHORIZATION FAILED');
+                        (err.code === 'ERR_NETWORK' ? 'SERVER_CONNECTION_FAILED' : 'AUTHORIZATION FAILED');
             setError(msg);
         } finally {
             setLoading(false);

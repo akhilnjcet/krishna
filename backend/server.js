@@ -12,6 +12,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
+app.use('/api/portfolio', require('./routes/portfolioRoutes'));
 app.use('/api/quotes', require('./routes/quoteRoutes'));
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
 app.use('/api/leave', require('./routes/leaveRoutes'));
@@ -29,18 +30,25 @@ app.get('/api/health', (req, res) => {
 
 // Database connection
 const connectDB = require('./config/database');
+const { startWhatsAppConnection } = require('./services/whatsappService');
 
 const startServer = async () => {
     try {
         await connectDB();
+        
+        // Initialize WhatsApp Connection
+        await startWhatsAppConnection();
+
         if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
             app.listen(PORT, () => {
                 console.log(`Server running on port ${PORT}`);
             });
         }
     } catch (error) {
-        console.error('CRITICAL: Server failed to start due to database connection failure.');
+        console.error('CRITICAL: Server failed to start.');
+        console.error('Error Details:', error.message);
         if (process.env.NODE_ENV !== 'production') {
+            console.error('Stack Trace:', error.stack);
             process.exit(1);
         }
     }

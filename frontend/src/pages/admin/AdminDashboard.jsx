@@ -127,7 +127,7 @@ const AdminDashboard = () => {
                                 </div>
                                 <div className="text-right">
                                     <p className="font-black text-indigo-600 text-sm">{(log.face_match_confidence * 100).toFixed(1)}% Match</p>
-                                    <p className="text-xs text-slate-400 uppercase font-bold mt-1">{new Date(log.login_time).toLocaleTimeString()}</p>
+                                    <p className="text-xs text-slate-400 uppercase font-bold mt-1">{log.login_time ? new Date(log.login_time).toLocaleTimeString() : 'N/A'}</p>
                                 </div>
                             </div>
                         ))}

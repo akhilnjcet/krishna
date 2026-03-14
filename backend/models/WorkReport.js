@@ -5,6 +5,9 @@ const workReportSchema = new mongoose.Schema({
     title: { type: String, required: true },
     content: { type: String, required: true },
     attachments: [{ type: String }], // URLs to files
+    projectName: { type: String },
+    progress: { type: Number, default: 0 },
+    status: { type: String },
     date: { type: Date, default: Date.now },
     createdAt: { type: Date, default: Date.now }
 });

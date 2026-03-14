@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
     // Staff specific fields
     staff_id: { type: String, unique: true, sparse: true },
     phone: { type: String },
+    phoneNumber: { type: String },
     department: { type: String },
     designation: { type: String },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },

@@ -1,4 +1,5 @@
 const Project = require('../models/Project');
+const { sendProgressUpdate } = require('../services/whatsappService');
 
 exports.createProject = async (req, res) => {
     try {
@@ -26,8 +27,18 @@ exports.getProjects = async (req, res) => {
 
 exports.updateProject = async (req, res) => {
     try {
-        const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('customerId');
         if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        // If progress or status is updated, notify customer
+        if (req.body.progress !== undefined || req.body.status !== undefined) {
+            sendProgressUpdate(project, {
+                progress: project.progress,
+                todayWork: req.body.updateNotes || 'Project status updated.',
+                nextWork: req.body.nextNotes || 'Check dashboard for details.'
+            }).catch(err => console.error('WhatsApp Error:', err));
+        }
+
         res.json(project);
     } catch (error) {
         res.status(500).json({ message: error.message });

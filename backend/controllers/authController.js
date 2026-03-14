@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Attendance = require('../models/Attendance');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { sendAttendanceAlert } = require('../services/whatsappService');
 
 const generateToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret123', {
@@ -35,6 +36,7 @@ exports.register = async (req, res) => {
             staff_id,
             name: name || full_name,
             phone: phone || phone_number,
+            phoneNumber: phone || phone_number,
             email,
             department,
             designation,
@@ -61,29 +63,42 @@ exports.login = async (req, res) => {
         const { username, email, password } = req.body;
         
         const identifier = username || email;
+        console.log(`Login attempt for identifier: ${identifier}`);
+        
         const user = await User.findOne({ 
             $or: [{ username: identifier }, { email: identifier }] 
         });
 
-        if (user && (await bcrypt.compare(password, user.password))) {
-            user.last_login = Date.now();
-            await user.save();
-            
-            res.json({
-                _id: user._id,
-                name: user.name,
-                username: user.username,
-                email: user.email,
-                role: user.role,
-                token: generateToken(user._id, user.role),
-            });
+        if (user) {
+            console.log(`User found: ${user.name}, Role: ${user.role}`);
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (isMatch) {
+                user.last_login = Date.now();
+                await user.save();
+                
+                console.log('Password match: Success');
+                res.json({
+                    _id: user._id,
+                    name: user.name,
+                    username: user.username,
+                    email: user.email,
+                    role: user.role,
+                    token: generateToken(user._id, user.role),
+                });
+            } else {
+                console.log('Password match: Failed');
+                res.status(401).json({ message: 'Invalid credentials' });
+            }
         } else {
+            console.log('User not found in database');
             res.status(401).json({ message: 'Invalid credentials' });
         }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
+
+const FaceData = require('../models/FaceData');
 
 exports.verifyFace = async (req, res) => {
     try {
@@ -92,37 +107,46 @@ exports.verifyFace = async (req, res) => {
             return res.status(400).json({ message: 'Face descriptor is required' });
         }
 
-        const allStaff = await User.find({ 
-            role: 'staff',
-            faceDescriptor: { $exists: true, $not: { $size: 0 } } 
-        });
+        // 1. Fetch all embeddings (Optimize: Could use memory cache for production)
+        const allFaceData = await FaceData.find({}).populate('userId');
+        
+        console.log(`Verification: Checking against ${allFaceData.length} records...`);
         
         let bestMatch = null;
-        let minDistance = 0.6;
+        let minDistance = 0.6; // Slightly more balanced threshold
 
-        for (const staff of allStaff) {
-            const distance = getEuclideanDistance(descriptor, staff.faceDescriptor);
+        for (const record of allFaceData) {
+            if (!record.userId) continue;
+            
+            const distance = getEuclideanDistance(descriptor, record.faceEmbedding);
+            console.log(`Comparison against ${record.userId.name}: Distance = ${distance.toFixed(4)}`);
+            
             if (distance < minDistance) {
                 minDistance = distance;
-                bestMatch = staff;
+                bestMatch = record.userId;
             }
         }
 
         if (bestMatch) {
+            console.log(`✅ Match: ${bestMatch.name} (Dist: ${minDistance.toFixed(4)})`);
             const today = new Date().toISOString().split('T')[0];
             
             const attendance = await Attendance.create({
                 staff_id: bestMatch._id,
                 full_name: bestMatch.name,
+                login_time: new Date(),
                 date: today,
                 face_match_confidence: 1 - minDistance,
                 device_ip: req.ip || req.connection.remoteAddress,
-                status: 'success'
+                status: 'success',
+                face_verified: true
             });
+
+            sendAttendanceAlert(bestMatch, attendance).catch(err => console.error('WhatsApp Error:', err));
 
             res.json({
                 success: true,
-                message: 'Face verified successfully',
+                message: 'Attendance marked successfully',
                 user: {
                     _id: bestMatch._id,
                     name: bestMatch.name,
@@ -134,7 +158,8 @@ exports.verifyFace = async (req, res) => {
                 attendance
             });
         } else {
-            res.status(401).json({ message: 'Face match failed' });
+            console.log('❌ Auth Failed: No match found under threshold.');
+            res.status(401).json({ message: 'Authorization Failed' });
         }
     } catch (error) {
         res.status(500).json({ message: error.message });

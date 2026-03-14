@@ -1,4 +1,5 @@
 const WorkReport = require('../models/WorkReport');
+const { sendDailyReport } = require('../services/whatsappService');
 
 exports.submitReport = async (req, res) => {
     try {
@@ -6,6 +7,14 @@ exports.submitReport = async (req, res) => {
             ...req.body,
             staffId: req.user.id
         });
+
+        // Notify Admin
+        const User = require('../models/User');
+        const staff = await User.findById(req.user.id);
+        if (staff) {
+            sendDailyReport(report, staff).catch(err => console.error('WhatsApp Error:', err));
+        }
+
         res.status(201).json(report);
     } catch (error) {
         res.status(500).json({ message: error.message });

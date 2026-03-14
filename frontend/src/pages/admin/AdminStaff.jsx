@@ -104,9 +104,21 @@ const AdminStaff = () => {
             setShowFaceModal(false);
             fetchStaff();
         } catch (err) {
-            alert("Failed to register face.");
+            const msg = err.response?.data?.message || "Failed to register face.";
+            alert(msg);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDeleteFace = async (id) => {
+        if (!window.confirm("Are you sure you want to remove the registered face? The user will need to re-register to use face attendance.")) return;
+        try {
+            await api.delete(`/staff/${id}/face`);
+            alert("Face data removed.");
+            fetchStaff();
+        } catch (err) {
+            alert("Failed to remove face data.");
         }
     };
 
@@ -256,6 +268,15 @@ const AdminStaff = () => {
                                             >
                                                 <Camera className="w-5 h-5" />
                                             </button>
+                                            {member.faceDescriptor?.length > 0 && (
+                                                <button 
+                                                    title="Remove Face Data"
+                                                    onClick={() => handleDeleteFace(member._id)}
+                                                    className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
+                                            )}
                                             <button 
                                                 title="Edit"
                                                 onClick={() => { 

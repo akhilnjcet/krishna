@@ -13,6 +13,7 @@ const AdminLayout = () => {
     const navItems = [
         { name: 'Control Center', path: '/admin', icon: '◧' },
         { name: 'Active Projects', path: '/admin/projects', icon: '☰' },
+        { name: 'Work Gallery', path: '/admin/portfolio', icon: '◙' },
         { name: 'Quote Requests', path: '/admin/quotes', icon: '¥' },
         { name: 'Staff Roster', path: '/admin/staff', icon: '♙' },
         { name: 'Verification Logs', path: '/admin/logs', icon: '☷' },
