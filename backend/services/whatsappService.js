@@ -7,10 +7,32 @@ const pino = require('pino');
 // State variables
 let sock;
 let isConnecting = false;
-let baileys = null; // To store dynamically imported module
+let baileys = null;
+let connectionPromise = null;
 
 // Completely silent logs to see only our messages
 const logger = pino({ level: 'silent' });
+
+/**
+ * Load/Save Credentials from MongoDB for persistence on Vercel
+ */
+async function syncCredsWithDb(authPath, isVercel) {
+    const SystemSetting = require('../models/SystemSetting');
+    const credsPath = path.join(authPath, 'creds.json');
+
+    // Load from DB if file doesn't exist (e.g. fresh Vercel instance)
+    if (!fs.existsSync(credsPath)) {
+        try {
+            const setting = await SystemSetting.findOne({ key: 'whatsapp_creds' });
+            if (setting && setting.value) {
+                console.log('📦 Restoring WhatsApp session from MongoDB...');
+                fs.writeFileSync(credsPath, typeof setting.value === 'string' ? setting.value : JSON.stringify(setting.value));
+            }
+        } catch (err) {
+            console.error('❌ Failed to restore creds from DB:', err.message);
+        }
+    }
+}
 
 async function startWhatsAppConnection() {
     if (isConnecting) return;
@@ -39,6 +61,9 @@ async function startWhatsAppConnection() {
 
         if (!fs.existsSync(authPath)) fs.mkdirSync(authPath, { recursive: true });
 
+        // Restore from DB if on Vercel or local first run
+        await syncCredsWithDb(authPath, isVercel);
+
         const { state, saveCreds } = await useMultiFileAuthState(authPath);
         
         // Fetch latest version
@@ -59,7 +84,23 @@ async function startWhatsAppConnection() {
             printQRInTerminal: false
         });
 
-        sock.ev.on('creds.update', saveCreds);
+        // Wrap saveCreds to also update DB
+        const wrappedSaveCreds = async () => {
+            await saveCreds();
+            const SystemSetting = require('../models/SystemSetting');
+            try {
+                const credsData = fs.readFileSync(path.join(authPath, 'creds.json'), 'utf-8');
+                await SystemSetting.findOneAndUpdate(
+                    { key: 'whatsapp_creds' },
+                    { value: credsData, updatedAt: Date.now() },
+                    { upsert: true }
+                );
+            } catch (err) {
+                // Silent fail for DB update to avoid blocking
+            }
+        };
+
+        sock.ev.on('creds.update', wrappedSaveCreds);
 
         sock.ev.on('connection.update', (update) => {
             const { connection, lastDisconnect, qr } = update;
@@ -102,6 +143,7 @@ async function startWhatsAppConnection() {
     } catch (err) {
         console.error('❌ Failed to initialize WhatsApp socket:', err.message);
         isConnecting = false;
+        connectionPromise = null;
         return;
     }
 
@@ -109,12 +151,28 @@ async function startWhatsAppConnection() {
 }
 
 /**
+ * Ensures WhatsApp is connected before proceeding
+ */
+async function ensureWhatsApp() {
+    if (sock && !isConnecting) return sock;
+    
+    if (isConnecting && connectionPromise) {
+        return connectionPromise;
+    }
+
+    connectionPromise = startWhatsAppConnection();
+    return connectionPromise;
+}
+
+/**
  * Send a WhatsApp message
  */
 async function sendWhatsAppMessage(number, message) {
     try {
-        if (!sock) {
-            console.error(`❌ Cannot send message to ${number}: WhatsApp not connected.`);
+        const client = await ensureWhatsApp();
+        
+        if (!client) {
+            console.error(`❌ Cannot send message to ${number}: WhatsApp fail.`);
             return;
         }
         let cleanNumber = number.replace(/\D/g, '');
