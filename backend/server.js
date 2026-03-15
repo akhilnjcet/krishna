@@ -32,7 +32,8 @@ app.get('/api/health', (req, res) => {
 // Public WhatsApp Health Check
 app.get('/api/health/whatsapp', async (req, res) => {
     try {
-        const { getWhatsAppStatus } = require('./services/whatsappService');
+        const { getWhatsAppStatus, ensureWhatsApp } = require('./services/whatsappService');
+        await ensureWhatsApp(); // Wait for connection to attempt initialization
         const status = await getWhatsAppStatus();
         res.json({ 
             connected: status.connected, 
