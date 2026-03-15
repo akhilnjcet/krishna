@@ -26,8 +26,12 @@ async function syncCredsWithDb(authPath, isVercel) {
         try {
             const setting = await SystemSetting.findOne({ key: 'whatsapp_creds' });
             if (setting && setting.value) {
-                console.log('📦 Restoring WhatsApp session from MongoDB...');
-                fs.writeFileSync(credsPath, typeof setting.value === 'string' ? setting.value : JSON.stringify(setting.value));
+                console.log('📦 Found WhatsApp session in MongoDB. Writing to /tmp...');
+                const rawData = typeof setting.value === 'string' ? setting.value : JSON.stringify(setting.value);
+                fs.writeFileSync(credsPath, rawData);
+                console.log(`✅ Session written to ${credsPath} (${rawData.length} bytes)`);
+            } else {
+                console.log('⚠️ No WhatsApp session found in MongoDB settings.');
             }
         } catch (err) {
             console.error('❌ Failed to restore creds from DB:', err.message);
@@ -77,12 +81,13 @@ async function startWhatsAppConnection() {
                 keys: makeCacheableSignalKeyStore(state.keys, logger),
             },
             logger: logger,
-            browser: Browsers.macOS('Chrome'),
+            printQRInTerminal: false,
+            browser: Browsers.macOS('Desktop'),
             syncFullHistory: false,
             markOnlineOnConnect: true,
-            connectTimeoutMs: 15000, // Faster timeout for serverless
-            defaultQueryTimeoutMs: 15000,
-            printQRInTerminal: false
+            connectTimeoutMs: 30000,
+            defaultQueryTimeoutMs: 30000,
+            getMessage: async (key) => ({ conversation: 'Success' })
         });
 
         // Wrap saveCreds to also update DB
