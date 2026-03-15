@@ -33,15 +33,33 @@ app.get('/api/health', (req, res) => {
 app.get('/api/health/whatsapp', async (req, res) => {
     try {
         const { getWhatsAppStatus, ensureWhatsApp } = require('./services/whatsappService');
-        await ensureWhatsApp(); // Wait for connection to attempt initialization
+        const fs = require('fs');
+        const path = require('path');
+        
+        // Check if session file exists in /tmp
+        const credsPath = process.env.VERCEL === '1' 
+            ? '/tmp/whatsapp_auth_info/creds.json' 
+            : path.join(__dirname, 'whatsapp_auth_info/creds.json');
+        
+        const fileExists = fs.existsSync(credsPath);
+        const fileSize = fileExists ? fs.statSync(credsPath).size : 0;
+
+        await ensureWhatsApp();
         const status = await getWhatsAppStatus();
+        
         res.json({ 
             connected: status.connected, 
+            isConnecting: status.isConnecting,
             phone: status.phone,
+            sessionFile: {
+                exists: fileExists,
+                size: fileSize,
+                path: credsPath
+            },
             timestamp: new Date().toISOString()
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: err.message, stack: err.stack });
     }
 });
 
