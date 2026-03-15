@@ -9,6 +9,7 @@ let sock;
 let isConnecting = false;
 let baileys = null;
 let connectionPromise = null;
+let openResolver = null;
 
 // Completely silent logs to see only our messages
 const logger = pino({ level: 'silent' });
@@ -61,13 +62,13 @@ async function startWhatsAppConnection() {
 
         if (!fs.existsSync(authPath)) fs.mkdirSync(authPath, { recursive: true });
 
-        // Restore from DB if on Vercel or local first run
+        // Restore from DB
         await syncCredsWithDb(authPath, isVercel);
 
         const { state, saveCreds } = await useMultiFileAuthState(authPath);
         
         // Fetch latest version
-        const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 3000, 1015901307] }));
+        const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 3005, 12] }));
 
         sock = makeWASocket({
             version,
@@ -79,8 +80,8 @@ async function startWhatsAppConnection() {
             browser: Browsers.macOS('Chrome'),
             syncFullHistory: false,
             markOnlineOnConnect: true,
-            connectTimeoutMs: 60000,
-            defaultQueryTimeoutMs: 60000,
+            connectTimeoutMs: 15000, // Faster timeout for serverless
+            defaultQueryTimeoutMs: 15000,
             printQRInTerminal: false
         });
 
@@ -89,15 +90,16 @@ async function startWhatsAppConnection() {
             await saveCreds();
             const SystemSetting = require('../models/SystemSetting');
             try {
-                const credsData = fs.readFileSync(path.join(authPath, 'creds.json'), 'utf-8');
-                await SystemSetting.findOneAndUpdate(
-                    { key: 'whatsapp_creds' },
-                    { value: credsData, updatedAt: Date.now() },
-                    { upsert: true }
-                );
-            } catch (err) {
-                // Silent fail for DB update to avoid blocking
-            }
+                const credsFilePath = path.join(authPath, 'creds.json');
+                if (fs.existsSync(credsFilePath)) {
+                    const credsData = fs.readFileSync(credsFilePath, 'utf-8');
+                    await SystemSetting.findOneAndUpdate(
+                        { key: 'whatsapp_creds' },
+                        { value: credsData, updatedAt: Date.now() },
+                        { upsert: true }
+                    );
+                }
+            } catch (err) {}
         };
 
         sock.ev.on('creds.update', wrappedSaveCreds);
@@ -126,13 +128,25 @@ async function startWhatsAppConnection() {
             if (connection === 'open') {
                 console.log('\n✅ SUCCESS! WhatsApp is connected!');
                 const SystemSetting = require('../models/SystemSetting');
-                await SystemSetting.deleteOne({ key: 'whatsapp_qr' }); // Clear QR on success
+                SystemSetting.deleteOne({ key: 'whatsapp_qr' }).catch(() => {}); 
                 isConnecting = false;
+                if (openResolver) {
+                    openResolver(sock);
+                    openResolver = null;
+                }
             }
 
             if (connection === 'close') {
                 isConnecting = false;
                 const statusCode = (lastDisconnect.error instanceof Boom) ? lastDisconnect.error.output.statusCode : 0;
+                
+                if (openResolver) {
+                    // Force resolve if logged out or permanent fail
+                    if (statusCode === 401 || statusCode === 403) {
+                        openResolver(null);
+                        openResolver = null;
+                    }
+                }
                 
                 if (statusCode === 401 || statusCode === 403 || statusCode === 440) {
                     console.log(`WhatsApp Session Conflict (Code: ${statusCode}). Stopping auto-reconnect.`);
@@ -161,10 +175,24 @@ async function startWhatsAppConnection() {
         console.error('❌ Failed to initialize WhatsApp socket:', err.message);
         isConnecting = false;
         connectionPromise = null;
-        return;
+        if (openResolver) openResolver(null);
+        return null;
     }
 
-    return sock;
+    // Return a promise that resolves when the connection is actually OPEN
+    return new Promise((resolve) => {
+        if (sock && !isConnecting && sock.user) return resolve(sock);
+        openResolver = resolve;
+        
+        // Timeout if connection takes too long
+        setTimeout(() => {
+            if (openResolver) {
+                console.log('⏰ WhatsApp connection timeout.');
+                openResolver(sock); // Resolve with whatever we have
+                openResolver = null;
+            }
+        }, 12000);
+    });
 }
 
 /**
