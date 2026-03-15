@@ -38,7 +38,7 @@ app.get('/api/health/whatsapp', async (req, res) => {
         
         // Check if session file exists in /tmp
         const credsPath = process.env.VERCEL === '1' 
-            ? '/tmp/whatsapp_auth_info/creds.json' 
+            ? '/tmp/whatsapp_auth/creds.json' 
             : path.join(__dirname, 'whatsapp_auth_info/creds.json');
         
         const fileExists = fs.existsSync(credsPath);

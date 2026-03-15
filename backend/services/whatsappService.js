@@ -61,7 +61,7 @@ async function startWhatsAppConnection() {
         // Use /tmp for auth on Vercel/Serverless as other dirs are read-only
         const isVercel = process.env.VERCEL === '1';
         const authPath = isVercel 
-            ? path.join('/tmp', 'whatsapp_auth_info')
+            ? '/tmp/whatsapp_auth'
             : path.join(__dirname, '../whatsapp_auth_info');
 
         if (!fs.existsSync(authPath)) fs.mkdirSync(authPath, { recursive: true });
