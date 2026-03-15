@@ -36,22 +36,22 @@ app.get('/api/health/whatsapp', async (req, res) => {
         const fs = require('fs');
         const path = require('path');
         
-        // Check if session file exists in /tmp
+        await ensureWhatsApp();
+        const status = await getWhatsAppStatus();
+
+        // Check file status AFTER connection attempt
         const credsPath = process.env.VERCEL === '1' 
             ? '/tmp/whatsapp_auth/creds.json' 
             : path.join(__dirname, 'whatsapp_auth_info/creds.json');
         
         const fileExists = fs.existsSync(credsPath);
         const fileSize = fileExists ? fs.statSync(credsPath).size : 0;
-
-        await ensureWhatsApp();
-        const status = await getWhatsAppStatus();
         
         res.json({ 
             connected: status.connected, 
             isConnecting: status.isConnecting,
             phone: status.phone,
-            sessionFile: {
+            sessionStored: {
                 exists: fileExists,
                 size: fileSize,
                 path: credsPath

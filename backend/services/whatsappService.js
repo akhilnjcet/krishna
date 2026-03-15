@@ -21,21 +21,33 @@ async function syncCredsWithDb(authPath, isVercel) {
     const SystemSetting = require('../models/SystemSetting');
     const credsPath = path.join(authPath, 'creds.json');
 
+    console.log(`🔍 Checking for session at: ${credsPath}`);
+
     // Load from DB if file doesn't exist (e.g. fresh Vercel instance)
     if (!fs.existsSync(credsPath)) {
         try {
+            console.log('📦 Session file missing. Querying MongoDB...');
             const setting = await SystemSetting.findOne({ key: 'whatsapp_creds' });
+            
             if (setting && setting.value) {
-                console.log('📦 Found WhatsApp session in MongoDB. Writing to /tmp...');
+                console.log('✅ Found session data in MongoDB.');
+                
+                // Ensure directory exists again just in case
+                if (!fs.existsSync(authPath)) {
+                    fs.mkdirSync(authPath, { recursive: true });
+                }
+
                 const rawData = typeof setting.value === 'string' ? setting.value : JSON.stringify(setting.value);
                 fs.writeFileSync(credsPath, rawData);
-                console.log(`✅ Session written to ${credsPath} (${rawData.length} bytes)`);
+                console.log(`🚀 Successfully restored 'creds.json' to ${authPath} (${rawData.length} bytes)`);
             } else {
-                console.log('⚠️ No WhatsApp session found in MongoDB settings.');
+                console.log('⚠️ No "whatsapp_creds" found in MongoDB. Pair manually.');
             }
         } catch (err) {
-            console.error('❌ Failed to restore creds from DB:', err.message);
+            console.error('❌ Failed to restore session from DB:', err.message);
         }
+    } else {
+        console.log('✅ Session file already exists locally.');
     }
 }
 
