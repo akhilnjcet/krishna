@@ -70,8 +70,6 @@ const startServer = async () => {
     }
 };
 
-startServer();
-
 // Export for Vercel
+startServer();
 module.exports = app;
-
