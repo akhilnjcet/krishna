@@ -52,178 +52,155 @@ async function syncCredsWithDb(authPath, isVercel) {
 }
 
 async function startWhatsAppConnection() {
-    if (isConnecting) return;
+    if (isConnecting && connectionPromise) return connectionPromise;
     isConnecting = true;
 
-    try {
-        // Dynamic import for ESM module in CJS environment
-        if (!baileys) {
-            baileys = await import('@whiskeysockets/baileys');
-        }
+    connectionPromise = (async () => {
+        try {
+            // Dynamic import for ESM module in CJS environment
+            if (!baileys) {
+                baileys = await import('@whiskeysockets/baileys');
+            }
 
-        const {
-            default: makeWASocket,
-            useMultiFileAuthState,
-            DisconnectReason,
-            Browsers,
-            makeCacheableSignalKeyStore,
-            fetchLatestBaileysVersion
-        } = baileys;
+            const {
+                default: makeWASocket,
+                useMultiFileAuthState,
+                DisconnectReason,
+                Browsers,
+                makeCacheableSignalKeyStore,
+                fetchLatestBaileysVersion
+            } = baileys;
 
-        // Use /tmp for auth on Vercel/Serverless as other dirs are read-only
-        const isVercel = process.env.VERCEL === '1';
-        const authPath = isVercel 
-            ? '/tmp/whatsapp_auth'
-            : path.join(__dirname, '../whatsapp_auth_info');
+            // Use /tmp for auth on Vercel/Serverless as other dirs are read-only
+            const isVercel = process.env.VERCEL === '1';
+            const authPath = isVercel 
+                ? '/tmp/whatsapp_auth'
+                : path.join(__dirname, '../whatsapp_auth_info');
 
-        if (!fs.existsSync(authPath)) fs.mkdirSync(authPath, { recursive: true });
+            if (!fs.existsSync(authPath)) fs.mkdirSync(authPath, { recursive: true });
 
-        // Restore from DB
-        await syncCredsWithDb(authPath, isVercel);
+            // Restore from DB
+            await syncCredsWithDb(authPath, isVercel);
 
-        const { state, saveCreds } = await useMultiFileAuthState(authPath);
-        
-        // Fetch latest version
-        const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 3005, 12] }));
+            const { state, saveCreds } = await useMultiFileAuthState(authPath);
+            
+            // Fetch latest version
+            const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 3005, 12] }));
 
-        sock = makeWASocket({
-            version,
-            auth: {
-                creds: state.creds,
-                keys: makeCacheableSignalKeyStore(state.keys, logger),
-            },
-            logger: logger,
-            printQRInTerminal: false,
-            browser: Browsers.macOS('Desktop'),
-            syncFullHistory: false,
-            markOnlineOnConnect: true,
-            connectTimeoutMs: 30000,
-            defaultQueryTimeoutMs: 30000,
-            getMessage: async (key) => ({ conversation: 'Success' })
-        });
+            sock = makeWASocket({
+                version,
+                auth: {
+                    creds: state.creds,
+                    keys: makeCacheableSignalKeyStore(state.keys, logger),
+                },
+                logger: logger,
+                printQRInTerminal: false,
+                browser: Browsers.macOS('Desktop'),
+                syncFullHistory: false,
+                markOnlineOnConnect: true,
+                connectTimeoutMs: 30000,
+                defaultQueryTimeoutMs: 30000,
+                getMessage: async (key) => ({ conversation: 'Success' })
+            });
 
-        // Wrap saveCreds to also update DB
-        const wrappedSaveCreds = async () => {
-            await saveCreds();
-            const SystemSetting = require('../models/SystemSetting');
-            try {
-                const credsFilePath = path.join(authPath, 'creds.json');
-                if (fs.existsSync(credsFilePath)) {
-                    const credsData = fs.readFileSync(credsFilePath, 'utf-8');
-                    await SystemSetting.findOneAndUpdate(
-                        { key: 'whatsapp_creds' },
-                        { value: credsData, updatedAt: Date.now() },
-                        { upsert: true }
-                    );
-                }
-            } catch (err) {}
-        };
-
-        sock.ev.on('creds.update', wrappedSaveCreds);
-
-        sock.ev.on('connection.update', async (update) => {
-            const { connection, lastDisconnect, qr } = update;
-
-            if (qr) {
-                console.log('🔄 New WhatsApp QR Code generated. Saving to DB...');
+            // Wrap saveCreds to also update DB
+            const wrappedSaveCreds = async () => {
+                await saveCreds();
                 const SystemSetting = require('../models/SystemSetting');
                 try {
-                    await SystemSetting.findOneAndUpdate(
-                        { key: 'whatsapp_qr' },
-                        { value: qr, updatedAt: Date.now() },
-                        { upsert: true }
-                    );
-                } catch (err) {
-                    // Silent fail
-                }
-                
-                console.log('\n=================================================');
-                console.log('      PLEASE SCAN THE QR CODE ON YOUR WEB DASHBOARD');
-                console.log('=================================================');
-            }
+                    const credsFilePath = path.join(authPath, 'creds.json');
+                    if (fs.existsSync(credsFilePath)) {
+                        const credsData = fs.readFileSync(credsFilePath, 'utf-8');
+                        await SystemSetting.findOneAndUpdate(
+                            { key: 'whatsapp_creds' },
+                            { value: credsData, updatedAt: Date.now() },
+                            { upsert: true }
+                        );
+                    }
+                } catch (err) {}
+            };
 
-            if (connection === 'open') {
-                console.log('\n✅ SUCCESS! WhatsApp is connected!');
-                const SystemSetting = require('../models/SystemSetting');
-                SystemSetting.deleteOne({ key: 'whatsapp_qr' }).catch(() => {}); 
-                isConnecting = false;
-                if (openResolver) {
-                    openResolver(sock);
-                    openResolver = null;
-                }
-            }
+            sock.ev.on('creds.update', wrappedSaveCreds);
 
-            if (connection === 'close') {
-                isConnecting = false;
-                const statusCode = (lastDisconnect.error instanceof Boom) ? lastDisconnect.error.output.statusCode : 0;
-                
-                if (openResolver) {
-                    // Force resolve if logged out or permanent fail
-                    if (statusCode === 401 || statusCode === 403) {
-                        openResolver(null);
+            sock.ev.on('connection.update', async (update) => {
+                const { connection, lastDisconnect, qr } = update;
+
+                if (qr) {
+                    const SystemSetting = require('../models/SystemSetting');
+                    try {
+                        await SystemSetting.findOneAndUpdate(
+                            { key: 'whatsapp_qr' },
+                            { value: qr, updatedAt: Date.now() },
+                            { upsert: true }
+                        );
+                    } catch (err) {}
+                }
+
+                if (connection === 'open') {
+                    const SystemSetting = require('../models/SystemSetting');
+                    SystemSetting.deleteOne({ key: 'whatsapp_qr' }).catch(() => {}); 
+                    isConnecting = false;
+                    if (openResolver) {
+                        openResolver(sock);
                         openResolver = null;
                     }
                 }
+
+                if (connection === 'close') {
+                    isConnecting = false;
+                    const statusCode = (lastDisconnect?.error instanceof Boom) ? lastDisconnect.error.output.statusCode : 0;
+                    
+                    if (openResolver) {
+                        if (statusCode === 401 || statusCode === 403) {
+                            openResolver(null);
+                            openResolver = null;
+                        }
+                    }
+                    
+                    if (statusCode === 401 || statusCode === 403 || statusCode === 440) {
+                        return;
+                    }
+
+                    if (statusCode !== baileys.DisconnectReason.loggedOut) {
+                        setTimeout(() => {
+                            startWhatsAppConnection().catch(() => {});
+                        }, 5000);
+                    }
+                }
+            });
+
+            // Return a promise that resolves when the connection is actually OPEN
+            return new Promise((resolve) => {
+                if (sock && !isConnecting && sock.user) return resolve(sock);
+                openResolver = resolve;
                 
-                if (statusCode === 401 || statusCode === 403 || statusCode === 440) {
-                    console.log(`WhatsApp Session Conflict (Code: ${statusCode}). Stopping auto-reconnect.`);
-                    return;
-                }
+                // Timeout if connection takes too long
+                setTimeout(() => {
+                    if (openResolver) {
+                        openResolver(sock); 
+                        openResolver = null;
+                    }
+                }, 15000);
+            });
 
-                let waitTime = 5000; 
-                if (statusCode === 405) {
-                    console.log(`WhatsApp restricted (Code: 405). Waiting 30s...`);
-                    waitTime = 30000;
-                } else {
-                    console.log(`WhatsApp connection closed (Code: ${statusCode}). Reconnecting in ${waitTime/1000}s...`);
-                }
+        } catch (err) {
+            console.error('❌ Failed to initialize WhatsApp socket:', err.message);
+            isConnecting = false;
+            connectionPromise = null;
+            if (openResolver) openResolver(null);
+            return null;
+        }
+    })();
 
-                if (statusCode !== baileys.DisconnectReason.loggedOut) {
-                    setTimeout(() => {
-                        startWhatsAppConnection().catch(err => console.log('Retry error:', err.message));
-                    }, waitTime);
-                }
-            } else if (connection === 'open') {
-                console.log('\n✅ SUCCESS! WhatsApp is connected!');
-                isConnecting = false;
-            }
-        });
-    } catch (err) {
-        console.error('❌ Failed to initialize WhatsApp socket:', err.message);
-        isConnecting = false;
-        connectionPromise = null;
-        if (openResolver) openResolver(null);
-        return null;
-    }
-
-    // Return a promise that resolves when the connection is actually OPEN
-    return new Promise((resolve) => {
-        if (sock && !isConnecting && sock.user) return resolve(sock);
-        openResolver = resolve;
-        
-        // Timeout if connection takes too long
-        setTimeout(() => {
-            if (openResolver) {
-                console.log('⏰ WhatsApp connection timeout.');
-                openResolver(sock); // Resolve with whatever we have
-                openResolver = null;
-            }
-        }, 12000);
-    });
+    return connectionPromise;
 }
 
 /**
  * Ensures WhatsApp is connected before proceeding
  */
 async function ensureWhatsApp() {
-    if (sock && !isConnecting) return sock;
-    
-    if (isConnecting && connectionPromise) {
-        return connectionPromise;
-    }
-
-    connectionPromise = startWhatsAppConnection();
-    return connectionPromise;
+    if (sock && !isConnecting && sock.user) return sock;
+    return startWhatsAppConnection();
 }
 
 /**
@@ -232,27 +209,15 @@ async function ensureWhatsApp() {
 async function sendWhatsAppMessage(number, message) {
     try {
         const client = await ensureWhatsApp();
+        if (!client) return;
         
-        if (!client) {
-            console.error(`❌ Cannot send message to ${number}: WhatsApp fail.`);
-            return;
-        }
         let cleanNumber = number.replace(/\D/g, '');
-        // Auto-add India country code (91) if only 10 digits are provided
-        if (cleanNumber.length === 10) {
-            cleanNumber = '91' + cleanNumber;
-        }
+        if (cleanNumber.length === 10) cleanNumber = '91' + cleanNumber;
+        if (cleanNumber.length < 10) return;
         
-        if (cleanNumber.length < 10) {
-            console.error(`❌ Invalid phone number: ${number}`);
-            return;
-        }
         const jid = `${cleanNumber}@s.whatsapp.net`;
         await sock.sendMessage(jid, { text: message });
-        console.log(`✅ WhatsApp message sent to ${cleanNumber}`);
-    } catch (error) {
-        console.error(`❌ Failed to send WhatsApp message to ${number}:`, error.message);
-    }
+    } catch (error) {}
 }
 
 // Business logic functions
@@ -308,7 +273,7 @@ async function getWhatsAppStatus() {
     const qrSetting = await SystemSetting.findOne({ key: 'whatsapp_qr' });
     
     return {
-        connected: !!sock && !isConnecting && sock.user,
+        connected: !!(sock && !isConnecting && sock.user),
         isConnecting,
         qr: qrSetting ? qrSetting.value : null,
         phone: sock?.user?.id?.split(':')[0] || null

@@ -33,8 +33,12 @@ app.get('/api/health', (req, res) => {
 app.get('/api/health/whatsapp', async (req, res) => {
     try {
         const { getWhatsAppStatus, ensureWhatsApp } = require('./services/whatsappService');
+        const SystemSetting = require('./models/SystemSetting');
         const fs = require('fs');
         const path = require('path');
+        
+        // Check DB first
+        const dbCreds = await SystemSetting.findOne({ key: 'whatsapp_creds' });
         
         await ensureWhatsApp();
         const status = await getWhatsAppStatus();
@@ -51,7 +55,11 @@ app.get('/api/health/whatsapp', async (req, res) => {
             connected: status.connected, 
             isConnecting: status.isConnecting,
             phone: status.phone,
-            sessionStored: {
+            database: {
+                hasCreds: !!dbCreds,
+                credsLength: dbCreds ? dbCreds.value.length : 0
+            },
+            fileSystem: {
                 exists: fileExists,
                 size: fileSize,
                 path: credsPath
@@ -81,11 +89,6 @@ const startServer = async () => {
         }
     } catch (error) {
         console.error('CRITICAL: Server failed to start.');
-        console.error('Error Details:', error.message);
-        if (process.env.NODE_ENV !== 'production') {
-            console.error('Stack Trace:', error.stack);
-            process.exit(1);
-        }
     }
 };
 
