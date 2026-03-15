@@ -102,15 +102,32 @@ async function startWhatsAppConnection() {
 
         sock.ev.on('creds.update', wrappedSaveCreds);
 
-        sock.ev.on('connection.update', (update) => {
+        sock.ev.on('connection.update', async (update) => {
             const { connection, lastDisconnect, qr } = update;
 
             if (qr) {
+                console.log('🔄 New WhatsApp QR Code generated. Saving to DB...');
+                const SystemSetting = require('../models/SystemSetting');
+                try {
+                    await SystemSetting.findOneAndUpdate(
+                        { key: 'whatsapp_qr' },
+                        { value: qr, updatedAt: Date.now() },
+                        { upsert: true }
+                    );
+                } catch (err) {
+                    // Silent fail
+                }
+                
                 console.log('\n=================================================');
-                console.log('      PLEASE SCAN THE QR CODE BELOW');
+                console.log('      PLEASE SCAN THE QR CODE ON YOUR WEB DASHBOARD');
                 console.log('=================================================');
-                qrcode.generate(qr, { small: true });
-                console.log('=================================================\n');
+            }
+
+            if (connection === 'open') {
+                console.log('\n✅ SUCCESS! WhatsApp is connected!');
+                const SystemSetting = require('../models/SystemSetting');
+                await SystemSetting.deleteOne({ key: 'whatsapp_qr' }); // Clear QR on success
+                isConnecting = false;
             }
 
             if (connection === 'close') {
@@ -241,6 +258,18 @@ async function sendAbsentAlert(staff) {
     }
 }
 
+async function getWhatsAppStatus() {
+    const SystemSetting = require('../models/SystemSetting');
+    const qrSetting = await SystemSetting.findOne({ key: 'whatsapp_qr' });
+    
+    return {
+        connected: !!sock && !isConnecting && sock.user,
+        isConnecting,
+        qr: qrSetting ? qrSetting.value : null,
+        phone: sock?.user?.id?.split(':')[0] || null
+    };
+}
+
 module.exports = {
     startWhatsAppConnection,
     sendWhatsAppMessage,
@@ -248,5 +277,7 @@ module.exports = {
     sendAttendanceAlert,
     sendAbsentAlert,
     sendTaskAssignment,
-    sendDailyReport
+    sendDailyReport,
+    getWhatsAppStatus,
+    ensureWhatsApp
 };

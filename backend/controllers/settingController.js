@@ -27,3 +27,17 @@ exports.updateSettings = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
+
+exports.getWhatsAppStatus = async (req, res) => {
+    try {
+        const { getWhatsAppStatus, ensureWhatsApp } = require('../services/whatsappService');
+        
+        // Force a connection check if not already connected
+        await ensureWhatsApp();
+        
+        const status = await getWhatsAppStatus();
+        res.json(status);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};

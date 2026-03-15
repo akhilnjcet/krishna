@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getSettings, updateSettings } = require('../controllers/settingController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const { getSettings, updateSettings, getWhatsAppStatus } = require('../controllers/settingController');
+const { protect, admin } = require('../middleware/authMiddleware');
 
-router.get('/', protect, authorize('admin'), getSettings);
-router.put('/', protect, authorize('admin'), updateSettings);
+router.get('/', protect, admin, getSettings);
+router.get('/whatsapp-status', protect, admin, getWhatsAppStatus);
+router.put('/', protect, admin, updateSettings);
 
 module.exports = router;
