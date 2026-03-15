@@ -37,8 +37,8 @@ const startServer = async () => {
     try {
         await connectDB();
         
-        // Initialize WhatsApp Connection
-        await startWhatsAppConnection();
+        // Initialize WhatsApp Connection (Non-blocking for faster cold starts)
+        startWhatsAppConnection().catch(err => console.error('WhatsApp Init Error:', err.message));
 
         if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
             app.listen(PORT, () => {
