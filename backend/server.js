@@ -29,6 +29,21 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
 });
 
+// Public WhatsApp Health Check
+app.get('/api/health/whatsapp', async (req, res) => {
+    try {
+        const { getWhatsAppStatus } = require('./services/whatsappService');
+        const status = await getWhatsAppStatus();
+        res.json({ 
+            connected: status.connected, 
+            phone: status.phone,
+            timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Database connection
 const connectDB = require('./config/database');
 const { startWhatsAppConnection } = require('./services/whatsappService');
