@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { getDirectImageUrl } from '../../utils/imageUtils';
 import { 
   Briefcase, Plus, Image as ImageIcon, Trash2, Edit, X, 
   MapPin, Calendar, User, Layout, Filter, Loader2, AlertCircle,
@@ -14,7 +15,6 @@ const AdminPortfolio = () => {
     const [showLinkModal, setShowLinkModal] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [selectedProject, setSelectedProject] = useState(null);
-    const [uploading, setUploading] = useState(false);
     const [externalUrl, setExternalUrl] = useState('');
     
     const [formData, setFormData] = useState({
@@ -68,6 +68,7 @@ const AdminPortfolio = () => {
             await api.delete(`/portfolio/delete/${id}`);
             fetchProjects();
         } catch (err) {
+            console.error('Delete Project Error:', err);
             alert('Failed to delete project');
         }
     };
@@ -81,16 +82,14 @@ const AdminPortfolio = () => {
             uploadData.append('images', files[i]);
         }
 
-        setUploading(true);
         try {
             await api.post(`/portfolio/${projectId}/upload`, uploadData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             fetchProjects();
         } catch (err) {
+            console.error('Image upload failed:', err);
             alert('Image upload failed');
-        } finally {
-            setUploading(false);
         }
     };
 
@@ -98,13 +97,8 @@ const AdminPortfolio = () => {
         if (!externalUrl) return;
 
         // Auto-convert Google Drive links for preview
-        let finalUrl = externalUrl;
-        if (externalUrl.includes('drive.google.com')) {
-            const driveIdMatch = externalUrl.match(/\/d\/(.+?)\//) || externalUrl.match(/id=(.+?)(&|$)/);
-            if (driveIdMatch) {
-                finalUrl = `https://drive.google.com/uc?export=view&id=${driveIdMatch[1]}`;
-            }
-        }
+        // The transformation is now handled at the rendering layer via getDirectImageUrl utility
+        const finalUrl = externalUrl;
 
         try {
             await api.post(`/portfolio/${selectedProject._id}/links`, { urls: [finalUrl] });
@@ -112,6 +106,7 @@ const AdminPortfolio = () => {
             setExternalUrl('');
             fetchProjects();
         } catch (err) {
+            console.error('Link Add Error:', err);
             alert('Failed to add link');
         }
     };
@@ -122,6 +117,7 @@ const AdminPortfolio = () => {
             await api.delete(`/portfolio/${projectId}/image/${imageId}`);
             fetchProjects();
         } catch (err) {
+            console.error('Delete Image Error:', err);
             alert('Failed to delete image');
         }
     };
@@ -193,7 +189,7 @@ const AdminPortfolio = () => {
                             <div className="md:w-1/2 bg-slate-100 relative group min-h-[300px]">
                                 {project.images && project.images.length > 0 ? (
                                     <div className="absolute inset-0">
-                                        <img src={project.images[0].url} className="w-full h-full object-cover" alt={project.title} />
+                                        <img src={getDirectImageUrl(project.images[0].url)} className="w-full h-full object-cover" alt={project.title} />
                                         <div className="absolute inset-0 bg-indigo-600/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                                             <span className="bg-white text-slate-900 px-4 py-2 font-black uppercase text-xs tracking-widest border-2 border-slate-900 shadow-custom">
                                                 {project.images.length} Photos
@@ -273,9 +269,9 @@ const AdminPortfolio = () => {
                                 {/* Thumbnails management */}
                                 {project.images && project.images.length > 0 && (
                                     <div className="mt-6 flex flex-wrap gap-2 pt-4 border-t-2 border-slate-50">
-                                        {project.images.map((img, idx) => (
+                                        {project.images.map((img) => (
                                             <div key={img._id} className="relative group/thumb w-12 h-12 border-2 border-slate-200 rounded-lg overflow-hidden">
-                                                <img src={img.url} className="w-full h-full object-cover" alt="" />
+                                                <img src={getDirectImageUrl(img.url)} className="w-full h-full object-cover" alt="" />
                                                 <button 
                                                     onClick={() => handleDeleteImage(project._id, img._id)}
                                                     className="absolute inset-0 bg-red-600/80 text-white opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity"

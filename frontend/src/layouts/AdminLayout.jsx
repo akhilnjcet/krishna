@@ -18,6 +18,7 @@ const AdminLayout = () => {
         { name: 'Quote Requests', path: '/admin/quotes', icon: '¥' },
         { name: 'Staff Roster', path: '/admin/staff', icon: '♙' },
         { name: 'Verification Logs', path: '/admin/logs', icon: '☷' },
+        { name: 'Field Reports', path: '/admin/blog', icon: '▩' },
         { name: 'Financials', path: '/admin/invoices', icon: '$' },
     ];
 

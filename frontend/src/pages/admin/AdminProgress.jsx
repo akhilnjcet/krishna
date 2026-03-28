@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { getDirectImageUrl } from '../../utils/imageUtils';
 import { 
     Layout, Filter, Search, Calendar, User, Clock, CheckCircle2, 
     AlertCircle, FileText, BarChart, ChevronDown, ChevronUp,
@@ -33,7 +34,8 @@ const AdminProgress = () => {
         try {
             await api.delete(`/progress/delete/${id}`);
             fetchReports();
-        } catch (err) {
+        } catch (error) {
+            console.error('Delete Job Error:', error);
             alert('Failed to delete report');
         }
     };
@@ -195,7 +197,7 @@ const AdminProgress = () => {
                                                         <div className="grid grid-cols-3 gap-2">
                                                             {report.photos?.map((photo, pIdx) => (
                                                                 <a key={pIdx} href={photo.url} target="_blank" rel="noreferrer" className="aspect-square border-2 border-slate-200 hover:border-indigo-600 transition-colors cursor-zoom-in group relative overflow-hidden">
-                                                                    <img src={photo.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Site" />
+                                                                    <img src={getDirectImageUrl(photo.url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Site" />
                                                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center">
                                                                         <Eye className="w-4 h-4 text-white" />
                                                                     </div>

@@ -57,6 +57,8 @@ exports.uploadPortfolioImages = async (req, res) => {
     }
 };
 
+const { listarArquivosDaPasta, extrairFolderId } = require('../utils/driveHelper');
+
 // Admin: Add external image URLs (e.g. Google Drive)
 exports.addPortfolioLinks = async (req, res) => {
     try {
@@ -66,7 +68,25 @@ exports.addPortfolioLinks = async (req, res) => {
         const portfolio = await Portfolio.findById(id);
         if (!portfolio) return res.status(404).json({ message: 'Project not found' });
 
-        const newImages = urls.map(url => ({ url }));
+        const finalUrls = [];
+
+        for (const url of urls) {
+            const folderId = extrairFolderId(url);
+            if (folderId) {
+                try {
+                    const folderFiles = await listarArquivosDaPasta(folderId);
+                    finalUrls.push(...folderFiles);
+                } catch (driveErr) {
+                    console.error('Drive listing failed for:', url, driveErr);
+                    // Fallback to adding the URL itself if listing fails
+                    finalUrls.push(url);
+                }
+            } else {
+                finalUrls.push(url);
+            }
+        }
+
+        const newImages = finalUrls.map(url => ({ url }));
         portfolio.images.push(...newImages);
         await portfolio.save();
 

@@ -1,8 +1,63 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// eslint-disable-next-line no-unused-vars
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Loader2, AlertCircle, Image as ImageIcon, MapPin, X } from 'lucide-react';
+import { 
+    Loader2, AlertCircle, Image as ImageIcon, MapPin, X, 
+    ArrowUpRight, Grid, Zap, Hammer, HardHat
+} from 'lucide-react';
 import api from '../services/api';
+import { getDirectImageUrl } from '../utils/imageUtils';
+
+// Global spark generator helper
+const generateSparks = (count) => {
+    return [...Array(count)].map((_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        scale: Math.random() * 2,
+        duration: Math.random() * 3 + 2,
+        delay: Math.random() * 5,
+        xOffset: (Math.random() - 0.5) * 200
+    }));
+};
+
+const WeldingSparks = () => {
+    // Initializing state with the function directly to avoid synchronous setState in useEffect
+    const [sparks] = useState(() => generateSparks(15));
+
+    return (
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+            {sparks.map((spark) => (
+                <motion.div
+                    key={spark.id}
+                    className="absolute w-1 h-1 bg-brand-accent rounded-full"
+                    initial={{ 
+                        left: `${spark.x}%`, 
+                        top: '110%',
+                        opacity: 0,
+                        scale: spark.scale
+                    }}
+                    animate={{ 
+                        top: '-10%',
+                        left: [`${spark.x}%`, `${spark.x + (spark.xOffset / 10)}%`],
+                        opacity: [0, 1, 0],
+                        rotate: [0, 360]
+                    }}
+                    transition={{ 
+                        duration: spark.duration, 
+                        repeat: Infinity,
+                        delay: spark.delay,
+                        ease: "linear"
+                    }}
+                    style={{
+                        filter: 'blur(1px) drop-shadow(0 0 5px #ffb400)',
+                        boxShadow: '0 0 10px #ffb400'
+                    }}
+                />
+            ))}
+        </div>
+    );
+};
 
 const Projects = () => {
     const [projects, setProjects] = useState([]);
@@ -11,203 +66,303 @@ const Projects = () => {
     const [selectedProject, setSelectedProject] = useState(null);
 
     const categories = [
-        { id: 'all', name: 'All Operations' },
-        { id: 'Welding', name: 'Welding' },
-        { id: 'Roofing', name: 'Roofing' },
-        { id: 'Truss Work', name: 'Trusses' },
-        { id: 'Fabrication', name: 'Fabrication' },
-        { id: 'Construction', name: 'Construction' },
+        { id: 'all', name: 'All Work', icon: <Grid className="w-3 h-3" /> },
+        { id: 'Welding', name: 'Precision Welding', icon: <Zap className="w-3 h-3" /> },
+        { id: 'Roofing', name: 'Industrial Roofing', icon: <Hammer className="w-3 h-3" /> },
+        { id: 'Truss Work', name: 'Heavy Trusses', icon: <Zap className="w-3 h-3" /> },
+        { id: 'Fabrication', name: 'Fabrication', icon: <Hammer className="w-3 h-3" /> },
+        { id: 'Construction', name: 'Civil/Structural', icon: <HardHat className="w-3 h-3" /> },
     ];
 
     useEffect(() => {
+        const fetchGallery = async () => {
+            try {
+                const res = await api.get('/portfolio/gallery');
+                setProjects(res.data);
+            } catch (err) {
+                console.error('Failed to fetch gallery:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
         fetchGallery();
     }, []);
-
-    const fetchGallery = async () => {
-        try {
-            const res = await api.get('/portfolio/gallery');
-            setProjects(res.data);
-        } catch (err) {
-            console.error('Failed to fetch gallery:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const filteredProjects = filter === 'all'
         ? projects
         : projects.filter(p => p.category === filter);
 
     return (
-        <div className="bg-brand-50 min-h-screen pb-24 font-sans">
+        <div className="bg-[#050505] min-h-screen pb-24 font-sans text-white overflow-x-hidden selection:bg-brand-accent selection:text-black">
+            
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-brand-accent/10 blur-[150px] rounded-full"></div>
+                <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+            </div>
 
-            {/* Heavy Header */}
-            <div className="relative bg-brand-950 pt-24 pb-20 px-4 border-b-8 border-brand-accent overflow-hidden">
-                <div className="absolute bottom-0 right-0 w-1/2 h-full bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.03)_25%,rgba(255,255,255,0.03)_50%,transparent_50%,transparent_75%,rgba(255,255,255,0.03)_75%,rgba(255,255,255,0.03)_100%)] bg-[length:20px_20px]"></div>
+            <WeldingSparks />
 
-                <div className="max-w-7xl mx-auto flex flex-col items-center text-center relative z-10">
-                    <div className="bg-white text-brand-950 uppercase font-black tracking-widest text-[10px] sm:text-xs px-4 py-1.5 inline-block mb-6 border-l-4 border-brand-accent">
-                        Project Logbook
-                    </div>
-                    <h1 className="text-5xl md:text-7xl font-black text-brand-accent uppercase tracking-tighter mb-4 leading-none">
-                        COMPLETED <br className="md:hidden" /><span className="text-white">WORK</span>
-                    </h1>
-                    <p className="text-lg text-brand-400 font-medium max-w-2xl mt-4">
-                        Examining our legacy in structural fabrication and heavy civil installations across multiple sectors.
-                    </p>
+            <div className="relative pt-32 pb-20 px-4">
+                <div className="max-w-7xl mx-auto relative z-10 text-center">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <div className="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-brand-accent text-[9px] font-black uppercase tracking-[0.4em] mb-10 shadow-lg backdrop-blur-md">
+                           <span className="w-2 h-2 rounded-full bg-brand-accent animate-pulse"></span> 
+                           Engineering Archives v2.0
+                        </div>
+                        <h1 className="text-6xl md:text-9xl font-black uppercase tracking-tighter leading-[0.75] mb-10 text-white flex flex-col items-center">
+                            <span>BUILT WITH</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent via-white to-brand-accent bg-[length:200%_auto] animate-shimmer">
+                                PRECISION.
+                            </span>
+                        </h1>
+                        <p className="text-gray-500 font-bold max-w-2xl mx-auto text-sm md:text-lg leading-relaxed uppercase tracking-wider">
+                            A portfolio of heavy-duty solutions, from complex steel trusses to high-integrity structural welding.
+                        </p>
+                    </motion.div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
-                {/* Filter Controls */}
-                <div className="flex flex-wrap justify-center gap-2 mb-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex flex-wrap justify-center gap-3 mb-24"
+                >
                     {categories.map(cat => (
-                        <button
+                        <motion.button
                             key={cat.id}
+                            whileHover={{ scale: 1.05, y: -2 }}
+                            whileTap={{ scale: 0.95, y: 0 }}
                             onClick={() => setFilter(cat.id)}
-                            className={`px-6 py-2.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all border-2 ${filter === cat.id
-                                    ? 'bg-brand-accent border-brand-950 text-brand-950 shadow-solid'
-                                    : 'bg-white border-brand-200 text-brand-600 hover:border-brand-950 hover:text-brand-950'
-                                }`}
+                            className={`group relative px-8 py-3.5 text-[10px] font-black uppercase tracking-[0.25em] transition-all rounded-xl border-2 flex items-center gap-3 overflow-hidden ${
+                                filter === cat.id
+                                ? 'bg-white text-black border-white shadow-[0_0_30px_rgba(255,255,255,0.2)]'
+                                : 'bg-white/5 text-gray-400 border-white/5 hover:border-brand-accent/40 hover:text-white backdrop-blur-sm'
+                            }`}
                         >
+                            {filter === cat.id && (
+                                <motion.div 
+                                    className="absolute inset-0 bg-gradient-to-r from-brand-accent/20 via-transparent to-brand-accent/20 animate-pulse"
+                                />
+                            )}
+                            <span className={filter === cat.id ? 'text-black' : 'group-hover:text-brand-accent'}>{cat.icon}</span>
                             {cat.name}
-                        </button>
+                        </motion.button>
                     ))}
-                </div>
+                </motion.div>
 
-                {/* Gallery Grid */}
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-24">
-                        <Loader2 className="w-12 h-12 text-brand-950 animate-spin mb-4" />
-                        <p className="font-black uppercase tracking-widest text-brand-600">Accessing Archives...</p>
+                    <div className="flex flex-col items-center justify-center py-40">
+                        <div className="relative w-20 h-20">
+                            <motion.div 
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                                className="absolute inset-0 border-t-2 border-brand-accent rounded-full"
+                            />
+                            <motion.div 
+                                animate={{ rotate: -360 }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                className="absolute inset-4 border-b-2 border-white/20 rounded-full"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <Loader2 className="w-6 h-6 text-brand-accent animate-spin" />
+                            </div>
+                        </div>
+                        <p className="font-black text-[9px] uppercase tracking-[0.8em] text-gray-600 mt-10">Syncing Production Data...</p>
                     </div>
                 ) : filteredProjects.length === 0 ? (
-                    <div className="text-center py-24 bg-white border-4 border-brand-950 shadow-solid">
-                        <AlertCircle className="w-16 h-16 text-brand-200 mx-auto mb-4" />
-                        <p className="font-black uppercase tracking-widest text-brand-600">No Projects Found in this category</p>
-                    </div>
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-center py-40 rounded-[3rem] border-2 border-dashed border-white/5 bg-white/[0.01] backdrop-blur-3xl"
+                    >
+                        <AlertCircle className="w-20 h-20 text-white/5 mx-auto mb-8" />
+                        <p className="font-black uppercase tracking-[0.4em] text-gray-600">No project archives detected</p>
+                    </motion.div>
                 ) : (
-                    <motion.layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-                        <AnimatePresence>
-                            {filteredProjects.map(project => (
-                                <motion.div
-                                    key={project._id}
-                                    layout
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="bg-white border-4 border-brand-950 shadow-[6px_6px_0_0_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[6px] hover:translate-y-[6px] transition-all cursor-pointer group flex flex-col"
-                                    onClick={() => setSelectedProject(project)}
-                                >
-                                    <div className="relative h-64 overflow-hidden border-b-4 border-brand-950 bg-slate-100">
-                                        {/* Heavy overlay on hover */}
-                                        <div className="absolute inset-0 bg-brand-accent mix-blend-multiply opacity-0 group-hover:opacity-80 transition-opacity z-10 flex items-center justify-center">
-                                            <span className="text-brand-950 font-black text-2xl uppercase tracking-tighter opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 border-4 border-brand-950 px-4 py-2 bg-white shadow-solid">View details</span>
-                                        </div>
-                                        {project.images && project.images.length > 0 ? (
-                                            <img
-                                                src={project.images[0].url}
-                                                alt={project.title}
-                                                className="w-full h-full object-cover filter grayscale-[30%] contrast-125 group-hover:grayscale-0 transition-all"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-brand-200">
-                                                <ImageIcon className="w-12 h-12" />
+                    <LayoutGroup>
+                        <motion.div 
+                            layout
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12"
+                        >
+                            <AnimatePresence mode='popLayout'>
+                                {filteredProjects.map((project, idx) => (
+                                    <motion.div
+                                        key={project._id}
+                                        layout
+                                        initial={{ opacity: 0, y: 30 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        transition={{ duration: 0.5, delay: idx * 0.05 }}
+                                        whileHover={{ y: -10 }}
+                                        className="group cursor-pointer relative"
+                                        onClick={() => setSelectedProject(project)}
+                                    >
+                                        <div className="relative aspect-[10/11] overflow-hidden rounded-[2.5rem] bg-[#0c0c0e] border border-white/10 group-hover:border-brand-accent/30 shadow-2xl transition-all duration-500">
+                                            <div className="absolute inset-0 z-10 pointer-events-none border-[12px] border-white/0 group-hover:border-white/5 transition-all duration-500"></div>
+                                            
+                                            {project.images && project.images.length > 0 ? (
+                                                <img
+                                                    src={getDirectImageUrl(project.images[0].url)}
+                                                    alt={project.title}
+                                                    className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110 grayscale-[40%] group-hover:grayscale-0 contrast-[1.1]"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-white/5">
+                                                    <ImageIcon className="w-16 h-16" />
+                                                </div>
+                                            )}
+                                            
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-60 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-10 translate-y-4 group-hover:translate-y-0 transition-transform">
+                                                <div className="mb-4 flex items-center gap-3">
+                                                    <div className="w-10 h-[2px] bg-brand-accent"></div>
+                                                    <span className="text-[9px] font-black text-brand-accent uppercase tracking-[0.3em]">
+                                                        {project.category}
+                                                    </span>
+                                                </div>
+                                                <h3 className="text-3xl font-black uppercase tracking-tighter leading-[0.85] text-white">
+                                                    {project.title}
+                                                </h3>
+                                                
+                                                <div className="mt-8 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100">
+                                                    <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                       <MapPin className="w-3.5 h-3.5 text-brand-accent" /> {project.location || 'SITE'}
+                                                    </div>
+                                                    <div className="bg-brand-accent text-black p-3.5 rounded-full rotate-45 group-hover:rotate-0 transition-transform duration-500 shadow-[0_0_20px_#ffb40044]">
+                                                        <ArrowUpRight className="w-5 h-5" />
+                                                    </div>
+                                                </div>
                                             </div>
-                                        )}
-                                        <div className="absolute top-4 right-4 z-20 bg-brand-950 text-brand-accent text-[10px] font-black px-3 py-1 uppercase tracking-widest">
-                                            {project.category}
                                         </div>
-                                    </div>
-                                    <div className="p-6 flex-1 flex flex-col bg-white">
-                                        <h3 className="text-xl font-black text-brand-950 mb-3 uppercase tracking-tight leading-tight group-hover:text-brand-accent transition-colors">{project.title}</h3>
-                                        <p className="text-brand-600 font-medium text-sm mt-auto line-clamp-2">{project.description}</p>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </motion.layout>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </motion.div>
+                    </LayoutGroup>
                 )}
 
-                {/* Lightbox Modal / Slider */}
                 <AnimatePresence>
                     {selectedProject && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12">
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-brand-950/90 backdrop-blur-sm"
+                                className="absolute inset-0 bg-black/95 backdrop-blur-3xl"
                                 onClick={() => setSelectedProject(null)}
                             />
+                            
                             <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
+                                initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                className="bg-brand-50 max-w-6xl w-full border-8 border-brand-950 shadow-solid relative z-10 flex flex-col md:flex-row overflow-hidden max-h-[90vh]"
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="bg-[#0c0c0e] max-w-[1300px] w-full h-full max-h-[90vh] rounded-[3rem] border border-white/10 relative z-10 flex flex-col lg:flex-row overflow-hidden shadow-2xl"
                             >
                                 <button
                                     onClick={() => setSelectedProject(null)}
-                                    className="absolute top-0 right-0 bg-brand-accent text-brand-950 hover:bg-white hover:text-black p-3 z-30 transition-colors border-l-4 border-b-4 border-brand-950"
+                                    className="absolute top-8 right-8 bg-white text-black p-4 rounded-full z-50 transition-all active:scale-90 hover:rotate-90 flex items-center justify-center"
                                 >
-                                    <X className="w-8 h-8" />
+                                    <X className="w-6 h-6" />
                                 </button>
 
-                                {/* Image Section with Simple Horizontal Scroll */}
-                                <div className="md:w-3/5 relative border-b-4 md:border-b-0 md:border-r-4 border-brand-950 bg-black flex overflow-x-auto snap-x snap-mandatory">
+                                <div className="lg:w-[60%] relative h-[45vh] lg:h-auto bg-black flex overflow-x-auto snap-x snap-mandatory scrollbar-hide group">
                                     {selectedProject.images && selectedProject.images.length > 0 ? (
                                         selectedProject.images.map((img, idx) => (
-                                            <div key={idx} className="min-w-full h-[40vh] md:h-full snap-center flex items-center justify-center">
+                                            <div key={idx} className="min-w-full h-full snap-center relative">
                                                 <img 
-                                                    src={img.url} 
-                                                    alt={`Work View ${idx + 1}`} 
-                                                    className="w-full h-full object-contain"
+                                                    src={getDirectImageUrl(img.url)} 
+                                                    alt={`Shot ${idx + 1}`} 
+                                                    className="w-full h-full object-cover grayscale-[30%] hover:grayscale-0 transition-all duration-700"
                                                 />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
+                                                <div className="absolute top-10 left-10 text-[10px] font-black text-white/40 uppercase tracking-[0.5em] bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                                                    Frame {idx + 1} / {selectedProject.images.length}
+                                                </div>
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-brand-400 font-black uppercase">No Media Assets</div>
+                                        <div className="w-full h-full flex items-center justify-center text-white/5 font-black uppercase text-2xl">No Media Assets Found</div>
                                     )}
                                     
                                     {selectedProject.images?.length > 1 && (
-                                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-brand-950 text-brand-accent px-4 py-1 text-[10px] font-black uppercase tracking-[0.3em] border-2 border-brand-accent z-20 pointer-events-none">
-                                            Swipe for Gallery
+                                        <div className="absolute bottom-10 left-10 flex gap-1 z-20">
+                                            {selectedProject.images.map((_, i) => (
+                                                <div key={i} className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
+                                                    <motion.div 
+                                                        animate={{ x: [-50, 50] }} 
+                                                        transition={{ duration: 3, repeat: Infinity }}
+                                                        className="h-full bg-brand-accent/40 w-full"
+                                                    />
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="md:w-2/5 p-8 md:p-12 bg-white flex flex-col relative overflow-y-auto">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <span className="uppercase tracking-widest text-[10px] font-black text-brand-500 border-b-2 border-brand-accent pb-1 inline-block w-fit">
-                                            {selectedProject.category}
-                                        </span>
-                                        {selectedProject.location && (
-                                            <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest italic flex items-center gap-1">
-                                                <MapPin className="w-3 h-3" /> {selectedProject.location}
+                                <div className="lg:w-[40%] p-10 md:p-16 flex flex-col bg-[#0c0c0e] border-l border-white/5">
+                                    <motion.div 
+                                        initial={{ opacity: 0, x: 30 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.2 }}
+                                    >
+                                        <div className="flex flex-wrap items-center gap-4 mb-10">
+                                            <span className="px-4 py-1.5 bg-brand-accent text-black text-[9px] font-black uppercase tracking-[0.4em] rounded-md shadow-[0_0_20px_#ffb40044]">
+                                                {selectedProject.category}
                                             </span>
-                                        )}
-                                    </div>
+                                            {selectedProject.location && (
+                                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                                    <MapPin className="w-4 h-4 text-brand-accent" /> {selectedProject.location}
+                                                </span>
+                                            )}
+                                        </div>
 
-                                    <h2 className="text-3xl md:text-5xl font-black text-brand-950 mb-6 uppercase tracking-tighter leading-none mt-2">{selectedProject.title}</h2>
+                                        <h2 className="text-5xl md:text-6xl font-black text-white mb-10 uppercase tracking-tighter leading-[0.85] italic">
+                                            {selectedProject.title}
+                                        </h2>
 
-                                    <div className="w-16 h-2 bg-brand-accent mb-8 shadow-solid"></div>
+                                        <div className="space-y-8 text-gray-500 text-sm md:text-lg font-medium leading-relaxed mb-16">
+                                            <p className="border-L-4 border-brand-accent pl-6">{selectedProject.description}</p>
+                                            
+                                            {selectedProject.projectDate && (
+                                                <div className="pt-10 flex items-center gap-10">
+                                                    <div>
+                                                        <div className="text-[9px] font-black uppercase text-gray-700 tracking-[0.3em] mb-2">Completion</div>
+                                                        <div className="text-white font-black text-xl uppercase tracking-tighter">
+                                                            {new Date(selectedProject.projectDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-[9px] font-black uppercase text-gray-700 tracking-[0.3em] mb-2">Status</div>
+                                                        <div className="text-green-500 font-black text-xl uppercase tracking-tighter italic">ACTIVE LOG</div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
 
-                                    <div className="text-brand-700 text-sm md:text-lg mb-8 font-medium leading-relaxed flex-1 space-y-4">
-                                        <p>{selectedProject.description}</p>
-                                        
-                                        {selectedProject.projectDate && (
-                                            <div className="pt-6 border-t-2 border-brand-100 mt-6">
-                                                <p className="text-[10px] font-black uppercase text-brand-400 tracking-widest mb-1">Commission Date</p>
-                                                <p className="text-brand-950 font-black">{new Date(selectedProject.projectDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-auto">
-                                        <Link to={`/quote?service=${selectedProject.category}&project=${selectedProject._id}`} className="w-full block bg-brand-950 hover:bg-brand-accent hover:text-brand-950 text-white text-center font-bold uppercase tracking-widest py-5 px-8 transition-all shadow-solid hover:shadow-none translate-y-0 active:translate-y-1">
-                                            Inquire About Similar Job
+                                    <div className="mt-auto pt-10 border-t border-white/5 flex flex-col gap-4">
+                                        <Link 
+                                            to={`/quote?service=${selectedProject.category}&project=${selectedProject._id}`} 
+                                            className="group block w-full bg-brand-accent text-black py-6 px-10 text-center text-[10px] font-black uppercase tracking-[0.5em] transition-all hover:bg-white active:scale-95 rounded-2xl shadow-2xl relative overflow-hidden"
+                                        >
+                                            <motion.div 
+                                                className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700"
+                                            />
+                                            Secure Consultation
                                         </Link>
+                                        <button 
+                                            onClick={() => setSelectedProject(null)}
+                                            className="w-full py-4 text-[9px] font-black uppercase tracking-[0.3em] text-gray-600 hover:text-white transition-colors"
+                                        >
+                                            Return to Archives
+                                        </button>
                                     </div>
                                 </div>
                             </motion.div>
@@ -216,6 +371,27 @@ const Projects = () => {
                 </AnimatePresence>
 
             </div>
+
+            <style jsx>{`
+                @keyframes shimmer {
+                    0% { background-position: -200% 0; }
+                    100% { background-position: 200% 0; }
+                }
+                .animate-shimmer {
+                    animation: shimmer 10s linear infinite;
+                }
+                .scrollbar-hide::-webkit-scrollbar {
+                    display: none;
+                }
+                .scrollbar-hide {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+                ::selection {
+                    background: #ffb400;
+                    color: black;
+                }
+            `}</style>
         </div>
     );
 };

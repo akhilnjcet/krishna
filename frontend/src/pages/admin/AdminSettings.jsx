@@ -1,6 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Shield, Lock, Bell, Server, Save, RotateCcw, Loader2, Check } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+// eslint-disable-next-line no-unused-vars
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    Shield, Lock, Server, Save, Loader2, Check,
+    MapPin, Phone, Mail, Globe, Share2, AlignLeft, 
+    Terminal, Cpu, Radio, Activity, Zap, TrendingUp,
+    BarChart3, Info, ImageIcon, FileText
+} from 'lucide-react';
 import api from '../../services/api';
 
 const AdminSettings = () => {
@@ -9,18 +15,30 @@ const AdminSettings = () => {
         ownerEmail: 'admin@krishnaengg.com',
         maintenanceMode: false,
         faceThreshold: 0.6,
-        allowRegistration: true
+        allowRegistration: true,
+        // Footer & Contact
+        footer_description: 'Heavy structural engineering, industrial roofing, and precision fabrication.',
+        footer_address: 'Industrial Area Phase 1, Sector 123',
+        footer_phone: '+91 98765 43210',
+        footer_email: 'HELLO@KRISHNAENGG.COM',
+        social_in: '',
+        social_fb: '',
+        social_x: '',
+        // Home Stats
+        stat_projects: '500+',
+        stat_years: '25+',
+        stat_tons: '12K Tons',
+        stat_safety: '100%',
+        // About Us
+        about_title: 'ENGINEERING EXCELLENCE SINCE 1999',
+        about_content: 'Krishna Engineering Works has been at the forefront of heavy structural fabrication and industrial roofing for over two decades. Our mission is to provide unyielding integrity in every weld and truss we complete.',
+        about_image: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=1200'
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [success, setSuccess] = useState(false);
 
-    useEffect(() => {
-        fetchSettings();
-    }, []);
-
-    const fetchSettings = async () => {
-        setLoading(true);
+    const fetchSettings = useCallback(async () => {
         try {
             const res = await api.get('/settings');
             if (res.data && res.data.length > 0) {
@@ -31,11 +49,15 @@ const AdminSettings = () => {
                 setSettings(prev => ({ ...prev, ...settingsObj }));
             }
         } catch (err) {
-            console.error("Failed to fetch settings", err);
+            console.error("Failed to fetch settings:", err);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchSettings();
+    }, [fetchSettings]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -44,101 +66,294 @@ const AdminSettings = () => {
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
         } catch (err) {
-            alert("Failed to archive settings.");
+            console.error("Save failure:", err);
+            alert("Protocol failure: Unable to sync configuration.");
         } finally {
             setSaving(false);
         }
     };
 
+    const updateField = (key, val) => {
+        setSettings(prev => ({ ...prev, [key]: val }));
+    };
+
     if (loading) {
         return (
-            <div className="p-8 flex items-center justify-center min-h-[60vh]">
-                <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
+            <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center">
+                <div className="relative w-24 h-24 mb-6">
+                    <motion.div 
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-0 border-t-2 border-brand-accent rounded-full"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Cpu className="w-10 h-10 text-brand-accent animate-pulse" />
+                    </div>
+                </div>
+                <p className="text-brand-accent font-black uppercase tracking-[0.5em] text-[10px]">Initializing System Config...</p>
             </div>
         );
     }
 
-    return (
-        <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
-            <div className="bg-indigo-600 text-white p-10 rounded-[2.5rem] shadow-2xl shadow-indigo-200 flex justify-between items-center relative overflow-hidden">
-                <Shield className="absolute -right-10 -bottom-10 w-64 h-64 opacity-10" />
-                <div>
-                    <h1 className="text-4xl font-black uppercase tracking-tighter">System Configuration</h1>
-                    <p className="text-indigo-100 font-medium">Core protocol management and security overrides.</p>
-                </div>
-                <div className="flex gap-4 relative z-10">
-                    <button 
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="bg-white text-indigo-600 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center gap-2 hover:bg-indigo-50 transition shadow-lg disabled:opacity-50"
-                    >
-                        {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : success ? <Check className="w-5 h-5 text-emerald-500" /> : <Save className="w-5 h-5" />}
-                        {saving ? 'Processing...' : success ? 'Changes Saved' : 'Commit Changes'}
-                    </button>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-xl">
-                    <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-2 border-b border-slate-100 pb-4">
-                        <Lock className="w-6 h-6 text-indigo-600" /> Identity Protocols
-                    </h3>
-                    <div className="space-y-6">
-                        <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Face Recognition Variance [0.1 - 1.0]</label>
-                            <input 
-                                type="range" min="0.1" max="1.0" step="0.1" 
-                                value={settings.faceThreshold}
-                                onChange={(e) => setSettings({...settings, faceThreshold: parseFloat(e.target.value)})}
-                                className="w-full accent-indigo-600"
-                            />
-                            <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-2">
-                                <span>Strict (Low MD)</span>
-                                <span className="text-indigo-600 font-black">Current: {settings.faceThreshold}</span>
-                                <span>Loose (High MD)</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                            <div>
-                                <p className="font-black text-slate-900 text-sm">Allow Public Registration</p>
-                                <p className="text-xs text-slate-500 font-medium">New clients can initialize accounts.</p>
-                            </div>
-                            <button 
-                                onClick={() => setSettings({...settings, allowRegistration: !settings.allowRegistration})}
-                                className={`w-14 h-8 rounded-full transition-colors relative ${settings.allowRegistration ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                            >
-                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${settings.allowRegistration ? 'left-7' : 'left-1'}`}></div>
-                            </button>
+    const ModuleHeader = ({ icon: Icon, title, status }) => {
+        const ActiveIcon = Icon;
+        return (
+            <div className="flex items-center justify-between mb-10 pb-4 border-b border-white/5">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-brand-accent text-black rounded-lg skew-x-[-12deg]">
+                        <ActiveIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-black text-white uppercase tracking-tighter italic">{title}</h3>
+                        <div className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse"></span>
+                            <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest leading-none">Module Active</span>
                         </div>
                     </div>
                 </div>
+                {status && (
+                    <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[8px] font-black text-brand-accent uppercase tracking-widest">
+                        {status}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
-                <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-xl">
-                    <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-2 border-b border-slate-100 pb-4">
-                        <Server className="w-6 h-6 text-indigo-600" /> Database & Environment
-                    </h3>
-                    <div className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">System Alias</label>
-                            <input 
-                                type="text" 
-                                value={settings.systemName}
-                                onChange={(e) => setSettings({...settings, systemName: e.target.value})}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                            />
+    return (
+        <div className="min-h-screen bg-[#050505] text-white font-sans p-6 md:p-12 mb-20 md:mb-0 selection:bg-brand-accent selection:text-black">
+            
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-accent/5 blur-[120px] rounded-full"></div>
+            </div>
+
+            <div className="max-w-7xl mx-auto relative z-10">
+                
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-20">
+                    <div>
+                        <div className="flex items-center gap-3 text-brand-accent font-black text-[10px] uppercase tracking-[0.4em] mb-4">
+                            <Terminal className="w-4 h-4" /> Root Config Interface v5.1
                         </div>
-                        <div className="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100">
-                            <div>
-                                <p className="font-black text-red-900 text-sm">Maintenance Lockdown</p>
-                                <p className="text-xs text-red-600 font-medium">Suspend all incoming API requests.</p>
+                        <h1 className="text-6xl md:text-7xl font-black uppercase tracking-tighter leading-none italic">
+                            SYSTEM <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-white">DIRECTIVES.</span>
+                        </h1>
+                    </div>
+                    
+                    <button 
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="group relative px-12 py-5 bg-brand-accent text-black font-black uppercase tracking-[0.3em] text-[10px] flex items-center gap-4 hover:bg-white transition-all active:scale-95 rounded-xl shadow-[0_0_30px_rgba(255,180,0,0.2)]"
+                    >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : success ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                        {saving ? 'Syncing...' : success ? 'Config Updated' : 'Push Deployment'}
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+                    
+                    {/* LEFT COLUMN: ABOUT & SAFETY */}
+                    <div className="xl:col-span-12 space-y-10">
+                        <section className="p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-brand-accent/20 transition-all">
+                            <ModuleHeader icon={Info} title="Corporate Identity Protocol (About Us)" status="Live" />
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                                <div className="lg:col-span-4 space-y-8">
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
+                                            <Terminal className="w-3 h-3 text-brand-accent" /> Headline
+                                        </label>
+                                        <input 
+                                            value={settings.about_title}
+                                            onChange={(e) => updateField('about_title', e.target.value)}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-5 text-sm font-black text-white focus:border-brand-accent outline-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
+                                            <ImageIcon className="w-3 h-3 text-brand-accent" /> Hero Media URL
+                                        </label>
+                                        <input 
+                                            value={settings.about_image}
+                                            onChange={(e) => updateField('about_image', e.target.value)}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-5 text-sm font-bold text-blue-500 focus:border-brand-accent outline-none"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="lg:col-span-8 space-y-3">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
+                                        <FileText className="w-3 h-3 text-brand-accent" /> Corporate Narrative
+                                    </label>
+                                    <textarea 
+                                        rows={8}
+                                        value={settings.about_content}
+                                        onChange={(e) => updateField('about_content', e.target.value)}
+                                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-8 text-sm font-bold text-gray-400 focus:border-brand-accent outline-none leading-relaxed"
+                                    />
+                                </div>
                             </div>
-                            <button 
-                                onClick={() => setSettings({...settings, maintenanceMode: !settings.maintenanceMode})}
-                                className={`w-14 h-8 rounded-full transition-colors relative ${settings.maintenanceMode ? 'bg-red-600' : 'bg-slate-300'}`}
-                            >
-                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${settings.maintenanceMode ? 'left-7' : 'left-1'}`}></div>
-                            </button>
-                        </div>
+                        </section>
+                    </div>
+
+                    <div className="xl:col-span-4 space-y-10">
+                        <section className="p-8 bg-white/[0.02] border border-white/5 rounded-[2rem] backdrop-blur-3xl hover:border-brand-accent/20 transition-colors group">
+                            <ModuleHeader icon={BarChart3} title="Performance Metrics" status="Dynamic" />
+                            
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Projects Completed</label>
+                                    <input 
+                                        value={settings.stat_projects} 
+                                        onChange={(e)=>updateField('stat_projects', e.target.value)}
+                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-brand-accent font-black outline-none focus:border-brand-accent/40"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Years Record</label>
+                                    <input 
+                                        value={settings.stat_years} 
+                                        onChange={(e)=>updateField('stat_years', e.target.value)}
+                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-brand-accent font-black outline-none focus:border-brand-accent/40"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Steel Fabricated</label>
+                                    <input 
+                                        value={settings.stat_tons} 
+                                        onChange={(e)=>updateField('stat_tons', e.target.value)}
+                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-brand-accent font-black outline-none focus:border-brand-accent/40"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Safety Record %</label>
+                                    <input 
+                                        value={settings.stat_safety} 
+                                        onChange={(e)=>updateField('stat_safety', e.target.value)}
+                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-brand-accent font-black outline-none focus:border-brand-accent/40"
+                                    />
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="p-8 bg-white/[0.02] border border-white/5 rounded-[2rem] backdrop-blur-3xl hover:border-brand-accent/20 transition-colors group">
+                           <ModuleHeader icon={Shield} title="Identity Protocols" status="Secure" />
+                           <div className="space-y-8">
+                                <div className="space-y-3">
+                                    <label className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
+                                        Face Variance Logic
+                                        <span className="text-brand-accent font-black">X-{settings.faceThreshold}</span>
+                                    </label>
+                                    <input 
+                                        type="range" min="0.1" max="1.0" step="0.1" 
+                                        value={settings.faceThreshold}
+                                        onChange={(e) => updateField('faceThreshold', parseFloat(e.target.value))}
+                                        className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-brand-accent"
+                                    />
+                                </div>
+                                <div className="p-6 bg-white/[0.01] border border-white/5 rounded-2xl flex items-center justify-between group-hover:bg-brand-accent/[0.02] transition-colors">
+                                    <div>
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-white mb-1">Public Pipeline</h4>
+                                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Registration Node</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => updateField('allowRegistration', !settings.allowRegistration)}
+                                        className={`w-12 h-6 rounded-full transition-all relative ${settings.allowRegistration ? 'bg-brand-accent' : 'bg-white/10'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.allowRegistration ? 'left-7' : 'left-1'}`}></div>
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div className="xl:col-span-8 space-y-10 font-sans">
+                        <section className="p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden">
+                            <ModuleHeader icon={Radio} title="Comms Node Deployment" status="Global" />
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <div className="space-y-8">
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
+                                            <AlignLeft className="w-3 h-3" /> Technical Descriptive Footnote
+                                        </label>
+                                        <textarea 
+                                            value={settings.footer_description}
+                                            onChange={(e) => updateField('footer_description', e.target.value)}
+                                            rows={4}
+                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-2xl p-5 text-sm font-bold text-gray-400 focus:border-brand-accent/50 outline-none transition-all placeholder:text-gray-800"
+                                        />
+                                    </div>
+                                    
+                                    <div className="space-y-4">
+                                        <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-brand-accent flex items-center gap-2">
+                                            <Share2 className="w-3 h-3" /> Social Uplink Frequency
+                                        </h4>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            {['in', 'fb', 'x'].map(social => (
+                                                <div key={social} className="relative">
+                                                    <input 
+                                                        value={settings[`social_${social}`] || ''}
+                                                        onChange={(e) => updateField(`social_${social}`, e.target.value)}
+                                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-[10px] font-black text-center focus:border-brand-accent/50 outline-none transition-all"
+                                                        placeholder={social.toUpperCase()}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-8">
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
+                                            <MapPin className="w-3 h-3" /> Operation Headquarters
+                                        </label>
+                                        <textarea 
+                                            value={settings.footer_address}
+                                            onChange={(e) => updateField('footer_address', e.target.value)}
+                                            rows={2}
+                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-2xl p-5 text-sm font-bold text-gray-400 focus:border-brand-accent/50 outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-4">
+                                        <input 
+                                            value={settings.footer_phone}
+                                            onChange={(e) => updateField('footer_phone', e.target.value)}
+                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-bold text-gray-400 focus:border-brand-accent/50 outline-none transition-all"
+                                            placeholder="Phone"
+                                        />
+                                        <input 
+                                            value={settings.footer_email}
+                                            onChange={(e) => updateField('footer_email', e.target.value)}
+                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-bold text-gray-400 focus:border-brand-accent/50 outline-none transition-all"
+                                            placeholder="Email"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl">
+                            <ModuleHeader icon={Globe} title="Environment Identity" status="Instance 01" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <div className="space-y-3">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">System Alias</label>
+                                    <input 
+                                        value={settings.systemName}
+                                        onChange={(e) => updateField('systemName', e.target.value)}
+                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-brand-accent outline-none"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Security Override Email</label>
+                                    <input 
+                                        value={settings.ownerEmail}
+                                        onChange={(e) => updateField('ownerEmail', e.target.value)}
+                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-gray-500 outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>

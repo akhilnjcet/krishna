@@ -2,6 +2,7 @@ import React from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
+import About from './pages/About';
 import Services from './pages/Services';
 import Projects from './pages/Projects';
 import Quote from './pages/Quote';
@@ -39,6 +40,7 @@ import AdminReports from './pages/admin/AdminReports';
 import AdminLeave from './pages/admin/AdminLeave';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminProgress from './pages/admin/AdminProgress';
+import AdminBlog from './pages/admin/AdminBlog';
 import StaffProgress from './pages/staff/StaffProgress';
 
 const App = () => {
@@ -47,6 +49,7 @@ const App = () => {
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/quote" element={<Quote />} />
@@ -68,6 +71,7 @@ const App = () => {
             <Route path="leave" element={<AdminLeave />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="progress" element={<AdminProgress />} />
+            <Route path="blog" element={<AdminBlog />} />
           </Route>
 
           <Route path="/staff" element={<StaffDashboard />} />

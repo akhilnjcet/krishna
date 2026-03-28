@@ -3,8 +3,9 @@ import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, Calendar, Clock, Lock, ArrowUpRight, 
-  TrendingUp, Activity, UserCheck, ShieldCheck, Mail, Briefcase 
+  TrendingUp, Activity, UserCheck, ShieldCheck, Mail, Briefcase, Radio 
 } from 'lucide-react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 
 const AdminDashboard = () => {
@@ -164,7 +165,7 @@ const AdminDashboard = () => {
                                 { name: 'Audit Logs', icon: Clock, color: 'indigo', path: '/admin/logs' },
                                 { name: 'Reports', icon: TrendingUp, color: 'amber', path: '/admin/reports' },
                                 { name: 'Leave Reg', icon: Calendar, color: 'rose', path: '/admin/leave' },
-                                { name: 'Site Logs', icon: Briefcase, color: 'emerald', path: '/admin/progress' },
+                                { name: 'Field Intel', icon: Radio, color: 'amber', path: '/admin/blog' },
                                 { name: 'Settings', icon: Activity, color: 'slate', path: '/admin/settings' }
                             ].map((link, i) => (
                                 <button 

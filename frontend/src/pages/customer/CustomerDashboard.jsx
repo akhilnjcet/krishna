@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate, Link } from 'react-router-dom';
+import { getDirectImageUrl } from '../../utils/imageUtils';
 import useAuthStore from '../../stores/authStore';
 import api from '../../services/api';
 import { 
@@ -209,7 +210,7 @@ const CustomerDashboard = () => {
                                                         <div className="flex gap-2 mt-4">
                                                             {update.photos.map((photo, pIdx) => (
                                                                 <a key={pIdx} href={photo.url} target="_blank" rel="noreferrer" className="w-16 h-16 border-2 border-brand-100 overflow-hidden hover:border-brand-950 transition-colors">
-                                                                    <img src={photo.url} className="w-full h-full object-cover" alt="Progress" />
+                                                                    <img src={getDirectImageUrl(photo.url)} className="w-full h-full object-cover" alt="Progress" />
                                                                 </a>
                                                             ))}
                                                         </div>

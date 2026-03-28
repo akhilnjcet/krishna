@@ -28,6 +28,20 @@ exports.updateSettings = async (req, res) => {
     }
 };
 
+exports.getPublicSettings = async (req, res) => {
+    try {
+        // Only return non-sensitive settings for public view
+        const publicKeys = [
+            'systemName', 'footer_description', 'footer_address', 
+            'footer_phone', 'footer_email', 'social_in', 'social_fb', 'social_x'
+        ];
+        const settings = await SystemSetting.find({ key: { $in: publicKeys } });
+        res.json(settings);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
 exports.getWhatsAppStatus = async (req, res) => {
     try {
         const { getWhatsAppStatus, ensureWhatsApp } = require('../services/whatsappService');

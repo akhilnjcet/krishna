@@ -1,7 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../services/api';
 
 const Footer = () => {
+    const [settings, setSettings] = useState({
+        footer_description: 'Heavy structural engineering, industrial roofing, and precision fabrication for modern commercial enterprises everywhere. Built unyielding.',
+        footer_address: 'Industrial Area Phase 1,\nTech Sector, 123456',
+        footer_phone: '+91 98765 43210',
+        footer_email: 'HELLO@KRISHNAENGG.COM',
+        social_in: '#',
+        social_fb: '#',
+        social_x: '#'
+    });
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await api.get('/settings/public');
+                if (res.data && res.data.length > 0) {
+                    const settingsObj = {};
+                    res.data.forEach(s => {
+                        settingsObj[s.key] = s.value;
+                    });
+                    setSettings(prev => ({ ...prev, ...settingsObj }));
+                }
+            } catch (err) {
+                console.error("Failed to fetch footer settings", err);
+            }
+        };
+        fetchSettings();
+    }, []);
+
     return (
         <footer className="bg-brand-950 text-white font-sans border-t-[12px] border-brand-accent">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -24,22 +53,21 @@ const Footer = () => {
                             </div>
                         </Link>
                         <p className="text-brand-400 font-medium leading-relaxed mb-8 max-w-sm text-sm">
-                            Heavy structural engineering, industrial roofing, and precision fabrication for modern commercial enterprises everywhere. Built unyielding.
+                            {settings.footer_description}
                         </p>
                         <div className="flex gap-4">
-                            <div className="w-10 h-10 bg-brand-900 border-2 border-brand-800 flex items-center justify-center hover:bg-brand-accent hover:border-brand-accent transition text-white hover:text-brand-950 font-black cursor-pointer uppercase text-xs">IN</div>
-                            <div className="w-10 h-10 bg-brand-900 border-2 border-brand-800 flex items-center justify-center hover:bg-brand-accent hover:border-brand-accent transition text-white hover:text-brand-950 font-black cursor-pointer uppercase text-xs">FB</div>
-                            <div className="w-10 h-10 bg-brand-900 border-2 border-brand-800 flex items-center justify-center hover:bg-brand-accent hover:border-brand-accent transition text-white hover:text-brand-950 font-black cursor-pointer uppercase text-xs">X</div>
+                            <a href={settings.social_in} target="_blank" rel="noreferrer" className="w-10 h-10 bg-brand-900 border-2 border-brand-800 flex items-center justify-center hover:bg-brand-accent hover:border-brand-accent transition text-white hover:text-brand-950 font-black cursor-pointer uppercase text-xs">IN</a>
+                            <a href={settings.social_fb} target="_blank" rel="noreferrer" className="w-10 h-10 bg-brand-900 border-2 border-brand-800 flex items-center justify-center hover:bg-brand-accent hover:border-brand-accent transition text-white hover:text-brand-950 font-black cursor-pointer uppercase text-xs">FB</a>
+                            <a href={settings.social_x} target="_blank" rel="noreferrer" className="w-10 h-10 bg-brand-900 border-2 border-brand-800 flex items-center justify-center hover:bg-brand-accent hover:border-brand-accent transition text-white hover:text-brand-950 font-black cursor-pointer uppercase text-xs">X</a>
                         </div>
                     </div>
 
                     <div className="md:col-span-2">
                         <h3 className="text-brand-accent font-black uppercase tracking-widest text-sm mb-6 border-b-2 border-brand-800 pb-2 inline-block">Company</h3>
                         <ul className="space-y-3 font-bold text-sm text-brand-300">
-                            <li><Link to="/about" className="hover:text-brand-accent transition flex items-center gap-2"><span className="text-brand-600 hidden group-hover:inline">›</span> About Us</Link></li>
+                            <li><Link to="/about" className="hover:text-brand-accent transition flex items-center gap-2">About Us</Link></li>
                             <li><Link to="/services" className="hover:text-brand-accent transition flex items-center gap-2">Services</Link></li>
                             <li><Link to="/projects" className="hover:text-brand-accent transition flex items-center gap-2">Portfolio</Link></li>
-                            <li><Link to="/blog" className="hover:text-brand-accent transition flex items-center gap-2">Intel Blog</Link></li>
                         </ul>
                     </div>
 
@@ -58,15 +86,15 @@ const Footer = () => {
                         <ul className="space-y-4 font-bold text-sm text-brand-300">
                             <li className="flex items-start gap-3">
                                 <span className="text-brand-accent mt-1">⌖</span>
-                                <span className="uppercase tracking-wide">Industrial Area Phase 1,<br />Tech Sector, 123456</span>
+                                <span className="uppercase tracking-wide whitespace-pre-line">{settings.footer_address}</span>
                             </li>
                             <li className="flex items-center gap-3">
                                 <span className="text-brand-accent">☎</span>
-                                <span className="tracking-wide">+91 98765 43210</span>
+                                <span className="tracking-wide">{settings.footer_phone}</span>
                             </li>
                             <li className="flex items-center gap-3">
                                 <span className="text-brand-accent">✉</span>
-                                <span className="tracking-wide">HELLO@KRISHNAENGG.COM</span>
+                                <span className="tracking-wide uppercase">{settings.footer_email}</span>
                             </li>
                         </ul>
                     </div>
