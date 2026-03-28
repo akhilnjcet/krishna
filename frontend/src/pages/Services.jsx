@@ -12,7 +12,7 @@ const servicesData = [
         id: 'welding',
         title: 'Heavy Welding',
         desc: 'Industrial-grade structural welding. Certified professionals ensuring maximum joint integrity for high-pressure pipelines and heavy machinery support structures.',
-        image: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=1200',
+        image: 'https://images.pexels.com/photos/1474928/pexels-photo-1474928.jpeg?auto=compress&cs=tinysrgb&w=1200',
         process: ['Surface Grinding', 'Joint Alignment', 'TIG/MIG Welding', 'X-Ray Inspection'],
         icon: <Zap className="w-8 h-8" />
     },
@@ -20,7 +20,7 @@ const servicesData = [
         id: 'roofing',
         title: 'Industrial Roofing',
         desc: 'Heavy-duty metal roofing systems built to withstand extreme mechanical stress and environmental exposure. We install heavy gauge panels for massive industrial complexes.',
-        image: 'https://images.unsplash.com/photo-1635424710928-0544e8512eae?q=80&w=1200',
+        image: 'https://images.pexels.com/photos/9327076/pexels-photo-9327076.jpeg?auto=compress&cs=tinysrgb&w=1200',
         process: ['Structural Audit', 'Gauge Selection', 'Panel Fastening', 'Seal Check'],
         icon: <Hammer className="w-8 h-8" />
     },
@@ -28,7 +28,7 @@ const servicesData = [
         id: 'truss',
         title: 'Truss Systems',
         desc: 'Massive steel truss design, fabrication, and erection. Built for aircraft hangars, manufacturing plants, and large span facilities requiring immense load-bearing capacity.',
-        image: 'https://images.unsplash.com/photo-1513828583688-c52646db42da?q=80&w=1200',
+        image: 'https://images.pexels.com/photos/2180590/pexels-photo-2180590.jpeg?auto=compress&cs=tinysrgb&w=1200',
         process: ['Load Engineering', 'I-Beam Fab', 'Crane Positioning', 'Torque Bolting'],
         icon: <Construction className="w-8 h-8" />
     },
@@ -36,7 +36,7 @@ const servicesData = [
         id: 'fabrication',
         title: 'Steel Fabrication & Staircases',
         desc: 'Precision structural steel fabrication including heavy industrial staircases, fire escapes, and custom walkways. Built to rigorous safety and structural codes.',
-        image: 'https://images.unsplash.com/photo-1621259182978-f09e5e2ca1ff?q=80&w=1200',
+        image: 'https://images.pexels.com/photos/2096622/pexels-photo-2096622.jpeg?auto=compress&cs=tinysrgb&w=1200',
         process: ['CAD Modeling', 'Plasma Cut', 'Steel Stair Step Fab', 'Load Verification'],
         icon: <Drill className="w-8 h-8" />
     },

@@ -5,11 +5,11 @@ const BlogPost = require('../models/BlogPost');
 const readyMadeBlogs = [
     {
         title: 'Advanced Techniques in Industrial TIG Welding',
-        content: 'Structural TIG welding (Tungsten Inert Gas) is the pinnacle of engineering precision. At Krishna Engineering, we utilize specialized tungsten alloys to create joints that exceed international load-bearing standards. This process requires a controlled atmospheric environment to prevent oxidation in heavy gauge steel.',
+        content: 'Structural TIG welding (Tungsten Inert Gas) is the pinnacle of engineering precision. At Krishna Engineering, we utilize specialized tungsten alloys to create joints that exceed international load-bearing standards.',
         excerpt: 'The ultimate guide to structural integrity in high-pressure welding environments.',
         category: 'Welding',
         authorName: 'Chief Field Engineer',
-        image: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=800'
+        image: 'https://images.pexels.com/photos/1474928/pexels-photo-1474928.jpeg?auto=compress&cs=tinysrgb&w=800'
     },
     {
         title: 'Structural Auditor Protocols for 2026',
@@ -17,7 +17,7 @@ const readyMadeBlogs = [
         excerpt: 'Standard operating procedures for maintaining zero-failure industrial complexes.',
         category: 'Structural',
         authorName: 'Audit Division',
-        image: 'https://images.unsplash.com/photo-1513828583688-c52646db42da?q=80&w=800'
+        image: 'https://images.pexels.com/photos/2180590/pexels-photo-2180590.jpeg?auto=compress&cs=tinysrgb&w=800'
     },
     {
         title: 'The Evolution of Industrial Roofing Systems',
@@ -29,11 +29,11 @@ const readyMadeBlogs = [
     },
     {
         title: 'Heavy Duty Staircase Engineering for Safety',
-        content: 'Industrial staircases aren\'t just about moving people between floors; they are critical safety components. We design our staircases to sustain extreme loads and include non-slip grating patterns suitable for oily or wet factory floors.',
+        content: 'Industrial staircases aren\'t just about moving people between floors; they are critical safety components. We design our staircases to sustain extreme loads and include non-slip grating patterns.',
         excerpt: 'Designing fire escapes and industrial walkways that save lives.',
         category: 'Fabrication',
         authorName: 'Structural Team',
-        image: 'https://images.unsplash.com/photo-1621259182978-f09e5e2ca1ff?q=80&w=800'
+        image: 'https://images.pexels.com/photos/2096622/pexels-photo-2096622.jpeg?auto=compress&cs=tinysrgb&w=800'
     },
     {
         title: 'Cold Storage Truss Solutions',
@@ -41,30 +41,36 @@ const readyMadeBlogs = [
         excerpt: 'Temperature-resistant engineering for specialized logistics hubs.',
         category: 'Structural',
         authorName: 'Logistics Liaison',
-        image: 'https://images.unsplash.com/photo-1586528116311-ad86d6540674?q=80&w=800'
+        image: 'https://images.pexels.com/photos/159306/pexels-photo-159306.jpeg?auto=compress&cs=tinysrgb&w=800'
     },
     {
         title: 'Plasma vs Laser Cutting for Heavy Plate',
-        content: 'When dealing with plates thicker than 20mm, plasma cutting often provides a more cost-effective and structurally sound edge than laser. We break down the technical differences and why we choose plasma for heavy structural brackets.',
+        content: 'When dealing with plates thicker than 20mm, plasma cutting often provides a more cost-effective and structurally sound edge than laser. We break down the technical differences and why we choose plasma.',
         excerpt: 'A technical comparison of secondary steel processing techniques.',
         category: 'Fabrication',
         authorName: 'Tech Division',
-        image: 'https://images.unsplash.com/photo-1565615833231-e8c91a38a012?q=80&w=800'
+        image: 'https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg?auto=compress&cs=tinysrgb&w=800'
     }
 ];
 
 const seedDB = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URI);
-        console.log('Connected to Database for Expanded Seeding...');
+        console.log('--- DATABASE CONNECTION ESTABLISHED ---');
         
-        await BlogPost.deleteMany({});
-        await BlogPost.insertMany(readyMadeBlogs);
-        console.log('Successfully synchronized 6 Industry Intel Reports with synchronized industrial photos.');
+        const deleted = await BlogPost.deleteMany({});
+        console.log(`- Cleared ${deleted.deletedCount} old records from Intel Matrix.`);
         
+        const inserted = await BlogPost.insertMany(readyMadeBlogs);
+        console.log(`- SUCCESSFULLY DEPLOYED ${inserted.length} NEW TECHNICAL REPORTS.`);
+        
+        const count = await BlogPost.countDocuments();
+        console.log(`- TOTAL ACTIVE RECORDS: ${count}`);
+        
+        console.log('--- SEEDING PROTOCOL COMPLETE ---');
         mongoose.connection.close();
     } catch (error) {
-        console.error('Seeding Protocol Failure:', error);
+        console.error('CRITICAL SEEDING FAILURE:', error);
         process.exit(1);
     }
 };
