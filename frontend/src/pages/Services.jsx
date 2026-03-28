@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
 import { 
     Zap, Hammer, Construction, Drill, 
-    ArrowRight, CheckSquare, Target, Settings
+    ArrowRight, CheckSquare, Target, Settings,
+    AlertTriangle, RefreshCcw
 } from 'lucide-react';
 
 const servicesData = [
@@ -12,7 +13,7 @@ const servicesData = [
         id: 'welding',
         title: 'Heavy Welding',
         desc: 'Industrial-grade structural welding. Certified professionals ensuring maximum joint integrity for high-pressure pipelines and heavy machinery support structures.',
-        image: 'https://images.pexels.com/photos/1474928/pexels-photo-1474928.jpeg?auto=compress&cs=tinysrgb&w=1200',
+        image: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=1200',
         process: ['Surface Grinding', 'Joint Alignment', 'TIG/MIG Welding', 'X-Ray Inspection'],
         icon: <Zap className="w-8 h-8" />
     },
@@ -20,7 +21,7 @@ const servicesData = [
         id: 'roofing',
         title: 'Industrial Roofing',
         desc: 'Heavy-duty metal roofing systems built to withstand extreme mechanical stress and environmental exposure. We install heavy gauge panels for massive industrial complexes.',
-        image: 'https://images.pexels.com/photos/9327076/pexels-photo-9327076.jpeg?auto=compress&cs=tinysrgb&w=1200',
+        image: 'https://images.unsplash.com/photo-1635424710928-0544e8512eae?auto=format&fit=crop&q=80&w=1200',
         process: ['Structural Audit', 'Gauge Selection', 'Panel Fastening', 'Seal Check'],
         icon: <Hammer className="w-8 h-8" />
     },
@@ -28,7 +29,7 @@ const servicesData = [
         id: 'truss',
         title: 'Truss Systems',
         desc: 'Massive steel truss design, fabrication, and erection. Built for aircraft hangars, manufacturing plants, and large span facilities requiring immense load-bearing capacity.',
-        image: 'https://images.pexels.com/photos/2180590/pexels-photo-2180590.jpeg?auto=compress&cs=tinysrgb&w=1200',
+        image: 'https://images.unsplash.com/photo-1513828583688-c52646db42da?auto=format&fit=crop&q=80&w=1200',
         process: ['Load Engineering', 'I-Beam Fab', 'Crane Positioning', 'Torque Bolting'],
         icon: <Construction className="w-8 h-8" />
     },
@@ -36,7 +37,7 @@ const servicesData = [
         id: 'fabrication',
         title: 'Steel Fabrication & Staircases',
         desc: 'Precision structural steel fabrication including heavy industrial staircases, fire escapes, and custom walkways. Built to rigorous safety and structural codes.',
-        image: 'https://images.pexels.com/photos/2096622/pexels-photo-2096622.jpeg?auto=compress&cs=tinysrgb&w=1200',
+        image: 'https://images.pexels.com/photos/1571470/pexels-photo-1571470.jpeg?auto=compress&cs=tinysrgb&w=1200',
         process: ['CAD Modeling', 'Plasma Cut', 'Steel Stair Step Fab', 'Load Verification'],
         icon: <Drill className="w-8 h-8" />
     },
@@ -45,6 +46,14 @@ const servicesData = [
 const Services = () => {
     const [searchParams] = useSearchParams();
     const highlightedService = searchParams.get('type');
+    const [error, setError] = useState(false);
+
+    // Image error handler to show fallback if external links fail
+    const handleImgError = (e) => {
+        e.target.onerror = null;
+        e.target.src = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200"; // Fallback: Industrial plant
+        setError(true);
+    };
 
     return (
         <div className="bg-[#050505] min-h-screen pb-24 font-sans text-white">
@@ -68,6 +77,13 @@ const Services = () => {
                     <p className="text-lg text-gray-500 max-w-2xl mx-auto font-bold text-center uppercase tracking-tight">
                         Unyielding structural engineering solutions tailored for heavy industry and commercial applications.
                     </p>
+                    
+                    {error && (
+                        <div className="mt-8 bg-red-600/10 border border-red-600/20 px-8 py-4 rounded-full flex items-center gap-4 text-red-500 font-black text-[10px] uppercase tracking-widest">
+                            <AlertTriangle className="w-4 h-4" /> Connectivity warning: Using emergency media fallbacks.
+                            <button onClick={()=>window.location.reload()} className="flex items-center gap-2 bg-red-600 text-white px-4 py-1 rounded-full"><RefreshCcw className="w-3 h-3" /> Retry Sync</button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -84,14 +100,17 @@ const Services = () => {
                             transition={{ duration: 0.8 }}
                             className={`flex flex-col lg:flex-row bg-white/[0.02] border border-white/5 rounded-[3rem] overflow-hidden backdrop-blur-3xl group transition-all duration-500 ${isHighlighted ? 'border-brand-accent bg-brand-accent/[0.03] shadow-[0_0_50px_rgba(255,180,0,0.1)]' : ''}`}
                         >
-                            <div className="w-full lg:w-1/2 h-80 lg:h-auto relative overflow-hidden bg-gray-900/50">
+                            <div className="w-full lg:w-1/2 h-80 lg:h-auto relative overflow-hidden bg-white/5 flex items-center justify-center">
+                                {/* LOADER FOR EACH IMAGE */}
+                                <div className="absolute animate-pulse text-brand-accent/20 font-black text-[10px] uppercase tracking-[0.5em]">Establishing Connection...</div>
                                 <img 
                                     src={service.image} 
                                     alt={service.title} 
-                                    className="absolute inset-0 w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000" 
+                                    onError={handleImgError}
+                                    className="absolute inset-0 w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000 z-10" 
                                 />
-                                <div className="absolute inset-x-0 inset-y-0 bg-black/10 transition-opacity group-hover:opacity-0" />
-                                <div className="absolute bottom-10 left-10 flex items-center gap-4">
+                                <div className="absolute inset-x-0 inset-y-0 bg-black/10 transition-opacity group-hover:opacity-0 z-20" />
+                                <div className="absolute bottom-10 left-10 flex items-center gap-4 z-30">
                                     <div className="bg-brand-accent text-black font-black text-3xl px-6 py-2 rounded-xl italic shadow-2xl">
                                         0{index + 1}
                                     </div>

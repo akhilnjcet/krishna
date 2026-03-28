@@ -33,7 +33,7 @@ const readyMadeBlogs = [
         excerpt: 'Designing fire escapes and industrial walkways that save lives.',
         category: 'Fabrication',
         authorName: 'Structural Team',
-        image: 'https://images.pexels.com/photos/2096622/pexels-photo-2096622.jpeg?auto=compress&cs=tinysrgb&w=800'
+        image: 'https://images.pexels.com/photos/1571470/pexels-photo-1571470.jpeg?auto=compress&cs=tinysrgb&w=800'
     },
     {
         title: 'Cold Storage Truss Solutions',
