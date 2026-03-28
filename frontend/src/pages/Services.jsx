@@ -34,10 +34,10 @@ const servicesData = [
     },
     {
         id: 'fabrication',
-        title: 'Steel Fabrication',
-        desc: 'Complete structural steel fabrication from raw material to finished assembly. Precision plasma cutting, heavy plate bending, and custom bracketry.',
-        image: 'https://images.unsplash.com/photo-1565615833231-e8c91a38a012?q=80&w=1200',
-        process: ['CAD Modeling', 'Plasma Cut', 'Press Brake Forming', 'Quality Verification'],
+        title: 'Steel Fabrication & Staircases',
+        desc: 'Precision structural steel fabrication including heavy industrial staircases, fire escapes, and custom walkways. Built to rigorous safety and structural codes.',
+        image: 'https://images.unsplash.com/photo-1621259182978-f09e5e2ca1ff?q=80&w=1200',
+        process: ['CAD Modeling', 'Plasma Cut', 'Steel Stair Step Fab', 'Load Verification'],
         icon: <Drill className="w-8 h-8" />
     },
 ];
