@@ -15,7 +15,10 @@ const AdminDashboard = () => {
         activeStaff: 0,
         todayLogs: 0,
         registeredFaces: 0,
-        pendingLeaves: 0
+        pendingLeaves: 0,
+        income: 0,
+        expense: 0,
+        profit: 0
     });
     const [recentLogs, setRecentLogs] = useState([]);
     const [loading, setLoading] = useState(true);

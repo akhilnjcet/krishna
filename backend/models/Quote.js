@@ -6,6 +6,7 @@ const quoteSchema = new mongoose.Schema({
     location: { type: String, required: true },
     serviceType: { type: String, required: true },
     description: { type: String, required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Tracking association
     image: { type: String }, // URL from cloudinary
     estimatedCost: { type: Number },
     status: { type: String, enum: ['new', 'reviewed', 'accepted', 'rejected'], default: 'new' },

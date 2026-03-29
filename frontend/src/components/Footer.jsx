@@ -10,7 +10,10 @@ const Footer = () => {
         footer_email: 'HELLO@KRISHNAENGG.COM',
         social_in: '#',
         social_fb: '#',
-        social_x: '#'
+        social_x: '#',
+        footer_copyright: 'KRISHNA ENGINEERING WORKS. UNYIELDING QUALITY.',
+        footer_tos: '',
+        footer_privacy: ''
     });
 
     useEffect(() => {
@@ -104,8 +107,8 @@ const Footer = () => {
 
             {/* Heavy bottom bar */}
             <div className="bg-black py-6">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs font-bold text-brand-600 uppercase tracking-widest">
-                    <p>&copy; {new Date().getFullYear()} KRISHNA ENGINEERING WORKS. UNYIELDING QUALITY.</p>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs font-bold text-brand-600 uppercase tracking-widest text-center md:text-left">
+                    <p>&copy; {new Date().getFullYear()} {settings.footer_copyright}</p>
                     <div className="flex space-x-6 mt-4 md:mt-0">
                         <Link to="/privacy" className="hover:text-white transition">Privacy Spec</Link>
                         <Link to="/terms" className="hover:text-white transition">Terms of Service</Link>

@@ -33,7 +33,9 @@ exports.getPublicSettings = async (req, res) => {
         // Only return non-sensitive settings for public view
         const publicKeys = [
             'systemName', 'footer_description', 'footer_address', 
-            'footer_phone', 'footer_email', 'social_in', 'social_fb', 'social_x'
+            'footer_phone', 'footer_email', 'social_in', 'social_fb', 'social_x',
+            'floating_whatsapp', 'floating_phone', 'floating_email',
+            'footer_copyright', 'footer_tos', 'footer_privacy'
         ];
         const settings = await SystemSetting.find({ key: { $in: publicKeys } });
         res.json(settings);

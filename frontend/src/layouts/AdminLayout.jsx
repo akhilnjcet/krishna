@@ -10,6 +10,11 @@ const AdminLayout = () => {
         return <Navigate to="/login" replace />;
     }
 
+    const handleLogout = () => {
+        logout();
+        window.location.replace('/login');
+    };
+
     const navItems = [
         { name: 'Control', path: '/admin', icon: '◧' },
         { name: 'Projects', path: '/admin/projects', icon: '☰' },
@@ -23,7 +28,7 @@ const AdminLayout = () => {
         { name: 'Production', path: '/admin/progress', icon: '◰' },
         { name: 'Staff', path: '/admin/staff', icon: '♙' },
         { name: 'Logs', path: '/admin/logs', icon: '☷' },
-        { name: 'Financials', path: '/admin/invoices', icon: '$' },
+        { name: 'Financials', path: '/admin/finance', icon: '$' },
     ];
 
     return (
@@ -69,7 +74,7 @@ const AdminLayout = () => {
                         </div>
                     </div>
                     <button
-                        onClick={logout}
+                        onClick={handleLogout}
                         className="w-full bg-brand-800 hover:bg-red-600 text-white font-black uppercase tracking-widest py-3 text-[10px] transition-colors border-2 border-brand-950"
                     >
                         Log Out System
@@ -110,7 +115,7 @@ const AdminLayout = () => {
                         </div>
                         <div className="flex items-center gap-3 md:gap-4">
                             <span className="text-[9px] font-black text-brand-accent bg-brand-950 px-2 py-1 transform skew-x-[-12deg] md:block hidden">ADMIN_UNIT_01</span>
-                            <button onClick={logout} className="md:hidden text-white bg-red-600 font-black text-[9px] px-3 py-2 uppercase tracking-widest rounded-md">OFF</button>
+                            <button onClick={handleLogout} className="md:hidden text-white bg-red-600 font-black text-[9px] px-3 py-2 uppercase tracking-widest rounded-md">OFF</button>
                         </div>
                     </div>
                 </header>

@@ -16,7 +16,7 @@ const StaffDashboard = () => {
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        window.location.replace('/login');
     };
 
     return (

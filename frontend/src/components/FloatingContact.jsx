@@ -1,14 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, Mail, MessageCircle, ArrowRight } from 'lucide-react';
+import api from '../services/api';
 
 const FloatingContact = () => {
+    const [links, setLinks] = useState({
+        whatsapp: '919446000000',
+        phone: '+919446000000',
+        email: 'contact@krishna.com'
+    });
+
+    useEffect(() => {
+        const fetchLinks = async () => {
+            try {
+                const res = await api.get('/settings/public');
+                if (res.data) {
+                    const mapped = {};
+                    res.data.forEach(s => {
+                        if (s.key === 'floating_whatsapp') mapped.whatsapp = s.value;
+                        if (s.key === 'floating_phone') mapped.phone = s.value;
+                        if (s.key === 'floating_email') mapped.email = s.value;
+                    });
+                    if (Object.keys(mapped).length > 0) {
+                        setLinks(prev => ({ ...prev, ...mapped }));
+                    }
+                }
+            } catch (err) {
+                console.error("Relay link sync failure:", err);
+            }
+        };
+        fetchLinks();
+    }, []);
+
     const contacts = [
         { 
             id: 'whatsapp', 
             icon: <MessageCircle className="w-5 h-5" />, 
             label: 'Uplink WhatsApp', 
-            link: 'https://wa.me/919446000000', // Replace with active number
+            link: `https://wa.me/${links.whatsapp}`, 
             color: 'bg-[#25D366]',
             textColor: 'text-white'
         },
@@ -16,7 +45,7 @@ const FloatingContact = () => {
             id: 'phone', 
             icon: <Phone className="w-5 h-5" />, 
             label: 'Direct Line', 
-            link: 'tel:+919446000000', // Replace with active number
+            link: links.phone.startsWith('tel:') ? links.phone : `tel:${links.phone}`, 
             color: 'bg-brand-accent',
             textColor: 'text-brand-950'
         },
@@ -24,7 +53,7 @@ const FloatingContact = () => {
             id: 'email', 
             icon: <Mail className="w-5 h-5" />, 
             label: 'Technical Mail', 
-            link: 'mailto:contact@krishna.com', // Replace with active email
+            link: links.email.startsWith('mailto:') ? links.email : `mailto:${links.email}`, 
             color: 'bg-white',
             textColor: 'text-brand-950'
         }

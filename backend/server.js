@@ -9,6 +9,14 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Institutional Security Headers (Anti-Caching for Sensitive Data)
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    next();
+});
+
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
@@ -26,6 +34,7 @@ app.use('/api/settings', require('./routes/settingRoutes'));
 app.use('/api/progress', require('./routes/progressRoutes'));
 app.use('/api/blogs', require('./routes/blogRoutes'));
 app.use('/api/customer', require('./routes/customerRoutes'));
+app.use('/api/finance', require('./routes/financeRoutes'));
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });

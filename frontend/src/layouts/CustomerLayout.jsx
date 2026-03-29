@@ -10,8 +10,14 @@ const CustomerLayout = () => {
         return <Navigate to="/login" replace />;
     }
 
+    const handleLogout = () => {
+        logout();
+        window.location.replace('/login');
+    };
+
     const navItems = [
-        { name: 'My Projects', path: '/customer', icon: '☰' },
+        { name: 'My Applications', path: '/customer', icon: '☰' },
+        { name: 'Track Status', path: '/customer/quotes', icon: '▥' },
         { name: 'Intelligence Feed', path: '/blog', icon: '▩' },
         { name: 'Request Quote', path: '/quote', icon: '¥' },
     ];
@@ -59,7 +65,7 @@ const CustomerLayout = () => {
                         </div>
                     </div>
                     <button
-                        onClick={logout}
+                        onClick={handleLogout}
                         className="w-full bg-brand-800 hover:bg-red-600 text-white font-black uppercase tracking-widest py-3 text-[10px] transition-colors border-2 border-brand-950"
                     >
                         Security Termination
@@ -100,7 +106,7 @@ const CustomerLayout = () => {
                         </div>
                         <div className="flex items-center gap-3 md:gap-4">
                             <span className="text-[9px] font-black text-brand-accent bg-brand-950 px-2 py-1 transform skew-x-[-12deg] md:block hidden italic">SECURE_CHANNEL_ESTABLISHED</span>
-                            <button onClick={logout} className="md:hidden text-white bg-red-600 font-black text-[9px] px-3 py-2 uppercase tracking-widest rounded-md">LOGOUT</button>
+                            <button onClick={handleLogout} className="md:hidden text-white bg-red-600 font-black text-[9px] px-3 py-2 uppercase tracking-widest rounded-md">LOGOUT</button>
                         </div>
                     </div>
                 </header>

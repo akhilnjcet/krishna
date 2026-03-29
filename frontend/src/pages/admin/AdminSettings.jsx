@@ -24,6 +24,14 @@ const AdminSettings = () => {
         social_in: '',
         social_fb: '',
         social_x: '',
+        // Engagement Relay (Floating)
+        floating_whatsapp: '919446000000',
+        floating_phone: '+919446000000',
+        floating_email: 'contact@krishna.com',
+        // Legal & Copyright
+        footer_copyright: 'KRISHNA ENGINEERING WORKS. UNYIELDING QUALITY.',
+        footer_tos: '1. ACCEPTANCE OF TERMS\nKrishna Engineering Works providing its service to you subject to the following Terms of Service...',
+        footer_privacy: 'This Privacy Policy explains how we collect and use your data...',
         // Home Stats
         stat_projects: '500+',
         stat_years: '25+',
@@ -333,6 +341,36 @@ const AdminSettings = () => {
                             </div>
                         </section>
 
+                        <section className="p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-green-500/20 transition-all">
+                            <ModuleHeader icon={Radio} title="Engagement Relay (Floating Links)" status="Active" />
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="space-y-3">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">WhatsApp Number (91...)</label>
+                                    <input 
+                                        value={settings.floating_whatsapp}
+                                        onChange={(e) => updateField('floating_whatsapp', e.target.value)}
+                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-green-500 outline-none focus:border-green-500/50"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Call Icon Link (tel:+...)</label>
+                                    <input 
+                                        value={settings.floating_phone}
+                                        onChange={(e) => updateField('floating_phone', e.target.value)}
+                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-brand-accent outline-none"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Mail Icon Link (mailto:...)</label>
+                                    <input 
+                                        value={settings.floating_email}
+                                        onChange={(e) => updateField('floating_email', e.target.value)}
+                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-blue-400 outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </section>
+
                         <section className="p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl">
                             <ModuleHeader icon={Globe} title="Environment Identity" status="Instance 01" />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -351,6 +389,40 @@ const AdminSettings = () => {
                                         onChange={(e) => updateField('ownerEmail', e.target.value)}
                                         className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-gray-500 outline-none"
                                     />
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-red-500/20 transition-all">
+                            <ModuleHeader icon={Shield} title="Legal Configuration (ToS & Copyright)" status="Compliance" />
+                            <div className="space-y-8">
+                                <div className="space-y-3">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Copyright Text Footer</label>
+                                    <input 
+                                        value={settings.footer_copyright}
+                                        onChange={(e) => updateField('footer_copyright', e.target.value)}
+                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-bold text-gray-400 outline-none"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Terms of Service Content</label>
+                                        <textarea 
+                                            rows={8}
+                                            value={settings.footer_tos}
+                                            onChange={(e) => updateField('footer_tos', e.target.value)}
+                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-2xl p-6 text-sm font-medium text-gray-400 focus:border-red-500/40 outline-none leading-relaxed"
+                                        />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Privacy Policy Content</label>
+                                        <textarea 
+                                            rows={8}
+                                            value={settings.footer_privacy}
+                                            onChange={(e) => updateField('footer_privacy', e.target.value)}
+                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-2xl p-6 text-sm font-medium text-gray-400 focus:border-red-500/40 outline-none leading-relaxed"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </section>

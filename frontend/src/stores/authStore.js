@@ -19,7 +19,8 @@ const useAuthStore = create(
             setUser: (user) => set({ user }),
         }),
         {
-            name: 'auth-storage', // unique name
+            name: 'auth-storage',
+            getStorage: () => sessionStorage, // Terminate on tab/browser close
         }
     )
 );

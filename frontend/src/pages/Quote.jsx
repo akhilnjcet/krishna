@@ -1,24 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useSearchParams } from 'react-router-dom';
-import axios from 'axios';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import api from '../services/api';
+import useAuthStore from '../stores/authStore';
 
 const Quote = () => {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const { user, isAuthenticated } = useAuthStore();
     const initialService = searchParams.get('service') || 'welding';
 
     const [formData, setFormData] = useState({
-        name: '',
-        phone: '',
+        name: user?.name || '',
+        phone: user?.phone || '',
         location: '',
         serviceType: initialService,
         description: '',
     });
 
+    useEffect(() => {
+        if (!isAuthenticated) {
+            navigate('/login');
+        }
+    }, [isAuthenticated, navigate]);
+
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
-    const [estimation, setEstimation] = useState(null);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -26,9 +34,9 @@ const Quote = () => {
         setError('');
 
         try {
-            const response = await axios.post('/api/quotes', formData);
+            // Send the request to admin (backend stores it)
+            await api.post('/quotes', formData);
             setSuccess(true);
-            setEstimation(response.data.estimatedCost);
         } catch (err) {
             setError(err.response?.data?.message || 'An error occurred while submitting the operation request.');
         } finally {
@@ -67,35 +75,35 @@ const Quote = () => {
                             ✓
                         </div>
 
-                        <h2 className="text-4xl font-black text-brand-950 mb-4 uppercase tracking-tighter">DATA LOGGED</h2>
-                        <p className="text-brand-600 mb-10 text-lg font-medium max-w-xl">
-                            Your project specifications have been fed into our proprietary estimation engine. Preliminary results are ready.
+                        <h2 className="text-4xl font-black text-brand-950 mb-4 uppercase tracking-tighter italic text-center md:text-left">MISSION LOGGED</h2>
+                        <p className="text-brand-600 mb-10 text-lg font-bold max-w-xl text-center md:text-left">
+                            Your structural specifications have been uploaded to our **Operation Terminal.** 
+                            <br /><br />
+                            A human administrator will now review your parameters for material index accuracy. Your official quote will be delivered to your **Client Portal.**
                         </p>
 
-                        {estimation && (
-                            <div className="bg-brand-100 border-4 border-brand-950 p-8 mb-10 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 bg-brand-accent text-brand-950 text-[10px] font-black tracking-widest uppercase px-3 py-1 border-b-2 border-r-2 border-brand-950">
-                                    SYSTEM OUTPUT
-                                </div>
-                                <div className="mt-4">
-                                    <h3 className="text-brand-600 font-bold uppercase tracking-widest text-xs mb-1">Calculated Estimate</h3>
-                                    <div className="text-6xl sm:text-7xl font-black text-brand-950 tracking-tighter">
-                                        <span className="text-brand-400 text-4xl mr-1">$</span>
-                                        {estimation.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                    </div>
-                                </div>
-                                <div className="bg-brand-950 text-white text-[10px] uppercase font-bold p-2 mt-6">
-                                    NOTICE: Output is a base calculation only. Subject to material index fluctuation.
-                                </div>
-                            </div>
-                        )}
+                        <div className="bg-brand-950 text-white p-8 mb-12 border-l-8 border-brand-accent shadow-solid">
+                            <h3 className="text-brand-accent font-black uppercase tracking-[0.3em] text-[10px] mb-2 leading-none">Intelligence Required</h3>
+                            <p className="text-sm font-bold text-gray-400 mb-8 leading-relaxed">
+                                To track your quote status and view final structural blueprints, you must initialize your official client profile.
+                            </p>
+                            
+                            <a 
+                                href="/register"
+                                className="inline-block bg-brand-accent hover:bg-white text-brand-950 font-black uppercase tracking-widest text-xs py-4 px-10 transition-all rounded-sm border-2 border-brand-950 shadow-[4px_4px_0_0_#000]"
+                            >
+                                Initialize Account for Quote Delivery →
+                            </a>
+                        </div>
 
-                        <button
-                            onClick={() => { setSuccess(false); setFormData({ ...formData, description: '' }); setEstimation(null); }}
-                            className="bg-white border-4 border-brand-950 hover:bg-brand-950 hover:text-white text-brand-950 font-black uppercase tracking-widest py-4 px-8 transition-colors select-none"
-                        >
-                            Start New Entry
-                        </button>
+                        <div className="flex justify-center md:justify-start">
+                            <button
+                                onClick={() => { setSuccess(false); setFormData({ ...formData, description: '' }); }}
+                                className="text-brand-400 font-black uppercase tracking-widest text-[10px] hover:text-brand-950 transition-colors underline"
+                            >
+                                Submit Another Request
+                            </button>
+                        </div>
                     </motion.div>
                 ) : (
                     <motion.div

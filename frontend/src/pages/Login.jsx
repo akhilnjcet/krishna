@@ -13,7 +13,15 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
-    const login = useAuthStore((state) => state.login);
+    const { login, isAuthenticated, user } = useAuthStore();
+
+    React.useEffect(() => {
+        if (isAuthenticated && user) {
+            const path = user.role === 'admin' ? '/admin' : 
+                         user.role === 'staff' ? '/staff' : '/customer';
+            navigate(path, { replace: true });
+        }
+    }, [isAuthenticated, user, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

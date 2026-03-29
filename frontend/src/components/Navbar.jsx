@@ -69,19 +69,35 @@ const Navbar = () => {
 
                         {/* Desktop Cta */}
                         <div className="hidden md:flex items-center gap-4">
-                            <Link
-                                to="/register"
-                                className="text-gray-300 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors px-4"
-                            >
-                                Register
-                            </Link>
-                            <Link
-                                to="/login"
-                                className="bg-brand-accent hover:bg-brand-accentHover text-brand-950 px-6 py-2.5 text-sm font-bold uppercase tracking-wider transition-colors"
-                                style={{ clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0% 100%)' }}
-                            >
-                                Sign In
-                            </Link>
+                            {!isAuthenticated ? (
+                                <>
+                                    <Link
+                                        to="/register"
+                                        className="text-gray-300 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors px-4"
+                                    >
+                                        Register
+                                    </Link>
+                                    <Link
+                                        to="/login"
+                                        className="bg-brand-accent hover:bg-brand-accentHover text-brand-950 px-6 py-2.5 text-sm font-bold uppercase tracking-wider transition-colors"
+                                        style={{ clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0% 100%)' }}
+                                    >
+                                        Sign In
+                                    </Link>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        const { logout } = useAuthStore.getState();
+                                        logout();
+                                        window.location.replace('/login');
+                                    }}
+                                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 text-sm font-black uppercase tracking-widest transition-colors border-2 border-brand-950 shadow-md"
+                                    style={{ clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0% 100%)' }}
+                                >
+                                    Log Out
+                                </button>
+                            )}
                         </div>
 
                         {/* Mobile menu button */}
@@ -121,20 +137,36 @@ const Navbar = () => {
                                 </Link>
                             ))}
                             <div className="pt-4 pb-2 px-3 space-y-3">
-                                <Link
-                                    to="/register"
-                                    className="block w-full text-center border-2 border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-950 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors"
-                                    onClick={() => setIsOpen(false)}
-                                >
-                                    Register
-                                </Link>
-                                <Link
-                                    to="/login"
-                                    className="block w-full text-center bg-brand-accent hover:bg-brand-accentHover text-brand-950 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors"
-                                    onClick={() => setIsOpen(false)}
-                                >
-                                    Sign In
-                                </Link>
+                                {!isAuthenticated ? (
+                                    <>
+                                        <Link
+                                            to="/register"
+                                            className="block w-full text-center border-2 border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-950 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors"
+                                            onClick={() => setIsOpen(false)}
+                                        >
+                                            Register
+                                        </Link>
+                                        <Link
+                                            to="/login"
+                                            className="block w-full text-center bg-brand-accent hover:bg-brand-accentHover text-brand-950 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors"
+                                            onClick={() => setIsOpen(false)}
+                                        >
+                                            Sign In
+                                        </Link>
+                                    </>
+                                ) : (
+                                    <button
+                                        onClick={() => {
+                                            const { logout } = useAuthStore.getState();
+                                            logout();
+                                            window.location.replace('/login');
+                                            setIsOpen(false);
+                                        }}
+                                        className="block w-full text-center bg-red-600 hover:bg-red-700 text-white px-4 py-3 text-sm font-black uppercase tracking-widest transition-colors border-2 border-brand-950"
+                                    >
+                                        Log Out
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import { 
     Construction, Clock, CheckCircle2, AlertTriangle, 
-    ArrowRight, MessageSquare, Briefcase, Zap, Settings, Loader2
+    ArrowRight, MessageSquare, Briefcase, Zap, Settings, Loader2, FileText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -13,10 +13,40 @@ const CustomerDashboard = () => {
     const [selectedProject, setSelectedProject] = useState(null);
     const [updates, setUpdates] = useState([]);
     const [updatesLoading, setUpdatesLoading] = useState(false);
+    const [finance, setFinance] = useState({
+        totalInvoiced: 0,
+        totalPaid: 0,
+        remainingDues: 0,
+        balancePercentage: 0
+    });
+    const [quotes, setQuotes] = useState([]);
 
     useEffect(() => {
         fetchProjects();
+        fetchFinance();
+        fetchQuotes();
     }, []);
+
+    const fetchQuotes = async () => {
+        try {
+            const res = await api.get('/quotes/my-quotes');
+            setQuotes(res.data);
+        } catch (err) {
+            console.error('Quotes fetch error:', err);
+        }
+    };
+
+    const fetchFinance = async () => {
+        try {
+            const res = await api.get('/finance/customer-dues');
+            setFinance({
+                ...res.data,
+                balancePercentage: (res.data.totalPaid / res.data.totalInvoiced) * 100 || 0
+            });
+        } catch (err) {
+            console.error('Finance fetch error:', err);
+        }
+    };
 
     const fetchProjects = async () => {
         try {
@@ -58,6 +88,55 @@ const CustomerDashboard = () => {
     return (
         <div className="space-y-8 font-sans">
             
+            {/* FINANCIAL SNAPSHOT */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {[
+                    { label: 'Total Invoiced', value: `₹ ${finance.totalInvoiced?.toLocaleString()}`, icon: Briefcase, color: 'brand' },
+                    { label: 'Cleared Funds', value: `₹ ${finance.totalPaid?.toLocaleString()}`, icon: CheckCircle2, color: 'emerald' },
+                    { label: 'Outstanding Dues', value: `₹ ${finance.remainingDues?.toLocaleString()}`, icon: AlertTriangle, color: 'rose' },
+                    { label: 'Account Yield', value: `${Math.round(finance.balancePercentage)}%`, icon: Zap, color: 'amber' }
+                ].map((item, i) => (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                        key={i} 
+                        className="bg-white border-4 border-brand-950 p-6 flex items-center gap-6 shadow-solid group hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none transition-all"
+                    >
+                        <div className={`p-4 bg-brand-50 rounded-xl group-hover:bg-brand-accent transition-colors`}>
+                            <item.icon className="w-6 h-6 text-brand-950" />
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-1">{item.label}</p>
+                            <p className="text-xl font-black text-brand-950 italic">{item.value}</p>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+
+            {/* QUOTE TRACKING SUMMARY */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                    { label: 'Applied Quotes', value: quotes.length, icon: MessageSquare, color: 'blue' },
+                    { label: 'Under Review', value: quotes.filter(q => q.status === 'reviewed').length, icon: Clock, color: 'indigo' },
+                    { label: 'Authorized Jobs', value: quotes.filter(q => q.status === 'accepted').length, icon: FileText, color: 'emerald' }
+                ].map((item, i) => (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.4 + (i * 0.1) }}
+                        key={i} 
+                        className="bg-brand-950 text-white p-6 border-l-8 border-brand-accent shadow-2xl flex items-center justify-between"
+                    >
+                        <div>
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-accent mb-2">{item.label}</p>
+                            <p className="text-3xl font-black italic">{item.value}</p>
+                        </div>
+                        <item.icon className="w-8 h-8 opacity-20" />
+                    </motion.div>
+                ))}
+            </div>
+
             {/* PROJECTS SNAPSHOT */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 border-4 border-brand-950 bg-white p-8 relative overflow-hidden shadow-solid flex flex-col justify-between">
