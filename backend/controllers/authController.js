@@ -24,9 +24,17 @@ exports.register = async (req, res) => {
     try {
         const { staff_id, name, full_name, phone, phone_number, email, department, designation, username, password, role } = req.body;
 
-        const userExists = await User.findOne({ $or: [{ email }, { username }, { staff_id }] });
-        if (userExists) {
-            return res.status(400).json({ message: 'User with this email, username, or ID already exists' });
+        // Build dynamic query to avoid matching on undefined fields
+        const querySpecs = [];
+        if (email) querySpecs.push({ email });
+        if (username) querySpecs.push({ username });
+        if (staff_id) querySpecs.push({ staff_id });
+
+        if (querySpecs.length > 0) {
+            const userExists = await User.findOne({ $or: querySpecs });
+            if (userExists) {
+                return res.status(400).json({ message: 'A profile with these credentials already exists in the registry.' });
+            }
         }
 
         const salt = await bcrypt.genSalt(10);

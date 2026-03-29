@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import useAuthStore from '../stores/authStore';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
+    const { user, isAuthenticated } = useAuthStore();
+
+    const dashboardPath = user?.role === 'admin' ? '/admin' : 
+                         user?.role === 'staff' ? '/staff' : '/customer';
 
     const navLinks = [
         { name: 'Home', path: '/' },
         { name: 'About', path: '/about' },
         { name: 'Services', path: '/services' },
         { name: 'Projects', path: '/projects' },
-        { name: 'Get a Quote', path: '/quote' },
         { name: 'Blog', path: '/blog' },
+        ...(isAuthenticated ? [{ name: 'Dashboard', path: dashboardPath }] : []),
     ];
 
     return (
@@ -63,7 +68,13 @@ const Navbar = () => {
                         </div>
 
                         {/* Desktop Cta */}
-                        <div className="hidden md:flex items-center">
+                        <div className="hidden md:flex items-center gap-4">
+                            <Link
+                                to="/register"
+                                className="text-gray-300 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors px-4"
+                            >
+                                Register
+                            </Link>
                             <Link
                                 to="/login"
                                 className="bg-brand-accent hover:bg-brand-accentHover text-brand-950 px-6 py-2.5 text-sm font-bold uppercase tracking-wider transition-colors"
@@ -109,7 +120,14 @@ const Navbar = () => {
                                     {link.name}
                                 </Link>
                             ))}
-                            <div className="pt-4 pb-2 px-3">
+                            <div className="pt-4 pb-2 px-3 space-y-3">
+                                <Link
+                                    to="/register"
+                                    className="block w-full text-center border-2 border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-950 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    Register
+                                </Link>
                                 <Link
                                     to="/login"
                                     className="block w-full text-center bg-brand-accent hover:bg-brand-accentHover text-brand-950 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors"

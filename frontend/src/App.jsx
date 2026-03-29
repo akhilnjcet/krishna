@@ -11,25 +11,13 @@ import Login from './pages/Login';
 import StaffLogin from './pages/StaffLogin';
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
-const Layout = ({ children }) => (
-  <div className="min-h-screen flex flex-col font-sans">
-    <Navbar />
-    <main className="flex-grow">
-      {children}
-    </main>
-    <Footer />
-  </div>
-);
-
+import CustomerLayout from './layouts/CustomerLayout';
 import StaffDashboard from './pages/staff/StaffDashboard';
 import StaffTasks from './pages/staff/StaffTasks';
 import StaffLeave from './pages/staff/StaffLeave';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import InvoiceView from './pages/customer/InvoiceView';
 import Register from './pages/Register';
-
 import AdminProjects from './pages/admin/AdminProjects';
 import AdminPortfolio from './pages/admin/AdminPortfolio';
 import AdminQuotes from './pages/admin/AdminQuotes';
@@ -42,6 +30,17 @@ import AdminSettings from './pages/admin/AdminSettings';
 import AdminProgress from './pages/admin/AdminProgress';
 import AdminBlog from './pages/admin/AdminBlog';
 import StaffProgress from './pages/staff/StaffProgress';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+const Layout = ({ children }) => (
+  <div className="min-h-screen flex flex-col font-sans">
+    <Navbar />
+    <main className="flex-grow">
+      {children}
+    </main>
+    <Footer />
+  </div>
+);
 
 const App = () => {
   return (
@@ -79,8 +78,11 @@ const App = () => {
           <Route path="/staff/leave" element={<StaffLeave />} />
           <Route path="/staff/progress" element={<StaffProgress />} />
           
-          <Route path="/customer" element={<CustomerDashboard />} />
-          <Route path="/customer/invoice/:id" element={<InvoiceView />} />
+          {/* Customer Routes */}
+          <Route path="/customer" element={<CustomerLayout />}>
+            <Route index element={<CustomerDashboard />} />
+            <Route path="invoice/:id" element={<InvoiceView />} />
+          </Route>
 
           {/* Fallback for others */}
           <Route path="*" element={<div className="p-8 text-center text-2xl h-96 flex items-center justify-center">Page Not Found</div>} />

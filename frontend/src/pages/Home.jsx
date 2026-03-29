@@ -8,6 +8,7 @@ import {
     Hammer, Drill, HardHat, Radio
 } from 'lucide-react';
 import api from '../services/api';
+import FloatingContact from '../components/FloatingContact';
 
 // REUSABLE WELDING SPARK EFFECT
 const ButtonSparks = ({ active }) => {
@@ -147,7 +148,9 @@ const Home = () => {
     }, []);
 
     return (
-        <div className="bg-[#050505] min-h-screen text-white font-sans selection:bg-brand-accent selection:text-black">
+        <div className="bg-[#050505] min-h-screen text-white font-sans selection:bg-brand-accent selection:text-black translate-x-0">
+            {/* Direct Comms Relay */}
+            <FloatingContact />
             
             {/* CINEMATIC HERO SECTION */}
             <section className="relative min-h-screen flex items-center pt-24 pb-32 px-4 overflow-hidden border-b-[12px] border-brand-accent">

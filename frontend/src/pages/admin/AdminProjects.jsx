@@ -1,12 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
-import { Briefcase, Plus, X, Loader2, AlertCircle } from 'lucide-react';
+import { Briefcase, Plus, X, Loader2, AlertCircle, MessageSquare, Send, AlertTriangle } from 'lucide-react';
 
 const AdminProjects = () => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [showNotifyModal, setShowNotifyModal] = useState(false);
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [notificationText, setNotificationText] = useState({ title: '', message: '' });
+
+    const handlePostUpdate = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/progress', { 
+                projectId: selectedProject._id, 
+                title: notificationText.title,
+                description: notificationText.message,
+                progressPercentage: selectedProject.progress, // Maintain current progress
+                status: 'In Progress'
+            });
+            setShowNotifyModal(false);
+            setNotificationText({ title: '', message: '' });
+            alert("Technical alert successfully broadcasted to client portal.");
+        } catch (err) {
+            alert("Failed to transmit intelligence: " + (err.response?.data?.message || err.message));
+        }
+    };
     const [formData, setFormData] = useState({
         title: '',
         customerId: '',
@@ -132,7 +153,14 @@ const AdminProjects = () => {
                                             {prj.status}
                                         </span>
                                     </td>
-                                    <td className="p-6 text-right">
+                                    <td className="p-6 text-right flex justify-end gap-2">
+                                        <button 
+                                            onClick={() => { setSelectedProject(prj); setShowNotifyModal(true); }}
+                                            className="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-600 hover:text-white transition"
+                                            title="Transmit sudden info to customer"
+                                        >
+                                            <MessageSquare className="w-4 h-4" />
+                                        </button>
                                         <button className="bg-slate-100 text-slate-600 p-2 rounded-xl hover:bg-indigo-600 hover:text-white transition">
                                             <Briefcase className="w-4 h-4" />
                                         </button>
@@ -143,6 +171,56 @@ const AdminProjects = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Broadcast Terminal Modal */}
+            <AnimatePresence>
+                {showNotifyModal && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
+                        >
+                            <button onClick={() => setShowNotifyModal(false)} className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full">
+                                <X className="w-6 h-6 text-slate-400" />
+                            </button>
+
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="bg-indigo-100 p-3 rounded-2xl">
+                                    <Send className="w-8 h-8 text-indigo-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Sudden Pulse Transmit</h2>
+                                    <p className="text-[10px] font-black uppercase text-indigo-500 tracking-[0.2em]">Uplink to Client Portal</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-50 p-4 rounded-2xl mb-8 border border-slate-100">
+                                <div className="text-[9px] font-black uppercase text-slate-400 mb-1">Target Project Archive</div>
+                                <div className="text-sm font-black text-slate-900 uppercase">{selectedProject?.title}</div>
+                            </div>
+
+                            <form onSubmit={handlePostUpdate} className="space-y-6">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Subject Heading</label>
+                                    <input required value={notificationText.title} onChange={e => setNotificationText({...notificationText, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none uppercase text-xs" placeholder="TECHNICAL ALERT / SAFETY MILESTONE" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Core Intelligence Message</label>
+                                    <textarea required rows={4} value={notificationText.message} onChange={e => setNotificationText({...notificationText, message: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" placeholder="Detail the structural update or sudden site information..." />
+                                </div>
+                                <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100 mb-4">
+                                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                                    <p className="text-[9px] font-black text-amber-700 uppercase tracking-tight italic">This update will be broadcasted live to the customer's secure dashboard matrix immediately.</p>
+                                </div>
+                                <button type="submit" className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition flex items-center justify-center gap-4 group">
+                                    Initiate Intelligence Uplink <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Commission Modal */}
             <AnimatePresence>

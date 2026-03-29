@@ -353,11 +353,34 @@ const AdminStaff = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Username*</label>
-                                    <input required type="text" placeholder="johndoe.stf" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
+                                    <input required type="text" placeholder="johndoe.user" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Access Role*</label>
+                                    <select 
+                                        required 
+                                        className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" 
+                                        value={formData.role} 
+                                        onChange={e => setFormData({...formData, role: e.target.value})}
+                                    >
+                                        <option value="staff">Staff Operator</option>
+                                        <option value="customer">Customer / Project Owner</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Account Status*</label>
+                                    <select 
+                                        className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" 
+                                        value={formData.status} 
+                                        onChange={e => setFormData({...formData, status: e.target.value})}
+                                    >
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive / Suspended</option>
+                                    </select>
                                 </div>
                                 {!showEditModal && (
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Default Password*</label>
+                                    <div className="space-y-2 md:col-span-2">
+                                        <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Secure Access Key [Password]*</label>
                                         <input required type="password" placeholder="••••••••" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
                                     </div>
                                 )}
