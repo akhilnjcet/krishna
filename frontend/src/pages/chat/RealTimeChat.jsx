@@ -49,32 +49,29 @@ const RealTimeChat = ({ chatId: propChatId }) => {
         });
         return () => unsubscribe();
     }, [user, propChatId, activeRoom]);
-
-    // 2. Fetch Messages (NO FILTERS FOR ADMINS)
+    // 2. High-Performance Real-Time Listener
     useEffect(() => {
         if (!activeRoom) return;
 
-        // Force a simple query to ensure we see literally every message in the collection for this chatId
         const msgRef = collection(db, "messages");
         const q = query(msgRef, where("chatId", "==", activeRoom.id));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             
-            // Manual sort by time locally
+            // Manual sort by time locally to bypass index requirements
             msgs.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
             
-            console.log("DEBUG: Synced", msgs.length, "msgs for room", activeRoom.id);
             setMessages(msgs);
-
-            // Mark seen
+            
+            // Auto-mark seen
             msgs.forEach(m => {
                 if (!m.seen && m.senderId !== (user.id || user._id)) {
                     updateDoc(doc(db, "messages", m.id), { seen: true });
                 }
             });
         }, (err) => {
-            console.error("Message Sync Error:", err);
+            console.error("Critical Sync Failure:", err);
         });
 
         return () => unsubscribe();
