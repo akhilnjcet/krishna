@@ -8,8 +8,10 @@ import {
 } from 'lucide-react';
 import FloatingContact from '../components/FloatingContact';
 import api from '../services/api';
+import { getDirectImageUrl } from '../utils/imageUtils';
 
 const Home = () => {
+    const [projects, setProjects] = useState([]);
     const [settings, setSettings] = useState({
         about_title: 'Building Trust Through Quality Craftsmanship',
         about_content: "For over 25 years, **Krishna Engineering Works** has been a trusted pioneer in the fabrication, welding, and industrial services sector across Kerala. We have built our reputation on a foundation of unyielding quality, remarkable durability, and unwavering commitment to customer satisfaction.",
@@ -33,7 +35,18 @@ const Home = () => {
                 console.error("Failed to fetch settings", err);
             }
         };
+
+        const fetchProjects = async () => {
+            try {
+                const res = await api.get('/portfolio/gallery');
+                if (res.data) setProjects(res.data);
+            } catch (err) {
+                console.error("Failed to fetch projects", err);
+            }
+        };
+
         fetchSettings();
+        fetchProjects();
     }, []);
 
     const fadeIn = {
@@ -154,21 +167,27 @@ const Home = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[
-                            { img: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=800&h=600&fit=crop', title: 'Industrial Steel Structure' },
-                            { img: 'https://images.unsplash.com/photo-1541888087405-ebcfca2be2b1?w=800&h=600&fit=crop', title: 'Pipeline Welding' },
-                            { img: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&h=600&fit=crop', title: 'Factory Roofing Deck' },
-                            { img: 'https://images.unsplash.com/photo-1510265236892-329bfd7de7a1?w=800&h=600&fit=crop', title: 'Custom Iron Gates' },
-                            { img: 'https://images.unsplash.com/photo-1590496793907-9b24479abccb?w=800&h=600&fit=crop', title: 'Commercial Grills' },
-                            { img: 'https://images.unsplash.com/photo-1621213349942-0f723e421cd0?w=800&h=600&fit=crop', title: 'On-site Repair Unit' },
-                        ].map((item, i) => (
-                            <div key={i} className="group relative rounded-xl overflow-hidden aspect-[4/3] bg-brand-800">
-                                <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                                    <h4 className="text-xl font-bold">{item.title}</h4>
+                        {(projects.length > 0 ? projects : [
+                            { images: [{url: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=800&h=600&fit=crop'}], title: 'Industrial Steel Structure' },
+                            { images: [{url: 'https://images.unsplash.com/photo-1541888087405-ebcfca2be2b1?w=800&h=600&fit=crop'}], title: 'Pipeline Welding' },
+                            { images: [{url: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&h=600&fit=crop'}], title: 'Factory Roofing Deck' },
+                            { images: [{url: 'https://images.unsplash.com/photo-1510265236892-329bfd7de7a1?w=800&h=600&fit=crop'}], title: 'Custom Iron Gates' },
+                            { images: [{url: 'https://images.unsplash.com/photo-1590496793907-9b24479abccb?w=800&h=600&fit=crop'}], title: 'Commercial Grills' },
+                            { images: [{url: 'https://images.unsplash.com/photo-1621213349942-0f723e421cd0?w=800&h=600&fit=crop'}], title: 'On-site Repair Unit' },
+                        ]).slice(0, 6).map((item, i) => {
+                            const imgUrl = item.images && item.images.length > 0 
+                                ? getDirectImageUrl(item.images[0].url) 
+                                : 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=800&h=600&fit=crop';
+                            
+                            return (
+                                <div key={item._id || i} className="group relative rounded-xl overflow-hidden aspect-[4/3] bg-brand-800">
+                                    <img src={imgUrl} alt={item.title || 'Work'} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                                        <h4 className="text-xl font-bold">{item.title || 'Ongoing Project'}</h4>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             </section>
