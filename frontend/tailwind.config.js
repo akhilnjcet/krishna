@@ -8,19 +8,20 @@ export default {
         extend: {
             colors: {
                 brand: {
-                    50: '#f9f9f9',
-                    100: '#f2f2f2',
-                    200: '#e5e5e5',
-                    300: '#d4d4d4',
-                    400: '#a3a3a3',
-                    500: '#737373',
-                    600: '#525252',
-                    700: '#404040',
-                    800: '#262626',
-                    900: '#171717', // Dark Gray / Off-Black
-                    950: '#000000', // Solid Black
-                    accent: '#FFB612', // Caterpillar Yellow
-                    accentHover: '#E5A310',
+                    50: '#F5F5F5', // Light Grey (Section Background)
+                    100: '#E0E0E0',
+                    200: '#C2C2C2',
+                    300: '#A3A3A3',
+                    400: '#858585',
+                    500: '#4A4A4A', // Steel Grey (Industrial feel)
+                    600: '#3A3A3A',
+                    700: '#2A2A2A',
+                    800: '#142A55', 
+                    900: '#0A1F44', // Dark Blue (Header/Footer, primary trust)
+                    950: '#000000', // Black
+                    accent: '#FF6B00', // Safety Orange (Buttons, CTA)
+                    accentHover: '#E66000', 
+                    highlight: '#FFC107', // Yellow (Highlights/Icons)
                 }
             },
             fontFamily: {

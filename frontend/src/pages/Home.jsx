@@ -1,253 +1,144 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 // eslint-disable-next-line no-unused-vars
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
-    ArrowRight, Zap, Target, Shield, 
-    Box, Construction, Gauge, Settings, 
-    Hammer, Drill, HardHat, Radio
+    Phone, Mail, MessageCircle, MapPin, Search, CheckCircle, 
+    Star, ArrowRight, Wrench, Shield, Zap, Settings, Award 
 } from 'lucide-react';
-import api from '../services/api';
 import FloatingContact from '../components/FloatingContact';
 
-// REUSABLE WELDING SPARK EFFECT
-const ButtonSparks = ({ active }) => {
-    // Generate sparks only on mount using lazy initial state (fixes cascading render)
-    const [sparks] = useState(() => {
-        return [...Array(8)].map((_, i) => ({
-            id: i,
-            angle: (Math.random() * 360) * (Math.PI / 180),
-            distance: Math.random() * 60 + 40,
-            duration: Math.random() * 0.4 + 0.2
-        }));
-    });
+const Home = () => {
+    const fadeIn = {
+        hidden: { opacity: 0, y: 30 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+    };
 
-    if (sparks.length === 0) return null;
-
-    return (
-        <AnimatePresence>
-            {active && (
-                <div className="absolute inset-0 pointer-events-none z-20">
-                    {sparks.map((spark) => (
-                        <motion.div
-                            key={spark.id}
-                            className="absolute left-1/2 top-1/2 w-1 h-1 bg-brand-accent rounded-full"
-                            initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
-                            animate={{ 
-                                x: Math.cos(spark.angle) * spark.distance,
-                                y: Math.sin(spark.angle) * spark.distance,
-                                opacity: 0,
-                                scale: 0
-                            }}
-                            transition={{ duration: spark.duration, ease: "easeOut" }}
-                            style={{ boxShadow: '0 0 8px #ffb400' }}
-                        />
-                    ))}
-                </div>
-            )}
-        </AnimatePresence>
-    );
-};
-
-const SparkButton = ({ to, children, primary = true }) => {
-    const [isSparking, setIsSparking] = useState(false);
-    const handleClick = () => {
-        setIsSparking(true);
-        setTimeout(() => setIsSparking(false), 500);
+    const stagger = {
+        visible: { transition: { staggerChildren: 0.1 } }
     };
 
     return (
-        <Link 
-            to={to}
-            onClick={handleClick}
-            className={`relative group px-10 py-5 text-[11px] font-black uppercase tracking-[0.3em] rounded-xl transition-all active:scale-95 flex items-center justify-center gap-4 overflow-hidden shadow-2xl ${
-                primary 
-                ? 'bg-brand-accent text-brand-950 hover:bg-white' 
-                : 'bg-white/5 text-white border border-white/10 hover:border-brand-accent/50 group'
-            }`}
-        >
-            <ButtonSparks active={isSparking} />
-            <span className="relative z-10">{children}</span>
-            <ArrowRight className={`w-4 h-4 transition-transform group-hover:translate-x-2 ${primary ? 'text-brand-950' : 'text-brand-accent'}`} />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-        </Link>
-    );
-};
-
-// BACKGROUND VIDEO & PARALLAX INDUSTRIAL EQUIPMENT
-const HeavyBackground = () => {
-    return (
-        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-            {/* BACKGROUND CINEMATIC VIDEO */}
-            <div className="absolute inset-0 z-0 scale-110">
-                <video 
-                    autoPlay 
-                    muted 
-                    loop 
-                    playsInline
-                    className="w-full h-full object-cover filter brightness-[0.3] contrast-[1.2] grayscale-[40%]"
-                >
-                    <source src="https://cdn.pixabay.com/video/2019/04/16/22881-331215442_large.mp4" type="video/mp4" />
-                    {/* Fallback for welding/industrial construction loops */}
-                </video>
-                <div className="absolute inset-0 bg-gradient-to-b from-[#050505] via-transparent to-[#050505]"></div>
-                <div className="absolute inset-0 bg-black/60"></div>
-            </div>
-
-            {/* FLOATING SILHOUETTES */}
-            <motion.div 
-                animate={{ rotate: [-1, 1, -1], y: [-5, 5, -5] }}
-                transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-20 right-[-10%] opacity-[0.05] text-white"
-            >
-                <Construction className="w-[800px] h-[800px] -scale-x-100" />
-            </motion.div>
-
-            <motion.div 
-                animate={{ rotate: 360 }}
-                transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-                className="absolute bottom-[-10%] left-[-5%] opacity-[0.03]"
-            >
-                <Settings className="w-[400px] h-[400px]" />
-            </motion.div>
-
-            {/* BLUEPRINT GRID OVERLAY */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:50px_50px]"></div>
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] mix-blend-overlay"></div>
-        </div>
-    );
-};
-
-const Home = () => {
-    const defaultStats = useMemo(() => [
-        { label: 'Projects Completed', value: '500+', icon: <Target className="w-5 h-5" />, key: 'stat_projects' },
-        { label: 'Years Experience', value: '25+', icon: <Settings className="w-5 h-5" />, key: 'stat_years' },
-        { label: 'Steel Fabricated', value: '12K Tons', icon: <Box className="w-5 h-5" />, key: 'stat_tons' },
-        { label: 'Safety Record', value: '100%', icon: <Shield className="w-5 h-5" />, key: 'stat_safety' },
-    ], []);
-
-    const [liveStats, setLiveStats] = useState(defaultStats);
-
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const res = await api.get('/settings/public');
-                if (res.data && res.data.length > 0) {
-                    const settingsMap = {};
-                    res.data.forEach(s => settingsMap[s.key] = s.value);
-                    setLiveStats(prev => prev.map(stat => ({
-                        ...stat,
-                        value: settingsMap[stat.key] || stat.value
-                    })));
-                }
-            } catch (err) {
-                console.error("Failed to fetch live stats", err);
-            }
-        };
-        fetchStats();
-    }, []);
-
-    return (
-        <div className="bg-[#050505] min-h-screen text-white font-sans selection:bg-brand-accent selection:text-black translate-x-0">
-            {/* Direct Comms Relay */}
+        <div className="bg-brand-50 text-brand-900 font-sans min-h-screen">
             <FloatingContact />
-            
-            {/* CINEMATIC HERO SECTION */}
-            <section className="relative min-h-screen flex items-center pt-24 pb-32 px-4 overflow-hidden border-b-[12px] border-brand-accent">
-                <HeavyBackground />
+
+            {/* 1. HERO SECTION */}
+            <section className="relative min-h-[90vh] flex items-center bg-brand-950 overflow-hidden">
+                {/* Background Pattern & Overlay */}
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-[0.25] mix-blend-luminosity"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-brand-950 via-brand-950/90 to-brand-950/70"></div>
                 
-                <div className="max-w-7xl mx-auto w-full relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-
-                        <div className="lg:col-span-12 xl:col-span-8 text-center xl:text-left">
-                            <motion.div
-                                initial={{ opacity: 0, y: 50 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 1.2, ease: "circOut" }}
-                            >
-                                <div className="inline-flex items-center gap-4 bg-white/5 backdrop-blur-3xl border border-white/10 px-8 py-3 rounded-full mb-12 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-                                    <span className="w-3 h-3 rounded-full bg-brand-accent animate-pulse shadow-[0_0_10px_#ffb400]"></span>
-                                    <span className="text-[11px] font-black uppercase tracking-[0.5em] text-gray-400">Pioneer Structural Lab // REINFORCED 5.0</span>
-                                </div>
-
-                                <h1 className="text-7xl md:text-9xl font-black uppercase tracking-tighter leading-[0.8] mb-14 italic text-white drop-shadow-2xl">
-                                    ENGINEERED <br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent via-white to-brand-accent bg-[length:200%_auto] animate-shimmer">
-                                        DOMINANCE.
-                                    </span>
-                                </h1>
-                                
-                                <p className="text-xl md:text-3xl text-gray-400 font-bold uppercase tracking-tight max-w-3xl mb-16 leading-[1.3] mx-auto xl:mx-0">
-                                    Forging the future of heavy industrial infrastructure with relentless precision and structural integrity.
-                                </p>
-
-                                <div className="flex flex-col sm:flex-row gap-8 justify-center xl:justify-start">
-                                    <SparkButton to="/quote">Begin Estimation</SparkButton>
-                                    <SparkButton to="/projects" primary={false}>Explore Archives</SparkButton>
-                                </div>
-                            </motion.div>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full py-20">
+                    <motion.div 
+                        initial="hidden" animate="visible" variants={fadeIn}
+                        className="max-w-3xl"
+                    >
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-800/80 border border-brand-700 backdrop-blur-sm mb-6 text-brand-300 text-sm font-semibold tracking-wider uppercase">
+                            <span className="w-2 h-2 rounded-full bg-brand-accent animate-pulse"></span>
+                            25+ Years Experience | On-site Service | Budget Friendly
                         </div>
-                    </div>
-                </div>
-
-                {/* BOTTOM ANCHOR */}
-                <div className="absolute bottom-16 right-16 hidden 2xl:block">
-                   <div className="flex items-center gap-4 text-brand-accent font-black text-[10px] uppercase tracking-[0.6em] rotate-90 origin-right translate-y-16">
-                      <Radio className="w-5 h-5 animate-pulse" /> BROADCASTING LIVE UNIT 01
-                   </div>
+                        
+                        <h1 className="text-5xl md:text-7xl font-black text-white leading-tight mb-6">
+                            Krishna <span className="text-brand-accent">Engineering</span> Works
+                        </h1>
+                        
+                        <p className="text-xl md:text-2xl text-brand-200 mb-10 max-w-2xl font-light">
+                            Expert Fabrication & Welding Services in Kerala. We deliver industrial-grade durability with precision craftsmanship.
+                        </p>
+                        
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <Link to="/quote" className="px-8 py-4 bg-brand-accent hover:bg-brand-accentHover text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brand-accent/20">
+                                Get Free Quote <ArrowRight className="w-5 h-5" />
+                            </Link>
+                            <a href="tel:+919446000000" className="px-8 py-4 bg-brand-800 hover:bg-brand-700 text-white font-bold rounded-lg transition-colors border border-brand-600 flex items-center justify-center gap-2">
+                                <Phone className="w-5 h-5" /> Call Now
+                            </a>
+                        </div>
+                    </motion.div>
                 </div>
             </section>
 
-            {/* DYNAMIC CAPABILITIES MATRIX */}
-            <section className="py-40 relative px-4 overflow-hidden">
-                <div className="max-w-7xl mx-auto relative z-10">
-                    <div className="flex flex-col md:flex-row justify-between items-end gap-10 mb-32">
-                        <div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.6em] text-brand-accent mb-6 block italic opacity-60">Operations Unit</span>
-                            <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter italic text-white leading-none">CORE SPECIALTIES</h2>
+            {/* 2. ABOUT SECTION */}
+            <section className="py-24 bg-white" id="about">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn}>
+                            <h2 className="text-brand-accent font-bold uppercase tracking-wider mb-2">About Us</h2>
+                            <h3 className="text-4xl font-black text-brand-950 mb-6">Building Trust Through Quality Craftsmanship</h3>
+                            <p className="text-brand-600 text-lg leading-relaxed mb-6">
+                                For over 25 years, <strong>Krishna Engineering Works</strong> has been a trusted pioneer in the fabrication, welding, and industrial services sector across Kerala. We have built our reputation on a foundation of unyielding quality, remarkable durability, and unwavering commitment to customer satisfaction.
+                            </p>
+                            <div className="bg-brand-50 border-l-4 border-brand-accent p-6 rounded-r-lg">
+                                <p className="text-brand-800 font-medium">
+                                    "Whether it's a massive structural fabrication project or a precision gate design, we bring the same level of expertise and dedication to ensure long-term trust."
+                                </p>
+                            </div>
+                        </motion.div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <img src="https://images.unsplash.com/photo-1542626991-cbc4e32524cc?w=600&h=600&fit=crop" alt="Welding Worker" className="rounded-2xl shadow-xl w-full h-64 object-cover" />
+                            <img src="https://images.unsplash.com/photo-1502444330042-d1a1ddf9bb5b?w=600&h=600&fit=crop" alt="Steel Fabrication" className="rounded-2xl shadow-xl w-full h-64 object-cover mt-8" />
                         </div>
-                        <Link to="/services" className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] hover:bg-white hover:text-black transition-all active:scale-95 shadow-2xl">Matrix Capabilities</Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* 3. SERVICES SECTION */}
+            <section className="py-24 bg-brand-50" id="services">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center max-w-3xl mx-auto mb-16">
+                        <h2 className="text-brand-accent font-bold uppercase tracking-wider mb-2">Our Services</h2>
+                        <h3 className="text-4xl font-black text-brand-950">Industrial & Residential Solutions</h3>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+                    <motion.div 
+                        initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+                    >
                         {[
-                            { id: 'welding', title: 'Heavy Welding', icon: <Zap />, color: 'from-brand-accent/20 to-transparent' },
-                            { id: 'roofing', title: 'Metal Roofing', icon: <Hammer />, color: 'from-blue-500/10 to-transparent' },
-                            { id: 'truss', title: 'Truss Systems', icon: <Construction />, color: 'from-emerald-500/10 to-transparent' },
-                            { id: 'fabrication', title: 'Steel Fab', icon: <Drill />, color: 'from-orange-500/10 to-transparent' },
-                        ].map((service, idx) => (
-                            <motion.div key={service.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} viewport={{ once: true }}>
-                                <Link to={`/services?type=${service.id}`} className="block h-full group">
-                                    <div className="h-full bg-white/[0.02] border border-white/5 rounded-[4rem] p-12 transition-all group-hover:bg-brand-accent group-hover:border-brand-accent group-hover:-translate-y-6 shadow-2xl">
-                                        <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center mb-12 bg-gradient-to-br ${service.color} group-hover:bg-brand-950 transition-all shadow-xl shadow-black/40`}>
-                                            <div className="text-brand-accent group-hover:scale-125 transition-transform">{React.cloneElement(service.icon, { size: 36 })}</div>
-                                        </div>
-                                        <h3 className="text-3xl font-black uppercase tracking-tighter text-white group-hover:text-brand-950 mb-6 italic transition-colors">
-                                            {service.title}
-                                        </h3>
-                                        <p className="text-[11px] font-black text-gray-600 group-hover:text-brand-950 uppercase tracking-widest leading-loose font-bold">
-                                            Critical path execution for high-pressure heavy environments.
-                                        </p>
-                                    </div>
-                                </Link>
+                            { title: 'Steel Fabrication', icon: <Settings className="w-8 h-8"/>, desc: 'Heavy structural steel fabrication for industrial frameworks and construction projects.' },
+                            { title: 'Welding Services', icon: <Zap className="w-8 h-8"/>, desc: 'Precision TIG and MIG welding by certified professionals for robust joins.' },
+                            { title: 'Gate & Grill Works', icon: <Shield className="w-8 h-8"/>, desc: 'Custom designed residential and commercial gates, rolling shutters, and security grills.' },
+                            { title: 'Industrial Maintenance', icon: <Wrench className="w-8 h-8"/>, desc: 'On-site factory maintenance, machinery repair, and pipeline welding.' },
+                        ].map((srv, idx) => (
+                            <motion.div key={idx} variants={fadeIn} className="bg-white p-8 rounded-2xl shadow-lg border border-brand-100 hover:-translate-y-2 transition-transform duration-300">
+                                <div className="w-16 h-16 bg-brand-accent/10 rounded-xl flex items-center justify-center text-brand-accent mb-6">
+                                    {srv.icon}
+                                </div>
+                                <h4 className="text-xl font-bold text-brand-950 mb-3">{srv.title}</h4>
+                                <p className="text-brand-600">{srv.desc}</p>
                             </motion.div>
                         ))}
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
-            {/* PERFORMANCE STRIP */}
-            <section className="bg-brand-accent py-32 relative overflow-hidden border-y-[2px] border-black">
-                <div className="max-w-7xl mx-auto px-6 relative z-10">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-20 lg:gap-0">
-                        {liveStats.map((stat, i) => (
-                            <div key={i} className={`flex flex-col items-center justify-center text-brand-950 px-10 ${i !== liveStats.length - 1 ? 'lg:border-r-2 lg:border-brand-950/20' : ''}`}>
-                                <div className="mb-6 opacity-40">{stat.icon}</div>
-                                <div className="text-6xl md:text-8xl font-black tracking-tighter italic leading-none mb-4">
-                                    {stat.value}
-                                </div>
-                                <div className="text-[11px] font-black uppercase tracking-[0.5em] text-center opacity-70">
-                                    {stat.label}
+            {/* 4. PORTFOLIO / GALLERY */}
+            <section className="py-24 bg-brand-950 text-white" id="portfolio">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-end mb-12">
+                        <div>
+                            <h2 className="text-brand-accent font-bold uppercase tracking-wider mb-2">Portfolio</h2>
+                            <h3 className="text-4xl font-black">Our Recent Works</h3>
+                        </div>
+                        <Link to="/projects" className="hidden sm:flex text-brand-300 hover:text-brand-accent transition-colors items-center gap-2">
+                            View All Projects <ArrowRight className="w-4 h-4"/>
+                        </Link>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[
+                            { img: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=800&h=600&fit=crop', title: 'Industrial Steel Structure' },
+                            { img: 'https://images.unsplash.com/photo-1541888087405-ebcfca2be2b1?w=800&h=600&fit=crop', title: 'Pipeline Welding' },
+                            { img: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&h=600&fit=crop', title: 'Factory Roofing Deck' },
+                            { img: 'https://images.unsplash.com/photo-1510265236892-329bfd7de7a1?w=800&h=600&fit=crop', title: 'Custom Iron Gates' },
+                            { img: 'https://images.unsplash.com/photo-1590496793907-9b24479abccb?w=800&h=600&fit=crop', title: 'Commercial Grills' },
+                            { img: 'https://images.unsplash.com/photo-1621213349942-0f723e421cd0?w=800&h=600&fit=crop', title: 'On-site Repair Unit' },
+                        ].map((item, i) => (
+                            <div key={i} className="group relative rounded-xl overflow-hidden aspect-[4/3] bg-brand-800">
+                                <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                                    <h4 className="text-xl font-bold">{item.title}</h4>
                                 </div>
                             </div>
                         ))}
@@ -255,39 +146,148 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* FINAL DEPLOYMENT CTA */}
-            <section className="py-60 relative px-4 text-center overflow-hidden">
-                <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-brand-accent/10 via-transparent to-transparent opacity-50"></div>
-                <div className="max-w-4xl mx-auto relative z-10">
-                    <motion.div 
-                       animate={{ y: [0, -10, 0] }}
-                       transition={{ duration: 4, repeat: Infinity }}
-                    >
-                        <HardHat className="w-24 h-24 text-brand-accent mx-auto mb-16 opacity-40 drop-shadow-[0_0_20px_#ffb400]" />
-                    </motion.div>
-                    
-                    <h2 className="text-7xl md:text-9xl font-black uppercase tracking-tighter text-white mb-12 leading-[0.8] italic">
-                        REINFORCE <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-white">EVERYTHING.</span>
-                    </h2>
-                    <p className="text-xl md:text-2xl text-gray-500 font-bold uppercase tracking-widest mb-24 max-w-2xl mx-auto leading-relaxed italic opacity-80">
-                        Implement precision-guided engineering into your next heavy-duty deployment.
-                    </p>
-                    <div className="inline-block relative">
-                        <SparkButton to="/quote">Initiate Project Protocol</SparkButton>
+            {/* 5. WHY CHOOSE US */}
+            <section className="py-24 bg-white" id="why-us">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                        <div className="order-2 lg:order-1 relative h-full min-h-[400px]">
+                            <img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=800&h=800&fit=crop" alt="Experience" className="absolute inset-0 w-full h-full object-cover rounded-2xl shadow-xl" />
+                            <div className="absolute -bottom-8 -right-8 bg-brand-accent p-8 rounded-2xl text-white shadow-2xl hidden md:block">
+                                <div className="text-5xl font-black mb-2">25+</div>
+                                <div className="font-bold uppercase tracking-wider text-sm">Years of Excellence</div>
+                            </div>
+                        </div>
+
+                        <div className="order-1 lg:order-2">
+                            <h2 className="text-brand-accent font-bold uppercase tracking-wider mb-2">Why Choose Us</h2>
+                            <h3 className="text-4xl font-black text-brand-950 mb-8">The Benchmark of Reliability</h3>
+                            
+                            <div className="space-y-6">
+                                {[
+                                    { title: '25+ Years Experience', desc: 'Decades of field-tested expertise in heavy and structural works.', icon: <Award className="w-6 h-6"/> },
+                                    { title: 'Skilled Workers', desc: 'Highly trained and certified welding professionals.', icon: <CheckCircle className="w-6 h-6"/> },
+                                    { title: 'On-Time Delivery', desc: 'Strict adherence to project timelines and schedules.', icon: <CheckCircle className="w-6 h-6"/> },
+                                    { title: 'Affordable Pricing', desc: 'Budget-friendly quotes with no hidden costs.', icon: <CheckCircle className="w-6 h-6"/> },
+                                    { title: 'On-Site Service Available', desc: 'Mobile fabrication units that come right to your location.', icon: <CheckCircle className="w-6 h-6"/> },
+                                ].map((item, idx) => (
+                                    <div key={idx} className="flex gap-4 items-start">
+                                        <div className="mt-1 text-brand-accent">{item.icon}</div>
+                                        <div>
+                                            <h4 className="text-lg font-bold text-brand-950">{item.title}</h4>
+                                            <p className="text-brand-600 text-sm mt-1">{item.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <style jsx>{`
-                @keyframes shimmer {
-                    0% { background-position: -200% 0; }
-                    100% { background-position: 200% 0; }
-                }
-                .animate-shimmer {
-                    animation: shimmer 15s linear infinite;
-                }
-            `}</style>
+            {/* 6. TESTIMONIALS */}
+            <section className="py-24 bg-brand-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center max-w-3xl mx-auto mb-16">
+                        <h2 className="text-brand-accent font-bold uppercase tracking-wider mb-2">Testimonials</h2>
+                        <h3 className="text-4xl font-black text-brand-950">Words from Our Clients</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {[
+                            { name: 'Rajeev Nair', review: 'Exceptional service! They did the entire structural roofing for our new warehouse. Highly professional and completed the project before the deadline.' },
+                            { name: 'Mathew Thomas', review: 'Krishna Engineering Works replaced my old residential gates with stunning modern designs. The finish is extremely durable and budget-friendly.' },
+                            { name: 'Siddharth Menon', review: 'Their on-site welding team saved our factory from a major production halt. Very fast response and high-quality repair work.' },
+                        ].map((review, i) => (
+                            <div key={i} className="bg-white p-8 rounded-2xl shadow-md border border-brand-100">
+                                <div className="flex text-yellow-400 mb-4">
+                                    {[...Array(5)].map((_, j) => <Star key={j} className="w-5 h-5 fill-current" />)}
+                                </div>
+                                <p className="text-brand-600 italic mb-6">"{review.review}"</p>
+                                <div className="font-bold text-brand-950">- {review.name}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* 7. CONTACT SECTION */}
+            <section className="py-24 bg-white" id="contact">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                        <div>
+                            <h2 className="text-brand-accent font-bold uppercase tracking-wider mb-2">Contact Us</h2>
+                            <h3 className="text-4xl font-black text-brand-950 mb-6">Get in Touch for a Free Consultation</h3>
+                            <p className="text-brand-600 mb-10 text-lg">
+                                Have a project in mind? Let's discuss your requirements. We provide estimations and consultations across Kerala.
+                            </p>
+
+                            <div className="space-y-6">
+                                <a href="tel:+919446000000" className="flex items-center gap-4 group">
+                                    <div className="w-14 h-14 bg-brand-50 text-brand-accent rounded-full flex items-center justify-center group-hover:bg-brand-accent group-hover:text-white transition-colors">
+                                        <Phone className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-brand-500 font-medium tracking-wider uppercase">Direct Line</div>
+                                        <div className="text-xl font-bold text-brand-950">+91 9446 000 000</div>
+                                    </div>
+                                </a>
+                                <a href="https://wa.me/919446000000" className="flex items-center gap-4 group">
+                                    <div className="w-14 h-14 bg-brand-50 text-green-500 rounded-full flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors">
+                                        <MessageCircle className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-brand-500 font-medium tracking-wider uppercase">WhatsApp</div>
+                                        <div className="text-xl font-bold text-brand-950">+91 9446 000 000</div>
+                                    </div>
+                                </a>
+                                <div className="flex items-center gap-4 group">
+                                    <div className="w-14 h-14 bg-brand-50 text-brand-accent rounded-full flex items-center justify-center group-hover:bg-brand-accent group-hover:text-white transition-colors">
+                                        <MapPin className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-brand-500 font-medium tracking-wider uppercase">Location</div>
+                                        <div className="text-lg font-bold text-brand-950">Kochi, Kerala, India</div>
+                                    </div>
+                                </div>
+                                <div className="mt-4 rounded-2xl overflow-hidden h-48 border border-brand-200">
+                                    <iframe 
+                                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d251482.68658826724!2d76.16084920612662!3d9.982342759902633!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b080d514abec6bf%3A0xbd582caa5844192!2sKochi%2C%20Kerala!5e0!3m2!1sen!2sin!4v1709230552399!5m2!1sen!2sin" 
+                                        width="100%" 
+                                        height="100%" 
+                                        style={{ border: 0 }} 
+                                        allowFullScreen="" 
+                                        loading="lazy" 
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        title="Kochi Location Map">
+                                    </iframe>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-brand-50 p-8 md:p-10 rounded-3xl border border-brand-100 shadow-xl">
+                            <h4 className="text-2xl font-black text-brand-950 mb-6">Send a Message</h4>
+                            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert("Message sent successfully!"); }}>
+                                <div>
+                                    <label className="block text-sm font-bold text-brand-700 mb-2">Full Name</label>
+                                    <input type="text" className="w-full px-4 py-3 rounded-xl border border-brand-200 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" placeholder="John Doe" required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-brand-700 mb-2">Phone Number</label>
+                                    <input type="tel" className="w-full px-4 py-3 rounded-xl border border-brand-200 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" placeholder="+91 00000 00000" required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-brand-700 mb-2">Message</label>
+                                    <textarea rows="4" className="w-full px-4 py-3 rounded-xl border border-brand-200 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" placeholder="Tell us about your project..." required></textarea>
+                                </div>
+                                <button type="submit" className="w-full py-4 bg-brand-accent hover:bg-brand-accentHover text-white font-bold rounded-xl transition-colors shadow-lg shadow-brand-accent/30 mt-4">
+                                    Submit Request
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
         </div>
     );
 };

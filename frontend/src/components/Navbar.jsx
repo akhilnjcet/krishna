@@ -77,6 +77,13 @@ const Navbar = () => {
                                     >
                                         Register
                                     </Link>
+                                    <a
+                                        href="tel:+919446000000"
+                                        className="text-brand-accent border-2 border-brand-accent hover:bg-brand-accent hover:text-brand-950 px-6 py-2.5 text-sm font-bold uppercase tracking-wider transition-colors ml-2 mr-2"
+                                        style={{ clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0% 100%)' }}
+                                    >
+                                        Call Now
+                                    </a>
                                     <Link
                                         to="/login"
                                         className="bg-brand-accent hover:bg-brand-accentHover text-brand-950 px-6 py-2.5 text-sm font-bold uppercase tracking-wider transition-colors"
@@ -146,6 +153,13 @@ const Navbar = () => {
                                         >
                                             Register
                                         </Link>
+                                        <a
+                                            href="tel:+919446000000"
+                                            className="block w-full text-center border-2 border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-950 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors"
+                                            onClick={() => setIsOpen(false)}
+                                        >
+                                            Call Now
+                                        </a>
                                         <Link
                                             to="/login"
                                             className="block w-full text-center bg-brand-accent hover:bg-brand-accentHover text-brand-950 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors"
