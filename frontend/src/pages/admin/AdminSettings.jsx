@@ -24,6 +24,7 @@ const AdminSettings = () => {
         social_in: '',
         social_fb: '',
         social_x: '',
+        map_embed_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d251482.68658826724!2d76.16084920612662!3d9.982342759902633!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b080d514abec6bf%3A0xbd582caa5844192!2sKochi%2C%20Kerala!5e0!3m2!1sen!2sin!4v1709230552399!5m2!1sen!2sin',
         // Engagement Relay (Floating)
         floating_whatsapp: '919446000000',
         floating_phone: '+919446000000',
@@ -335,6 +336,13 @@ const AdminSettings = () => {
                                             onChange={(e) => updateField('footer_email', e.target.value)}
                                             className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-bold text-gray-400 focus:border-brand-accent/50 outline-none transition-all"
                                             placeholder="Email"
+                                        />
+                                        <textarea 
+                                            value={settings.map_embed_url}
+                                            onChange={(e) => updateField('map_embed_url', e.target.value)}
+                                            rows={2}
+                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-2xl p-4 text-sm font-bold text-gray-400 focus:border-brand-accent/50 outline-none transition-all"
+                                            placeholder="Google Maps Embed URL (src parameter)"
                                         />
                                     </div>
                                 </div>

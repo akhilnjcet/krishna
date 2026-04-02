@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -7,8 +7,35 @@ import {
     Star, ArrowRight, Wrench, Shield, Zap, Settings, Award 
 } from 'lucide-react';
 import FloatingContact from '../components/FloatingContact';
+import api from '../services/api';
 
 const Home = () => {
+    const [settings, setSettings] = useState({
+        about_title: 'Building Trust Through Quality Craftsmanship',
+        about_content: "For over 25 years, **Krishna Engineering Works** has been a trusted pioneer in the fabrication, welding, and industrial services sector across Kerala. We have built our reputation on a foundation of unyielding quality, remarkable durability, and unwavering commitment to customer satisfaction.",
+        map_embed_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d251482.68658826724!2d76.16084920612662!3d9.982342759902633!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b080d514abec6bf%3A0xbd582caa5844192!2sKochi%2C%20Kerala!5e0!3m2!1sen!2sin!4v1709230552399!5m2!1sen!2sin',
+        stat_years: '25+',
+        footer_address: 'Kochi, Kerala, India',
+        footer_phone: '+91 9446 000 000',
+        floating_whatsapp: '919446000000'
+    });
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await api.get('/settings/public');
+                if (res.data && res.data.length > 0) {
+                    const settingsMap = {};
+                    res.data.forEach(s => settingsMap[s.key] = s.value);
+                    setSettings(prev => ({ ...prev, ...settingsMap }));
+                }
+            } catch (err) {
+                console.error("Failed to fetch settings", err);
+            }
+        };
+        fetchSettings();
+    }, []);
+
     const fadeIn = {
         hidden: { opacity: 0, y: 30 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
@@ -64,9 +91,9 @@ const Home = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn}>
                             <h2 className="text-brand-accent font-bold uppercase tracking-wider mb-2">About Us</h2>
-                            <h3 className="text-4xl font-black text-brand-950 mb-6">Building Trust Through Quality Craftsmanship</h3>
+                            <h3 className="text-4xl font-black text-brand-950 mb-6">{settings.about_title}</h3>
                             <p className="text-brand-600 text-lg leading-relaxed mb-6">
-                                For over 25 years, <strong>Krishna Engineering Works</strong> has been a trusted pioneer in the fabrication, welding, and industrial services sector across Kerala. We have built our reputation on a foundation of unyielding quality, remarkable durability, and unwavering commitment to customer satisfaction.
+                                {settings.about_content}
                             </p>
                             <div className="bg-brand-50 border-l-4 border-brand-accent p-6 rounded-r-lg">
                                 <p className="text-brand-800 font-medium">
@@ -153,7 +180,7 @@ const Home = () => {
                         <div className="order-2 lg:order-1 relative h-full min-h-[400px]">
                             <img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=800&h=800&fit=crop" alt="Experience" className="absolute inset-0 w-full h-full object-cover rounded-2xl shadow-xl" />
                             <div className="absolute -bottom-8 -right-8 bg-brand-accent p-8 rounded-2xl text-white shadow-2xl hidden md:block">
-                                <div className="text-5xl font-black mb-2">25+</div>
+                                <div className="text-5xl font-black mb-2">{settings.stat_years}</div>
                                 <div className="font-bold uppercase tracking-wider text-sm">Years of Excellence</div>
                             </div>
                         </div>
@@ -222,22 +249,22 @@ const Home = () => {
                             </p>
 
                             <div className="space-y-6">
-                                <a href="tel:+919446000000" className="flex items-center gap-4 group">
+                                <a href={`tel:${settings.footer_phone}`} className="flex items-center gap-4 group">
                                     <div className="w-14 h-14 bg-brand-50 text-brand-accent rounded-full flex items-center justify-center group-hover:bg-brand-accent group-hover:text-white transition-colors">
                                         <Phone className="w-6 h-6" />
                                     </div>
                                     <div>
                                         <div className="text-sm text-brand-500 font-medium tracking-wider uppercase">Direct Line</div>
-                                        <div className="text-xl font-bold text-brand-950">+91 9446 000 000</div>
+                                        <div className="text-xl font-bold text-brand-950">{settings.footer_phone}</div>
                                     </div>
                                 </a>
-                                <a href="https://wa.me/919446000000" className="flex items-center gap-4 group">
+                                <a href={`https://wa.me/${settings.floating_whatsapp}`} className="flex items-center gap-4 group">
                                     <div className="w-14 h-14 bg-brand-50 text-green-500 rounded-full flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors">
                                         <MessageCircle className="w-6 h-6" />
                                     </div>
                                     <div>
                                         <div className="text-sm text-brand-500 font-medium tracking-wider uppercase">WhatsApp</div>
-                                        <div className="text-xl font-bold text-brand-950">+91 9446 000 000</div>
+                                        <div className="text-xl font-bold text-brand-950">+{settings.floating_whatsapp}</div>
                                     </div>
                                 </a>
                                 <div className="flex items-center gap-4 group">
@@ -246,19 +273,19 @@ const Home = () => {
                                     </div>
                                     <div>
                                         <div className="text-sm text-brand-500 font-medium tracking-wider uppercase">Location</div>
-                                        <div className="text-lg font-bold text-brand-950">Kochi, Kerala, India</div>
+                                        <div className="text-lg font-bold text-brand-950">{settings.footer_address}</div>
                                     </div>
                                 </div>
                                 <div className="mt-4 rounded-2xl overflow-hidden h-48 border border-brand-200">
                                     <iframe 
-                                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d251482.68658826724!2d76.16084920612662!3d9.982342759902633!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b080d514abec6bf%3A0xbd582caa5844192!2sKochi%2C%20Kerala!5e0!3m2!1sen!2sin!4v1709230552399!5m2!1sen!2sin" 
+                                        src={settings.map_embed_url} 
                                         width="100%" 
                                         height="100%" 
                                         style={{ border: 0 }} 
                                         allowFullScreen="" 
                                         loading="lazy" 
                                         referrerPolicy="no-referrer-when-downgrade"
-                                        title="Kochi Location Map">
+                                        title="Location Map">
                                     </iframe>
                                 </div>
                             </div>
