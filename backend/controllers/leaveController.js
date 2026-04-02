@@ -1,4 +1,5 @@
 const Leave = require('../models/Leave');
+const { sendStatusUpdateEmail } = require('../services/emailService');
 
 exports.applyLeave = async (req, res) => {
     try {
@@ -34,9 +35,16 @@ exports.updateLeaveStatus = async (req, res) => {
             req.params.id,
             { status: req.body.status },
             { new: true }
-        );
+        ).populate('staffId', 'name email');
+        
         if (!leave) return res.status(404).json({ message: 'Leave not found' });
+        
         res.json(leave);
+
+        // Notify Staff
+        if (req.body.status && leave.staffId?.email) {
+            sendStatusUpdateEmail(leave.staffId.email, leave.staffId.name, 'Leave Request', req.body.status).catch(console.error);
+        }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

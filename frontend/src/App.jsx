@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -8,18 +9,18 @@ import Projects from './pages/Projects';
 import Quote from './pages/Quote';
 import Blog from './pages/Blog';
 import Login from './pages/Login';
-import StaffLogin from './pages/StaffLogin';
-import AdminLayout from './layouts/AdminLayout';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import CustomerLayout from './layouts/CustomerLayout';
-import StaffDashboard from './pages/staff/StaffDashboard';
-import StaffTasks from './pages/staff/StaffTasks';
-import StaffLeave from './pages/staff/StaffLeave';
-import StaffFinance from './pages/staff/StaffFinance';
-import CustomerDashboard from './pages/customer/CustomerDashboard';
-import CustomerQuotes from './pages/customer/CustomerQuotes';
-import InvoiceView from './pages/customer/InvoiceView';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import StaffLogin from './pages/StaffLogin';
+import LegalPage from './pages/LegalPage';
+
+// Layouts
+import AdminLayout from './layouts/AdminLayout';
+import CustomerLayout from './layouts/CustomerLayout';
+import StaffLayout from './layouts/StaffLayout';
+
+// Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProjects from './pages/admin/AdminProjects';
 import AdminPortfolio from './pages/admin/AdminPortfolio';
 import AdminQuotes from './pages/admin/AdminQuotes';
@@ -32,14 +33,29 @@ import AdminSettings from './pages/admin/AdminSettings';
 import AdminFinance from './pages/admin/AdminFinance';
 import AdminProgress from './pages/admin/AdminProgress';
 import AdminBlog from './pages/admin/AdminBlog';
-import StaffProgress from './pages/staff/StaffProgress';
-import LegalPage from './pages/LegalPage';
 import AdminAIChat from './pages/admin/AdminAIChat';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+// Staff Pages
+import StaffDashboard from './pages/staff/StaffDashboard';
+import StaffTasks from './pages/staff/StaffTasks';
+import StaffLeave from './pages/staff/StaffLeave';
+import StaffFinance from './pages/staff/StaffFinance';
+import StaffProgress from './pages/staff/StaffProgress';
+import AttendanceScanner from './pages/staff/AttendanceScanner';
+
+// Customer Pages
+import CustomerDashboard from './pages/customer/CustomerDashboard';
+import CustomerQuotes from './pages/customer/CustomerQuotes';
+import InvoiceView from './pages/customer/InvoiceView';
+
+// Components
 import AIChatWidget from './components/AIChatWidget';
 
 import useAuthStore from './stores/authStore';
-import { useEffect } from 'react';
+
+// Chat
+import SupportHub from './pages/chat/SupportHub';
+import ChatRequestsManager from './pages/chat/ChatRequestsManager';
 
 const Layout = ({ children }) => (
   <div className="min-h-screen flex flex-col font-sans relative">
@@ -59,7 +75,7 @@ const SecurityWrapper = ({ children }) => {
     if (!isAuthenticated) return;
 
     let timeoutId;
-    const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 Minutes
+    const INACTIVITY_LIMIT = 15 * 60 * 1000;
 
     const resetTimer = () => {
       if (timeoutId) clearTimeout(timeoutId);
@@ -70,7 +86,6 @@ const SecurityWrapper = ({ children }) => {
       }, INACTIVITY_LIMIT);
     };
 
-    // Tracking frequencies
     const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
     events.forEach(event => window.addEventListener(event, resetTimer));
     
@@ -82,10 +97,8 @@ const SecurityWrapper = ({ children }) => {
     };
   }, [isAuthenticated, logout]);
 
-  // Back-button frequency protection
   useEffect(() => {
     if (!isAuthenticated) {
-        // Clear history to prevent back-button re-entry
         window.history.replaceState(null, '', window.location.href);
     }
   }, [isAuthenticated]);
@@ -100,50 +113,60 @@ const App = () => {
         <SecurityWrapper>
           <Routes>
             <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/quote" element={<Quote />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/staff-login" element={<StaffLogin />} />
-          <Route path="/terms" element={<LegalPage type="terms" />} />
-          <Route path="/privacy" element={<LegalPage type="privacy" />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/quote" element={<Quote />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/staff-login" element={<StaffLogin />} />
+            <Route path="/terms" element={<LegalPage type="terms" />} />
+            <Route path="/privacy" element={<LegalPage type="privacy" />} />
 
-          {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="projects" element={<AdminProjects />} />
-            <Route path="portfolio" element={<AdminPortfolio />} />
-            <Route path="quotes" element={<AdminQuotes />} />
-            <Route path="staff" element={<AdminStaff />} />
-            <Route path="invoices" element={<AdminInvoices />} />
-            <Route path="logs" element={<AttendanceLogs />} />
-            <Route path="reports" element={<AdminReports />} />
-            <Route path="leave" element={<AdminLeave />} />
-            <Route path="settings" element={<AdminSettings />} />
-            <Route path="finance" element={<AdminFinance />} />
-            <Route path="progress" element={<AdminProgress />} />
-            <Route path="blog" element={<AdminBlog />} />
-            <Route path="chat" element={<AdminAIChat />} />
-          </Route>
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="projects" element={<AdminProjects />} />
+              <Route path="portfolio" element={<AdminPortfolio />} />
+              <Route path="quotes" element={<AdminQuotes />} />
+              <Route path="staff" element={<AdminStaff />} />
+              <Route path="invoices" element={<AdminInvoices />} />
+              <Route path="logs" element={<AttendanceLogs />} />
+              <Route path="reports" element={<AdminReports />} />
+              <Route path="leave" element={<AdminLeave />} />
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="finance" element={<AdminFinance />} />
+              <Route path="progress" element={<AdminProgress />} />
+              <Route path="blog" element={<AdminBlog />} />
+              <Route path="chat" element={<AdminAIChat />} />
+              <Route path="support" element={<ChatRequestsManager />} />
+              <Route path="live-chat" element={<SupportHub />} />
+            </Route>
 
-          <Route path="/staff" element={<StaffDashboard />} />
-          <Route path="/staff/tasks" element={<StaffTasks />} />
-          <Route path="/staff/leave" element={<StaffLeave />} />
-          <Route path="/staff/progress" element={<StaffProgress />} />
-          <Route path="/staff/salary" element={<StaffFinance />} />
-          
-          {/* Customer Routes */}
-          <Route path="/customer" element={<CustomerLayout />}>
-            <Route index element={<CustomerDashboard />} />
-            <Route path="quotes" element={<CustomerQuotes />} />
-            <Route path="invoice/:id" element={<InvoiceView />} />
-          </Route>
+            {/* Staff Routes */}
+            <Route path="/staff" element={<StaffLayout />}>
+              <Route index element={<StaffDashboard />} />
+              <Route path="attendance" element={<AttendanceScanner />} />
+              <Route path="tasks" element={<StaffTasks />} />
+              <Route path="leave" element={<StaffLeave />} />
+              <Route path="progress" element={<StaffProgress />} />
+              <Route path="salary" element={<StaffFinance />} />
+              <Route path="contacts" element={<div className="p-8">Customer Contact Panel Coming Soon</div>} />
+              <Route path="chat" element={<SupportHub />} />
+            </Route>
 
-          {/* Fallback for others */}
-          <Route path="*" element={<div className="p-8 text-center text-2xl h-96 flex items-center justify-center">Page Not Found</div>} />
+            {/* Customer Routes */}
+            <Route path="/customer" element={<CustomerLayout />}>
+              <Route index element={<CustomerDashboard />} />
+              <Route path="quotes" element={<CustomerQuotes />} />
+              <Route path="invoice/:id" element={<InvoiceView />} />
+              <Route path="support" element={<SupportHub />} />
+            </Route>
+
+            {/* Fallback */}
+            <Route path="*" element={<div className="p-8 text-center text-2xl h-96 flex items-center justify-center">Page Not Found</div>} />
           </Routes>
         </SecurityWrapper>
       </Layout>
@@ -152,4 +175,3 @@ const App = () => {
 };
 
 export default App;
-

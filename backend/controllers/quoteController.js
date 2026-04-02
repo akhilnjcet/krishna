@@ -1,4 +1,5 @@
 const Quote = require('../models/Quote');
+const { sendStatusUpdateEmail } = require('../services/emailService');
 
 // @desc    Submit a quote (Public)
 // @route   POST /api/quotes
@@ -25,7 +26,7 @@ exports.submitQuote = async (req, res) => {
 // @access  Private/Admin
 exports.getQuotes = async (req, res) => {
     try {
-        const quotes = await Quote.find().sort({ createdAt: -1 });
+        const quotes = await Quote.find().populate('userId', 'name email').sort({ createdAt: -1 });
         res.json(quotes);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -49,9 +50,15 @@ exports.getMyQuotes = async (req, res) => {
 // @access  Private/Admin
 exports.updateQuote = async (req, res) => {
     try {
-        const quote = await Quote.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const quote = await Quote.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('userId', 'name email');
         if (!quote) return res.status(404).json({ message: 'Quote not found' });
+        
         res.json(quote);
+
+        // Notify Customer if status changed
+        if (req.body.status && quote.userId?.email) {
+            sendStatusUpdateEmail(quote.userId.email, quote.userId.name, `${quote.serviceType} Quote`, req.body.status).catch(console.error);
+        }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

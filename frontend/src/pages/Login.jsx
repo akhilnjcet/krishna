@@ -100,6 +100,13 @@ const Login = () => {
                             <div>
                                 <div className="flex justify-between items-center mb-2">
                                     <label className="block text-[10px] uppercase tracking-widest font-black text-brand-600">Secure Key [Passcode]</label>
+                                    <button 
+                                        type="button"
+                                        onClick={() => navigate('/forgot-password')}
+                                        className="text-[9px] font-black uppercase text-brand-400 hover:text-brand-950 transition-colors"
+                                    >
+                                        Forgot Passcode?
+                                    </button>
                                 </div>
                                 <input
                                     type="password"

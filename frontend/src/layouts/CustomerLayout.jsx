@@ -20,6 +20,7 @@ const CustomerLayout = () => {
         { name: 'Track Status', path: '/customer/quotes', icon: '▥' },
         { name: 'Intelligence Feed', path: '/blog', icon: '▩' },
         { name: 'Request Quote', path: '/quote', icon: '¥' },
+        { name: 'Support Chat', path: '/customer/support', icon: '⚐' },
     ];
 
     return (

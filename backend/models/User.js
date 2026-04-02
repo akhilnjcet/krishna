@@ -18,7 +18,11 @@ const userSchema = new mongoose.Schema({
     profilePhoto: { type: String },
 
     createdAt: { type: Date, default: Date.now },
-    last_login: { type: Date }
+    last_login: { type: Date },
+    
+    // Email OTP Auth Fields
+    resetOTP: { type: String },
+    otpExpiry: { type: Date }
 });
 
 module.exports = mongoose.model('User', userSchema);

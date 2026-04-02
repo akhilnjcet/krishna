@@ -28,8 +28,10 @@ const AdminLayout = () => {
         { name: 'Production', path: '/admin/progress', icon: '◰' },
         { name: 'Staff', path: '/admin/staff', icon: '♙' },
         { name: 'Logs', path: '/admin/logs', icon: '☷' },
-        { name: 'Financials', path: '/admin/finance', icon: '$' },
-        { name: 'AI Chat', path: '/admin/chat', icon: '⎋' },
+        {name: 'Financials', path: '/admin/finance', icon: '$' },
+        {name: 'AI Chat', path: '/admin/chat', icon: '⎋' },
+        {name: 'Inbound Requests', path: '/admin/support', icon: '⚐' },
+        {name: 'Global Chat', path: '/admin/live-chat', icon: '▣' },
     ];
 
     return (

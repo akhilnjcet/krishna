@@ -54,7 +54,8 @@ const AdminAIChat = () => {
             const res = await api.post('/faqs', newFaq);
             setFaqs([res.data, ...faqs]);
             setNewFaq({ question: '', answer: '' });
-        } catch (err) {
+        } catch (error) {
+            console.error(error);
             alert("Failed to add FAQ");
         }
     };
@@ -64,7 +65,8 @@ const AdminAIChat = () => {
         try {
             await api.delete(`/faqs/${id}`);
             setFaqs(faqs.filter(f => f._id !== id));
-        } catch (err) {
+        } catch (error) {
+            console.error(error);
             alert("Failed to delete FAQ");
         }
     };
@@ -74,7 +76,8 @@ const AdminAIChat = () => {
         try {
             await api.delete(`/leads/${id}`);
             setLeads(leads.filter(l => l._id !== id));
-        } catch (err) {
+        } catch (error) {
+            console.error(error);
             alert("Failed to delete Lead");
         }
     };

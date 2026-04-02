@@ -230,12 +230,35 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* 6. TESTIMONIALS */}
+            {/* 6. GOOGLE REVIEWS */}
             <section className="py-24 bg-brand-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center max-w-3xl mx-auto mb-16">
-                        <h2 className="text-brand-accent font-bold uppercase tracking-wider mb-2">Testimonials</h2>
-                        <h3 className="text-4xl font-black text-brand-950">Words from Our Clients</h3>
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-6">
+                        <div className="text-center md:text-left">
+                            <h2 className="text-brand-accent font-bold uppercase tracking-wider mb-2">Customer Reviews</h2>
+                            <h3 className="text-4xl font-black text-brand-950">Trusted by Kerala</h3>
+                            <p className="mt-2 text-brand-600 font-bold bg-white inline-block px-4 py-2 rounded-full shadow-sm border border-brand-200">
+                                ⭐ 4.8/5 based on Google Reviews
+                            </p>
+                        </div>
+                        <div className="flex gap-4">
+                            <a 
+                                href="https://g.page/r/CfL2cyKPQ0ThEAI/review" 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="bg-brand-accent text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest shadow-lg hover:bg-brand-accentHover transition-all hover:-translate-y-1"
+                            >
+                                Write a Review
+                            </a>
+                            <a 
+                                href="https://g.page/r/CfL2cyKPQ0ThEAI/review" 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="bg-white text-brand-950 border-2 border-brand-200 px-6 py-3 rounded-xl font-bold uppercase tracking-widest hover:border-brand-950 transition-all hover:-translate-y-1"
+                            >
+                                View All
+                            </a>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -243,13 +266,25 @@ const Home = () => {
                             { name: 'Rajeev Nair', review: 'Exceptional service! They did the entire structural roofing for our new warehouse. Highly professional and completed the project before the deadline.' },
                             { name: 'Mathew Thomas', review: 'Krishna Engineering Works replaced my old residential gates with stunning modern designs. The finish is extremely durable and budget-friendly.' },
                             { name: 'Siddharth Menon', review: 'Their on-site welding team saved our factory from a major production halt. Very fast response and high-quality repair work.' },
+                            { name: 'Anil Kumar', review: 'Great experience working with them. Affordable prices and very transparent quoting process. Will highly recommend for fabrication in Kochi.' },
+                            { name: 'Binoy Varghese', review: 'They fabricated custom racks for our showroom. Excellent finish and attention to detail. 5 stars.' },
+                            { name: 'Gokul Krishna', review: 'Best welding services in Ernakulam. The team is very skilled and the owner is directly involved in ensuring quality.' }
                         ].map((review, i) => (
-                            <div key={i} className="bg-white p-8 rounded-2xl shadow-md border border-brand-100">
+                            <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border-t-4 border-t-transparent hover:border-t-brand-accent hover:shadow-xl transition-all group relative">
+                                <MessageCircle className="absolute top-6 right-6 w-8 h-8 text-brand-100 group-hover:text-brand-accent/20 transition-colors" />
                                 <div className="flex text-yellow-400 mb-4">
                                     {[...Array(5)].map((_, j) => <Star key={j} className="w-5 h-5 fill-current" />)}
                                 </div>
-                                <p className="text-brand-600 italic mb-6">"{review.review}"</p>
-                                <div className="font-bold text-brand-950">- {review.name}</div>
+                                <p className="text-brand-600 font-medium mb-6 line-clamp-4">"{review.review}"</p>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-950 font-black">
+                                        {review.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-brand-950 text-sm leading-tight">{review.name}</div>
+                                        <div className="text-[10px] text-brand-400 font-bold uppercase">Google Reviewer</div>
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>

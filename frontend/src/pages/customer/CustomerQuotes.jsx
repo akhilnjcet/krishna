@@ -87,22 +87,55 @@ const CustomerQuotes = () => {
                                         </div>
                                     </div>
                                     
-                                    {/* TRACKING TIMELINE */}
-                                    <div className="py-6 border-y-2 border-dashed border-brand-100">
-                                        <div className="flex justify-between items-center relative gap-2">
+                                    {/* FLIPKART-STYLE VERTICAL TRACKING TIMELINE */}
+                                    <div className="py-6 mb-6">
+                                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-6">Live Work Tracking</p>
+                                        <div className="flex flex-col gap-0 relative">
+                                            {/* Vertical Connecting Line */}
+                                            <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-gray-200 z-0"></div>
+                                            
                                             {[
-                                                { label: 'Submitted', active: true },
-                                                { label: 'Under Review', active: quote.status === 'reviewed' || quote.status === 'accepted' || quote.status === 'rejected' },
-                                                { label: 'Finalized', active: quote.status === 'accepted' || quote.status === 'rejected' }
+                                                { 
+                                                    label: 'Application Received', 
+                                                    desc: 'We have received your project details.',
+                                                    active: true,
+                                                    date: new Date(quote.createdAt).toLocaleDateString()
+                                                },
+                                                { 
+                                                    label: 'Under Engineering Review', 
+                                                    desc: 'Our engineers are assessing requirements.',
+                                                    active: quote.status === 'reviewed' || quote.status === 'accepted' || quote.status === 'rejected'
+                                                },
+                                                { 
+                                                    label: quote.status === 'rejected' ? 'Application Declined' : 'Admin Approved', 
+                                                    desc: quote.status === 'rejected' ? 'We cannot proceed with this request.' : 'Quote verified and finalized by Admin.',
+                                                    active: quote.status === 'accepted' || quote.status === 'rejected'
+                                                },
+                                                { 
+                                                    label: 'Work Initialized', 
+                                                    desc: 'Project sent to shop floor for execution.',
+                                                    active: quote.status === 'accepted' && quote.progress // Need actual progress link, assume true if accepted
+                                                }
                                             ].map((step, idx) => (
-                                                <div key={idx} className="flex flex-col items-center gap-2 flex-1 relative z-10">
-                                                    <div className={`w-6 h-6 rounded-full border-4 flex items-center justify-center transition-all duration-500 ${step.active ? 'bg-brand-accent border-brand-950' : 'bg-white border-brand-100'}`}>
-                                                        {step.active && <div className="w-2 h-2 bg-brand-950 rounded-full" />}
+                                                <div key={idx} className="flex gap-6 relative z-10 pb-8 last:pb-0">
+                                                    <div className="flex flex-col items-center">
+                                                        <div className={`w-6 h-6 rounded-full border-4 flex items-center justify-center transition-all duration-500 shadow-sm ${step.active ? (quote.status === 'rejected' && idx === 2 ? 'bg-red-500 border-red-200' : 'bg-brand-accent border-brand-100') : 'bg-white border-gray-200'}`}>
+                                                            {step.active && <div className={`w-2 h-2 rounded-full ${quote.status === 'rejected' && idx === 2 ? 'bg-white' : 'bg-brand-950'}`} />}
+                                                        </div>
                                                     </div>
-                                                    <span className={`text-[8px] font-black uppercase tracking-tighter ${step.active ? 'text-brand-950' : 'text-gray-300'}`}>{step.label}</span>
+                                                    <div className="-mt-1 flex-1">
+                                                        <div className="flex justify-between items-start">
+                                                            <span className={`text-sm font-black uppercase tracking-tight ${step.active ? (quote.status === 'rejected' && idx === 2 ? 'text-red-500' : 'text-brand-950') : 'text-gray-400'}`}>
+                                                                {step.label}
+                                                            </span>
+                                                            {step.date && <span className="text-[9px] text-gray-400 font-bold uppercase">{step.date}</span>}
+                                                        </div>
+                                                        <p className={`text-xs font-bold leading-relaxed mt-1 ${step.active ? 'text-brand-600' : 'text-gray-300'}`}>
+                                                            {step.desc}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             ))}
-                                            <div className="absolute top-3 left-0 right-0 h-1 bg-brand-50 pointer-events-none -mt-0.5"></div>
                                         </div>
                                     </div>
 

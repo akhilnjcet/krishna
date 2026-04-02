@@ -3,6 +3,13 @@ const Attendance = require('../models/Attendance');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { sendAttendanceAlert } = require('../services/whatsappService');
+const { 
+    sendWelcomeEmail, 
+    sendPasswordResetOTP, 
+    sendLoginNotification, 
+    sendSignoutNotification, 
+    sendPasswordChangeConfirmation 
+} = require('../services/emailService');
 
 const generateToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret123', {
@@ -61,6 +68,84 @@ exports.register = async (req, res) => {
             role: user.role,
             token: generateToken(user._id, user.role),
         });
+
+        // Fire & Forget Welcome Email
+        if (email) {
+            sendWelcomeEmail(email, user.name).catch(console.error);
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            // Return 200 anyway for security (prevent email enumeration)
+            return res.status(200).json({ message: 'If that email exists, an OTP has been sent.' });
+        }
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        // 10 minutes expiry
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+        user.resetOTP = otp;
+        user.otpExpiry = otpExpiry;
+        await user.save();
+
+        const emailSent = await sendPasswordResetOTP(email, otp);
+        if (emailSent) {
+            res.status(200).json({ message: 'If that email exists, an OTP has been sent.' });
+        } else {
+            res.status(500).json({ message: 'Failed to send OTP email. Please try again later.' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.verifyOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        const user = await User.findOne({ email, resetOTP: otp, otpExpiry: { $gt: Date.now() } });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired OTP.' });
+        }
+
+        res.status(200).json({ message: 'OTP verified successfully.', verified: true });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        const user = await User.findOne({ email, resetOTP: otp, otpExpiry: { $gt: Date.now() } });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired OTP.' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        
+        // Clear OTP fields
+        user.resetOTP = undefined;
+        user.otpExpiry = undefined;
+        await user.save();
+
+        res.status(200).json({ message: 'Password has been reset successfully.' });
+
+        // Fire & Forget Password Change Email
+        if (user.email) {
+            sendPasswordChangeConfirmation(user.email, user.name).catch(console.error);
+        }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -93,6 +178,11 @@ exports.login = async (req, res) => {
                     role: user.role,
                     token: generateToken(user._id, user.role),
                 });
+
+                // Fire & Forget Login Email
+                if (user.email) {
+                    sendLoginNotification(user.email, user.name).catch(console.error);
+                }
             } else {
                 console.log('Password match: Failed');
                 res.status(401).json({ message: 'Invalid credentials' });
@@ -187,10 +277,23 @@ exports.getUsersByRole = async (req, res) => {
     try {
         const { role } = req.query;
         const query = role ? { role } : {};
-        const users = await User.find(query).select('_id name email role');
+        const users = await User.find(query).select('_id name email role phone phoneNumber');
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
+
+
+exports.logout = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (user && user.email) {
+            await sendSignoutNotification(user.email, user.name);
+        }
+        res.status(200).json({ message: 'Signed out successfully.' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
