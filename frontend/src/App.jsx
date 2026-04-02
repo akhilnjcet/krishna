@@ -34,18 +34,21 @@ import AdminProgress from './pages/admin/AdminProgress';
 import AdminBlog from './pages/admin/AdminBlog';
 import StaffProgress from './pages/staff/StaffProgress';
 import LegalPage from './pages/LegalPage';
+import AdminAIChat from './pages/admin/AdminAIChat';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import AIChatWidget from './components/AIChatWidget';
 
 import useAuthStore from './stores/authStore';
 import { useEffect } from 'react';
 
 const Layout = ({ children }) => (
-  <div className="min-h-screen flex flex-col font-sans">
+  <div className="min-h-screen flex flex-col font-sans relative">
     <Navbar />
     <main className="flex-grow">
       {children}
     </main>
     <Footer />
+    <AIChatWidget />
   </div>
 );
 
@@ -123,6 +126,7 @@ const App = () => {
             <Route path="finance" element={<AdminFinance />} />
             <Route path="progress" element={<AdminProgress />} />
             <Route path="blog" element={<AdminBlog />} />
+            <Route path="chat" element={<AdminAIChat />} />
           </Route>
 
           <Route path="/staff" element={<StaffDashboard />} />
