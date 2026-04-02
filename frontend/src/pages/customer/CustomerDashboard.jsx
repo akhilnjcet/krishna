@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import { 
     Construction, Clock, CheckCircle2, AlertTriangle, 
-    ArrowRight, MessageSquare, Briefcase, Zap, Settings, Loader2, FileText
+    ArrowRight, MessageSquare, Briefcase, Zap, Settings, Loader2, FileText,
+    TrendingUp, Wallet, ShieldCheck, Activity, ChevronRight, Search
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const CustomerDashboard = () => {
+    const navigate = useNavigate();
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedProject, setSelectedProject] = useState(null);
@@ -19,56 +20,49 @@ const CustomerDashboard = () => {
         remainingDues: 0,
         balancePercentage: 0
     });
-    const [quotes, setQuotes] = useState([]);
 
     useEffect(() => {
-        fetchProjects();
-        fetchFinance();
-        fetchQuotes();
+        fetchDashboardData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const fetchQuotes = async () => {
+    const fetchDashboardData = async () => {
+        setLoading(true);
         try {
-            const res = await api.get('/quotes/my-quotes');
-            setQuotes(res.data);
-        } catch (err) {
-            console.error('Quotes fetch error:', err);
-        }
-    };
+            const [projRes, financeRes] = await Promise.all([
+                api.get('/customer/projects'),
+                api.get('/finance/customer-dues')
+            ]);
+            
+            const projectsList = Array.isArray(projRes.data) ? projRes.data : [];
+            setProjects(projectsList);
+            
+            if (financeRes.data) {
+                setFinance({
+                    ...financeRes.data,
+                    balancePercentage: (financeRes.data.totalPaid / financeRes.data.totalInvoiced) * 100 || 0
+                });
+            }
 
-    const fetchFinance = async () => {
-        try {
-            const res = await api.get('/finance/customer-dues');
-            setFinance({
-                ...res.data,
-                balancePercentage: (res.data.totalPaid / res.data.totalInvoiced) * 100 || 0
-            });
-        } catch (err) {
-            console.error('Finance fetch error:', err);
-        }
-    };
-
-    const fetchProjects = async () => {
-        try {
-            const res = await api.get('/customer/projects');
-            setProjects(res.data);
-            if (res.data.length > 0) {
-                handleProjectSelect(res.data[0]._id);
+            if (projectsList.length > 0) {
+                handleProjectSelect(projectsList[0]._id, projectsList);
             }
         } catch (err) {
-            console.error('Project fetch error:', err);
+            console.error('Dashboard relay error:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleProjectSelect = async (projectId) => {
-        const proj = projects.find(p => p._id === projectId) || projects[0];
+    const handleProjectSelect = async (projectId, existingProjects) => {
+        const proj = (existingProjects || projects).find(p => p._id === projectId);
+        if (!proj) return;
+        
         setSelectedProject(proj);
         setUpdatesLoading(true);
         try {
             const res = await api.get(`/customer/projects/${projectId}/updates`);
-            setUpdates(res.data.updates);
+            setUpdates(Array.isArray(res.data.updates) ? res.data.updates : []);
         } catch (err) {
             console.error('Updates fetch error:', err);
         } finally {
@@ -78,180 +72,199 @@ const CustomerDashboard = () => {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-40 bg-brand-50">
-                <Loader2 className="w-12 h-12 text-brand-950 animate-spin mb-4" />
-                <p className="font-black text-[10px] uppercase tracking-[0.4em] text-gray-500">Establishing Secure Uplink...</p>
+            <div className="flex flex-col items-center justify-center py-40 animate-pulse">
+                <div className="w-16 h-16 bg-blue-50 border-4 border-blue-100 rounded-2xl flex items-center justify-center mb-6">
+                    <Activity className="w-8 h-8 text-blue-600 animate-spin" />
+                </div>
+                <p className="font-bold text-xs uppercase tracking-[0.3em] text-slate-400">Synchronizing Project Data...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-8 font-sans">
+        <div className="space-y-10 animate-in fade-in duration-700">
             
-            {/* FINANCIAL SNAPSHOT */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {[
-                    { label: 'Total Invoiced', value: `₹ ${finance.totalInvoiced?.toLocaleString()}`, icon: Briefcase, color: 'brand' },
-                    { label: 'Cleared Funds', value: `₹ ${finance.totalPaid?.toLocaleString()}`, icon: CheckCircle2, color: 'emerald' },
-                    { label: 'Outstanding Dues', value: `₹ ${finance.remainingDues?.toLocaleString()}`, icon: AlertTriangle, color: 'rose' },
-                    { label: 'Account Yield', value: `${Math.round(finance.balancePercentage)}%`, icon: Zap, color: 'amber' }
-                ].map((item, i) => (
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.1 }}
-                        key={i} 
-                        className="bg-white border-4 border-brand-950 p-6 flex items-center gap-6 shadow-solid group hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none transition-all"
-                    >
-                        <div className={`p-4 bg-brand-50 rounded-xl group-hover:bg-brand-accent transition-colors`}>
-                            <item.icon className="w-6 h-6 text-brand-950" />
-                        </div>
-                        <div>
-                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-1">{item.label}</p>
-                            <p className="text-xl font-black text-brand-950 italic">{item.value}</p>
-                        </div>
-                    </motion.div>
-                ))}
+            {/* Header Area */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h1 className="text-4xl font-bold text-[#111827] dark:text-dark-text tracking-tight font-poppins">
+                        Welcome, <span className="text-[#2563EB]">Project Partner</span>
+                    </h1>
+                    <p className="text-[#6B7280] dark:text-dark-muted mt-2 font-medium flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                        Authenticated Client Workspace • Krishna Engineering Works
+                    </p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button onClick={() => navigate('/customer/support')} className="px-5 py-3 bg-[#2563EB] text-white rounded-2xl font-bold text-sm shadow-xl shadow-blue-500/20 hover:bg-[#1D4ED8] transition-all flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" /> Live Support
+                    </button>
+                </div>
             </div>
 
-            {/* QUOTE TRACKING SUMMARY */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Financial Overview Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Applied Quotes', value: quotes.length, icon: MessageSquare, color: 'blue' },
-                    { label: 'Under Review', value: quotes.filter(q => q.status === 'reviewed').length, icon: Clock, color: 'indigo' },
-                    { label: 'Authorized Jobs', value: quotes.filter(q => q.status === 'accepted').length, icon: FileText, color: 'emerald' }
+                    { label: 'Total Engagement', value: `₹${finance.totalInvoiced?.toLocaleString()}`, icon: Wallet, color: 'blue' },
+                    { label: 'Settled Amount', value: `₹${finance.totalPaid?.toLocaleString()}`, icon: CheckCircle2, color: 'emerald' },
+                    { label: 'Current Dues', value: `₹${finance.remainingDues?.toLocaleString()}`, icon: AlertTriangle, color: 'rose' },
+                    { label: 'Project Equity', value: `${Math.round(finance.balancePercentage)}%`, icon: TrendingUp, color: 'amber' }
                 ].map((item, i) => (
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.4 + (i * 0.1) }}
-                        key={i} 
-                        className="bg-brand-950 text-white p-6 border-l-8 border-brand-accent shadow-2xl flex items-center justify-between"
-                    >
-                        <div>
-                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-accent mb-2">{item.label}</p>
-                            <p className="text-3xl font-black italic">{item.value}</p>
+                    <div key={i} className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group">
+                        <div className={`w-12 h-12 bg-${item.color}-50 dark:bg-blue-950/30 text-${item.color}-600 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                            <item.icon className="w-6 h-6" />
                         </div>
-                        <item.icon className="w-8 h-8 opacity-20" />
-                    </motion.div>
-                ))}
-            </div>
-
-            {/* PROJECTS SNAPSHOT */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-1 border-4 border-brand-950 bg-white p-8 relative overflow-hidden shadow-solid flex flex-col justify-between">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                        <Briefcase className="w-32 h-32" />
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280] dark:text-dark-muted mb-1">{item.label}</p>
+                        <p className="text-2xl font-bold text-[#111827] dark:text-dark-text font-poppins">{item.value}</p>
                     </div>
-                    <div>
-                        <div className="text-[10px] font-black uppercase tracking-widest text-brand-500 mb-2">Portfolio Overview</div>
-                        <div className="text-4xl font-black text-brand-950 uppercase tracking-tighter leading-none mb-6 italic">Active <span className="text-brand-accent">Units</span></div>
-                        <div className="space-y-4">
+                ))}
+            </div>
+
+            {/* Dashboard Workspace */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                {/* Fixed Sidebar: Unit Selection */}
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="bg-white dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm p-8 overflow-hidden relative">
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-lg font-bold text-[#111827] dark:text-dark-text">Active Work Units</h3>
+                            <div className="px-3 py-1 bg-blue-50 dark:bg-blue-950/30 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-wider">{projects.length} Total</div>
+                        </div>
+
+                        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                             {projects.map(project => (
                                 <button 
                                     key={project._id}
                                     onClick={() => handleProjectSelect(project._id)}
-                                    className={`w-full text-left p-4 border-4 transition-all flex items-center justify-between ${selectedProject?._id === project._id ? 'border-brand-950 bg-brand-accent shadow-solid' : 'border-brand-100 hover:border-brand-300 bg-brand-50'}`}
+                                    className={`w-full text-left p-5 rounded-2xl border-2 transition-all group flex items-center justify-between ${
+                                        selectedProject?._id === project._id 
+                                        ? 'border-[#2563EB] bg-blue-50/50 dark:bg-blue-900/20' 
+                                        : 'border-transparent bg-[#F8FAFC] dark:bg-dark-bg hover:bg-slate-100 dark:hover:bg-blue-900/10'
+                                    }`}
                                 >
-                                    <div>
-                                        <div className="text-[9px] font-black uppercase tracking-widest leading-none mb-1 opacity-60">PRJ-ID: {project._id.slice(-6).toUpperCase()}</div>
-                                        <div className="text-xs font-black uppercase tracking-tight">{project.title}</div>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-colors ${
+                                            selectedProject?._id === project._id ? 'bg-[#2563EB] text-white' : 'bg-white dark:bg-dark-surface text-[#6B7280] border border-slate-200 dark:border-dark-border'
+                                        }`}>
+                                            {project.title.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className={`text-sm font-bold ${selectedProject?._id === project._id ? 'text-[#111827] dark:text-dark-text' : 'text-[#6B7280] dark:text-dark-muted'}`}>{project.title}</p>
+                                            <p className="text-[10px] font-medium text-[#9CA3AF] mt-0.5">Updated {new Date(project.updatedAt).toLocaleDateString()}</p>
+                                        </div>
                                     </div>
-                                    {selectedProject?._id === project._id && <ArrowRight className="w-4 h-4" />}
+                                    <ChevronRight className={`w-4 h-4 transition-transform ${selectedProject?._id === project._id ? 'text-[#2563EB] translate-x-1' : 'text-slate-300 dark:text-dark-muted'}`} />
                                 </button>
                             ))}
                             {projects.length === 0 && (
-                                <div className="text-gray-400 text-[10px] py-10 text-center font-black uppercase tracking-widest border-4 border-dashed border-brand-100">Zero active deployments found</div>
+                                <div className="text-center py-12 bg-slate-50 dark:bg-dark-bg rounded-2xl border-2 border-dashed border-slate-200 dark:border-dark-border">
+                                    <Search className="w-10 h-10 text-slate-300 dark:text-dark-muted mx-auto mb-4 opacity-50" />
+                                    <p className="text-xs font-bold text-slate-400 dark:text-dark-muted uppercase tracking-widest leading-relaxed">No project units linked<br/>to this account</p>
+                                </div>
                             )}
                         </div>
+
+                        <Link to="/quote" className="mt-8 flex items-center justify-center gap-3 w-full py-4 bg-[#F8FAFC] dark:bg-dark-bg hover:bg-blue-50 dark:hover:bg-blue-900/10 border-2 border-dashed border-slate-200 dark:border-dark-border hover:border-blue-200 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-[#6B7280] dark:text-dark-muted hover:text-[#2563EB] transition-all">
+                            <Zap className="w-4 h-4" /> Request Commission
+                        </Link>
                     </div>
-                    <Link to="/quote" className="mt-10 bg-brand-950 text-white p-4 font-black uppercase tracking-widest text-xs flex items-center justify-center gap-4 hover:bg-brand-800 transition-colors">
-                        Deploy New Project <Zap className="w-4 h-4 text-brand-accent" />
-                    </Link>
                 </div>
 
-                {/* PROJECT INTELLIGENCE */}
-                <div className="lg:col-span-2 space-y-6">
+                {/* Main Insight Engine */}
+                <div className="lg:col-span-8 flex flex-col gap-8">
                     {selectedProject ? (
                         <>
-                            <div className="bg-brand-950 text-white p-10 border-b-8 border-brand-accent relative overflow-hidden shadow-2xl skew-x-[-1deg] ml-1">
-                                <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none transform skew-x-[1deg]">
-                                    <Construction className="w-48 h-48" />
-                                </div>
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10 transform skew-x-[1deg]">
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <span className="bg-brand-accent text-brand-950 text-[10px] font-black px-3 py-1 uppercase tracking-widest leading-none">Status: {selectedProject.status}</span>
-                                            <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest opacity-60 italic">| {selectedProject.serviceType}</span>
-                                        </div>
-                                        <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-2 italic">{selectedProject.title}</h2>
-                                        <div className="flex items-center gap-3 text-gray-500 text-xs font-black uppercase tracking-widest">
-                                            <Clock className="w-4 h-4" /> Expected Completion: {new Date(selectedProject.deadline).toLocaleDateString()}
-                                        </div>
+                            {/* Hero Card for Selected Project */}
+                            <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] dark:from-[#0B1222] dark:to-[#1E3A8A] rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden ring-1 ring-white/10 transition-all duration-500">
+                                <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-3xl -mr-40 -mt-40"></div>
+                                <div className="relative z-10">
+                                    <div className="flex flex-wrap items-center gap-3 mb-8">
+                                        <span className="bg-yellow-400 text-blue-900 text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-widest shadow-lg">Live Operation</span>
+                                        <span className="text-[10px] text-blue-100 font-bold uppercase tracking-[0.2em] opacity-80">{selectedProject.serviceType}</span>
                                     </div>
-                                    <div className="bg-white/5 p-6 border-l-4 border-brand-accent backdrop-blur-3xl min-w-[200px]">
-                                        <div className="text-[10px] font-black uppercase tracking-widest mb-4 text-brand-accent">Production Yield</div>
-                                        <div className="flex items-end gap-3">
-                                            <span className="text-5xl font-black leading-none">{selectedProject.progress}%</span>
-                                            <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden mb-1">
-                                                <div className="bg-brand-accent h-full shadow-[0_0_10px_#FFB612]" style={{ width: `${selectedProject.progress}%` }}></div>
+                                    <h2 className="text-4xl font-bold font-poppins tracking-tight mb-8 leading-tight">{selectedProject.title}</h2>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-blue-100 italic">
+                                                <span>Work Progress</span>
+                                                <span className="text-yellow-300 font-black">{selectedProject.progress}% Solid</span>
+                                            </div>
+                                            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                                                <div className="h-full bg-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]" style={{ width: `${selectedProject.progress}%` }}></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4 bg-white/10 dark:bg-white/5 p-5 rounded-3xl border border-white/10 backdrop-blur-md">
+                                            <Clock className="w-8 h-8 text-blue-200" />
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-blue-200 opacity-80">Timeline Milestone</p>
+                                                <p className="text-lg font-bold">ETA: {new Date(selectedProject.deadline).toLocaleDateString([], {month: 'long', day: 'numeric', year: 'numeric'})}</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* FIELD UPDATES (SUDDEN INFORMATION PASSING) */}
-                            <div className="border-4 border-brand-950 bg-white p-8 shadow-solid">
-                                <h3 className="text-brand-950 font-black text-[10px] uppercase tracking-[0.4em] mb-10 flex items-center gap-4">
-                                    <MessageSquare className="w-4 h-4" /> Operational Intelligence Feed
-                                </h3>
+                            {/* Activity Logistics Feed */}
+                            <div className="bg-white dark:bg-dark-surface rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border shadow-sm p-10">
+                                <div className="flex items-center justify-between mb-10">
+                                    <h3 className="text-2xl font-bold text-[#111827] dark:text-dark-text font-poppins flex items-center gap-4">
+                                        <div className="p-2.5 bg-blue-50 dark:bg-blue-950/30 text-blue-600 rounded-xl">
+                                            <Activity className="w-6 h-6" />
+                                        </div>
+                                        Activity Logistics
+                                    </h3>
+                                    <button className="text-[11px] font-bold text-blue-600 uppercase tracking-widest hover:underline transition-all">Export Report</button>
+                                </div>
 
                                 {updatesLoading ? (
-                                    <div className="flex items-center justify-center py-20">
-                                        <Loader2 className="w-8 h-8 text-brand-950 animate-spin" />
+                                    <div className="py-20 flex flex-col items-center justify-center opacity-50">
+                                        <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
                                     </div>
                                 ) : (
-                                    <div className="space-y-8">
-                                        {updates.map((update, i) => (
-                                            <motion.div 
+                                    <div className="space-y-6 relative ml-4 border-l-2 border-slate-100 dark:border-dark-border pl-10 pr-2">
+                                        {updates.map((update) => (
+                                            <div 
                                                 key={update._id}
-                                                initial={{ opacity: 0, x: -10 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                className="flex flex-col md:flex-row gap-6 border-l-8 border-brand-Accent bg-brand-50 p-6 relative overflow-hidden group hover:bg-brand-100 transition-colors"
+                                                className="bg-[#F8FAFC]/50 dark:bg-dark-bg/50 p-8 rounded-3xl border border-[#E2E8F0] dark:border-dark-border relative hover:bg-white dark:hover:bg-dark-surface hover:border-blue-100 dark:hover:border-blue-900/20 hover:shadow-xl hover:shadow-blue-500/5 transition-all group"
                                             >
-                                                <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none group-hover:scale-125 transition-transform duration-700">
-                                                    <Settings className={update.status === 'Completed' ? "text-green-500 w-16 h-16" : "text-brand-950 w-16 h-16"} />
-                                                </div>
-                                                <div className="flex-shrink-0">
-                                                    <div className="w-12 h-12 bg-brand-950 flex items-center justify-center font-black text-brand-accent text-xl border-2 border-brand-800">
-                                                        {update.staffId?.name?.charAt(0) || 'S'}
-                                                    </div>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
+                                                <div className="absolute top-1/2 -left-[51px] w-5 h-5 bg-white dark:bg-dark-surface border-4 border-blue-500 rounded-full group-hover:scale-125 transition-transform" />
+                                                
+                                                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 rounded-2xl bg-white dark:bg-dark-bg border border-slate-200 dark:border-dark-border flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
+                                                            {update.staffId?.name?.charAt(0) || 'S'}
+                                                        </div>
                                                         <div>
-                                                            <div className="text-[10px] font-black uppercase text-brand-950 tracking-widest">{update.staffId?.name} <span className="text-gray-400 font-bold ml-2">[{update.staffId?.designation}]</span></div>
-                                                            <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{new Date(update.date).toLocaleString()}</div>
+                                                            <p className="font-bold text-[#111827] dark:text-dark-text">{update.staffId?.name}</p>
+                                                            <p className="text-[10px] font-bold uppercase text-[#6B7280] dark:text-dark-muted tracking-wider italic">{update.staffId?.designation} • {new Date(update.date).toLocaleDateString()}</p>
                                                         </div>
-                                                        <div className="px-3 py-1 bg-white border-2 border-brand-950 text-[8px] font-black uppercase tracking-widest">{update.status}</div>
                                                     </div>
-                                                    <h4 className="text-lg font-black uppercase tracking-tight mb-2 text-brand-950 italic">{update.title}</h4>
-                                                    <p className="text-xs font-bold text-brand-600 uppercase tracking-tight leading-relaxed line-clamp-2 italic">{update.description}</p>
-                                                    {update.photos?.length > 0 && (
-                                                        <div className="mt-6 flex gap-3 overflow-x-auto pb-2">
-                                                            {update.photos.map((p, idx) => (
-                                                                <img key={idx} src={p.url} alt="Update" className="w-24 h-24 object-cover border-4 border-white shadow-md grayscale hover:grayscale-0 transition-all cursor-zoom-in" />
-                                                            ))}
-                                                        </div>
-                                                    )}
+                                                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border-2 ${
+                                                        update.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/10 dark:border-emerald-900/30' : 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/10 dark:border-blue-900/30'
+                                                    }`}>
+                                                        {update.status}
+                                                    </span>
                                                 </div>
-                                            </motion.div>
+                                                
+                                                <h4 className="text-xl font-bold text-[#111827] dark:text-dark-text mb-3 font-poppins">{update.title}</h4>
+                                                <p className="text-[#6B7280] dark:text-dark-muted text-sm font-medium leading-relaxed mb-6">{update.description}</p>
+                                                
+                                                {update.photos?.length > 0 && (
+                                                    <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+                                                        {update.photos.map((p, idx) => (
+                                                            <div key={idx} className="flex-shrink-0 w-32 h-32 rounded-2xl overflow-hidden ring-4 ring-white dark:ring-dark-border shadow-lg group-hover:ring-blue-50 transition-all">
+                                                                <img src={p.url} alt="Site" className="w-full h-full object-cover grayscale-0 hover:scale-110 transition-transform duration-500" />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         ))}
                                         {updates.length === 0 && (
-                                            <div className="text-center py-20 bg-brand-50 border-4 border-dashed border-brand-100 italic rounded-2xl">
-                                                <AlertTriangle className="w-12 h-12 text-brand-200 mx-auto mb-4" />
-                                                <p className="font-black uppercase tracking-[0.2em] text-[10px] text-gray-400">Awaiting secure field update from site operators...</p>
+                                            <div className="py-20 text-center bg-slate-50/50 dark:bg-dark-bg/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-dark-border">
+                                                <AlertTriangle className="w-12 h-12 text-slate-300 dark:text-dark-muted mx-auto mb-4 opacity-50" />
+                                                <p className="text-xs font-bold text-slate-400 dark:text-dark-muted uppercase tracking-widest italic">Waiting for initial field report sequence...</p>
                                             </div>
                                         )}
                                     </div>
@@ -259,22 +272,13 @@ const CustomerDashboard = () => {
                             </div>
                         </>
                     ) : (
-                        <div className="text-center py-40 bg-brand-50 border-8 border-dashed border-brand-100 italic flex flex-col items-center justify-center">
-                            <Construction className="w-20 h-20 text-brand-200 mb-8" />
-                            <p className="font-black uppercase tracking-[0.4em] text-[10px] text-gray-400">Select a project unit to initialize intelligence relay</p>
+                        <div className="h-full min-h-[600px] flex flex-col items-center justify-center bg-white dark:bg-dark-surface rounded-[3rem] border border-slate-200 dark:border-dark-border border-dashed animate-pulse transition-colors">
+                            <div className="p-8 bg-slate-50 dark:bg-dark-bg rounded-[2.5rem] border border-slate-200 dark:border-dark-border mb-8 opacity-40">
+                                <Construction className="w-20 h-20 text-slate-400 dark:text-dark-muted" />
+                            </div>
+                            <p className="text-xs font-bold text-slate-400 dark:text-dark-muted uppercase tracking-[0.5em] italic">Select Operation Center to Relay Feed</p>
                         </div>
                     )}
-                </div>
-            </div>
-
-            {/* QUICK CONTACT MATRIX */}
-            <div className="bg-brand-950 p-10 mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 skew-x-[1deg] mr-1">
-                <div className="md:col-span-2 transform skew-x-[-1deg]">
-                    <h3 className="text-white font-black text-2xl uppercase tracking-tighter italic mb-4">Direct Command Link</h3>
-                    <p className="text-gray-400 font-bold uppercase tracking-tight text-xs max-w-xl">Emergency field contact and instantaneous data relay for expedited project adjustments.</p>
-                </div>
-                <div className="flex items-center justify-end transform skew-x-[-1deg]">
-                    <button className="bg-brand-accent text-brand-950 px-10 py-4 font-black uppercase tracking-widest text-xs border-4 border-white shadow-solid hover:bg-white transition-all active:scale-95">Initiate Comms</button>
                 </div>
             </div>
         </div>

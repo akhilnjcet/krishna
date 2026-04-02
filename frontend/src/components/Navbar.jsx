@@ -20,26 +20,21 @@ const Navbar = () => {
     ];
 
     return (
-        <>
-            {/* Top thin yellow bar */}
-            <div className="bg-brand-accent h-2 w-full"></div>
-
-            {/* Main Navigation */}
-            <nav className="bg-brand-950 text-white sticky top-0 z-50 shadow-xl">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-20">
+        <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 transition-all">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between h-20">
 
                         {/* Logo */}
                         <div className="flex-shrink-0">
-                            <Link to="/" className="flex items-center gap-3">
-                                <div className="bg-brand-accent w-10 h-10 flex items-center justify-center font-black text-brand-950 text-xl transform -skew-x-12">
+                            <Link to="/" className="flex items-center gap-3 group">
+                                <div className="bg-primary w-11 h-11 flex items-center justify-center font-black text-white text-xl rounded-2xl shadow-lg shadow-blue-100 group-hover:scale-105 transition-transform duration-300">
                                     KE
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-2xl font-black uppercase tracking-tight text-white leading-none">
+                                    <span className="text-xl font-bold tracking-tight text-primary leading-none font-poppins">
                                         KRISHNA
                                     </span>
-                                    <span className="text-[0.6rem] font-bold tracking-widest uppercase text-brand-accent leading-none mt-1">
+                                    <span className="text-[0.65rem] font-bold tracking-[0.2em] uppercase text-secondary leading-none mt-1.5 transition-colors group-hover:text-cta">
                                         Engineering Works
                                     </span>
                                 </div>
@@ -55,9 +50,9 @@ const Navbar = () => {
                                         <Link
                                             key={link.name}
                                             to={link.path}
-                                            className={`uppercase text-sm font-bold tracking-wider px-4 py-8 transition-colors border-b-4 ${isActive
-                                                    ? 'border-brand-accent text-brand-accent'
-                                                    : 'border-transparent text-gray-300 hover:bg-brand-900 hover:text-white hover:border-brand-accent/50'
+                                            className={`text-sm font-semibold tracking-tight px-5 py-2.5 rounded-xl transition-all duration-300 ${isActive
+                                                    ? 'bg-blue-50 text-cta'
+                                                    : 'text-textMain/80 hover:bg-slate-50 hover:text-primary'
                                                 }`}
                                         >
                                             {link.name}
@@ -72,24 +67,16 @@ const Navbar = () => {
                             {!isAuthenticated ? (
                                 <>
                                     <Link
-                                        to="/register"
-                                        className="text-gray-300 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors px-4"
-                                    >
-                                        Register
-                                    </Link>
-                                    <a
-                                        href="tel:+919446000000"
-                                        className="text-brand-accent border-2 border-brand-accent hover:bg-brand-accent hover:text-brand-950 px-6 py-2.5 text-sm font-bold uppercase tracking-wider transition-colors ml-2 mr-2"
-                                        style={{ clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0% 100%)' }}
-                                    >
-                                        Call Now
-                                    </a>
-                                    <Link
                                         to="/login"
-                                        className="bg-brand-accent hover:bg-brand-accentHover text-brand-950 px-6 py-2.5 text-sm font-bold uppercase tracking-wider transition-colors"
-                                        style={{ clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0% 100%)' }}
+                                        className="text-textMain/70 hover:text-primary text-xs font-bold uppercase tracking-widest transition-colors px-4"
                                     >
-                                        Sign In
+                                        Member Access
+                                    </Link>
+                                    <Link
+                                        to="/register"
+                                        className="bg-cta hover:bg-ctaHover text-white px-7 py-3 text-sm font-bold rounded-2xl shadow-xl shadow-blue-100 hover:shadow-blue-200 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
+                                    >
+                                        Get Started
                                     </Link>
                                 </>
                             ) : (
@@ -99,8 +86,7 @@ const Navbar = () => {
                                         logout();
                                         window.location.replace('/login');
                                     }}
-                                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 text-sm font-black uppercase tracking-widest transition-colors border-2 border-brand-950 shadow-md"
-                                    style={{ clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0% 100%)' }}
+                                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-7 py-3 text-sm font-bold rounded-2xl transition-all duration-300 flex items-center gap-2"
                                 >
                                     Log Out
                                 </button>
@@ -111,7 +97,7 @@ const Navbar = () => {
                         <div className="md:hidden flex items-center">
                             <button
                                 onClick={() => setIsOpen(!isOpen)}
-                                className="p-2 text-gray-400 hover:text-white focus:outline-none"
+                                className="p-2 text-primary hover:text-cta focus:outline-none"
                             >
                                 <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     {isOpen ? (
@@ -128,15 +114,15 @@ const Navbar = () => {
 
                 {/* Mobile Menu */}
                 {isOpen && (
-                    <div className="md:hidden bg-brand-900 border-t border-brand-800">
+                    <div className="md:hidden bg-white border-t border-slate-100 shadow-2xl">
                         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                             {navLinks.map((link) => (
                                 <Link
                                     key={link.name}
                                     to={link.path}
-                                    className={`block px-3 py-4 text-base font-bold uppercase tracking-wider border-l-4 ${location.pathname === link.path
-                                            ? 'border-brand-accent bg-brand-950 text-brand-accent'
-                                            : 'border-transparent text-gray-300 hover:bg-brand-800 hover:border-gray-500'
+                                    className={`block px-5 py-4 text-sm font-bold rounded-2xl transition-all ${location.pathname === link.path
+                                            ? 'bg-blue-50 text-cta'
+                                            : 'text-textMain/70 hover:bg-slate-50'
                                         }`}
                                     onClick={() => setIsOpen(false)}
                                 >
@@ -148,24 +134,17 @@ const Navbar = () => {
                                     <>
                                         <Link
                                             to="/register"
-                                            className="block w-full text-center border-2 border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-950 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors"
+                                            className="block w-full text-center bg-cta text-white px-4 py-4 rounded-2xl font-bold transition-all"
                                             onClick={() => setIsOpen(false)}
                                         >
-                                            Register
+                                            Join Now
                                         </Link>
-                                        <a
-                                            href="tel:+919446000000"
-                                            className="block w-full text-center border-2 border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-950 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors"
-                                            onClick={() => setIsOpen(false)}
-                                        >
-                                            Call Now
-                                        </a>
                                         <Link
                                             to="/login"
-                                            className="block w-full text-center bg-brand-accent hover:bg-brand-accentHover text-brand-950 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors"
+                                            className="block w-full text-center bg-surface text-primary px-4 py-4 rounded-2xl font-bold transition-all"
                                             onClick={() => setIsOpen(false)}
                                         >
-                                            Sign In
+                                            Member Login
                                         </Link>
                                     </>
                                 ) : (
@@ -176,7 +155,7 @@ const Navbar = () => {
                                             window.location.replace('/login');
                                             setIsOpen(false);
                                         }}
-                                        className="block w-full text-center bg-red-600 hover:bg-red-700 text-white px-4 py-3 text-sm font-black uppercase tracking-widest transition-colors border-2 border-brand-950"
+                                        className="block w-full bg-rose-50 text-rose-600 px-4 py-4 rounded-2xl font-bold transition-all"
                                     >
                                         Log Out
                                     </button>
@@ -185,8 +164,7 @@ const Navbar = () => {
                         </div>
                     </div>
                 )}
-            </nav>
-        </>
+        </nav>
     );
 };
 

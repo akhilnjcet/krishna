@@ -27,7 +27,7 @@ const ChatRequestsManager = () => {
                 // 1. Create a Chat Room
                 const newRoom = await addDoc(collection(db, "chatRooms"), {
                     userId,
-                    participants: [userId, 'admin'], // Using 'admin' as a fixed ID for simplicity
+                    participants: [userId, 'admin'], // 'admin' is the high-level monitor ID
                     title: `${userName} - ${projectTitle}`,
                     status: 'active',
                     createdAt: serverTimestamp(),
@@ -50,7 +50,7 @@ const ChatRequestsManager = () => {
                 alert("Request Terminated.");
             }
         } catch (err) {
-            console.error("Administrative Auth failure");
+            console.error("Administrative Auth failure", err);
         }
     };
 

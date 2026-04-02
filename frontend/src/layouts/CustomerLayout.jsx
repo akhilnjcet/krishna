@@ -1,5 +1,18 @@
 import React from 'react';
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
+import { 
+    LayoutDashboard, 
+    Layers, 
+    Search,
+    BookOpen, 
+    FileText, 
+    BadgeIndianRupee, 
+    MessageSquare, 
+    HelpCircle,
+    User,
+    LogOut,
+    Bell
+} from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 
 const CustomerLayout = () => {
@@ -16,104 +29,101 @@ const CustomerLayout = () => {
     };
 
     const navItems = [
-        { name: 'My Applications', path: '/customer', icon: '☰' },
-        { name: 'Track Status', path: '/customer/quotes', icon: '▥' },
-        { name: 'Intelligence Feed', path: '/blog', icon: '▩' },
-        { name: 'Request Quote', path: '/quote', icon: '¥' },
-        { name: 'Support Chat', path: '/customer/support', icon: '⚐' },
+        { name: 'My Dashboard', path: '/customer', icon: LayoutDashboard },
+        { name: 'My Applications', path: '/customer/quotes', icon: Layers },
+        { name: 'Intelligence Feed', path: '/blog', icon: BookOpen },
+        { name: 'Formal Quote Request', path: '/quote', icon: FileText },
+        { name: 'Technical Support', path: '/customer/support', icon: MessageSquare },
     ];
 
     return (
-        <div className="min-h-screen bg-brand-50 flex font-sans overflow-x-hidden md:flex-row flex-col">
+        <div className="min-h-screen bg-[#F8FAFC] flex font-sans overflow-x-hidden md:flex-row flex-col">
             
-            {/* CLIENT SIDEBAR */}
-            <aside className="w-72 bg-brand-950 text-white hidden md:flex flex-col fixed h-full z-20 border-r-8 border-brand-accent">
-                <div className="p-8 border-b-4 border-brand-800 bg-black">
-                    <Link to="/" className="flex flex-col">
-                        <span className="text-3xl font-black uppercase tracking-tighter text-white">KRISHNA</span>
-                        <div className="text-[10px] font-black tracking-widest uppercase text-brand-accent mt-1 tracking-[0.2em]">Client Portal</div>
+            {/* Sidebar - Fix Visibility & Support Blue Theme */}
+            <aside className="w-72 bg-[#0F172A] text-white hidden md:flex flex-col fixed h-full z-20 border-r border-slate-800">
+                <div className="p-8 border-b border-slate-800 bg-[#0B1222]">
+                    <Link to="/" className="flex flex-col items-center gap-3">
+                        <div className="bg-[#2563EB] w-12 h-12 flex items-center justify-center font-bold text-white text-2xl rounded-2xl shadow-lg shadow-blue-900/20">
+                            K
+                        </div>
+                        <div className="flex flex-col text-center">
+                            <span className="text-xl font-bold tracking-tight text-white font-poppins capitalize">Krishna Engineering</span>
+                            <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-blue-400 opacity-80 mt-1">Client Portal</span>
+                        </div>
                     </Link>
                 </div>
 
-                <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto bg-brand-950">
-                    <div className="text-[10px] uppercase font-black tracking-widest text-brand-500 mb-4 px-2">Operator System</div>
+                <nav className="flex-1 px-4 py-10 space-y-2 overflow-y-auto">
+                    <h3 className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-6">Client Services</h3>
                     {navItems.map(item => {
                         const isActive = location.pathname === item.path;
                         return (
                             <Link
                                 key={item.name}
                                 to={item.path}
-                                className={`flex items-center gap-4 px-4 py-3 font-bold uppercase tracking-widest text-xs transition-all border-l-4 ${isActive
-                                        ? 'border-brand-accent bg-brand-900 text-brand-accent'
-                                        : 'border-transparent text-gray-400 hover:bg-brand-900 hover:text-white hover:border-gray-500'
-                                    }`}
+                                className={`flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-semibold transition-all duration-300 group ${
+                                    isActive
+                                        ? 'bg-[#2563EB] text-white shadow-xl shadow-blue-500/20'
+                                        : 'text-slate-400 hover:bg-[#1E293B] hover:text-white'
+                                }`}
                             >
-                                <span className="text-lg w-6 flex justify-center font-black">{item.icon}</span>
-                                {item.name}
+                                <item.icon className={`w-5 h-5 transition-colors ${
+                                    isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'
+                                }`} />
+                                <span>{item.name}</span>
                             </Link>
                         );
                     })}
                 </nav>
 
-                <div className="p-6 border-t-4 border-brand-800 bg-black relative">
-                    <div className="flex justify-between items-center mb-6">
-                        <div className="overflow-hidden">
-                            <div className="text-[10px] text-brand-accent font-black uppercase tracking-widest mb-1 leading-none">Identity: Customer</div>
-                            <div className="text-sm font-black uppercase tracking-tight truncate text-white">{user?.name}</div>
+                <div className="p-4 border-t border-slate-800 bg-[#0B1222]">
+                    <div className="flex items-center gap-3 p-4 bg-[#1E293B]/50 rounded-2xl mb-4">
+                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold border border-slate-700">
+                            {user?.name?.charAt(0)}
                         </div>
-                        <div className="w-10 h-10 bg-brand-900 border-2 border-brand-800 flex items-center justify-center font-black text-brand-accent text-xl uppercase">
-                            {user?.name?.charAt(0) || 'C'}
+                        <div className="min-w-0">
+                            <p className="text-sm font-bold truncate">{user?.name}</p>
+                            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Client Identity</p>
                         </div>
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="w-full bg-brand-800 hover:bg-red-600 text-white font-black uppercase tracking-widest py-3 text-[10px] transition-colors border-2 border-brand-950"
+                        className="w-full bg-slate-800 hover:bg-rose-600/20 hover:text-rose-500 text-slate-400 font-bold uppercase tracking-widest py-3.5 rounded-2xl text-[10px] transition-all"
                     >
-                        Security Termination
+                        Log Out System
                     </button>
                 </div>
             </aside>
 
-            {/* MOBILE NAVIGATION DOCK */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-brand-950 border-t-4 border-brand-accent z-[100] grid grid-cols-3 h-16 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-                {navItems.map(item => {
-                    const isActive = location.pathname === item.path;
-                    return (
-                        <Link 
-                            key={item.name} 
-                            to={item.path}
-                            className={`flex flex-col items-center justify-center transition-all ${isActive ? 'bg-brand-accent text-brand-950' : 'text-gray-500'}`}
-                        >
-                            <span className="text-2xl font-black mb-1">{item.icon}</span>
-                            <span className="text-[7px] font-black uppercase tracking-widest leading-none">{item.name}</span>
-                        </Link>
-                    )
-                })}
-            </div>
-
-            {/* MAIN CONTENT WORKSPACE */}
-            <main className="flex-1 md:ml-72 flex flex-col min-h-screen relative bg-brand-50 pb-20 md:pb-0">
-                <header className="bg-white h-20 border-b-4 border-brand-200 px-6 md:px-8 flex items-center justify-between sticky top-0 z-10 w-full shadow-sm">
-                    <div className="flex items-center gap-3 md:gap-4">
-                        <div className="w-1.5 h-6 bg-brand-accent md:w-2 md:h-8"></div>
-                        <h1 className="text-lg md:text-2xl font-black text-brand-950 uppercase tracking-tighter leading-none">
+            {/* Main Content Area */}
+            <main className="flex-1 md:ml-72 flex flex-col min-h-screen relative bg-[#F8FAFC]">
+                <header className="bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] h-20 px-8 flex items-center justify-between sticky top-0 z-30 shadow-lg">
+                    <div className="flex items-center gap-6">
+                        <div className="w-1.5 h-8 bg-blue-300/40 rounded-full"></div>
+                        <h1 className="text-xl font-bold text-white tracking-tight font-poppins capitalize">
                             {navItems.find(item => item.path === location.pathname)?.name || 'Client Module'}
                         </h1>
                     </div>
                     
-                    <div className="flex items-center gap-3">
-                        <div className="hidden sm:block bg-brand-100 text-brand-950 text-[10px] font-black px-3 py-1 tracking-widest uppercase border-2 border-brand-200">
-                           CLIENT_STATUS: ACTIVE
-                        </div>
-                        <div className="flex items-center gap-3 md:gap-4">
-                            <span className="text-[9px] font-black text-brand-accent bg-brand-950 px-2 py-1 transform skew-x-[-12deg] md:block hidden italic">SECURE_CHANNEL_ESTABLISHED</span>
-                            <button onClick={handleLogout} className="md:hidden text-white bg-red-600 font-black text-[9px] px-3 py-2 uppercase tracking-widest rounded-md">LOGOUT</button>
+                    <div className="flex items-center gap-4">
+                        <button className="relative p-2.5 text-blue-100 hover:bg-white/10 rounded-xl transition-all">
+                            <Bell className="w-5 h-5" />
+                            <span className="absolute top-2.5 right-2.5 w-2 h-1.5 bg-yellow-400 rounded-full border-2 border-primary"></span>
+                        </button>
+                        <Link to="/customer/support" className="p-2.5 text-blue-100 hover:bg-white/10 rounded-xl transition-all flex items-center gap-2">
+                            <HelpCircle className="w-5 h-5" />
+                            <span className="hidden sm:inline text-xs font-bold uppercase tracking-widest text-white/80">Support Hub</span>
+                        </Link>
+                        <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/20">
+                            <User className="w-4 h-4 cursor-pointer" />
                         </div>
                     </div>
                 </header>
 
-                <div className="flex-1 p-4 md:p-10">
-                    <Outlet />
+                <div className="flex-1 p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="max-w-[1400px] mx-auto">
+                        <Outlet />
+                    </div>
                 </div>
             </main>
         </div>

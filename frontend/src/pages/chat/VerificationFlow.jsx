@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 import { db } from '../../services/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import useAuthStore from '../../stores/authStore';
 import { CheckCircle2, ChevronRight, Projector as Project, AlertCircle, Send, ArrowLeft } from 'lucide-react';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 
 const REASONS = [
@@ -26,10 +27,10 @@ const VerificationFlow = ({ onComplete }) => {
     useEffect(() => {
         const fetchProjects = async () => {
             try {
-                const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/projects/my-projects`);
-                setProjects(data);
+                const { data } = await api.get('/projects');
+                setProjects(Array.isArray(data) ? data : []);
             } catch (err) {
-                console.error("Order fetch failure");
+                console.error("Project fetch failure", err);
             } finally {
                 setLoading(false);
             }
@@ -51,6 +52,7 @@ const VerificationFlow = ({ onComplete }) => {
             });
             setStep(3);
         } catch (err) {
+            console.error(err);
             alert("Administrative Error: Channel Request Failed");
         }
     };

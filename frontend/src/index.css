@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,47 +6,47 @@
 
 @layer base {
   body {
-    @apply antialiased text-brand-900 bg-white;
+    @apply antialiased text-textMain bg-white dark:bg-dark-bg dark:text-dark-text transition-colors duration-200;
     font-family: 'Inter', sans-serif;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply uppercase tracking-tight font-black;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-primary dark:text-blue-400 tracking-tight;
+    font-family: 'Poppins', sans-serif;
   }
 }
 
-@layer utilities {
+@layer components {
   .btn-primary {
-    @apply bg-brand-accent hover:bg-brand-accentHover text-brand-950 font-bold uppercase tracking-wider px-6 py-3 transition-colors border-2 border-transparent;
+    @apply bg-cta hover:bg-ctaHover text-white font-semibold rounded-xl px-6 py-3 transition-all transform active:scale-95 shadow-lg shadow-blue-100 dark:shadow-none;
   }
 
   .btn-outline {
-    @apply bg-transparent hover:bg-brand-950 text-brand-950 hover:text-brand-accent border-2 border-brand-950 font-bold uppercase tracking-wider px-6 py-3 transition-all;
+    @apply bg-transparent hover:bg-surface text-primary border-2 border-primary/20 font-semibold rounded-xl px-6 py-3 transition-all dark:text-blue-400 dark:border-blue-900/50 dark:hover:bg-dark-surface;
+  }
+
+  .card-minimal {
+    @apply bg-surface rounded-3xl p-8 border border-white/50 shadow-xl shadow-slate-100/50 hover:shadow-2xl hover:shadow-blue-50 transition-all duration-300 dark:bg-dark-surface dark:border-dark-border dark:shadow-none;
+  }
+
+  .sticky-nav {
+    @apply sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-100 dark:bg-dark-bg/80 dark:border-dark-border;
   }
 
   .section-pad {
-    @apply py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto;
+    @apply py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto;
   }
 }
 
-/* Custom scrollbar - Industrial Look */
+/* Custom scrollbar - Professional Finish */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f2f2f2;
+  @apply bg-slate-100 dark:bg-dark-bg;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #262626;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #FFB612;
+  @apply bg-[#2563EB]/20 rounded-full hover:bg-[#2563EB]/40 transition-all;
 }

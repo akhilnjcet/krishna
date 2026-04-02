@@ -59,39 +59,43 @@ const Home = () => {
     };
 
     return (
-        <div className="bg-brand-50 text-brand-900 font-sans min-h-screen">
+        <div className="bg-white text-textMain min-h-screen selection:bg-blue-100 selection:text-primary">
             <FloatingContact />
 
             {/* 1. HERO SECTION */}
-            <section className="relative min-h-[90vh] flex items-center bg-brand-950 overflow-hidden">
+            <section className="relative min-h-[95vh] flex items-center bg-slate-900 overflow-hidden">
                 {/* Background Pattern & Overlay */}
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-[0.25] mix-blend-luminosity"></div>
-                <div className="absolute inset-0 bg-gradient-to-r from-brand-950 via-brand-950/90 to-brand-950/70"></div>
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-[0.15]"></div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary via-primary/95 to-slate-900/90"></div>
                 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full py-20">
+                {/* Abstract light effects */}
+                <div className="absolute top-1/4 -right-1/4 w-[600px] h-[600px] bg-secondary/20 rounded-full blur-[120px] animate-pulse"></div>
+                <div className="absolute -bottom-1/4 -left-1/4 w-[600px] h-[600px] bg-accent/10 rounded-full blur-[120px]"></div>
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full py-24">
                     <motion.div 
                         initial="hidden" animate="visible" variants={fadeIn}
-                        className="max-w-3xl"
+                        className="max-w-4xl"
                     >
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-800/80 border border-brand-700 backdrop-blur-sm mb-6 text-brand-300 text-sm font-semibold tracking-wider uppercase">
-                            <span className="w-2 h-2 rounded-full bg-brand-accent animate-pulse"></span>
-                            25+ Years Experience | On-site Service | Budget Friendly
+                        <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-10 text-accent text-xs font-bold tracking-[0.2em] uppercase">
+                            <span className="w-2 h-2 rounded-full bg-cta animate-ping"></span>
+                            Established 1999 | Certified Excellence
                         </div>
                         
-                        <h1 className="text-5xl md:text-7xl font-black text-white leading-tight mb-6">
-                            Krishna <span className="text-brand-accent">Engineering</span> Works
+                        <h1 className="text-6xl md:text-8xl font-bold text-white leading-[1.1] mb-8 font-poppins">
+                            Precision <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary">Engineering</span> Redefined.
                         </h1>
                         
-                        <p className="text-xl md:text-2xl text-brand-200 mb-10 max-w-2xl font-light">
-                            Expert Fabrication & Welding Services in Kerala. We deliver industrial-grade durability with precision craftsmanship.
+                        <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-2xl font-medium leading-relaxed opacity-90">
+                            Delivering industrial-grade fabrication and precision welding solutions across Kerala for over two decades.
                         </p>
                         
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <Link to="/quote" className="px-8 py-4 bg-brand-accent hover:bg-brand-accentHover text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brand-accent/20">
-                                Get Free Quote <ArrowRight className="w-5 h-5" />
+                        <div className="flex flex-col sm:flex-row gap-6">
+                            <Link to="/quote" className="px-10 py-5 bg-cta hover:bg-ctaHover text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 shadow-2xl shadow-blue-500/20 hover:-translate-y-1 active:translate-y-0">
+                                Start Your Project <ArrowRight className="w-5 h-5" />
                             </Link>
-                            <a href="tel:+919446000000" className="px-8 py-4 bg-brand-800 hover:bg-brand-700 text-white font-bold rounded-lg transition-colors border border-brand-600 flex items-center justify-center gap-2">
-                                <Phone className="w-5 h-5" /> Call Now
+                            <a href="tel:+919446000000" className="px-10 py-5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all border border-white/10 backdrop-blur-sm flex items-center justify-center gap-3 hover:-translate-y-1 active:translate-y-0">
+                                <Phone className="w-5 h-5 text-accent" /> Speak with Experts
                             </a>
                         </div>
                     </motion.div>
@@ -124,11 +128,12 @@ const Home = () => {
             </section>
 
             {/* 3. SERVICES SECTION */}
-            <section className="py-24 bg-brand-50" id="services">
+            <section className="py-24 bg-surface" id="services">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center max-w-3xl mx-auto mb-16">
-                        <h2 className="text-brand-accent font-bold uppercase tracking-wider mb-2">Our Services</h2>
-                        <h3 className="text-4xl font-black text-brand-950">Industrial & Residential Solutions</h3>
+                    <div className="text-center max-w-3xl mx-auto mb-20">
+                        <h2 className="text-cta font-bold uppercase tracking-[0.2em] text-xs mb-4">Our Expertise</h2>
+                        <h3 className="text-4xl md:text-5xl font-bold text-primary mb-6">End-to-End Metal Solutions</h3>
+                        <p className="text-textMain/70 font-medium">Delivering world-class engineering services tailored for industrial and residential excellence.</p>
                     </div>
 
                     <motion.div 
@@ -136,17 +141,17 @@ const Home = () => {
                         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
                     >
                         {[
-                            { title: 'Steel Fabrication', icon: <Settings className="w-8 h-8"/>, desc: 'Heavy structural steel fabrication for industrial frameworks and construction projects.' },
-                            { title: 'Welding Services', icon: <Zap className="w-8 h-8"/>, desc: 'Precision TIG and MIG welding by certified professionals for robust joins.' },
-                            { title: 'Gate & Grill Works', icon: <Shield className="w-8 h-8"/>, desc: 'Custom designed residential and commercial gates, rolling shutters, and security grills.' },
-                            { title: 'Industrial Maintenance', icon: <Wrench className="w-8 h-8"/>, desc: 'On-site factory maintenance, machinery repair, and pipeline welding.' },
+                            { title: 'Steel Fabrication', icon: <Settings className="w-7 h-7"/>, desc: 'Heavy structural steel fabrication for industrial frameworks and construction.' },
+                            { title: 'Welding Services', icon: <Zap className="w-7 h-7"/>, desc: 'Precision TIG and MIG welding by certified professionals for high-durability joins.' },
+                            { title: 'Gate & Grill Works', icon: <Shield className="w-7 h-7"/>, desc: 'Custom designed residential gates, rolling shutters, and architectural security grills.' },
+                            { title: 'Industrial Projects', icon: <Wrench className="w-7 h-7"/>, desc: 'Factory maintenance, machinery repair, and high-pressure pipeline welding.' },
                         ].map((srv, idx) => (
-                            <motion.div key={idx} variants={fadeIn} className="bg-white p-8 rounded-2xl shadow-lg border border-brand-100 hover:-translate-y-2 transition-transform duration-300">
-                                <div className="w-16 h-16 bg-brand-accent/10 rounded-xl flex items-center justify-center text-brand-accent mb-6">
+                            <motion.div key={idx} variants={fadeIn} className="bg-white p-10 rounded-[2.5rem] shadow-xl shadow-blue-900/5 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-3 transition-all duration-500 border border-transparent hover:border-cta/10 flex flex-col items-center text-center">
+                                <div className="w-20 h-20 bg-blue-50 text-cta rounded-[2rem] flex items-center justify-center mb-8 transform rotate-3 hover:rotate-0 transition-transform">
                                     {srv.icon}
                                 </div>
-                                <h4 className="text-xl font-bold text-brand-950 mb-3">{srv.title}</h4>
-                                <p className="text-brand-600">{srv.desc}</p>
+                                <h4 className="text-xl font-bold text-primary mb-4 leading-tight">{srv.title}</h4>
+                                <p className="text-textMain/70 text-sm leading-relaxed font-medium">{srv.desc}</p>
                             </motion.div>
                         ))}
                     </motion.div>

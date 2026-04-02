@@ -1,77 +1,114 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../../services/firebase';
 import { 
-    collection, addDoc, query, orderBy, 
+    collection, addDoc, query, 
     onSnapshot, serverTimestamp, where, 
     doc, updateDoc 
 } from 'firebase/firestore';
-import { Send, Image, Paperclip, CheckCheck, Smile, MoreHorizontal, User, ShieldCheck, Search } from 'lucide-react';
+import { Send, Image, Paperclip, CheckCheck, Smile, MoreHorizontal, User, ShieldCheck, Search, MessageSquare, ArrowDown, Mic } from 'lucide-react';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import useAuthStore from '../../stores/authStore';
 
-const RealTimeChat = () => {
+const RealTimeChat = ({ chatId: propChatId }) => {
     const { user } = useAuthStore();
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
     const [activeRoom, setActiveRoom] = useState(null);
     const [rooms, setRooms] = useState([]);
+    const [isAtBottom, setIsAtBottom] = useState(true);
+    const [showNewMessageToast, setShowNewMessageToast] = useState(false);
+    
     const messagesEndRef = useRef(null);
+    const scrollContainerRef = useRef(null);
 
-    // 1. Fetch Chat Rooms (Conversations)
+    // 1. Fetch Chat Rooms (WIDER ACCESS FOR ADMIN)
     useEffect(() => {
         if (!user) return;
-
+        
         let q;
-        if (user.role === 'admin') {
-            q = query(collection(db, "chatRooms"), where("status", "==", "active"));
+        if (user.role === 'admin' || user.role === 'staff') {
+            // ADMINS SEE ALL ROOMS
+            q = collection(db, "chatRooms");
         } else {
+            // CLIENTS SEE ONLY THEIR PARTICIPANT ROOMS
             q = query(collection(db, "chatRooms"), where("participants", "array-contains", user.id || user._id));
         }
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const roomsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            roomsData.sort((a, b) => (b.lastMessageTime?.seconds || 0) - (a.lastMessageTime?.seconds || 0));
             setRooms(roomsData);
-            if (!activeRoom && roomsData.length > 0) setActiveRoom(roomsData[0]);
+
+            if (propChatId) {
+                const target = roomsData.find(r => r.id === propChatId);
+                if (target) setActiveRoom(target);
+            } else if (!activeRoom && roomsData.length > 0) {
+                setActiveRoom(roomsData[0]);
+            }
         });
-
         return () => unsubscribe();
-    }, [user]);
+    }, [user, propChatId, activeRoom]);
 
-    // 2. Fetch Messages for Active Room
+    // 2. Fetch Messages (NO FILTERS FOR ADMINS)
     useEffect(() => {
         if (!activeRoom) return;
 
-        const q = query(
-            collection(db, "messages"), 
-            where("chatId", "==", activeRoom.id),
-            orderBy("timestamp", "asc")
-        );
+        // Force a simple query to ensure we see literally every message in the collection for this chatId
+        const msgRef = collection(db, "messages");
+        const q = query(msgRef, where("chatId", "==", activeRoom.id));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setMessages(msgs);
             
-            // Mark messages as seen
+            // Manual sort by time locally
+            msgs.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+            
+            console.log("DEBUG: Synced", msgs.length, "msgs for room", activeRoom.id);
+            setMessages(msgs);
+
+            // Mark seen
             msgs.forEach(m => {
                 if (!m.seen && m.senderId !== (user.id || user._id)) {
                     updateDoc(doc(db, "messages", m.id), { seen: true });
                 }
             });
+        }, (err) => {
+            console.error("Message Sync Error:", err);
         });
 
         return () => unsubscribe();
-    }, [activeRoom]);
+    }, [activeRoom, user]);
+
+    // 3. Scroll & WhatsApp UX
+    const handleScroll = () => {
+        if (!scrollContainerRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+        const atBottom = scrollHeight - scrollTop <= clientHeight + 150;
+        setIsAtBottom(atBottom);
+        if (atBottom) setShowNewMessageToast(false);
+    };
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+        if (isAtBottom && scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: messages.length <= 1 ? "auto" : "smooth" });
+        }
+    }, [messages, isAtBottom]);
+
+    const scrollToBottom = () => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: "smooth" });
+            setShowNewMessageToast(false);
+        }
+    };
 
     const sendMessage = async (e) => {
         e.preventDefault();
         if (!message.trim() || !activeRoom) return;
-
+        
         const msgText = message;
         setMessage('');
+        setIsAtBottom(true);
 
         await addDoc(collection(db, "messages"), {
             chatId: activeRoom.id,
@@ -82,8 +119,7 @@ const RealTimeChat = () => {
             seen: false,
             type: 'text'
         });
-
-        // Update room's last message
+        
         await updateDoc(doc(db, "chatRooms", activeRoom.id), {
             lastMessage: msgText,
             lastMessageTime: serverTimestamp()
@@ -91,130 +127,110 @@ const RealTimeChat = () => {
     };
 
     return (
-        <div className="h-[calc(100vh-160px)] flex flex-col md:flex-row bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-2xl shadow-indigo-100 animate-in fade-in zoom-in-95 duration-500">
+        <div className="flex h-[88vh] flex-col md:flex-row bg-[#f0f2f5] rounded-none md:rounded-2xl border border-slate-200 overflow-hidden shadow-2xl relative">
             
-            {/* Sidebar: Chat List */}
-            <aside className="w-full md:w-80 border-r border-slate-100 flex flex-col bg-slate-50/10">
-                <div className="p-6 border-b border-slate-100 bg-white space-y-4">
-                    <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Direct Channels</h2>
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 flex items-center gap-2">
-                         <Search className="w-4 h-4 text-slate-400" />
-                         <input type="text" placeholder="Filter conversations..." className="bg-transparent text-xs outline-none w-full" />
+            {/* Sidebar */}
+            <aside className="w-full md:w-[420px] border-r border-slate-200 flex flex-col bg-white overflow-hidden">
+                <header className="p-4 bg-[#f0f2f5] border-b border-slate-200 flex justify-between items-center h-[60px] flex-shrink-0">
+                    <User className="w-10 h-10 bg-slate-300 p-2 rounded-full text-white" />
+                </header>
+                <div className="p-2 bg-white flex-shrink-0 border-b border-slate-100">
+                    <div className="bg-[#f0f2f5] rounded-xl px-4 py-2 flex items-center gap-4">
+                        <Search className="w-4 h-4 text-slate-500" />
+                        <input type="text" placeholder="Search" className="bg-transparent text-[14px] w-full outline-none" />
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {rooms.map(room => (
-                        <div 
-                            key={room.id}
-                            onClick={() => setActiveRoom(room)}
-                            className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${
-                                activeRoom?.id === room.id 
-                                ? 'bg-white border-indigo-100 shadow-sm border-l-4 border-l-indigo-600' 
-                                : 'border-transparent hover:bg-white hover:border-slate-100'
-                            }`}
-                        >
-                            <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 border border-indigo-100 flex-shrink-0 relative">
-                                <User className="w-6 h-6" />
-                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white"></div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-center mb-0.5">
-                                    <h4 className="text-sm font-bold text-slate-800 truncate">{room.title || "Admin Support"}</h4>
-                                    <span className="text-[9px] text-slate-400 font-bold">12:45</span>
+                <div className="flex-1 overflow-y-auto bg-white custom-scrollbar">
+                    {rooms.map(room => {
+                        const isSelected = activeRoom?.id === room.id;
+                        return (
+                            <div key={room.id} onClick={() => setActiveRoom(room)} className={`p-4 flex items-center gap-4 cursor-pointer border-b border-slate-50 ${isSelected ? 'bg-[#f0f2f5]' : 'hover:bg-[#f5f6f6]'}`}>
+                                <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-black text-white ${isSelected ? 'bg-[#00a884]' : 'bg-slate-400'}`}>{room.title?.charAt(0).toUpperCase()}</div>
+                                <div className="flex-1 min-w-0 pr-1">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <h4 className="text-[17px] font-normal text-slate-900 truncate">{room.title}</h4>
+                                        <span className="text-[11px] text-slate-400">{(room.lastMessageTime?.toDate?.() || new Date()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1"><CheckCheck className="w-3.5 h-3.5 text-blue-400" /><p className="text-[14px] text-slate-500 truncate leading-relaxed">{room.lastMessage || "Begin Chat..."}</p></div>
                                 </div>
-                                <p className="text-[11px] text-slate-400 truncate font-medium">{room.lastMessage || "No messages yet"}</p>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </aside>
 
-            {/* Chat Window */}
+            {/* Main Chat Area */}
             {activeRoom ? (
-                <main className="flex-1 flex flex-col bg-white overflow-hidden">
-                    <header className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white relative z-10 shadow-sm">
+                <main className="flex-1 flex flex-col bg-[#efeae2] overflow-hidden relative">
+                    <div className="absolute inset-0 opacity-[0.08] pointer-events-none" style={{ backgroundImage: 'url("https://w0.peakpx.com/wallpaper/580/678/HD-wallpaper-whatsapp-background-whatsapp-texture.jpg")', backgroundSize: '400px' }}></div>
+                    <header className="px-4 py-2 h-[60px] border-b border-slate-200 flex items-center justify-between bg-[#f0f2f5] z-30 flex-shrink-0">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
-                                <ShieldCheck className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-slate-800 leading-tight">{activeRoom.title || "Support Channel"}</h3>
-                                <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest">Active Link Established</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                             <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors"><MoreHorizontal className="w-5 h-5" /></button>
+                            <div className="w-10 h-10 bg-[#00a884] rounded-full flex items-center justify-center font-bold text-white uppercase">{activeRoom.title?.charAt(0).toUpperCase()}</div>
+                            <div><h3 className="text-[16px] font-medium text-slate-800 leading-tight">{activeRoom.title}</h3><p className="text-[12px] text-emerald-600 font-medium">online</p></div>
                         </div>
                     </header>
 
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/10">
-                        <AnimatePresence>
-                            {messages.map((msg) => {
-                                const isMe = msg.senderId === (user.id || user._id);
-                                return (
-                                    <motion.div 
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        key={msg.id} 
-                                        className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-                                    >
-                                        <div className={`max-w-[75%] ${isMe ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-                                            <div className={`p-4 rounded-2xl text-sm font-medium transition-all ${
-                                                isMe 
-                                                ? 'bg-indigo-600 text-white rounded-br-none shadow-lg shadow-indigo-100' 
-                                                : 'bg-white text-slate-700 border border-slate-100 rounded-bl-none shadow-sm'
-                                            }`}>
-                                                {msg.text}
-                                            </div>
-                                            <div className="flex items-center gap-2 px-1">
-                                                <span className="text-[9px] text-slate-400 font-bold uppercase">{msg.timestamp?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                                {isMe && <CheckCheck className={`w-3.5 h-3.5 ${msg.seen ? 'text-indigo-400' : 'text-slate-300'}`} />}
+                    <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-4 md:px-16 py-6 space-y-3 z-10 custom-scrollbar scroll-smooth">
+                        <div className="flex justify-center mb-6"><span className="bg-[#fff9ee] text-[#54656f] px-4 py-1 rounded-xl text-[12px] font-semibold uppercase tracking-wider">Today</span></div>
+                        
+                        {messages.length > 0 ? messages.map((msg, index) => {
+                            const isMe = msg.senderId === (user.id || user._id);
+                            return (
+                                <div key={msg.id || index} className={`flex w-full mb-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[90%] md:max-w-[70%] px-3 py-2 rounded-lg text-[15px] shadow-sm relative ${isMe ? 'bg-[#dcf8c6] text-[#111b21] rounded-tr-none' : 'bg-white text-[#111b21] rounded-tl-none'}`}>
+                                        <div className="flex flex-col">
+                                            {!isMe && <span className="text-[13px] font-bold text-[#e542a3] mb-1">{msg.senderName}</span>}
+                                            <div className="flex flex-wrap items-end justify-between pr-2">
+                                                <span className="whitespace-pre-wrap flex-1 break-words font-normal leading-relaxed">{msg.text}</span>
+                                                <div className="flex items-center gap-1 self-end pl-6"><span className="text-[11px] text-slate-500">{(msg.timestamp?.toDate?.() || new Date()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>{isMe && <CheckCheck className={`w-4 h-4 ${msg.seen ? 'text-blue-400' : 'text-slate-400'}`} />}</div>
                                             </div>
                                         </div>
-                                    </motion.div>
-                                );
-                            })}
-                        </AnimatePresence>
-                        <div ref={messagesEndRef} />
+                                        <div className={`absolute top-0 w-3 h-3 ${isMe ? 'right-[-7px] bg-[#dcf8c6]' : 'left-[-7px] bg-white'}`} style={{ clipPath: isMe ? 'polygon(0 0, 0 100%, 100% 0)' : 'polygon(100% 0, 100% 100%, 0 0)' }}></div>
+                                    </div>
+                                </div>
+                            );
+                        }) : (
+                             <div className="flex flex-col items-center justify-center p-20 opacity-40"><MessageSquare className="w-12 h-12" /><p className="text-xs font-black uppercase tracking-widest mt-4">History Synchronized</p></div>
+                        )}
+                        <div ref={messagesEndRef} className="h-6" />
                     </div>
 
-                    <footer className="p-6 border-t border-slate-100 bg-white">
-                        <form onSubmit={sendMessage} className="flex items-center gap-3">
-                            <div className="flex gap-1">
-                                <button type="button" className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"><Image className="w-5 h-5" /></button>
-                                <button type="button" className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"><Paperclip className="w-5 h-5" /></button>
-                            </div>
-                            <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 flex items-center gap-3">
-                                <input 
-                                    type="text" 
-                                    placeholder="Type your message..." 
-                                    className="bg-transparent text-sm w-full outline-none text-slate-700 font-medium"
-                                    value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
-                                />
-                                <Smile className="w-5 h-5 text-slate-300 cursor-pointer" />
-                            </div>
-                            <button 
-                                type="submit"
-                                disabled={!message.trim()}
-                                className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all active:scale-95"
+                    {/* New Messages Indicator */}
+                    <AnimatePresence>
+                        {showNewMessageToast && (
+                            <motion.button 
+                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                                onClick={scrollToBottom}
+                                className="absolute bottom-[90px] right-10 z-40 bg-white p-3 rounded-full shadow-2xl border border-slate-100 hover:bg-slate-50"
                             >
-                                <Send className="w-5 h-5" />
-                            </button>
+                                <ArrowDown className="w-6 h-6 text-[#54656f]" />
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
+
+                    <footer className="px-4 py-3 bg-[#f0f2f5] z-30 flex-shrink-0 shadow-sm">
+                        <form onSubmit={sendMessage} className="flex items-center gap-4">
+                            <Smile className="w-7 h-7 text-[#54656f] cursor-pointer" /><Paperclip className="w-7 h-7 text-[#54656f] cursor-pointer" />
+                            <div className="flex-1 bg-white rounded-lg px-5 py-2.5 flex items-center shadow-sm">
+                                <input type="text" placeholder="Type a message" className="bg-transparent text-[16px] w-full outline-none" value={message} onChange={(e) => setMessage(e.target.value)} />
+                            </div>
+                            {message.trim() ? (<button type="submit" className="p-2 text-[#00a884]"><Send className="w-7 h-7 rotate-45" /></button>) : (<Mic className="w-7 h-7 text-[#54656f] cursor-pointer" />)}
                         </form>
                     </footer>
                 </main>
             ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-20 text-center space-y-4">
-                     <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200">
-                         <MessageSquare className="w-10 h-10" />
-                     </div>
-                     <div>
-                         <h3 className="text-xl font-bold text-slate-800">Select a Conversation</h3>
-                         <p className="text-sm text-slate-400">Initialize a connection from the left panel to begin communication.</p>
-                     </div>
+                <div className="flex-1 flex flex-col items-center justify-center p-20 text-center bg-[#f0f2f5] border-b-8 border-[#00a884] h-full">
+                     <div className="w-40 h-40 bg-slate-200 rounded-full flex items-center justify-center mb-8 shadow-inner"><MessageSquare className="w-16 h-16 text-slate-400" /></div>
+                     <h3 className="text-4xl font-light text-slate-600 mb-2">WhatsApp Web</h3>
+                     <p className="text-[15px] text-slate-500 max-w-md font-light leading-relaxed">Connect seamlessly with your administrative support. Select a chat to begin.</p>
                 </div>
             )}
+
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #8883; border-radius: 10px; }
+            `}</style>
         </div>
     );
 };

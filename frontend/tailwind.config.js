@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+    darkMode: 'class',
     content: [
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,26 +8,32 @@ export default {
     theme: {
         extend: {
             colors: {
+                primary: '#1E3A8A',    // Deep Blue
+                secondary: '#3B82F6',  // Sky Blue
+                accent: '#60A5FA',     // Light Blue
+                cta: '#2563EB',        // Bright Blue
+                ctaHover: '#1D4ED8',   // Darker Blue
+                surface: '#F1F5F9',    // Very Light Blue
+                textMain: '#374151',   // Dark Gray
                 brand: {
-                    50: '#F5F5F5', // Light Grey (Section Background)
-                    100: '#E0E0E0',
-                    200: '#C2C2C2',
-                    300: '#A3A3A3',
-                    400: '#858585',
-                    500: '#4A4A4A', // Steel Grey (Industrial feel)
-                    600: '#3A3A3A',
-                    700: '#2A2A2A',
-                    800: '#142A55', 
-                    900: '#0A1F44', // Dark Blue (Header/Footer, primary trust)
-                    950: '#000000', // Black
-                    accent: '#FF6B00', // Safety Orange (Buttons, CTA)
-                    accentHover: '#E66000', 
-                    highlight: '#FFC107', // Yellow (Highlights/Icons)
+                    50: '#F8FAFC',
+                    100: '#F1F5F9',
+                    200: '#E2E8F0',
+                    800: '#1E3A8A', 
+                    900: '#0F172A',
+                    950: '#020617', // Deeper for Dark Mode background
+                },
+                dark: {
+                    bg: '#020617',
+                    surface: '#0B1222',
+                    border: '#1E293B',
+                    text: '#F1F5F9',
+                    muted: '#94A3B8'
                 }
             },
             fontFamily: {
-                sans: ['"Inter"', 'sans-serif'], // Solid, heavy-duty sans serif
-                display: ['"Barlow Semi Condensed"', 'sans-serif'], // For industrial headings if needed
+                sans: ['"Inter"', 'sans-serif'],
+                poppins: ['"Poppins"', 'sans-serif'],
             },
             boxShadow: {
                 'solid': '4px 4px 0px 0px rgba(0,0,0,1)', // Brutalist/Solid shadow
