@@ -1,5 +1,6 @@
 import React from 'react';
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     LayoutDashboard, 
     Layers, 
