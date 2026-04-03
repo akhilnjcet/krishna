@@ -101,7 +101,7 @@ const CustomerLayout = () => {
                 <div className="p-8 border-b border-slate-800 bg-[#0B1222]">
                     <Link to="/" className="flex flex-col items-center gap-3 group">
                         <img 
-                            src="/app-icon.jpg" 
+                            src="/logo512.png" 
                             alt="Client Portal" 
                             className="w-16 h-16 object-contain rounded-2xl shadow-lg group-hover:scale-105 transition-transform" 
                         />

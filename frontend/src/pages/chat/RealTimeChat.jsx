@@ -33,8 +33,8 @@ const RealTimeChat = ({ chatId: propChatId }) => {
         if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
             new Notification(title, {
                 body,
-                icon: "/app-icon.jpg",
-                badge: "/app-icon.jpg"
+                icon: "/logo512.png",
+                badge: "/logo512.png"
             });
         }
     };

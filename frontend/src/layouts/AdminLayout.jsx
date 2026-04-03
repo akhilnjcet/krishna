@@ -75,7 +75,7 @@ const AdminLayout = () => {
                 <div className="p-8 border-b border-slate-800 dark:border-dark-border bg-[#0B1222] dark:bg-dark-bg">
                     <Link to="/" className="flex items-center gap-3 group">
                         <img 
-                            src="/app-icon.jpg" 
+                            src="/logo512.png" 
                             alt="KEW Admin" 
                             className="w-12 h-12 object-contain rounded-xl shadow-lg group-hover:scale-105 transition-transform" 
                         />

@@ -28,7 +28,7 @@ const Navbar = () => {
                         <div className="flex-shrink-0">
                             <Link to="/" className="flex items-center gap-3 group">
                                 <img 
-                                    src="/app-icon.jpg" 
+                                    src="/logo512.png" 
                                     alt="Krishna Engineering Works" 
                                     className="h-16 w-auto object-contain rounded-xl shadow-lg shadow-blue-100 group-hover:scale-105 transition-transform duration-300"
                                 />
