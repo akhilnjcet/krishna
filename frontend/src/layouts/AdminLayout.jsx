@@ -64,6 +64,12 @@ const AdminLayout = () => {
                 { name: 'Live Channels', path: '/admin/live-chat', icon: MessagesSquare },
                 { name: 'AI Assistant', path: '/admin/chat', icon: MessageSquare },
             ]
+        },
+        {
+            label: "System Control",
+            items: [
+                { name: 'General Settings', path: '/admin/settings', icon: Settings },
+            ]
         }
     ];
 
@@ -115,15 +121,15 @@ const AdminLayout = () => {
 
                 {/* Sidebar Footer / User Profile */}
                 <div className="p-4 border-t border-slate-800 space-y-4">
-                    <div className="bg-[#1E293B]/50 p-4 rounded-2xl flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white border-2 border-slate-700">
+                    <Link to="/admin/settings" className="bg-[#1E293B]/50 p-4 rounded-2xl flex items-center gap-3 hover:bg-[#1E293B] transition-all group/profile">
+                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white border-2 border-slate-700 group-hover/profile:border-blue-400 transition-all">
                             {user?.name?.charAt(0)}
                         </div>
                         <div className="min-w-0">
-                            <p className="text-sm font-bold truncate">{user?.name}</p>
+                            <p className="text-sm font-bold truncate group-hover/profile:text-blue-400 transition-all">{user?.name}</p>
                             <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Super Admin</p>
                         </div>
-                    </div>
+                    </Link>
                     <button
                         onClick={handleLogout}
                         className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-rose-600/20 hover:text-rose-500 text-slate-400 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-200"
@@ -180,9 +186,16 @@ const AdminLayout = () => {
                     ))}
                 </nav>
 
-                <div className="p-4 border-t border-slate-800">
-                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 bg-slate-800 text-slate-400 py-3 rounded-xl text-xs font-bold transition-all">
-                        <LogOut className="w-4 h-4" /> Log Out
+                <div className="p-4 border-t border-slate-800 space-y-3">
+                    <Link 
+                        to="/admin/settings" 
+                        onClick={() => setSidebarOpen(false)}
+                        className="w-full flex items-center justify-center gap-2 bg-[#2563EB]/10 text-blue-400 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#2563EB]/20 transition-all"
+                    >
+                        <Settings className="w-4 h-4" /> System Settings
+                    </Link>
+                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 bg-slate-800 text-slate-400 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-rose-600/20 hover:text-rose-500 transition-all">
+                        <LogOut className="w-4 h-4" /> Log Out Station
                     </button>
                 </div>
             </aside>
@@ -211,12 +224,19 @@ const AdminLayout = () => {
                         </div>
 
                         <div className="flex items-center gap-2 md:gap-3">
+                            <Link 
+                                to="/admin/settings"
+                                className="p-2 text-blue-100 hover:bg-white/10 rounded-xl transition-all"
+                                title="System Settings"
+                            >
+                                <Settings className="w-5 h-5" />
+                            </Link>
                             <button className="relative p-2 text-blue-100 hover:bg-white/10 rounded-xl transition-all">
                                 <Bell className="w-5 h-5" />
                                 <span className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 border-2 border-[#2563EB] rounded-full"></span>
                             </button>
-                            <div className="w-9 h-9 md:w-10 md:h-10 bg-white/20 rounded-xl flex items-center justify-center text-white backdrop-blur-md border border-white/20">
-                                <User className="w-4 h-4 md:w-5 md:h-5" />
+                            <div className="w-9 h-9 md:w-10 md:h-10 bg-white/20 rounded-xl flex items-center justify-center text-white backdrop-blur-md border border-white/20 text-xs font-bold">
+                                {user?.name?.charAt(0)}
                             </div>
                         </div>
                     </div>

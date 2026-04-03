@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Bot, Save, Trash2, Plus, Users, MessageSquare, ToggleLeft, ToggleRight, Settings } from 'lucide-react';
+import { Bot, Save, Trash2, Plus, Users, MessageSquare, ToggleLeft, ToggleRight, Settings, Activity } from 'lucide-react';
 
 const AdminAIChat = () => {
-    const [settings, setSettings] = useState({ isAiEnabled: 'true', aiPrompt: '' });
+    const [settings, setSettings] = useState({ isAiEnabled: 'true', aiWorkMode: 'online', aiPrompt: '' });
     const [faqs, setFaqs] = useState([]);
     const [leads, setLeads] = useState([]);
     
@@ -26,6 +26,7 @@ const AdminAIChat = () => {
             settingsRes.data.forEach(s => fetchedSettings[s.key] = s.value);
             setSettings({
                 isAiEnabled: fetchedSettings.isAiEnabled || 'true',
+                aiWorkMode: fetchedSettings.aiWorkMode || 'online',
                 aiPrompt: fetchedSettings.aiPrompt || 'You are a helpful assistant for Krishna Engineering...'
             });
 
@@ -119,7 +120,28 @@ const AdminAIChat = () => {
                             </button>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="flex items-center justify-between p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl">
+                            <div>
+                                <h3 className="font-bold text-sm uppercase text-slate-900">Neural Connect</h3>
+                                <p className="text-[10px] text-[#4f46e5] font-black uppercase tracking-widest">Flash AI vs Offline Brain</p>
+                            </div>
+                            <div className="flex bg-white border-4 border-slate-900 rounded-2xl p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                <button 
+                                    onClick={() => setSettings({ ...settings, aiWorkMode: 'online' })}
+                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${settings.aiWorkMode === 'online' ? 'bg-[#4f46e5] text-white' : 'text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    Online
+                                </button>
+                                <button 
+                                    onClick={() => setSettings({ ...settings, aiWorkMode: 'offline' })}
+                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${settings.aiWorkMode === 'offline' ? 'bg-[#4f46e5] text-white' : 'text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    Offline
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">System Identity Prompt</label>
                             <textarea 
                                 rows={6}
@@ -127,14 +149,42 @@ const AdminAIChat = () => {
                                 onChange={e => setSettings({ ...settings, aiPrompt: e.target.value })}
                                 className="w-full border-4 border-slate-200 p-4 rounded-2xl font-medium outline-none focus:border-indigo-600 transition"
                             />
+                            
+                            {/* Neural Diagnostic Button */}
+                            <button 
+                                onClick={async () => {
+                                    try {
+                                        const res = await api.post('/chat', { messages: [{ role: 'user', content: 'Connection Test' }] });
+                                        if (res.data.reply.includes("trouble connecting") || res.data.reply.includes("[AI OFF-LINE]")) {
+                                            alert("Neural Heartbeat Warning: " + res.data.reply);
+                                        } else {
+                                            alert("Neural Heartbeat Confirmed: " + res.data.reply.substring(0, 50) + "...");
+                                        }
+                                    } catch (err) {
+                                        alert("Neural Critical Failure: " + (err.response?.data?.error || err.message));
+                                    }
+                                }}
+                                className="w-full py-3 border-4 border-indigo-600/30 text-indigo-600 font-black rounded-xl hover:bg-indigo-50 transition uppercase text-[10px] tracking-widest"
+                            >
+                                <Activity className="w-3 h-3 inline mr-2" /> Verify Neural Heartbeat
+                            </button>
                         </div>
 
                         <button 
                             onClick={handleSaveSettings}
-                            className="bg-indigo-600 text-white font-black px-6 py-4 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-900 transition w-full flex items-center justify-center gap-2 uppercase tracking-widest"
+                            className="bg-indigo-600 text-white font-black px-6 py-4 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-900 transition w-full flex items-center justify-center gap-2 uppercase tracking-widest mt-6"
                         >
                             <Save className="w-4 h-4" /> Save Core Configuration
                         </button>
+
+                        <div className="mt-8 p-4 bg-blue-50 border-2 border-blue-200 rounded-2xl border-dashed">
+                            <h4 className="text-[10px] font-black uppercase text-blue-600 mb-2 flex items-center gap-2">
+                                <Bot className="w-3 h-3" /> Pro Tip: Intelligent Free Tier
+                            </h4>
+                            <p className="text-[9px] font-bold text-slate-600 leading-relaxed uppercase">
+                                To use AI for <span className="text-blue-600 underline font-black">FREE</span>, get a Gemini API Key from <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" className="text-indigo-600 font-bold underline">Google AI Studio</a> and add <code className="bg-white px-1">GEMINI_API_KEY</code> to your .env.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
