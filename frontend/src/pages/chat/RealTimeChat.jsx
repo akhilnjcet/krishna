@@ -20,6 +20,24 @@ const RealTimeChat = ({ chatId: propChatId }) => {
     
     const messagesEndRef = useRef(null);
     const scrollContainerRef = useRef(null);
+    const lastNotifiedRef = useRef(null);
+
+    // Request Notification Permission
+    useEffect(() => {
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+    }, []);
+
+    const showNotification = (title, body) => {
+        if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
+            new Notification(title, {
+                body,
+                icon: "/app-icon.jpg",
+                badge: "/app-icon.jpg"
+            });
+        }
+    };
 
     // 1. Fetch Chat Rooms (BROADCAST REAL-TIME)
     useEffect(() => {
@@ -66,10 +84,17 @@ const RealTimeChat = ({ chatId: propChatId }) => {
             console.log("REALTIME SYNC ACTIVE:", msgs.length, "msgs");
             setMessages(msgs);
 
-            // Auto-mark seen
+            // Auto-mark seen & Notify
             msgs.forEach(m => {
-                if (!m.seen && m.senderId !== (user.id || user._id)) {
+                const isFromOther = m.senderId !== (user.id || user._id);
+                if (!m.seen && isFromOther) {
                     updateDoc(doc(db, "messages", m.id), { seen: true });
+                    
+                    // Only notify if we haven't notified for this specific message ID yet
+                    if (lastNotifiedRef.current !== m.id) {
+                        showNotification("New Message", m.text);
+                        lastNotifiedRef.current = m.id;
+                    }
                 }
             });
         }, (err) => {

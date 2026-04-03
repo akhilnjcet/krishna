@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
 import FaceCapture from '../../components/FaceCapture';
 import { 
@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 const AdminStaff = () => {
     const [staff, setStaff] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showFaceModal, setShowFaceModal] = useState(false);
@@ -33,19 +32,19 @@ const AdminStaff = () => {
 
     useEffect(() => {
         fetchStaff();
-    }, [searchQuery, filterDept]);
+    }, [fetchStaff]);
 
-    const fetchStaff = async () => {
+    const fetchStaff = useCallback(async () => {
         setLoading(true);
         try {
             const res = await api.get(`/staff?search=${searchQuery}&department=${filterDept}`);
             setStaff(res.data);
         } catch (err) {
-            setError("Failed to fetch staff data.");
+            console.error("Failed to fetch staff data:", err);
         } finally {
             setLoading(false);
         }
-    };
+    }, [searchQuery, filterDept]);
 
     const handleAddStaff = async (e) => {
         e.preventDefault();
@@ -92,6 +91,7 @@ const AdminStaff = () => {
             await api.delete(`/staff/${id}`);
             fetchStaff();
         } catch (err) {
+            console.error(err);
             alert("Failed to delete staff.");
         }
     };
@@ -118,6 +118,7 @@ const AdminStaff = () => {
             alert("Face data removed.");
             fetchStaff();
         } catch (err) {
+            console.error(err);
             alert("Failed to remove face data.");
         }
     };
@@ -125,35 +126,35 @@ const AdminStaff = () => {
     const departments = [...new Set(staff.map(s => s.department))];
 
     return (
-        <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
+        <div className="p-4 md:p-8 space-y-6 md:space-y-8 bg-slate-50 min-h-screen">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-4xl font-black text-slate-900 flex items-center gap-3">
-                        <Users className="w-10 h-10 text-indigo-600" />
+                <div className="text-left">
+                    <h1 className="text-2xl md:text-4xl font-black text-slate-900 flex items-center gap-3 italic uppercase tracking-tighter">
+                        <Users className="w-8 h-8 md:w-10 md:h-10 text-indigo-600" />
                         Staff Management
                     </h1>
-                    <p className="text-slate-500 mt-2 font-medium">Manage your workforce, track attendance, and register biometrics.</p>
+                    <p className="text-xs md:text-sm text-slate-500 mt-2 font-bold uppercase tracking-widest opacity-60">Operations Registry & Biometrics</p>
                 </div>
                 
                 <button 
                     onClick={() => { resetForm(); setShowAddModal(true); }}
-                    className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
+                    className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
                 >
                     <UserPlus className="w-5 h-5" /> Add New Staff
                 </button>
             </div>
 
             {/* Stats Bar */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 {[
-                    { label: 'Total Staff', value: staff.length, color: 'indigo' },
+                    { label: 'Total', value: staff.length, color: 'indigo' },
                     { label: 'Active', value: staff.filter(s => s.status === 'active').length, color: 'emerald' },
-                    { label: 'Face Registered', value: staff.filter(s => s.faceDescriptor?.length > 0).length, color: 'amber' },
-                    { label: 'Departments', value: departments.length, color: 'purple' }
+                    { label: 'Face ID', value: staff.filter(s => s.faceDescriptor?.length > 0).length, color: 'amber' },
+                    { label: 'Dept', value: departments.length, color: 'purple' }
                 ].map((stat, i) => (
-                    <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                        <p className="text-slate-500 font-semibold text-sm uppercase tracking-wider">{stat.label}</p>
-                        <p className={`text-3xl font-black text-${stat.color}-600 mt-1`}>{stat.value}</p>
+                    <div key={i} className="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 shadow-sm text-left">
+                        <p className="text-slate-500 font-black text-[9px] md:text-xs uppercase tracking-widest">{stat.label}</p>
+                        <p className={`text-xl md:text-3xl font-black text-${stat.color}-600 mt-1`}>{stat.value}</p>
                     </div>
                 ))}
             </div>

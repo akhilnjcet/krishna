@@ -27,17 +27,11 @@ const Navbar = () => {
                         {/* Logo */}
                         <div className="flex-shrink-0">
                             <Link to="/" className="flex items-center gap-3 group">
-                                <div className="bg-primary w-11 h-11 flex items-center justify-center font-black text-white text-xl rounded-2xl shadow-lg shadow-blue-100 group-hover:scale-105 transition-transform duration-300">
-                                    KE
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xl font-bold tracking-tight text-primary leading-none font-poppins">
-                                        KRISHNA
-                                    </span>
-                                    <span className="text-[0.65rem] font-bold tracking-[0.2em] uppercase text-secondary leading-none mt-1.5 transition-colors group-hover:text-cta">
-                                        Engineering Works
-                                    </span>
-                                </div>
+                                <img 
+                                    src="/app-icon.jpg" 
+                                    alt="Krishna Engineering Works" 
+                                    className="h-16 w-auto object-contain rounded-xl shadow-lg shadow-blue-100 group-hover:scale-105 transition-transform duration-300"
+                                />
                             </Link>
                         </div>
 

@@ -6,12 +6,21 @@ import useAuthStore from '../../stores/authStore';
 import { CheckCircle2, ChevronRight, Projector as Project, AlertCircle, Send, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const REASONS = [
-    "Staff behavior issue",
+const CUSTOMER_REASONS = [
     "Work delay",
     "Payment issue",
     "Service complaint",
+    "Staff behavior issue",
     "Other (technical detail)"
+];
+
+const STAFF_REASONS = [
+    "Project Clarification",
+    "Material Requirement",
+    "Site Update / Blockade",
+    "Admin Instruction Needed",
+    "Safety / Urgent Notice",
+    "Other (internal ref)"
 ];
 
 const VerificationFlow = ({ onComplete }) => {
@@ -22,6 +31,8 @@ const VerificationFlow = ({ onComplete }) => {
     const [selectedReason, setSelectedReason] = useState("");
     const [otherReason, setOtherReason] = useState("");
     const [loading, setLoading] = useState(true);
+
+    const REASONS = user?.role === 'staff' ? STAFF_REASONS : CUSTOMER_REASONS;
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -43,9 +54,11 @@ const VerificationFlow = ({ onComplete }) => {
                 userId: user.id || user._id,
                 userName: user.name,
                 userEmail: user.email,
+                userRole: user.role || 'customer',
+                requestType: user.role === 'staff' ? 'staff-reference' : 'support',
                 projectId: selectedProject._id,
                 projectTitle: selectedProject.title,
-                reason: selectedReason === "Other (technical detail)" ? otherReason : selectedReason,
+                reason: (selectedReason === "Other (technical detail)" || selectedReason === "Other (internal ref)") ? otherReason : selectedReason,
                 status: 'pending',
                 createdAt: serverTimestamp()
             });
@@ -148,7 +161,7 @@ const VerificationFlow = ({ onComplete }) => {
                             ))}
                         </div>
 
-                        {selectedReason === "Other (technical detail)" && (
+                        {(selectedReason === "Other (technical detail)" || selectedReason === "Other (internal ref)") && (
                             <textarea 
                                 placeholder="Describe the issue in detail..."
                                 className="w-full bg-slate-50 border border-slate-200 rounded-3xl p-6 outline-none text-slate-700 font-medium focus:ring-2 focus:ring-indigo-100"
@@ -162,7 +175,7 @@ const VerificationFlow = ({ onComplete }) => {
                              <button onClick={() => setStep(1)} className="flex-1 py-4 text-xs font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">Go Back</button>
                              <button 
                                 onClick={submitRequest}
-                                disabled={!selectedReason || (selectedReason === "Other (technical detail)" && !otherReason)}
+                                disabled={!selectedReason || ((selectedReason === "Other (technical detail)" || selectedReason === "Other (internal ref)") && !otherReason)}
                                 className="flex-[2] bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 group transition-all"
                             >
                                 Dispatch Request <Send className="w-4 h-4 group-hover:-translate-y-1 transition-transform" />

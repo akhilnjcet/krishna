@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -57,16 +57,23 @@ import useAuthStore from './stores/authStore';
 import SupportHub from './pages/chat/SupportHub';
 import ChatRequestsManager from './pages/chat/ChatRequestsManager';
 
-const Layout = ({ children }) => (
-  <div className="min-h-screen flex flex-col font-sans relative">
-    <Navbar />
-    <main className="flex-grow">
-      {children}
-    </main>
-    <Footer />
-    <AIChatWidget />
-  </div>
-);
+const Layout = ({ children }) => {
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith('/admin') || 
+                      location.pathname.startsWith('/staff') || 
+                      location.pathname.startsWith('/customer');
+
+  return (
+    <div className="min-h-screen flex flex-col font-sans relative">
+      {!isDashboard && <Navbar />}
+      <main className="flex-grow">
+        {children}
+      </main>
+      {!isDashboard && <Footer />}
+      <AIChatWidget />
+    </div>
+  );
+};
 
 const SecurityWrapper = ({ children }) => {
   const { logout, isAuthenticated } = useAuthStore();

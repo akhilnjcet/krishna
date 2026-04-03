@@ -1,0 +1,17 @@
+{
+  "name": "Krishna Engineering Works",
+  "short_name": "Krishna ERP",
+  "description": "Secure ERP and Project Management Portal for Krishna Engineering Works.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#2563EB",
+  "icons": [
+    {
+      "src": "/app-icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

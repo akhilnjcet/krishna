@@ -99,10 +99,12 @@ const CustomerLayout = () => {
             {/* Desktop Sidebar */}
             <aside className="w-72 bg-[#0F172A] text-white hidden md:flex flex-col fixed h-full z-20 border-r border-slate-800">
                 <div className="p-8 border-b border-slate-800 bg-[#0B1222]">
-                    <Link to="/" className="flex flex-col items-center gap-3">
-                        <div className="bg-[#2563EB] w-12 h-12 flex items-center justify-center font-bold text-white text-2xl rounded-2xl shadow-lg shadow-blue-900/20">
-                            K
-                        </div>
+                    <Link to="/" className="flex flex-col items-center gap-3 group">
+                        <img 
+                            src="/app-icon.jpg" 
+                            alt="Client Portal" 
+                            className="w-16 h-16 object-contain rounded-2xl shadow-lg group-hover:scale-105 transition-transform" 
+                        />
                         <div className="flex flex-col text-center">
                             <span className="text-xl font-bold tracking-tight text-white font-poppins capitalize">Krishna Engineering</span>
                             <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-blue-400 opacity-80 mt-1">Client Portal</span>

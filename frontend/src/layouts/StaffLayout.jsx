@@ -53,9 +53,11 @@ const StaffLayout = () => {
             <aside className={`bg-[#0F172A] text-white border-r border-slate-800 transition-all duration-300 hidden md:flex flex-col z-30 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
                 <div className="h-20 flex items-center px-6 border-b border-slate-800 bg-[#0B1222]">
                     <Link to="/" className="flex items-center gap-3 group">
-                        <div className="bg-[#2563EB] w-10 h-10 flex items-center justify-center font-bold text-white text-xl rounded-xl shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                            K
-                        </div>
+                        <img 
+                            src="/app-icon.jpg" 
+                            alt="Staff" 
+                            className="w-10 h-10 object-contain rounded-xl shadow-lg group-hover:scale-105 transition-transform" 
+                        />
                         {isSidebarOpen && (
                             <div className="flex flex-col">
                                 <span className="text-lg font-bold tracking-tight text-white font-poppins capitalize leading-none">Krishna Staff</span>

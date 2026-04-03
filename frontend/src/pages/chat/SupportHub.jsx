@@ -20,6 +20,7 @@ const SupportHub = () => {
     const [view, setView] = useState('entry'); // 'entry', 'chat', 'verify'
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('active');
+    const [chatType, setChatType] = useState('support'); // 'support' or 'staff-reference'
 
     useEffect(() => {
         if (!user) {
@@ -29,9 +30,13 @@ const SupportHub = () => {
         }
 
         let q;
-        if (user.role === 'admin' || user.role === 'staff') {
+        if (user.role === 'admin') {
             q = collection(db, "chatRequests");
         } else {
+            // Staff and Customers only see their own requests OR staff sees all support?
+            // User requested "Staff can seperate chat for admin... based on project"
+            // Let's allow staff to see ALL support chats IF they aren't the requester, 
+            // BUT see their own "staff-reference" chats.
             q = query(
                 collection(db, "chatRequests"), 
                 where("userId", "==", user.id || user._id || "")
@@ -100,8 +105,29 @@ const SupportHub = () => {
                 <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center text-white mx-auto shadow-2xl shadow-indigo-100 mb-6 transform rotate-3">
                     <MessageSquare className="w-10 h-10" />
                 </div>
-                <h1 className="text-4xl font-black text-slate-100 dark:text-slate-900 tracking-tighter uppercase italic">Support Command Center</h1>
-                <p className="text-slate-500 font-bold tracking-widest uppercase text-[10px] opacity-60">Secure End-to-End Encrypted Communication</p>
+                <h1 className="text-4xl font-black text-slate-100 dark:text-slate-900 tracking-tighter uppercase italic">Communication Hub</h1>
+                <p className="text-slate-500 font-bold tracking-widest uppercase text-[10px] opacity-60">Secure End-to-End Encrypted Tunnel</p>
+                
+                {user.role !== 'customer' && (
+                    <div className="flex justify-center gap-4 mt-8">
+                        <button 
+                            onClick={() => setChatType('support')}
+                            className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                                chatType === 'support' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400'
+                            }`}
+                        >
+                            Customer Support
+                        </button>
+                        <button 
+                            onClick={() => setChatType('staff-reference')}
+                            className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                                chatType === 'staff-reference' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400'
+                            }`}
+                        >
+                            Staff Project Ref
+                        </button>
+                    </div>
+                )}
             </header>
 
             <div className="flex items-center gap-6 border-b-2 border-slate-100 mb-10">
@@ -132,7 +158,9 @@ const SupportHub = () => {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {(activeTab === 'active' ? activeTickets : closedTickets).map((ticket) => (
+                    {(activeTab === 'active' ? activeTickets : closedTickets)
+                        .filter(t => user.role === 'customer' || t.requestType === chatType)
+                        .map((ticket) => (
                         <div 
                             key={ticket.id}
                             className={`p-10 rounded-[3rem] border-4 transition-all relative overflow-hidden flex flex-col justify-between h-full group ${
@@ -162,6 +190,9 @@ const SupportHub = () => {
                                 <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">{ticket.projectTitle}</h3>
                                 <div className="flex items-center gap-2 mb-6">
                                     <span className="bg-slate-900 text-white text-[9px] font-black px-2 py-1 rounded">REF: {ticket.id.slice(-6).toUpperCase()}</span>
+                                    {ticket.requestType === 'staff-reference' && (
+                                        <span className="bg-amber-100 text-amber-700 text-[9px] font-black px-2 py-1 rounded">INTERNAL</span>
+                                    )}
                                     <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest">{ticket.reason}</span>
                                 </div>
                                 
@@ -203,7 +234,7 @@ const SupportHub = () => {
                         </div>
                     ))}
                     
-                    {activeTab === 'active' && user.role === 'customer' && (
+                    {activeTab === 'active' && (user.role === 'customer' || user.role === 'staff') && (
                         <button 
                             onClick={() => setView('verify')}
                             className="bg-white p-10 rounded-[3rem] border-4 border-dashed border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition-all flex flex-col items-center justify-center text-center group min-h-[400px] active:scale-98"
@@ -211,7 +242,9 @@ const SupportHub = () => {
                             <div className="w-24 h-24 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all scale-110 shadow-xl group-hover:shadow-indigo-200">
                                 <Plus className="w-12 h-12" />
                             </div>
-                            <h4 className="text-lg font-black text-slate-400 group-hover:text-indigo-600 uppercase tracking-[0.3em]">Open Support Protocol</h4>
+                            <h4 className="text-lg font-black text-slate-400 group-hover:text-indigo-600 uppercase tracking-[0.3em]">
+                                {user.role === 'staff' ? 'Initialize Project Channel' : 'Open Support Protocol'}
+                            </h4>
                         </button>
                     )}
                 </div>
