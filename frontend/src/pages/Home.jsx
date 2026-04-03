@@ -14,11 +14,11 @@ const Home = () => {
     const [settings, setSettings] = useState({
         about_title: 'Building Trust Through Quality Craftsmanship',
         about_content: "For over 25 years, **Krishna Engineering Works** has been a trusted pioneer in the fabrication, welding, and industrial services sector across Kerala. We have built our reputation on a foundation of unyielding quality, remarkable durability, and unwavering commitment to customer satisfaction.",
-        map_embed_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d251482.68658826724!2d76.16084920612662!3d9.982342759902633!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b080d514abec6bf%3A0xbd582caa5844192!2sKochi%2C%20Kerala!5e0!3m2!1sen!2sin!4v1709230552399!5m2!1sen!2sin',
+        map_embed_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3917.86141356417!2d76.3951277!3d10.8981353!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba7d7df303996fd%3A0xe144438f2273f6f2!2sKrishna%20engineering%20works%20thiruvazhiyode.(welding%20workshop)!5e0!3m2!1sen!2sin!4v1775236981093!5m2!1sen!2sin',
         stat_years: '25+',
-        footer_address: 'Kochi, Kerala, India',
-        footer_phone: '+91 9446 000 000',
-        floating_whatsapp: '919446000000'
+        footer_address: 'Thiruvazhiyode, Sreekrishnapuram, Kerala 679514',
+        footer_phone: '+91 85940 30186',
+        floating_whatsapp: '918594030186'
     });
 
     useEffect(() => {
@@ -93,7 +93,7 @@ const Home = () => {
                             <Link to="/quote" className="px-10 py-5 bg-cta hover:bg-ctaHover text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 shadow-2xl shadow-blue-500/20 hover:-translate-y-1 active:translate-y-0">
                                 Start Your Project <ArrowRight className="w-5 h-5" />
                             </Link>
-                            <a href="tel:+919446000000" className="px-10 py-5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all border border-white/10 backdrop-blur-sm flex items-center justify-center gap-3 hover:-translate-y-1 active:translate-y-0">
+                            <a href="tel:+918594030186" className="px-10 py-5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all border border-white/10 backdrop-blur-sm flex items-center justify-center gap-3 hover:-translate-y-1 active:translate-y-0">
                                 <Phone className="w-5 h-5 text-accent" /> Speak with Experts
                             </a>
                         </div>

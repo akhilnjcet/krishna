@@ -20,6 +20,13 @@ const userSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
     last_login: { type: Date },
     
+    // Financial Specific Fields
+    upi_id: { type: String },
+    bank_name: { type: String },
+    account_number: { type: String },
+    ifsc_code: { type: String },
+    base_salary: { type: Number, default: 0 },
+
     // Email OTP Auth Fields
     resetOTP: { type: String },
     otpExpiry: { type: Date }

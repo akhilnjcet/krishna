@@ -41,7 +41,11 @@ exports.getStaffById = async (req, res) => {
 
 exports.addStaff = async (req, res) => {
     try {
-        const { staff_id, full_name, name, phone_number, phone, email, department, designation, username, password, role, status } = req.body;
+        const { 
+            staff_id, full_name, name, phone_number, phone, email, 
+            department, designation, username, password, role, status,
+            upi_id, bank_name, account_number, ifsc_code, base_salary
+        } = req.body;
 
         const userExists = await User.findOne({ $or: [{ email }, { username }, { staff_id }] });
         if (userExists) {
@@ -62,7 +66,12 @@ exports.addStaff = async (req, res) => {
             username: username || email,
             password: hashedPassword,
             role: role || 'staff',
-            status: status || 'active'
+            status: status || 'active',
+            upi_id,
+            bank_name,
+            account_number,
+            ifsc_code,
+            base_salary: parseFloat(base_salary) || 0
         });
 
         // Send Welcome Message via WhatsApp
@@ -82,7 +91,11 @@ exports.updateStaff = async (req, res) => {
         const staff = await User.findOne({ _id: req.params.id, role: 'staff' });
         if (!staff) return res.status(404).json({ message: 'Staff member not found' });
 
-        const { full_name, name, phone_number, phone, email, department, designation, status, role } = req.body;
+        const { 
+            full_name, name, phone_number, phone, email, 
+            department, designation, status, role,
+            upi_id, bank_name, account_number, ifsc_code, base_salary
+        } = req.body;
 
         staff.name = name || full_name || staff.name;
         staff.phone = phone || phone_number || staff.phone;
@@ -92,6 +105,11 @@ exports.updateStaff = async (req, res) => {
         staff.designation = designation || staff.designation;
         staff.status = status || staff.status;
         staff.role = role || staff.role;
+        staff.upi_id = upi_id !== undefined ? upi_id : staff.upi_id;
+        staff.bank_name = bank_name !== undefined ? bank_name : staff.bank_name;
+        staff.account_number = account_number !== undefined ? account_number : staff.account_number;
+        staff.ifsc_code = ifsc_code !== undefined ? ifsc_code : staff.ifsc_code;
+        staff.base_salary = base_salary !== undefined ? parseFloat(base_salary) : staff.base_salary;
 
         const updatedStaff = await staff.save();
         res.json(updatedStaff);

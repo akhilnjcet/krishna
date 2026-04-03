@@ -3,7 +3,8 @@ import api from '../../services/api';
 import FaceCapture from '../../components/FaceCapture';
 import { 
   Users, UserPlus, Search, Filter, Mail, Phone, Briefcase, 
-  Trash2, Edit, Camera, X, Check, Loader2, AlertCircle, ChevronRight 
+  Trash2, Edit, Camera, X, Check, Loader2, AlertCircle, ChevronRight,
+  Banknote, BadgeIndianRupee
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -13,9 +14,11 @@ const AdminStaff = () => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showFaceModal, setShowFaceModal] = useState(false);
+    const [showPayModal, setShowPayModal] = useState(false);
     const [selectedStaff, setSelectedStaff] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterDept, setFilterDept] = useState('');
+    const [payAmount, setPayAmount] = useState('');
 
     const [formData, setFormData] = useState({
         staff_id: '',
@@ -27,7 +30,12 @@ const AdminStaff = () => {
         username: '',
         password: '',
         role: 'staff',
-        status: 'active'
+        status: 'active',
+        upi_id: '',
+        bank_name: '',
+        account_number: '',
+        ifsc_code: '',
+        base_salary: ''
     });
 
     useEffect(() => {
@@ -122,8 +130,28 @@ const AdminStaff = () => {
             alert("Failed to remove face data.");
         }
     };
+    const handleConfirmPayout = async () => {
+        if (!payAmount) return alert("Please enter an amount.");
+        setLoading(true);
+        try {
+            await api.post('/finance/expenses', {
+                title: `Salary: ${selectedStaff.name} (${selectedStaff.staff_id})`,
+                amount: parseFloat(payAmount),
+                category: 'staff',
+                description: `Salary disbursement for ${selectedStaff.name} via Digital Payout`
+            });
+            alert("Salary Payout Logged Successfully!");
+            setShowPayModal(false);
+            setPayAmount('');
+        } catch {
+            alert("Internal Ledger Failure: Payout could not be recorded.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const departments = [...new Set(staff.map(s => s.department))];
+    const safeStaff = Array.isArray(staff) ? staff : [];
+    const departments = [...new Set(safeStaff.map(s => s?.department || 'General'))];
 
     return (
         <div className="p-4 md:p-8 space-y-6 md:space-y-8 bg-slate-50 min-h-screen">
@@ -147,9 +175,9 @@ const AdminStaff = () => {
             {/* Stats Bar */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 {[
-                    { label: 'Total', value: staff.length, color: 'indigo' },
-                    { label: 'Active', value: staff.filter(s => s.status === 'active').length, color: 'emerald' },
-                    { label: 'Face ID', value: staff.filter(s => s.faceDescriptor?.length > 0).length, color: 'amber' },
+                    { label: 'Total', value: safeStaff.length, color: 'indigo' },
+                    { label: 'Active', value: safeStaff.filter(s => s?.status === 'active').length, color: 'emerald' },
+                    { label: 'Face ID', value: safeStaff.filter(s => s?.faceDescriptor && Array.isArray(s.faceDescriptor) && s.faceDescriptor.length > 0).length, color: 'amber' },
                     { label: 'Dept', value: departments.length, color: 'purple' }
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 shadow-sm text-left">
@@ -206,14 +234,14 @@ const AdminStaff = () => {
                                         <p className="text-slate-500 font-medium font-mono">Synchronizing staff data...</p>
                                     </td>
                                 </tr>
-                            ) : staff.length === 0 ? (
+                            ) : safeStaff.length === 0 ? (
                                 <tr>
                                     <td colSpan="6" className="px-6 py-20 text-center text-slate-500">
                                         <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-20" />
                                         No staff members found matching your search criteria.
                                     </td>
                                 </tr>
-                            ) : staff.map((member) => (
+                            ) : safeStaff.map((member) => (
                                 <tr key={member._id} className="hover:bg-indigo-50/30 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div>
@@ -268,6 +296,17 @@ const AdminStaff = () => {
                                                 className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                                             >
                                                 <Camera className="w-5 h-5" />
+                                            </button>
+                                            <button 
+                                                title="Disburse Salary"
+                                                onClick={() => { 
+                                                    setSelectedStaff(member); 
+                                                    setPayAmount(member.base_salary || '');
+                                                    setShowPayModal(true); 
+                                                }}
+                                                className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                                            >
+                                                <Banknote className="w-5 h-5" />
                                             </button>
                                             {member.faceDescriptor?.length > 0 && (
                                                 <button 
@@ -368,19 +407,47 @@ const AdminStaff = () => {
                                         <option value="customer">Customer / Project Owner</option>
                                     </select>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Account Status*</label>
-                                    <select 
-                                        className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" 
-                                        value={formData.status} 
-                                        onChange={e => setFormData({...formData, status: e.target.value})}
-                                    >
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive / Suspended</option>
-                                    </select>
+                                {showEditModal && (
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Account Status*</label>
+                                        <select 
+                                            className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" 
+                                            value={formData.status} 
+                                            onChange={e => setFormData({...formData, status: e.target.value})}
+                                        >
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive / Suspended</option>
+                                        </select>
+                                    </div>
+                                )}
+
+                                {/* --- Financial Data Section --- */}
+                                <div className="md:col-span-2 pt-6 border-t border-slate-100 mt-4">
+                                    <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-4">Financial Protocol Registry</h4>
                                 </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Base Salary (INR)</label>
+                                    <input type="number" placeholder="25000" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.base_salary} onChange={e => setFormData({...formData, base_salary: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">UPI ID (for Direct Pay)</label>
+                                    <input type="text" placeholder="name@upi" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.upi_id} onChange={e => setFormData({...formData, upi_id: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Bank Name</label>
+                                    <input type="text" placeholder="SBI / HDFC / Federal" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.bank_name} onChange={e => setFormData({...formData, bank_name: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Account Number</label>
+                                    <input type="text" placeholder="00000000000" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.account_number} onChange={e => setFormData({...formData, account_number: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">IFSC Code</label>
+                                    <input type="text" placeholder="SBIN0000001" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.ifsc_code} onChange={e => setFormData({...formData, ifsc_code: e.target.value})} />
+                                </div>
+
                                 {!showEditModal && (
-                                    <div className="space-y-2 md:col-span-2">
+                                    <div className="space-y-2">
                                         <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Secure Access Key [Password]*</label>
                                         <input required type="password" placeholder="••••••••" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
                                     </div>
@@ -420,6 +487,81 @@ const AdminStaff = () => {
                             >
                                 Cancel Process
                             </button>
+                        </motion.div>
+                    </div>
+                )}
+
+                {showPayModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-10 flex flex-col"
+                        >
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                                    <BadgeIndianRupee className="w-8 h-8 text-emerald-600" />
+                                </div>
+                                <div className="text-left text-balance">
+                                    <h2 className="text-2xl font-black text-slate-900 leading-tight">Salary Disburser</h2>
+                                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[9px] mt-1">Recipient: {selectedStaff?.name}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-start">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Amount to Disburse (INR)</label>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-2xl font-black text-slate-400">₹</span>
+                                        <input 
+                                            type="number" 
+                                            value={payAmount}
+                                            onChange={(e) => setPayAmount(e.target.value)}
+                                            placeholder={`Base: 0`}
+                                            className="text-3xl font-black text-slate-900 bg-transparent w-full outline-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                {selectedStaff?.upi_id ? (
+                                    <div className="flex flex-col items-center gap-6 p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100">
+                                        <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.2em] italic">Scan with GPay / PhonePe / Any UPI</p>
+                                        <div className="bg-white p-4 rounded-3xl shadow-lg">
+                                            <img 
+                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=${selectedStaff.upi_id}&pn=${selectedStaff.name}&am=${payAmount}&cu=INR`)}`} 
+                                                alt="UPI QR Code"
+                                                className="w-40 h-40"
+                                            />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-xs font-black text-slate-900">{selectedStaff.upi_id}</p>
+                                            <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest leading-none">{selectedStaff.bank_name || 'REGISTERED BANK PORTAL'}</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="p-8 bg-amber-50 rounded-3xl border border-amber-100 flex flex-col items-center text-center gap-4">
+                                        <AlertCircle className="w-10 h-10 text-amber-500" />
+                                        <p className="text-sm font-bold text-amber-800">No UPI ID registered for this staff member. Use manual Bank Transfer or Update Profile.</p>
+                                        <div className="text-xs font-medium text-amber-600"> {selectedStaff?.account_number ? `Acc: X-${selectedStaff.account_number.slice(-4)} | IFSC: ${selectedStaff.ifsc_code}` : 'No Bank Data Found'}</div>
+                                    </div>
+                                )}
+
+                                <div className="flex gap-4 pt-4">
+                                    <button 
+                                        onClick={() => setShowPayModal(false)}
+                                        className="flex-1 px-6 py-4 rounded-2xl bg-slate-100 text-slate-500 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-200 transition"
+                                    >
+                                        Close
+                                    </button>
+                                    <button 
+                                        onClick={handleConfirmPayout}
+                                        className="flex-[2] px-6 py-4 rounded-2xl bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition shadow-xl shadow-emerald-600/20 active:scale-95"
+                                    >
+                                        Confirm & Log Payout
+                                    </button>
+                                </div>
+                            </div>
                         </motion.div>
                     </div>
                 )}
