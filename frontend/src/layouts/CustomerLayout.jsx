@@ -18,6 +18,7 @@ import useAuthStore from '../stores/authStore';
 const CustomerLayout = () => {
     const { user, isAuthenticated, logout } = useAuthStore();
     const location = useLocation();
+    const [isMobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
     if (!isAuthenticated || user?.role !== 'customer') {
         return <Navigate to="/login" replace />;
@@ -37,9 +38,64 @@ const CustomerLayout = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex font-sans overflow-x-hidden md:flex-row flex-col">
+        <div className="min-h-screen bg-[#F8FAFC] flex font-sans overflow-x-hidden flex-col md:flex-row">
             
-            {/* Sidebar - Fix Visibility & Support Blue Theme */}
+            {/* Mobile Navigation Header */}
+            <div className="md:hidden bg-[#0F172A] p-4 flex items-center justify-between z-50 sticky top-0 border-b border-slate-800">
+                <Link to="/" className="flex items-center gap-2">
+                    <div className="bg-[#2563EB] w-8 h-8 flex items-center justify-center font-bold text-white text-lg rounded-lg">K</div>
+                    <span className="text-white font-bold text-sm">Krishna Client</span>
+                </Link>
+                <button onClick={() => setMobileMenuOpen(true)} className="p-2 text-white bg-slate-800 rounded-lg">
+                    <Layers className="w-5 h-5 font-bold" />
+                </button>
+            </div>
+
+            {/* Mobile Menu Backdrop */}
+            <AnimatePresence>
+                {isMobileMenuOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] md:hidden"
+                        />
+                        <motion.aside 
+                            initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }}
+                            className="fixed top-0 bottom-0 left-0 w-72 bg-[#0F172A] z-[70] md:hidden flex flex-col shadow-2xl"
+                        >
+                            <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800 bg-[#0B1222]">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-[#2563EB] w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold">K</div>
+                                    <span className="font-bold text-white text-lg">Menu</span>
+                                </div>
+                                <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-lg">
+                                    <LogOut className="w-5 h-5 rotate-180" />
+                                </button>
+                            </div>
+                            <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
+                                {navItems.map((item) => (
+                                    <Link
+                                        key={item.name}
+                                        to={item.path}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className={`flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-semibold transition-all ${
+                                            location.pathname === item.path 
+                                            ? 'bg-[#2563EB] text-white shadow-xl shadow-blue-500/20' 
+                                            : 'text-slate-400'
+                                        }`}
+                                    >
+                                        <item.icon className="w-5 h-5" />
+                                        <span>{item.name}</span>
+                                    </Link>
+                                ))}
+                            </nav>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* Desktop Sidebar */}
             <aside className="w-72 bg-[#0F172A] text-white hidden md:flex flex-col fixed h-full z-20 border-r border-slate-800">
                 <div className="p-8 border-b border-slate-800 bg-[#0B1222]">
                     <Link to="/" className="flex flex-col items-center gap-3">
