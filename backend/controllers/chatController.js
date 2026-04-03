@@ -107,7 +107,6 @@ exports.handleChat = async (req, res) => {
         }
 
         // 4. ULTIMATE FALLBACK: Keyword Matcher (TOTALLY FREE)
-        const userMsg = messages[messages.length - 1].content.toLowerCase();
         const matchedFaq = faqs.find(f => 
             userMsg.includes(f.question.toLowerCase()) || 
             f.question.toLowerCase().split(' ').some(word => word.length > 3 && userMsg.includes(word))
