@@ -4,7 +4,6 @@ import { db } from '../../services/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import useAuthStore from '../../stores/authStore';
 import { CheckCircle2, ChevronRight, Projector as Project, AlertCircle, Send, ArrowLeft } from 'lucide-react';
-// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 
 const REASONS = [

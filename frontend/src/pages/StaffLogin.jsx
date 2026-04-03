@@ -4,7 +4,7 @@ import api from '../services/api';
 import useAuthStore from '../stores/authStore';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Lock, Camera, ArrowLeft, LogIn, ShieldCheck, Info } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line
+import { motion, AnimatePresence } from 'framer-motion';
 
 const StaffLogin = () => {
     const [loginMethod, setLoginMethod] = useState('password'); 

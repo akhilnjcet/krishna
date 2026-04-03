@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line
+import { motion, AnimatePresence } from 'framer-motion';
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { 
     LayoutDashboard, 

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Calendar, User, Tag, ArrowRight, Loader2, 

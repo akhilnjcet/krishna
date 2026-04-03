@@ -6,7 +6,6 @@ import {
     doc, updateDoc 
 } from 'firebase/firestore';
 import { Send, Image, Paperclip, CheckCheck, Smile, MoreHorizontal, User, ShieldCheck, Search, MessageSquare, ArrowDown, Mic } from 'lucide-react';
-// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import useAuthStore from '../../stores/authStore';
 

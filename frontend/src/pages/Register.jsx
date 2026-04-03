@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, ShieldCheck, ArrowRight, Activity, Users, Info, Rocket } from 'lucide-react';
 import api from '../services/api';
