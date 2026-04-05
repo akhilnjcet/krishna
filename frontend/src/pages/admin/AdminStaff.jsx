@@ -199,7 +199,7 @@ const AdminStaff = () => {
     const departments = [...new Set(safeStaff.map(s => s?.department || 'General'))];
 
     return (
-        <div className="p-4 md:p-8 space-y-6 md:space-y-8 bg-slate-50 min-h-screen">
+        <div className="mobile-p-reset space-y-6 md:space-y-8 bg-slate-50 min-h-screen force-full-width">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="text-left">
                     <h1 className="text-2xl md:text-4xl font-black text-slate-900 flex items-center gap-3 italic uppercase tracking-tighter">
@@ -258,8 +258,8 @@ const AdminStaff = () => {
             </div>
 
             {/* Staff Table */}
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
-                <div className="overflow-x-auto">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden mobile-table-scroll">
+                <div className="min-w-[800px] md:min-w-full">
                     <table className="w-full border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-200 text-left">

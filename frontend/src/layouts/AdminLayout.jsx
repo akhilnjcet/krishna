@@ -26,7 +26,8 @@ import useAuthStore from '../stores/authStore';
 const AdminLayout = () => {
     const { user, isAuthenticated, logout } = useAuthStore();
     const location = useLocation();
-    const [isSidebarOpen, setSidebarOpen] = React.useState(false);
+    const [isSidebarOpen, setSidebarOpen] = React.useState(false); // For mobile
+    const [isSidebarVisible, setSidebarVisible] = React.useState(true); // For desktop toggle
 
     if (!isAuthenticated || user?.role !== 'admin') {
         return <Navigate to="/login" replace />;
@@ -78,7 +79,7 @@ const AdminLayout = () => {
         <div className="min-h-screen bg-[#F8FAFC] dark:bg-dark-bg flex font-sans overflow-x-hidden transition-colors duration-300">
             
             {/* Sidebar - Desktop */}
-            <aside className="w-72 bg-[#0F172A] dark:bg-dark-surface text-white hidden md:flex flex-col fixed h-full z-40 border-r border-slate-800 dark:border-dark-border shadow-2xl">
+            <aside className={`bg-[#0F172A] dark:bg-dark-surface text-white hidden md:flex flex-col fixed h-full z-40 border-r border-slate-800 dark:border-dark-border shadow-2xl transition-all duration-300 ${isSidebarVisible ? 'w-72' : 'w-0 -translate-x-full'}`}>
                 <div className="p-8 border-b border-slate-800 dark:border-dark-border bg-[#0B1222] dark:bg-dark-bg">
                     <Link to="/" className="flex items-center gap-3 group">
                         <img 
@@ -112,7 +113,7 @@ const AdminLayout = () => {
                                         <item.icon className={`w-5 h-5 flex-shrink-0 transition-colors ${
                                             isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'
                                         }`} />
-                                        <span>{item.name}</span>
+                                        <span className="whitespace-nowrap">{item.name}</span>
                                     </Link>
                                 );
                             })}
@@ -163,7 +164,7 @@ const AdminLayout = () => {
                     </button>
                 </div>
 
-                <nav className="flex-1 px-4 py-8 space-y-8 overflow-y-auto">
+                <nav className="flex-1 px-4 py-8 space-y-8 overflow-y-auto italic">
                     {menuGroups.map((group, gIdx) => (
                         <div key={gIdx} className="space-y-2 text-left">
                             <h3 className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-3">{group.label}</h3>
@@ -202,13 +203,20 @@ const AdminLayout = () => {
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 md:ml-72 flex flex-col min-h-screen relative bg-[#F8FAFC] dark:bg-dark-bg transition-all duration-300">
+            <main className={`flex-1 flex flex-col min-h-screen relative bg-[#F8FAFC] dark:bg-dark-bg transition-all duration-300 ${isSidebarVisible ? 'md:ml-72' : 'ml-0'}`}>
                 {/* Modern Header */}
-                <header className="bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] dark:from-[#0B1222] dark:to-[#1E3A8A] h-20 px-8 flex items-center justify-between sticky top-0 z-30 shadow-lg">
+                <header className="bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] dark:from-[#0B1222] dark:to-[#1E3A8A] h-20 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-lg transition-all duration-300">
                     <div className="flex items-center gap-4">
                         <button 
-                            onClick={() => setSidebarOpen(true)}
-                            className="md:hidden p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all border border-white/10"
+                            onClick={() => {
+                                // Toggle mobile menu if on mobile, else toggle desktop visibility
+                                if (window.innerWidth < 768) {
+                                    setSidebarOpen(true);
+                                } else {
+                                    setSidebarVisible(!isSidebarVisible);
+                                }
+                            }}
+                            className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all border border-white/10"
                         >
                             <Menu className="w-6 h-6" />
                         </button>

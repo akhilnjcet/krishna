@@ -20,6 +20,7 @@ const CustomerLayout = () => {
     const { user, isAuthenticated, logout } = useAuthStore();
     const location = useLocation();
     const [isMobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+    const [isSidebarVisible, setSidebarVisible] = React.useState(true);
 
     if (!isAuthenticated || user?.role !== 'customer') {
         return <Navigate to="/login" replace />;
@@ -39,13 +40,13 @@ const CustomerLayout = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex font-sans overflow-x-hidden flex-col md:flex-row">
+        <div className="min-h-screen bg-[#F8FAFC] flex font-sans overflow-x-hidden flex-col md:flex-row transition-all duration-300">
             
             {/* Mobile Navigation Header */}
             <div className="md:hidden bg-[#0F172A] p-4 flex items-center justify-between z-50 sticky top-0 border-b border-slate-800">
                 <Link to="/" className="flex items-center gap-2">
                     <div className="bg-[#2563EB] w-8 h-8 flex items-center justify-center font-bold text-white text-lg rounded-lg">K</div>
-                    <span className="text-white font-bold text-sm">Krishna Client</span>
+                    <span className="text-white font-bold text-sm uppercase tracking-tight">Krishna Client</span>
                 </Link>
                 <button onClick={() => setMobileMenuOpen(true)} className="p-2 text-white bg-slate-800 rounded-lg">
                     <Layers className="w-5 h-5 font-bold" />
@@ -68,13 +69,13 @@ const CustomerLayout = () => {
                             <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800 bg-[#0B1222]">
                                 <div className="flex items-center gap-3">
                                     <div className="bg-[#2563EB] w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold">K</div>
-                                    <span className="font-bold text-white text-lg">Menu</span>
+                                    <span className="font-bold text-white text-lg uppercase tracking-tight">Menu</span>
                                 </div>
                                 <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-lg">
                                     <LogOut className="w-5 h-5 rotate-180" />
                                 </button>
                             </div>
-                            <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
+                            <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto italic">
                                 {navItems.map((item) => (
                                     <Link
                                         key={item.name}
@@ -97,7 +98,7 @@ const CustomerLayout = () => {
             </AnimatePresence>
 
             {/* Desktop Sidebar */}
-            <aside className="w-72 bg-[#0F172A] text-white hidden md:flex flex-col fixed h-full z-20 border-r border-slate-800">
+            <aside className={`bg-[#0F172A] text-white hidden md:flex flex-col fixed h-full z-20 border-r border-slate-800 transition-all duration-300 ${isSidebarVisible ? 'w-72' : 'w-0 -translate-x-full'}`}>
                 <div className="p-8 border-b border-slate-800 bg-[#0B1222]">
                     <Link to="/" className="flex flex-col items-center gap-3 group">
                         <img 
@@ -112,8 +113,8 @@ const CustomerLayout = () => {
                     </Link>
                 </div>
 
-                <nav className="flex-1 px-4 py-10 space-y-2 overflow-y-auto">
-                    <h3 className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-6">Client Services</h3>
+                <nav className="flex-1 px-4 py-10 space-y-2 overflow-y-auto italic">
+                    <h3 className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-6 font-black italic">Client Services</h3>
                     {navItems.map(item => {
                         const isActive = location.pathname === item.path;
                         return (
@@ -129,7 +130,7 @@ const CustomerLayout = () => {
                                 <item.icon className={`w-5 h-5 transition-colors ${
                                     isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'
                                 }`} />
-                                <span>{item.name}</span>
+                                <span className="whitespace-nowrap">{item.name}</span>
                             </Link>
                         );
                     })}
@@ -141,8 +142,8 @@ const CustomerLayout = () => {
                             {user?.name?.charAt(0)}
                         </div>
                         <div className="min-w-0">
-                            <p className="text-sm font-bold truncate">{user?.name}</p>
-                            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Client Identity</p>
+                            <p className="text-sm font-bold truncate italic">{user?.name}</p>
+                            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider italic">Identity Validated</p>
                         </div>
                     </div>
                     <button
@@ -155,11 +156,23 @@ const CustomerLayout = () => {
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 md:ml-72 flex flex-col min-h-screen relative bg-[#F8FAFC]">
-                <header className="bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] h-20 px-8 flex items-center justify-between sticky top-0 z-30 shadow-lg">
-                    <div className="flex items-center gap-6">
-                        <div className="w-1.5 h-8 bg-blue-300/40 rounded-full"></div>
-                        <h1 className="text-xl font-bold text-white tracking-tight font-poppins capitalize">
+            <main className={`flex-1 flex flex-col min-h-screen relative bg-[#F8FAFC] transition-all duration-300 ${isSidebarVisible ? 'md:ml-72' : 'ml-0'}`}>
+                <header className="bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] h-20 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-lg">
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => {
+                                if (window.innerWidth < 768) {
+                                    setMobileMenuOpen(true);
+                                } else {
+                                    setSidebarVisible(!isSidebarVisible);
+                                }
+                            }}
+                            className="p-2 text-white bg-white/10 rounded-xl hover:bg-white/20 transition-all border border-white/10"
+                        >
+                            <Layers className="w-6 h-6" />
+                        </button>
+                        <div className="hidden sm:block w-1.5 h-8 bg-blue-300/40 rounded-full"></div>
+                        <h1 className="text-lg md:text-xl font-bold text-white tracking-tight font-poppins capitalize">
                             {navItems.find(item => item.path === location.pathname)?.name || 'Client Module'}
                         </h1>
                     </div>

@@ -50,3 +50,27 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-[#2563EB]/20 rounded-full hover:bg-[#2563EB]/40 transition-all;
 }
+
+/* --- Mobile Visibility Fixes --- */
+@layer utilities {
+  /* Prevent table content from getting cut off */
+  .mobile-table-scroll {
+    @apply overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
+  }
+
+  /* Responsive card adjustments */
+  .mobile-p-reset {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+
+  /* Force elements to respect container width */
+  .force-full-width {
+    @apply w-full max-w-[100vw] overflow-hidden;
+  }
+  
+  /* Hide specific elements on very small screens to save space */
+  @media (max-width: 640px) {
+    .hide-xs { display: none !important; }
+    .text-xs-mobile { font-size: 0.75rem !important; }
+  }
+}

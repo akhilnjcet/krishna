@@ -23,6 +23,7 @@ const StaffLayout = () => {
     const { user, isAuthenticated, logout } = useAuthStore();
     const location = useLocation();
     const [isSidebarOpen, setSidebarOpen] = useState(true);
+    const [isSidebarVisible, setSidebarVisible] = useState(true); // Control visibility
     const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     if (!isAuthenticated || user?.role !== 'staff') {
@@ -48,10 +49,12 @@ const StaffLayout = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex font-sans overflow-x-hidden md:flex-row flex-col">
+        <div className="min-h-screen bg-[#F8FAFC] flex font-sans overflow-x-hidden md:flex-row flex-col transition-all duration-300">
             
             {/* Desktop Sidebar - High Contrast Blue Theme */}
-            <aside className={`bg-[#0F172A] text-white border-r border-slate-800 transition-all duration-300 hidden md:flex flex-col z-30 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
+            <aside className={`bg-[#0F172A] text-white border-r border-slate-800 transition-all duration-300 hidden md:flex flex-col z-30 fixed h-full ${
+                isSidebarVisible ? (isSidebarOpen ? 'w-64' : 'w-20') : 'w-0 -translate-x-full'
+            }`}>
                 <div className="h-20 flex items-center px-6 border-b border-slate-800 bg-[#0B1222]">
                     <Link to="/" className="flex items-center gap-3 group">
                         <img 
@@ -59,7 +62,7 @@ const StaffLayout = () => {
                             alt="Staff" 
                             className="w-10 h-10 object-contain rounded-xl shadow-lg group-hover:scale-105 transition-transform" 
                         />
-                        {isSidebarOpen && (
+                        {(isSidebarOpen && isSidebarVisible) && (
                             <div className="flex flex-col">
                                 <span className="text-lg font-bold tracking-tight text-white font-poppins capitalize leading-none">Krishna Staff</span>
                                 <span className="text-[8px] font-bold tracking-[0.2em] uppercase text-blue-400 opacity-80 mt-1">Field Logistics</span>
@@ -68,7 +71,7 @@ const StaffLayout = () => {
                     </Link>
                 </div>
 
-                <nav className="flex-1 px-3 py-10 space-y-2 overflow-y-auto custom-scrollbar">
+                <nav className="flex-1 px-3 py-10 space-y-2 overflow-y-auto custom-scrollbar italic">
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path;
                         return (
@@ -82,8 +85,8 @@ const StaffLayout = () => {
                                 }`}
                             >
                                 <item.icon className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
-                                {isSidebarOpen && <span>{item.name}</span>}
-                                {isActive && !isSidebarOpen && (
+                                {(isSidebarOpen && isSidebarVisible) && <span>{item.name}</span>}
+                                {isActive && !isSidebarOpen && isSidebarVisible && (
                                     <div className="absolute left-1.5 w-1 h-6 bg-white rounded-r-full" />
                                 )}
                             </Link>
@@ -97,13 +100,13 @@ const StaffLayout = () => {
                         className="w-full flex items-center justify-center md:justify-start gap-4 px-4 py-3.5 rounded-2xl text-sm font-bold text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all"
                     >
                         <LogOut className="w-5 h-5" />
-                        {isSidebarOpen && <span>Logout Station</span>}
+                        {(isSidebarOpen && isSidebarVisible) && <span>Logout</span>}
                     </button>
                     <button 
                         onClick={() => setSidebarOpen(!isSidebarOpen)}
                         className="mt-6 w-full flex justify-center text-slate-500 hover:text-white transition-all bg-[#1E293B] rounded-xl py-2"
                     >
-                        {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                        {isSidebarOpen ? <X className="w-5 h-5 rotate-90" /> : <Menu className="w-5 h-5" />}
                     </button>
                 </div>
             </aside>
@@ -128,7 +131,7 @@ const StaffLayout = () => {
                                 </div>
                                 <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-white"><X className="w-6 h-6" /></button>
                             </div>
-                            <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
+                            <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto italic">
                                 {navItems.map((item) => (
                                     <Link
                                         key={item.name}
@@ -151,13 +154,21 @@ const StaffLayout = () => {
             </AnimatePresence>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-h-screen min-w-0">
+            <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${
+                isSidebarVisible ? (isSidebarOpen ? 'md:ml-64' : 'md:ml-20') : 'ml-0'
+            }`}>
                 {/* Header with High-Contrast Blue Gradient */}
-                <header className="h-20 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] border-b border-white/10 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-lg">
+                <header className="h-20 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] border-b border-white/10 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-lg transition-all duration-300">
                     <div className="flex items-center gap-6">
                         <button 
-                            onClick={() => setMobileMenuOpen(true)}
-                            className="md:hidden p-2 text-white bg-white/10 rounded-xl"
+                            onClick={() => {
+                                if (window.innerWidth < 768) {
+                                    setMobileMenuOpen(true);
+                                } else {
+                                    setSidebarVisible(!isSidebarVisible);
+                                }
+                            }}
+                            className="p-2 text-white bg-white/10 rounded-xl hover:bg-white/20 transition-all border border-white/10"
                         >
                             <Menu className="w-6 h-6" />
                         </button>

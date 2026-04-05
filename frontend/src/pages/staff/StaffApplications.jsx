@@ -52,7 +52,7 @@ const StaffApplications = () => {
     });
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="mobile-p-reset space-y-8 animate-in fade-in duration-500 force-full-width">
             {/* Header */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
@@ -95,7 +95,7 @@ const StaffApplications = () => {
 
             {/* Application Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div className="xl:col-span-2 space-y-4">
+                <div className="xl:col-span-2 space-y-4 mobile-table-scroll">
                     {loading ? (
                         <div className="h-64 flex flex-col items-center justify-center bg-white rounded-[2.5rem] border border-slate-100 opacity-50">
                             <Clock className="w-8 h-8 text-blue-600 animate-spin mb-4" />
