@@ -33,8 +33,10 @@ const AdminSettings = () => {
         footer_tos: '1. ACCEPTANCE OF TERMS\nKrishna Engineering Works providing its service to you subject to the following Terms of Service...',
         footer_privacy: 'This Privacy Policy explains how we collect and use your data...',
         // Home Stats
-        stat_projects: '500+',
+        stat_projects: '1200+',
         stat_years: '25+',
+        stat_clients: '450+',
+        stat_satisfaction: '99%',
         stat_tons: '12K Tons',
         stat_safety: '100%',
         // About Us
@@ -213,31 +215,35 @@ const AdminSettings = () => {
                                     <input 
                                         value={settings.stat_projects} 
                                         onChange={(e)=>updateField('stat_projects', e.target.value)}
+                                        placeholder="e.g. 1200+"
                                         className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-brand-accent font-black outline-none focus:border-brand-accent/40"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Years Record</label>
+                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Happy Clients</label>
+                                    <input 
+                                        value={settings.stat_clients} 
+                                        onChange={(e)=>updateField('stat_clients', e.target.value)}
+                                        placeholder="e.g. 450+"
+                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-cyan-400 font-black outline-none focus:border-brand-accent/40"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Years Experience</label>
                                     <input 
                                         value={settings.stat_years} 
                                         onChange={(e)=>updateField('stat_years', e.target.value)}
-                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-brand-accent font-black outline-none focus:border-brand-accent/40"
+                                        placeholder="e.g. 25+"
+                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-yellow-400 font-black outline-none focus:border-brand-accent/40"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Steel Fabricated</label>
+                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Client Satisfaction</label>
                                     <input 
-                                        value={settings.stat_tons} 
-                                        onChange={(e)=>updateField('stat_tons', e.target.value)}
-                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-brand-accent font-black outline-none focus:border-brand-accent/40"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Safety Record %</label>
-                                    <input 
-                                        value={settings.stat_safety} 
-                                        onChange={(e)=>updateField('stat_safety', e.target.value)}
-                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-brand-accent font-black outline-none focus:border-brand-accent/40"
+                                        value={settings.stat_satisfaction} 
+                                        onChange={(e)=>updateField('stat_satisfaction', e.target.value)}
+                                        placeholder="e.g. 99%"
+                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-green-400 font-black outline-none focus:border-brand-accent/40"
                                     />
                                 </div>
                             </div>
