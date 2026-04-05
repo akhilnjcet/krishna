@@ -51,7 +51,8 @@ const AdminLayout = () => {
             label: "Management",
             items: [
                 { name: 'Staff Directory', path: '/admin/staff', icon: Users },
-                { name: 'Attendance Logs', path: '/admin/logs', icon: ClipboardList },
+                { name: 'Request Portal', path: '/admin/applications', icon: ClipboardList },
+                { name: 'Attendance Logs', path: '/admin/logs', icon: FileText },
                 { name: 'Production Feed', path: '/admin/progress', icon: BarChart3 },
                 { name: 'Financial Hub', path: '/admin/finance', icon: BadgeIndianRupee },
             ]

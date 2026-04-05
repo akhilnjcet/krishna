@@ -1,20 +1,10 @@
-const OpenAI = require('openai');
 const SystemSetting = require('../models/SystemSetting');
 const FAQ = require('../models/FAQ');
 const Lead = require('../models/Lead');
 
-let openai = null;
-const initOpenAI = () => {
-    if (!openai && process.env.OPENAI_API_KEY) {
-        openai = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY
-        });
-    }
-};
-
 exports.handleChat = async (req, res) => {
     try {
-        const { messages } = req.body; // Array of {role: 'user'|'assistant', content: '...'}
+        const { messages } = req.body; 
         
         // 1. Fetch AI settings to check if enabled and get prompt
         const settingsRaw = await SystemSetting.find({ key: { $in: ['isAiEnabled', 'aiWorkMode', 'aiPrompt'] } });
@@ -22,12 +12,12 @@ exports.handleChat = async (req, res) => {
         settingsRaw.forEach(s => settings[s.key] = s.value);
         
         if (settings.isAiEnabled === 'false') {
-            return res.json({ reply: "Our chat assistant is currently offline. Please use the contact form to reach us." });
+            return res.json({ reply: "Our chat assistant is currently offline. Please use our contact form or call us directly." });
         }
 
-        // 2. Load FAQs for use in both AI and Keyword Matching
+        // 2. Load FAQs for context or fallback
         const faqs = await FAQ.find();
-        let faqContext = "Here are some frequently asked questions you MUST know about the business:\n";
+        let faqContext = "CRITICAL BUSINESS FAQ DATA (USE THESE ANSWERS FIRST):\n";
         faqs.forEach((faq, index) => {
             faqContext += `${index + 1}. Q: ${faq.question} \n   A: ${faq.answer}\n`;
         });
@@ -40,29 +30,20 @@ exports.handleChat = async (req, res) => {
                 userMsg.includes(f.question.toLowerCase()) || 
                 f.question.toLowerCase().split(' ').some(word => word.length > 3 && userMsg.includes(word))
             );
-
-            if (matchedFaq) {
-                return res.json({ reply: `[OFFLINE MODE] ${matchedFaq.answer}` });
-            }
-            return res.json({ reply: "I am operating in Offline Mode. I couldn't find a direct match for your question. Would you like to leave your number so we can call you back?" });
+            if (matchedFaq) return res.json({ reply: matchedFaq.answer });
+            return res.json({ reply: "I'm sorry, I couldn't find a direct answer. Would you like to leave your contact number for a callback?" });
         }
 
-        // 4. Construct System Prompt (For Online mode)
-        const defaultPrompt = "You are a friendly and professional sales assistant for Krishna Engineering Works in Kochi, Kerala. Your goal is to answer queries about fabrication, welding, and industrial services, and to gently encourage the user to provide their phone number so we can provide a quick quote.";
+        // 4. Construct System Prompt (Optimized for Gemini)
+        const defaultPrompt = "You are a friendly and professional sales assistant for Krishna Engineering Works in Kochi, Kerala. Your goal is to answer queries about fabrication, welding, and industrial services based on the provided FAQ data. Encourage users to leave their phone number for a quick quote.";
         const basePrompt = settings.aiPrompt || defaultPrompt;
-        
-        const systemMessage = {
-            role: "system",
-            content: `${basePrompt}\n\n${faqContext}`
-        };
 
-        // 5. Prepare AI Provider (Prioritize Gemini for Free Tier)
+        // 5. Try Gemini (Primary - FREE)
         const geminiKey = process.env.GEMINI_API_KEY;
-        const openAiKey = process.env.OPENAI_API_KEY;
 
         if (geminiKey) {
             try {
-                // Formatting messages for Gemini
+                // Formatting history for Gemini
                 const geminiHistory = messages.map(m => ({
                     role: m.role === 'assistant' ? 'model' : 'user',
                     parts: [{ text: m.content }]
@@ -74,52 +55,39 @@ exports.handleChat = async (req, res) => {
                     body: JSON.stringify({
                         contents: geminiHistory,
                         systemInstruction: { parts: [{ text: `${basePrompt}\n\n${faqContext}` }] },
-                        generationConfig: { maxOutputTokens: 250, temperature: 0.7 }
+                        generationConfig: { maxOutputTokens: 300, temperature: 0.7 }
                     })
                 });
 
                 const data = await geminiRes.json();
-                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                
+                if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
                     return res.json({ reply: data.candidates[0].content.parts[0].text });
                 }
-                console.error("Gemini Parse Failure:", data);
-                // Continue to OpenAI if Gemini fails for some reason
+
+                if (data.error && data.error.code === 429) {
+                    console.warn("Gemini Free Tier Quota Exhausted. Using Keyword Fallback.");
+                } else {
+                    console.error("Gemini Response Error:", data);
+                }
             } catch (geminiErr) {
-                console.error("Gemini System Error:", geminiErr.message);
+                console.error("Gemini Connectivity Error:", geminiErr.message);
             }
         }
 
-        // 3. Fallback to OpenAI if Gemini is not available or failed
-        initOpenAI();
-        if (openai && openAiKey) {
-            try {
-                const response = await openai.chat.completions.create({
-                    model: "gpt-4o-mini",
-                    messages: [systemMessage, ...messages],
-                    max_tokens: 250,
-                    temperature: 0.7
-                });
-
-                return res.json({ reply: response.choices[0].message.content });
-            } catch (openaiErr) {
-                console.error("OpenAI Execution Error:", openaiErr.message);
-            }
-        }
-
-        // 4. ULTIMATE FALLBACK: Keyword Matcher (TOTALLY FREE)
+        // 6. Final Keyword Fallback (Always Works, Always Free)
         const matchedFaq = faqs.find(f => 
             userMsg.includes(f.question.toLowerCase()) || 
-            f.question.toLowerCase().split(' ').some(word => word.length > 3 && userMsg.includes(word))
+            f.question.toLowerCase().split(' ').some(word => word.length > 2 && userMsg.includes(word)) ||
+            (userMsg.length < 4 && f.question.toLowerCase().includes(userMsg))
         );
 
         if (matchedFaq) {
-            return res.json({ 
-                reply: `[OFFLINE MODE] I matched this for you: \n\n${matchedFaq.answer}` 
-            });
+            return res.json({ reply: matchedFaq.answer });
         }
 
         return res.json({ 
-            reply: "I am currently in maintenance. Please reach us at +91 94460 00000 or leave your phone number for a callback." 
+            reply: "I am receiving a high volume of queries. Please contact us at +91 94460 00000 or share your number here for an immediate callback." 
         });
 
     } catch (err) {
@@ -131,14 +99,9 @@ exports.handleChat = async (req, res) => {
 exports.captureLead = async (req, res) => {
     try {
         const { name, phone, message } = req.body;
-        
-        if (!phone) {
-            return res.status(400).json({ error: "Phone number is required." });
-        }
-
+        if (!phone) return res.status(400).json({ error: "Phone number is required." });
         const newLead = new Lead({ name: name || 'Unknown', phone, message });
         await newLead.save();
-
         res.json({ success: true, message: "Lead captured successfully!" });
     } catch (err) {
         console.error('Lead Capture Error:', err);

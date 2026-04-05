@@ -87,6 +87,21 @@ exports.addExpense = async (req, res) => {
         const expense = await Expense.create({ ...req.body, recordedBy: req.user.id });
         res.status(201).json(expense);
     } catch (err) {
+        console.error("Expense creation failed:", err.message);
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.addSalary = async (req, res) => {
+    try {
+        const { staffId, month, salaryAmount, paymentStatus } = req.body;
+        const salary = await Salary.findOneAndUpdate(
+            { staffId, month },
+            { salaryAmount, paymentStatus },
+            { upsert: true, new: true }
+        );
+        res.status(201).json(salary);
+    } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };

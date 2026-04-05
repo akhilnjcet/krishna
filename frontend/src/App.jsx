@@ -34,6 +34,7 @@ import AdminFinance from './pages/admin/AdminFinance';
 import AdminProgress from './pages/admin/AdminProgress';
 import AdminBlog from './pages/admin/AdminBlog';
 import AdminAIChat from './pages/admin/AdminAIChat';
+import AdminApplications from './pages/admin/AdminApplications';
 
 // Staff Pages
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -42,6 +43,8 @@ import StaffLeave from './pages/staff/StaffLeave';
 import StaffFinance from './pages/staff/StaffFinance';
 import StaffProgress from './pages/staff/StaffProgress';
 import AttendanceScanner from './pages/staff/AttendanceScanner';
+import StaffContacts from './pages/staff/StaffContacts';
+import StaffApplications from './pages/staff/StaffApplications';
 
 // Customer Pages
 import CustomerDashboard from './pages/customer/CustomerDashboard';
@@ -149,6 +152,7 @@ const App = () => {
               <Route path="blog" element={<AdminBlog />} />
               <Route path="chat" element={<AdminAIChat />} />
               <Route path="support" element={<ChatRequestsManager />} />
+              <Route path="applications" element={<AdminApplications />} />
               <Route path="live-chat" element={<SupportHub />} />
             </Route>
 
@@ -160,7 +164,8 @@ const App = () => {
               <Route path="leave" element={<StaffLeave />} />
               <Route path="progress" element={<StaffProgress />} />
               <Route path="salary" element={<StaffFinance />} />
-              <Route path="contacts" element={<div className="p-8">Customer Contact Panel Coming Soon</div>} />
+              <Route path="applications" element={<StaffApplications />} />
+              <Route path="contacts" element={<StaffContacts />} />
               <Route path="chat" element={<SupportHub />} />
             </Route>
 

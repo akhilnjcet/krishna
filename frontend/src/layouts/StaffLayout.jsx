@@ -42,6 +42,7 @@ const StaffLayout = () => {
         { name: 'Task Board', path: '/staff/tasks', icon: CheckSquare },
         { name: 'Payout Hub', path: '/staff/salary', icon: Wallet },
         { name: 'Leave Tracker', path: '/staff/leave', icon: CalendarDays },
+        { name: 'Track Requests', path: '/staff/applications', icon: CheckSquare },
         { name: 'Field Contacts', path: '/staff/contacts', icon: Users },
         { name: 'Support Channel', path: '/staff/chat', icon: MessageSquare },
     ];

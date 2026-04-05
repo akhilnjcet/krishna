@@ -42,11 +42,22 @@ const StaffFinance = () => {
         }, user);
     };
 
-    const handleAdvanceRequest = (e) => {
+    const handleAdvanceRequest = async (e) => {
         e.preventDefault();
-        alert(`Advance request of ₹${advanceForm.amount} submitted successfully for review.`);
-        setAdvanceModalOpen(false);
-        setAdvanceForm({ amount: '', reason: '' });
+        try {
+            await api.post('/applications', {
+                type: 'advance_salary',
+                title: `Advance Salary Request: ₹${advanceForm.amount}`,
+                description: advanceForm.reason,
+                amount: parseFloat(advanceForm.amount)
+            });
+            alert(`Advance request of ₹${advanceForm.amount} submitted successfully for review.`);
+            setAdvanceModalOpen(false);
+            setAdvanceForm({ amount: '', reason: '' });
+        } catch (err) {
+            console.error("Submission failed:", err);
+            alert("Failed to submit advance salary request.");
+        }
     };
 
     const totalPaid = history.filter(s => s.paymentStatus === 'paid').reduce((acc, s) => acc + s.salaryAmount, 0);

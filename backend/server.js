@@ -38,6 +38,7 @@ app.use('/api/finance', require('./routes/financeRoutes'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/leads', require('./routes/lead'));
 app.use('/api/faqs', require('./routes/faq'));
+app.use('/api/applications', require('./routes/applicationRoutes'));
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });

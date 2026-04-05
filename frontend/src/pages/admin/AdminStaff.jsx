@@ -19,6 +19,8 @@ const AdminStaff = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterDept, setFilterDept] = useState('');
     const [payAmount, setPayAmount] = useState('');
+    const [attendanceSummary, setAttendanceSummary] = useState({ totalMinutes: 0, shifts: 0, estimatedSalary: 0 });
+    const [payAdjustment, setPayAdjustment] = useState(0); // For manual increase/decrease
 
     const [formData, setFormData] = useState({
         staff_id: '',
@@ -38,10 +40,6 @@ const AdminStaff = () => {
         base_salary: ''
     });
 
-    useEffect(() => {
-        fetchStaff();
-    }, [fetchStaff]);
-
     const fetchStaff = useCallback(async () => {
         setLoading(true);
         try {
@@ -53,6 +51,11 @@ const AdminStaff = () => {
             setLoading(false);
         }
     }, [searchQuery, filterDept]);
+
+    useEffect(() => {
+        fetchStaff();
+    }, [fetchStaff]);
+
 
     const handleAddStaff = async (e) => {
         e.preventDefault();
@@ -88,7 +91,9 @@ const AdminStaff = () => {
         setFormData({
             staff_id: '', name: '', phone: '', email: '', 
             department: '', designation: '', username: '', password: '', 
-            role: 'staff', status: 'active'
+            role: 'staff', status: 'active',
+            upi_id: '', bank_name: '', account_number: '', 
+            ifsc_code: '', base_salary: ''
         });
         setSelectedStaff(null);
     };
@@ -120,7 +125,7 @@ const AdminStaff = () => {
     };
 
     const handleDeleteFace = async (id) => {
-        if (!window.confirm("Are you sure you want to remove the registered face? The user will need to re-register to use face attendance.")) return;
+        if (!window.confirm("Are you sure you want to remove the registered face?")) return;
         try {
             await api.delete(`/staff/${id}/face`);
             alert("Face data removed.");
@@ -130,21 +135,61 @@ const AdminStaff = () => {
             alert("Failed to remove face data.");
         }
     };
+
+    const fetchAttendanceStats = async (staffId, baseSalary) => {
+        try {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+            
+            // Get completed shifts (OUT logs) for the current month
+            const res = await api.get(`/attendance?staff_id=${staffId}&type=OUT`);
+            const logs = res.data.filter(l => l.date >= firstDay && l.date <= lastDay);
+            
+            const totalMinutes = logs.reduce((acc, log) => acc + (log.duration_minutes || 0), 0);
+            const shifts = logs.length;
+            
+            // Calculate Based on Base Salary (Assuming 8-hour shift standard)
+            // Hourly Rate = Base Salary / 160 (assuming 20 days x 8 hours)
+            const hourlyRate = (baseSalary || 0) / 160;
+            const calculated = Math.round((totalMinutes / 60) * hourlyRate);
+
+            setAttendanceSummary({ totalMinutes, shifts, estimatedSalary: calculated });
+            setPayAmount(calculated.toString());
+            setPayAdjustment(0);
+        } catch (err) {
+            console.error("Stats Error:", err);
+        }
+    };
     const handleConfirmPayout = async () => {
         if (!payAmount) return alert("Please enter an amount.");
         setLoading(true);
         try {
+            const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+            
+            // 1. Record in General Finance Ledger
             await api.post('/finance/expenses', {
                 title: `Salary: ${selectedStaff.name} (${selectedStaff.staff_id})`,
                 amount: parseFloat(payAmount),
                 category: 'staff',
                 description: `Salary disbursement for ${selectedStaff.name} via Digital Payout`
             });
-            alert("Salary Payout Logged Successfully!");
+
+            // 2. Record in Specific Staff Salary History
+            await api.post('/finance/salaries', {
+                staffId: selectedStaff._id,
+                month: currentMonth,
+                salaryAmount: parseFloat(payAmount),
+                paymentStatus: 'paid'
+            });
+
+            alert("Salary Payout Logged & Staff History Updated!");
             setShowPayModal(false);
             setPayAmount('');
-        } catch {
-            alert("Internal Ledger Failure: Payout could not be recorded.");
+            fetchStaff(); // Refresh staff list
+        } catch (err) {
+            console.error("Payout error:", err);
+            alert("Digital Payout recorded on gateway, but ledger sync failed.");
         } finally {
             setLoading(false);
         }
@@ -298,10 +343,10 @@ const AdminStaff = () => {
                                                 <Camera className="w-5 h-5" />
                                             </button>
                                             <button 
-                                                title="Disburse Salary"
+                                                title="Calculate & Payout"
                                                 onClick={() => { 
                                                     setSelectedStaff(member); 
-                                                    setPayAmount(member.base_salary || '');
+                                                    fetchAttendanceStats(member._id, member.base_salary);
                                                     setShowPayModal(true); 
                                                 }}
                                                 className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
@@ -323,7 +368,12 @@ const AdminStaff = () => {
                                                     setSelectedStaff(member); 
                                                     setFormData({
                                                         ...member,
-                                                        password: ''
+                                                        password: '',
+                                                        upi_id: member.upi_id || '',
+                                                        bank_name: member.bank_name || '',
+                                                        account_number: member.account_number || '',
+                                                        ifsc_code: member.ifsc_code || '',
+                                                        base_salary: member.base_salary || ''
                                                     });
                                                     setShowEditModal(true); 
                                                 }}
@@ -507,20 +557,48 @@ const AdminStaff = () => {
                                     <h2 className="text-2xl font-black text-slate-900 leading-tight">Salary Disburser</h2>
                                     <p className="text-slate-500 font-bold uppercase tracking-widest text-[9px] mt-1">Recipient: {selectedStaff?.name}</p>
                                 </div>
-                            </div>
+                                                 <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col items-center">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Shifts</p>
+                                        <p className="text-xl font-black text-slate-900">{attendanceSummary.shifts}</p>
+                                    </div>
+                                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col items-center">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Hours</p>
+                                        <p className="text-xl font-black text-slate-900">{(attendanceSummary.totalMinutes / 60).toFixed(1)}h</p>
+                                    </div>
+                                </div>
 
-                            <div className="space-y-6">
-                                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-start">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Amount to Disburse (INR)</label>
+                                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-start relative">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Calculated Salary (Auto + Adjustments)</label>
                                     <div className="flex items-center gap-2">
                                         <span className="text-2xl font-black text-slate-400">₹</span>
                                         <input 
                                             type="number" 
-                                            value={payAmount}
-                                            onChange={(e) => setPayAmount(e.target.value)}
-                                            placeholder={`Base: 0`}
-                                            className="text-3xl font-black text-slate-900 bg-transparent w-full outline-none"
+                                            value={parseFloat(payAmount) + parseFloat(payAdjustment || 0)}
+                                            onChange={(e) => {
+                                                const val = parseFloat(e.target.value) || 0;
+                                                setPayAmount(val.toString());
+                                                setPayAdjustment(0); // Reset adjustment when manually typing
+                                            }}
+                                            className="text-4xl font-black text-slate-900 bg-transparent w-full outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-2 -ml-2"
                                         />
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-slate-200 w-full flex items-center justify-between">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Quick Adjust:</span>
+                                        <div className="flex items-center gap-3">
+                                            <button 
+                                                onClick={() => setPayAdjustment(prev => prev - 500)}
+                                                className="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center font-black border border-red-100 hover:bg-red-600 hover:text-white transition-all"
+                                            >-</button>
+                                            <span className={`text-xs font-black min-w-[50px] text-center ${payAdjustment < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                                                {payAdjustment > 0 ? '+' : ''}{payAdjustment}
+                                            </span>
+                                            <button 
+                                                onClick={() => setPayAdjustment(prev => prev + 500)}
+                                                className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-black border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all"
+                                            >+</button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -529,9 +607,9 @@ const AdminStaff = () => {
                                         <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.2em] italic">Scan with GPay / PhonePe / Any UPI</p>
                                         <div className="bg-white p-4 rounded-3xl shadow-lg">
                                             <img 
-                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=${selectedStaff.upi_id}&pn=${selectedStaff.name}&am=${payAmount}&cu=INR`)}`} 
+                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(`upi://pay?pa=${selectedStaff.upi_id}&pn=${selectedStaff.name}&am=${parseFloat(payAmount) + parseFloat(payAdjustment || 0)}&cu=INR`)}`} 
                                                 alt="UPI QR Code"
-                                                className="w-40 h-40"
+                                                className="w-36 h-36"
                                             />
                                         </div>
                                         <div className="text-center">
@@ -542,8 +620,8 @@ const AdminStaff = () => {
                                 ) : (
                                     <div className="p-8 bg-amber-50 rounded-3xl border border-amber-100 flex flex-col items-center text-center gap-4">
                                         <AlertCircle className="w-10 h-10 text-amber-500" />
-                                        <p className="text-sm font-bold text-amber-800">No UPI ID registered for this staff member. Use manual Bank Transfer or Update Profile.</p>
-                                        <div className="text-xs font-medium text-amber-600"> {selectedStaff?.account_number ? `Acc: X-${selectedStaff.account_number.slice(-4)} | IFSC: ${selectedStaff.ifsc_code}` : 'No Bank Data Found'}</div>
+                                        <p className="text-sm font-bold text-amber-800">No UPI Registered</p>
+                                        <div className="text-xs font-medium text-amber-600"> {selectedStaff?.account_number ? `Acc: X-${selectedStaff.account_number.slice(-4)}` : 'No Bank Data'}</div>
                                     </div>
                                 )}
 
@@ -552,16 +630,21 @@ const AdminStaff = () => {
                                         onClick={() => setShowPayModal(false)}
                                         className="flex-1 px-6 py-4 rounded-2xl bg-slate-100 text-slate-500 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-200 transition"
                                     >
-                                        Close
+                                        Cancel
                                     </button>
                                     <button 
-                                        onClick={handleConfirmPayout}
+                                        onClick={async () => {
+                                            const finalAmount = parseFloat(payAmount) + parseFloat(payAdjustment || 0);
+                                            setPayAmount(finalAmount.toString());
+                                            handleConfirmPayout();
+                                        }}
                                         className="flex-[2] px-6 py-4 rounded-2xl bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition shadow-xl shadow-emerald-600/20 active:scale-95"
                                     >
-                                        Confirm & Log Payout
+                                        Log & Confirm ₹{parseFloat(payAmount) + parseFloat(payAdjustment || 0)}
                                     </button>
                                 </div>
                             </div>
+           </div>
                         </motion.div>
                     </div>
                 )}

@@ -19,10 +19,10 @@ const StaffLeave = () => {
 
     const fetchLeaves = async () => {
         try {
-            const res = await api.get('/leave');
+            const res = await api.get('/applications?type=leave');
             setLeaves(res.data);
         } catch (err) {
-            console.error('Failed to fetch leave history');
+            console.error('Failed to fetch leave history:', err);
         } finally {
             setLoading(false);
         }
@@ -31,12 +31,19 @@ const StaffLeave = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/leave', formData);
+            await api.post('/applications', {
+                type: 'leave',
+                title: `Leave: ${formData.startDate} to ${formData.endDate}`,
+                startDate: formData.startDate,
+                endDate: formData.endDate,
+                description: formData.reason
+            });
             alert("Leave application submitted successfully!");
             setFormData({ startDate: '', endDate: '', reason: '' });
             setApplyModalOpen(false);
             fetchLeaves();
         } catch (err) {
+            console.error("Submission error:", err);
             alert("Administrative Error: Failed to submit leave application.");
         }
     };

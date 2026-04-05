@@ -4,15 +4,17 @@ const attendanceSchema = new mongoose.Schema({
     staff_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     full_name: { type: String, required: true },
     login_time: { type: Date, default: Date.now },
+    check_out: { type: Date },
+    duration_minutes: { type: Number, default: 0 },
     date: { type: String, required: true }, // Format: YYYY-MM-DD
     face_match_confidence: { type: Number, default: 0 },
     device_ip: { type: String },
     status: { type: String, enum: ['success', 'fail'], default: 'success' },
-    face_verified: { type: Boolean, default: false }
+    face_verified: { type: Boolean, default: false },
+    type: { type: String, enum: ['IN', 'OUT'], default: 'IN' }
 });
 
 // We might want multiple logs per day if it's "verification logs", or just one for attendance.
 // I'll leave the indexing for now or remove if multiple logs are okay.
 
 module.exports = mongoose.model('Attendance', attendanceSchema);
-

@@ -2,15 +2,16 @@ const Attendance = require('../models/Attendance');
 
 exports.getAttendanceLogs = async (req, res) => {
     try {
-        const { staff_id, date, status } = req.query;
+        const { staff_id, date, status, type } = req.query;
         let query = {};
 
         if (staff_id) query.staff_id = staff_id;
         if (date) query.date = date;
         if (status) query.status = status;
+        if (type) query.type = type;
 
         const logs = await Attendance.find(query)
-            .populate('staff_id', 'staff_id full_name email department designation')
+            .populate('staff_id', 'staff_id name email department designation base_salary')
             .sort({ login_time: -1 });
             
         res.json(logs);
