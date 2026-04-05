@@ -89,13 +89,43 @@ const Home = () => {
                             Delivering industrial-grade fabrication and precision welding solutions across Kerala for over two decades.
                         </p>
                         
-                        <div className="flex flex-col sm:flex-row gap-6">
+                        <div className="flex flex-col sm:flex-row gap-6 mb-16">
                             <Link to="/quote" className="px-10 py-5 bg-cta hover:bg-ctaHover text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 shadow-2xl shadow-blue-500/20 hover:-translate-y-1 active:translate-y-0">
                                 Start Your Project <ArrowRight className="w-5 h-5" />
                             </Link>
-                            <a href="tel:+918594030186" className="px-10 py-5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all border border-white/10 backdrop-blur-sm flex items-center justify-center gap-3 hover:-translate-y-1 active:translate-y-0">
+                            <a href="tel:+918594030186" className="px-10 py-5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all border border-white/10 backdrop-blur-sm flex items-center justify-center gap-3 hover:-translate-y-1 active:translate-y-0 text-sm md:text-base">
                                 <Phone className="w-5 h-5 text-accent" /> Speak with Experts
                             </a>
+                        </div>
+
+                        {/* Performance Metrics Overlay */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 pt-8 border-t border-white/10">
+                            {[
+                                { label: 'Projects Completed', value: '1,200', suffix: '+', icon: <Layers className="w-5 h-5" /> },
+                                { label: 'Active Clients', value: '450', suffix: '+', icon: <Users className="w-5 h-5" /> },
+                                { label: 'Years Experience', value: settings.stat_years.replace('+', ''), suffix: '+', icon: <Award className="w-5 h-5" /> },
+                                { label: 'Success Rate', value: '99', suffix: '%', icon: <Star className="w-5 h-5" /> }
+                            ].map((stat, i) => (
+                                <motion.div 
+                                    key={i}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.5 + (i * 0.1) }}
+                                    className="group cursor-default"
+                                >
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 rounded-lg bg-accent/10 text-accent group-hover:bg-accent group-hover:text-white transition-all duration-500">
+                                            {stat.icon}
+                                        </div>
+                                        <div className="text-2xl md:text-3xl font-black text-white tracking-tight">
+                                            {stat.value}{stat.suffix}
+                                        </div>
+                                    </div>
+                                    <div className="text-[10px] md:text-xs font-bold uppercase tracking-[0.1em] text-slate-400 group-hover:text-accent transition-colors">
+                                        {stat.label}
+                                    </div>
+                                </motion.div>
+                            ))}
                         </div>
                     </motion.div>
                 </div>
