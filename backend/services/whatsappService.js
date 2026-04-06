@@ -96,18 +96,22 @@ async function startWhatsAppConnection() {
                 logger: logger,
                 printQRInTerminal: false,
                 browser: Browsers.macOS('Desktop'),
-                syncFullHistory: false,
-                markOnlineOnConnect: true,
-                connectTimeoutMs: 60000, // Double the timeout for slow cold starts
+                syncFullHistory: false, // Critical for Vercel (Disables massive history downloads)
+                fireInitQueries: false, // Don't fire initial search queries to save time/ram
+                shouldSyncHistoryMessage: () => false, // Absolutely no history sync
+                markOnlineOnConnect: false,
+                connectTimeoutMs: 60000, 
                 defaultQueryTimeoutMs: 60000,
+                keepAliveIntervalMs: 10000,
+                mobile: false,
                 getMessage: async (key) => ({ conversation: 'Success' })
             });
 
-            // Wrap saveCreds to also update DB
-            const wrappedSaveCreds = async () => {
-                await saveCreds();
+            // Extreme Persistence: Save credentials the INSTANT they are updated
+            sock.ev.on('creds.update', async () => {
                 const SystemSetting = require('../models/SystemSetting');
                 try {
+                    await saveCreds(); 
                     const credsFilePath = path.join(authPath, 'creds.json');
                     if (fs.existsSync(credsFilePath)) {
                         const credsData = fs.readFileSync(credsFilePath, 'utf-8');
@@ -115,12 +119,12 @@ async function startWhatsAppConnection() {
                             { key: 'whatsapp_creds' },
                             { value: credsData, updatedAt: Date.now() },
                             { upsert: true }
-                        );
+                        ).exec();
                     }
-                } catch (err) {}
-            };
-
-            sock.ev.on('creds.update', wrappedSaveCreds);
+                } catch (err) {
+                    console.error('Persistence Fail:', err.message);
+                }
+            });
 
             sock.ev.on('connection.update', async (update) => {
                 const { connection, lastDisconnect, qr } = update;
