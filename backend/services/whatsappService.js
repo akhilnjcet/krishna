@@ -268,6 +268,14 @@ async function sendAbsentAlert(staff) {
     }
 }
 
+async function sendLoginAlert(user) {
+    const userPhone = user.phoneNumber || user.phone;
+    if (!userPhone) return;
+    const timeStr = new Date().toLocaleString();
+    const message = `*Login Alert: Krishna Engineering Portal*\n\nHello ${user.name || 'User'},\n\nYour account was just logged into.\n\n*Time:* ${timeStr}\n\nIf this was not you, please contact support immediately.`;
+    await sendWhatsAppMessage(userPhone, message);
+}
+
 async function getWhatsAppStatus() {
     const SystemSetting = require('../models/SystemSetting');
     const qrSetting = await SystemSetting.findOne({ key: 'whatsapp_qr' });
@@ -288,6 +296,7 @@ module.exports = {
     sendAbsentAlert,
     sendTaskAssignment,
     sendDailyReport,
+    sendLoginAlert,
     getWhatsAppStatus,
     ensureWhatsApp
 };

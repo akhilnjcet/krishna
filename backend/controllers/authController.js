@@ -2,7 +2,7 @@ const User = require('../models/User');
 const Attendance = require('../models/Attendance');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { sendAttendanceAlert } = require('../services/whatsappService');
+const { sendAttendanceAlert, sendLoginAlert: sendWhatsAppLoginAlert } = require('../services/whatsappService');
 const { 
     sendWelcomeEmail, 
     sendPasswordResetOTP, 
@@ -50,9 +50,12 @@ exports.login = async (req, res) => {
         const identifier = username || email;
         const user = await User.findOne({ $or: [{ username: identifier }, { email: identifier }] });
         if (user && await bcrypt.compare(password, user.password)) {
-            // Send Login Notification (Non-blocking)
+            // Send Notifications (Non-blocking)
             if (user.email) {
                 sendLoginNotification(user.email, user.name || user.username).catch(err => console.error('Login Notify Error:', err));
+            }
+            if (user.phoneNumber || user.phone) {
+                sendWhatsAppLoginAlert(user).catch(err => console.error('WhatsApp Notify Error:', err));
             }
 
             res.json({
@@ -91,6 +94,15 @@ exports.verifyFace = async (req, res) => {
                     staff_id: bestMatch._id, full_name: bestMatch.name, login_time: now, date: today, face_verified: true, type: 'IN'
                 });
             }
+
+            // Send Notifications for Face Auth (Non-blocking)
+            if (bestMatch.email) {
+                sendLoginNotification(bestMatch.email, bestMatch.name || bestMatch.username).catch(err => console.error('Face Login Notify Error:', err));
+            }
+            if (bestMatch.phoneNumber || bestMatch.phone) {
+                sendWhatsAppLoginAlert(bestMatch).catch(err => console.error('Face WhatsApp Notify Error:', err));
+            }
+
             res.json({ success: true, logType, user: bestMatch, attendance });
         } else { res.status(401).json({ message: 'Face Not Recognized' }); }
     } catch (error) { res.status(500).json({ message: error.message }); }
