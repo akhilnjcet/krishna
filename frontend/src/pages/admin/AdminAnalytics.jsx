@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Title } from '../../components/Title'; // Assuming Title component exists
 import {
     Activity,
     Users,
