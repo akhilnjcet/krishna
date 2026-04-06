@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import useAuthStore from '../stores/authStore';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
     const { user, isAuthenticated } = useAuthStore();
 
     const dashboardPath = user?.role === 'admin' ? '/admin' : 
@@ -79,7 +80,7 @@ const Navbar = () => {
                                     onClick={() => {
                                         const { logout } = useAuthStore.getState();
                                         logout();
-                                        window.location.replace('/login');
+                                        navigate('/login', { replace: true });
                                     }}
                                     className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-7 py-3 text-sm font-bold rounded-2xl transition-all duration-300 flex items-center gap-2"
                                 >
@@ -147,7 +148,7 @@ const Navbar = () => {
                                         onClick={() => {
                                             const { logout } = useAuthStore.getState();
                                             logout();
-                                            window.location.replace('/login');
+                                            navigate('/login', { replace: true });
                                             setIsOpen(false);
                                         }}
                                         className="block w-full bg-rose-50 text-rose-600 px-4 py-4 rounded-2xl font-bold transition-all"

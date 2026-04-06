@@ -20,7 +20,7 @@ const useAuthStore = create(
         }),
         {
             name: 'auth-storage',
-            getStorage: () => sessionStorage, // Terminate on tab/browser close
+            getStorage: () => localStorage, // Persist across sessions for mobile stability
         }
     )
 );

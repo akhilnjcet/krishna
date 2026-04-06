@@ -180,7 +180,7 @@ const AdminDashboard = () => {
                                         <p className="font-bold text-[#111827] dark:text-dark-text">{log.full_name || log.name}</p>
                                         <div className="flex items-center gap-3 text-xs text-[#6B7280] dark:text-dark-muted font-medium mt-1">
                                             <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {log.login_time ? new Date(log.login_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}</span>
-                                            <span className="flex items-center gap-1 font-bold text-blue-600">{(log.face_match_confidence * 100).toFixed(0)}% Confidence</span>
+                                            <span className="flex items-center gap-1 font-bold text-blue-600">{(Number(log.face_match_confidence || 0) * 100).toFixed(0)}% Confidence</span>
                                         </div>
                                     </div>
                                 </div>

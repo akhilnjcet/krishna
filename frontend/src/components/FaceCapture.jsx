@@ -9,7 +9,7 @@ import {
 import { loadFaceModels } from '../utils/faceApiLoader';
 import { detectBlink } from '../utils/faceApiUtils';
 
-const FaceCapture = ({ onCapture, buttonText = "Finalize Enrollment" }) => {
+const FaceCapture = ({ onCapture }) => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [status, setStatus] = useState('initializing'); // initializing, idle, scanning, success, error
@@ -17,6 +17,14 @@ const FaceCapture = ({ onCapture, buttonText = "Finalize Enrollment" }) => {
     const [capturedFrames, setCapturedFrames] = useState([]);
     const streamRef = useRef(null);
     const scanActiveRef = useRef(false);
+
+    const stopVideo = () => {
+        scanActiveRef.current = false;
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+    };
 
     useEffect(() => {
         const init = async () => {
@@ -96,19 +104,13 @@ const FaceCapture = ({ onCapture, buttonText = "Finalize Enrollment" }) => {
             };
             scanLoop();
 
-        } catch (err) {
+        } catch {
             setStatus('error');
             setMessage("OPTICAL HARDWARE ACCESS DENIED.");
         }
     };
 
-    const stopVideo = () => {
-        scanActiveRef.current = false;
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-            streamRef.current = null;
-        }
-    };
+
 
     return (
         <div className="w-full flex flex-col items-center gap-8 py-4">
@@ -173,7 +175,7 @@ const FaceCapture = ({ onCapture, buttonText = "Finalize Enrollment" }) => {
                         <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 bg-red-950/90 flex flex-col items-center justify-center px-8 text-center">
                             <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
                             <p className="text-white font-black uppercase tracking-widest text-[10px] mb-6">{message}</p>
-                            <button onClick={() => window.location.reload()} className="px-8 py-3 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center gap-2">
+                            <button onClick={() => setStatus('initializing')} className="px-8 py-3 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center gap-2">
                                 <RefreshCw className="w-3 h-3" /> Re-Initialize
                             </button>
                         </motion.div>

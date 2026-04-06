@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { loadFaceModels } from './utils/faceApiLoader';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import api from './services/api';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -93,6 +93,14 @@ const Layout = ({ children }) => {
     }
   }, []);
 
+  useEffect(() => {
+    const handleError = (event) => {
+      alert(`SYSTEM CRASH DETECTED: ${event.message}\nAt: ${event.filename}:${event.lineno}`);
+    };
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col font-sans relative">
       {!isDashboard && <Navbar />}
@@ -107,6 +115,7 @@ const Layout = ({ children }) => {
 
 const SecurityWrapper = ({ children }) => {
   const { logout, isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -119,7 +128,7 @@ const SecurityWrapper = ({ children }) => {
       timeoutId = setTimeout(() => {
         alert("SECURITY: Session timed out due to operational inactivity.");
         logout();
-        window.location.replace('/login');
+        navigate('/login', { replace: true });
       }, INACTIVITY_LIMIT);
     };
 
@@ -132,13 +141,9 @@ const SecurityWrapper = ({ children }) => {
       if (timeoutId) clearTimeout(timeoutId);
       events.forEach(event => window.removeEventListener(event, resetTimer));
     };
-  }, [isAuthenticated, logout]);
+  }, [isAuthenticated, logout, navigate]);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-        window.history.replaceState(null, '', window.location.href);
-    }
-  }, [isAuthenticated]);
+
 
   return <>{children}</>;
 };

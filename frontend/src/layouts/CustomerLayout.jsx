@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
+import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Layers, BookOpen, FileText,
@@ -72,6 +72,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
 const CustomerLayout = () => {
     const { user, isAuthenticated, logout } = useAuthStore();
     const location = useLocation();
+    const navigate = useNavigate();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [desktopOpen, setDesktopOpen] = useState(true);
 
@@ -79,44 +80,33 @@ const CustomerLayout = () => {
         return <Navigate to="/login" replace />;
     }
 
-    const handleLogout = () => { logout(); window.location.replace('/login'); };
+    const handleLogout = () => { logout(); navigate('/login', { replace: true }); };
     const closeMobile = () => setMobileOpen(false);
     const currentPage = navItems.find(i => i.path === location.pathname)?.name || 'Client Module';
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex font-sans">
+        <div className="min-h-screen bg-[#F8FAFC] flex font-sans overflow-x-hidden">
 
             {/* ── Desktop Sidebar ─────────────────────── */}
             <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-[#0F172A] text-white z-40 border-r border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
                 {desktopOpen && <SidebarContent location={location} user={user} onNavClick={() => { }} onLogout={handleLogout} />}
             </aside>
 
-            {/* ── Mobile Backdrop ─────────────────────── */}
-            <AnimatePresence>
-                {mobileOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden"
-                        onClick={closeMobile}
-                    />
-                )}
-            </AnimatePresence>
-
-            {/* ── Mobile Drawer ───────────────────────── */}
-            <AnimatePresence>
-                {mobileOpen && (
-                    <motion.aside
-                        initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                        className={`fixed top-0 left-0 h-full bg-[#0F172A] text-white z-[70] md:hidden flex flex-col border-r border-slate-800 shadow-2xl ${SIDEBAR_W}`}
-                    >
-                        <button onClick={closeMobile} className="absolute top-3 right-3 p-2 text-slate-400 hover:text-white bg-slate-800 rounded-xl z-10">
-                            <X className="w-4 h-4" />
-                        </button>
+            {/* ── Mobile Sidebar (Direct Render for Stability) ──────────────── */}
+            {mobileOpen && (
+                <div className="fixed inset-0 z-[60] md:hidden">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
+                    <aside className={`fixed top-0 left-0 h-full bg-[#0F172A] text-white z-[70] flex flex-col border-r border-slate-800 shadow-2xl ${SIDEBAR_W}`}>
+                        <div className="flex items-center justify-between p-4 border-b border-slate-800">
+                            <h2 className="text-sm font-black uppercase tracking-widest text-[#2563EB]">Client Menu</h2>
+                            <button onClick={closeMobile} className="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-xl z-10">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
                         <SidebarContent location={location} user={user} onNavClick={closeMobile} onLogout={handleLogout} />
-                    </motion.aside>
-                )}
-            </AnimatePresence>
+                    </aside>
+                </div>
+            )}
 
             {/* ── Main Content ────────────────────────── */}
             <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-[280px]' : 'md:ml-0'}`}>
