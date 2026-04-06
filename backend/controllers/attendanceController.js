@@ -41,3 +41,24 @@ exports.deleteLog = async (req, res) => {
     }
 };
 
+exports.updateLog = async (req, res) => {
+    try {
+        const { login_time, check_out } = req.body;
+        const log = await Attendance.findById(req.params.id);
+        
+        if (!log) return res.status(404).json({ message: 'Log not found' });
+        
+        if (login_time) log.login_time = new Date(login_time);
+        if (check_out) log.check_out = new Date(check_out);
+        
+        if (log.login_time && log.check_out) {
+            log.duration_minutes = Math.round((log.check_out - log.login_time) / 60000);
+            log.type = 'OUT';
+        }
+        
+        await log.save();
+        res.json(log);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

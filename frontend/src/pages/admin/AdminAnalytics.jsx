@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 import {
     Activity,
     Users,
@@ -17,11 +17,7 @@ const AdminAnalytics = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/visits`, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}` // Admin token
-                }
-            });
+            const res = await api.get('/visits');
             if (res.data.success) {
                 setStats({
                     totalVisits: res.data.totalVisits,

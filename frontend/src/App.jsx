@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from './services/api';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -45,6 +45,7 @@ import StaffLeave from './pages/staff/StaffLeave';
 import StaffFinance from './pages/staff/StaffFinance';
 import StaffProgress from './pages/staff/StaffProgress';
 import AttendanceScanner from './pages/staff/AttendanceScanner';
+import StaffTimesheets from './pages/staff/StaffTimesheets';
 import StaffContacts from './pages/staff/StaffContacts';
 import StaffApplications from './pages/staff/StaffApplications';
 
@@ -77,7 +78,7 @@ const Layout = ({ children }) => {
           // If session storage has visit logged, we optionally can skip. 
           // We will just let backend handle 1-minute spam limit, but let's add basic session limit too.
           if (!sessionStorage.getItem('visit_logged')) {
-            await axios.post(`${import.meta.env.VITE_API_URL}/api/visits`);
+            await api.post(`/visits`);
             sessionStorage.setItem('visit_logged', 'true');
           }
         } catch (error) {
@@ -184,6 +185,7 @@ const App = () => {
             <Route path="/staff" element={<StaffLayout />}>
               <Route index element={<StaffDashboard />} />
               <Route path="attendance" element={<AttendanceScanner />} />
+              <Route path="timesheets" element={<StaffTimesheets />} />
               <Route path="tasks" element={<StaffTasks />} />
               <Route path="leave" element={<StaffLeave />} />
               <Route path="progress" element={<StaffProgress />} />
