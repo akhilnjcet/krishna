@@ -5,7 +5,7 @@ import {
     BarChart3, Users, ClipboardList, BadgeIndianRupee, MessageSquare,
     Calculator, Receipt, TrendingUp, Settings, LogOut, Menu, X, Bell,
     Search, HelpCircle, ChevronRight, User, Filter, LayoutGrid, Activity,
-    Clock, AlertCircle
+    Clock, AlertCircle, Radio, MessageCircle
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 
@@ -26,6 +26,7 @@ const SIDEBAR_ITEMS = [
     { name: 'AI Command Center', path: '/admin/ai-chat',     icon: Calculator },
     { name: 'Applications',    path: '/admin/applications', icon: LayoutGrid },
     { name: 'Analytics Hub',   path: '/admin/analytics',    icon: BarChart3 },
+    { name: 'WhatsApp Relay',  path: '/admin/whatsapp',     icon: Radio },
     { name: 'System Core',     path: '/admin/settings',     icon: Settings },
 ];
 
