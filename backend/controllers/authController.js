@@ -134,10 +134,15 @@ exports.forgotPassword = async (req, res) => {
         if (!user) return res.status(200).json({ message: 'If email exists, OTP sent.' });
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         user.resetOTP = otp;
-        user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+        user.otpExpiry = Date.now() + 300000;
         await user.save();
-        await sendPasswordResetOTP(email, otp);
-        res.status(200).json({ message: 'OTP sent.' });
+
+        const emailSent = await sendPasswordResetOTP(email, otp);
+        if (!emailSent) {
+            return res.status(500).json({ message: 'Failed to dispatch recovery signal. Check SMTP configuration.' });
+        }
+
+        res.json({ message: 'OTP sent to your email' });
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
