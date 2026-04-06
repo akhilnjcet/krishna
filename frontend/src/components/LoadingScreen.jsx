@@ -5,7 +5,7 @@ const LoadingScreen = () => {
     return (
         <motion.div 
             initial={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.8, ease: "easeInOut" } }}
+            exit={{ opacity: 0, transition: { duration: 0.3, ease: "easeInOut" } }}
             className="fixed inset-0 z-[100] bg-[#0F172A] flex flex-col items-center justify-center pointer-events-none"
         >
             <div className="relative">

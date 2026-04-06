@@ -151,7 +151,7 @@ const Home = () => {
                     setProjects(projectsRes.value.data);
                 }
             } catch (e) { console.error('Fetch error', e); }
-            finally { setTimeout(() => setLoading(false), 1800); }
+            finally { setTimeout(() => setLoading(false), 500); }
         };
         fetchAll();
     }, []);
