@@ -195,18 +195,25 @@ async function startWhatsAppConnection() {
     return connectionPromise;
 }
 
+const { sendMetaWhatsApp } = require('./metaWhatsAppService');
+
 /**
- * Ensures WhatsApp is connected before proceeding
+ * Ensures WhatsApp is connected before proceeding (Baileys only)
  */
 async function ensureWhatsApp() {
+    if (process.env.META_ACCESS_TOKEN) return true; // Skip for Meta
     if (sock && !isConnecting && sock.user) return sock;
     return startWhatsAppConnection();
 }
 
 /**
- * Send a WhatsApp message
+ * Send a WhatsApp message (Auto-switches between Baileys and Meta)
  */
 async function sendWhatsAppMessage(number, message) {
+    if (process.env.META_ACCESS_TOKEN && process.env.META_PHONE_NUMBER_ID) {
+        return sendMetaWhatsApp(number, message);
+    }
+
     try {
         const client = await ensureWhatsApp();
         if (!client) return;
@@ -277,6 +284,16 @@ async function sendLoginAlert(user) {
 }
 
 async function getWhatsAppStatus() {
+    if (process.env.META_ACCESS_TOKEN && process.env.META_PHONE_NUMBER_ID) {
+        return {
+            connected: true,
+            isConnecting: false,
+            qr: null,
+            phone: process.env.META_PHONE_NUMBER_ID,
+            provider: 'META_CLOUD_API_OFFICIAL'
+        };
+    }
+
     const SystemSetting = require('../models/SystemSetting');
     const qrSetting = await SystemSetting.findOne({ key: 'whatsapp_qr' });
     
@@ -284,7 +301,8 @@ async function getWhatsAppStatus() {
         connected: !!(sock && !isConnecting && sock.user),
         isConnecting,
         qr: qrSetting ? qrSetting.value : null,
-        phone: sock?.user?.id?.split(':')[0] || null
+        phone: sock?.user?.id?.split(':')[0] || null,
+        provider: 'LEGACY_QR_PAIRING'
     };
 }
 
