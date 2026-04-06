@@ -86,6 +86,21 @@ app.get('/api/health/whatsapp', async (req, res) => {
     }
 });
 
+app.get('/api/health/email', async (req, res) => {
+    try {
+        const { sendWelcomeEmail } = require('./services/emailService');
+        const success = await sendWelcomeEmail(process.env.EMAIL_USER, "System Health Check");
+        res.json({ 
+            success, 
+            user: process.env.EMAIL_USER,
+            passSet: !!process.env.EMAIL_PASS,
+            timestamp: new Date().toISOString() 
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Database connection
 const connectDB = require('./config/database');
 const { startWhatsAppConnection } = require('./services/whatsappService');
