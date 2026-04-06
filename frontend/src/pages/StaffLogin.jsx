@@ -139,9 +139,9 @@ const StaffLogin = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end px-1">
-                                    <Link to="/forgot-password" size="sm" className="text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-[0.15em] transition-colors">
-                                        Lost Key? Reset Here
+                                <div className="flex items-center justify-center p-2">
+                                    <Link to="/forgot-password" size="sm" className="text-xs font-bold text-slate-400 hover:text-blue-600 uppercase tracking-widest transition-colors">
+                                        Forgot Password? Reset Here
                                     </Link>
                                 </div>
 

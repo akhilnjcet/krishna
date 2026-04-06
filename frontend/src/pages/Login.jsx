@@ -104,10 +104,10 @@ const Login = () => {
                             />
                             <div className="flex items-center justify-between px-1">
                                 <Link to="/forgot-password" size="sm" className="text-xs font-bold text-slate-400 hover:text-[#2563EB] uppercase tracking-widest transition-colors">
-                                    Lost Access?
+                                    Forgot Password?
                                 </Link>
                                 <Link to="/register" size="sm" className="text-xs font-bold text-[#2563EB] hover:underline uppercase tracking-widest">
-                                    Join Protocol
+                                    Register Member
                                 </Link>
                             </div>
 
@@ -117,7 +117,7 @@ const Login = () => {
                                 disabled={loading}
                                 className="w-full py-4 bg-[#2563EB] text-white rounded-2xl font-bold shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
                             >
-                                {loading ? "Communicating..." : "Engage Session"}
+                                {loading ? "Signing in..." : "Login Now"}
                             </button>
                         </form>
                     </div>
