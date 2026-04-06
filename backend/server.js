@@ -39,7 +39,7 @@ app.use('/api/chat', require('./routes/chat'));
 app.use('/api/leads', require('./routes/lead'));
 app.use('/api/faqs', require('./routes/faq'));
 app.use('/api/applications', require('./routes/applicationRoutes'));
-
+app.use('/api/visits', require('./routes/visitRoutes'));
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
 });

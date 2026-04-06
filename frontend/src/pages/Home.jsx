@@ -9,6 +9,7 @@ import {
 import FloatingContact from '../components/FloatingContact';
 import LoadingScreen from '../components/LoadingScreen';
 import api from '../services/api';
+import AdBanner from '../components/AdBanner';
 import { getDirectImageUrl } from '../utils/imageUtils';
 
 /* ─── Animation Variants ─────────────────────────────────────────── */
@@ -320,6 +321,13 @@ const Home = () => {
                         </div>
                     </motion.div>
                 </section>
+
+                {/* Banner Ad Placement */}
+                <div className="bg-[#050B1A] pt-12 pb-6 border-b border-indigo-900/40">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <AdBanner adSlot="7234567890" adFormat="horizontal" />
+                    </div>
+                </div>
 
                 {/* ════════════════════════════════════════
                     2. ABOUT SECTION — Cinematic reveal   

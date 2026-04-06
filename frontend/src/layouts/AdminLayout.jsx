@@ -3,7 +3,7 @@ import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { 
     LayoutDashboard, Layers, Image as ImageIcon, FileText, BookOpen,
     BarChart3, Users, ClipboardList, BadgeIndianRupee, MessageSquare,
-    Inbox, MessagesSquare, Settings, LogOut, Bell, Search, X, Menu
+    Inbox, MessagesSquare, Settings, LogOut, Bell, Search, X, Menu, Activity
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 
@@ -42,6 +42,7 @@ const menuGroups = [
         label: 'System Control',
         items: [
             { name: 'General Settings', path: '/admin/settings',   icon: Settings },
+            { name: 'Website Analytics', path: '/admin/analytics', icon: Activity },
         ]
     }
 ];

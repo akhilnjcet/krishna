@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -35,6 +36,7 @@ import AdminProgress from './pages/admin/AdminProgress';
 import AdminBlog from './pages/admin/AdminBlog';
 import AdminAIChat from './pages/admin/AdminAIChat';
 import AdminApplications from './pages/admin/AdminApplications';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
 
 // Staff Pages
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -62,9 +64,30 @@ import ChatRequestsManager from './pages/chat/ChatRequestsManager';
 
 const Layout = ({ children }) => {
   const location = useLocation();
+  const hasTrackedVisit = useRef(false);
   const isDashboard = location.pathname.startsWith('/admin') || 
                       location.pathname.startsWith('/staff') || 
                       location.pathname.startsWith('/customer');
+
+  useEffect(() => {
+    // Only track once per app session
+    if (!hasTrackedVisit.current) {
+      const trackVisit = async () => {
+        try {
+          // If session storage has visit logged, we optionally can skip. 
+          // We will just let backend handle 1-minute spam limit, but let's add basic session limit too.
+          if (!sessionStorage.getItem('visit_logged')) {
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/visits`);
+            sessionStorage.setItem('visit_logged', 'true');
+          }
+        } catch (error) {
+          console.error("Failed to track visit", error);
+        }
+      };
+      trackVisit();
+      hasTrackedVisit.current = true;
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col font-sans relative">
@@ -153,6 +176,7 @@ const App = () => {
               <Route path="chat" element={<AdminAIChat />} />
               <Route path="support" element={<ChatRequestsManager />} />
               <Route path="applications" element={<AdminApplications />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="live-chat" element={<SupportHub />} />
             </Route>
 
