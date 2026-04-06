@@ -50,16 +50,26 @@ exports.login = async (req, res) => {
         const identifier = username || email;
         const user = await User.findOne({ $or: [{ username: identifier }, { email: identifier }] });
         if (user && await bcrypt.compare(password, user.password)) {
-            // Send Notifications (Awaited for Vercel/Lambda stability)
-            if (user.email) {
-                await sendLoginNotification(user.email, user.name || user.username).catch(err => console.error('Login Notify Error:', err));
-            }
-            if (user.phoneNumber || user.phone) {
-                await sendWhatsAppLoginAlert(user).catch(err => console.error('WhatsApp Notify Error:', err));
+            try {
+                // Send Notifications (Awaited but isolated in try-catch to prevent 500)
+                if (user.email) {
+                    await sendLoginNotification(user.email, user.name || user.username).catch(e => console.error('Email Fail:', e));
+                }
+                if (user.phoneNumber || user.phone) {
+                    await sendWhatsAppLoginAlert(user).catch(e => console.error('WA Fail:', e));
+                }
+            } catch (notifyErr) {
+                console.error('Notification critical failure:', notifyErr);
             }
 
+            const role = user.role || 'customer';
+            const token = generateToken(user._id.toString(), role);
+            
             res.json({
-                _id: user._id, name: user.name, role: user.role, token: generateToken(user._id, user.role)
+                _id: user._id, 
+                name: user.name, 
+                role: role, 
+                token: token
             });
         } else { res.status(401).json({ message: 'Invalid credentials' }); }
     } catch (error) { res.status(500).json({ message: error.message }); }
