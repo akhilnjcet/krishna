@@ -7,7 +7,6 @@ import {
     ChevronLeft, ChevronRight, Quote, Star
 } from 'lucide-react';
 import FloatingContact from '../components/FloatingContact';
-import LoadingScreen from '../components/LoadingScreen';
 import api from '../services/api';
 import AdBanner from '../components/AdBanner';
 import { getDirectImageUrl } from '../utils/imageUtils';
@@ -106,7 +105,6 @@ const TESTIMONIALS = [
 /* ─── Main Component ─────────────────────────────────────────────── */
 const Home = () => {
     const [projects, setProjects] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [testimonialIdx, setTestimonialIdx] = useState(0);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const heroRef = useRef(null);
@@ -151,7 +149,6 @@ const Home = () => {
                     setProjects(projectsRes.value.data);
                 }
             } catch (e) { console.error('Fetch error', e); }
-            finally { setTimeout(() => setLoading(false), 500); }
         };
         fetchAll();
     }, []);
@@ -164,9 +161,6 @@ const Home = () => {
 
     return (
         <>
-            {/* ── Loading Screen ── */}
-            <AnimatePresence>{loading && <LoadingScreen />}</AnimatePresence>
-
             <FloatingContact />
 
             <div className="bg-white text-slate-800 overflow-x-hidden">

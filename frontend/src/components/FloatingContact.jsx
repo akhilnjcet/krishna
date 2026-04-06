@@ -46,16 +46,16 @@ const FloatingContact = () => {
             icon: <Phone className="w-5 h-5" />, 
             label: 'Direct Line', 
             link: links.phone.startsWith('tel:') ? links.phone : `tel:${links.phone}`, 
-            color: 'bg-brand-accent',
-            textColor: 'text-brand-950'
+            color: 'bg-blue-600',
+            textColor: 'text-white'
         },
         { 
             id: 'email', 
             icon: <Mail className="w-5 h-5" />, 
             label: 'Technical Mail', 
             link: links.email.startsWith('mailto:') ? links.email : `mailto:${links.email}`, 
-            color: 'bg-white',
-            textColor: 'text-brand-950'
+            color: 'bg-slate-100',
+            textColor: 'text-slate-900'
         }
     ];
 

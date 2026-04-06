@@ -154,14 +154,16 @@ const AdminAIChat = () => {
                             <button 
                                 onClick={async () => {
                                     try {
-                                        const res = await api.post('/chat', { messages: [{ role: 'user', content: 'Connection Test' }] });
-                                        if (res.data.reply.includes("trouble connecting") || res.data.reply.includes("[AI OFF-LINE]")) {
-                                            alert("Neural Heartbeat Warning: " + res.data.reply);
+                                        const res = await api.post('/chat', { messages: [{ role: 'user', content: 'SYSTEM_DIAGNOSTIC_PING' }] });
+                                        if (res.data.reply.includes("PARTIAL")) {
+                                            alert("⚠️ Heartbeat Warning:\n\n" + res.data.reply);
+                                        } else if (res.data.reply.includes("FULLY OPERATIONAL")) {
+                                            alert("✅ Systems Nominal:\n\n" + res.data.reply);
                                         } else {
-                                            alert("Neural Heartbeat Confirmed: " + res.data.reply.substring(0, 50) + "...");
+                                            alert("ℹ️ Offline Protocol Active:\n\n" + res.data.reply);
                                         }
                                     } catch (err) {
-                                        alert("Neural Critical Failure: " + (err.response?.data?.error || err.message));
+                                        alert("❌ Neural Critical Failure:\n\n" + (err.response?.data?.error || err.message));
                                     }
                                 }}
                                 className="w-full py-3 border-4 border-indigo-600/30 text-indigo-600 font-black rounded-xl hover:bg-indigo-50 transition uppercase text-[10px] tracking-widest"

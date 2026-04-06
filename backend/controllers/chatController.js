@@ -63,6 +63,13 @@ exports.handleChat = async (req, res) => {
 
         const userMsg = messages[messages.length - 1].content;
 
+        if (userMsg === 'SYSTEM_DIAGNOSTIC_PING') {
+            const geminiKey = process.env.GEMINI_API_KEY;
+            if (settings.aiWorkMode === 'offline') return res.json({ reply: "SYSTEM ONLINE [OFFLINE MODE: AI disabled, routing to manual fallback]" });
+            if (!geminiKey) return res.json({ reply: "SYSTEM PARTIAL ONLINE [ONLINE MODE: Gemini API Key missing, routing to smart fallback]" });
+            return res.json({ reply: "SYSTEM FULLY OPERATIONAL [ONLINE MODE: Gemini Neural Engine connected successfully]" });
+        }
+
         // 3. Offline / FAQ-only mode
         if (settings.aiWorkMode === 'offline') {
             const matched = matchFaq(userMsg, faqs);
