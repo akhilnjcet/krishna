@@ -102,6 +102,15 @@ const Login = () => {
                                 className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none"
                                 placeholder="Password"
                             />
+                            <div className="flex items-center justify-between px-1">
+                                <Link to="/forgot-password" size="sm" className="text-xs font-bold text-slate-400 hover:text-[#2563EB] uppercase tracking-widest transition-colors">
+                                    Lost Access?
+                                </Link>
+                                <Link to="/register" size="sm" className="text-xs font-bold text-[#2563EB] hover:underline uppercase tracking-widest">
+                                    Join Protocol
+                                </Link>
+                            </div>
+
                             {error && <p className="text-red-500 text-sm text-center font-medium animate-pulse">{error}</p>}
                             <button
                                 type="submit"
