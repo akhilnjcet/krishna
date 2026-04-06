@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { sendAttendanceAlert, sendLoginAlert: sendWhatsAppLoginAlert } = require('../services/whatsappService');
 const { 

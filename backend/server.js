@@ -133,4 +133,14 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     });
 }
 
+// Global JSON Error Handler (Prevents generic 500 HTML crashes)
+app.use((err, req, res, next) => {
+    console.error('SERVER CRASH:', err);
+    res.status(500).json({ 
+        error: true,
+        message: err.message || 'Internal Signal Breach',
+        details: process.env.NODE_ENV !== 'production' ? err.stack : 'Telemetry active'
+    });
+});
+
 module.exports = app;
