@@ -112,7 +112,7 @@ const Home = () => {
     const [settings, setSettings] = useState({
         about_title: 'Building Trust Through Quality Craftsmanship',
         about_content: "For over 25 years, Krishna Engineering Works has been a trusted pioneer in fabrication, welding, and industrial services across Kerala. Built on a foundation of unyielding quality, remarkable durability, and unwavering commitment to customer satisfaction.",
-        map_embed_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3917.86141356417!2d76.3951277!3d10.8981353!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba7d7df303996fd%3A0xe144438f2273f6f2!2sKrishna%20engineering%20works%20thiruvazhiyode.!5e0!3m2!1sen!2sin!4v1775236981093!5m2!1sen!2sin',
+        map_embed_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3917.86141356417!2d76.3951277!3d10.8981353!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba7d7df303996fd%3A0xe144438f2273f6f2!2sKrishna%20engineering%20works%20thiruzhiyode.(welding%20workshop)!5e0!3m2!1sen!2sin!4v1775472335434!5m2!1sen!2sin',
         stat_years: '25+',
         stat_projects: '1200+',
         stat_clients: '450+',
@@ -272,7 +272,7 @@ const Home = () => {
 
                             {/* ── PERFORMANCE METRICS ── 
                                 Glassmorphism cards with animated counters */}
-                            <motion.div variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-10 border-t border-white/10">
+                            <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-10 border-t border-white/10">
                                 {[
                                     { label: 'Projects Completed', value: (settings.stat_projects || '1200+').replace(/[^0-9,]/g, ''), suffix: (settings.stat_projects || '1200+').replace(/[0-9,]/g, '') || '+', icon: <Layers className="w-7 h-7" />, color: 'from-blue-500/20 to-blue-600/5', glow: 'shadow-blue-500/20', border: 'border-blue-500/20', iconColor: 'text-blue-400' },
                                     { label: 'Happy Clients', value: (settings.stat_clients || '450+').replace(/[^0-9,]/g, ''), suffix: (settings.stat_clients || '450+').replace(/[0-9,]/g, '') || '+', icon: <Users className="w-7 h-7" />, color: 'from-cyan-500/20 to-cyan-600/5', glow: 'shadow-cyan-500/20', border: 'border-cyan-500/20', iconColor: 'text-cyan-400' },

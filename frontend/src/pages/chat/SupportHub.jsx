@@ -157,7 +157,7 @@ const SupportHub = () => {
                     <p className="text-slate-400 font-black uppercase tracking-[0.3em] animate-pulse text-xs">Synchronizing Registry...</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
                     {(activeTab === 'active' ? activeTickets : closedTickets)
                         .filter(t => {
                             // Admins see ALL tickets (both support + staff-reference)
@@ -170,7 +170,7 @@ const SupportHub = () => {
                         .map((ticket) => (
                         <div 
                             key={ticket.id}
-                            className={`p-10 rounded-[3rem] border-4 transition-all relative overflow-hidden flex flex-col justify-between h-full group ${
+                            className={`p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border-4 transition-all relative overflow-hidden flex flex-col justify-between h-full group ${
                                 ticket.status === 'approved' 
                                 ? 'bg-white border-indigo-600 shadow-[10px_10px_0px_0px_#4f46e5]' 
                                 : ticket.status === 'closed' 

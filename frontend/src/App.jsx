@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { loadFaceModels } from './utils/faceApiLoader';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import api from './services/api';
 import Navbar from './components/Navbar';
@@ -87,6 +88,8 @@ const Layout = ({ children }) => {
       };
       trackVisit();
       hasTrackedVisit.current = true;
+      // Pre-load face models for attendance and registration
+      loadFaceModels();
     }
   }, []);
 

@@ -6,8 +6,9 @@
 
 @layer base {
   body {
-    @apply antialiased text-textMain bg-white dark:bg-dark-bg dark:text-dark-text transition-colors duration-200;
+    @apply antialiased text-textMain bg-white dark:bg-dark-bg dark:text-dark-text transition-colors duration-200 overflow-x-hidden;
     font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1, h2, h3, h4, h5, h6 {

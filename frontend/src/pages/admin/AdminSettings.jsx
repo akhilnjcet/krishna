@@ -23,7 +23,7 @@ const AdminSettings = () => {
         social_in: '',
         social_fb: '',
         social_x: '',
-        map_embed_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d251482.68658826724!2d76.16084920612662!3d9.982342759902633!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b080d514abec6bf%3A0xbd582caa5844192!2sKochi%2C%20Kerala!5e0!3m2!1sen!2sin!4v1709230552399!5m2!1sen!2sin',
+        map_embed_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3917.86141356417!2d76.3951277!3d10.8981353!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba7d7df303996fd%3A0xe144438f2273f6f2!2sKrishna%20engineering%20works%20thiruzhiyode.(welding%20workshop)!5e0!3m2!1sen!2sin!4v1775472335434!5m2!1sen!2sin',
         // Engagement Relay (Floating)
         floating_whatsapp: '919447940835',
         floating_phone: '+919447940835',
@@ -164,7 +164,7 @@ const AdminSettings = () => {
                     
                     {/* LEFT COLUMN: ABOUT & SAFETY */}
                     <div className="xl:col-span-12 space-y-10">
-                        <section className="p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-brand-accent/20 transition-all">
+                        <section className="p-6 md:p-10 bg-white/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-brand-accent/20 transition-all">
                             <ModuleHeader icon={Info} title="Corporate Identity Protocol (About Us)" status="Live" />
                             
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
@@ -281,7 +281,7 @@ const AdminSettings = () => {
                     </div>
 
                     <div className="xl:col-span-8 space-y-10 font-sans">
-                        <section className="p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden">
+                        <section className="p-6 md:p-10 bg-white/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden">
                             <ModuleHeader icon={Radio} title="Comms Node Deployment" status="Global" />
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -354,7 +354,7 @@ const AdminSettings = () => {
                             </div>
                         </section>
 
-                        <section className="p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-green-500/20 transition-all">
+                        <section className="p-6 md:p-10 bg-white/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-green-500/20 transition-all">
                             <ModuleHeader icon={Radio} title="Engagement Relay (Floating Links)" status="Active" />
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 <div className="space-y-3">
@@ -406,7 +406,7 @@ const AdminSettings = () => {
                             </div>
                         </section>
 
-                        <section className="p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-red-500/20 transition-all">
+                        <section className="p-6 md:p-10 bg-white/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-red-500/20 transition-all">
                             <ModuleHeader icon={Shield} title="Legal Configuration (ToS & Copyright)" status="Compliance" />
                             <div className="space-y-8">
                                 <div className="space-y-3">

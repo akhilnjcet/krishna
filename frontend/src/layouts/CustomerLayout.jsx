@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 
-const SIDEBAR_W = 'w-72';
+const SIDEBAR_W = 'w-[280px]';
 
 const navItems = [
     { name: 'My Dashboard', path: '/customer', icon: LayoutDashboard },
@@ -119,7 +119,7 @@ const CustomerLayout = () => {
             </AnimatePresence>
 
             {/* ── Main Content ────────────────────────── */}
-            <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-72' : 'md:ml-0'}`}>
+            <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-[280px]' : 'md:ml-0'}`}>
 
                 {/* Header */}
                 <header className="sticky top-0 z-30 h-16 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-4 md:px-6 flex items-center justify-between shadow-lg">

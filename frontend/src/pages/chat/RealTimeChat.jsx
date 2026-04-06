@@ -159,10 +159,10 @@ const RealTimeChat = ({ chatId: propChatId }) => {
     };
 
     return (
-        <div className="flex h-[88vh] flex-col md:flex-row bg-[#f0f2f5] rounded-none md:rounded-2xl border border-slate-200 overflow-hidden shadow-2xl relative">
+        <div className="flex h-[calc(100svh-4rem)] md:h-[88vh] flex-col md:flex-row bg-[#f0f2f5] rounded-none md:rounded-2xl border border-slate-200 overflow-hidden shadow-2xl relative">
             
             {/* Sidebar View (Mobile Toggled) */}
-            <aside className={`w-full md:w-[420px] border-r border-slate-200 flex flex-col bg-white overflow-hidden ${activeRoom && 'hidden md:flex'}`}>
+            <aside className={`w-full md:w-[320px] lg:w-[400px] flex-shrink-0 border-r border-slate-200 flex flex-col bg-white overflow-hidden ${activeRoom && 'hidden md:flex'}`}>
                 <header className="p-4 bg-[#f0f2f5] border-b border-slate-200 flex justify-between items-center h-[60px] flex-shrink-0">
                     <User className="w-10 h-10 bg-slate-300 p-2 rounded-full text-white shadow-sm" />
                     <div className="flex gap-6 text-[#54656f]">

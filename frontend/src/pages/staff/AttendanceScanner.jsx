@@ -1,18 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    Camera, ShieldCheck, CheckCircle2, AlertCircle, 
+    Loader2, UserCheck, Timer, Fingerprint, Scan,
+    ArrowRight, Info
+} from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
-import { loadModels, detectFaceAndLiveness } from '../../utils/faceApiUtils';
+import { loadFaceModels } from '../../utils/faceApiLoader';
+import { detectFaceAndLiveness } from '../../utils/faceApiUtils';
 
 const AttendanceScanner = () => {
     const { user, login } = useAuthStore();
-    const [status, setStatus] = useState('idle'); // idle, loading, scanning, verifying, success, error
+    const [status, setStatus] = useState('idle'); // idle, checking, loading_models, scanning, verifying, success, error
     const [message, setMessage] = useState('');
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const streamRef = useRef(null);
     const scanActiveRef = useRef(false);
+    const [stats, setStats] = useState({ blinkCount: 0, quality: 0 });
 
-    // Cleanup camera stream when unmounting
     useEffect(() => {
         return () => {
             scanActiveRef.current = false;
@@ -28,22 +35,23 @@ const AttendanceScanner = () => {
     };
 
     const startScan = async () => {
-        setStatus('loading');
-        setMessage('LOADING AI VERIFICATION MODELS...');
+        setStatus('loading_models');
+        setMessage('Synchronizing AI Biometrics...');
 
-        const modelsReady = await loadModels();
+        const modelsReady = await loadFaceModels();
         if (!modelsReady) {
             setStatus('error');
-            setMessage('FAILED TO LOAD LOCAL AI MODELS.');
+            setMessage('Biometric Engine initialization failed.');
             return;
         }
 
         setStatus('scanning');
-        setMessage('INITIALIZING CAMERA HARDWARE...');
+        setMessage('Activating Optical Sensor...');
 
         try {
-            // Request camera feed
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } 
+            });
             streamRef.current = stream;
 
             if (videoRef.current) {
@@ -56,17 +64,18 @@ const AttendanceScanner = () => {
             let highestScore = 0;
             let bestDescriptor = null;
 
-            setMessage('ANALYZING FACIAL TOPOLOGY...');
-
             const scanLoop = async () => {
                 if (!scanActiveRef.current) return;
 
                 const result = await detectFaceAndLiveness(videoRef, canvasRef);
 
                 if (result) {
+                    setStats(prev => ({ ...prev, quality: Math.round(result.score * 100) }));
+
                     if (!blinkDetected && result.isBlinking) {
                         blinkDetected = true;
-                        setMessage('LIVENESS VERIFIED. KEEP STILL...');
+                        setStats(prev => ({ ...prev, blinkCount: 1 }));
+                        setMessage('Liveness Verified. Holding for profile match...');
                     }
 
                     if (blinkDetected && !result.isBlinking && result.score > 0.8) {
@@ -76,160 +85,199 @@ const AttendanceScanner = () => {
                         }
                     }
 
-                    // Proceed once we have a very clear shot
-                    if (bestDescriptor && highestScore > 0.85) {
+                    if (bestDescriptor && highestScore > 0.88) {
                         scanActiveRef.current = false;
-                        if (canvasRef.current) {
-                            canvasRef.current.getContext('2d').clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                        }
                         verifyIdentity(bestDescriptor);
                         return;
-                    } else if (!blinkDetected && result.score > 0.6) {
-                        setMessage('PLEASE BLINK TO VERIFY LIVENESS.');
+                    } else if (!blinkDetected) {
+                        setMessage('Presence Detected. Please blink to verify.');
                     }
                 } else {
-                    setMessage('POSITION FACE IN FRAME...');
+                    setMessage('Align face within the secure perimeter.');
+                    setStats(prev => ({ ...prev, quality: 0 }));
                 }
 
-                if (scanActiveRef.current) {
-                    requestAnimationFrame(scanLoop);
-                }
+                if (scanActiveRef.current) requestAnimationFrame(scanLoop);
             };
 
             scanLoop();
         } catch (err) {
             setStatus('error');
-            setMessage('CAMERA ACCESS DENIED.');
-            console.error("Camera error:", err);
+            setMessage('Optical Hardware Access Denied.');
         }
     };
 
     const verifyIdentity = async (descriptor) => {
         setStatus('verifying');
-        setMessage('MATCHING WITH BIOMETRIC DATABASE...');
+        setMessage('Matching high-fidelity descriptor...');
 
         try {
-            // Backend verify-face handles both verification AND attendance logging now
             const res = await api.post('/auth/verify-face', { descriptor });
 
             if (res.data.success) {
                 const matchedUser = res.data.user;
-                // Sync session if needed
-                if (!user) {
-                    login(matchedUser, matchedUser.token);
-                }
+                if (!user) login(matchedUser, matchedUser.token);
                 
                 stopCamera();
                 setStatus('success');
-                setMessage(`ATTENDANCE MARKED SUCCESSFULLY: ${matchedUser.name.toUpperCase()}`);
+                setMessage(`${res.data.logType === 'IN' ? 'SHIFT IN' : 'SHIFT OUT'} REGISTERED: ${matchedUser.name}`);
             }
         } catch (error) {
             stopCamera();
             setStatus('error');
-            const errorMsg = error.response?.data?.message === 'Face Not Recognized' 
-                ? 'FACE NOT RECOGNIZED. PLEASE ALIGN YOUR FACE AND TRY AGAIN.' 
-                : 'AUTHORIZATION FAILED. TRY AGAIN.';
-            setMessage(errorMsg);
+            setMessage(error.response?.data?.message === 'Face Not Recognized' 
+                ? 'Identity Mismatch. Please retry with better lighting.' 
+                : 'Cryptographic handshake failed.');
         }
     };
 
-
     return (
-        <div className="bg-white border-4 border-brand-950 p-8 shadow-solid">
-            <div className="flex justify-between items-center mb-6 border-b-4 border-brand-950 pb-4">
-                <h2 className="text-2xl font-black uppercase tracking-tighter text-brand-950">
-                    <span className="text-brand-accent mr-3">■</span>
-                    Biometric Shift Log
-                </h2>
-                <span className="bg-brand-950 text-brand-accent font-black text-[10px] uppercase tracking-widest px-3 py-1">LIVENESS SYSTEM V2.4</span>
-            </div>
-
-            <div className="bg-brand-50 border-l-4 border-brand-accent p-4 mb-8">
-                <p className="text-brand-950 font-black text-xs uppercase tracking-widest mb-1">Authorization Protocol:</p>
-                <p className="text-brand-600 text-xs font-bold leading-relaxed">
-                    1. Align face in frame. <br/>
-                    2. Perform one clear <span className="text-brand-950 underline">BLINK</span> for liveness proof. <br/>
-                    3. System will auto-verify once human presence is confirmed.
-                </p>
-            </div>
-
-            {/* Scanner UI block */}
-            <div className="bg-black p-4 border-4 border-brand-800 mb-8 flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden">
-                {/* Visual grid / scanning effect */}
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
-
-                {/* Actual Video Feed */}
-                <video
-                    ref={videoRef}
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${(status === 'scanning' || status === 'verifying') ? 'opacity-100' : 'opacity-0 hidden'}`}
-                    muted
-                    playsInline
-                />
-
-                {/* Tracking Canvas Overlay */}
-                <canvas
-                    ref={canvasRef}
-                    className={`absolute inset-0 w-full h-full object-cover z-20 ${status === 'scanning' ? 'opacity-100' : 'opacity-0 hidden'}`}
-                />
-
-                {status === 'idle' && (
-                    <div className="text-brand-500 font-black uppercase tracking-widest text-xl text-center z-20">
-                        CAMERA STANDBY<br />
-                        <span className="text-xs text-brand-700">Awaiting engagement protocol</span>
-                    </div>
-                )}
-
-                {(status === 'loading' || status === 'scanning' || status === 'verifying') && (
-                    <div className="z-30 flex flex-col items-center absolute inset-0 justify-center pointer-events-none">
-                        <div className="w-48 h-48 border-4 border-brand-accent border-dashed rounded-full animate-[spin_4s_linear_infinite] flex items-center justify-center mb-4">
-                            <div className="w-32 h-32 border-4 border-brand-400 opacity-50 border-dotted rounded-full animate-[spin_2s_linear_infinite_reverse]"></div>
+        <div className="min-h-[calc(100vh-100px)] p-6 lg:p-12 bg-slate-50 flex items-center justify-center">
+            <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                
+                {/* Left Side: Status & Controls */}
+                <div className="lg:col-span-5 space-y-8 order-2 lg:order-1">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3 text-indigo-600 font-black text-xs uppercase tracking-[0.3em]">
+                            <Fingerprint className="w-4 h-4" /> Secure Auth Node
                         </div>
-                        <div className="absolute bottom-6 bg-black/80 px-4 py-2 text-brand-accent font-black uppercase tracking-widest text-sm animate-pulse border-2 border-brand-800">
-                            {message}
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-none">
+                            BIOMETRIC <span className="text-indigo-600">RECOGNITION.</span>
+                        </h1>
+                        <p className="text-slate-500 font-medium">Verify your identity to log shift attendance using enterprise-grade facial recognition.</p>
+                    </div>
+
+                    <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 space-y-6">
+                        <div className="flex items-center gap-4 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                            <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
+                                <Info className="w-6 h-6" />
+                            </div>
+                            <div className="text-sm">
+                                <p className="font-black text-indigo-900 uppercase tracking-widest text-[10px] mb-1">Scanning Guidelines</p>
+                                <p className="text-indigo-600/80 font-bold leading-tight">Remove glasses, stand in good light, and blink once instructed.</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <button
+                                onClick={startScan}
+                                disabled={['loading_models', 'scanning', 'verifying', 'success'].includes(status)}
+                                className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg ${
+                                    status === 'success' 
+                                    ? 'bg-emerald-500 text-white shadow-emerald-500/30' 
+                                    : 'bg-slate-900 text-white hover:bg-black shadow-slate-900/40'
+                                } disabled:opacity-70 disabled:cursor-not-allowed`}
+                            >
+                                {status === 'idle' && <><Camera className="w-5 h-5" /> Initialize Scanner</>}
+                                {status === 'loading_models' && <><Loader2 className="w-5 h-5 animate-spin" /> Loading AI...</>}
+                                {status === 'scanning' && <><Scan className="w-5 h-5 animate-pulse" /> Scanning...</>}
+                                {status === 'verifying' && <><UserCheck className="w-5 h-5 animate-bounce" /> Verifying...</>}
+                                {status === 'success' && <><CheckCircle2 className="w-5 h-5" /> Logged In</>}
+                                {status === 'error' && <><RefreshCw className="w-5 h-5" /> Retry Scan</>}
+                            </button>
+
+                            {status === 'success' && (
+                                <p className="text-center text-emerald-600 font-black uppercase tracking-widest text-[10px]">Shift timestamp recorded successfully.</p>
+                            )}
                         </div>
                     </div>
-                )}
 
-                {status === 'success' && (
-                    <div className="z-20 flex flex-col items-center">
-                        <div className="w-20 h-20 bg-green-500 text-white flex items-center justify-center font-black text-4xl border-4 border-white mb-4">
-                            ✓
+                    {/* Stats Widget */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center">
+                            <Timer className="w-5 h-5 text-indigo-500 mb-2" />
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quality</span>
+                            <span className="text-lg font-black text-slate-900">{stats.quality}%</span>
                         </div>
-                        <div className="text-green-500 bg-black/50 px-3 py-1 font-black uppercase tracking-widest text-sm text-center">
-                            {message}
-                        </div>
-                    </div>
-                )}
-
-                {status === 'error' && (
-                    <div className="z-20 flex flex-col items-center">
-                        <div className="w-20 h-20 bg-red-600 text-white flex items-center justify-center font-black text-4xl border-4 border-white mb-4">
-                            !
-                        </div>
-                        <div className="text-red-500 bg-black/50 px-3 py-1 font-black uppercase tracking-widest text-sm text-center">
-                            {message}
+                        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center">
+                            <ShieldCheck className={`w-5 h-5 mb-2 ${stats.blinkCount > 0 ? 'text-emerald-500' : 'text-slate-300'}`} />
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Liveness</span>
+                            <span className={`text-lg font-black ${stats.blinkCount > 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
+                                {stats.blinkCount > 0 ? 'Verified' : 'Pending'}
+                            </span>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
 
-            <div className="flex flex-col sm:flex-row gap-6">
-                <button
-                    onClick={startScan}
-                    disabled={status === 'loading' || status === 'scanning' || status === 'verifying' || status === 'success'}
-                    className={`font-black uppercase tracking-widest py-4 px-8 border-4 border-brand-950 shadow-[4px_4px_0_0_#000] active:translate-y-[4px] active:translate-x-[4px] active:shadow-none transition-all flex-1 text-center ${status === 'success'
-                        ? 'bg-brand-50 text-brand-400 cursor-not-allowed border-brand-200 shadow-none'
-                        : 'bg-brand-accent hover:bg-brand-400 text-brand-950'
-                        }`}
-                >
-                    {status === 'success' ? 'LOGGED' : 'Initiate Scan &rarr;'}
-                </button>
+                {/* Right Side: Camera Viewport */}
+                <div className="lg:col-span-7 relative order-1 lg:order-2">
+                    <div className="relative w-full aspect-square md:aspect-[4/3] bg-slate-900 rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white ring-1 ring-slate-200 group">
+                        
+                        {/* Interactive UI Overlays */}
+                        <AnimatePresence>
+                            {(status === 'scanning' || status === 'verifying') && (
+                                <motion.div 
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    className="absolute inset-0 z-10 pointer-events-none"
+                                >
+                                    {/* Scanning frame corners */}
+                                    <div className="absolute top-10 left-10 w-20 h-20 border-t-4 border-l-4 border-indigo-400 rounded-tl-3xl opacity-60"></div>
+                                    <div className="absolute top-10 right-10 w-20 h-20 border-t-4 border-r-4 border-indigo-400 rounded-tr-3xl opacity-60"></div>
+                                    <div className="absolute bottom-10 left-10 w-20 h-20 border-b-4 border-l-4 border-indigo-400 rounded-bl-3xl opacity-60"></div>
+                                    <div className="absolute bottom-10 right-10 w-20 h-20 border-b-4 border-r-4 border-indigo-400 rounded-br-3xl opacity-60"></div>
+                                    
+                                    {/* Scanning line animation */}
+                                    <motion.div 
+                                        animate={{ top: ['10%', '90%', '10%'] }}
+                                        transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                                        className="absolute left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-transparent via-indigo-400 to-transparent shadow-[0_0_15px_rgba(129,140,248,0.8)]"
+                                    />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
-                <div className="bg-brand-50 border-2 border-brand-200 p-4 flex-1 flex flex-col justify-center items-center">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-brand-500 mb-1">Status Registry</span>
-                    <span className={`font-black uppercase tracking-tight ${status === 'success' ? 'text-green-600' : 'text-brand-950'}`}>
-                        {status === 'success' ? `Logged at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Pending Shift Log'}
-                    </span>
+                        {/* Status Message Overlay */}
+                        <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 w-[80%]">
+                            <motion.div 
+                                layout
+                                className={`px-6 py-3 rounded-2xl backdrop-blur-md border shadow-xl flex items-center justify-center gap-3 text-center
+                                    ${status === 'error' ? 'bg-red-500/90 border-red-400 text-white' : 
+                                      status === 'success' ? 'bg-emerald-500/90 border-emerald-400 text-white' : 
+                                      'bg-black/60 border-white/20 text-white'}`}
+                            >
+                                {status === 'verifying' && <Loader2 className="w-4 h-4 animate-spin" />}
+                                {status === 'error' && <AlertCircle className="w-4 h-4" />}
+                                {status === 'success' && <CheckCircle2 className="w-4 h-4" />}
+                                <span className="text-[10px] font-black uppercase tracking-widest">{message || 'System Standby'}</span>
+                            </motion.div>
+                        </div>
+
+                        {/* Video Element */}
+                        <video
+                            ref={videoRef}
+                            className={`w-full h-full object-cover transition-opacity duration-700 
+                                ${['scanning', 'verifying', 'success'].includes(status) ? 'opacity-100' : 'opacity-20'}`}
+                            muted
+                            playsInline
+                        />
+
+                        {/* Canvas for Detections */}
+                        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none" />
+
+                        {/* Idle / Success Overlays */}
+                        {status === 'idle' && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
+                                <div className="w-24 h-24 rounded-full bg-indigo-600/10 border border-indigo-600/20 flex items-center justify-center">
+                                    <Camera className="w-10 h-10 text-indigo-600 animate-pulse" />
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[10px] mb-2">Sensor Standby</p>
+                                    <div className="w-1 h-12 bg-gradient-to-b from-indigo-600 to-transparent"></div>
+                                </div>
+                            </div>
+                        )}
+
+                        {status === 'success' && (
+                            <div className="absolute inset-0 bg-emerald-600/20 backdrop-blur-sm flex flex-col items-center justify-center z-30">
+                                <motion.div 
+                                    initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }}
+                                    className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-2xl"
+                                >
+                                    <CheckCircle2 className="w-20 h-20 text-emerald-500" />
+                                </motion.div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
