@@ -10,11 +10,11 @@ import useAuthStore from '../stores/authStore';
 const SIDEBAR_W = 'w-72';
 
 const navItems = [
-    { name: 'My Dashboard',         path: '/customer',         icon: LayoutDashboard },
-    { name: 'My Applications',      path: '/customer/quotes',  icon: Layers },
-    { name: 'Intelligence Feed',    path: '/blog',             icon: BookOpen },
-    { name: 'Formal Quote Request', path: '/quote',            icon: FileText },
-    { name: 'Technical Support',    path: '/customer/support', icon: MessageSquare },
+    { name: 'My Dashboard', path: '/customer', icon: LayoutDashboard },
+    { name: 'My Applications', path: '/customer/quotes', icon: Layers },
+    { name: 'Intelligence Feed', path: '/blog', icon: BookOpen },
+    { name: 'Formal Quote Request', path: '/quote', icon: FileText },
+    { name: 'Technical Support', path: '/customer/support', icon: MessageSquare },
 ];
 
 /* ── Shared Sidebar Content ─────────────────────────────────────── */
@@ -41,9 +41,8 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                         key={item.name}
                         to={item.path}
                         onClick={onNavClick}
-                        className={`flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-semibold transition-all ${
-                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                        }`}
+                        className={`flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-semibold transition-all ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                            }`}
                     >
                         <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
                         <span className="truncate">{item.name}</span>
@@ -89,7 +88,7 @@ const CustomerLayout = () => {
 
             {/* ── Desktop Sidebar ─────────────────────── */}
             <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-[#0F172A] text-white z-40 border-r border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
-                {desktopOpen && <SidebarContent location={location} user={user} onNavClick={() => {}} onLogout={handleLogout} />}
+                {desktopOpen && <SidebarContent location={location} user={user} onNavClick={() => { }} onLogout={handleLogout} />}
             </aside>
 
             {/* ── Mobile Backdrop ─────────────────────── */}

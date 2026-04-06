@@ -119,7 +119,7 @@ const Home = () => {
         stat_clients: '450+',
         stat_satisfaction: '99%',
         footer_address: 'Thiruvazhiyode, Sreekrishnapuram, Kerala 679514',
-        footer_phone: '+91 85940 30186', floating_whatsapp: '918594030186'
+        footer_phone: '+91 9447940835', floating_whatsapp: '919447940835'
     });
 
     /* Parallax scroll — only moves bg, content stays visible */

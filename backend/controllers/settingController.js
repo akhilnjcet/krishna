@@ -36,7 +36,9 @@ exports.getPublicSettings = async (req, res) => {
             'footer_phone', 'footer_email', 'social_in', 'social_fb', 'social_x',
             'floating_whatsapp', 'floating_phone', 'floating_email',
             'footer_copyright', 'footer_tos', 'footer_privacy',
-            'map_embed_url', 'stat_years', 'stat_projects', 'stat_tons', 'stat_safety',
+            'map_embed_url',
+            'stat_years', 'stat_projects', 'stat_tons', 'stat_safety',
+            'stat_clients', 'stat_satisfaction',
             'about_title', 'about_content', 'about_image'
         ];
         const settings = await SystemSetting.find({ key: { $in: publicKeys } });

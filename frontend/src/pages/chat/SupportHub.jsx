@@ -105,8 +105,8 @@ const SupportHub = () => {
                 <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center text-white mx-auto shadow-2xl shadow-indigo-100 mb-6 transform rotate-3">
                     <MessageSquare className="w-10 h-10" />
                 </div>
-                <h1 className="text-4xl font-black text-slate-100 dark:text-slate-900 tracking-tighter uppercase italic">Communication Hub</h1>
-                <p className="text-slate-500 font-bold tracking-widest uppercase text-[10px] opacity-60">Secure End-to-End Encrypted Tunnel</p>
+                <h1 className="text-4xl font-black text-slate-800 tracking-tighter uppercase italic">Communication Hub</h1>
+                <p className="text-slate-500 font-bold tracking-widest uppercase text-[10px]">Secure End-to-End Encrypted Tunnel</p>
                 
                 {user.role !== 'customer' && (
                     <div className="flex justify-center gap-4 mt-8">
@@ -159,7 +159,14 @@ const SupportHub = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {(activeTab === 'active' ? activeTickets : closedTickets)
-                        .filter(t => user.role === 'customer' || t.requestType === chatType)
+                        .filter(t => {
+                            // Admins see ALL tickets (both support + staff-reference)
+                            if (user.role === 'admin') return true;
+                            // Customers see all their own tickets regardless of type
+                            if (user.role === 'customer') return true;
+                            // Staff: filter by selected chatType tab
+                            return t.requestType === chatType;
+                        })
                         .map((ticket) => (
                         <div 
                             key={ticket.id}
