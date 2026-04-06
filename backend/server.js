@@ -17,6 +17,17 @@ app.use((req, res, next) => {
     next();
 });
 
+// Vercel Database Connection Sync (Ensures DB is ready for every request)
+const connectDB = require('./config/database');
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        res.status(503).json({ error: 'Database Synchronization Failure', message: err.message });
+    }
+});
+
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
@@ -117,15 +128,9 @@ app.get('/api/health/email', async (req, res) => {
     }
 });
 
-// Database connection
-const connectDB = require('./config/database');
+// Start WhatsApp Relay (Async, isolated)
 const { startWhatsAppConnection } = require('./services/whatsappService');
-
-// Initialize Database (Async, doesn't block Vercel export)
-connectDB().then(() => {
-   console.log('Database Initialized');
-   startWhatsAppConnection().catch(e => console.error('WhatsApp Error:', e));
-}).catch(e => console.error('Startup Critical:', e));
+startWhatsAppConnection().catch(e => console.error('WhatsApp Relay Failure:', e));
 
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     app.listen(PORT, () => {

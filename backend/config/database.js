@@ -1,19 +1,17 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
+    if (mongoose.connection.readyState >= 1) return;
+
     try {
-        const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/krishna-erp', {
-            serverSelectionTimeoutMS: 5000, // Fail fast if DB down after 5 seconds
-            // Re-enabling bufferCommands but with a low selection timeout is generally safer 
-            // for handling brief connection drops while preventing long hangs.
-            bufferCommands: true, 
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/krishna-erp', {
+            serverSelectionTimeoutMS: 5000,
+            bufferCommands: false, // Don't buffer if connection fails
         });
-        console.log(`MongoDB Connected: ${conn.connection.host}`);
-        return conn;
+        console.log(`MongoDB Connected`);
     } catch (error) {
-        console.error(`Database Connection Error: ${error.message}`);
-        console.error('Action required: Ensure MongoDB is running and your connection string is correct.');
-        throw error; // Throw so server.js can handle the failure to start
+        console.error(`DB Error: ${error.message}`);
+        throw error;
     }
 };
 
