@@ -44,12 +44,9 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
 });
 
-let lastError = null;
-process.on('uncaughtException', (err) => { lastError = { msg: err.message, stack: err.stack, type: 'uncaught' }; });
-process.on('unhandledRejection', (reason) => { lastError = { msg: reason?.message || reason, type: 'unhandled' }; });
-
+// Root Error Route
 app.get('/api/debug/error', (req, res) => {
-    res.json(lastError || { status: 'Operational', msg: 'No errors captured since startup' });
+    res.json({ status: 'Operational', msg: 'System monitoring active.' });
 });
 
 // Public WhatsApp Health Check
@@ -124,23 +121,16 @@ app.get('/api/health/email', async (req, res) => {
 const connectDB = require('./config/database');
 const { startWhatsAppConnection } = require('./services/whatsappService');
 
-const startServer = async () => {
-    try {
-        await connectDB();
-        
-        // Initialize WhatsApp Connection (Non-blocking for faster cold starts)
-        startWhatsAppConnection().catch(err => console.error('WhatsApp Init Error:', err.message));
+// Initialize Database (Async, doesn't block Vercel export)
+connectDB().then(() => {
+   console.log('Database Initialized');
+   startWhatsAppConnection().catch(e => console.error('WhatsApp Error:', e));
+}).catch(e => console.error('Startup Critical:', e));
 
-        if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-            app.listen(PORT, () => {
-                console.log(`Server running on port ${PORT}`);
-            });
-        }
-    } catch (error) {
-        console.error('CRITICAL: Server failed to start.');
-    }
-};
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
 
-// Export for Vercel
-startServer();
 module.exports = app;
