@@ -44,6 +44,14 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
 });
 
+let lastError = null;
+process.on('uncaughtException', (err) => { lastError = { msg: err.message, stack: err.stack, type: 'uncaught' }; });
+process.on('unhandledRejection', (reason) => { lastError = { msg: reason?.message || reason, type: 'unhandled' }; });
+
+app.get('/api/debug/error', (req, res) => {
+    res.json(lastError || { status: 'Operational', msg: 'No errors captured since startup' });
+});
+
 // Public WhatsApp Health Check
 app.get('/api/health/whatsapp', async (req, res) => {
     try {
