@@ -50,12 +50,12 @@ exports.login = async (req, res) => {
         const identifier = username || email;
         const user = await User.findOne({ $or: [{ username: identifier }, { email: identifier }] });
         if (user && await bcrypt.compare(password, user.password)) {
-            // Send Notifications (Non-blocking)
+            // Send Notifications (Awaited for Vercel/Lambda stability)
             if (user.email) {
-                sendLoginNotification(user.email, user.name || user.username).catch(err => console.error('Login Notify Error:', err));
+                await sendLoginNotification(user.email, user.name || user.username).catch(err => console.error('Login Notify Error:', err));
             }
             if (user.phoneNumber || user.phone) {
-                sendWhatsAppLoginAlert(user).catch(err => console.error('WhatsApp Notify Error:', err));
+                await sendWhatsAppLoginAlert(user).catch(err => console.error('WhatsApp Notify Error:', err));
             }
 
             res.json({
@@ -95,12 +95,12 @@ exports.verifyFace = async (req, res) => {
                 });
             }
 
-            // Send Notifications for Face Auth (Non-blocking)
+            // Send Notifications for Face Auth (Awaited for stability)
             if (bestMatch.email) {
-                sendLoginNotification(bestMatch.email, bestMatch.name || bestMatch.username).catch(err => console.error('Face Login Notify Error:', err));
+                await sendLoginNotification(bestMatch.email, bestMatch.name || bestMatch.username).catch(err => console.error('Face Login Notify Error:', err));
             }
             if (bestMatch.phoneNumber || bestMatch.phone) {
-                sendWhatsAppLoginAlert(bestMatch).catch(err => console.error('Face WhatsApp Notify Error:', err));
+                await sendWhatsAppLoginAlert(bestMatch).catch(err => console.error('Face WhatsApp Notify Error:', err));
             }
 
             res.json({ success: true, logType, user: bestMatch, attendance });
