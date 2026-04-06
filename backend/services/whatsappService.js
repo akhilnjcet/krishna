@@ -84,8 +84,8 @@ async function startWhatsAppConnection() {
 
             const { state, saveCreds } = await useMultiFileAuthState(authPath);
             
-            // Fetch latest version
-            const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 3005, 12] }));
+            // Hardcoded version string to avoid sluggish dynamic fetch on startup
+            const version = [2, 3000, 101]; 
 
             sock = makeWASocket({
                 version,
@@ -98,8 +98,8 @@ async function startWhatsAppConnection() {
                 browser: Browsers.macOS('Desktop'),
                 syncFullHistory: false,
                 markOnlineOnConnect: true,
-                connectTimeoutMs: 30000,
-                defaultQueryTimeoutMs: 30000,
+                connectTimeoutMs: 60000, // Double the timeout for slow cold starts
+                defaultQueryTimeoutMs: 60000,
                 getMessage: async (key) => ({ conversation: 'Success' })
             });
 

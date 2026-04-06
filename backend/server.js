@@ -56,7 +56,16 @@ app.get('/api/health/whatsapp', async (req, res) => {
         const dbCreds = await SystemSetting.findOne({ key: 'whatsapp_creds' });
         
         await ensureWhatsApp();
-        const status = await getWhatsAppStatus();
+        
+        // Vercel/Serverless Wait Loop: Stay alive for up to 8 seconds to capture any new QR code
+        let attempts = 0;
+        let status = await getWhatsAppStatus();
+        
+        while (!status.connected && !status.qr && attempts < 8) {
+            await new Promise(r => setTimeout(r, 1000));
+            status = await getWhatsAppStatus();
+            attempts++;
+        }
 
         // Check file status AFTER connection attempt
         const credsPath = process.env.VERCEL === '1' 
@@ -70,6 +79,8 @@ app.get('/api/health/whatsapp', async (req, res) => {
             connected: status.connected, 
             isConnecting: status.isConnecting,
             phone: status.phone,
+            qr: status.qr,
+            provider: status.provider,
             database: {
                 hasCreds: !!dbCreds,
                 credsLength: dbCreds ? dbCreds.value.length : 0
