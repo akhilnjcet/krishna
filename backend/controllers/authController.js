@@ -34,6 +34,12 @@ exports.register = async (req, res) => {
         const user = await User.create({
             staff_id, name, email, username: username || email, password: hashedPassword, role: role || 'customer', department, designation, phone
         });
+
+        // Send Welcome Email (Non-blocking)
+        if (email) {
+            sendWelcomeEmail(email, name || username).catch(err => console.error('Greeting Error:', err));
+        }
+
         res.status(201).json(user);
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
@@ -44,6 +50,11 @@ exports.login = async (req, res) => {
         const identifier = username || email;
         const user = await User.findOne({ $or: [{ username: identifier }, { email: identifier }] });
         if (user && await bcrypt.compare(password, user.password)) {
+            // Send Login Notification (Non-blocking)
+            if (user.email) {
+                sendLoginNotification(user.email, user.name || user.username).catch(err => console.error('Login Notify Error:', err));
+            }
+
             res.json({
                 _id: user._id, name: user.name, role: user.role, token: generateToken(user._id, user.role)
             });
@@ -137,6 +148,12 @@ exports.resetPassword = async (req, res) => {
         user.resetOTP = undefined;
         user.otpExpiry = undefined;
         await user.save();
+
+        // Send Password Change Confirmation (Non-blocking)
+        if (email) {
+            sendPasswordChangeConfirmation(email, user.name || user.username).catch(err => console.error('Security Notify Error:', err));
+        }
+
         res.json({ message: 'Success' });
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
