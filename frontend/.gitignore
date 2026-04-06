@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Android / Capacitor (APK build only - not needed for Vercel)
+android/
+capacitor.config.json

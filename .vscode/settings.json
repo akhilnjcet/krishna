@@ -1,9 +1,10 @@
 {
   "css.lint.unknownAtRules": "ignore",
   "css.lint.validProperties": [
-      "apply",
-      "tailwind",
-      "layer",
-      "config"
-  ]
+    "apply",
+    "tailwind",
+    "layer",
+    "config"
+  ],
+  "java.configuration.updateBuildConfiguration": "interactive"
 }
