@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const COMPANY_DETAILS = {
     name: 'KRISHNA ENGINEERING WORKS',
@@ -91,7 +91,7 @@ export const generateQuotePDF = (quote) => {
     doc.text(`Reference ID: #${quoteId}`, 15, 65);
     doc.text(`Quote Date: ${createdAt}`, 15, 72);
 
-    doc.autoTable({
+    autoTable(doc, {
         startY: 80,
         head: [['Project Parameter', 'Specification Details']],
         body: [
@@ -136,7 +136,7 @@ export const generateSalaryPDF = (salary, user) => {
     doc.text(`Employee Name: ${user.name.toUpperCase()}`, 15, 65);
     doc.text(`Pay Period: ${salary.month} ${salary.year || new Date().getFullYear()}`, 15, 72);
 
-    doc.autoTable({
+    autoTable(doc, {
         startY: 80,
         head: [['Earnings Category', 'Description', 'Amount (INR)']],
         body: [
@@ -177,7 +177,7 @@ export const generateInvoicePDF = (invoice) => {
     doc.text(`${invoice.customerId?.name || 'Valued Client'}`, 140, 72);
     doc.text(`${invoice.projectId?.title || 'General Engineering'}`, 140, 77);
 
-    doc.autoTable({
+    autoTable(doc, {
         startY: 90,
         head: [['Sl No.', 'Description of Service', 'Project ID', 'Status', 'Total (INR)']],
         body: [
@@ -216,7 +216,7 @@ export const generateAttendanceReportPDF = (logs, user, type = 'Staff') => {
     doc.text(`Entity Name: ${user.name.toUpperCase()}`, 15, 65);
     doc.text(`Report Period: Current Tactical Cycle`, 15, 72);
 
-    doc.autoTable({
+    autoTable(doc, {
         startY: 80,
         head: [['Date', 'Clock In', 'Clock Out', 'Status', 'Duration']],
         body: logs.map(log => [
@@ -239,7 +239,7 @@ export const generateGeneralReportPDF = (data, title, columns) => {
     const doc = new jsPDF();
     addHeader(doc, title);
 
-    doc.autoTable({
+    autoTable(doc, {
         startY: 65,
         head: [columns],
         body: data,
@@ -267,7 +267,7 @@ export const generatePaymentReceiptPDF = (payment, user) => {
     doc.text(`${user?.name?.toUpperCase() || 'N/A'}`, 140, 72);
     doc.text(`${user?.email || 'N/A'}`, 140, 77);
 
-    doc.autoTable({
+    autoTable(doc, {
         startY: 90,
         head: [['Transaction Parameter', 'Details / Values']],
         body: [
