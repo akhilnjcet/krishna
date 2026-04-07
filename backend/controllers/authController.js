@@ -125,6 +125,23 @@ exports.getMe = async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
+exports.updateProfile = async (req, res) => {
+    try {
+        const { name, phone } = req.body;
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        
+        if (name) user.name = name;
+        if (phone !== undefined) {
+            user.phone = phone;
+            user.phoneNumber = phone;
+        }
+        
+        await user.save();
+        res.json({ message: 'Profile updated successfully', user });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
 exports.getUsersByRole = async (req, res) => {
     try {
         const { role } = req.query;

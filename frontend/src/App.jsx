@@ -58,6 +58,7 @@ import InvoiceView from './pages/customer/InvoiceView';
 
 // Components
 import AIChatWidget from './components/AIChatWidget';
+import Profile from './pages/Profile';
 
 import useAuthStore from './stores/authStore';
 
@@ -203,6 +204,7 @@ const App = () => {
               <Route path="applications" element={<StaffApplications />} />
               <Route path="contacts" element={<StaffContacts />} />
               <Route path="chat" element={<SupportHub />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
 
             {/* Customer Routes */}
@@ -211,6 +213,7 @@ const App = () => {
               <Route path="quotes" element={<CustomerQuotes />} />
               <Route path="invoice/:id" element={<InvoiceView />} />
               <Route path="support" element={<SupportHub />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
 
             {/* Fallback */}

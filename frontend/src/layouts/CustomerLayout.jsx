@@ -53,15 +53,15 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
 
         {/* Footer */}
         <div className="p-4 border-t border-slate-800 bg-[#0B1222] space-y-3 flex-shrink-0">
-            <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl">
-                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            <Link to="/customer/profile" onClick={onNavClick} className="flex items-center gap-3 p-3 bg-slate-800/50 hover:bg-slate-700/50 rounded-xl transition-colors group">
+                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 group-hover:scale-110 transition-transform">
                     {user?.name?.charAt(0)?.toUpperCase()}
                 </div>
                 <div className="min-w-0">
                     <p className="text-sm font-bold text-white truncate">{user?.name}</p>
-                    <p className="text-[9px] text-blue-400 font-bold uppercase tracking-wider">Identity Validated</p>
+                    <p className="text-[9px] text-blue-400 font-bold uppercase tracking-wider">Edit Profile (WA)</p>
                 </div>
-            </div>
+            </Link>
             <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-rose-600/20 hover:text-rose-400 text-slate-400 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all">
                 <LogOut className="w-4 h-4" /> Log Out
             </button>
