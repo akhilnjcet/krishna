@@ -183,7 +183,7 @@ const App = () => {
               <Route path="finance" element={<AdminFinance />} />
               <Route path="progress" element={<AdminProgress />} />
               <Route path="blog" element={<AdminBlog />} />
-              <Route path="chat" element={<AdminAIChat />} />
+              <Route path="ai-chat" element={<AdminAIChat />} />
               <Route path="support" element={<ChatRequestsManager />} />
               <Route path="applications" element={<AdminApplications />} />
               <Route path="analytics" element={<AdminAnalytics />} />
