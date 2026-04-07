@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import { 
     FileText, Check, X, Loader2, AlertCircle, Phone, MapPin, 
-    Trash2, Edit, Save, Terminal, ShieldAlert 
+    Trash2, Edit, Save, Terminal, ShieldAlert, Download 
 } from 'lucide-react';
+import { generateQuotePDF } from '../../services/pdfService';
 
 const AdminQuotes = () => {
     const [quotes, setQuotes] = useState([]);
@@ -174,6 +175,14 @@ const AdminQuotes = () => {
                                                 <X className="w-4 h-4" /> Reject
                                             </button>
                                         </>
+                                    )}
+                                    {quote.status === 'accepted' && (
+                                        <button 
+                                            onClick={() => generateQuotePDF(quote)}
+                                            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-xs py-4 rounded-2xl transition shadow-lg flex items-center justify-center gap-2"
+                                        >
+                                            <Download className="w-4 h-4" /> Download Quote
+                                        </button>
                                     )}
                                     {quote.status === 'new' && (
                                         <button 

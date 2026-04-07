@@ -244,7 +244,7 @@ async function sendAttendanceAlert(staff, attendance) {
     const User = require('../models/User');
     const admins = await User.find({ role: 'admin' });
     const timeValue = attendance.login_time ? new Date(attendance.login_time) : new Date();
-    const timeStr = isNaN(timeValue.getTime()) ? new Date().toLocaleTimeString() : timeValue.toLocaleTimeString();
+    const timeStr = isNaN(timeValue.getTime()) ? new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : timeValue.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' });
     
     const message = `*Attendance Update*\n\n*Staff:* ${staff.name}\n*Status:* Success\n*Time:* ${timeStr}\n\n*Face Verification Successful*`;
     for (const admin of admins) {
@@ -283,7 +283,7 @@ async function sendAbsentAlert(staff) {
 async function sendLoginAlert(user) {
     const userPhone = user.phoneNumber || user.phone;
     if (!userPhone) return;
-    const timeStr = new Date().toLocaleString();
+    const timeStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const message = `*Login Alert: Krishna Engineering Portal*\n\nHello ${user.name || 'User'},\n\nYour account was just logged into.\n\n*Time:* ${timeStr}\n\nIf this was not you, please contact support immediately.`;
     await sendWhatsAppMessage(userPhone, message);
 }

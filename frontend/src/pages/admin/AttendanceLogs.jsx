@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
 import { 
   History, Calendar, Search, Filter, Trash2, 
   MapPin, CheckCircle2, XCircle, Clock, Smartphone, Loader2, Download
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { generateGeneralReportPDF } from '../../services/pdfService';
 
 const AttendanceLogs = () => {
     const [logs, setLogs] = useState([]);
@@ -15,28 +16,29 @@ const AttendanceLogs = () => {
     const [editingLog, setEditingLog] = useState(null);
     const [editData, setEditData] = useState({ login_time: '', check_out: '' });
 
-    useEffect(() => {
-        fetchLogs();
-    }, [filterStatus]);
-
-    const fetchLogs = async () => {
+    const fetchLogs = useCallback(async () => {
         setLoading(true);
         try {
             const res = await api.get(`/attendance?status=${filterStatus}`);
             setLogs(res.data);
-        } catch (err) {
-            console.error("Failed to fetch logs");
+        } catch (error) {
+            console.error("Failed to fetch logs", error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [filterStatus]);
+
+    useEffect(() => {
+        fetchLogs();
+    }, [fetchLogs]);
 
     const handleDelete = async (id) => {
         if (!window.confirm("Delete this log entry?")) return;
         try {
             await api.delete(`/attendance/${id}`);
             fetchLogs();
-        } catch (err) {
+        } catch (error) {
+            console.error(error);
             alert("Failed to delete log.");
         }
     };
@@ -57,7 +59,8 @@ const AttendanceLogs = () => {
             });
             setEditingLog(null);
             fetchLogs();
-        } catch (err) {
+        } catch (error) {
+            console.error(error);
             alert("Failed to update log.");
         }
     };
@@ -109,12 +112,31 @@ const AttendanceLogs = () => {
                     <p className="text-slate-500 mt-2 font-medium">Real-time tracking of staff verification, shift times, and automatic payroll calculation.</p>
                 </div>
                 
-                <button 
-                    onClick={exportToCSV}
-                    className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
-                >
-                    <Download className="w-5 h-5" /> Export Report (CSV)
-                </button>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={exportToCSV}
+                        className="flex items-center justify-center gap-2 bg-white border-2 border-slate-200 text-slate-600 px-6 py-4 rounded-2xl font-bold shadow-sm transition-all active:scale-95"
+                    >
+                        <Download className="w-5 h-5" /> CSV
+                    </button>
+                    <button 
+                        onClick={() => {
+                            const columns = ['Staff', 'Date', 'IN', 'OUT', 'Duration', 'Status'];
+                            const data = filteredLogs.map(log => [
+                                log.full_name,
+                                log.date,
+                                log.login_time ? new Date(log.login_time).toLocaleTimeString() : 'N/A',
+                                log.check_out ? new Date(log.check_out).toLocaleTimeString() : 'N/A',
+                                log.duration_minutes ? `${Math.floor(log.duration_minutes / 60)}h ${log.duration_minutes % 60}m` : '--',
+                                getSalaryStatus(log.duration_minutes).label
+                            ]);
+                            generateGeneralReportPDF(data, 'Biometric Verification Archive', columns);
+                        }}
+                        className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
+                    >
+                        <Download className="w-5 h-5" /> Export PDF
+                    </button>
+                </div>
             </div>
 
             {/* Filter Bar */}
@@ -128,6 +150,18 @@ const AttendanceLogs = () => {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition"
                     />
+                </div>
+                <div className="md:w-64 relative">
+                    <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <select 
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl appearance-none focus:ring-2 focus:ring-indigo-500/20 outline-none transition uppercase font-bold text-xs"
+                    >
+                        <option value="">All Verification Status</option>
+                        <option value="success">Successful Scans</option>
+                        <option value="failed">Failed Attempts</option>
+                    </select>
                 </div>
             </div>
 

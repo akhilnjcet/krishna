@@ -3,7 +3,7 @@ import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-d
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Layers, BookOpen, FileText,
-    MessageSquare, HelpCircle, User, LogOut, Bell, Menu, X
+    MessageSquare, HelpCircle, User, LogOut, Bell, Menu, X, ChevronLeft, Wallet
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 
@@ -12,6 +12,7 @@ const SIDEBAR_W = 'w-[280px]';
 const navItems = [
     { name: 'My Dashboard', path: '/customer', icon: LayoutDashboard },
     { name: 'My Applications', path: '/customer/quotes', icon: Layers },
+    { name: 'My Payments', path: '/customer/payments', icon: Wallet },
     { name: 'Intelligence Feed', path: '/blog', icon: BookOpen },
     { name: 'Formal Quote Request', path: '/quote', icon: FileText },
     { name: 'Technical Support', path: '/customer/support', icon: MessageSquare },
@@ -117,8 +118,16 @@ const CustomerLayout = () => {
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}
                             className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all border border-white/10"
+                            title="Toggle Menu"
                         >
                             <Menu className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all border border-white/10 flex items-center justify-center"
+                            title="Go Back"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
                         </button>
                         <h1 className="text-base md:text-lg font-bold text-white tracking-tight font-poppins truncate max-w-[160px] sm:max-w-xs">
                             {currentPage}

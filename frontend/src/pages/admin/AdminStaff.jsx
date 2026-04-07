@@ -4,8 +4,9 @@ import FaceCapture from '../../components/FaceCapture';
 import { 
   Users, UserPlus, Search, Filter, Mail, Phone, Briefcase, 
   Trash2, Edit, Camera, X, Check, Loader2, AlertCircle, ChevronRight,
-  Banknote, BadgeIndianRupee
+  Banknote, BadgeIndianRupee, Download
 } from 'lucide-react';
+import { generateGeneralReportPDF } from '../../services/pdfService';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminStaff = () => {
@@ -20,7 +21,20 @@ const AdminStaff = () => {
     const [filterDept, setFilterDept] = useState('');
     const [payAmount, setPayAmount] = useState('');
     const [attendanceSummary, setAttendanceSummary] = useState({ totalMinutes: 0, shifts: 0, estimatedSalary: 0 });
-    const [payAdjustment, setPayAdjustment] = useState(0); // For manual increase/decrease
+    const [payAdjustment, setPayAdjustment] = useState(0); 
+
+    const handleDownloadRoster = () => {
+        if (!staff || staff.length === 0) return alert("No staff data to export.");
+        const columns = ['Emp ID', 'Full Name', 'Department', 'Designation', 'Contact'];
+        const data = staff.map(s => [
+            s.staff_id,
+            s.name.toUpperCase(),
+            s.department,
+            s.designation,
+            s.phone
+        ]);
+        generateGeneralReportPDF(data, 'Enterprise Resource Roster', columns);
+    };
 
     const [formData, setFormData] = useState({
         staff_id: '',
@@ -209,12 +223,20 @@ const AdminStaff = () => {
                     <p className="text-xs md:text-sm text-slate-500 mt-2 font-bold uppercase tracking-widest opacity-60">Operations Registry & Biometrics</p>
                 </div>
                 
-                <button 
-                    onClick={() => { resetForm(); setShowAddModal(true); }}
-                    className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
-                >
-                    <UserPlus className="w-5 h-5" /> Add New Staff
-                </button>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={handleDownloadRoster}
+                        className="bg-white border-2 border-slate-200 text-slate-600 px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition active:scale-95 flex items-center gap-2"
+                    >
+                        <Download className="w-5 h-5" /> Export Roster
+                    </button>
+                    <button 
+                        onClick={() => { resetForm(); setShowAddModal(true); }}
+                        className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
+                    >
+                        <UserPlus className="w-5 h-5" /> Add New Staff
+                    </button>
+                </div>
             </div>
 
             {/* Stats Bar */}

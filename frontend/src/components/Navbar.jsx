@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 
 const Navbar = () => {
@@ -26,8 +27,17 @@ const Navbar = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-20">
 
-                        {/* Logo */}
-                        <div className="flex-shrink-0">
+                        {/* Back Button & Logo */}
+                        <div className="flex items-center gap-4 flex-shrink-0">
+                            {location.pathname !== '/' && (
+                                <button
+                                    onClick={() => navigate(-1)}
+                                    className="p-2.5 bg-slate-50 text-primary hover:bg-blue-50 hover:text-cta rounded-xl transition-all duration-300 border border-slate-100 flex items-center justify-center"
+                                    title="Go Back"
+                                >
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+                            )}
                             <Link to="/" className="flex items-center gap-3 group">
                                 <img 
                                     src="/logo512.png" 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { motion } from 'framer-motion';
-import { FileText, Download, Filter, TrendingUp, Calendar, Users } from 'lucide-react';
+import { generateGeneralReportPDF } from '../../services/pdfService';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FileText, Download, Filter, TrendingUp, Calendar, Users, FileBarChart } from 'lucide-react';
 
 const AdminReports = () => {
     const [reports, setReports] = useState([]);
@@ -22,9 +23,31 @@ const AdminReports = () => {
         }
     };
 
-    const handleDownload = (report) => {
-        alert("Downloading report: " + report.title);
-        // Realistic implementation would trigger a PDF/CSV stream
+    const handleDownload = (rpt) => {
+        const columns = ['Field', 'Details'];
+        const data = [
+            ['Report ID', rpt._id?.slice(-8).toUpperCase()],
+            ['Submission Date', new Date(rpt.date).toLocaleDateString()],
+            ['Author', rpt.staffId?.name || 'Unknown'],
+            ['Department', rpt.staffId?.department || 'Operations'],
+            ['Title', rpt.title],
+            ['Description', rpt.description || 'Verified operational log.'],
+            ['Status', 'VERIFIED / ARCHIVED']
+        ];
+        generateGeneralReportPDF(data, 'Operational Incident Report', columns);
+    };
+
+    const handleExportAll = () => {
+        if (reports.length === 0) return alert("No data available to export.");
+        
+        const columns = ['Date', 'Author', 'Title', 'Dept'];
+        const data = reports.map(r => [
+            new Date(r.date).toLocaleDateString(),
+            r.staffId?.name || 'N/A',
+            r.title,
+            r.staffId?.department || 'N/A'
+        ]);
+        generateGeneralReportPDF(data, 'Consolidated Operational Archive', columns);
     };
 
     return (
@@ -35,7 +58,10 @@ const AdminReports = () => {
                     <p className="text-slate-500 font-medium">Business intelligence and operational logs.</p>
                 </div>
                 <div className="flex gap-4">
-                    <button className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition">
+                    <button 
+                        onClick={handleExportAll}
+                        className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition"
+                    >
                         <Download className="w-5 h-5" /> Export All
                     </button>
                 </div>

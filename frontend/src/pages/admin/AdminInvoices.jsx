@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from '../../services/api';
-import { CreditCard, Send, CheckCircle, Clock, Loader2, IndianRupee } from 'lucide-react';
+import { generateInvoicePDF, generateGeneralReportPDF } from '../../services/pdfService';
+import { CreditCard, Send, CheckCircle, Clock, Loader2, IndianRupee, Download, RotateCcw } from 'lucide-react';
 
 const AdminInvoices = () => {
     const [invoices, setInvoices] = useState([]);
@@ -17,10 +18,28 @@ const AdminInvoices = () => {
             const res = await api.get('/invoices');
             setInvoices(res.data);
         } catch (err) {
-            console.error("Failed to fetch invoices");
+            console.error("Failed to fetch invoices", err);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleDownloadPDF = (inv) => {
+        generateInvoicePDF(inv);
+    };
+
+    const handleDownloadLedger = () => {
+        if (invoices.length === 0) return alert("No ledger data available.");
+        const columns = ['Date', 'Invoice ID', 'Client', 'Project', 'Amount', 'Status'];
+        const data = invoices.map(inv => [
+            new Date(inv.createdAt).toLocaleDateString(),
+            `INV-${inv._id.slice(-6).toUpperCase()}`,
+            inv.customerId?.name || 'N/A',
+            inv.projectId?.title || 'N/A',
+            `₹ ${inv.amount.toLocaleString()}`,
+            inv.paymentStatus.toUpperCase()
+        ]);
+        generateGeneralReportPDF(data, 'Accounts Receivable Ledger', columns);
     };
 
     const handleUpdateStatus = async (id, status) => {
@@ -28,6 +47,7 @@ const AdminInvoices = () => {
             await api.put(`/invoices/${id}/status`, { status });
             fetchInvoices();
         } catch (err) {
+            console.error(err);
             alert("Failed to update status.");
         }
     };
@@ -38,19 +58,29 @@ const AdminInvoices = () => {
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50">
+            {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl gap-6">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Financial Oversight</div>
                     <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Accounts Receivable</h2>
                 </div>
-                <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-3xl text-right">
-                    <div className="text-[10px] uppercase font-black tracking-widest text-indigo-500">Total Outstanding</div>
-                    <div className="font-black text-3xl text-indigo-600 flex items-center justify-end gap-1">
-                        <IndianRupee className="w-6 h-6" /> {totalOutstanding.toLocaleString()}
+                <div className="flex items-center gap-6">
+                    <button 
+                        onClick={handleDownloadLedger}
+                        className="bg-white border border-slate-200 text-slate-600 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm"
+                    >
+                        <Download className="w-5 h-5" /> Download Ledger
+                    </button>
+                    <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-3xl text-right">
+                        <div className="text-[10px] uppercase font-black tracking-widest text-indigo-500">Total Outstanding</div>
+                        <div className="font-black text-3xl text-indigo-600 flex items-center justify-end gap-1">
+                            <IndianRupee className="w-6 h-6" /> {totalOutstanding.toLocaleString()}
+                        </div>
                     </div>
                 </div>
             </div>
 
+            {/* Invoices Table */}
             <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[800px]">
@@ -124,7 +154,14 @@ const AdminInvoices = () => {
                                                     <RotateCcw className="w-4 h-4" />
                                                 </button>
                                             )}
-                                            <button className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-xl transition shadow-md">
+                                            <button 
+                                                onClick={() => handleDownloadPDF(inv)}
+                                                className="bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2 rounded-xl transition shadow-sm"
+                                                title="Download Invoice PDF"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                            </button>
+                                            <button className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-xl transition shadow-md focus:outline-none">
                                                 <Send className="w-4 h-4" />
                                             </button>
                                         </div>

@@ -55,6 +55,7 @@ import StaffApplications from './pages/staff/StaffApplications';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import CustomerQuotes from './pages/customer/CustomerQuotes';
 import InvoiceView from './pages/customer/InvoiceView';
+import CustomerPayments from './pages/customer/CustomerPayments';
 
 // Components
 import AIChatWidget from './components/AIChatWidget';
@@ -190,6 +191,7 @@ const App = () => {
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="whatsapp" element={<AdminWhatsApp />} />
               <Route path="live-chat" element={<SupportHub />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
 
             {/* Staff Routes */}
@@ -212,6 +214,7 @@ const App = () => {
               <Route index element={<CustomerDashboard />} />
               <Route path="quotes" element={<CustomerQuotes />} />
               <Route path="invoice/:id" element={<InvoiceView />} />
+              <Route path="payments" element={<CustomerPayments />} />
               <Route path="support" element={<SupportHub />} />
               <Route path="profile" element={<Profile />} />
             </Route>

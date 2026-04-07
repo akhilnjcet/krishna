@@ -118,8 +118,16 @@ const StaffLayout = () => {
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}
                             className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all border border-white/10"
+                            title="Toggle Menu"
                         >
                             <Menu className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all border border-white/10 flex items-center justify-center"
+                            title="Go Back"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
                         </button>
                         <h1 className="text-base md:text-lg font-bold text-white tracking-tight font-poppins capitalize truncate max-w-[160px] sm:max-w-xs">
                             {navItems.find(i => i.path === location.pathname)?.name || 'Staff Portal'}

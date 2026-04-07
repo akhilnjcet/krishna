@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
+import { generateGeneralReportPDF } from '../../services/pdfService';
 import { 
   Users, Calendar, Clock, Lock, ArrowUpRight, 
   TrendingUp, Activity, UserCheck, ShieldCheck, 
   ArrowRight, ChevronRight, Search, Filter,
-  Layers, Package, AlertCircle
+  Layers, Package, AlertCircle, Download
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -22,6 +23,19 @@ const AdminDashboard = () => {
     });
     const [recentLogs, setRecentLogs] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const handleQuickReport = () => {
+        const columns = ['System Parameter', 'Operational Value', 'Status'];
+        const data = [
+            ['Total Workforce', stats.totalStaff.toString(), 'Operational'],
+            ['Active Projects', stats.activeProjects.toString(), 'In-Progress'],
+            ['Attendance Verified', stats.todayLogs.toString(), 'Verified'],
+            ['Pending Quotes', stats.pendingQuotes.toString(), 'Action Required'],
+            ['Registered Biometrics', stats.registeredFaces.toString(), 'Secure'],
+            ['Pending Compliances', stats.pendingLeaves.toString(), 'Internal']
+        ];
+        generateGeneralReportPDF(data, 'Institutional Operations Summary', columns);
+    };
 
     useEffect(() => {
         fetchDashboardData();
@@ -97,8 +111,11 @@ const AdminDashboard = () => {
                         <Activity className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                         Refresh Data
                     </button>
-                    <button onClick={() => navigate('/admin/reports')} className="px-5 py-2.5 bg-[#2563EB] rounded-xl text-sm font-bold text-white hover:bg-[#1D4ED8] transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20">
-                        Generate Report
+                    <button 
+                        onClick={handleQuickReport}
+                        className="px-5 py-2.5 bg-[#2563EB] rounded-xl text-sm font-bold text-white hover:bg-[#1D4ED8] transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                    >
+                        <Download className="w-4 h-4" /> Generate Report
                     </button>
                 </div>
             </div>

@@ -3,7 +3,7 @@ import useAuthStore from '../stores/authStore';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 
-             (window.location.hostname === 'localhost' ? 'https://krishna-akhilnjcets-projects.vercel.app/api' : '/api'),
+             (window.location.hostname === 'localhost' ? '/api' : 'https://krishna-akhilnjcets-projects.vercel.app/api'),
 });
 
 

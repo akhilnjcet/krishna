@@ -39,7 +39,8 @@ exports.getPublicSettings = async (req, res) => {
             'map_embed_url',
             'stat_years', 'stat_projects', 'stat_tons', 'stat_safety',
             'stat_clients', 'stat_satisfaction',
-            'about_title', 'about_content', 'about_image'
+            'about_title', 'about_content', 'about_image',
+            'payment_upi_id', 'payment_bank_name', 'payment_bank_account', 'payment_bank_ifsc'
         ];
         const settings = await SystemSetting.find({ key: { $in: publicKeys } });
         res.json(settings);

@@ -4,7 +4,7 @@ import {
     Shield, Lock, Server, Save, Loader2, Check,
     MapPin, Phone, Mail, Globe, Share2, AlignLeft, 
     Terminal, Cpu, Radio, Activity, Zap, TrendingUp,
-    BarChart3, Info, ImageIcon, FileText
+    BarChart3, Info, ImageIcon, FileText, Building, CreditCard
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -158,6 +158,50 @@ const AdminSettings = () => {
                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : success ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                         {saving ? 'Syncing...' : success ? 'Config Updated' : 'Push Deployment'}
                     </button>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 mb-20">
+                    <section className="xl:col-span-12 p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-blue-500/20 transition-all">
+                        <ModuleHeader icon={Building} title="Commercial Gateway Configuration" status="Official" />
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                            <div className="space-y-3">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Integrated UPI Address</label>
+                                <input 
+                                    value={settings.payment_upi_id || ''}
+                                    onChange={(e) => updateField('payment_upi_id', e.target.value)}
+                                    placeholder="e.g. 9447940835@okaxis"
+                                    className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-blue-400 outline-none focus:border-blue-500/50"
+                                />
+                            </div>
+                            <div className="space-y-3">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Bank Institution Name</label>
+                                <input 
+                                    value={settings.payment_bank_name || ''}
+                                    onChange={(e) => updateField('payment_bank_name', e.target.value)}
+                                    placeholder="e.g. STATE BANK OF INDIA"
+                                    className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-white outline-none"
+                                />
+                            </div>
+                            <div className="space-y-3">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Corporate Account No.</label>
+                                <input 
+                                    value={settings.payment_bank_account || ''}
+                                    onChange={(e) => updateField('payment_bank_account', e.target.value)}
+                                    placeholder="99887766554433"
+                                    className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-white outline-none"
+                                />
+                            </div>
+                            <div className="space-y-3">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Institutional IFSC Registry</label>
+                                <input 
+                                    value={settings.payment_bank_ifsc || ''}
+                                    onChange={(e) => updateField('payment_bank_ifsc', e.target.value)}
+                                    placeholder="SBIN0001234"
+                                    className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-white outline-none"
+                                />
+                            </div>
+                        </div>
+                    </section>
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
