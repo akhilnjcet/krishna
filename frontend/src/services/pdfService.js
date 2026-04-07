@@ -251,3 +251,54 @@ export const generateGeneralReportPDF = (data, title, columns) => {
     addFooter(doc);
     doc.save(`${title.replace(/\s+/g, '_')}.pdf`);
 };
+
+export const generatePaymentReceiptPDF = (payment, user) => {
+    const doc = new jsPDF();
+    addHeader(doc, 'Payment Receipt / Acknowledgment');
+
+    doc.setTextColor(...THEME.textDark);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Receipt ID: RCPT-${payment._id?.slice(-8).toUpperCase() || 'N/A'}`, 15, 65);
+    doc.text(`Transaction Date: ${new Date(payment.createdAt).toLocaleDateString()}`, 15, 72);
+    
+    doc.text(`Payor Details:`, 140, 65);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${user?.name?.toUpperCase() || 'N/A'}`, 140, 72);
+    doc.text(`${user?.email || 'N/A'}`, 140, 77);
+
+    doc.autoTable({
+        startY: 90,
+        head: [['Transaction Parameter', 'Details / Values']],
+        body: [
+            ['Reference UTR / ID', payment.referenceId || 'N/A'],
+            ['Payment Channel', (payment.method || 'Manual').toUpperCase()],
+            ['Project / Service', payment.projectId?.title || payment.quoteId?.serviceType || 'Krishna Engineering Services'],
+            ['Payment Status', (payment.status || 'Verified').toUpperCase()],
+            ['Currency Indicator', 'Indian Rupee (INR)'],
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: THEME.accent },
+        styles: { fontSize: 9, cellPadding: 5 }
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 15;
+    const pageWidth = doc.internal.pageSize.width;
+    
+    doc.setFillColor(...THEME.bgLight);
+    doc.rect(120, finalY, 75, 20, 'F');
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOTAL AMOUNT PAID:', 125, finalY + 12);
+    doc.setFontSize(14);
+    doc.text(`₹ ${payment.amount?.toLocaleString() || '0'}`, pageWidth - 15, finalY + 12, { align: 'right' });
+
+    doc.setFontSize(8);
+    doc.setTextColor(...THEME.textMuted);
+    const disclaimer = "This is a system-generated receipt and does not require a physical signature. Subject to bank clearance.";
+    doc.text(disclaimer, 15, finalY + 40);
+
+    addFooter(doc);
+    doc.save(`Receipt_${payment._id?.slice(-8).toUpperCase() || 'N/A'}.pdf`);
+};
