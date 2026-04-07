@@ -44,10 +44,10 @@ const CustomerQuotes = () => {
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-transparent">
-            <div className="flex justify-between items-center mb-12 border-l-8 border-brand-accent pl-8">
+            <div className="flex flex-col mb-8 border-l-8 border-brand-accent pl-6 md:pl-8">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-brand-500 mb-2 italic">Operation Estimation Brief</div>
-                    <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-brand-950">Project <span className="text-gray-400">Quotations</span></h2>
+                    <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-brand-950">Project <span className="text-gray-400">Quotations</span></h2>
                 </div>
             </div>
 

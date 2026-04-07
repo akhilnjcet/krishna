@@ -80,14 +80,14 @@ const AdminProjects = () => {
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50">
-            <div className="flex justify-between items-center mb-8 bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-xl">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Director View</div>
-                    <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Active Projects Registry</h2>
+                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900">Active Projects Registry</h2>
                 </div>
                 <button 
                     onClick={() => setShowModal(true)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-xs py-4 px-8 rounded-2xl flex items-center gap-2 shadow-lg transition-all active:scale-95"
+                    className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-xs py-4 px-8 rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95"
                 >
                     <Plus className="w-5 h-5" /> Commission New Project
                 </button>
@@ -243,7 +243,7 @@ const AdminProjects = () => {
                                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Project Title</label>
                                     <input required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Select Customer*</label>
                                         <select 
@@ -263,7 +263,7 @@ const AdminProjects = () => {
                                         <input required value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="e.g. Fabrication" />
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Budget (₹)</label>
                                         <input type="number" value={formData.budget} onChange={e => setFormData({...formData, budget: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" />

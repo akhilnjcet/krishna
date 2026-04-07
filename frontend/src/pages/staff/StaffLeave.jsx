@@ -183,7 +183,7 @@ const StaffLeave = () => {
                             </div>
                             
                             <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Starts From</label>
                                         <input 

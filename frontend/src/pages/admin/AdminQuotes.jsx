@@ -66,10 +66,10 @@ const AdminQuotes = () => {
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50">
-            <div className="flex justify-between items-center mb-8 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200 shadow-xl">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Sales & Estimation</div>
-                    <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Inbound Quotes Log</h2>
+                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900">Inbound Quotes Log</h2>
                 </div>
             </div>
 
@@ -131,7 +131,7 @@ const AdminQuotes = () => {
                                 <div>
                                     <h3 className="font-black text-2xl uppercase tracking-tighter text-slate-900 mb-4">{quote.name}</h3>
                                     
-                                    <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                                         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                                             <div className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Contact Details</div>
                                             <div className="flex flex-col gap-1">
@@ -217,7 +217,7 @@ const AdminQuotes = () => {
                             </div>
 
                             <form onSubmit={handleEditSave} className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
-                                <div className="grid grid-cols-2 gap-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Client Identifier</label>
                                         <input 
@@ -236,7 +236,7 @@ const AdminQuotes = () => {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Site Coordinates (Location)</label>
                                         <input 

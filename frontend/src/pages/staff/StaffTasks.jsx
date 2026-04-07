@@ -42,11 +42,11 @@ const StaffTasks = () => {
     };
 
     return (
-        <div className="bg-brand-50 min-h-screen py-16 px-4 font-sans">
-            <div className="max-w-5xl mx-auto space-y-12">
-                <div className="bg-brand-950 text-white p-8 border-b-8 border-brand-accent shadow-solid">
+        <div className="bg-brand-50 min-h-screen py-6 md:py-16 px-4 font-sans">
+            <div className="max-w-5xl mx-auto space-y-8 md:space-y-12">
+                <div className="bg-brand-950 text-white p-6 md:p-8 border-b-8 border-brand-accent shadow-solid">
                     <div className="text-[10px] font-black uppercase tracking-widest text-brand-accent mb-2">Assignment Module</div>
-                    <h1 className="text-4xl font-black uppercase tracking-tighter">My Operational Tasks</h1>
+                    <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter">My Operational Tasks</h1>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

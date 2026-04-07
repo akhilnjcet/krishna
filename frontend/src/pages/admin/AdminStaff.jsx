@@ -550,14 +550,15 @@ const AdminStaff = () => {
                             className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-10 flex flex-col"
                         >
                             <div className="flex items-center gap-4 mb-8">
-                                <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                                <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex-shrink-0 flex items-center justify-center">
                                     <BadgeIndianRupee className="w-8 h-8 text-emerald-600" />
                                 </div>
                                 <div className="text-left text-balance">
                                     <h2 className="text-2xl font-black text-slate-900 leading-tight">Salary Disburser</h2>
                                     <p className="text-slate-500 font-bold uppercase tracking-widest text-[9px] mt-1">Recipient: {selectedStaff?.name}</p>
                                 </div>
-                                                 <div className="space-y-6">
+                            </div>
+                            <div className="space-y-6">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col items-center">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Shifts</p>
@@ -644,7 +645,6 @@ const AdminStaff = () => {
                                     </button>
                                 </div>
                             </div>
-           </div>
                         </motion.div>
                     </div>
                 )}

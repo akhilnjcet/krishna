@@ -60,7 +60,7 @@ const StaffContacts = () => {
                         </p>
                     </div>
 
-                    <div className="relative group min-w-[320px]">
+                    <div className="relative group w-full md:w-80">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
                         <input 
                             type="text" 

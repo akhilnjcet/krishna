@@ -86,8 +86,8 @@ const AdminFinance = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* EXPENSE INJECTION PORT */}
-                <div className="bg-white border border-slate-200 p-10 rounded-[3rem] shadow-2xl">
-                    <div className="flex items-center justify-between mb-10">
+                <div className="bg-white border border-slate-200 p-6 md:p-10 rounded-[3rem] shadow-2xl">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 md:mb-10">
                         <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter italic flex items-center gap-4">
                             <Plus className="text-indigo-600" /> Operational Expense Injection
                         </h3>
@@ -95,7 +95,7 @@ const AdminFinance = () => {
                     </div>
                     
                     <form onSubmit={handleAddExpense} className="space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Transaction Title</label>
                                 <input 

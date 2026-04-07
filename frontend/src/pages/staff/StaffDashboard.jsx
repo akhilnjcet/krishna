@@ -33,7 +33,7 @@ const StaffDashboard = () => {
         <div className="space-y-10 animate-in fade-in duration-700">
             
             {/* High-Contrast Impact Banner */}
-            <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] dark:from-[#0B1222] dark:to-[#1E3A8A] rounded-[2.5rem] p-10 relative overflow-hidden text-white shadow-2xl shadow-blue-900/20 group transition-all duration-500">
+            <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] dark:from-[#0B1222] dark:to-[#1E3A8A] rounded-[2.5rem] p-6 md:p-10 relative overflow-hidden text-white shadow-2xl shadow-blue-900/20 group transition-all duration-500">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -mr-40 -mt-40 group-hover:scale-110 transition-transform duration-1000"></div>
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                     <div className="space-y-6">
@@ -102,7 +102,7 @@ const StaffDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 
                 {/* Task Logistics Preview */}
-                <div className="lg:col-span-8 bg-white dark:bg-dark-surface rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border p-10 shadow-sm relative overflow-hidden">
+                <div className="lg:col-span-8 bg-white dark:bg-dark-surface rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border p-6 md:p-10 shadow-sm relative overflow-hidden">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-blue-50 dark:bg-blue-950/30 text-[#2563EB] rounded-2xl">
