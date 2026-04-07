@@ -151,12 +151,15 @@ const SecurityWrapper = ({ children }) => {
   return <>{children}</>;
 };
 
+import PermissionGuard from './components/PermissionGuard';
+
 const App = () => {
   return (
     <Router>
-      <Layout>
-        <SecurityWrapper>
-          <Routes>
+      <PermissionGuard>
+        <Layout>
+          <SecurityWrapper>
+            <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
@@ -224,8 +227,9 @@ const App = () => {
           </Routes>
         </SecurityWrapper>
       </Layout>
-    </Router>
-  );
+    </PermissionGuard>
+  </Router>
+);
 };
 
 export default App;
