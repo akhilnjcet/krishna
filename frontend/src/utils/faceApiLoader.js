@@ -22,7 +22,9 @@ export const loadFaceModels = async () => {
         await faceapi.tf.ready();
       }
 
-      const baseUrl = window.location.origin + '/models';
+      const baseUrl = '/models'; // More robust for both Vercel and Capacitor
+      console.log(`Loading models from: ${window.location.origin}${baseUrl}`);
+      
       await Promise.all([
         faceapi.nets.ssdMobilenetv1.loadFromUri(baseUrl),
         faceapi.nets.faceLandmark68Net.loadFromUri(baseUrl),
@@ -33,9 +35,23 @@ export const loadFaceModels = async () => {
       return true;
     } catch (error) {
       console.error('Error loading FaceAPI models:', error);
-      modelsLoaded = false;
-      loadingPromise = null;
-      return false;
+      // Fallback for some Capacitor environments
+      try {
+        console.log('Retrying model load with origin prefix...');
+        const altUrl = window.location.origin + '/models';
+        await Promise.all([
+          faceapi.nets.ssdMobilenetv1.loadFromUri(altUrl),
+          faceapi.nets.faceLandmark68Net.loadFromUri(altUrl),
+          faceapi.nets.faceRecognitionNet.loadFromUri(altUrl)
+        ]);
+        modelsLoaded = true;
+        return true;
+      } catch (e2) {
+        console.error('Final model load failure:', e2);
+        modelsLoaded = false;
+        loadingPromise = null;
+        return false;
+      }
     }
   })();
 

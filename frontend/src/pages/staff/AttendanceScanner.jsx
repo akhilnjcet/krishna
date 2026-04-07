@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Camera, ShieldCheck, CheckCircle2, AlertCircle, 
     Loader2, UserCheck, Timer, Fingerprint, Scan,
-    ArrowRight, Info
+    ArrowRight, Info, RefreshCw
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
@@ -20,19 +20,19 @@ const AttendanceScanner = () => {
     const scanActiveRef = useRef(false);
     const [stats, setStats] = useState({ blinkCount: 0, quality: 0 });
 
-    useEffect(() => {
-        return () => {
-            scanActiveRef.current = false;
-            stopCamera();
-        };
-    }, []);
-
     const stopCamera = () => {
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
         }
     };
+
+    useEffect(() => {
+        return () => {
+            scanActiveRef.current = false;
+            stopCamera();
+        };
+    }, []);
 
     const startScan = async () => {
         setStatus('loading_models');
@@ -101,7 +101,7 @@ const AttendanceScanner = () => {
             };
 
             scanLoop();
-        } catch (err) {
+        } catch (_err) {
             setStatus('error');
             setMessage('Optical Hardware Access Denied.');
         }
