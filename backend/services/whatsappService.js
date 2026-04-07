@@ -84,8 +84,9 @@ async function startWhatsAppConnection() {
 
             const { state, saveCreds } = await useMultiFileAuthState(authPath);
             
-            // Hardcoded version string to avoid sluggish dynamic fetch on startup
-            const version = [2, 3000, 101]; 
+            // Use latest version to prevent rejection from WA servers
+            const { version } = await fetchLatestBaileysVersion();
+            console.log(`Using WA version v${version.join('.')}`);
 
             sock = makeWASocket({
                 version,
