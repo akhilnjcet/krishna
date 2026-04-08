@@ -87,16 +87,15 @@ const CustomerPayments = () => {
 
     const getUPILink = () => {
         if (!settings.payment_upi_id || !formData.amount) return null;
-        // tr is unique ref, tn is note, pn is payee name, mc is merchant code
-        const orderId = `KEW${Date.now()}`;
-        const payeeName = "AKHIL N"; // Matches bank record in screenshot
-        return `upi://pay?pa=${settings.payment_upi_id}&pn=${encodeURIComponent(payeeName)}&am=${formData.amount}&cu=INR&tn=ProjectPayment&tr=${orderId}&mc=0000&mode=02&purpose=00`;
+        // Minimal link to avoid security flags in specific apps
+        const payeeName = encodeURIComponent("AKHIL N");
+        return `upi://pay?pa=${settings.payment_upi_id}&pn=${payeeName}&am=${formData.amount}&cu=INR`;
     };
 
     const handleCopyVPA = () => {
         if (!settings.payment_upi_id) return;
         navigator.clipboard.writeText(settings.payment_upi_id);
-        alert("UPI Address Copied: " + settings.payment_upi_id);
+        alert(`UPI ADDRESS COPIED: ${settings.payment_upi_id}\n\nYou can now paste this in any UPI app to pay manually.`);
     };
 
     if (loading) return (
@@ -155,41 +154,65 @@ const CustomerPayments = () => {
                                     </button>
                                 </div>
 
-                                {/* Dynamic QR and UPI Redirection */}
+                                {/* BULLETPROOF PAYMENT HUB */}
                                 {formData.method === 'upi' && formData.amount > 0 && (
                                     <motion.div 
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        className="bg-white p-6 rounded-3xl flex flex-col items-center gap-4 border-b-4 border-blue-600"
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-white p-6 rounded-[2.5rem] flex flex-col gap-6 border-b-[8px] border-blue-600 shadow-2xl"
                                     >
-                                        <div className="p-2 border-2 border-slate-100 rounded-xl">
-                                            <img 
-                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(getUPILink())}`}
-                                                alt="Payment QR"
-                                                className="w-32 h-32"
-                                            />
+                                        <div className="flex items-center gap-4 border-b border-slate-100 pb-4 text-slate-900">
+                                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+                                                <CheckCircle className="w-6 h-6 text-blue-600" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Verified Receiver</p>
+                                                <p className="text-sm font-black text-slate-900 tracking-tight">AKHIL N (KRISHNA ENGG)</p>
+                                            </div>
                                         </div>
-                                        <div className="text-center">
-                                            <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 italic">Scan to Pay ₹{formData.amount}</p>
-                                            <p className="text-[8px] font-bold text-slate-400 uppercase">{settings.payment_upi_id}</p>
+
+                                        <div className="flex flex-col items-center gap-4 py-2">
+                                            <div className="p-4 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 group/qr relative">
+                                                <img 
+                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(getUPILink())}`}
+                                                    alt="Secure QR"
+                                                    className="w-40 h-40 mix-blend-multiply"
+                                                />
+                                                <div className="absolute inset-0 bg-blue-600/5 opacity-0 group-hover/qr:opacity-100 transition-opacity rounded-3xl pointer-events-none"></div>
+                                            </div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] italic text-center">Scan QR or Use Buttons Below</p>
                                         </div>
-                                        <div className="flex w-full gap-2">
+
+                                        <div className="space-y-3">
                                             <a 
                                                 href={getUPILink()}
-                                                className="flex-1 py-4 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest text-center rounded-xl hover:bg-slate-900 transition-colors shadow-lg shadow-blue-600/20"
+                                                className="w-full flex items-center justify-center gap-3 py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:bg-slate-900 transition-all active:scale-95"
                                             >
-                                                Open in UPI App
+                                                <Send className="w-4 h-4" /> Open Payment Choice
                                             </a>
-                                            <button 
-                                                type="button"
-                                                onClick={handleCopyVPA}
-                                                className="px-4 py-4 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all border border-slate-200 shadow-sm"
-                                                title="Copy UPI ID"
-                                            >
-                                                <History className="w-4 h-4 rotate-90" />
-                                            </button>
+                                            
+                                            <div className="relative">
+                                                <button 
+                                                    type="button"
+                                                    onClick={handleCopyVPA}
+                                                    className="w-full flex items-center justify-between px-6 py-4 bg-slate-100 text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-200 hover:bg-slate-200 transition-all"
+                                                >
+                                                    <span className="truncate mr-4 lowercase italic font-mono">{settings.payment_upi_id || "VPA ID"}</span>
+                                                    <div className="flex items-center gap-2 text-blue-600 bg-white px-3 py-1.5 rounded-lg shadow-sm">
+                                                        <QrCode className="w-3 h-3" /> COPY ID
+                                                    </div>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <p className="text-[8px] font-bold text-slate-400 uppercase italic">If "Technical Error" appears, please Copy ID & pay manually in your app.</p>
+
+                                        {/* Troubleshooting Advice */}
+                                        <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex gap-3 items-start">
+                                            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="text-[10px] font-black text-amber-700 uppercase tracking-tight text-left">Technical Error?</p>
+                                                <p className="text-[9px] font-bold text-amber-600/80 leading-relaxed uppercase mt-1 italic text-left">If your app fails, use "COPY ID" above, open your UPI app manually, and paste the ID to pay ₹{formData.amount}.</p>
+                                            </div>
+                                        </div>
                                     </motion.div>
                                 )}
 
