@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { TrendingUp, TrendingDown, DollarSign, Plus, Trash2, Loader2, AlertCircle, PieChart, Activity, Download } from 'lucide-react';
-import { generateGeneralReportPDF } from '../../services/pdfService';
+import ReportHeader from '../../components/ReportHeader';
 
 const AdminFinance = () => {
     const [summary, setSummary] = useState(null);
@@ -13,18 +13,6 @@ const AdminFinance = () => {
     useEffect(() => {
         fetchFinance();
     }, []);
-
-    const handleDownloadLedger = () => {
-        if (!expenses || expenses.length === 0) return alert("Expenditure log is empty.");
-        const columns = ['Date', 'Title', 'Category', 'Amount'];
-        const data = expenses.map(exp => [
-            new Date(exp.date).toLocaleDateString(),
-            exp.title.toUpperCase(),
-            exp.category,
-            `₹ ${exp.amount.toLocaleString()}`
-        ]);
-        generateGeneralReportPDF(data, 'Institutional Expenditure Audit', columns);
-    };
 
     const fetchFinance = async () => {
         setLoading(true);
@@ -69,19 +57,17 @@ const AdminFinance = () => {
     return (
         <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-12 font-sans bg-slate-50 min-h-screen">
             
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-center bg-white p-8 rounded-[3rem] border border-slate-200 shadow-xl gap-6">
-                <div>
-                    <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">Financial Intelligence</h1>
-                    <p className="text-slate-500 font-medium italic">Command-level oversight of institutional liquid assets.</p>
-                </div>
-                <button 
-                    onClick={handleDownloadLedger}
-                    className="bg-white border-2 border-slate-200 text-slate-600 px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition active:scale-95 flex items-center gap-2"
-                >
-                    <Download className="w-5 h-5" /> Download Financial Ledger
-                </button>
-            </div>
+            <ReportHeader 
+                title="Financial Intelligence"
+                subtitle="Command-level oversight of institutional liquid assets."
+                data={expenses.map(exp => [
+                    new Date(exp.date).toLocaleDateString(),
+                    exp.title.toUpperCase(),
+                    exp.category,
+                    `₹ ${exp.amount.toLocaleString()}`
+                ])}
+                columns={['Date', 'Title', 'Category', 'Amount']}
+            />
 
             {/* FINANCIAL OVERVIEW GRID */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

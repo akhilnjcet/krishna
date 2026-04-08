@@ -87,9 +87,16 @@ const CustomerPayments = () => {
 
     const getUPILink = () => {
         if (!settings.payment_upi_id || !formData.amount) return null;
-        // tr is a unique transaction reference, tn is the note
+        // tr is unique ref, tn is note, pn is payee name, mc is merchant code
         const orderId = `KEW${Date.now()}`;
-        return `upi://pay?pa=${settings.payment_upi_id}&am=${formData.amount}&cu=INR&tn=Krishna%10Payment&tr=${orderId}&mode=02`;
+        const payeeName = "AKHIL N"; // Matches bank record in screenshot
+        return `upi://pay?pa=${settings.payment_upi_id}&pn=${encodeURIComponent(payeeName)}&am=${formData.amount}&cu=INR&tn=ProjectPayment&tr=${orderId}&mc=0000&mode=02&purpose=00`;
+    };
+
+    const handleCopyVPA = () => {
+        if (!settings.payment_upi_id) return;
+        navigator.clipboard.writeText(settings.payment_upi_id);
+        alert("UPI Address Copied: " + settings.payment_upi_id);
     };
 
     if (loading) return (
@@ -166,12 +173,23 @@ const CustomerPayments = () => {
                                             <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 italic">Scan to Pay ₹{formData.amount}</p>
                                             <p className="text-[8px] font-bold text-slate-400 uppercase">{settings.payment_upi_id}</p>
                                         </div>
-                                        <a 
-                                            href={getUPILink()}
-                                            className="w-full py-3 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest text-center rounded-xl hover:bg-slate-900 transition-colors"
-                                        >
-                                            Open in UPI App
-                                        </a>
+                                        <div className="flex w-full gap-2">
+                                            <a 
+                                                href={getUPILink()}
+                                                className="flex-1 py-4 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest text-center rounded-xl hover:bg-slate-900 transition-colors shadow-lg shadow-blue-600/20"
+                                            >
+                                                Open in UPI App
+                                            </a>
+                                            <button 
+                                                type="button"
+                                                onClick={handleCopyVPA}
+                                                className="px-4 py-4 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all border border-slate-200 shadow-sm"
+                                                title="Copy UPI ID"
+                                            >
+                                                <History className="w-4 h-4 rotate-90" />
+                                            </button>
+                                        </div>
+                                        <p className="text-[8px] font-bold text-slate-400 uppercase italic">If "Technical Error" appears, please Copy ID & pay manually in your app.</p>
                                     </motion.div>
                                 )}
 

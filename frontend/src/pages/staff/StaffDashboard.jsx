@@ -17,6 +17,7 @@ import {
     LayoutDashboard,
     ArrowRight
 } from 'lucide-react';
+import ReportHeader from '../../components/ReportHeader';
 
 const StaffDashboard = () => {
     const { user } = useAuthStore();
@@ -31,6 +32,12 @@ const StaffDashboard = () => {
 
     return (
         <div className="space-y-10 animate-in fade-in duration-700">
+            <ReportHeader 
+                title="Operational Terminal"
+                subtitle="Live status of assigned structural tasks and shift attendance."
+                data={stats.map(s => [s.label, s.value, s.sub])}
+                columns={['Domain', 'Status / Value', 'Temporal Ref']}
+            />
             
             {/* High-Contrast Impact Banner */}
             <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] dark:from-[#0B1222] dark:to-[#1E3A8A] rounded-[2.5rem] p-6 md:p-10 relative overflow-hidden text-white shadow-2xl shadow-blue-900/20 group transition-all duration-500">

@@ -1,5 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
 
 const COMPANY_DETAILS = {
     name: 'KRISHNA ENGINEERING WORKS',
@@ -16,6 +18,29 @@ const THEME = {
     textDark: [15, 23, 42],
     textMuted: [100, 116, 139], // Slate 500
     bgLight: [248, 250, 252]   // Slate 50
+};
+
+const savePDF = async (doc, filename) => {
+    if (Capacitor.isNativePlatform()) {
+        try {
+            const pdfOutput = doc.output('datauristring');
+            // Remove the data URI header
+            const base64Data = pdfOutput.split(',')[1];
+            
+            await Filesystem.writeFile({
+                path: filename,
+                data: base64Data,
+                directory: Directory.Documents,
+                recursive: true
+            });
+            alert(`Report Saved: ${filename} is now in your Documents folder.`);
+        } catch (err) {
+            console.error('Mobile PDF Save Error:', err);
+            alert('Failed to save PDF to device storage. Please check permissions.');
+        }
+    } else {
+        doc.save(filename);
+    }
 };
 
 const addHeader = (doc, title) => {
@@ -123,7 +148,7 @@ export const generateQuotePDF = (quote) => {
     doc.text(`₹ ${cost}`, 185, finalY + 5, { align: 'right' });
 
     addFooter(doc);
-    doc.save(`Quote_${quoteId}.pdf`);
+    savePDF(doc, `Quote_${quoteId}.pdf`);
 };
 
 export const generateSalaryPDF = (salary, user) => {
@@ -159,7 +184,7 @@ export const generateSalaryPDF = (salary, user) => {
     doc.text(`TRANSACTION STATUS: ${salary.paymentStatus.toUpperCase()}`, 15, finalY + 20);
 
     addFooter(doc);
-    doc.save(`SalarySlip_${salary.month}_${user.name.replace(/\s+/g, '_')}.pdf`);
+    savePDF(doc, `SalarySlip_${salary.month}_${user.name.replace(/\s+/g, '_')}.pdf`);
 };
 
 export const generateInvoicePDF = (invoice) => {
@@ -203,7 +228,7 @@ export const generateInvoicePDF = (invoice) => {
     doc.text(`₹ ${invoice.amount?.toLocaleString()}`, pageWidth - 15, finalY + 10, { align: 'right' });
 
     addFooter(doc);
-    doc.save(`Invoice_${invoice._id.slice(-6).toUpperCase()}.pdf`);
+    savePDF(doc, `Invoice_${invoice._id.slice(-6).toUpperCase()}.pdf`);
 };
 
 export const generateAttendanceReportPDF = (logs, user, type = 'Staff') => {
@@ -232,7 +257,7 @@ export const generateAttendanceReportPDF = (logs, user, type = 'Staff') => {
     });
 
     addFooter(doc);
-    doc.save(`${type}_Attendance_Report.pdf`);
+    savePDF(doc, `${type}_Attendance_Report.pdf`);
 };
 
 export const generateGeneralReportPDF = (data, title, columns) => {
@@ -249,7 +274,7 @@ export const generateGeneralReportPDF = (data, title, columns) => {
     });
 
     addFooter(doc);
-    doc.save(`${title.replace(/\s+/g, '_')}.pdf`);
+    savePDF(doc, `${title.replace(/\s+/g, '_')}.pdf`);
 };
 
 export const generatePaymentReceiptPDF = (payment, user) => {
@@ -300,5 +325,5 @@ export const generatePaymentReceiptPDF = (payment, user) => {
     doc.text(disclaimer, 15, finalY + 40);
 
     addFooter(doc);
-    doc.save(`Receipt_${payment._id?.slice(-8).toUpperCase() || 'N/A'}.pdf`);
+    savePDF(doc, `Receipt_${payment._id?.slice(-8).toUpperCase() || 'N/A'}.pdf`);
 };

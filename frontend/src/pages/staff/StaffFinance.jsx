@@ -9,6 +9,7 @@ import {
 import { generateSalaryPDF } from '../../services/pdfService';
 import useAuthStore from '../../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReportHeader from '../../components/ReportHeader';
 
 const StaffFinance = () => {
     const [history, setHistory] = useState([]);
@@ -81,19 +82,18 @@ const StaffFinance = () => {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             
-            {/* Header */}
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Finances & Payroll</h1>
-                    <p className="text-sm text-slate-500">Manage your earnings, request advances, and download payslips.</p>
-                </div>
-                <button 
-                    onClick={() => setAdvanceModalOpen(true)}
-                    className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
-                >
-                    <Send className="w-4 h-4" /> Request Advance Salary
-                </button>
-            </header>
+            <ReportHeader 
+                title="Finance Ledger"
+                subtitle="Manage your earnings, request advances, and download payslips."
+                data={history.map(sal => [
+                    `${sal.month}, 2026`,
+                    `₹ ${sal.salaryAmount?.toLocaleString()}`,
+                    '₹ 0.00',
+                    `₹ ${sal.salaryAmount?.toLocaleString()}`,
+                    sal.paymentStatus.toUpperCase()
+                ])}
+                columns={['Period', 'Base', 'Deduction', 'Net', 'Status']}
+            />
 
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

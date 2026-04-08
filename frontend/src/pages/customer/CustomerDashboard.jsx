@@ -5,10 +5,10 @@ import {
     ArrowRight, MessageSquare, Briefcase, Zap, Settings, Loader2, FileText,
     TrendingUp, Wallet, ShieldCheck, Activity, ChevronRight, Search
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import ReportHeader from '../../components/ReportHeader';
 
 const CustomerDashboard = () => {
-    const navigate = useNavigate();
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedProject, setSelectedProject] = useState(null);
@@ -83,24 +83,18 @@ const CustomerDashboard = () => {
 
     return (
         <div className="space-y-10 animate-in fade-in duration-700">
-            
-            {/* Header Area */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-4xl font-bold text-[#111827] dark:text-dark-text tracking-tight font-poppins">
-                        Welcome, <span className="text-[#2563EB]">Project Partner</span>
-                    </h1>
-                    <p className="text-[#6B7280] dark:text-dark-muted mt-2 font-medium flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                        Authenticated Client Workspace • Krishna Engineering Works
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <button onClick={() => navigate('/customer/support')} className="px-5 py-3 bg-[#2563EB] text-white rounded-2xl font-bold text-sm shadow-xl shadow-blue-500/20 hover:bg-[#1D4ED8] transition-all flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4" /> Live Support
-                    </button>
-                </div>
-            </div>
+            <ReportHeader 
+                title="Management Terminal"
+                subtitle="Command-level oversight of active engineering projects and payments."
+                data={projects.map(p => [
+                    p.title,
+                    p.serviceType,
+                    `${p.progress}%`,
+                    new Date(p.deadline).toLocaleDateString(),
+                    p.status || 'Active'
+                ])}
+                columns={['Project Name', 'Type', 'Progress', 'Deadline', 'Status']}
+            />
 
             {/* Financial Overview Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

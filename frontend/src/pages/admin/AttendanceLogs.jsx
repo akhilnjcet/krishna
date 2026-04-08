@@ -5,7 +5,7 @@ import {
   MapPin, CheckCircle2, XCircle, Clock, Smartphone, Loader2, Download
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { generateGeneralReportPDF } from '../../services/pdfService';
+import ReportHeader from '../../components/ReportHeader';
 
 const AttendanceLogs = () => {
     const [logs, setLogs] = useState([]);
@@ -65,31 +65,6 @@ const AttendanceLogs = () => {
         }
     };
 
-    const exportToCSV = () => {
-        const headers = ["Staff ID", "Full Name", "Date", "IN Time", "OUT Time", "Duration (mins)", "Salary Status", "IP Address"];
-        const rows = logs.map(log => [
-            log.staff_id?.staff_id || 'N/A',
-            log.full_name,
-            log.date,
-            log.login_time ? new Date(log.login_time).toLocaleTimeString() : 'N/A',
-            log.check_out ? new Date(log.check_out).toLocaleTimeString() : 'N/A',
-            log.duration_minutes || 0,
-            getSalaryStatus(log.duration_minutes),
-            log.device_ip
-        ]);
-
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `attendance_report_${new Date().toISOString().split('T')[0]}.csv`;
-        link.click();
-    };
-
     const filteredLogs = logs.filter(log => 
         log.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
         log.staff_id?.staff_id?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -103,41 +78,19 @@ const AttendanceLogs = () => {
 
     return (
         <div className="p-8 space-y-8 bg-slate-50 min-h-screen relative">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-4xl font-black text-slate-900 flex items-center gap-3">
-                        <History className="w-10 h-10 text-indigo-600" />
-                        Attendance Verification Logs
-                    </h1>
-                    <p className="text-slate-500 mt-2 font-medium">Real-time tracking of staff verification, shift times, and automatic payroll calculation.</p>
-                </div>
-                
-                <div className="flex gap-3">
-                    <button 
-                        onClick={exportToCSV}
-                        className="flex items-center justify-center gap-2 bg-white border-2 border-slate-200 text-slate-600 px-6 py-4 rounded-2xl font-bold shadow-sm transition-all active:scale-95"
-                    >
-                        <Download className="w-5 h-5" /> CSV
-                    </button>
-                    <button 
-                        onClick={() => {
-                            const columns = ['Staff', 'Date', 'IN', 'OUT', 'Duration', 'Status'];
-                            const data = filteredLogs.map(log => [
-                                log.full_name,
-                                log.date,
-                                log.login_time ? new Date(log.login_time).toLocaleTimeString() : 'N/A',
-                                log.check_out ? new Date(log.check_out).toLocaleTimeString() : 'N/A',
-                                log.duration_minutes ? `${Math.floor(log.duration_minutes / 60)}h ${log.duration_minutes % 60}m` : '--',
-                                getSalaryStatus(log.duration_minutes).label
-                            ]);
-                            generateGeneralReportPDF(data, 'Biometric Verification Archive', columns);
-                        }}
-                        className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
-                    >
-                        <Download className="w-5 h-5" /> Export PDF
-                    </button>
-                </div>
-            </div>
+            <ReportHeader 
+                title="Attendance Logs"
+                subtitle="Real-time tracking of staff verification, shift times, and automatic payroll calculation."
+                data={filteredLogs.map(log => [
+                    log.full_name,
+                    log.date,
+                    log.login_time ? new Date(log.login_time).toLocaleTimeString() : 'N/A',
+                    log.check_out ? new Date(log.check_out).toLocaleTimeString() : 'N/A',
+                    log.duration_minutes ? `${Math.floor(log.duration_minutes / 60)}h ${log.duration_minutes % 60}m` : '--',
+                    getSalaryStatus(log.duration_minutes).label
+                ])}
+                columns={['Staff', 'Date', 'IN', 'OUT', 'Duration', 'Status']}
+            />
 
             {/* Filter Bar */}
             <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
