@@ -87,7 +87,9 @@ const CustomerPayments = () => {
 
     const getUPILink = () => {
         if (!settings.payment_upi_id || !formData.amount) return null;
-        return `upi://pay?pa=${settings.payment_upi_id}&am=${formData.amount}&cu=INR`;
+        // tr is a unique transaction reference, tn is the note
+        const orderId = `KEW${Date.now()}`;
+        return `upi://pay?pa=${settings.payment_upi_id}&am=${formData.amount}&cu=INR&tn=Krishna%10Payment&tr=${orderId}&mode=02`;
     };
 
     if (loading) return (
