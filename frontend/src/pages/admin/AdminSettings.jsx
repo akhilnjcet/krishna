@@ -165,6 +165,15 @@ const AdminSettings = () => {
                         <ModuleHeader icon={Building} title="Commercial Gateway Configuration" status="Official" />
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                             <div className="space-y-3">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Recipient Merchant Name</label>
+                                <input 
+                                    value={settings.payment_payee_name || ''}
+                                    onChange={(e) => updateField('payment_payee_name', e.target.value)}
+                                    placeholder="e.g. KRISHNA ENGINEERING"
+                                    className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-amber-500 outline-none focus:border-amber-500/50"
+                                />
+                            </div>
+                            <div className="space-y-3">
                                 <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Integrated UPI Address</label>
                                 <input 
                                     value={settings.payment_upi_id || ''}

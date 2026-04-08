@@ -87,7 +87,7 @@ const CustomerPayments = () => {
 
     const getUPILink = (pkg = null) => {
         if (!settings.payment_upi_id || !formData.amount) return null;
-        const payeeName = encodeURIComponent("AKHIL N");
+        const payeeName = encodeURIComponent(settings.payment_payee_name || "AKHIL N");
         const base = `upi://pay?pa=${settings.payment_upi_id}&pn=${payeeName}&am=${formData.amount}&cu=INR`;
         
         if (pkg) {
@@ -105,7 +105,7 @@ const CustomerPayments = () => {
     const handleCopyVPA = () => {
         if (!settings.payment_upi_id) return;
         navigator.clipboard.writeText(settings.payment_upi_id);
-        alert(`UPI ID COPIED: ${settings.payment_upi_id}\n\nManual Payment Guide:\n1. Open your UPI app\n2. Select "Pay to UPI ID"\n3. Paste this ID and pay ₹${formData.amount}`);
+        alert(`UPI ID COPIED: ${settings.payment_upi_id}\n\nUniversal Payment Guide:\n1. Open ANY UPI app (PhonePe, GPay, Paytm, Amazon)\n2. Select "Pay to UPI ID"\n3. Paste ID and pay ₹${formData.amount}`);
     };
 
     const isFastTag = settings.payment_upi_id?.toLowerCase().startsWith('netc.');
@@ -179,17 +179,17 @@ const CustomerPayments = () => {
                                             </div>
                                             <div>
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-left">Recipient Ledger</p>
-                                                <p className="text-sm font-black text-slate-900 tracking-tight text-left">AKHIL N (KRISHNA ENGG)</p>
+                                                <p className="text-sm font-black text-slate-900 tracking-tight text-left">{settings.payment_payee_name || "AKHIL N (KRISHNA ENGG)"}</p>
                                             </div>
                                         </div>
 
-                                        {/* FASTag Warning Diagnostic */}
+                                        {/* Softened Compatibility Tip */}
                                         {isFastTag && (
-                                            <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex gap-3 animate-pulse">
-                                                <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-1" />
+                                            <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex gap-3">
+                                                <Info className="w-5 h-5 text-blue-500 shrink-0 mt-1" />
                                                 <div>
-                                                    <p className="text-[10px] font-black text-rose-700 uppercase tracking-tight text-left italic underline mb-1">Incompatibility Detected</p>
-                                                    <p className="text-[9px] font-bold text-rose-600/80 leading-relaxed uppercase text-left">The current UPI ID ({settings.payment_upi_id}) is a FASTag/NETC ID. Banks block non-toll payments to FASTags. Please use a standard UPI ID.</p>
+                                                    <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight text-left italic mb-1">Bank Compatibility Tip</p>
+                                                    <p className="text-[9px] font-bold text-slate-500 leading-relaxed uppercase text-left">The current UPI ID is a FASTag ID. Note that some banks restrict these to tolls. If payment fails, please use a standard UPI ID.</p>
                                                 </div>
                                             </div>
                                         )}
@@ -202,6 +202,7 @@ const CustomerPayments = () => {
                                                     className="w-40 h-40 mix-blend-multiply"
                                                 />
                                             </div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] italic text-center">Compatible with ALL UPI Apps</p>
                                         </div>
 
                                         <div className="grid grid-cols-1 gap-3">
