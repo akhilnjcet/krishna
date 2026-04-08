@@ -87,7 +87,7 @@ const CustomerPayments = () => {
 
     const getUPILink = () => {
         if (!settings.payment_upi_id || !formData.amount) return null;
-        return `upi://pay?pa=${settings.payment_upi_id}&pn=Krishna%20Engineering&am=${formData.amount}&cu=INR`;
+        return `upi://pay?pa=${settings.payment_upi_id}&am=${formData.amount}&cu=INR`;
     };
 
     if (loading) return (
