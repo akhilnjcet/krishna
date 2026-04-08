@@ -2,19 +2,7 @@ import * as faceapi from 'face-api.js';
 
 const MODEL_URL = '/models';
 
-export const loadModels = async () => {
-    try {
-        await Promise.all([
-            faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
-            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-            faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-        ]);
-        return true;
-    } catch (e) {
-        console.error("Failed to load face-api models", e);
-        return false;
-    }
-};
+// Model loading is handled by faceApiLoader.js
 
 
 const getDistance = (p1, p2) => Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
