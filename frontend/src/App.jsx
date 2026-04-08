@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { loadFaceModels } from './utils/faceApiLoader';
-import { HashRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation, useNavigate, Link } from 'react-router-dom';
 import api from './services/api';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -98,7 +98,8 @@ const Layout = ({ children }) => {
 
   useEffect(() => {
     const handleError = (event) => {
-      alert(`SYSTEM CRASH DETECTED: ${event.message}\nAt: ${event.filename}:${event.lineno}`);
+      console.error(`SYSTEM ERROR: ${event.message}\nAt: ${event.filename}:${event.lineno}`);
+      // Silently log or use a toast instead of a blocking alert
     };
     window.addEventListener('error', handleError);
     return () => window.removeEventListener('error', handleError);
@@ -124,12 +125,12 @@ const SecurityWrapper = ({ children }) => {
     if (!isAuthenticated) return;
 
     let timeoutId;
-    const INACTIVITY_LIMIT = 15 * 60 * 1000;
+    const INACTIVITY_LIMIT = 30 * 60 * 1000; // Increased to 30 mins
 
     const resetTimer = () => {
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
-        alert("SECURITY: Session timed out due to operational inactivity.");
+        // Log out without an intrusive alert that blocks bots/users
         logout();
         navigate('/login', { replace: true });
       }, INACTIVITY_LIMIT);
@@ -223,7 +224,17 @@ const App = () => {
             </Route>
 
             {/* Fallback */}
-            <Route path="*" element={<div className="p-8 text-center text-2xl h-96 flex items-center justify-center">Page Not Found</div>} />
+            {/* Fallback */}
+            <Route path="*" element={
+              <div className="bg-[#050505] min-h-[70vh] flex flex-col items-center justify-center p-8 text-center">
+                <div className="w-20 h-1 bg-brand-accent mb-8"></div>
+                <h1 className="text-8xl font-black text-white italic tracking-tighter mb-4">404</h1>
+                <p className="text-xl text-gray-400 font-bold uppercase tracking-widest mb-12">System Link Failure: Page Not Found</p>
+                <Link to="/" className="bg-brand-accent text-brand-950 px-10 py-4 font-black uppercase tracking-widest hover:bg-white transition-colors rotate-2 hover:rotate-0">
+                  Return to Control Center
+                </Link>
+              </div>
+            } />
           </Routes>
         </SecurityWrapper>
       </Layout>

@@ -4,6 +4,7 @@ const Payment = require('../models/Payment');
 exports.submitPayment = async (req, res) => {
     try {
         const { amount, method, referenceId, projectId, quoteId, notes } = req.body;
+        const receiptUrl = req.file ? req.file.path : null;
         
         const newPayment = await Payment.create({
             customerId: req.user._id,
@@ -13,6 +14,7 @@ exports.submitPayment = async (req, res) => {
             projectId,
             quoteId,
             notes,
+            receiptUrl,
             status: 'pending' // Manual verification needed
         });
 

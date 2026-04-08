@@ -18,6 +18,9 @@ const logger = pino({ level: 'silent' });
  * Load/Save Credentials from MongoDB for persistence on Vercel
  */
 async function syncCredsWithDb(authPath, isVercel) {
+    const connectDB = require('../config/database');
+    await connectDB().catch(() => {}); // Ensure DB is ready
+
     const SystemSetting = require('../models/SystemSetting');
     const credsPath = path.join(authPath, 'creds.json');
 
@@ -299,6 +302,9 @@ async function getWhatsAppStatus() {
         };
     }
 
+    const connectDB = require('../config/database');
+    await connectDB().catch(() => {});
+    
     const SystemSetting = require('../models/SystemSetting');
     const qrSetting = await SystemSetting.findOne({ key: 'whatsapp_qr' });
     

@@ -1,7 +1,14 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
-    if (mongoose.connection.readyState >= 1) return;
+    if (mongoose.connection.readyState === 1) return; // Already connected
+    if (mongoose.connection.readyState === 2) {
+        // Wait for current connection attempt
+        return new Promise((resolve) => {
+            mongoose.connection.once('connected', resolve);
+            mongoose.connection.once('error', resolve); 
+        });
+    }
 
     try {
         await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/krishna-erp', {

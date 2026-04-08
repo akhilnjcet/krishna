@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import api from '../../services/api';
 import { 
     Wallet, Send, History, Download, Info, 
@@ -21,6 +22,8 @@ const CustomerPayments = () => {
         referenceId: '',
         notes: ''
     });
+
+    const [proofFile, setProofFile] = useState(null);
 
     useEffect(() => {
         fetchData();
@@ -45,20 +48,46 @@ const CustomerPayments = () => {
         }
     };
 
+    const handleFileChange = (e) => {
+        setProofFile(e.target.files[0]);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!proofFile) return alert("Please upload a screenshot of your payment proof.");
+        
         setSubmitting(true);
         try {
-            await api.post('/payments/submit', formData);
+            const formDataToSend = new FormData();
+            formDataToSend.append('amount', formData.amount);
+            formDataToSend.append('method', formData.method);
+            formDataToSend.append('referenceId', formData.referenceId);
+            formDataToSend.append('notes', formData.notes);
+            formDataToSend.append('image', proofFile);
+
+            const res = await api.post('/payments/submit', formDataToSend, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
             setFormData({ amount: '', method: 'upi', referenceId: '', notes: '' });
-            alert("Payment Acknowledgement Submitted. Awaiting Admin Verification.");
+            setProofFile(null);
+            
+            // Automatically generate and download receipt
+            generatePaymentReceiptPDF(res.data, user);
+            
+            alert("Payment Acknowledgement Submitted. Receipt Downloaded. Awaiting Admin Verification.");
             fetchData();
         } catch (err) {
             console.error("Payment Submission Error:", err);
-            alert("Submission error: Connection interrupted.");
+            alert("Submission error: " + (err.response?.data?.message || "Connection interrupted."));
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const getUPILink = () => {
+        if (!settings.payment_upi_id || !formData.amount) return null;
+        return `upi://pay?pa=${settings.payment_upi_id}&pn=Krishna%20Engineering&am=${formData.amount}&cu=INR`;
     };
 
     if (loading) return (
@@ -117,23 +146,78 @@ const CustomerPayments = () => {
                                     </button>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Reference ID / UTR Number</label>
-                                    <input 
-                                        required
-                                        value={formData.referenceId}
-                                        onChange={(e) => setFormData({...formData, referenceId: e.target.value})}
-                                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
-                                        placeholder="Enter UPI Ref / Bank UTR"
-                                    />
+                                {/* Dynamic QR and UPI Redirection */}
+                                {formData.method === 'upi' && formData.amount > 0 && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="bg-white p-6 rounded-3xl flex flex-col items-center gap-4 border-b-4 border-blue-600"
+                                    >
+                                        <div className="p-2 border-2 border-slate-100 rounded-xl">
+                                            <img 
+                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(getUPILink())}`}
+                                                alt="Payment QR"
+                                                className="w-32 h-32"
+                                            />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 italic">Scan to Pay ₹{formData.amount}</p>
+                                            <p className="text-[8px] font-bold text-slate-400 uppercase">{settings.payment_upi_id}</p>
+                                        </div>
+                                        <a 
+                                            href={getUPILink()}
+                                            className="w-full py-3 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest text-center rounded-xl hover:bg-slate-900 transition-colors"
+                                        >
+                                            Open in UPI App
+                                        </a>
+                                    </motion.div>
+                                )}
+
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Reference ID / UTR Number</label>
+                                        <input 
+                                            required
+                                            value={formData.referenceId}
+                                            onChange={(e) => setFormData({...formData, referenceId: e.target.value})}
+                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                            placeholder="Enter UPI Ref / Bank UTR"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Screenshot (Proof)</label>
+                                        <div className="relative group/file">
+                                            <input 
+                                                type="file" 
+                                                accept="image/*"
+                                                onChange={handleFileChange}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            />
+                                            <div className={`w-full p-4 border-2 border-dashed rounded-2xl flex flex-col items-center gap-2 transition-all ${proofFile ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/10 bg-white/5 group-hover/file:border-blue-500'}`}>
+                                                {proofFile ? (
+                                                    <>
+                                                        <CheckCircle className="w-5 h-5 text-emerald-400" />
+                                                        <span className="text-[9px] font-black text-emerald-400 uppercase truncate max-w-full px-4">{proofFile.name}</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Download className="w-5 h-5 text-blue-400 rotate-180" />
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase">Drop Screenshot or Click</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <button 
                                     disabled={submitting}
+                                    type="submit"
                                     className="w-full py-5 bg-blue-600 hover:bg-white hover:text-blue-600 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-xl shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-3"
                                 >
                                     {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                    Upload Payment Proof
+                                    Submit Transaction Node
                                 </button>
                             </form>
                         </div>

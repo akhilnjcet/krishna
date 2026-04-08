@@ -11,7 +11,8 @@ import {
 const PermissionGuard = ({ children }) => {
     const [permissions, setPermissions] = useState({
         location: 'prompt',
-        storage: 'prompt'
+        storage: 'prompt',
+        camera: 'prompt'
     });
     const [loading, setLoading] = useState(true);
     const [showOverlay, setShowOverlay] = useState(false);
@@ -30,12 +31,13 @@ const PermissionGuard = ({ children }) => {
 
             const statuses = {
                 location: locStatus.location,
-                storage: storeStatus.publicStorage // specifically for downloads
+                storage: storeStatus.publicStorage,
+                camera: (await navigator.permissions.query({ name: 'camera' })).state
             };
 
             setPermissions(statuses);
             
-            if (statuses.location !== 'granted' || statuses.storage !== 'granted') {
+            if (statuses.location !== 'granted' || statuses.storage !== 'granted' || statuses.camera !== 'granted') {
                 setShowOverlay(true);
             }
         } catch (err) {
@@ -57,6 +59,12 @@ const PermissionGuard = ({ children }) => {
             }
             if (permissions.storage !== 'granted') {
                 await Filesystem.requestPermissions();
+            }
+            if (permissions.camera !== 'granted') {
+                try {
+                    const s = await navigator.mediaDevices.getUserMedia({ video: true });
+                    s.getTracks().forEach(t => t.stop());
+                } catch { console.warn("Camera request denied"); }
             }
             // Re-check
             const loc = await Geolocation.checkPermissions();
@@ -129,6 +137,17 @@ const PermissionGuard = ({ children }) => {
                                             <p className="text-[10px] font-bold text-slate-400 leading-tight mt-1">Allows secure downloading of PDF reports & invoices.</p>
                                         </div>
                                         {permissions.storage === 'granted' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                                    </div>
+
+                                    <div className="flex items-center gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center border border-slate-100">
+                                            <ShieldCheck className="w-6 h-6 text-indigo-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h4 className="font-black text-slate-900 uppercase tracking-widest text-xs">Biometric Camera</h4>
+                                            <p className="text-[10px] font-bold text-slate-400 leading-tight mt-1">Required for facial recognition and attendance scanning.</p>
+                                        </div>
+                                        {permissions.camera === 'granted' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                                     </div>
                                 </div>
 

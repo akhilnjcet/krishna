@@ -17,8 +17,15 @@ app.use((req, res, next) => {
     next();
 });
 
-// Vercel Database Connection Sync (Ensures DB is ready for every request)
+// Connect to Database
 const connectDB = require('./config/database');
+connectDB().then(() => {
+    console.log('Database synchronization established.');
+}).catch(err => {
+    console.error('Critical Database Failure:', err.message);
+});
+
+// Vercel Database Connection Sync (Ensures DB is ready for every request)
 app.use(async (req, res, next) => {
     try {
         await connectDB();

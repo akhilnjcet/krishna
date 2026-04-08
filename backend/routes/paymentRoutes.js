@@ -9,8 +9,10 @@ const {
 } = require('../controllers/paymentController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
+const upload = require('../config/cloudinary');
+
 router.post('/create-payment-intent', protect, createPaymentIntent);
-router.post('/submit', protect, submitPayment);
+router.post('/submit', protect, upload.single('image'), submitPayment);
 router.get('/my-payments', protect, getMyPayments);
 
 // Admin only

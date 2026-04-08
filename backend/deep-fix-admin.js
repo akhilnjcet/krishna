@@ -35,7 +35,7 @@ async function deepFixAdmin() {
         
         if (!admin) {
             console.log('No admin found. Creating from scratch...');
-            const bcrypt = require('bcrypt');
+            const bcrypt = require('bcryptjs');
             const hashedPassword = await bcrypt.hash('admin', 10);
             admin = await User.create({
                 name: 'System Administrator',
@@ -50,7 +50,7 @@ async function deepFixAdmin() {
             admin.email = email;
             admin.username = username;
             // Also reset password to be sure
-            const bcrypt = require('bcrypt');
+            const bcrypt = require('bcryptjs');
             admin.password = await bcrypt.hash('admin', 10);
             await admin.save();
         }
