@@ -85,18 +85,30 @@ const CustomerPayments = () => {
         }
     };
 
-    const getUPILink = () => {
+    const getUPILink = (pkg = null) => {
         if (!settings.payment_upi_id || !formData.amount) return null;
-        // Minimal link to avoid security flags in specific apps
         const payeeName = encodeURIComponent("AKHIL N");
-        return `upi://pay?pa=${settings.payment_upi_id}&pn=${payeeName}&am=${formData.amount}&cu=INR`;
+        const base = `upi://pay?pa=${settings.payment_upi_id}&pn=${payeeName}&am=${formData.amount}&cu=INR`;
+        
+        if (pkg) {
+            // Android Intent format for direct app targeting
+            return `intent://pay${base.replace('upi://pay', '')}#Intent;scheme=upi;package=${pkg};end`;
+        }
+        return base;
+    };
+
+    const handleAppIntent = (pkg) => {
+        const link = getUPILink(pkg);
+        if (link) window.location.href = link;
     };
 
     const handleCopyVPA = () => {
         if (!settings.payment_upi_id) return;
         navigator.clipboard.writeText(settings.payment_upi_id);
-        alert(`UPI ADDRESS COPIED: ${settings.payment_upi_id}\n\nYou can now paste this in any UPI app to pay manually.`);
+        alert(`UPI ID COPIED: ${settings.payment_upi_id}\n\nManual Payment Guide:\n1. Open your UPI app\n2. Select "Pay to UPI ID"\n3. Paste this ID and pay ₹${formData.amount}`);
     };
+
+    const isFastTag = settings.payment_upi_id?.toLowerCase().startsWith('netc.');
 
     if (loading) return (
         <div className="p-20 flex flex-col items-center justify-center">
@@ -154,7 +166,7 @@ const CustomerPayments = () => {
                                     </button>
                                 </div>
 
-                                {/* BULLETPROOF PAYMENT HUB */}
+                                {/* TARGETED INTENT HUB v2.11 */}
                                 {formData.method === 'upi' && formData.amount > 0 && (
                                     <motion.div 
                                         initial={{ opacity: 0, y: 20 }}
@@ -166,10 +178,21 @@ const CustomerPayments = () => {
                                                 <CheckCircle className="w-6 h-6 text-blue-600" />
                                             </div>
                                             <div>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Verified Receiver</p>
-                                                <p className="text-sm font-black text-slate-900 tracking-tight">AKHIL N (KRISHNA ENGG)</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-left">Recipient Ledger</p>
+                                                <p className="text-sm font-black text-slate-900 tracking-tight text-left">AKHIL N (KRISHNA ENGG)</p>
                                             </div>
                                         </div>
+
+                                        {/* FASTag Warning Diagnostic */}
+                                        {isFastTag && (
+                                            <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex gap-3 animate-pulse">
+                                                <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-1" />
+                                                <div>
+                                                    <p className="text-[10px] font-black text-rose-700 uppercase tracking-tight text-left italic underline mb-1">Incompatibility Detected</p>
+                                                    <p className="text-[9px] font-bold text-rose-600/80 leading-relaxed uppercase text-left">The current UPI ID ({settings.payment_upi_id}) is a FASTag/NETC ID. Banks block non-toll payments to FASTags. Please use a standard UPI ID.</p>
+                                                </div>
+                                            </div>
+                                        )}
 
                                         <div className="flex flex-col items-center gap-4 py-2">
                                             <div className="p-4 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 group/qr relative">
@@ -178,40 +201,46 @@ const CustomerPayments = () => {
                                                     alt="Secure QR"
                                                     className="w-40 h-40 mix-blend-multiply"
                                                 />
-                                                <div className="absolute inset-0 bg-blue-600/5 opacity-0 group-hover/qr:opacity-100 transition-opacity rounded-3xl pointer-events-none"></div>
                                             </div>
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] italic text-center">Scan QR or Use Buttons Below</p>
                                         </div>
 
-                                        <div className="space-y-3">
-                                            <a 
-                                                href={getUPILink()}
-                                                className="w-full flex items-center justify-center gap-3 py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:bg-slate-900 transition-all active:scale-95"
+                                        <div className="grid grid-cols-1 gap-3">
+                                            <button 
+                                                type="button"
+                                                onClick={() => handleAppIntent('in.amazon.mShop.android.shopping')}
+                                                className="w-full flex items-center justify-between px-6 py-4 bg-amber-400 text-amber-950 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 transition-all shadow-lg shadow-amber-200"
                                             >
-                                                <Send className="w-4 h-4" /> Open Payment Choice
-                                            </a>
+                                                <span>Pay via Amazon Pay</span>
+                                                <ArrowRight className="w-4 h-4 text-amber-950" />
+                                            </button>
                                             
-                                            <div className="relative">
+                                            <div className="grid grid-cols-2 gap-3">
                                                 <button 
                                                     type="button"
-                                                    onClick={handleCopyVPA}
-                                                    className="w-full flex items-center justify-between px-6 py-4 bg-slate-100 text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-200 hover:bg-slate-200 transition-all"
+                                                    onClick={() => handleAppIntent('com.google.android.apps.nbu.paisa.user')}
+                                                    className="py-4 bg-slate-100 text-slate-900 rounded-2xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all text-center border border-slate-200 shadow-sm"
                                                 >
-                                                    <span className="truncate mr-4 lowercase italic font-mono">{settings.payment_upi_id || "VPA ID"}</span>
-                                                    <div className="flex items-center gap-2 text-blue-600 bg-white px-3 py-1.5 rounded-lg shadow-sm">
-                                                        <QrCode className="w-3 h-3" /> COPY ID
-                                                    </div>
+                                                    Google Pay
+                                                </button>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => handleAppIntent('com.phonepe.app')}
+                                                    className="py-4 bg-slate-100 text-slate-900 rounded-2xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all text-center border border-slate-200 shadow-sm"
+                                                >
+                                                    PhonePe
                                                 </button>
                                             </div>
-                                        </div>
 
-                                        {/* Troubleshooting Advice */}
-                                        <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex gap-3 items-start">
-                                            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                                            <div>
-                                                <p className="text-[10px] font-black text-amber-700 uppercase tracking-tight text-left">Technical Error?</p>
-                                                <p className="text-[9px] font-bold text-amber-600/80 leading-relaxed uppercase mt-1 italic text-left">If your app fails, use "COPY ID" above, open your UPI app manually, and paste the ID to pay ₹{formData.amount}.</p>
-                                            </div>
+                                            <button 
+                                                type="button"
+                                                onClick={handleCopyVPA}
+                                                className="w-full flex items-center justify-between px-6 py-4 border-2 border-dashed border-blue-200 bg-blue-50/30 text-blue-800 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all"
+                                            >
+                                                <span className="truncate mr-4 lowercase italic font-mono opacity-60">{settings.payment_upi_id}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <QrCode className="w-3 h-3" /> COPY ID
+                                                </div>
+                                            </button>
                                         </div>
                                     </motion.div>
                                 )}
