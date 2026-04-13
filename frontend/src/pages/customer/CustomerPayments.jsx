@@ -4,7 +4,7 @@ import api from '../../services/api';
 import { 
     Wallet, Send, History, Download, Info, 
     CreditCard, Building, QrCode, CheckCircle, 
-    Clock, AlertTriangle, Loader2 
+    Clock, AlertTriangle, Loader2, ArrowRight
 } from 'lucide-react';
 import { generatePaymentReceiptPDF } from '../../services/pdfService';
 import useAuthStore from '../../stores/authStore';
