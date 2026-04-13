@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
+Allow: /index.html
+Allow: /about
+Allow: /services
+Allow: /projects
+Allow: /blog
+Allow: /privacy
+Allow: /terms
 
-Sitemap: https://krishnaengineeringworks.com/sitemap.xml
+Sitemap: https://krishna-engineering.vercel.app/sitemap.xml

@@ -176,6 +176,18 @@ const Profile = () => {
                         </div>
                     </div>
                 </div>
+            {/* Developer Disclosure Link - satisfying Reason 3 of rejection */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 flex items-center justify-between">
+                <div>
+                    <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Developer & Legal Info</h5>
+                    <p className="text-[10px] font-bold text-slate-900 uppercase">Krishna Engineering Works • AKHIL N</p>
+                </div>
+                <a 
+                    href="#/privacy" 
+                    className="text-[9px] font-black uppercase tracking-widest px-4 py-2 bg-slate-50 text-slate-400 hover:bg-blue-600 hover:text-white rounded-lg transition-all"
+                >
+                    View Policy
+                </a>
             </div>
         </div>
     );

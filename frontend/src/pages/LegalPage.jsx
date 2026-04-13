@@ -40,12 +40,13 @@ const LegalPage = ({ type }) => {
                                 We may use third-party Service Providers to monitor and analyze the use of our Service, or to facilitate UPI payments (e.g., Amazon Pay, GPay, PhonePe).
 
                                 5. DEVELOPER CONTACT INFORMATION
-                                If you have any questions about this Privacy Policy, please contact us:
-                                - Entity: Krishna Engineering Works
-                                - Developer: AKHIL N
-                                - Address: Thiruvazhiyode, Sreekrishnapuram, Kerala 679514
-                                - Primary Contact: +91 9447940835
-                                - Support Email: krishnaengineeringworks0715@gmail.com
+                                Krishna Engineering Works provides full disclosure of identity for operational transparency:
+
+                                • Official Entity: Krishna Engineering Works
+                                • Principal Developer: AKHIL N
+                                • Physical Address: Thiruvazhiyode, Sreekrishnapuram, Kerala 679514
+                                • Direct Contact: +91 9447940835
+                                • Official Support: krishnaengineeringworks0715@gmail.com
                             `);
                         } else {
                             setContent(`

@@ -6,9 +6,9 @@ import { Capacitor } from '@capacitor/core';
 const COMPANY_DETAILS = {
     name: 'KRISHNA ENGINEERING WORKS',
     tagline: 'PRECISION ENGINEERING & INDUSTRIAL SOLUTIONS',
-    address: 'Phase-1, Industrial Area, Bangalore - 560058',
-    contact: 'Phone: +91 99887 76655 | Email: contact@krishnaengg.com',
-    gstin: 'GSTIN: 29ABCDE1234F1Z5'
+    address: 'Thiruvazhiyode, Sreekrishnapuram, Kerala 679514',
+    contact: 'Phone: +91 94479 40835 | Email: krishnaengineeringworks0715@gmail.com',
+    gstin: 'GSTIN: 32ABCDE1234F1Z5' // Updated sample to Kerala state code (32)
 };
 
 const THEME = {
