@@ -1,4 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Network } from '@capacitor/network';
+import { motion, AnimatePresence } from 'framer-motion';
 import { loadFaceModels } from './utils/faceApiLoader';
 import { HashRouter as Router, Routes, Route, useLocation, useNavigate, Link } from 'react-router-dom';
 import api from './services/api';
@@ -70,6 +72,21 @@ import ChatRequestsManager from './pages/chat/ChatRequestsManager';
 const Layout = ({ children }) => {
   const location = useLocation();
   const hasTrackedVisit = useRef(false);
+  const [isOffline, setIsOffline] = useState(false);
+  
+  useEffect(() => {
+    const initNetwork = async () => {
+      const status = await Network.getStatus();
+      setIsOffline(!status.connected);
+    };
+    initNetwork();
+
+    const handler = Network.addListener('networkStatusChange', status => {
+      setIsOffline(!status.connected);
+    });
+
+    return () => handler.remove();
+  }, []);
   const isDashboard = location.pathname.startsWith('/admin') || 
                       location.pathname.startsWith('/staff') || 
                       location.pathname.startsWith('/customer');
@@ -107,6 +124,19 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col font-sans relative">
+      <AnimatePresence>
+        {isOffline && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-rose-600 text-white py-2 px-4 text-center text-[10px] font-black uppercase tracking-[0.3em] sticky top-0 z-[1000] flex items-center justify-center gap-3"
+          >
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+            Atmospheric Link Interrupted: Manual Reconnaissance Only
+          </motion.div>
+        )}
+      </AnimatePresence>
       {!isDashboard && <Navbar />}
       <main className="flex-grow">
         {children}

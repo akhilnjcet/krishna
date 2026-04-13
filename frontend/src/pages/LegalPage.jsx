@@ -22,44 +22,49 @@ const LegalPage = ({ type }) => {
                                 PRIVACY POLICY
                                 Last updated: April 2026
 
-                                At Krishna Engineering Works, we prioritize the privacy of our visitors. This Privacy Protocol document contains types of information that is collected and recorded by our system and how we use it.
+                                1. INTRODUCTION
+                                Krishna Engineering Works ("the Company", "we", "us", or "our") operates the Krishna ERP Mobile Application. This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service.
 
-                                1. INFORMATION WE COLLECT
-                                The personal information that you are asked to provide, and the reasons why you are asked to provide it, will be made clear to you at the point we ask you to provide your personal information.
+                                2. INFORMATION COLLECTION AND USE
+                                To provide an enhanced industrial management experience, we collect several different types of information:
+                                - Personal Identification: Name, Email, Phone Number, and Professional Role.
+                                - Biometric Data: Our Staff Attendance module uses facial recognition technology. We collect and process facial descriptors (binary mathematical data) to verify identity. We do NOT store actual photographs for biometrics; only encrypted descriptors are used.
+                                - Location Data: When using specific field-reporting or attendance features, we may collect precise location data to verify on-site operations.
+                                - Financial Data: We collect payment reference IDs and UTR numbers for transaction verification.
+                                - Storage Access: We require access to device storage to save and retrieve generated PDF receipts and project documentation.
 
-                                2. HOW WE USE YOUR INFORMATION
-                                We use the information we collect in various ways, including to:
-                                - Provide, operate, and maintain our engineering portal.
-                                - Improve, personalize, and expand our services.
-                                - Understand and analyze how you use our portal.
-                                - Develop new products, services, features, and functionality.
-                                - Communicate with you for customer service and updates.
+                                3. DATA SECURITY
+                                The security of your data is critical to us. We implement enterprise-grade encryption for all biometric descriptors and personal information.
 
-                                3. LOG FILES
-                                Krishna Engineering Works follows a standard procedure of using log files. These files log visitors when they visit websites. All hosting companies do this and a part of hosting services' analytics.
+                                4. THIRD-PARTY SERVICES
+                                We may use third-party Service Providers to monitor and analyze the use of our Service, or to facilitate UPI payments (e.g., Amazon Pay, GPay, PhonePe).
 
-                                4. COOKIES AND WEB BEACONS
-                                Like any other website, we use 'cookies'. These cookies are used to store information including visitors' preferences, and the pages on the website that the visitor accessed or visited.
+                                5. DEVELOPER CONTACT INFORMATION
+                                If you have any questions about this Privacy Policy, please contact us:
+                                - Entity: Krishna Engineering Works
+                                - Developer: AKHIL N
+                                - Address: Thiruvazhiyode, Sreekrishnapuram, Kerala 679514
+                                - Primary Contact: +91 9447940835
+                                - Support Email: krishnaengineeringworks0715@gmail.com
                             `);
                         } else {
                             setContent(`
                                 TERMS OF SERVICE
                                 Last updated: April 2026
 
-                                By accessing this website, we assume you accept these terms and conditions. Do not continue to use Krishna Engineering Works if you do not agree to take all of the terms and conditions stated on this page.
+                                By accessing this Krishna ERP Application ("The App"), we assume you accept these terms and conditions. Do not continue to use Krishna ERP if you do not agree to take all of the terms and conditions stated on this page.
 
                                 1. INTELLECTUAL PROPERTY
-                                Unless otherwise stated, Krishna Engineering Works and/or its licensors own the intellectual property rights for all material on this website. All intellectual property rights are reserved.
+                                Unless otherwise stated, Krishna Engineering Works and/or its licensors own the intellectual property rights for all material on this Application. All intellectual property rights are reserved.
 
                                 2. USER RESTRICTIONS
                                 You are specifically restricted from all of the following:
-                                - Publishing any website material in any other media.
-                                - Selling, sublicensing and/or otherwise commercializing any website material.
-                                - Publicly performing and/or showing any website material.
-                                - Using this website in any way that is or may be damaging to this website.
+                                - Publishing any App material in any other media.
+                                - Selling, sublicensing and/or otherwise commercializing any App material.
+                                - Using this Application in any way that is or may be damaging to this platform or its users.
 
                                 3. LIMITATION OF LIABILITY
-                                In no event shall Krishna Engineering Works, nor any of its officers, directors and employees, be held liable for anything arising out of or in any way connected with your use of this website.
+                                In no event shall Krishna Engineering Works, nor any of its officers, directors and employees, be held liable for anything arising out of or in any way connected with your use of this Application.
                             `);
                         }
                     }

@@ -6,6 +6,7 @@ import {
     ArrowRight, Info, RefreshCw
 } from 'lucide-react';
 import api from '../../services/api';
+import hapticService from '../../services/hapticService';
 import useAuthStore from '../../stores/authStore';
 import { loadFaceModels } from '../../utils/faceApiLoader';
 import { detectFaceAndLiveness } from '../../utils/faceApiUtils';
@@ -35,6 +36,7 @@ const AttendanceScanner = () => {
     }, []);
 
     const startScan = async () => {
+        hapticService.light();
         setStatus('loading_models');
         setMessage('Synchronizing AI Biometrics...');
 
@@ -119,11 +121,13 @@ const AttendanceScanner = () => {
                 if (!user) login(matchedUser, matchedUser.token);
                 
                 stopCamera();
+                hapticService.success();
                 setStatus('success');
                 setMessage(`${res.data.logType === 'IN' ? 'SHIFT IN' : 'SHIFT OUT'} REGISTERED: ${matchedUser.name}`);
             }
         } catch (error) {
             stopCamera();
+            hapticService.error();
             setStatus('error');
             setMessage(error.response?.data?.message === 'Face Not Recognized' 
                 ? 'Identity Mismatch. Please retry with better lighting.' 

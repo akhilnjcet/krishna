@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from '../../services/api';
+import hapticService from '../../services/hapticService';
 import { 
     Wallet, Send, History, Download, Info, 
     CreditCard, Building, QrCode, CheckCircle, 
-    Clock, AlertTriangle, Loader2, ArrowRight
+    Clock, AlertTriangle, Loader2, ArrowRight, ShieldCheck, Smartphone
 } from 'lucide-react';
 import { generatePaymentReceiptPDF } from '../../services/pdfService';
 import useAuthStore from '../../stores/authStore';
+import UPIAppPicker from '../../components/UPIAppPicker';
+import UPIFallback from '../../components/UPIFallback';
 
 const CustomerPayments = () => {
     const { user } = useAuthStore();
@@ -24,6 +27,14 @@ const CustomerPayments = () => {
     });
 
     const [proofFile, setProofFile] = useState(null);
+    const [showPicker, setShowPicker] = useState(false);
+    const [showFallback, setShowFallback] = useState(false);
+    const [debugLogs, setDebugLogs] = useState([]);
+
+    const addLog = (msg) => {
+        console.log(`[UPI DEBUG] ${msg}`);
+        setDebugLogs(prev => [...prev.slice(-4), `> ${msg}`]);
+    };
 
     useEffect(() => {
         fetchData();
@@ -74,41 +85,35 @@ const CustomerPayments = () => {
             
             // Automatically generate and download receipt
             generatePaymentReceiptPDF(res.data, user);
+            hapticService.success();
             
             alert("Payment Acknowledgement Submitted. Receipt Downloaded. Awaiting Admin Verification.");
             fetchData();
         } catch (err) {
             console.error("Payment Submission Error:", err);
+            hapticService.error();
             alert("Submission error: " + (err.response?.data?.message || "Connection interrupted."));
         } finally {
             setSubmitting(false);
         }
     };
 
-    const getUPILink = (pkg = null) => {
-        if (!settings.payment_upi_id || !formData.amount) return null;
-        const payeeName = encodeURIComponent(settings.payment_payee_name || "AKHIL N");
-        const base = `upi://pay?pa=${settings.payment_upi_id}&pn=${payeeName}&am=${formData.amount}&cu=INR`;
-        
-        if (pkg) {
-            // Android Intent format for direct app targeting
-            return `intent://pay${base.replace('upi://pay', '')}#Intent;scheme=upi;package=${pkg};end`;
+    const upiData = {
+        pa: settings.payment_upi_id,
+        pn: settings.payment_payee_name || "AKHIL N",
+        am: formData.amount || '0',
+        tn: `CRP-${user?.id?.slice(-4)}`,
+        tr: `tr-${Date.now()}`
+    };
+
+    const handlePayInitiate = () => {
+        if (!upiData.pa || !upiData.am || parseFloat(upiData.am) <= 0) {
+            return alert("Validated parameters required. Enter amount.");
         }
-        return base;
+        hapticService.light();
+        addLog(`Initiating payment for ${upiData.am} INR`);
+        setShowPicker(true);
     };
-
-    const handleAppIntent = (pkg) => {
-        const link = getUPILink(pkg);
-        if (link) window.location.href = link;
-    };
-
-    const handleCopyVPA = () => {
-        if (!settings.payment_upi_id) return;
-        navigator.clipboard.writeText(settings.payment_upi_id);
-        alert(`UPI ID COPIED: ${settings.payment_upi_id}\n\nUniversal Payment Guide:\n1. Open ANY UPI app (PhonePe, GPay, Paytm, Amazon)\n2. Select "Pay to UPI ID"\n3. Paste ID and pay ₹${formData.amount}`);
-    };
-
-    const isFastTag = settings.payment_upi_id?.toLowerCase().startsWith('netc.');
 
     if (loading) return (
         <div className="p-20 flex flex-col items-center justify-center">
@@ -166,84 +171,65 @@ const CustomerPayments = () => {
                                     </button>
                                 </div>
 
-                                {/* TARGETED INTENT HUB v2.11 */}
+                                {/* TARGETED INTENT HUB v3.0 - High Resilience */}
                                 {formData.method === 'upi' && formData.amount > 0 && (
-                                    <motion.div 
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="bg-white p-6 rounded-[2.5rem] flex flex-col gap-6 border-b-[8px] border-blue-600 shadow-2xl"
-                                    >
-                                        <div className="flex items-center gap-4 border-b border-slate-100 pb-4 text-slate-900">
-                                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
-                                                <CheckCircle className="w-6 h-6 text-blue-600" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-left">Recipient Ledger</p>
-                                                <p className="text-sm font-black text-slate-900 tracking-tight text-left">{settings.payment_payee_name || "AKHIL N (KRISHNA ENGG)"}</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Softened Compatibility Tip */}
-                                        {isFastTag && (
-                                            <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex gap-3">
-                                                <Info className="w-5 h-5 text-blue-500 shrink-0 mt-1" />
-                                                <div>
-                                                    <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight text-left italic mb-1">Bank Compatibility Tip</p>
-                                                    <p className="text-[9px] font-bold text-slate-500 leading-relaxed uppercase text-left">The current UPI ID is a FASTag ID. Note that some banks restrict these to tolls. If payment fails, please use a standard UPI ID.</p>
+                                    <div className="space-y-6">
+                                        {!showFallback ? (
+                                            <motion.div 
+                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                className="bg-white p-8 rounded-[3rem] border-b-[8px] border-blue-600 shadow-2xl space-y-8"
+                                            >
+                                                <div className="flex items-center gap-4 border-b border-slate-50 pb-6 text-slate-900">
+                                                    <div className="w-14 h-14 bg-blue-50 rounded-[1.5rem] flex items-center justify-center">
+                                                        <Smartphone className="w-7 h-7 text-blue-600" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Recipient</p>
+                                                        <p className="text-sm font-black text-slate-900 tracking-tight">{upiData.pn}</p>
+                                                    </div>
                                                 </div>
-                                            </div>
+
+                                                <div className="space-y-4">
+                                                    <button 
+                                                        type="button"
+                                                        onClick={handlePayInitiate}
+                                                        className="w-full py-6 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-black transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95"
+                                                    >
+                                                        <Send className="w-4 h-4 text-blue-400" /> Open UPI Apps
+                                                    </button>
+                                                    
+                                                    <div className="flex items-center justify-center gap-4">
+                                                        <div className="h-[1px] bg-slate-100 flex-1" />
+                                                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">OR</span>
+                                                        <div className="h-[1px] bg-slate-100 flex-1" />
+                                                    </div>
+
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => {
+                                                            hapticService.light();
+                                                            setShowFallback(true);
+                                                        }}
+                                                        className="w-full py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black uppercase tracking-widest text-[9px] hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <QrCode className="w-4 h-4" /> Show Static QR
+                                                    </button>
+                                                </div>
+
+                                                {/* Debug Log Trace */}
+                                                {debugLogs.length > 0 && (
+                                                    <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100 font-mono text-[8px] text-slate-400">
+                                                        {debugLogs.map((log, i) => (
+                                                            <div key={i}>{log}</div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </motion.div>
+                                        ) : (
+                                            <UPIFallback upiData={upiData} />
                                         )}
-
-                                        <div className="flex flex-col items-center gap-4 py-2">
-                                            <div className="p-4 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 group/qr relative">
-                                                <img 
-                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(getUPILink())}`}
-                                                    alt="Secure QR"
-                                                    className="w-40 h-40 mix-blend-multiply"
-                                                />
-                                            </div>
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] italic text-center">Compatible with ALL UPI Apps</p>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 gap-3">
-                                            <button 
-                                                type="button"
-                                                onClick={() => handleAppIntent('in.amazon.mShop.android.shopping')}
-                                                className="w-full flex items-center justify-between px-6 py-4 bg-amber-400 text-amber-950 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 transition-all shadow-lg shadow-amber-200"
-                                            >
-                                                <span>Pay via Amazon Pay</span>
-                                                <ArrowRight className="w-4 h-4 text-amber-950" />
-                                            </button>
-                                            
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => handleAppIntent('com.google.android.apps.nbu.paisa.user')}
-                                                    className="py-4 bg-slate-100 text-slate-900 rounded-2xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all text-center border border-slate-200 shadow-sm"
-                                                >
-                                                    Google Pay
-                                                </button>
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => handleAppIntent('com.phonepe.app')}
-                                                    className="py-4 bg-slate-100 text-slate-900 rounded-2xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all text-center border border-slate-200 shadow-sm"
-                                                >
-                                                    PhonePe
-                                                </button>
-                                            </div>
-
-                                            <button 
-                                                type="button"
-                                                onClick={handleCopyVPA}
-                                                className="w-full flex items-center justify-between px-6 py-4 border-2 border-dashed border-blue-200 bg-blue-50/30 text-blue-800 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all"
-                                            >
-                                                <span className="truncate mr-4 lowercase italic font-mono opacity-60">{settings.payment_upi_id}</span>
-                                                <div className="flex items-center gap-2">
-                                                    <QrCode className="w-3 h-3" /> COPY ID
-                                                </div>
-                                            </button>
-                                        </div>
-                                    </motion.div>
+                                    </div>
                                 )}
 
                                 <div className="space-y-4">
@@ -397,6 +383,16 @@ const CustomerPayments = () => {
                     </div>
                 </div>
             </div>
+            <UPIAppPicker 
+                isOpen={showPicker}
+                onClose={() => setShowPicker(false)}
+                upiData={upiData}
+                onFallbackTriggered={() => {
+                    setShowPicker(false);
+                    setShowFallback(true);
+                    addLog("Switched to fallback manual flow");
+                }}
+            />
         </div>
     );
 };
