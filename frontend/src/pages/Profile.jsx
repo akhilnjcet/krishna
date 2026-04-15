@@ -175,7 +175,9 @@ const Profile = () => {
                             </div>
                         </div>
                     </div>
+                    </div>
                 </div>
+
             {/* Developer Disclosure Link - satisfying Reason 3 of rejection */}
             <div className="bg-white p-6 rounded-2xl border border-slate-100 flex items-center justify-between">
                 <div>

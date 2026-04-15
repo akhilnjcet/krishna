@@ -69,6 +69,62 @@ import useAuthStore from './stores/authStore';
 import SupportHub from './pages/chat/SupportHub';
 import ChatRequestsManager from './pages/chat/ChatRequestsManager';
 
+// Lodge & Building Manager
+import LodgeHome from './pages/lodge/LodgeHome';
+import RoomSelection from './pages/lodge/RoomSelection';
+import RoomDashboard from './pages/lodge/RoomDashboard';
+import ComplaintSystem from './pages/lodge/ComplaintSystem';
+import PaymentSystem from './pages/lodge/PaymentSystem';
+import PaymentHistory from './pages/lodge/PaymentHistory';
+import AdminLogin from './pages/lodge/AdminLogin';
+import LodgeAdminDashboard from './pages/lodge/LodgeAdminDashboard';
+import TenantLogin from './pages/lodge/TenantLogin';
+
+import useLodgeStore from './stores/lodgeStore';
+
+const LodgeNotificationManager = () => {
+    const { rooms, authenticatedTenantRoom } = useLodgeStore();
+    const [alert, setAlert] = useState(null);
+
+    useEffect(() => {
+        if (!authenticatedTenantRoom) return;
+        const room = rooms.find(r => r.number === authenticatedTenantRoom);
+        if (!room) return;
+
+        const now = new Date();
+        const alerts = [];
+
+        if (room.dueDate && new Date(room.dueDate) <= now) {
+            alerts.push('Rent is currently due');
+        }
+        if (room.electricityBill > 0 && room.electricityStatus === 'pending') {
+            alerts.push('Electricity bill pending');
+        }
+        if (room.waterBill > 0 && room.waterStatus === 'pending') {
+            alerts.push('Water bill pending');
+        }
+
+        if (alerts.length > 0) {
+            setAlert(alerts[0]);
+        } else {
+            setAlert(null);
+        }
+    }, [rooms, authenticatedTenantRoom]);
+
+    if (!alert) return null;
+
+    return (
+        <motion.div 
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="bg-[#E53935] text-white py-2 px-4 text-center text-[10px] font-black uppercase tracking-[0.2em] sticky top-0 z-[1001] flex items-center justify-center gap-2"
+        >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            System Alert: {alert}
+        </motion.div>
+    );
+};
+
 const Layout = ({ children }) => {
   const location = useLocation();
   const hasTrackedVisit = useRef(false);
@@ -81,15 +137,27 @@ const Layout = ({ children }) => {
     };
     initNetwork();
 
-    const handler = Network.addListener('networkStatusChange', status => {
-      setIsOffline(!status.connected);
-    });
+    let handlerPromise = null;
+    try {
+      handlerPromise = Network.addListener('networkStatusChange', status => {
+        setIsOffline(!status.connected);
+      });
+    } catch (e) {
+      console.warn("Network listener error", e);
+    }
 
-    return () => handler.remove();
+    return () => {
+      if (handlerPromise && typeof handlerPromise.then === 'function') {
+        handlerPromise.then(handler => {
+           if (handler && handler.remove) handler.remove();
+        });
+      }
+    };
   }, []);
   const isDashboard = location.pathname.startsWith('/admin') || 
                       location.pathname.startsWith('/staff') || 
-                      location.pathname.startsWith('/customer');
+                      location.pathname.startsWith('/customer') ||
+                      location.pathname.startsWith('/lodge');
 
   useEffect(() => {
     // Only track once per app session
@@ -124,6 +192,7 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col font-sans relative">
+      <LodgeNotificationManager />
       <AnimatePresence>
         {isOffline && (
           <motion.div 
@@ -243,7 +312,7 @@ const App = () => {
               <Route path="profile" element={<Profile />} />
             </Route>
 
-            {/* Customer Routes */}
+              {/* Customer Routes */}
             <Route path="/customer" element={<CustomerLayout />}>
               <Route index element={<CustomerDashboard />} />
               <Route path="quotes" element={<CustomerQuotes />} />
@@ -251,6 +320,20 @@ const App = () => {
               <Route path="payments" element={<CustomerPayments />} />
               <Route path="support" element={<SupportHub />} />
               <Route path="profile" element={<Profile />} />
+            </Route>
+
+            {/* Lodge & Building Manager Routes */}
+            <Route path="/lodge">
+              <Route index element={<LodgeHome />} />
+              <Route path="rooms" element={<RoomSelection />} />
+              <Route path="tenant-login" element={<TenantLogin />} />
+              <Route path="room/:roomNumber" element={<RoomDashboard />} />
+              <Route path="complaint" element={<ComplaintSystem />} />
+              <Route path="complaint/:roomNumber" element={<ComplaintSystem />} />
+              <Route path="payment/:roomNumber/:type" element={<PaymentSystem />} />
+              <Route path="history/:roomNumber" element={<PaymentHistory />} />
+              <Route path="admin-login" element={<AdminLogin />} />
+              <Route path="admin" element={<LodgeAdminDashboard />} />
             </Route>
 
             {/* Fallback */}

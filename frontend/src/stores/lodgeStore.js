@@ -1,0 +1,308 @@
+import { create } from 'zustand';
+
+const STORAGE_KEY = 'krishna_lodge_data';
+
+const defaultRooms = [
+  {
+    id: 'room-101',
+    number: '101',
+    status: 'available', // available | occupied | maintenance
+    rent: 5000,
+    tenant: null,
+    pin: null,
+    dueDate: null,
+    advance: 0,
+    electricityBill: 0,
+    waterBill: 0,
+    electricityStatus: 'pending',
+    waterStatus: 'pending',
+    notes: '',
+    checkIn: null,
+    checkOut: null,
+  },
+  {
+    id: 'room-102',
+    number: '102',
+    status: 'available',
+    rent: 5000,
+    tenant: null,
+    pin: null,
+    dueDate: null,
+    advance: 0,
+    electricityBill: 0,
+    waterBill: 0,
+    electricityStatus: 'pending',
+    waterStatus: 'pending',
+    notes: '',
+    checkIn: null,
+    checkOut: null,
+  },
+];
+
+const loadData = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error('Lodge store load error:', e);
+  }
+  return null;
+};
+
+const saveData = (state) => {
+  try {
+    const toSave = {
+      rooms: state.rooms,
+      payments: state.payments,
+      complaints: state.complaints,
+      adminPin: state.adminPin,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch (e) {
+    console.error('Lodge store save error:', e);
+  }
+};
+
+const saved = loadData();
+
+const useLodgeStore = create((set, get) => ({
+  // --- State ---
+  rooms: saved?.rooms || defaultRooms,
+  payments: saved?.payments || [],
+  complaints: saved?.complaints || [],
+  adminPin: saved?.adminPin || '1234',
+  isAdminLoggedIn: false,
+  authenticatedTenantRoom: null, // Stores room number if logged in as tenant
+
+  // --- Admin Auth ---
+  loginAdmin: (pin) => {
+    const state = get();
+    if (pin === state.adminPin) {
+      set({ isAdminLoggedIn: true });
+      return true;
+    }
+    return false;
+  },
+  logoutAdmin: () => set({ isAdminLoggedIn: false }),
+  changePin: (newPin) => {
+    set({ adminPin: newPin });
+    saveData(get());
+  },
+
+  // --- Tenant Auth ---
+  loginTenant: (roomNumber, pin) => {
+    const room = get().rooms.find(r => r.number === roomNumber && r.status === 'occupied');
+    if (room && room.pin === pin) {
+      set({ authenticatedTenantRoom: roomNumber });
+      return true;
+    }
+    return false;
+  },
+  logoutTenant: () => set({ authenticatedTenantRoom: null }),
+
+  // --- Room Management ---
+  updateRoom: (roomId, updates) => {
+    set((state) => ({
+      rooms: state.rooms.map((r) =>
+        r.id === roomId ? { ...r, ...updates } : r
+      ),
+    }));
+    saveData(get());
+  },
+
+  assignTenant: (roomId, tenantName, rent, dueDate, advance = 0) => {
+    // Generate 4-digit PIN
+    const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+    set((state) => ({
+      rooms: state.rooms.map((r) =>
+        r.id === roomId
+          ? {
+              ...r,
+              tenant: tenantName,
+              pin: newPin,
+              rent,
+              dueDate,
+              advance,
+              status: 'occupied',
+              checkIn: new Date().toISOString(),
+              checkOut: null,
+            }
+          : r
+      ),
+    }));
+    saveData(get());
+    return newPin;
+  },
+
+  checkOutRoom: (roomId) => {
+    set((state) => ({
+      rooms: state.rooms.map((r) =>
+        r.id === roomId
+          ? {
+              ...r,
+              status: 'available',
+              tenant: null,
+              pin: null, // Clear PIN on checkout
+              dueDate: null,
+              advance: 0,
+              electricityBill: 0,
+              waterBill: 0,
+              electricityStatus: 'pending',
+              waterStatus: 'pending',
+              checkOut: new Date().toISOString(),
+            }
+          : r
+      ),
+    }));
+    saveData(get());
+  },
+
+  setRoomStatus: (roomId, status) => {
+    set((state) => ({
+      rooms: state.rooms.map((r) =>
+        r.id === roomId ? { ...r, status } : r
+      ),
+    }));
+    saveData(get());
+  },
+
+  // --- Payments ---
+  addPayment: (payment) => {
+    const newPayment = {
+      ...payment,
+      id: 'pay-' + Date.now(),
+      timestamp: new Date().toISOString(),
+    };
+    set((state) => ({
+      payments: [newPayment, ...state.payments],
+    }));
+    saveData(get());
+    return newPayment;
+  },
+
+  getPaymentsByRoom: (roomNumber) => {
+    return get().payments.filter((p) => p.roomNumber === roomNumber);
+  },
+
+  getTotalIncome: () => {
+    return get().payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  },
+
+  // --- Reports & Analytics ---
+  getMonthlyReport: () => {
+    const payments = get().payments;
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const monthlyPayments = payments.filter(p => {
+      const d = new Date(p.timestamp);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    const incomeByType = monthlyPayments.reduce((acc, p) => {
+      acc[p.type] = (acc[p.type] || 0) + p.amount;
+      return acc;
+    }, {});
+
+    return {
+      monthlyTotal: monthlyPayments.reduce((sum, p) => sum + p.amount, 0),
+      incomeByType,
+      pendingDues: get().getPendingDues(),
+      occupiedCount: get().getOccupiedCount()
+    };
+  },
+
+  getPendingDues: () => {
+    const state = get();
+    return state.rooms.reduce((sum, r) => {
+      if (r.status === 'occupied' && r.dueDate) {
+        const due = new Date(r.dueDate);
+        const now = new Date();
+        if (due <= now) {
+          // Check if rent was paid this month
+          const thisMonth = now.getMonth();
+          const thisYear = now.getFullYear();
+          const paidThisMonth = state.payments.some(
+            (p) =>
+              p.roomNumber === r.number &&
+              p.type === 'rent' &&
+              new Date(p.timestamp).getMonth() === thisMonth &&
+              new Date(p.timestamp).getFullYear() === thisYear
+          );
+          if (!paidThisMonth) return sum + r.rent;
+        }
+      }
+      return sum;
+    }, 0);
+  },
+
+  // --- Complaints ---
+  addComplaint: (complaint) => {
+    const newComplaint = {
+      ...complaint,
+      id: 'comp-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      resolved: false,
+    };
+    set((state) => ({
+      complaints: [newComplaint, ...state.complaints],
+    }));
+    saveData(get());
+    return newComplaint;
+  },
+
+  resolveComplaint: (complaintId) => {
+    set((state) => ({
+      complaints: state.complaints.map((c) =>
+        c.id === complaintId
+          ? { ...c, resolved: true, resolvedAt: new Date().toISOString() }
+          : c
+      ),
+    }));
+    saveData(get());
+  },
+
+  getComplaintsByRoom: (roomNumber) => {
+    return get().complaints.filter((c) => c.roomNumber === roomNumber);
+  },
+
+  getUnresolvedComplaints: () => {
+    return get().complaints.filter((c) => !c.resolved);
+  },
+
+  // --- Bills ---
+  setBill: (roomId, billType, amount) => {
+    const field = billType === 'electricity' ? 'electricityBill' : 'waterBill';
+    const statusField =
+      billType === 'electricity' ? 'electricityStatus' : 'waterStatus';
+    set((state) => ({
+      rooms: state.rooms.map((r) =>
+        r.id === roomId ? { ...r, [field]: amount, [statusField]: 'pending' } : r
+      ),
+    }));
+    saveData(get());
+  },
+
+  markBillPaid: (roomId, billType) => {
+    const statusField =
+      billType === 'electricity' ? 'electricityStatus' : 'waterStatus';
+    set((state) => ({
+      rooms: state.rooms.map((r) =>
+        r.id === roomId ? { ...r, [statusField]: 'paid' } : r
+      ),
+    }));
+    saveData(get());
+  },
+
+  // --- Utility ---
+  getRoomByNumber: (number) => {
+    return get().rooms.find((r) => r.number === number);
+  },
+
+  getOccupiedCount: () => {
+    return get().rooms.filter((r) => r.status === 'occupied').length;
+  },
+}));
+
+export default useLodgeStore;

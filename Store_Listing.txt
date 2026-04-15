@@ -1,0 +1,23 @@
+Application Title: Krishna ERP
+Developer: Krishna Engineering Works
+
+--- SHORT DESCRIPTION ---
+Professional Lodge and Building Management System with native SOS and maintenance reporting features.
+
+--- FULL DESCRIPTION ---
+Krishna ERP is the complete digital companion for tenants and property managers at Krishna Lodge. Designed for high performance and reliability, our app provides essential native tools to simplify your stay and improve communication with the management.
+
+Key Features:
+• NATIVE HOME DASHBOARD: Immediate access to essential services without waiting for slow website loads.
+• EMERGENCY SOS: One-tap emergency dialer for instant security or site assistance.
+• MAINTENANCE REPORTING: File maintenance or plumbing issues directly from the app. Integrated WhatsApp synchronization drafts a professional ticket for the administrator instantly.
+• RENT STATUS HUB: Track your current rent status, view next due dates, and access the secure payment portal.
+• DIRECT ADMIN CONTACT: Choose between voice call or WhatsApp chat for real-time support.
+• SECURE PAYMENTS: Direct integration with our management system for 100% secure financial transactions.
+
+Privacy & Safety:
+We prioritize your data privacy. Krishna ERP only requests essential permissions like Call (for SOS) and Internet to provide a seamless management experience.
+
+Managed by: Krishna Engineering Works
+Developer: AKHIL N
+Location: Thiruvazhiyode, Kerala 679514
