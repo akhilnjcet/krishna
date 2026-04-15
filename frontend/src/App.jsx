@@ -260,7 +260,8 @@ const App = () => {
         <Layout>
           <SecurityWrapper>
             <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<LodgeHome />} />
+            <Route path="/engineering" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
             <Route path="/projects" element={<Projects />} />

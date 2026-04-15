@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle, Building2, ClipboardList, ExternalLink,
-  Phone, Shield, ChevronRight, Zap, Heart
+  Phone, Shield, ChevronRight, Zap, Heart, MapPin
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 
@@ -77,6 +77,15 @@ const LodgeHome = () => {
         if (choice) window.open(`tel:${ADMIN_PHONE}`, '_self');
         else window.open(ADMIN_WHATSAPP, '_blank');
       },
+    },
+    {
+      id: 'location',
+      icon: MapPin,
+      title: 'Location & Map',
+      subtitle: 'Get directions to Krishna Building',
+      color: 'from-rose-500 to-red-600',
+      iconBg: 'bg-rose-50 text-rose-600',
+      action: () => window.open('https://maps.google.com/?q=Krishna+engineering+works+thiruzhiyode', '_blank'),
     },
   ];
 
