@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { App as CapApp } from '@capacitor/app';
+
 import { Network } from '@capacitor/network';
+
 import { Capacitor } from '@capacitor/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { loadFaceModels } from './utils/faceApiLoader';
@@ -83,49 +86,27 @@ import LodgeAdminDashboard from './pages/lodge/LodgeAdminDashboard';
 import TenantLogin from './pages/lodge/TenantLogin';
 
 import useLodgeStore from './stores/lodgeStore';
+import { notificationService } from './services/notificationService';
+
 
 const LodgeNotificationManager = () => {
     const { rooms, authenticatedTenantRoom } = useLodgeStore();
-    const [alert, setAlert] = useState(null);
+
+    useEffect(() => {
+        notificationService.requestPermissions();
+    }, []);
 
     useEffect(() => {
         if (!authenticatedTenantRoom) return;
         const room = rooms.find(r => r.number === authenticatedTenantRoom);
-        if (!room) return;
-
-        const now = new Date();
-        const alerts = [];
-
-        if (room.dueDate && new Date(room.dueDate) <= now) {
-            alerts.push('Rent is currently due');
+        if (room) {
+            notificationService.scheduleStayReminders(room);
         }
-        if (room.electricityBill > 0 && room.electricityStatus === 'pending') {
-            alerts.push('Electricity bill pending');
-        }
-        if (room.waterBill > 0 && room.waterStatus === 'pending') {
-            alerts.push('Water bill pending');
-        }
+    }, [authenticatedTenantRoom, rooms]);
 
-        if (alerts.length > 0) {
-            setAlert(alerts[0]);
-        } else {
-            setAlert(null);
-        }
-    }, [rooms, authenticatedTenantRoom]);
-
-    if (!alert) return null;
-
-    return (
-        <motion.div 
-            initial={{ y: -50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="bg-[#E53935] text-white py-2 px-4 text-center text-[10px] font-black uppercase tracking-[0.2em] sticky top-0 z-[1001] flex items-center justify-center gap-2"
-        >
-            <AlertTriangle className="w-3.5 h-3.5" />
-            System Alert: {alert}
-        </motion.div>
-    );
+    return null;
 };
+
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -223,7 +204,25 @@ const SecurityWrapper = ({ children }) => {
   const navigate = useNavigate();
   
   useEffect(() => {
+    // 🛡️ NATIVE BACK BUTTON LOGIC: Mandatory for Indus Appstore Approval
+    const backListener = CapApp.addListener('backButton', () => {
+      const path = window.location.hash;
+      if (path === '#/' || path === '#/lodge') {
+        CapApp.exitApp();
+      } else {
+        window.history.back();
+      }
+    });
+
+    return () => {
+      backListener.then(l => l.remove());
+    };
+
+  }, []);
+
+  useEffect(() => {
     if (!isAuthenticated) return;
+
 
     let timeoutId;
     const INACTIVITY_LIMIT = 30 * 60 * 1000; // Increased to 30 mins

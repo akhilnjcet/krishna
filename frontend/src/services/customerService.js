@@ -97,6 +97,24 @@ export const customerService = {
     // Ensure persistence
     try { await waitForPendingWrites(db); } catch(e) {}
     return true;
+  // 5. Search Customers (Prefix Matching)
+  searchCustomers: async (qString) => {
+    if (!qString || qString.length < 3) return [];
+    try {
+        const { getDocs, collection, query, where, limit } = await import("firebase/firestore");
+        const phone = qString.replace(/\D/g, '');
+        const q = query(
+            collection(db, "customers"), 
+            where("mobile", ">=", phone),
+            where("mobile", "<=", phone + '\uf8ff'),
+            limit(5)
+        );
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (err) {
+        console.error("Search Failure:", err);
+        return [];
+    }
   }
 };
 

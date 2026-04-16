@@ -31,11 +31,50 @@ const LodgeAdminDashboard = () => {
     
     // Customer Management State
     const [allCustomers, setAllCustomers] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+    const [isQuickCheckInMode, setIsQuickCheckInMode] = useState(false);
     const [mobileSearch, setMobileSearch] = useState('');
     const [lookupLoading, setLookupLoading] = useState(false);
     const [customerData, setCustomerData] = useState({ name: '', address: '', idType: 'Aadhar', idNumber: '' });
+
+    // Handle Quick Check-in from Directory
+    const initiateQuickCheckIn = (customer) => {
+        setMobileSearch(customer.mobile || customer.id);
+        setCustomerData({
+            name: customer.name || '',
+            address: customer.address || '',
+            idType: customer.idType || 'Aadhar',
+            idNumber: customer.idNumber || ''
+        });
+        setIsQuickCheckInMode(true);
+        setActiveTab('rooms'); // Switch to rooms to pick one
+        alert(`Guest "${customer.name}" selected. Now click an Available Room to complete check-in.`);
+    };
+
+    // Handle Mobile Search Change
+    const handleMobileChange = async (e) => {
+        const val = e.target.value;
+        setMobileSearch(val);
+        if (val.length >= 3) {
+            const results = await customerService.searchCustomers(val);
+            setSuggestions(results);
+        } else {
+            setSuggestions([]);
+        }
+    };
+
+    const selectSuggestion = (customer) => {
+        setMobileSearch(customer.mobile || customer.id);
+        setCustomerData({
+            name: customer.name || '',
+            address: customer.address || '',
+            idType: customer.idType || 'Aadhar',
+            idNumber: customer.idNumber || ''
+        });
+        setSuggestions([]);
+    };
 
     // Fetch history when tab changes
     React.useEffect(() => {
@@ -191,6 +230,7 @@ const LodgeAdminDashboard = () => {
             updateRoom(selectedRoom.id, { pin: result.data.tempPassword });
 
             setIsAssignModalOpen(false);
+            setIsQuickCheckInMode(false);
             setMobileSearch('');
             setCustomerData({ name: '', address: '', idType: 'Aadhar', idNumber: '' });
             
@@ -206,10 +246,11 @@ const LodgeAdminDashboard = () => {
     const tabs = [
         { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'rooms', label: 'Rooms', icon: DoorOpen },
-        { id: 'customers', label: 'History', icon: History },
+        { id: 'customers', label: 'Directory', icon: History },
         { id: 'bills', label: 'Accounts', icon: Lightbulb },
         { id: 'settings', label: 'Admin', icon: Settings },
     ];
+
 
 
     const stats = [
@@ -339,7 +380,8 @@ const LodgeAdminDashboard = () => {
                                             <div>
                                                 <p className="text-sm font-bold text-slate-800">{room.tenant || 'Unassigned'}</p>
                                                 <div className="flex items-center gap-2">
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Rent: ₹{room.                                                     {room.pin && (
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Rent: ₹{room.rent}</p>
+                                                    {room.pin && (
                                                         <button 
                                                             onClick={() => {
                                                                 const newPin = prompt('Enter New PIN (4 digits):', room.pin);
@@ -351,6 +393,7 @@ const LodgeAdminDashboard = () => {
                                                         </button>
                                                      )}
                                                 </div>
+
                                             </div>
                                         </div>
                                         <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
@@ -456,12 +499,29 @@ const LodgeAdminDashboard = () => {
                                         </div>
 
                                         <div className="flex gap-2">
+                                            {activeRoom ? (
+                                                <button 
+                                                    onClick={() => { setSelectedCustomer(customer); setIsCustomerModalOpen(true); }}
+                                                    className="flex-grow py-3 bg-slate-50 text-slate-600 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all"
+                                                >
+                                                    View Profile
+                                                </button>
+                                            ) : (
+                                                <button 
+                                                    onClick={() => initiateQuickCheckIn(customer)}
+                                                    className="flex-grow py-3 bg-emerald-500 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+                                                >
+                                                    <Plus className="w-4 h-4" /> Quick Check-in
+                                                </button>
+                                            )}
+                                            
                                             <button 
                                                 onClick={() => { setSelectedCustomer(customer); setIsCustomerModalOpen(true); }}
-                                                className="flex-grow py-3 bg-slate-50 text-slate-600 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all"
+                                                className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100 transition-all"
                                             >
-                                                View Profile
+                                                <Settings className="w-5 h-5" />
                                             </button>
+
                                             <button 
                                                 onClick={() => generateIndividualPDF(customer)}
                                                 className="w-12 h-12 flex items-center justify-center bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all"
@@ -469,6 +529,7 @@ const LodgeAdminDashboard = () => {
                                                 <FileText className="w-5 h-5" />
                                             </button>
                                         </div>
+
                                     </div>
                                 );
                             })}
@@ -770,25 +831,57 @@ const LodgeAdminDashboard = () => {
                                        <form onSubmit={handleAssign} className="space-y-6 max-h-[70vh] overflow-y-auto px-1 no-scrollbar">
                                 <div className="space-y-4">
                                     {/* Mobile ID Lookup (Primary Key) */}
-                                    <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center gap-3">
-                                        <div className="flex-grow">
-                                            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Customer Mobile (UID)</p>
-                                            <input 
-                                                required 
-                                                type="tel"
-                                                value={mobileSearch}
-                                                onChange={(e) => setMobileSearch(e.target.value)}
-                                                onBlur={handleCustomerLookup}
-                                                placeholder="9876543210" 
-                                                className="w-full bg-transparent border-0 p-0 font-black text-slate-900 focus:ring-0 text-xl" 
-                                            />
+                                    <div className="relative">
+                                        <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center gap-3">
+                                            <div className="flex-grow">
+                                                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Customer Mobile (UID)</p>
+                                                <input 
+                                                    required 
+                                                    type="tel"
+                                                    value={mobileSearch}
+                                                    onChange={handleMobileChange}
+                                                    onBlur={() => setTimeout(() => setSuggestions([]), 200)}
+                                                    placeholder="9876543210" 
+                                                    className="w-full bg-transparent border-0 p-0 font-black text-slate-900 focus:ring-0 text-xl" 
+                                                />
+                                            </div>
+                                            {lookupLoading ? (
+                                                <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                                            ) : (
+                                                <Search className="w-5 h-5 text-blue-300" onClick={handleCustomerLookup} />
+                                            )}
                                         </div>
-                                        {lookupLoading ? (
-                                            <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-                                        ) : (
-                                            <Search className="w-5 h-5 text-blue-300" onClick={handleCustomerLookup} />
-                                        )}
+
+                                        {/* Predictive Suggestions Dropdown */}
+                                        <AnimatePresence>
+                                            {suggestions.length > 0 && (
+                                                <motion.div 
+                                                    initial={{ opacity: 0, y: -10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -10 }}
+                                                    className="absolute z-50 left-0 right-0 top-full mt-2 bg-white rounded-2xl border border-slate-100 shadow-2xl shadow-slate-200 overflow-hidden"
+                                                >
+                                                    {suggestions.map((guest) => (
+                                                        <button
+                                                            key={guest.id}
+                                                            type="button"
+                                                            onClick={() => selectSuggestion(guest)}
+                                                            className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"
+                                                        >
+                                                            <div className="text-left">
+                                                                <p className="font-bold text-slate-800 text-sm leading-none mb-1">{guest.name}</p>
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{guest.mobile}</p>
+                                                            </div>
+                                                            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                                                                <CheckCircle2 className="w-4 h-4" />
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
+
 
                                     {/* Real-time Customer Profile */}
                                     <div className="grid grid-cols-1 gap-4">
@@ -886,8 +979,11 @@ const LodgeAdminDashboard = () => {
                         </motion.div>
                     </div>
                 )}
+            </AnimatePresence>
+
             {/* Customer Detail & Edit Modal */}
             <AnimatePresence>
+
                 {isCustomerModalOpen && selectedCustomer && (
                     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
                         <motion.div 

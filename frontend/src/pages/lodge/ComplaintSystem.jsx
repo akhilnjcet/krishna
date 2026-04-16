@@ -56,20 +56,21 @@ const ComplaintSystem = () => {
 
     return (
         <div className="min-h-screen bg-slate-50">
-            {/* Header */}
-            <div className="bg-[#2D5BE3] pt-12 pb-20 px-6 relative">
+            {/* Slim Complaint Ribbon */}
+            <div className="bg-[#2D5BE3] pt-6 pb-12 px-6 relative flex-shrink-0">
                 <div className="relative z-10 flex items-center gap-4">
                     <button 
                         onClick={() => navigate(-1)}
-                        className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white backdrop-blur-md"
+                        className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
                     >
-                        <ArrowLeft className="w-6 h-6" />
+                        <ArrowLeft className="w-5 h-5" />
                     </button>
-                    <h1 className="text-2xl font-bold text-white font-poppins">Report Issue</h1>
+                    <h1 className="text-xl font-black text-white font-poppins tracking-tight leading-none">Report Issue</h1>
                 </div>
             </div>
 
-            <div className="px-6 -mt-10 pb-12 max-w-lg mx-auto">
+            <div className="px-6 -mt-6 pb-12 max-w-lg mx-auto">
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Issue Type Selection */}
                     <div className="bg-white rounded-3xl p-6 shadow-xl shadow-blue-900/5 border border-slate-100">

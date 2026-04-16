@@ -118,20 +118,23 @@ const PaymentSystem = () => {
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Header */}
-            <div className="bg-[#2D5BE3] pt-12 pb-20 px-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl text-white"></div>
+            {/* Slim Payment Ribbon */}
+            <div className="bg-[#2D5BE3] pt-6 pb-12 px-6 relative flex-shrink-0">
                 <div className="relative z-10 flex items-center gap-4">
                     <button 
                         onClick={() => showQR ? setShowQR(false) : navigate(-1)}
-                        className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white backdrop-blur-md"
+                        className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
                     >
-                        <ArrowLeft className="w-6 h-6" />
+                        <ArrowLeft className="w-5 h-5" />
                     </button>
-                    <h1 className="text-2xl font-bold text-white font-poppins capitalize">{showQR ? 'Scan & Pay' : `${type} Settlement`}</h1>
+                    <h1 className="text-xl font-black text-white font-poppins capitalize tracking-tight leading-none">
+                        {showQR ? 'Scan & Pay' : `${type} Settlement`}
+                    </h1>
                 </div>
             </div>
 
-            <div className="px-6 -mt-10 pb-12 max-w-lg mx-auto">
+            <div className="px-6 -mt-6 pb-12 max-w-lg mx-auto">
+
                 <div className="space-y-6">
                     {/* Amount Card  - Only show if not in QR mode */}
                     {!showQR && (
