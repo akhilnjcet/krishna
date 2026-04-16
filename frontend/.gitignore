@@ -26,3 +26,5 @@ dist-ssr
 # Android / Capacitor (APK build only - not needed for Vercel)
 android/
 capacitor.config.json
+
+.vercel

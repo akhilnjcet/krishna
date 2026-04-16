@@ -1,0 +1,8 @@
+node_modules
+dist
+.next
+.vercel
+.git
+android
+ios
+capacitor-cordova-android-plugins
