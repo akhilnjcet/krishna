@@ -764,6 +764,7 @@ const LodgeAdminDashboard = () => {
                                     const data = new FormData(e.target);
                                     updateAppSettings({
                                         upiId: data.get('upiId'),
+                                        adminPhone: data.get('adminPhone'),
                                         buildingLocation: data.get('buildingLocation'),
                                         mapUrl: data.get('mapUrl')
                                     });
@@ -778,6 +779,21 @@ const LodgeAdminDashboard = () => {
                                                 className="w-full bg-white border border-slate-200 p-3 rounded-xl font-bold text-slate-900 focus:ring-[#2D5BE3] focus:border-[#2D5BE3]" 
                                                 placeholder="e.g. yourname@upi"
                                             />
+                                        </div>
+                                        <div className="p-4 bg-blue-50/30 rounded-2xl border border-blue-100">
+                                            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-2">Admin / Emergency Contact</p>
+                                            <div className="flex items-center gap-3">
+                                                 <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-blue-600 border border-blue-100">
+                                                     <Phone className="w-5 h-5" />
+                                                 </div>
+                                                 <input 
+                                                    name="adminPhone" 
+                                                    type="tel"
+                                                    defaultValue={appSettings?.adminPhone || '9876543210'}
+                                                    className="flex-grow bg-white border border-slate-200 p-3 rounded-xl font-black text-slate-900 focus:ring-[#2D5BE3] focus:border-[#2D5BE3] text-lg tracking-wider" 
+                                                    placeholder="9876543210"
+                                                />
+                                            </div>
                                         </div>
                                         <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Google Maps URL</p>

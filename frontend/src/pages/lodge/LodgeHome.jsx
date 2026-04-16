@@ -11,16 +11,19 @@ import {
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 
-const ADMIN_PHONE = '9876543210';
-const ADMIN_WHATSAPP = `https://wa.me/91${ADMIN_PHONE}`;
 
 const LodgeHome = () => {
+
     const navigate = useNavigate();
-    const { rooms, authenticatedTenantRoom, isAdminLoggedIn } = useLodgeStore();
+    const { rooms, authenticatedTenantRoom, isAdminLoggedIn, appSettings } = useLodgeStore();
     const [hwInfo, setHwInfo] = useState({ batteryLevel: 0.98, isCharging: false });
     const [netStatus, setNetStatus] = useState({ connected: true, connectionType: 'wifi' });
 
+    const activeAdminPhone = appSettings?.adminPhone || '9447940835';
+    const adminWhatsAppUrl = `https://wa.me/91${activeAdminPhone.replace(/\D/g,'')}`;
+
     useEffect(() => {
+
         const getSystemTelemetry = async () => {
             if (Capacitor.isNativePlatform()) {
                 try {
@@ -41,7 +44,8 @@ const LodgeHome = () => {
         { id: 'report', icon: ClipboardList, title: 'Maintenance Log', subtitle: 'Relay issues to command', action: () => navigate('/lodge/complaint'), color: 'bg-amber-500' },
         { id: 'privacy', icon: Shield, title: 'Privacy & Terms', subtitle: 'Legal & Data Protocols', action: () => alert('PRIVACY POLICY:\n\n1. Data Security: All guest data is encrypted in Firestore.\n2. Local Storage: We use IndexedDB for offline resilience.\n3. Hardware Access: Battery/Network status used ONLY for telemetry UI.\n4. No Third-Party Sales: We do not share your mobile number.'), color: 'bg-emerald-600' },
         { id: 'admin', icon: Terminal, title: 'Admin Terminal', subtitle: 'Management access only', action: () => navigate('/lodge/admin-login'), color: 'bg-slate-800' },
-        { id: 'contact', icon: Phone, title: 'Emergency Relay', subtitle: 'Call Administrator duty line', action: () => window.open(`tel:${ADMIN_PHONE}`, '_self'), color: 'bg-rose-500' },
+        { id: 'contact', icon: Phone, title: 'Emergency Relay', subtitle: 'Call Administrator duty line', action: () => window.open(`tel:${activeAdminPhone}`, '_self'), color: 'bg-rose-500' },
+        { id: 'map', icon: MapPin, title: 'Tactical Map', subtitle: 'Lodge location grid', action: () => window.open('https://maps.google.com/?q=Krishna+engineering+works+thiruzhiyode', '_blank'), color: 'bg-indigo-600' }
     ];
 
 
@@ -150,8 +154,9 @@ const LodgeHome = () => {
             <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-12 py-6 flex justify-between items-center z-[100]">
                 <button onClick={() => navigate('/lodge')} className="text-blue-600"><Building2 className="w-7 h-7" /></button>
                 <button onClick={() => navigate('/lodge/admin-login')} className="text-slate-400 hover:text-blue-400 transition-colors"><Shield className="w-7 h-7" /></button>
-                <button onClick={() => window.open(`tel:${ADMIN_PHONE}`, '_self')} className="text-slate-400 hover:text-rose-400 transition-colors"><Phone className="w-7 h-7" /></button>
+                <button onClick={() => window.open(`tel:${activeAdminPhone}`, '_self')} className="text-slate-400 hover:text-rose-400 transition-colors"><Phone className="w-7 h-7" /></button>
             </div>
+
         </div>
     );
 };
