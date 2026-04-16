@@ -97,7 +97,10 @@ export const customerService = {
     // Ensure persistence
     try { await waitForPendingWrites(db); } catch(e) {}
     return true;
+  },
+
   // 5. Search Customers (Prefix Matching)
+
   searchCustomers: async (qString) => {
     if (!qString || qString.length < 3) return [];
     try {
