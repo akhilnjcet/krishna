@@ -56,6 +56,7 @@ const saveData = (state) => {
       payments: state.payments,
       complaints: state.complaints,
       adminPin: state.adminPin,
+      appSettings: state.appSettings,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   } catch (e) {
@@ -71,8 +72,19 @@ const useLodgeStore = create((set, get) => ({
   payments: saved?.payments || [],
   complaints: saved?.complaints || [],
   adminPin: saved?.adminPin || '1234',
+  appSettings: saved?.appSettings || {
+    upiId: 'krishnaengineering@upi',
+    buildingLocation: '123 Krishna Building, Main Street',
+    mapUrl: ''
+  },
   isAdminLoggedIn: false,
   authenticatedTenantRoom: null, // Stores room number if logged in as tenant
+
+  // --- Admin Settings ---
+  updateAppSettings: (newSettings) => {
+    set((state) => ({ appSettings: { ...state.appSettings, ...newSettings } }));
+    saveData(get());
+  },
 
   // --- Admin Auth ---
   loginAdmin: (pin) => {
@@ -178,6 +190,35 @@ const useLodgeStore = create((set, get) => ({
     }));
     saveData(get());
     return newPayment;
+  },
+
+  approvePayment: (paymentId) => {
+    const state = get();
+    const payment = state.payments.find(p => p.id === paymentId);
+    if (!payment) return;
+
+    set((state) => ({
+      payments: state.payments.map((p) =>
+        p.id === paymentId ? { ...p, status: 'Completed' } : p
+      ),
+    }));
+
+    if (payment.type === 'electricity' || payment.type === 'water') {
+        const room = state.rooms.find(r => r.number === payment.roomNumber);
+        if (room) {
+            get().markBillPaid(room.id, payment.type);
+        }
+    }
+    saveData(get());
+  },
+
+  rejectPayment: (paymentId) => {
+    set((state) => ({
+      payments: state.payments.map((p) =>
+        p.id === paymentId ? { ...p, status: 'Rejected' } : p
+      ),
+    }));
+    saveData(get());
   },
 
   getPaymentsByRoom: (roomNumber) => {
@@ -297,7 +338,7 @@ const useLodgeStore = create((set, get) => ({
 
   // --- Utility ---
   getRoomByNumber: (number) => {
-    return get().rooms.find((r) => r.number === number);
+    return get().rooms.find((r) => String(r.number) === String(number));
   },
 
   getOccupiedCount: () => {

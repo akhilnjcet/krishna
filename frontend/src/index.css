@@ -5,6 +5,19 @@
 @import "tailwindcss/utilities";
 
 @layer base {
+  * {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+  
+  /* Allow selection only on explicit typing inputs */
+  input, textarea {
+    user-select: auto;
+    -webkit-user-select: auto;
+  }
+
   body {
     @apply antialiased text-textMain bg-white dark:bg-dark-bg dark:text-dark-text transition-colors duration-200 overflow-x-hidden;
     font-family: 'Inter', sans-serif;

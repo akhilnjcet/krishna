@@ -15,7 +15,7 @@ const RoomDashboard = () => {
     
     // Auth Guard
     React.useEffect(() => {
-        if (authenticatedTenantRoom !== roomNumber) {
+        if (!authenticatedTenantRoom || String(authenticatedTenantRoom) !== String(roomNumber)) {
             navigate('/lodge/tenant-login');
         }
     }, [authenticatedTenantRoom, roomNumber, navigate]);
@@ -76,7 +76,7 @@ const RoomDashboard = () => {
                 </div>
             </div>
 
-            <div className="px-6 -mt-16 pb-12 space-y-8 max-w-lg mx-auto">
+            <div className="px-6 -mt-16 pb-32 space-y-8 max-w-lg mx-auto">
                 {/* Status Card */}
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}

@@ -6,6 +6,7 @@ import {
     CreditCard, Zap, Droplets, ArrowUpRight 
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
+import { generatePaymentReceiptPDF } from '../../services/pdfService';
 
 const PaymentHistory = () => {
     const { roomNumber } = useParams();
@@ -61,11 +62,27 @@ const PaymentHistory = () => {
                                         <div>
                                             <p className="text-sm font-bold text-slate-800 capitalize">{pay.type} Settlement</p>
                                             <p className="text-[10px] text-slate-400 font-bold uppercase">{new Date(pay.timestamp).toLocaleDateString()} • {pay.method}</p>
+                                            {pay.status === 'Completed' && (
+                                                <button 
+                                                    onClick={() => {
+                                                        const room = useLodgeStore.getState().getRoomByNumber(roomNumber);
+                                                        generatePaymentReceiptPDF(pay, { name: room.tenant, email: `Room ${roomNumber}` });
+                                                    }}
+                                                    className="text-[10px] text-[#2D5BE3] font-bold uppercase underline mt-1 block"
+                                                >
+                                                    Download Receipt
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm font-black text-slate-800">₹{pay.amount.toLocaleString()}</p>
-                                        <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Verified</p>
+                                        <p className={`text-[10px] font-bold uppercase tracking-wider ${
+                                            pay.status === 'Completed' ? 'text-emerald-500' : 
+                                            pay.status === 'Rejected' ? 'text-rose-500' : 'text-amber-500'
+                                        }`}>
+                                            {pay.status || 'Verified'}
+                                        </p>
                                     </div>
                                 </motion.div>
                             );

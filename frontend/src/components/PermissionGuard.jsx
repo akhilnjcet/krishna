@@ -18,27 +18,29 @@ const PermissionGuard = ({ children }) => {
     const [showOverlay, setShowOverlay] = useState(false);
 
     const checkPermissions = async () => {
-        if (!Capacitor.isNativePlatform()) {
+        if (!Capacitor.isNativePlatform() || localStorage.getItem('krishna_permissions_prompted')) {
             setLoading(false);
             return;
         }
 
         try {
+            const { Camera } = await import('@capacitor/camera');
             const locStatus = await Geolocation.checkPermissions();
-            // On modern Android/iOS, Filesystem doesn't always need explicit permission for standard private folders, 
-            // but we check for general storage access if needed.
             const storeStatus = await Filesystem.checkPermissions();
+            const camStatus = await Camera.checkPermissions();
 
             const statuses = {
                 location: locStatus.location,
                 storage: storeStatus.publicStorage,
-                camera: (await navigator.permissions.query({ name: 'camera' })).state
+                camera: camStatus.camera
             };
 
             setPermissions(statuses);
             
             if (statuses.location !== 'granted' || statuses.storage !== 'granted' || statuses.camera !== 'granted') {
                 setShowOverlay(true);
+            } else {
+                localStorage.setItem('krishna_permissions_prompted', 'true');
             }
         } catch (err) {
             console.error("Permission check failed", err);
@@ -54,6 +56,7 @@ const PermissionGuard = ({ children }) => {
     const requestAll = async () => {
         setLoading(true);
         try {
+            const { Camera } = await import('@capacitor/camera');
             if (permissions.location !== 'granted') {
                 await Geolocation.requestPermissions();
             }
@@ -61,24 +64,25 @@ const PermissionGuard = ({ children }) => {
                 await Filesystem.requestPermissions();
             }
             if (permissions.camera !== 'granted') {
-                try {
-                    const s = await navigator.mediaDevices.getUserMedia({ video: true });
-                    s.getTracks().forEach(t => t.stop());
-                } catch { console.warn("Camera request denied"); }
+                await Camera.requestPermissions();
             }
+            
             // Re-check
             const loc = await Geolocation.checkPermissions();
             const store = await Filesystem.checkPermissions();
+            const cam = await Camera.checkPermissions();
             
-            if (loc.location === 'granted' && store.publicStorage === 'granted') {
-                setShowOverlay(false);
-            } else {
-                // If they denied, we just close it for now to let them use the app, 
-                // but they might see issues downloading PDFs later.
-                setShowOverlay(false);
+            if (loc.location === 'granted' && store.publicStorage === 'granted' && cam.camera === 'granted') {
+                setPermissions({ location: 'granted', storage: 'granted', camera: 'granted' });
             }
+            
+            // Mark as prompted regardless so we don't nag the user again later.
+            localStorage.setItem('krishna_permissions_prompted', 'true');
+            setShowOverlay(false);
         } catch (err) {
             alert("Permission error: Some features may be restricted.");
+            localStorage.setItem('krishna_permissions_prompted', 'true');
+            setShowOverlay(false);
         } finally {
             setLoading(false);
         }
@@ -153,7 +157,10 @@ const PermissionGuard = ({ children }) => {
 
                                 <div className="flex gap-4 pt-4">
                                     <button 
-                                        onClick={() => setShowOverlay(false)}
+                                        onClick={() => {
+                                            localStorage.setItem('krishna_permissions_prompted', 'true');
+                                            setShowOverlay(false);
+                                        }}
                                         className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] text-slate-400 hover:text-slate-600 transition"
                                     >
                                         Ignore

@@ -20,23 +20,30 @@ const THEME = {
     bgLight: [248, 250, 252]   // Slate 50
 };
 
+import { Share } from '@capacitor/share';
+
 const savePDF = async (doc, filename) => {
     if (Capacitor.isNativePlatform()) {
         try {
             const pdfOutput = doc.output('datauristring');
-            // Remove the data URI header
             const base64Data = pdfOutput.split(',')[1];
             
-            await Filesystem.writeFile({
+            const savedFile = await Filesystem.writeFile({
                 path: filename,
                 data: base64Data,
-                directory: Directory.Documents,
+                directory: Directory.Cache,
                 recursive: true
             });
-            alert(`Report Saved: ${filename} is now in your Documents folder.`);
+            
+            await Share.share({
+                title: filename,
+                text: 'Here is your generated PDF document.',
+                url: savedFile.uri,
+                dialogTitle: 'Save or Share PDF'
+            });
         } catch (err) {
-            console.error('Mobile PDF Save Error:', err);
-            alert('Failed to save PDF to device storage. Please check permissions.');
+            console.error('Mobile PDF Share Error:', err);
+            alert('Failed to process PDF. Please check your system settings.');
         }
     } else {
         doc.save(filename);

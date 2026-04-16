@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Network } from '@capacitor/network';
+import { Capacitor } from '@capacitor/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { loadFaceModels } from './utils/faceApiLoader';
 import { HashRouter as Router, Routes, Route, useLocation, useNavigate, Link } from 'react-router-dom';
+import { AlertTriangle, WifiOff } from 'lucide-react';
 import api from './services/api';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -211,7 +213,7 @@ const Layout = ({ children }) => {
         {children}
       </main>
       {!isDashboard && <Footer />}
-      <AIChatWidget />
+      {!location.pathname.startsWith('/lodge') && (!Capacitor.isNativePlatform() || location.pathname !== '/') && <AIChatWidget />}
     </div>
   );
 };
@@ -260,7 +262,7 @@ const App = () => {
         <Layout>
           <SecurityWrapper>
             <Routes>
-            <Route path="/" element={<LodgeHome />} />
+            <Route path="/" element={Capacitor.isNativePlatform() ? <LodgeHome /> : <Home />} />
             <Route path="/engineering" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />

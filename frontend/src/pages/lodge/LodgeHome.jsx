@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle, Building2, ClipboardList, ExternalLink,
@@ -22,7 +24,7 @@ const item = {
 
 const LodgeHome = () => {
   const navigate = useNavigate();
-  const { rooms, authenticatedTenantRoom } = useLodgeStore();
+  const { rooms, authenticatedTenantRoom, appSettings } = useLodgeStore();
 
   const userRoom = rooms.find(r => r.number === authenticatedTenantRoom);
   const hasAlert = userRoom && (
@@ -30,6 +32,33 @@ const LodgeHome = () => {
     (userRoom.electricityBill > 0 && userRoom.electricityStatus === 'pending') ||
     (userRoom.waterBill > 0 && userRoom.waterStatus === 'pending')
   );
+
+  React.useEffect(() => {
+    const checkAndNotify = async () => {
+      if (hasAlert && Capacitor.isNativePlatform()) {
+        try {
+          const permStatus = await LocalNotifications.checkPermissions();
+          if (permStatus.display !== 'granted') {
+            await LocalNotifications.requestPermissions();
+          }
+          await LocalNotifications.schedule({
+            notifications: [
+              {
+                title: "Action Required",
+                body: "You have pending dues or bills for your room.",
+                id: 1,
+                schedule: { at: new Date(Date.now() + 1000 * 2) }, // Notify 2 seconds from now
+              }
+            ]
+          });
+        } catch (e) {
+          console.error("Notification Error: ", e);
+        }
+      }
+    };
+    checkAndNotify();
+  }, [hasAlert]);
+
 
   const handleSOS = () => {
     if (confirm('🚨 Emergency! Call Administrator now?')) {
@@ -85,7 +114,19 @@ const LodgeHome = () => {
       subtitle: 'Get directions to Krishna Building',
       color: 'from-rose-500 to-red-600',
       iconBg: 'bg-rose-50 text-rose-600',
-      action: () => window.open('https://maps.google.com/?q=Krishna+engineering+works+thiruzhiyode', '_blank'),
+      action: () => {
+        const url = appSettings?.mapUrl || 'https://maps.google.com/?q=Krishna+engineering+works+thiruzhiyode';
+        window.open(url, '_blank');
+      },
+    },
+    {
+      id: 'admin',
+      icon: Shield,
+      title: 'Admin Terminal',
+      subtitle: 'Manage lodge and payments',
+      color: 'from-slate-700 to-slate-900',
+      iconBg: 'bg-slate-100 text-slate-700',
+      action: () => navigate('/lodge/admin-login'),
     },
   ];
 
@@ -111,7 +152,7 @@ const LodgeHome = () => {
         </motion.div>
       </div>
 
-      <div className="px-5 -mt-12 pb-8 max-w-lg mx-auto">
+      <div className="px-5 -mt-12 pb-12 max-w-lg mx-auto">
         {/* SOS Button */}
         <motion.button
           initial={{ opacity: 0, scale: 0.9 }}
@@ -166,24 +207,8 @@ const LodgeHome = () => {
           ))}
         </motion.div>
 
-        {/* Admin Access - Hidden */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="mt-8 text-center"
-        >
-          <button
-            onClick={() => navigate('/lodge/admin-login')}
-            className="inline-flex items-center gap-2 text-slate-400 hover:text-blue-600 transition-colors text-xs font-medium py-3 px-6 rounded-xl hover:bg-blue-50/50"
-          >
-            <Shield className="w-3.5 h-3.5" />
-            Admin Panel
-          </button>
-        </motion.div>
-
         {/* Footer */}
-        <div className="mt-6 flex items-center justify-center gap-1.5 text-[10px] text-slate-300 font-medium">
+        <div className="mt-8 flex items-center justify-center gap-1.5 text-[10px] text-slate-300 font-medium">
           <span>Built with</span>
           <Heart className="w-3 h-3 text-red-400 fill-red-400" />
           <span>by Krishna Engineering</span>

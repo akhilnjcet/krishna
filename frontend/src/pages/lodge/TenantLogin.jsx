@@ -18,7 +18,10 @@ const TenantLogin = () => {
     const [loading, setLoading] = useState(false);
 
     const handleRoomSelect = (room) => {
-        if (room.status !== 'occupied') return;
+        if (room.status !== 'occupied') {
+            alert('This room is currently vacant. Administrator must check-in a tenant first.');
+            return;
+        }
         setSelectedRoom(room);
         setStep(2);
     };
@@ -88,11 +91,10 @@ const TenantLogin = () => {
                                     <button
                                         key={room.id}
                                         onClick={() => handleRoomSelect(room)}
-                                        disabled={room.status !== 'occupied'}
                                         className={`group relative flex items-center justify-between p-6 rounded-3xl border-2 transition-all ${
                                             room.status === 'occupied' 
                                             ? 'bg-white border-slate-100 hover:border-[#2D5BE3] shadow-lg shadow-slate-200/50' 
-                                            : 'bg-slate-50 border-transparent opacity-50 grayscale cursor-not-allowed'
+                                            : 'bg-slate-50 border-transparent opacity-60 hover:opacity-80 active:scale-95'
                                         }`}
                                     >
                                         <div className="flex items-center gap-4">

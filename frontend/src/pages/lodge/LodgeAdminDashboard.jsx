@@ -4,15 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     LayoutDashboard, DoorOpen, Lightbulb, AlertTriangle, 
     LogOut, UserPlus, Trash2, CheckCircle2, Phone, 
-    ArrowUpRight, IndianRupee, Clock, Plus, X, List, History
+    ArrowUpRight, IndianRupee, Clock, Plus, X, List, History, Settings
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 
 const LodgeAdminDashboard = () => {
     const navigate = useNavigate();
     const { 
-        rooms, payments, complaints, 
-        isAdminLoggedIn, logoutAdmin,
+        rooms, payments, complaints, appSettings,
+        isAdminLoggedIn, logoutAdmin, updateAppSettings,
         getOccupiedCount, getUnresolvedComplaints,
         getTotalIncome, getPendingDues,
         assignTenant, checkOutRoom, setBill, 
@@ -32,7 +32,8 @@ const LodgeAdminDashboard = () => {
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'rooms', label: 'Rooms', icon: DoorOpen },
         { id: 'bills', label: 'Bills', icon: Lightbulb },
-        { id: 'complaints', label: 'Issues', icon: AlertTriangle }
+        { id: 'complaints', label: 'Issues', icon: AlertTriangle },
+        { id: 'settings', label: 'Settings', icon: Settings }
     ];
 
     const stats = [
@@ -48,8 +49,9 @@ const LodgeAdminDashboard = () => {
         <div className="min-h-screen bg-[#F8FAFC]">
             {/* Admin Header */}
             <div className="bg-[#111827] pt-12 pb-24 px-6 text-white overflow-hidden relative">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="relative z-10 flex justify-between items-start mb-8">
+
                     <div>
                         <h1 className="text-2xl font-black font-poppins">Admin Terminal</h1>
                         <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em]">Krishna ERP Command</p>
@@ -63,7 +65,7 @@ const LodgeAdminDashboard = () => {
                 </div>
 
                 {/* Tab Navigation */}
-                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                <div className="relative z-10 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
@@ -81,7 +83,7 @@ const LodgeAdminDashboard = () => {
                 </div>
             </div>
 
-            <div className="px-6 -mt-12 pb-12 max-w-lg mx-auto min-h-[60vh]">
+            <div className="relative z-20 px-6 -mt-12 pb-12 max-w-lg mx-auto min-h-[60vh]">
                 <AnimatePresence mode="wait">
                     {activeTab === 'overview' && (
                         <motion.div 
@@ -213,8 +215,49 @@ const LodgeAdminDashboard = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            className="space-y-4"
+                            className="space-y-6"
                         >
+                            {/* Pending Approvals Section */}
+                            {payments.filter(p => p.status === 'Waiting for Approval').length > 0 && (
+                                <div className="space-y-4">
+                                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest pl-2">Pending Validation</h3>
+                                    {payments.filter(p => p.status === 'Waiting for Approval').map(pay => (
+                                        <div key={pay.id} className="bg-white rounded-3xl p-6 border border-amber-100 shadow-xl shadow-amber-500/5">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div>
+                                                    <p className="text-xs font-bold text-amber-600 uppercase tracking-widest leading-none mb-1">Room {pay.roomNumber} • {pay.type}</p>
+                                                    <p className="text-2xl font-black text-slate-800">₹{pay.amount}</p>
+                                                </div>
+                                                <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-bold uppercase">{pay.method}</span>
+                                            </div>
+                                            
+                                            {pay.screenshot && (
+                                                <div className="mb-6 rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 relative group">
+                                                    <img src={pay.screenshot} alt="Payment SS" className="w-full h-48 object-cover" />
+                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer text-white text-xs font-bold" onClick={() => window.open(pay.screenshot, '_blank')}>View Full Image</div>
+                                                </div>
+                                            )}
+
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => { if(confirm('Reject this payment?')) useLodgeStore.getState().rejectPayment(pay.id); }}
+                                                    className="w-14 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center hover:bg-rose-100"
+                                                >
+                                                    <X className="w-5 h-5" />
+                                                </button>
+                                                <button 
+                                                    onClick={() => { if(confirm('Approve payment & generate receipt?')) useLodgeStore.getState().approvePayment(pay.id); }}
+                                                    className="flex-grow h-12 bg-emerald-500 text-white rounded-xl font-bold uppercase tracking-wider shadow-lg shadow-emerald-500/30 hover:bg-emerald-600 transition-colors"
+                                                >
+                                                    Approve Payment
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest pl-2 pt-4">Room Billing Management</h3>
                             {rooms.filter(r => r.status === 'occupied').map((room) => (
                                 <div key={room.id} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-6">
                                     <div className="flex items-center gap-4">
@@ -346,6 +389,63 @@ const LodgeAdminDashboard = () => {
                             {complaints.length === 0 && (
                                 <div className="text-center py-20 text-slate-300 font-bold uppercase tracking-[0.2em] italic">No issues recorded</div>
                             )}
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'settings' && (
+                        <motion.div 
+                            key="settings"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="space-y-6"
+                        >
+                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                                <h3 className="text-xl font-black text-slate-800 font-poppins mb-6">Global Properties</h3>
+                                
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const data = new FormData(e.target);
+                                    updateAppSettings({
+                                        upiId: data.get('upiId'),
+                                        buildingLocation: data.get('buildingLocation'),
+                                        mapUrl: data.get('mapUrl')
+                                    });
+                                    alert('Settings Updated Successfully');
+                                }} className="space-y-6">
+                                    <div className="space-y-4">
+                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Merchant UPI ID</p>
+                                            <input 
+                                                name="upiId" 
+                                                defaultValue={appSettings?.upiId}
+                                                className="w-full bg-white border border-slate-200 p-3 rounded-xl font-bold text-slate-900 focus:ring-[#2D5BE3] focus:border-[#2D5BE3]" 
+                                                placeholder="e.g. yourname@upi"
+                                            />
+                                        </div>
+                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Google Maps URL</p>
+                                            <input 
+                                                name="mapUrl" 
+                                                defaultValue={appSettings?.mapUrl}
+                                                className="w-full bg-white border border-slate-200 p-3 rounded-xl font-bold text-slate-900 focus:ring-[#2D5BE3] focus:border-[#2D5BE3]" 
+                                                placeholder="https://maps.google.com/..."
+                                            />
+                                        </div>
+                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Building Address</p>
+                                            <textarea 
+                                                name="buildingLocation" 
+                                                defaultValue={appSettings?.buildingLocation}
+                                                className="w-full bg-white border border-slate-200 p-3 rounded-xl font-medium text-slate-900 focus:ring-[#2D5BE3] focus:border-[#2D5BE3]" 
+                                                rows="2"
+                                                placeholder="Enter full building address..."
+                                            />
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="w-full py-4 bg-[#2D5BE3] text-white rounded-2xl font-bold shadow-xl shadow-blue-200">Save Configuration</button>
+                                </form>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
