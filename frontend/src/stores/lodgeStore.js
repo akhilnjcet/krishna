@@ -43,7 +43,18 @@ const defaultRooms = [
 const loadData = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+        const data = JSON.parse(raw);
+        // Persistence logic: Check if login was recent (within 24h)
+        const now = Date.now();
+        const loginExpiry = 24 * 60 * 60 * 1000; // 24 hours
+        if (data.loginTimestamp && (now - data.loginTimestamp < loginExpiry)) {
+            data.isAdminLoggedIn = true;
+        } else {
+            data.isAdminLoggedIn = false;
+        }
+        return data;
+    }
   } catch (e) {
     console.error('Lodge store load error:', e);
   }
@@ -58,6 +69,8 @@ const saveData = (state) => {
       complaints: state.complaints,
       adminPin: state.adminPin,
       appSettings: state.appSettings,
+      loginTimestamp: state.isAdminLoggedIn ? (state.loginTimestamp || Date.now()) : null,
+      lastSynced: state.lastSynced
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     
@@ -83,10 +96,12 @@ const useLodgeStore = create((set, get) => ({
     buildingLocation: '123 Krishna Building, Main Street',
     mapUrl: ''
   },
-  isAdminLoggedIn: false,
+  isAdminLoggedIn: saved?.isAdminLoggedIn || false,
+  loginTimestamp: saved?.loginTimestamp || null,
   authenticatedTenantRoom: null, // Stores room number if logged in as tenant
   isSyncing: false,
   lastSynced: saved?.lastSynced || null,
+
 
   // --- Cloud Sync ---
   pushToCloud: async () => {
@@ -145,13 +160,18 @@ const useLodgeStore = create((set, get) => ({
   loginAdmin: (pin) => {
     const state = get();
     if (pin === state.adminPin) {
-      set({ isAdminLoggedIn: true });
+      set({ isAdminLoggedIn: true, loginTimestamp: Date.now() });
       get().pullFromCloud(); // Sync on login
+      saveData(get());
       return true;
     }
     return false;
   },
-  logoutAdmin: () => set({ isAdminLoggedIn: false }),
+  logoutAdmin: () => {
+    set({ isAdminLoggedIn: false, loginTimestamp: null });
+    saveData(get());
+  },
+
   changePin: (newPin) => {
     set({ adminPin: newPin });
     saveData(get());

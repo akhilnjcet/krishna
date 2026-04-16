@@ -51,37 +51,32 @@ const RoomDashboard = () => {
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col overflow-y-auto">
-            {/* Compact Header */}
-            <div className="bg-[#2D5BE3] pt-4 pb-14 px-5 relative overflow-hidden flex-shrink-0">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
-                <div className="relative z-10 flex flex-col gap-4">
-                    <div className="flex justify-between items-center">
+            {/* Ultra-Slim Management Ribbon */}
+            <div className="bg-[#2D5BE3] pt-10 pb-10 px-5 relative overflow-hidden flex-shrink-0">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl"></div>
+                <div className="relative z-10 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
                         <button 
                             onClick={() => navigate('/lodge')}
-                            className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center text-white backdrop-blur-md"
+                            className="w-9 h-9 bg-white/15 rounded-xl flex items-center justify-center text-white backdrop-blur-md border border-white/10"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </button>
-                        <button 
-                            onClick={() => { logoutTenant(); navigate('/lodge/tenant-login'); }}
-                            className="px-3 py-1.5 bg-white/10 text-white rounded-lg text-[9px] font-black uppercase tracking-widest backdrop-blur-md border border-white/20"
-                        >
-                            Log Out
-                        </button>
-                    </div>
-                    <div className="flex items-end justify-between">
                         <div>
-                            <h1 className="text-2xl font-black text-white font-poppins leading-none">Room {room.number}</h1>
-                            <p className="text-blue-100 text-[10px] font-bold uppercase tracking-wider mt-1">{room.tenant || 'Available'}</p>
-                        </div>
-                        <div className="px-3 py-1 bg-white/10 rounded-lg border border-white/10">
-                             <p className="text-[8px] font-black text-white/60 uppercase tracking-widest">Live Status</p>
+                            <h1 className="text-xl font-black text-white font-poppins leading-none tracking-tight">Room {room.number}</h1>
+                            <p className="text-blue-200 text-[8px] font-bold uppercase tracking-[0.2em] mt-1">{room.tenant || 'Unoccupied'}</p>
                         </div>
                     </div>
+                    <button 
+                        onClick={() => { logoutTenant(); navigate('/lodge/tenant-login'); }}
+                        className="px-4 py-2.5 bg-rose-500/10 text-rose-100 hover:bg-rose-500/20 rounded-xl text-[9px] font-black uppercase tracking-widest backdrop-blur-md border border-rose-500/20 transition-all"
+                    >
+                        Log Out
+                    </button>
                 </div>
             </div>
 
-            <div className="px-5 -mt-14 pb-48 space-y-6 max-w-lg mx-auto w-full">
+            <div className="px-5 -mt-6 pb-48 space-y-6 max-w-lg mx-auto w-full">
                 {/* Status Card */}
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
