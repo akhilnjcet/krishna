@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import api from '../services/api';
 
 const STORAGE_KEY = 'krishna_lodge_data';
 
@@ -59,6 +60,11 @@ const saveData = (state) => {
       appSettings: state.appSettings,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    
+    // Auto-sync to cloud if possible
+    if (state.isAdminLoggedIn) {
+        state.pushToCloud();
+    }
   } catch (e) {
     console.error('Lodge store save error:', e);
   }
@@ -79,6 +85,55 @@ const useLodgeStore = create((set, get) => ({
   },
   isAdminLoggedIn: false,
   authenticatedTenantRoom: null, // Stores room number if logged in as tenant
+  isSyncing: false,
+  lastSynced: saved?.lastSynced || null,
+
+  // --- Cloud Sync ---
+  pushToCloud: async () => {
+    const state = get();
+    if (state.isSyncing) return;
+    set({ isSyncing: true });
+    try {
+        const toSave = {
+            rooms: state.rooms,
+            payments: state.payments,
+            complaints: state.complaints,
+            adminPin: state.adminPin,
+            appSettings: state.appSettings,
+        };
+        const res = await api.post('/lodge/sync', toSave);
+        if (res.data.success) {
+            set({ lastSynced: res.data.lastSynced });
+        }
+    } catch (e) {
+        console.error('Cloud Sync Fail:', e);
+    } finally {
+        set({ isSyncing: false });
+    }
+  },
+
+  pullFromCloud: async () => {
+    set({ isSyncing: true });
+    try {
+        const res = await api.get('/lodge');
+        if (res.data && res.data.rooms) {
+            set({
+                rooms: res.data.rooms,
+                payments: res.data.payments,
+                complaints: res.data.complaints,
+                adminPin: res.data.adminPin,
+                appSettings: res.data.appSettings,
+                lastSynced: res.data.lastSynced
+            });
+            // Also update local storage
+            saveData(get());
+        }
+    } catch (e) {
+        console.error('Cloud Pull Fail:', e);
+    } finally {
+        set({ isSyncing: false });
+    }
+  },
 
   // --- Admin Settings ---
   updateAppSettings: (newSettings) => {
@@ -91,6 +146,7 @@ const useLodgeStore = create((set, get) => ({
     const state = get();
     if (pin === state.adminPin) {
       set({ isAdminLoggedIn: true });
+      get().pullFromCloud(); // Sync on login
       return true;
     }
     return false;

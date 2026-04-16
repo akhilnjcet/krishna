@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     LayoutDashboard, DoorOpen, Lightbulb, AlertTriangle, 
     LogOut, UserPlus, Trash2, CheckCircle2, Phone, 
-    ArrowUpRight, IndianRupee, Clock, Plus, X, List, History, Settings
+    ArrowUpRight, IndianRupee, Clock, Plus, X, List, History, Settings,
+    Cloud, RefreshCw
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 
@@ -16,7 +17,8 @@ const LodgeAdminDashboard = () => {
         getOccupiedCount, getUnresolvedComplaints,
         getTotalIncome, getPendingDues,
         assignTenant, checkOutRoom, setBill, 
-        markBillPaid, resolveComplaint, updateRoom
+        markBillPaid, resolveComplaint, updateRoom,
+        isSyncing, lastSynced, pushToCloud, pullFromCloud
     } = useLodgeStore();
 
     const [activeTab, setActiveTab] = useState('overview');
@@ -400,6 +402,34 @@ const LodgeAdminDashboard = () => {
                             exit={{ opacity: 0, y: -20 }}
                             className="space-y-6"
                         >
+                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 italic">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-lg ${isSyncing ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                            <Cloud className={`w-5 h-5 ${isSyncing ? 'animate-pulse' : ''}`} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Cloud Infrastructure</h3>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">
+                                                {isSyncing ? 'Synchronizing records...' : `Last Backup: ${lastSynced ? new Date(lastSynced).toLocaleString() : 'Never'}`}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => pushToCloud()}
+                                        disabled={isSyncing}
+                                        className="p-2.5 bg-slate-50 text-slate-400 hover:text-[#2D5BE3] hover:bg-blue-50 rounded-xl transition-all"
+                                    >
+                                        <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
+                                    </button>
+                                </div>
+                                <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                                    <p className="text-[9px] font-bold text-amber-700 leading-tight">
+                                        INDUSTRIAL PERSISTENCE ACTIVE: Your data is automatically backed up to the Krishna Engineering cloud database. Records survive app uninstalls.
+                                    </p>
+                                </div>
+                            </div>
+
                             <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
                                 <h3 className="text-xl font-black text-slate-800 font-poppins mb-6">Global Properties</h3>
                                 
