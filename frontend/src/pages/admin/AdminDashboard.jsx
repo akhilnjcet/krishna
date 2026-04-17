@@ -7,7 +7,7 @@ import {
   Users, Calendar, Clock, Lock, ArrowUpRight, 
   TrendingUp, Activity, UserCheck, ShieldCheck, 
   ArrowRight, ChevronRight, Search, Filter,
-  Layers, Package, AlertCircle, Download
+  Layers, Package, AlertCircle, Download, DoorOpen
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -246,7 +246,7 @@ const AdminDashboard = () => {
                             {[
                                 { name: 'Staff List', icon: Users, path: '/admin/staff', color: 'blue' },
                                 { name: 'Audit Hub', icon: Clock, path: '/admin/logs', color: 'blue' },
-                                { name: 'Quotes', icon: Package, path: '/admin/quotes', color: 'blue' },
+                                { name: 'Lodge Manager', icon: DoorOpen, path: '/lodge/admin', color: 'indigo' },
                                 { name: 'Gallery', icon: Layers, path: '/admin/portfolio', color: 'blue' }
                             ].map((link, i) => (
                                 <button 

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { 
-    Construction, Clock, CheckCircle2, AlertTriangle, 
     ArrowRight, MessageSquare, Briefcase, Zap, Settings, Loader2, FileText,
-    TrendingUp, Wallet, ShieldCheck, Activity, ChevronRight, Search
+    TrendingUp, Wallet, ShieldCheck, Activity, ChevronRight, Search, Bed
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReportHeader from '../../components/ReportHeader';
@@ -99,10 +98,10 @@ const CustomerDashboard = () => {
             {/* Financial Overview Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Total Engagement', value: `₹${finance.totalInvoiced?.toLocaleString()}`, icon: Wallet, color: 'blue' },
-                    { label: 'Settled Amount', value: `₹${finance.totalPaid?.toLocaleString()}`, icon: CheckCircle2, color: 'emerald' },
-                    { label: 'Current Dues', value: `₹${finance.remainingDues?.toLocaleString()}`, icon: AlertTriangle, color: 'rose' },
-                    { label: 'Project Equity', value: `${Math.round(finance.balancePercentage)}%`, icon: TrendingUp, color: 'amber' }
+                    { label: 'Total Engagement', value: `₹${(finance.totalInvoiced || 0).toLocaleString()}`, icon: Wallet, color: 'blue' },
+                    { label: 'Settled Amount', value: `₹${(finance.totalPaid || 0).toLocaleString()}`, icon: CheckCircle2, color: 'emerald' },
+                    { label: 'Current Dues', value: `₹${(finance.remainingDues || 0).toLocaleString()}`, icon: AlertTriangle, color: 'rose' },
+                    { label: 'Project Equity', value: `${Math.round(finance.balancePercentage || 0)}%`, icon: TrendingUp, color: 'amber' }
                 ].map((item, i) => (
                     <div key={i} className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group">
                         <div className={`w-12 h-12 bg-${item.color}-50 dark:bg-blue-950/30 text-${item.color}-600 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
@@ -112,6 +111,25 @@ const CustomerDashboard = () => {
                         <p className="text-2xl font-bold text-[#111827] dark:text-dark-text font-poppins">{item.value}</p>
                     </div>
                 ))}
+                {/* Dedicated Lodge Utility */}
+                <div 
+                    onClick={() => window.location.href = '/lodge'}
+                    className="bg-indigo-600 p-6 rounded-3xl border border-indigo-500 shadow-xl shadow-indigo-200 cursor-pointer group relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Bed className="w-24 h-24" />
+                    </div>
+                    <div className="relative z-10 text-white">
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                             <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> Facility Residency
+                        </p>
+                        <h4 className="text-xl font-bold font-poppins mb-1">Book a Residency Suite</h4>
+                        <p className="text-[10px] opacity-70 font-medium italic">Premium check-ins for site visits</p>
+                        <div className="mt-6 flex items-center gap-2 text-[9px] font-black uppercase tracking-widest bg-white/10 w-fit px-4 py-2 rounded-xl backdrop-blur-md group-hover:bg-white/20 transition-all">
+                            Open Lodge CRM <ChevronRight className="w-4 h-4" />
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Dashboard Workspace */}

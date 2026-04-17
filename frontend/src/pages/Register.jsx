@@ -9,6 +9,7 @@ const Register = () => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
+        mobile: '',
         password: '',
         confirmPassword: ''
     });
@@ -39,6 +40,7 @@ const Register = () => {
             const response = await api.post('/auth/register', {
                 name: formData.name,
                 email: formData.email,
+                phone: formData.mobile,
                 password: formData.password,
                 role: 'customer'
             });
@@ -158,6 +160,23 @@ const Register = () => {
                                         onChange={(e) => setFormData({...formData, email: e.target.value})}
                                         className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
                                         placeholder="partner@company.com"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 md:col-span-2">
+                                <label className="text-[10px] font-bold text-[#6B7280] dark:text-dark-muted uppercase tracking-[0.2em] ml-1">Mobile Relay</label>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                                        <Activity className="w-4 h-4" />
+                                    </div>
+                                    <input
+                                        type="tel"
+                                        required
+                                        value={formData.mobile}
+                                        onChange={(e) => setFormData({...formData, mobile: e.target.value})}
+                                        className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
+                                        placeholder="+91 00000 00000"
                                     />
                                 </div>
                             </div>

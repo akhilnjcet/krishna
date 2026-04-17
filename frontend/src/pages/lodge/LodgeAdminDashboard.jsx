@@ -10,19 +10,30 @@ import {
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 import useBookingStore from '../../stores/bookingStore';
+import useAuthStore from '../../stores/authStore';
 import { customerService } from '../../services/customerService';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const LodgeAdminDashboard = () => {
     const navigate = useNavigate();
+    const { user, isAuthenticated } = useAuthStore();
+    
+    // Safety redirect: Ensure user is an authenticated Admin
+    React.useEffect(() => {
+        if (!isAuthenticated || user?.role !== 'admin') {
+            navigate('/lodge/admin-login');
+        }
+    }, [isAuthenticated, user, navigate]);
+
     const { 
         rooms, payments, complaints, appSettings,
-        isAdminLoggedIn, logoutAdmin, updateAppSettings,
+        logoutAdmin, updateAppSettings,
         getOccupiedCount, getUnresolvedComplaints,
         getTotalIncome, getPendingDues,
         assignTenant, checkOutRoom, setBill, 
         markBillPaid, resolveComplaint, updateRoom,
+        addRoom, editRoomDetails, deleteRoomManual,
         isSyncing, lastSynced, pushToCloud, pullFromCloud
     } = useLodgeStore();
 
@@ -229,11 +240,8 @@ const LodgeAdminDashboard = () => {
         }
     };
 
-    // Redirect if not logged in
-    React.useEffect(() => {
-        if (!isAdminLoggedIn) navigate('/lodge/admin-login');
-    }, [isAdminLoggedIn, navigate]);
-
+    // Safety redirect: Handled at start of component using Global Auth
+    
     const handleCustomerLookup = async () => {
         if (!mobileSearch || mobileSearch.length < 10) return;
         setLookupLoading(true);
@@ -301,6 +309,7 @@ const LodgeAdminDashboard = () => {
         { id: 'rooms', label: 'Rooms', icon: DoorOpen },
         { id: 'bookings', label: 'Bookings', icon: Calendar },
         { id: 'bills', label: 'Accounts', icon: IndianRupee },
+        { id: 'complaints', label: 'Issues', icon: AlertTriangle },
         { id: 'customers', label: 'Registry', icon: History },
         { id: 'settings', label: 'Config', icon: Settings },
     ];
@@ -314,7 +323,7 @@ const LodgeAdminDashboard = () => {
         { label: 'Open Issues', value: getUnresolvedComplaints().length, color: 'rose' }
     ];
 
-    if (!isAdminLoggedIn) return null;
+    if (!isAuthenticated) return null;
 
     return (
         <div className="min-h-screen bg-[#F8FAFC]">
@@ -324,11 +333,11 @@ const LodgeAdminDashboard = () => {
                 <div className="relative z-10 flex justify-between items-start mb-8">
 
                     <div>
-                        <h1 className="text-2xl font-black font-poppins">Admin Terminal</h1>
-                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em]">Krishna ERP Command</p>
+                        <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Lodge <br /><span className="text-blue-500">Command.</span></h1>
+                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em] mt-2">Krishna ERP Cloud Node</p>
                     </div>
                     <button 
-                        onClick={() => { logoutAdmin(); navigate('/lodge'); }}
+                        onClick={() => { logoutAdmin(); useAuthStore.getState().logout(); navigate('/lodge/admin-login'); }}
                         className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-slate-400"
                     >
                         <LogOut className="w-5 h-5" />
@@ -513,15 +522,10 @@ const LodgeAdminDashboard = () => {
                             <div className="flex justify-between items-center px-2">
                                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Floor Configuration</h3>
                                 <button 
-                                    onClick={async () => {
-                                        const number = prompt('Room Number:');
-                                        const price = prompt('Price per Night:');
-                                        if (number && price) {
-                                            try {
-                                                await api.post('/rooms', { number, price: parseFloat(price), type: 'Double', amenities: ['WiFi', 'AC'] });
-                                                alert('Room Added Successfully');
-                                            } catch (e) { alert('Failed: ' + e.message); }
-                                        }
+                                    onClick={() => {
+                                        const number = prompt('Define Room Number / Name:');
+                                        const rent = prompt('Set Standard Rent (Numerical):');
+                                        if (number && rent) addRoom(number, rent);
                                     }}
                                     className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-slate-200"
                                 >
@@ -579,9 +583,20 @@ const LodgeAdminDashboard = () => {
                                             </button>
                                         )}
                                         <button 
-                                            onClick={() => setActiveTab('customers')}
-                                            className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100" title="History">
-                                            <History className="w-5 h-5" />
+                                            onClick={() => {
+                                                const no = prompt('Edit Room No:', room.number);
+                                                const rnt = prompt('Edit Rent:', room.rent);
+                                                if (no && rnt) editRoomDetails(room.id, no, rnt);
+                                            }}
+                                            className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100" title="Edit Configuration"
+                                        >
+                                            <Edit3 className="w-5 h-5" />
+                                        </button>
+                                        <button 
+                                            onClick={() => { if(confirm('Permanently decommission this room?')) deleteRoomManual(room.id); }}
+                                            className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-rose-50 hover:text-rose-600" title="Delete Room"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
                                         </button>
                                         <button 
                                             onClick={() => updateRoom(room.id, { status: room.status === 'maintenance' ? 'available' : 'maintenance' })}
@@ -864,16 +879,19 @@ const LodgeAdminDashboard = () => {
                                         <div className="flex gap-2">
                                             <button 
                                                 onClick={() => resolveComplaint(comp.id)}
-                                                className="flex-grow py-3 bg-emerald-50 text-emerald-600 rounded-xl font-bold text-xs hover:bg-emerald-100 transition-colors"
+                                                className="flex-grow py-3 bg-emerald-50 text-emerald-600 rounded-xl font-bold text-xs hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2"
                                             >
-                                                Resolve Issue
+                                                <CheckCircle2 className="w-4 h-4" /> Resolve & Close
                                             </button>
-                                            <button 
-                                                onClick={() => window.open(`tel:9876543210`)}
-                                                className="p-3 bg-blue-50 text-blue-600 rounded-xl"
-                                            >
-                                                <Phone className="w-5 h-5" />
-                                            </button>
+                                            {rooms.find(r => r.number === comp.roomNumber)?.phone && (
+                                                <button 
+                                                    onClick={() => window.open(`tel:${rooms.find(r => r.number === comp.roomNumber).phone}`)}
+                                                    className="p-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100"
+                                                    title="Call Guest"
+                                                >
+                                                    <Phone className="w-5 h-5" />
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                 </div>

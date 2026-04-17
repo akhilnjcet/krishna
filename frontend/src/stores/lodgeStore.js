@@ -204,14 +204,60 @@ const useLodgeStore = create((set, get) => ({
   logoutTenant: () => set({ authenticatedTenantRoom: null }),
 
   // --- Room Management ---
-  updateRoom: (roomId, updates) => {
-    set((state) => ({
-      rooms: state.rooms.map((r) =>
-        r.id === roomId ? { ...r, ...updates } : r
-      ),
-    }));
-    saveData(get());
-  },
+    // Unified Room CRUD for Administrator (Dual Sync: REST API + LodgeData Blob)
+    addRoom: async (number, rent) => {
+        try {
+            const res = await api.post('/rooms', { 
+                number, 
+                price: parseFloat(rent),
+                status: 'active'
+            });
+            
+            const newRoom = {
+                id: res.data._id || Date.now().toString(),
+                number,
+                rent: parseFloat(rent),
+                status: 'available',
+                tenant: null,
+                pin: Math.floor(1000 + Math.random() * 9000).toString(),
+                checkIn: null,
+                advance: 0
+            };
+            
+            set(state => ({ rooms: [...state.rooms, newRoom] }));
+            get().pushToCloud();
+            alert('Room Integrated into ERP Grid');
+        } catch (e) {
+            console.error(e);
+            alert('Cloud Registration Failed');
+        }
+    },
+
+    editRoomDetails: async (id, number, rent) => {
+        try {
+            await api.put(`/rooms/${id}`, { 
+                number, 
+                price: parseFloat(rent) 
+            });
+            
+            set(state => ({
+                rooms: state.rooms.map(r => r.id === id ? { ...r, number, rent: parseFloat(rent) } : r)
+            }));
+            get().pushToCloud();
+        } catch (e) {
+            console.error(e);
+        }
+    },
+
+    deleteRoomManual: async (id) => {
+        try {
+            await api.delete(`/rooms/${id}`);
+            set(state => ({ rooms: state.rooms.filter(r => r.id !== id) }));
+            get().pushToCloud();
+        } catch (e) {
+            console.error(e);
+        }
+    },
 
   assignTenant: async (roomId, tenantName, rent, dueDate, advance = 0) => {
     // Generate 4-digit PIN (Note: New logic uses server PINs for bookings, this is for active legacy stays)

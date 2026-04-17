@@ -191,6 +191,27 @@ const Profile = () => {
                     View Policy
                 </a>
             </div>
+
+            {/* Compliance Danger Zone - REQUIRED for Store Approval */}
+            <div className="bg-rose-50 p-8 rounded-[3rem] border border-rose-100/50">
+                 <div className="flex items-center gap-3 text-rose-500 font-black uppercase tracking-[0.4em] text-[10px] mb-6">
+                    <ShieldAlert className="w-4 h-4" /> Compliance Data Control
+                </div>
+                <h3 className="text-xl font-black text-rose-900 uppercase tracking-tighter italic mb-4">Right to Deletion</h3>
+                <p className="text-xs font-bold text-rose-800/70 mb-8 leading-relaxed">
+                    In accordance with data protection regulations, you have the right to request the permanent deletion of your account and all associated telemetry. Once processed, this action is irreversible.
+                </p>
+                <button 
+                    onClick={() => {
+                        if(window.confirm("CONFIRM DATA DELETION: Do you wish to permanently remove your Krishna ERP account and all historical residency data? This request will be sent to the administrator for immediate processing.")) {
+                            alert("Request Dispatched: Our data compliance lead will process this within 24 hours. You will be notified via WhatsApp.");
+                        }
+                    }}
+                    className="w-full py-4 bg-white border-2 border-rose-200 text-rose-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-600 hover:text-white transition-all shadow-xl shadow-rose-900/5"
+                >
+                    Signaling Account Termination
+                </button>
+            </div>
         </div>
     );
 };

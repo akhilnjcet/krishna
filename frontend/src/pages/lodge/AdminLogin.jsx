@@ -25,20 +25,26 @@ const AdminLogin = () => {
         setError('');
 
         try {
-            const res = await api.post('/auth/login', formData);
-            if (res.data.token) {
-                // Check if user is admin (Backend should return role)
-                if (res.data.user.role !== 'admin') {
-                    setError('Unauthorized Access Request');
-                    setLoading(false);
-                    return;
-                }
-                
-                login(res.data.user, res.data.token);
+            const res = await api.post('/auth/login', {
+                email: formData.email,
+                password: formData.password
+            });
+            
+            const data = res.data;
+            const role = data.role || data.user?.role || (data.data && (data.data.role || data.data.user?.role));
+            const userObj = data.user || data.data?.user || data;
+            const token = data.token || data.user?.token || (data.data && data.data.token);
+
+            if (token && role === 'admin') {
+                login(userObj, token);
                 navigate('/lodge/admin');
+            } else if (role && role !== 'admin') {
+                setError('Insufficient Command Clearance');
+            } else {
+                setError('Invalid Gateway Response');
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Authentication Failed');
+            setError(err.response?.data?.message || 'Authentication Link Failure');
         } finally {
             setLoading(false);
         }

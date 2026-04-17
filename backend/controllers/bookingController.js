@@ -92,26 +92,42 @@ exports.verifyRoomAccess = async (req, res) => {
     try {
         const { roomNumber, pin } = req.body;
         
-        // Find room by number first
-        const room = await Room.findOne({ number: roomNumber });
-        if (!room) return res.status(404).json({ error: 'Room not found' });
+        // 1. Check in the master LodgeData (Primary for manual / legacy stays)
+        const LodgeData = require('../models/LodgeData');
+        // We find any lodge data (Admin's data) that contains this room
+        const allLodgeData = await LodgeData.find({});
+        
+        for (const lodge of allLodgeData) {
+            const roomInLodge = lodge.rooms.find(r => 
+                String(r.number) === String(roomNumber) && 
+                r.status === 'occupied' && 
+                String(r.pin) === String(pin)
+            );
+            
+            if (roomInLodge) {
+                return res.json({ 
+                    success: true, 
+                    booking: { roomId: { number: roomNumber }, guestName: roomInLodge.tenant },
+                    message: 'Access Granted (via Master Records)' 
+                });
+            }
+        }
 
-        // Find active booking for this room with matching PIN
+        // 2. Fallback: Check new Booking collection
         const booking = await Booking.findOne({
-            roomId: room._id,
             tempPin: pin,
             bookingStatus: 'checked-in'
         }).populate('roomId');
 
-        if (!booking) {
-            return res.status(401).json({ error: 'Invalid Room Number or PIN' });
+        if (booking && String(booking.roomId?.number) === String(roomNumber)) {
+            return res.json({ 
+                success: true, 
+                booking,
+                message: 'Access Granted (via Reservation)' 
+            });
         }
 
-        res.json({ 
-            success: true, 
-            booking,
-            message: 'Access Granted' 
-        });
+        res.status(401).json({ error: 'Invalid Room Number or PIN. Access Expired.' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
