@@ -58,6 +58,8 @@ app.use('/api/leads', require('./routes/lead'));
 app.use('/api/faqs', require('./routes/faq'));
 app.use('/api/applications', require('./routes/applicationRoutes'));
 app.use('/api/lodge', require('./routes/lodgeRoutes'));
+app.use('/api/rooms', require('./routes/roomRoutes'));
+app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/visits', require('./routes/visitRoutes'));
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });

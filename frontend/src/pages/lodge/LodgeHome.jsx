@@ -7,7 +7,8 @@ import { Capacitor } from '@capacitor/core';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle, Building2, ClipboardList, ExternalLink,
-  Phone, Shield, ChevronRight, Zap, MapPin, Activity, Terminal
+  Phone, Shield, ChevronRight, Zap, MapPin, Activity, Terminal,
+  CalendarCheck
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 
@@ -40,12 +41,14 @@ const LodgeHome = () => {
     const userRoom = rooms.find(r => r.number === authenticatedTenantRoom);
 
     const menuItems = [
+        { id: 'booking', icon: CalendarCheck, title: 'Book a Room', subtitle: 'Select dates & reserve', action: () => navigate('/lodge/booking'), color: 'bg-indigo-600' },
         { id: 'building', icon: Building2, title: 'Residency Login', subtitle: 'Manage your active stay', action: () => navigate('/lodge/tenant-login'), color: 'bg-blue-600' },
         { id: 'report', icon: ClipboardList, title: 'Maintenance Log', subtitle: 'Relay issues to command', action: () => navigate('/lodge/complaint'), color: 'bg-amber-500' },
         { id: 'privacy', icon: Shield, title: 'Privacy & Terms', subtitle: 'Legal & Data Protocols', action: () => alert('PRIVACY POLICY:\n\n1. Data Security: All guest data is encrypted in Firestore.\n2. Local Storage: We use IndexedDB for offline resilience.\n3. Hardware Access: Battery/Network status used ONLY for telemetry UI.\n4. No Third-Party Sales: We do not share your mobile number.'), color: 'bg-emerald-600' },
+        { id: 'engineering', icon: ExternalLink, title: 'Engineering Site', subtitle: 'Our Services & Portfolio', action: () => navigate('/engineering'), color: 'bg-indigo-600' },
         { id: 'admin', icon: Terminal, title: 'Admin Terminal', subtitle: 'Management access only', action: () => navigate('/lodge/admin-login'), color: 'bg-slate-800' },
         { id: 'contact', icon: Phone, title: 'Emergency Relay', subtitle: 'Call Administrator duty line', action: () => window.open(`tel:${activeAdminPhone}`, '_self'), color: 'bg-rose-500' },
-        { id: 'map', icon: MapPin, title: 'Tactical Map', subtitle: 'Lodge location grid', action: () => window.open('https://maps.google.com/?q=Krishna+engineering+works+thiruzhiyode', '_blank'), color: 'bg-indigo-600' }
+        { id: 'map', icon: MapPin, title: 'Tactical Map', subtitle: 'Lodge location grid', action: () => window.open('https://maps.google.com/?q=Krishna+engineering+works+thiruzhiyode', '_blank'), color: 'bg-amber-600' }
     ];
 
 
@@ -151,10 +154,23 @@ const LodgeHome = () => {
             </div>
             
             {/* Native Tab Bar Simulation */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-12 py-6 flex justify-between items-center z-[100]">
-                <button onClick={() => navigate('/lodge')} className="text-blue-600"><Building2 className="w-7 h-7" /></button>
-                <button onClick={() => navigate('/lodge/admin-login')} className="text-slate-400 hover:text-blue-400 transition-colors"><Shield className="w-7 h-7" /></button>
-                <button onClick={() => window.open(`tel:${activeAdminPhone}`, '_self')} className="text-slate-400 hover:text-rose-400 transition-colors"><Phone className="w-7 h-7" /></button>
+            <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-8 py-6 flex justify-between items-center z-[100]">
+                <button onClick={() => navigate('/lodge')} className="text-blue-600 flex flex-col items-center gap-1">
+                    <Building2 className="w-6 h-6" />
+                    <span className="text-[8px] font-black uppercase tracking-widest">Lodge</span>
+                </button>
+                <button onClick={() => navigate('/engineering')} className="text-slate-400 hover:text-indigo-600 transition-colors flex flex-col items-center gap-1">
+                    <ExternalLink className="w-6 h-6" />
+                    <span className="text-[8px] font-black uppercase tracking-widest">Engineering</span>
+                </button>
+                <button onClick={() => navigate('/lodge/admin-login')} className="text-slate-400 hover:text-blue-400 transition-colors flex flex-col items-center gap-1">
+                    <Shield className="w-6 h-6" />
+                    <span className="text-[8px] font-black uppercase tracking-widest">Admin</span>
+                </button>
+                <button onClick={() => window.open(`tel:${activeAdminPhone}`, '_self')} className="text-slate-400 hover:text-rose-400 transition-colors flex flex-col items-center gap-1">
+                    <Phone className="w-6 h-6" />
+                    <span className="text-[8px] font-black uppercase tracking-widest">SOS</span>
+                </button>
             </div>
 
         </div>

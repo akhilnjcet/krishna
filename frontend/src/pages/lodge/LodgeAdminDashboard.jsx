@@ -6,9 +6,10 @@ import {
     LogOut, UserPlus, Trash2, CheckCircle2, Phone, 
     ArrowUpRight, IndianRupee, Clock, Plus, X, List, History, Settings,
     Cloud, RefreshCw, Search, Loader2, ShieldCheck, MapPin, FileText,
-    Download, User, Edit3
+    Download, User, Edit3, Calendar, Users
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
+import useBookingStore from '../../stores/bookingStore';
 import { customerService } from '../../services/customerService';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -25,6 +26,7 @@ const LodgeAdminDashboard = () => {
         isSyncing, lastSynced, pushToCloud, pullFromCloud
     } = useLodgeStore();
 
+    const { userBookings: allBookings, fetchUserBookings: fetchAllBookings, updateBookingStatus } = useBookingStore();
     const [activeTab, setActiveTab] = useState('overview');
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -81,6 +83,9 @@ const LodgeAdminDashboard = () => {
         if (activeTab === 'customers') {
             fetchHistory();
         }
+        if (activeTab === 'bookings') {
+            fetchAllBookings(); // Admin fetch all (Backend needs to support this)
+        }
     }, [activeTab]);
 
     const fetchHistory = async () => {
@@ -124,12 +129,26 @@ const LodgeAdminDashboard = () => {
         doc.save(`${customer.name}_record.pdf`);
     };
 
-    const generateGlobalPDF = () => {
+    const generateGlobalPDF = async () => {
+        let dataToUse = allCustomers;
+        if (dataToUse.length === 0) {
+            setLookupLoading(true);
+            try {
+                dataToUse = await customerService.getAllCustomers();
+                setAllCustomers(dataToUse);
+            } catch (e) {
+                alert("Failed to fetch customer data");
+                return;
+            } finally {
+                setLookupLoading(false);
+            }
+        }
+
         const doc = new jsPDF();
         doc.setFont("helvetica", "bold");
         doc.text("KRISHNA LODGE - GLOBAL BOOKING HISTORY", 105, 20, { align: "center" });
 
-        const tableData = allCustomers.map((c, i) => [
+        const tableData = dataToUse.map((c, i) => [
             i + 1,
             c.name,
             c.mobile || c.id,
@@ -146,6 +165,40 @@ const LodgeAdminDashboard = () => {
         });
 
         doc.save(`Global_Booking_History.pdf`);
+    };
+
+    const generateFinancePDF = () => {
+        const doc = new jsPDF();
+        doc.setFont("helvetica", "bold");
+        doc.text("KRISHNA LODGE - FINANCIAL STATEMENT", 105, 20, { align: "center" });
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 28, { align: "center" });
+
+        const tableData = payments.map((p, i) => [
+            i + 1,
+            new Date(p.timestamp).toLocaleDateString(),
+            `Room ${p.roomNumber}`,
+            String(p.type).toUpperCase(),
+            p.method,
+            `₹${p.amount}`
+        ]);
+
+        autoTable(doc, {
+            startY: 40,
+            head: [["S.No", "Date", "Room", "Category", "Method", "Amount"]],
+            body: tableData,
+            theme: 'striped',
+            headStyles: { fillColor: [5, 150, 105] }
+        });
+
+        const total = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        const finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFont("helvetica", "bold");
+        doc.text(`Total Revenue Collected: ₹${total.toLocaleString()}`, 190, finalY, { align: "right" });
+
+        doc.save(`Financial_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     const handleUpdateCustomer = async (e) => {
@@ -246,9 +299,10 @@ const LodgeAdminDashboard = () => {
     const tabs = [
         { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'rooms', label: 'Rooms', icon: DoorOpen },
-        { id: 'customers', label: 'Directory', icon: History },
-        { id: 'bills', label: 'Accounts', icon: Lightbulb },
-        { id: 'settings', label: 'Admin', icon: Settings },
+        { id: 'bookings', label: 'Bookings', icon: Calendar },
+        { id: 'bills', label: 'Accounts', icon: IndianRupee },
+        { id: 'customers', label: 'Registry', icon: History },
+        { id: 'settings', label: 'Config', icon: Settings },
     ];
 
 
@@ -321,10 +375,18 @@ const LodgeAdminDashboard = () => {
 
                             {/* Monthly Income Report */}
                             <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-                                <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center justify-between">
-                                    Monthly Income Report
-                                    <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">₹{getTotalIncome()} Total</span>
-                                </h3>
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Revenue Report</h3>
+                                        <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">₹{getTotalIncome()} Collection</p>
+                                    </div>
+                                    <button 
+                                        onClick={generateFinancePDF}
+                                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                                    >
+                                        <Download className="w-3.5 h-3.5" /> Export PDF
+                                    </button>
+                                </div>
                                 
                                 <div className="grid grid-cols-3 gap-3 mb-8">
                                     {['rent', 'electricity', 'water'].map(type => {
@@ -362,6 +424,84 @@ const LodgeAdminDashboard = () => {
                         </motion.div>
                     )}
 
+                    {activeTab === 'bookings' && (
+                        <motion.div 
+                            key="bookings"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="space-y-4"
+                        >
+                            <div className="flex justify-between items-center px-2">
+                                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Master Reservations</h3>
+                                <button onClick={() => fetchAllBookings()} className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                                    <RefreshCw className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {allBookings.map((booking) => (
+                                <div key={booking._id} className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h4 className="text-lg font-black text-slate-900 leading-none">Guest: {booking.guestName}</h4>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Phone: {booking.guestPhone}</p>
+                                        </div>
+                                        <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                            booking.bookingStatus === 'booked' ? 'bg-blue-50 text-blue-600' :
+                                            booking.bookingStatus === 'checked-in' ? 'bg-emerald-50 text-emerald-600' :
+                                            'bg-slate-100 text-slate-500'
+                                        }`}>
+                                            {booking.bookingStatus}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4 mb-5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div>
+                                            <p className="text-[8px] font-bold text-slate-400 uppercase">Stay Dates</p>
+                                            <p className="text-xs font-black text-slate-800">{new Date(booking.checkIn).toLocaleDateString()} - {new Date(booking.checkOut).toLocaleDateString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[8px] font-bold text-slate-400 uppercase">Room Allocation</p>
+                                            <p className="text-xs font-black text-slate-800">Room {booking.roomId?.number || '???'}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        {booking.bookingStatus === 'booked' && (
+                                            <button 
+                                                onClick={() => updateBookingStatus(booking._id, 'checked-in')}
+                                                className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20"
+                                            >
+                                                Mark Checked-In
+                                            </button>
+                                        )}
+                                        {booking.bookingStatus === 'checked-in' && (
+                                            <button 
+                                                onClick={() => updateBookingStatus(booking._id, 'completed')}
+                                                className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/20"
+                                            >
+                                                Complete Stay
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={() => updateBookingStatus(booking._id, 'cancelled')}
+                                            className="px-4 py-3 bg-rose-50 text-rose-600 rounded-xl font-bold text-xs uppercase tracking-widest"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {allBookings.length === 0 && (
+                                <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+                                    <Calendar className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No active reservations found</p>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+
                     {activeTab === 'rooms' && (
                         <motion.div 
                             key="rooms"
@@ -370,6 +510,24 @@ const LodgeAdminDashboard = () => {
                             exit={{ opacity: 0, y: -20 }}
                             className="space-y-4"
                         >
+                            <div className="flex justify-between items-center px-2">
+                                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Floor Configuration</h3>
+                                <button 
+                                    onClick={async () => {
+                                        const number = prompt('Room Number:');
+                                        const price = prompt('Price per Night:');
+                                        if (number && price) {
+                                            try {
+                                                await api.post('/rooms', { number, price: parseFloat(price), type: 'Double', amenities: ['WiFi', 'AC'] });
+                                                alert('Room Added Successfully');
+                                            } catch (e) { alert('Failed: ' + e.message); }
+                                        }
+                                    }}
+                                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-slate-200"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> Add Room
+                                </button>
+                            </div>
                             {rooms.map((room) => (
                                 <div key={room.id} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
                                     <div className="flex items-center justify-between mb-6">
@@ -617,7 +775,10 @@ const LodgeAdminDashboard = () => {
                                                 </button>
                                                 {room.electricityBill > 0 && room.electricityStatus === 'pending' && (
                                                     <button 
-                                                        onClick={() => markBillPaid(room.id, 'electricity')}
+                                                        onClick={() => {
+                                                            const amt = prompt('Amount paid (Electricity):', room.electricityBill);
+                                                            if (amt !== null) markBillPaid(room.id, 'electricity', parseFloat(amt));
+                                                        }}
                                                         className="px-4 py-2 bg-yellow-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-yellow-200"
                                                     >
                                                         Pay
@@ -650,7 +811,10 @@ const LodgeAdminDashboard = () => {
                                                 </button>
                                                 {room.waterBill > 0 && room.waterStatus === 'pending' && (
                                                     <button 
-                                                        onClick={() => markBillPaid(room.id, 'water')}
+                                                        onClick={() => {
+                                                            const amt = prompt('Amount paid (Water):', room.waterBill);
+                                                            if (amt !== null) markBillPaid(room.id, 'water', parseFloat(amt));
+                                                        }}
                                                         className="px-4 py-2 bg-cyan-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-cyan-200"
                                                     >
                                                         Pay

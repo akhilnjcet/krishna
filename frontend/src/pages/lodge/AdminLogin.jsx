@@ -1,109 +1,128 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Shield, Lock, ArrowLeft, Key, ArrowRight } from 'lucide-react';
-import useLodgeStore from '../../stores/lodgeStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    Shield, Lock, ArrowLeft, Mail, 
+    ChevronRight, Loader2, AlertCircle 
+} from 'lucide-react';
+import useAuthStore from '../../stores/authStore';
+import api from '../../services/api';
 
 const AdminLogin = () => {
     const navigate = useNavigate();
-    const loginAdmin = useLodgeStore(state => state.loginAdmin);
-    const [pin, setPin] = useState('');
-    const [error, setError] = useState(false);
+    const login = useAuthStore(state => state.login);
+    
+    const [formData, setFormData] = useState({
+        email: '', // Backend uses email as Admin ID
+        password: ''
+    });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        const success = loginAdmin(pin);
-        if (success) {
-            navigate('/lodge/admin');
-        } else {
-            setError(true);
-            setPin('');
-            setTimeout(() => setError(false), 2000);
+        setLoading(true);
+        setError('');
+
+        try {
+            const res = await api.post('/auth/login', formData);
+            if (res.data.token) {
+                // Check if user is admin (Backend should return role)
+                if (res.data.user.role !== 'admin') {
+                    setError('Unauthorized Access Request');
+                    setLoading(false);
+                    return;
+                }
+                
+                login(res.data.user, res.data.token);
+                navigate('/lodge/admin');
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Authentication Failed');
+        } finally {
+            setLoading(false);
         }
     };
 
-    const addNumber = (num) => {
-        if (pin.length < 4) setPin(prev => prev + num);
-    };
-
-    const deleteLast = () => {
-        setPin(prev => prev.slice(0, -1));
-    };
-
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+        <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
             <div className="pt-12 px-6">
                 <button 
                     onClick={() => navigate('/lodge')}
                     className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm border border-slate-100"
                 >
-                    <ArrowLeft className="w-6 h-6" />
+                    <ArrowLeft className="w-5 h-5" />
                 </button>
             </div>
 
-            <div className="flex-grow flex flex-col items-center justify-center px-8">
-                <div className="w-16 h-16 bg-[#2D5BE3] rounded-3xl flex items-center justify-center text-white mb-8 shadow-2xl shadow-blue-200">
-                    <Shield className="w-8 h-8" />
-                </div>
-                
-                <h1 className="text-3xl font-black text-slate-800 mb-2 font-poppins">Admin Command</h1>
-                <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mb-12">Authorization Required</p>
-
-                {/* PIN Display */}
-                <div className="flex gap-4 mb-12">
-                    {[...Array(4)].map((_, i) => (
-                        <div 
-                            key={i}
-                            className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center transition-all ${
-                                pin.length > i 
-                                ? 'border-[#2D5BE3] bg-blue-50' 
-                                : 'border-slate-100 bg-white'
-                            } ${error ? 'border-red-500 bg-red-50 shake' : ''}`}
-                        >
-                            {pin.length > i && <div className="w-3 h-3 bg-[#2D5BE3] rounded-full"></div>}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Number Pad */}
-                <div className="grid grid-cols-3 gap-6 max-w-[300px] w-full">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                        <button
-                            key={num}
-                            onClick={() => addNumber(num.toString())}
-                            className="w-16 h-16 rounded-full bg-white text-xl font-bold text-slate-700 shadow-sm border border-slate-50 hover:bg-slate-50 transition-colors"
-                        >
-                            {num}
-                        </button>
-                    ))}
-                    <button onClick={() => setPin('')} className="w-16 h-16 rounded-full flex items-center justify-center text-slate-400 text-xs font-bold uppercase">Clear</button>
-                    <button onClick={() => addNumber('0')} className="w-16 h-16 rounded-full bg-white text-xl font-bold text-slate-700 shadow-sm border border-slate-50">0</button>
-                    <button onClick={deleteLast} className="w-16 h-16 rounded-full flex items-center justify-center text-slate-400"><ArrowLeft className="w-5 h-5"/></button>
-                </div>
-
-                <button
-                    onClick={handleLogin}
-                    disabled={pin.length < 4}
-                    className={`mt-12 w-full max-w-[200px] py-4 rounded-2xl flex items-center justify-center gap-3 font-bold transition-all ${
-                        pin.length === 4 
-                        ? 'bg-[#2D5BE3] text-white shadow-xl shadow-blue-200' 
-                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                    }`}
+            <div className="flex-grow flex flex-col items-center justify-center px-8 pb-10 max-w-lg mx-auto w-full">
+                <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-20 h-20 bg-slate-900 rounded-[2rem] flex items-center justify-center text-white mb-8 shadow-2xl shadow-slate-200"
                 >
-                    <Lock className="w-5 h-5" />
-                    Authorize
-                </button>
-            </div>
+                    <Shield className="w-10 h-10" />
+                </motion.div>
+                
+                <h1 className="text-4xl font-black text-slate-900 mb-2 italic tracking-tight">Admin <span className="text-blue-600">Secure.</span></h1>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-12">Industrial Command Protocol</p>
 
-            <style dangerouslySetInnerHTML={{ __html: `
-                .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-                @keyframes shake {
-                    10%, 90% { transform: translate3d(-1px, 0, 0); }
-                    20%, 80% { transform: translate3d(2px, 0, 0); }
-                    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-                    40%, 60% { transform: translate3d(4px, 0, 0); }
-                }
-            `}} />
+                <form onSubmit={handleLogin} className="w-full space-y-4">
+                    <div className="space-y-1">
+                        <div className="p-4 bg-white rounded-2xl border border-slate-100 flex items-center gap-4 focus-within:border-blue-500 transition-all shadow-sm">
+                            <Mail className="w-5 h-5 text-slate-400" />
+                            <input 
+                                type="text"
+                                placeholder="Admin ID / Email"
+                                className="bg-transparent border-0 p-0 w-full focus:ring-0 text-slate-900 font-bold placeholder:text-slate-300"
+                                value={formData.email}
+                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-1">
+                        <div className="p-4 bg-white rounded-2xl border border-slate-100 flex items-center gap-4 focus-within:border-blue-500 transition-all shadow-sm">
+                            <Lock className="w-5 h-5 text-slate-400" />
+                            <input 
+                                type="password"
+                                placeholder="Access Password"
+                                className="bg-transparent border-0 p-0 w-full focus:ring-0 text-slate-900 font-bold placeholder:text-slate-300"
+                                value={formData.password}
+                                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <AnimatePresence>
+                        {error && (
+                            <motion.div 
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="flex items-center gap-2 text-rose-500 bg-rose-50 p-4 rounded-xl border border-rose-100"
+                            >
+                                <AlertCircle className="w-4 h-4" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest">{error}</span>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all"
+                    >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Shield className="w-4 h-4" /> Authorize & Link Cloud</>}
+                    </button>
+                    
+                    <p className="text-center text-[8px] font-bold text-slate-300 uppercase leading-relaxed px-4">
+                        By authorizing, you agree to establish a secure link with the Krishna ERP Cloud and synchronize all local telemetry.
+                    </p>
+                </form>
+            </div>
         </div>
     );
 };

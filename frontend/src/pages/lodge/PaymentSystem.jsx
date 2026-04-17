@@ -84,7 +84,7 @@ const PaymentSystem = () => {
 
             if (!isWaiting) {
                 if (type === 'electricity' || type === 'water') {
-                    markBillPaid(room.id, type);
+                    markBillPaid(room.id, type, parseFloat(amount));
                 }
             }
 

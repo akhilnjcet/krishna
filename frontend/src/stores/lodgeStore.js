@@ -74,8 +74,9 @@ const saveData = (state) => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     
-    // Auto-sync to cloud if possible
-    if (state.isAdminLoggedIn) {
+    // Auto-sync to cloud if possible (requires ERP auth token)
+    const token = useAuthStore.getState().token;
+    if (token) {
         state.pushToCloud();
     }
   } catch (e) {
@@ -87,20 +88,19 @@ const saved = loadData();
 
 const useLodgeStore = create((set, get) => ({
   // --- State ---
-  rooms: saved?.rooms || defaultRooms,
-  payments: saved?.payments || [],
-  complaints: saved?.complaints || [],
-  adminPin: saved?.adminPin || '1234',
-  appSettings: saved?.appSettings || {
+  rooms: defaultRooms,
+  payments: [],
+  complaints: [],
+  adminPin: '1234',
+  appSettings: {
     upiId: 'krishnaengineering@upi',
     buildingLocation: '123 Krishna Building, Main Street',
     mapUrl: ''
   },
-  isAdminLoggedIn: saved?.isAdminLoggedIn || false,
-  loginTimestamp: saved?.loginTimestamp || null,
-  authenticatedTenantRoom: null, // Stores room number if logged in as tenant
+  isAdminLoggedIn: false,
+  authenticatedTenantRoom: null, 
   isSyncing: false,
-  lastSynced: saved?.lastSynced || null,
+  lastSynced: null,
 
 
   // --- Cloud Sync ---
@@ -128,20 +128,35 @@ const useLodgeStore = create((set, get) => ({
   },
 
   pullFromCloud: async () => {
+    // Only pull if we have a token
+    const token = useAuthStore.getState().token;
+    if (!token) return;
+
     set({ isSyncing: true });
     try {
         const res = await api.get('/lodge');
-        if (res.data && res.data.rooms) {
+        if (res.data && res.data.rooms && res.data.rooms.length > 0) {
+            // Merge logic or direct set
             set({
                 rooms: res.data.rooms,
-                payments: res.data.payments,
-                complaints: res.data.complaints,
-                adminPin: res.data.adminPin,
-                appSettings: res.data.appSettings,
+                payments: res.data.payments || [],
+                complaints: res.data.complaints || [],
+                adminPin: res.data.adminPin || '1234',
+                appSettings: res.data.appSettings || get().appSettings,
                 lastSynced: res.data.lastSynced
             });
-            // Also update local storage
-            saveData(get());
+            // Also update local storage silently
+            const toSave = {
+                rooms: res.data.rooms,
+                payments: res.data.payments || [],
+                complaints: res.data.complaints || [],
+                adminPin: res.data.adminPin || '1234',
+                appSettings: res.data.appSettings || get().appSettings,
+                lastSynced: res.data.lastSynced,
+                loginTimestamp: get().loginTimestamp,
+                isAdminLoggedIn: get().isAdminLoggedIn
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
         }
     } catch (e) {
         console.error('Cloud Pull Fail:', e);
@@ -198,8 +213,8 @@ const useLodgeStore = create((set, get) => ({
     saveData(get());
   },
 
-  assignTenant: (roomId, tenantName, rent, dueDate, advance = 0) => {
-    // Generate 4-digit PIN
+  assignTenant: async (roomId, tenantName, rent, dueDate, advance = 0) => {
+    // Generate 4-digit PIN (Note: New logic uses server PINs for bookings, this is for active legacy stays)
     const newPin = Math.floor(1000 + Math.random() * 9000).toString();
     set((state) => ({
       rooms: state.rooms.map((r) =>
@@ -218,11 +233,11 @@ const useLodgeStore = create((set, get) => ({
           : r
       ),
     }));
-    saveData(get());
+    await get().pushToCloud();
     return newPin;
   },
 
-  checkOutRoom: (roomId) => {
+  checkOutRoom: async (roomId) => {
     set((state) => ({
       rooms: state.rooms.map((r) =>
         r.id === roomId
@@ -230,7 +245,7 @@ const useLodgeStore = create((set, get) => ({
               ...r,
               status: 'available',
               tenant: null,
-              pin: null, // Clear PIN on checkout
+              pin: null, 
               dueDate: null,
               advance: 0,
               electricityBill: 0,
@@ -242,7 +257,7 @@ const useLodgeStore = create((set, get) => ({
           : r
       ),
     }));
-    saveData(get());
+    await get().pushToCloud();
   },
 
   setRoomStatus: (roomId, status) => {
@@ -282,7 +297,7 @@ const useLodgeStore = create((set, get) => ({
     if (payment.type === 'electricity' || payment.type === 'water') {
         const room = state.rooms.find(r => r.number === payment.roomNumber);
         if (room) {
-            get().markBillPaid(room.id, payment.type);
+            get().markBillPaid(room.id, payment.type, payment.amount);
         }
     }
     saveData(get());
@@ -401,13 +416,25 @@ const useLodgeStore = create((set, get) => ({
     saveData(get());
   },
 
-  markBillPaid: (roomId, billType) => {
+  markBillPaid: (roomId, billType, amountPaid) => {
+    const field = billType === 'electricity' ? 'electricityBill' : 'waterBill';
     const statusField =
       billType === 'electricity' ? 'electricityStatus' : 'waterStatus';
     set((state) => ({
-      rooms: state.rooms.map((r) =>
-        r.id === roomId ? { ...r, [statusField]: 'paid' } : r
-      ),
+      rooms: state.rooms.map((r) => {
+        if (r.id === roomId) {
+          const currentBill = r[field] || 0;
+          let paidAmt = amountPaid !== undefined ? parseFloat(amountPaid) : currentBill;
+          if (isNaN(paidAmt)) paidAmt = 0;
+          const newAmount = Math.max(0, currentBill - paidAmt);
+          return {
+            ...r,
+            [field]: newAmount,
+            [statusField]: newAmount === 0 ? 'paid' : 'pending'
+          };
+        }
+        return r;
+      }),
     }));
     saveData(get());
   },

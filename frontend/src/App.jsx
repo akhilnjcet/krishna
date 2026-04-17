@@ -84,6 +84,8 @@ import PaymentHistory from './pages/lodge/PaymentHistory';
 import AdminLogin from './pages/lodge/AdminLogin';
 import LodgeAdminDashboard from './pages/lodge/LodgeAdminDashboard';
 import TenantLogin from './pages/lodge/TenantLogin';
+import LodgeBooking from './pages/lodge/LodgeBooking';
+import PrivacyPolicyPage from './pages/lodge/PrivacyPolicyPage';
 
 import useLodgeStore from './stores/lodgeStore';
 import { notificationService } from './services/notificationService';
@@ -103,6 +105,21 @@ const LodgeNotificationManager = () => {
             notificationService.scheduleStayReminders(room);
         }
     }, [authenticatedTenantRoom, rooms]);
+
+    return null;
+};
+
+const LodgeDataManager = () => {
+    const pullFromCloud = useLodgeStore(state => state.pullFromCloud);
+    const token = useAuthStore(state => state.token);
+    const hasAttemptedPull = useRef(false);
+
+    useEffect(() => {
+        if (token && !hasAttemptedPull.current) {
+            pullFromCloud();
+            hasAttemptedPull.current = true;
+        }
+    }, [token, pullFromCloud]);
 
     return null;
 };
@@ -176,6 +193,7 @@ const Layout = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col font-sans relative">
       <LodgeNotificationManager />
+      <LodgeDataManager />
       <AnimatePresence>
         {isOffline && (
           <motion.div 
@@ -328,6 +346,8 @@ const App = () => {
             <Route path="/lodge">
               <Route index element={<LodgeHome />} />
               <Route path="rooms" element={<RoomSelection />} />
+              <Route path="booking" element={<LodgeBooking />} />
+              <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
               <Route path="tenant-login" element={<TenantLogin />} />
               <Route path="room/:roomNumber" element={<RoomDashboard />} />
               <Route path="complaint" element={<ComplaintSystem />} />
