@@ -33,21 +33,24 @@ const CustomerDashboard = () => {
                 api.get('/finance/customer-dues')
             ]);
             
-            const projectsList = Array.isArray(projRes.data) ? projRes.data : [];
-            setProjects(projectsList);
+            const projList = (projRes?.data && Array.isArray(projRes.data)) ? projRes.data : [];
+            setProjects(projList);
             
-            if (financeRes.data) {
+            if (financeRes?.data && typeof financeRes.data === 'object') {
+                const fData = financeRes.data;
                 setFinance({
-                    ...financeRes.data,
-                    balancePercentage: (financeRes.data.totalPaid / financeRes.data.totalInvoiced) * 100 || 0
+                    totalInvoiced: fData.totalInvoiced || 0,
+                    totalPaid: fData.totalPaid || 0,
+                    remainingDues: fData.remainingDues || 0,
+                    balancePercentage: (fData.totalPaid / fData.totalInvoiced) * 100 || 0
                 });
             }
 
-            if (projectsList.length > 0) {
-                handleProjectSelect(projectsList[0]._id, projectsList);
+            if (projList.length > 0) {
+                handleProjectSelect(projList[0]._id, projList);
             }
         } catch (err) {
-            console.error('Dashboard relay error:', err);
+            console.error('Terminal sync failure:', err);
         } finally {
             setLoading(false);
         }
@@ -98,13 +101,13 @@ const CustomerDashboard = () => {
             {/* Financial Overview Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Total Engagement', value: `₹${(finance.totalInvoiced || 0).toLocaleString()}`, icon: Wallet, color: 'blue' },
-                    { label: 'Settled Amount', value: `₹${(finance.totalPaid || 0).toLocaleString()}`, icon: CheckCircle2, color: 'emerald' },
-                    { label: 'Current Dues', value: `₹${(finance.remainingDues || 0).toLocaleString()}`, icon: AlertTriangle, color: 'rose' },
-                    { label: 'Project Equity', value: `${Math.round(finance.balancePercentage || 0)}%`, icon: TrendingUp, color: 'amber' }
+                    { label: 'Total Engagement', value: `₹${(finance?.totalInvoiced || 0).toLocaleString()}`, icon: Wallet, color: 'blue' },
+                    { label: 'Settled Amount', value: `₹${(finance?.totalPaid || 0).toLocaleString()}`, icon: CheckCircle2, color: 'emerald' },
+                    { label: 'Current Dues', value: `₹${(finance?.remainingDues || 0).toLocaleString()}`, icon: AlertTriangle, color: 'rose' },
+                    { label: 'Project Equity', value: `${Math.round(finance?.balancePercentage || 0)}%`, icon: TrendingUp, color: 'amber' }
                 ].map((item, i) => (
                     <div key={i} className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group">
-                        <div className={`w-12 h-12 bg-${item.color}-50 dark:bg-blue-950/30 text-${item.color}-600 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                        <div className={`w-12 h-12 bg-blue-50 dark:bg-blue-950/30 text-blue-600 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
                             <item.icon className="w-6 h-6" />
                         </div>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280] dark:text-dark-muted mb-1">{item.label}</p>

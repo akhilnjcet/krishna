@@ -2,7 +2,9 @@ const LodgeData = require('../models/LodgeData');
 
 exports.getLodgeData = async (req, res) => {
     try {
-        let data = await LodgeData.findOne({ userId: req.user.id });
+        let userId = req.user.id;
+        if (userId === 'failsafe-admin') userId = "00000000000000000000ad14";
+        let data = await LodgeData.findOne({ userId });
         if (!data) {
             return res.json({ status: 'new', message: 'No cloud data found' });
         }
@@ -25,8 +27,11 @@ exports.syncLodgeData = async (req, res) => {
             lastSynced: Date.now()
         };
 
+        let userId = req.user.id;
+        if (userId === 'failsafe-admin') userId = "00000000000000000000ad14";
+
         const data = await LodgeData.findOneAndUpdate(
-            { userId: req.user.id },
+            { userId },
             update,
             { upsert: true, new: true }
         );

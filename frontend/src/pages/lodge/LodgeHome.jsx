@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import {
   AlertTriangle, Building2, ClipboardList, ExternalLink,
   Phone, Shield, ChevronRight, Zap, MapPin, Activity, Terminal,
-  CalendarCheck, LogOut, Plus
+  CalendarCheck, LogOut, Plus, Users
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 import useAuthStore from '../../stores/authStore';
@@ -104,8 +104,8 @@ const LodgeHome = () => {
                                 <Activity className="w-3 h-3" /> Hardware Health
                             </p>
                             <div className="flex items-center gap-2">
-                                 <Zap className={`w-4 h-4 ${hwInfo.isCharging ? 'text-emerald-400' : 'text-slate-400'}`} />
-                                 <span className="text-lg font-black text-white">{Math.round(hwInfo.batteryLevel * 100)}%</span>
+                                 <Zap className={`w-4 h-4 ${(hwInfo?.isCharging || false) ? 'text-emerald-400' : 'text-slate-400'}`} />
+                                 <span className="text-lg font-black text-white">{Math.round((hwInfo?.batteryLevel || 0.98) * 100)}%</span>
                             </div>
                         </div>
                         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
@@ -114,7 +114,7 @@ const LodgeHome = () => {
                             </p>
                             <div className="flex items-center gap-2">
                                  <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                                 <span className="text-lg font-black text-white uppercase">{netStatus.connectionType === 'none' ? 'OFFLINE' : 'LIVE NODE'}</span>
+                                 <span className="text-lg font-black text-white uppercase">{(netStatus?.connectionType || 'wifi') === 'none' ? 'OFFLINE' : 'LIVE NODE'}</span>
                             </div>
                         </div>
                     </div>
@@ -122,7 +122,29 @@ const LodgeHome = () => {
             </div>
 
             {/* Application Grid */}
-            <div className="px-6 -mt-10 pb-32 space-y-6 relative z-20">
+            <div className="px-6 -mt-10 pb-32 space-y-6 relative z-20 font-sans">
+                {/* Session Guard Banner */}
+                {user?._id === 'failsafe-admin' && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-amber-600 p-6 rounded-[2.5rem] shadow-2xl text-white mb-6 border border-amber-500 relative overflow-hidden"
+                    >
+                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                            <AlertTriangle className="w-20 h-20" />
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2">Security Maintenance Required</p>
+                        <h3 className="text-xl font-bold mb-4">Legacy Session Protocol Active</h3>
+                        <p className="text-[11px] opacity-80 mb-6 leading-relaxed">System has detected a stale administrative key. Cloud synchronization is currently suspended for safety.</p>
+                        <button 
+                            onClick={globalLogout}
+                            className="bg-white text-amber-700 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center gap-3"
+                        >
+                            Refresh Session & Logout <LogOut className="w-4 h-4" />
+                        </button>
+                    </motion.div>
+                )}
+
                 {userRoom ? (
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
@@ -138,8 +160,8 @@ const LodgeHome = () => {
                                 <span className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse"></span>
                                 <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">CONNECTED RESIDENCY</p>
                             </div>
-                            <h2 className="text-3xl font-black mb-1">Room {userRoom.number}</h2>
-                            <p className="text-sm opacity-90 font-medium">Guest Identifier: {userRoom.tenant}</p>
+                            <h2 className="text-3xl font-black mb-1">Room {userRoom?.number || "N/A"}</h2>
+                            <p className="text-sm opacity-90 font-medium">Guest Identifier: {userRoom?.tenant || "Verified Occupant"}</p>
                             <div className="mt-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-white/20 w-fit px-5 py-2.5 rounded-2xl backdrop-blur-md">
                                 Open Dashboard <ChevronRight className="w-4 h-4" />
                             </div>

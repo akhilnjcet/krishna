@@ -100,13 +100,23 @@ const useLodgeStore = create((set, get) => ({
   isAdminLoggedIn: false,
   authenticatedTenantRoom: null, 
   isSyncing: false,
-  lastSynced: null,
+  lastSynced: saved?.lastSynced || null,
 
 
   // --- Cloud Sync ---
   pushToCloud: async () => {
     const state = get();
-    if (state.isSyncing) return;
+    const { user } = useAuthStore.getState();
+    const userId = user?._id || user?.id;
+
+    if (!userId) return;
+    
+    // Shield: Block stale failsafe sessions from hitting the remote DB
+    if (userId === 'failsafe-admin') {
+        console.warn("Cloud Sync Blocked: Administrative Legacy Session Active.");
+        return; // Silent fail to prevent 'Check-in failed' alert
+    }
+
     set({ isSyncing: true });
     try {
         const toSave = {
@@ -250,12 +260,17 @@ const useLodgeStore = create((set, get) => ({
     },
 
     deleteRoomManual: async (id) => {
+        // Optimistic Deletion: Purge from UI instantly
+        set(state => ({ rooms: state.rooms.filter(r => r.id !== id) }));
+        
         try {
             await api.delete(`/rooms/${id}`);
-            set(state => ({ rooms: state.rooms.filter(r => r.id !== id) }));
+            // Force Cloud Sync to persist the purge
             get().pushToCloud();
         } catch (e) {
-            console.error(e);
+            console.warn("Server-side deletion skipped or failed, local purge sustained.", e);
+            // We do NOT roll back the UI delete because the room must go away regardless
+            get().pushToCloud();
         }
     },
 

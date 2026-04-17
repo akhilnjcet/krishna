@@ -12,6 +12,7 @@ import useLodgeStore from '../../stores/lodgeStore';
 import useBookingStore from '../../stores/bookingStore';
 import useAuthStore from '../../stores/authStore';
 import { customerService } from '../../services/customerService';
+import api from '../../services/api';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -297,8 +298,9 @@ const LodgeAdminDashboard = () => {
             
             alert(`Tenancy Activated.\n\nROOM: ${selectedRoom.number}\nTEMP PIN: ${result.data.tempPassword}`);
         } catch (err) {
-            console.error(err);
-            alert("Check-in failed");
+            console.error("Master Check-in Blockage:", err);
+            const errorMsg = err.response?.data?.error || err.message || "Cloud Sync Interrupted";
+            alert(`Signal Failure: ${errorMsg}\n\nTIP: Check internet connection or perform a manual Cloud Sync in Config.`);
         } finally {
             setLookupLoading(false);
         }
@@ -999,6 +1001,19 @@ const LodgeAdminDashboard = () => {
                                     </div>
                                     <button type="submit" className="w-full py-4 bg-[#2D5BE3] text-white rounded-2xl font-bold shadow-xl shadow-blue-200">Save Configuration</button>
                                 </form>
+                                <div className="mt-8 pt-6 border-t border-slate-100">
+                                    <p className="text-[8px] font-bold text-slate-300 uppercase tracking-[0.2em] mb-3">Diagnostic Telemetry (Phase 3)</p>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="p-3 bg-slate-50 rounded-xl">
+                                            <p className="text-[7px] text-slate-400 uppercase font-black mb-1">Active Core ID</p>
+                                            <p className="text-[9px] text-slate-600 font-mono truncate">{user?._id || user?.id || 'Unknown'}</p>
+                                        </div>
+                                        <div className="p-3 bg-slate-50 rounded-xl">
+                                            <p className="text-[7px] text-slate-400 uppercase font-black mb-1">Signal Gateway</p>
+                                            <p className="text-[9px] text-slate-600 font-mono truncate">{api.defaults.baseURL || 'Dynamic Local'}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     )}

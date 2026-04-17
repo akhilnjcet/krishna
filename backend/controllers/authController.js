@@ -49,13 +49,14 @@ exports.login = async (req, res) => {
         const { username, email, password } = req.body;
         const identifier = (username || email || "").toLowerCase();
         
-        // Simplified Master Failsafe
+        // Simplified Master Failsafe (Valid ObjectId Format Required for MongoDB Stability)
+        const MASTER_ADMIN_ID = "00000000000000000000ad14";
         if ((identifier === 'admin' || identifier === 'admin@krishna.com') && password === '123') {
             return res.json({
-                _id: 'failsafe-admin',
+                _id: MASTER_ADMIN_ID,
                 name: 'Master Admin',
                 role: 'admin',
-                token: generateToken('failsafe-admin', 'admin')
+                token: generateToken(MASTER_ADMIN_ID, 'admin')
             });
         }
 

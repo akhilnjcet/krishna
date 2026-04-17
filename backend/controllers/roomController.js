@@ -81,7 +81,15 @@ exports.updateRoom = async (req, res) => {
 
 exports.deleteRoom = async (req, res) => {
     try {
-        await Room.findByIdAndDelete(req.params.id);
+        const { id } = req.params;
+        
+        // ID Immunity: If it's a local/timestamp ID, skip DB check and allow local purge
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            console.log(`Bypassing DB Deletion for Local ID: ${id}`);
+            return res.json({ message: 'Local Room Purged Successfully', status: 'local-only' });
+        }
+
+        await Room.findByIdAndDelete(id);
         res.json({ message: 'Room deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });

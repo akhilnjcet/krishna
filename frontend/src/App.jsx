@@ -66,6 +66,7 @@ import CustomerPayments from './pages/customer/CustomerPayments';
 
 // Components
 import AIChatWidget from './components/AIChatWidget';
+import PermissionGuard from './components/PermissionGuard';
 import Profile from './pages/Profile';
 
 import useAuthStore from './stores/authStore';
@@ -239,6 +240,18 @@ const SecurityWrapper = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    // 🛡️ SESSION PURGE PROTOCOL (PHASE 3)
+    // If we detect the legacy 'failsafe-admin' ID, we MUST purge storage to prevent BSON errors
+    const user = useAuthStore.getState().user;
+    if (user?._id === 'failsafe-admin' || user?.id === 'failsafe-admin') {
+        console.warn("LEGACY SESSION DETECTED: AUTO-PURGE INITIATED");
+        localStorage.clear();
+        logout();
+        navigate('/login', { replace: true });
+        window.location.reload(); // Force full system reset
+        return;
+    }
+
     if (!isAuthenticated) return;
 
 
@@ -270,15 +283,57 @@ const SecurityWrapper = ({ children }) => {
   return <>{children}</>;
 };
 
-import PermissionGuard from './components/PermissionGuard';
+const SystemRescue = ({ error, reset }) => (
+  <div className="fixed inset-0 bg-[#0A0A0B] z-[9999] flex flex-col items-center justify-center p-8 text-center font-sans overflow-hidden">
+    <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -mr-48 -mt-48 animate-pulse"></div>
+    <div className="w-16 h-1 bg-blue-600 mb-10 rounded-full"></div>
+    <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] backdrop-blur-3xl mb-12 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+            <AlertTriangle className="w-24 h-24" />
+        </div>
+        <h2 className="text-4xl font-black text-white italic tracking-tighter mb-4">Link Severed.</h2>
+        <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.4em] mb-8">Atmospheric Signal Instability Detected</p>
+        <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-left mb-8 max-w-sm">
+            <p className="text-[9px] font-bold text-slate-500 uppercase mb-2">Diagnostic Feed:</p>
+            <p className="text-[10px] text-white/60 font-medium font-mono truncate">{error?.message || "Unhandled Logic Exception"}</p>
+        </div>
+        <div className="flex flex-col gap-4">
+            <button 
+                onClick={reset}
+                className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-blue-600/30 hover:bg-blue-500 active:scale-95 transition-all"
+            >
+                Restablish Connection (Restart)
+            </button>
+            <button 
+                onClick={() => { localStorage.clear(); window.location.href = '#/'; window.location.reload(); }}
+                className="w-full py-4 bg-white/5 text-slate-400 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-white/10 transition-all"
+            >
+                Purge System Memory & Logout
+            </button>
+        </div>
+    </div>
+    <p className="text-[8px] font-bold text-slate-700 uppercase tracking-[0.5em]">Emergency Protocol: REACH-RESTORE v2.0</p>
+  </div>
+);
+
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  componentDidCatch(error, info) { console.error("EMERGENCY INTERCEPT:", error, info); }
+  render() {
+    if (this.state.hasError) return <SystemRescue error={this.state.error} reset={() => this.setState({ hasError: false })} />;
+    return this.props.children;
+  }
+}
 
 const App = () => {
   return (
-    <Router>
-      <PermissionGuard>
-        <Layout>
-          <SecurityWrapper>
-            <Routes>
+    <ErrorBoundary>
+        <Router>
+          <PermissionGuard>
+            <Layout>
+              <SecurityWrapper>
+                <Routes>
             <Route path="/" element={Capacitor.isNativePlatform() ? <LodgeHome /> : <Home />} />
             <Route path="/engineering" element={<Home />} />
             <Route path="/about" element={<About />} />
@@ -370,11 +425,12 @@ const App = () => {
                 </Link>
               </div>
             } />
-          </Routes>
-        </SecurityWrapper>
-      </Layout>
-    </PermissionGuard>
-  </Router>
+            </Routes>
+          </SecurityWrapper>
+        </Layout>
+      </PermissionGuard>
+    </Router>
+  </ErrorBoundary>
 );
 };
 

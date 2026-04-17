@@ -35,6 +35,21 @@ const useBookingStore = create((set, get) => ({
     },
 
     createBooking: async (bookingData) => {
+        // High-Safety Guard: Prevent non-ObjectId identifiers from hitting the DB
+        if (bookingData.userId === 'failsafe-admin' || !bookingData.userId?.match(/^[0-9a-fA-F]{24}$/)) {
+            if (!bookingData.userId) {
+                // Try to get from store if missing in payload
+                bookingData.userId = useAuthStore.getState().user?._id;
+            }
+            
+            if (bookingData.userId === 'failsafe-admin') {
+                return { 
+                    success: false, 
+                    error: "Administrative Legacy Session Active. Please LOG OUT and LOGIN again to refresh your security credentials." 
+                };
+            }
+        }
+
         set({ loading: true });
         try {
             const res = await api.post('/bookings', bookingData);
