@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Lodge Booking System</title>
+    <style>
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f4f4f5; margin: 0; padding: 20px; color: #18181b; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h1, h2, h3 { color: #09090b; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        
+        .card { padding: 20px; border: 1px solid #e4e4e7; border-radius: 8px; background: #fafafa; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        input, select, button { width: 100%; padding: 10px; border: 1px solid #d4d4d8; border-radius: 6px; box-sizing: border-box; }
+        button { background: #2563eb; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        button:hover { background: #1d4ed8; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e4e4e7; }
+        th { background: #f4f4f5; }
+        
+        .error { color: #dc2626; font-size: 14px; font-weight: bold; text-align: center; margin-top: 10px;}
+        .success { color: #16a34a; font-size: 14px; font-weight: bold; text-align: center; margin-top: 10px;}
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #e4e4e7; padding-bottom: 20px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-bar">
+        <div>
+            <h1>Unified Lodge Booking</h1>
+            <p style="margin:0;color:#71717a;">Strict Overlap Prevention System</p>
+        </div>
+        <div style="width: 250px;">
+            <label>Login As (Simulated Auth):</label>
+            <select id="userSelect" onchange="fetchMyBookings()"></select>
+        </div>
+    </div>
+
+    <div class="grid">
+        <!-- BOOKING PANEL -->
+        <div class="card">
+            <h2>1. Search Availability</h2>
+            <div class="form-group">
+                <label>Check In</label>
+                <input type="date" id="checkInDate">
+            </div>
+            <div class="form-group">
+                <label>Check Out</label>
+                <input type="date" id="checkOutDate">
+            </div>
+            <button onclick="searchRooms()">Find Available Rooms</button>
+
+            <h3 style="margin-top:30px;">2. Book A Room</h3>
+            <div class="form-group">
+                <label>Select Room</label>
+                <select id="roomSelect">
+                    <option value="">Search dates first...</option>
+                </select>
+            </div>
+            <button onclick="bookRoom()">Confirm Booking</button>
+            <div id="bookingMessage"></div>
+        </div>
+
+        <!-- MY BOOKINGS PANEL -->
+        <div class="card">
+            <h2>Booking Ledger</h2>
+            <p style="font-size: 12px; color:#71717a;">Admins see all. Users see their own.</p>
+            <button onclick="fetchMyBookings()" style="background:#475569;">Refresh Ledger</button>
+            <table id="bookingsTable">
+                <thead>
+                    <tr><th>Room</th><th>Check-in</th><th>Check-out</th><th>Guest</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:4000/api';
+
+    // 1. Initial Load
+    async function init() {
+        const res = await fetch(`${API_URL}/users`);
+        const users = await res.json();
+        const select = document.getElementById('userSelect');
+        users.forEach(u => select.innerHTML += `<option value="${u._id}">${u.name} (${u.role})</option>`);
+        fetchMyBookings();
+    }
+
+    // 2. Search Rooms
+    async function searchRooms() {
+        const ci = document.getElementById('checkInDate').value;
+        const co = document.getElementById('checkOutDate').value;
+        if(!ci || !co) return alert("Please select dates first.");
+
+        const res = await fetch(`${API_URL}/available-rooms?checkIn=${ci}&checkOut=${co}`);
+        const data = await res.json();
+        
+        if (res.ok) {
+            const rSelect = document.getElementById('roomSelect');
+            rSelect.innerHTML = '';
+            if(data.length === 0) rSelect.innerHTML = `<option value="">No rooms available for these dates.</option>`;
+            data.forEach(r => rSelect.innerHTML += `<option value="${r._id}">${r.type} (Cap: ${r.capacity}) - ₹${r.price}/night</option>`);
+        } else {
+            alert(data.error);
+        }
+    }
+
+    // 3. Book Room
+    async function bookRoom() {
+        const userId = document.getElementById('userSelect').value;
+        const roomId = document.getElementById('roomSelect').value;
+        const checkIn = document.getElementById('checkInDate').value;
+        const checkOut = document.getElementById('checkOutDate').value;
+        const msgDiv = document.getElementById('bookingMessage');
+
+        if(!roomId) return alert("Select a room first!");
+
+        const res = await fetch(`${API_URL}/book-room`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
+            body: JSON.stringify({ roomId, checkIn, checkOut })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            msgDiv.innerHTML = `<p class="success">Booking Confirmed! (ID: ${data._id})</p>`;
+            fetchMyBookings();
+            searchRooms(); // Refresh available list
+        } else {
+            // STRICT BLOCK FIRED
+            msgDiv.innerHTML = `<p class="error">❌ ${data.error}</p>`;
+        }
+    }
+
+    // 4. Fetch Bookings
+    async function fetchMyBookings() {
+        const userId = document.getElementById('userSelect').value;
+        if(!userId) return;
+
+        const res = await fetch(`${API_URL}/my-bookings`, {
+            headers: { 'x-user-id': userId }
+        });
+        const data = await res.json();
+
+        const tbody = document.querySelector('#bookingsTable tbody');
+        tbody.innerHTML = '';
+        data.forEach(b => {
+            const checkIn = new Date(b.checkIn).toLocaleDateString();
+            const checkOut = new Date(b.checkOut).toLocaleDateString();
+            tbody.innerHTML += `
+                <tr>
+                    <td>${b.roomId ? b.roomId.type : 'Unknown'}</td>
+                    <td>${checkIn}</td>
+                    <td>${checkOut}</td>
+                    <td>${b.userId.name}</td>
+                </tr>
+            `;
+        });
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
