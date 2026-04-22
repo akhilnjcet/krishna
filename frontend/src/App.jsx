@@ -110,10 +110,23 @@ const LodgeNotificationManager = () => {
     return null;
 };
 
+import useSignalStore from './stores/signalStore';
+
 const LodgeDataManager = () => {
     const pullFromCloud = useLodgeStore(state => state.pullFromCloud);
     const token = useAuthStore(state => state.token);
     const hasAttemptedPull = useRef(false);
+
+    // Sync API Signal with Global BaseURL
+    useEffect(() => {
+        const unsubscribe = useSignalStore.subscribe(
+            (state) => {
+                api.defaults.baseURL = state.getApiUrl();
+                console.log(`Signal Shifted: ${api.defaults.baseURL}`);
+            }
+        );
+        return () => unsubscribe();
+    }, []);
 
     useEffect(() => {
         if (token && !hasAttemptedPull.current) {

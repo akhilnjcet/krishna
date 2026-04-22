@@ -8,10 +8,11 @@ import { motion } from 'framer-motion';
 import {
   AlertTriangle, Building2, ClipboardList, ExternalLink,
   Phone, Shield, ChevronRight, Zap, MapPin, Activity, Terminal,
-  CalendarCheck, LogOut, Plus, Users
+  CalendarCheck, LogOut, Plus, Users, Cloud
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 import useAuthStore from '../../stores/authStore';
+import useSignalStore from '../../stores/signalStore';
 
 
 const LodgeHome = () => {
@@ -73,6 +74,11 @@ const LodgeHome = () => {
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">{isAuthenticated ? `Authenticated: ${user?.name || user?.email || 'Guest'}` : 'Public Guest Console'}</p>
                         </div>
                         <div className="flex items-center gap-3">
+                            {/* Signal Indicator */}
+                            <div className={`px-3 py-1.5 rounded-full border flex items-center gap-1.5 backdrop-blur-md ${useSignalStore.getState().activeSignal === 'local' ? 'bg-slate-900/40 border-slate-700/50 text-slate-300' : 'bg-blue-600/20 border-blue-500/30 text-blue-400'}`}>
+                                {useSignalStore.getState().activeSignal === 'local' ? <Terminal className="w-3 h-3" /> : <Cloud className="w-3 h-3" />}
+                                <span className="text-[7px] font-black uppercase tracking-widest">{useSignalStore.getState().activeSignal === 'local' ? 'Local Signal' : 'Cloud Link'}</span>
+                            </div>
                             {isAuthenticated && (
                                 <button 
                                     onClick={() => navigate('/customer/profile')}

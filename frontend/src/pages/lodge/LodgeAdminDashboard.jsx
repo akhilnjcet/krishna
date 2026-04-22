@@ -278,7 +278,8 @@ const LodgeAdminDashboard = () => {
                 idNumber: formData.get('idNumber')
             };
 
-            const result = await customerService.checkInCustomer(mobileSearch, finalData);
+            // STEP 1: GENERATE INSTANT PIN
+            const generatedPin = Math.floor(1000 + Math.random() * 9000).toString();
             
             // Generate Tenancy 
             assignTenant(
@@ -289,14 +290,20 @@ const LodgeAdminDashboard = () => {
                 parseFloat(formData.get('advance'))
             );
 
-            updateRoom(selectedRoom.id, { pin: result.data.tempPassword });
+            updateRoom(selectedRoom.id, { pin: generatedPin });
 
             setIsAssignModalOpen(false);
             setIsQuickCheckInMode(false);
             setMobileSearch('');
             setCustomerData({ name: '', address: '', idType: 'Aadhar', idNumber: '' });
             
-            alert(`Tenancy Activated.\n\nROOM: ${selectedRoom.number}\nTEMP PIN: ${result.data.tempPassword}`);
+            alert(`Tenancy Activated (Instant Guard).\n\nROOM: ${selectedRoom.number}\nTEMP PIN: ${generatedPin}`);
+
+            // STEP 3: BACKGROUND SYNC (NON-BLOCKING)
+            customerService.checkInCustomer(mobileSearch, finalData)
+                .then(() => console.log("Cloud Registry Synced."))
+                .catch(err => console.warn("Background Sync Delayed:", err));
+
         } catch (err) {
             console.error("Master Check-in Blockage:", err);
             const errorMsg = err.response?.data?.error || err.message || "Cloud Sync Interrupted";

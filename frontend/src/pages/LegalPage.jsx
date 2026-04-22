@@ -46,7 +46,7 @@ const LegalPage = ({ type }) => {
                                 • Principal Developer: AKHIL N
                                 • Physical Address: Thiruvazhiyode, Sreekrishnapuram, Kerala 679514
                                 • Direct Contact: +91 9447940835
-                                • Official Support: krishnaengineeringworks0715@gmail.com
+                                • Official Support: akhilnadiluveettil@gmail.com
                             `);
                         } else {
                             setContent(`

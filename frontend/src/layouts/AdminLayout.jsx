@@ -110,7 +110,7 @@ const AdminLayout = () => {
         // If we think we are in, but the role check is failing, show visible diagnostics
         if (isAuthenticated) {
             return (
-                <div className="h-screen w-screen bg-slate-900 flex flex-col items-center justify-center p-8 text-center text-white">
+                <div className="min-h-screen w-full bg-slate-900 flex flex-col items-center justify-center p-8 text-center text-white">
                    <div className="w-20 h-20 bg-rose-500/20 rounded-full flex items-center justify-center mb-6">
                        <AlertCircle className="w-10 h-10 text-rose-500" />
                    </div>

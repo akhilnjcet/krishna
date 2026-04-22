@@ -6,7 +6,68 @@ import {
     ChevronRight, Loader2, AlertCircle 
 } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
+import useSignalStore from '../../stores/signalStore';
 import api from '../../services/api';
+import { Wifi, Cloud, Terminal } from 'lucide-react';
+
+const SignalSwitcher = () => {
+    const { activeSignal, localIp, toggleSignal, setLocalIp } = useSignalStore();
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    return (
+        <div className="mb-6 bg-blue-50/50 rounded-2xl border border-blue-100/50 overflow-hidden transition-all">
+            <button 
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full px-4 py-3 flex items-center justify-between text-blue-600"
+            >
+                <div className="flex items-center gap-2">
+                    <Wifi className="w-4 h-4" />
+                    <span className="text-[9px] font-black uppercase tracking-widest">Signal Status: {activeSignal === 'cloud' ? 'Cloud Link' : 'Local Override'}</span>
+                </div>
+                <div className="px-2 py-1 bg-white rounded-lg border border-blue-100 text-[8px] font-black uppercase">Adjust Signal</div>
+            </button>
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div 
+                        initial={{ height: 0 }}
+                        animate={{ height: 'auto' }}
+                        exit={{ height: 0 }}
+                        className="px-4 pb-4 space-y-3"
+                    >
+                        <div className="flex gap-2">
+                            <button 
+                                type="button"
+                                onClick={() => toggleSignal('cloud')}
+                                className={`flex-grow py-3 rounded-xl text-[8px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${activeSignal === 'cloud' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-blue-400 border border-blue-100'}`}
+                            >
+                                <Cloud className="w-3 h-3" /> Production Cloud
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => toggleSignal('local')}
+                                className={`flex-grow py-3 rounded-xl text-[8px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${activeSignal === 'local' ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' : 'bg-white text-slate-400 border border-slate-200'}`}
+                            >
+                                <Terminal className="w-3 h-3" /> Local Link
+                            </button>
+                        </div>
+                        {activeSignal === 'local' && (
+                            <div className="mt-2 p-2 bg-white rounded-xl border border-blue-100 flex items-center gap-3">
+                                <span className="text-[8px] font-black text-blue-600 uppercase whitespace-nowrap">Local IP:</span>
+                                <input 
+                                    className="bg-transparent border-0 p-0 w-full focus:ring-0 text-[10px] font-black text-slate-700 font-mono"
+                                    value={localIp}
+                                    onChange={(e) => setLocalIp(e.target.value)}
+                                    placeholder="e.g. 192.168.1.10"
+                                />
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
 
 const AdminLogin = () => {
     const navigate = useNavigate();
@@ -74,6 +135,7 @@ const AdminLogin = () => {
                 <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-12">Industrial Command Protocol</p>
 
                 <form onSubmit={handleLogin} className="w-full space-y-4">
+                    <SignalSwitcher />
                     <div className="space-y-1">
                         <div className="p-4 bg-white rounded-2xl border border-slate-100 flex items-center gap-4 focus-within:border-blue-500 transition-all shadow-sm">
                             <Mail className="w-5 h-5 text-slate-400" />
