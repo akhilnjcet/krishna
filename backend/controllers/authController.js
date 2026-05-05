@@ -162,6 +162,26 @@ exports.getUsersByRole = async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
+exports.adminEditUser = async (req, res) => {
+    try {
+        const { name, phone, password } = req.body;
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        
+        if (name) user.name = name;
+        if (phone !== undefined) {
+             user.phone = phone;
+             user.phoneNumber = phone;
+        }
+        if (password) {
+             const salt = await bcrypt.genSalt(10);
+             user.password = await bcrypt.hash(password, salt);
+        }
+        await user.save();
+        res.json({ message: 'User updated successfully', user });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
 exports.logout = async (req, res) => {
     res.status(200).json({ message: 'Signed out' });
 };

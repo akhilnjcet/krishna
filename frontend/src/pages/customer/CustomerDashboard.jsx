@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { 
-    ArrowRight, MessageSquare, Briefcase, Zap, Settings, Loader2, FileText,
-    TrendingUp, Wallet, ShieldCheck, Activity, ChevronRight, Search, Bed
+import {
+    TrendingUp, Wallet, ShieldCheck, Activity, ChevronRight, Search, Bed, CalendarX,
+    CheckCircle2, Plus, X, AlertTriangle, Construction
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReportHeader from '../../components/ReportHeader';
@@ -19,6 +19,11 @@ const CustomerDashboard = () => {
         remainingDues: 0,
         balancePercentage: 0
     });
+    const [lodgeBookings, setLodgeBookings] = useState([]);
+    
+    // Modal States
+    const [issueModal, setIssueModal] = useState({ show: false, bookingId: null, lodgeId: null, roomId: null, title: '', desc: '' });
+    const [payModal, setPayModal] = useState({ show: false, bookingId: null, amount: 0, file: null });
 
     useEffect(() => {
         fetchDashboardData();
@@ -28,9 +33,10 @@ const CustomerDashboard = () => {
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            const [projRes, financeRes] = await Promise.all([
+            const [projRes, financeRes, lodgeRes] = await Promise.all([
                 api.get('/customer/projects'),
-                api.get('/finance/customer-dues')
+                api.get('/finance/customer-dues'),
+                api.get('/bookings/my-bookings').catch(() => ({ data: [] }))
             ]);
             
             const projList = (projRes?.data && Array.isArray(projRes.data)) ? projRes.data : [];
@@ -46,6 +52,8 @@ const CustomerDashboard = () => {
                 });
             }
 
+            if (lodgeRes?.data) setLodgeBookings(lodgeRes.data);
+
             if (projList.length > 0) {
                 handleProjectSelect(projList[0]._id, projList);
             }
@@ -54,6 +62,38 @@ const CustomerDashboard = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const submitComplaint = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/complaints', {
+                bookingId: issueModal.bookingId,
+                lodgeId: issueModal.lodgeId,
+                roomId: issueModal.roomId,
+                title: issueModal.title,
+                description: issueModal.desc
+            });
+            alert('Issue reported successfully. A technician will review it.');
+            setIssueModal({ show: false, bookingId: null, lodgeId: null, roomId: null, title: '', desc: '' });
+        } catch(err) { alert('Failed to submit issue'); }
+    };
+
+    const submitPayment = async (e) => {
+        e.preventDefault();
+        if(!payModal.file) return alert('Please attach a screenshot of the transaction');
+        const formData = new FormData();
+        formData.append('image', payModal.file);
+        formData.append('amount', payModal.amount);
+        formData.append('type', 'booking_fee');
+        formData.append('method', 'UPI/Bank');
+        formData.append('roomNumber', payModal.roomId || 'N/A');
+        
+        try {
+            await api.post('/payments/submit', formData, { headers: { 'Content-Type': 'multipart/form-data' }});
+            alert('Payment submitted for validation.');
+            setPayModal({ show: false, bookingId: null, amount: 0, file: null });
+        } catch(err) { alert('Failed to submit payment'); }
     };
 
     const handleProjectSelect = async (projectId, existingProjects) => {
@@ -134,6 +174,81 @@ const CustomerDashboard = () => {
                     </div>
                 </div>
             </div>
+            
+            {/* Added Lodge Bookings Section */}
+            {lodgeBookings.length > 0 && (
+                <div className="bg-white rounded-3xl p-8 border border-[#E2E8F0] shadow-sm mb-10">
+                    <h3 className="text-xl font-bold mb-6 flex items-center"><Bed className="w-6 h-6 mr-3 text-indigo-600"/> My Lodge Bookings</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {lodgeBookings.map(b => (
+                            <div key={b._id} className={`border p-5 rounded-2xl ${b.status === 'active' ? 'border-indigo-100 bg-indigo-50/30' : 'border-rose-100 bg-rose-50'}`}>
+                                <div className="flex justify-between items-start mb-2">
+                                    <h4 className="font-bold text-gray-900">{b.lodgeId?.name || "Unknown"} Suite</h4>
+                                    <span className={`text-xs font-bold px-2 py-1 uppercase rounded-md ${b.status === 'active' ? 'bg-indigo-100 text-indigo-800' : 'bg-rose-100 text-rose-800'}`}>{b.status}</span>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-4">{new Date(b.checkIn).toLocaleDateString()} - {new Date(b.checkOut).toLocaleDateString()}</p>
+                                <div className="flex justify-between items-center text-sm font-bold">
+                                    <span>${b.totalAmount}</span>
+                                    {b.status === 'active' && (
+                                        <div className="flex gap-2 mt-4">
+                                            <button 
+                                                onClick={() => setIssueModal({ show: true, bookingId: b._id, lodgeId: b.lodgeId?._id, roomId: b.roomId?._id, title: '', desc: '' })}
+                                                className="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-lg text-xs"
+                                            >
+                                                Raise Issue
+                                            </button>
+                                            <button 
+                                                onClick={() => setPayModal({ show: true, bookingId: b._id, roomId: b.roomId?._id, amount: b.totalAmount, file: null })}
+                                                className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-lg text-xs"
+                                            >
+                                                Settle Dues
+                                            </button>
+                                            <button 
+                                                onClick={async () => {
+                                                    if(confirm('Cancel Booking?')) {
+                                                        try {
+                                                            await api.put(`/bookings/${b._id}/cancel`);
+                                                            fetchDashboardData();
+                                                        } catch(e) { alert(e.response?.data?.message || 'Error cancelling'); }
+                                                    }
+                                                }}
+                                                className="flex items-center text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg ml-auto"
+                                            >
+                                                <CalendarX className="w-4 h-4 mr-1"/> Cancel
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Modals for Lodge operations */}
+            {issueModal.show && (
+                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                    <form onSubmit={submitComplaint} className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+                       <h3 className="text-xl font-bold mb-4">Report an Issue</h3>
+                       <button type="button" onClick={() => setIssueModal({...issueModal, show: false})} className="absolute top-4 right-4 text-gray-500 hover:text-red-500">Close</button>
+                       <input autoFocus required placeholder="Issue Title (e.g., AC Not Working)" className="w-full border p-3 rounded-xl mb-4" value={issueModal.title} onChange={e => setIssueModal({...issueModal, title: e.target.value})} />
+                       <textarea required placeholder="Describe the problem..." rows="4" className="w-full border p-3 rounded-xl mb-4" value={issueModal.desc} onChange={e => setIssueModal({...issueModal, desc: e.target.value})} />
+                       <button type="submit" className="w-full bg-amber-500 text-white font-bold py-3 rounded-xl">Submit Ticket</button>
+                    </form>
+                </div>
+            )}
+
+            {payModal.show && (
+                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                    <form onSubmit={submitPayment} className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+                       <h3 className="text-xl font-bold mb-4">Settle Booking Amount</h3>
+                       <button type="button" onClick={() => setPayModal({...payModal, show: false})} className="absolute top-4 right-4 text-gray-500 hover:text-red-500">Close</button>
+                       <p className="mb-4 text-sm text-gray-600">Please attach a screenshot of your transaction for <b>${payModal.amount}</b>.</p>
+                       <input type="file" required accept="image/*" onChange={e => setPayModal({...payModal, file: e.target.files[0]})} className="w-full mb-4 border p-2 rounded-lg text-sm" />
+                       <button type="submit" className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg">Upload Receipt</button>
+                    </form>
+                </div>
+            )}
 
             {/* Dashboard Workspace */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

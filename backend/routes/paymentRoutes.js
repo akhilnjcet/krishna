@@ -19,4 +19,29 @@ router.get('/my-payments', protect, getMyPayments);
 router.get('/', protect, admin, getAllPayments);
 router.put('/:id/verify', protect, admin, verifyPayment);
 
+// @route   POST /api/payments/manual
+// @desc    Admin manually add payment for rent/dues
+// @access  Private Admin
+router.post('/manual', protect, admin, async (req, res) => {
+    try {
+        const Payment = require('../models/Payment');
+        const { customerId, amount, method, referenceId, notes } = req.body;
+        
+        const payment = await Payment.create({
+            customerId,
+            amount: parseFloat(amount),
+            method: method || 'cash',
+            referenceId: referenceId || 'MANUAL',
+            status: 'verified',
+            verifiedAt: Date.now(),
+            verifiedBy: req.user.id || req.user._id,
+            notes: notes || 'Admin override payment'
+        });
+        res.status(201).json(payment);
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 module.exports = router;

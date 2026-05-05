@@ -8,6 +8,9 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+const path = require('path');
+const isVercel = process.env.VERCEL === '1';
+app.use('/uploads', express.static(isVercel ? '/tmp/uploads' : path.join(__dirname, 'uploads')));
 
 // Institutional Security Headers (Anti-Caching for Sensitive Data)
 app.use((req, res, next) => {
@@ -60,7 +63,10 @@ app.use('/api/applications', require('./routes/applicationRoutes'));
 app.use('/api/lodge', require('./routes/lodgeRoutes'));
 app.use('/api/rooms', require('./routes/roomRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
+app.use('/api/availability', require('./routes/availabilityRoutes'));
+app.use('/api/complaints', require('./routes/complaintRoutes'));
 app.use('/api/visits', require('./routes/visitRoutes'));
+app.use('/api/lodge-extras', require('./routes/lodgeExtraRoutes'));
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
 });
@@ -120,6 +126,16 @@ app.get('/api/health/whatsapp', async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ error: err.message, stack: err.stack });
+    }
+});
+
+app.post('/api/health/whatsapp/logout', async (req, res) => {
+    try {
+        const { logoutWhatsApp } = require('./services/whatsappService');
+        await logoutWhatsApp();
+        res.json({ success: true, message: 'WhatsApp session terminated.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 

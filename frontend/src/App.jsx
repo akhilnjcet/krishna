@@ -84,8 +84,12 @@ import PaymentSystem from './pages/lodge/PaymentSystem';
 import PaymentHistory from './pages/lodge/PaymentHistory';
 import AdminLogin from './pages/lodge/AdminLogin';
 import LodgeAdminDashboard from './pages/lodge/LodgeAdminDashboard';
+import LodgeAdminManager from './pages/lodge/LodgeAdminManager';
 import TenantLogin from './pages/lodge/TenantLogin';
 import LodgeBooking from './pages/lodge/LodgeBooking';
+import LodgeSearch from './pages/lodge/LodgeSearch';
+import LodgeDetail from './pages/lodge/LodgeDetail';
+import LodgeCustomerDashboard from './pages/lodge/LodgeCustomerDashboard';
 import PrivacyPolicyPage from './pages/lodge/PrivacyPolicyPage';
 
 import useLodgeStore from './stores/lodgeStore';
@@ -383,6 +387,7 @@ const App = () => {
               <Route path="whatsapp" element={<AdminWhatsApp />} />
               <Route path="live-chat" element={<SupportHub />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="lodge-manager" element={<LodgeAdminManager />} />
             </Route>
 
             {/* Staff Routes */}
@@ -413,17 +418,14 @@ const App = () => {
             {/* Lodge & Building Manager Routes */}
             <Route path="/lodge">
               <Route index element={<LodgeHome />} />
-              <Route path="rooms" element={<RoomSelection />} />
-              <Route path="booking" element={<LodgeBooking />} />
+              <Route path="search" element={<LodgeSearch />} />
+              <Route path="detail/:id" element={<LodgeDetail />} />
+              <Route path="book/:roomId" element={<LodgeBooking />} />
               <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
               <Route path="tenant-login" element={<TenantLogin />} />
-              <Route path="room/:roomNumber" element={<RoomDashboard />} />
-              <Route path="complaint" element={<ComplaintSystem />} />
-              <Route path="complaint/:roomNumber" element={<ComplaintSystem />} />
-              <Route path="payment/:roomNumber/:type" element={<PaymentSystem />} />
-              <Route path="history/:roomNumber" element={<PaymentHistory />} />
               <Route path="admin-login" element={<AdminLogin />} />
               <Route path="admin" element={<LodgeAdminDashboard />} />
+              <Route path="dashboard" element={<LodgeCustomerDashboard />} />
             </Route>
 
             {/* Fallback */}

@@ -3,7 +3,7 @@ import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-d
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Layers, BookOpen, FileText,
-    MessageSquare, HelpCircle, User, LogOut, Bell, Menu, X, ChevronLeft, Wallet
+    MessageSquare, HelpCircle, User, LogOut, Bell, Menu, X, ChevronLeft, Wallet, Home
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 
@@ -50,6 +50,16 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                     </Link>
                 );
             })}
+            
+            <a 
+                href={import.meta.env.VITE_LODGE_BOOKING_URL || "https://your-lodge-booking-vercel-url.vercel.app"}
+                target="_blank" 
+                rel="noreferrer"
+                className="flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-semibold transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 mt-4 hover:bg-emerald-500"
+            >
+                <Home className="w-5 h-5 flex-shrink-0 text-white" />
+                <span className="truncate">Book Your Room</span>
+            </a>
         </nav>
 
         {/* Footer */}

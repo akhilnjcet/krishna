@@ -317,6 +317,36 @@ async function getWhatsAppStatus() {
     };
 }
 
+async function logoutWhatsApp() {
+    try {
+        if (sock) {
+            await sock.logout().catch(() => {});
+            sock.end();
+            sock = null;
+        }
+
+        const SystemSetting = require('../models/SystemSetting');
+        await SystemSetting.deleteMany({ key: { $in: ['whatsapp_creds', 'whatsapp_qr'] } });
+
+        const isVercel = process.env.VERCEL === '1';
+        const authPath = isVercel 
+            ? '/tmp/whatsapp_auth'
+            : path.join(__dirname, '../whatsapp_auth_info');
+
+        if (fs.existsSync(authPath)) {
+            // Delete folder recursively
+            fs.rmSync(authPath, { recursive: true, force: true });
+        }
+
+        isConnecting = false;
+        connectionPromise = null;
+        return { success: true };
+    } catch (err) {
+        console.error('Logout Fail:', err);
+        throw err;
+    }
+}
+
 module.exports = {
     startWhatsAppConnection,
     sendWhatsAppMessage,
@@ -327,5 +357,6 @@ module.exports = {
     sendDailyReport,
     sendLoginAlert,
     getWhatsAppStatus,
+    logoutWhatsApp,
     ensureWhatsApp
 };

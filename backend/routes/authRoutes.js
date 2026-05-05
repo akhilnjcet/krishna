@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, logout, verifyFace, getMe, updateProfile, getUsersByRole, forgotPassword, verifyOTP, resetPassword } = require('../controllers/authController');
-const { protect } = require('../middleware/authMiddleware');
+const { register, login, logout, verifyFace, getMe, updateProfile, getUsersByRole, forgotPassword, verifyOTP, resetPassword, adminEditUser } = require('../controllers/authController');
+const { protect, admin } = require('../middleware/authMiddleware');
 
 router.post('/register', register);
 router.post('/login', login);
@@ -10,6 +10,7 @@ router.post('/verify-face', verifyFace);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
 router.get('/users', protect, getUsersByRole);
+router.put('/:id/admin-edit', protect, admin, adminEditUser);
 
 router.post('/forgot-password', forgotPassword);
 router.post('/verify-otp', verifyOTP);

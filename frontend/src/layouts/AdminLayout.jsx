@@ -27,6 +27,7 @@ const SIDEBAR_ITEMS = [
     { name: 'Applications',    path: '/admin/applications', icon: LayoutGrid },
     { name: 'Analytics Hub',   path: '/admin/analytics',    icon: BarChart3 },
     { name: 'WhatsApp Relay',  path: '/admin/whatsapp',     icon: Radio },
+    { name: 'Lodge Manager',   path: '/admin/lodge-manager',icon: BookOpen },
     { name: 'System Core',     path: '/admin/settings',     icon: Settings },
 ];
 

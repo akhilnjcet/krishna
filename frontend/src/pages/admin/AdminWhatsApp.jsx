@@ -22,6 +22,22 @@ const AdminWhatsApp = () => {
         }
     };
 
+    const handleLogout = async () => {
+        if (!window.confirm('WARNING: This will permanently terminate the WhatsApp cloud session. You will need to re-scan the QR code to restore automation. Proceed?')) return;
+        
+        setRefreshing(true);
+        try {
+            await api.post('/health/whatsapp/logout');
+            setStatus(prev => ({ ...prev, connected: false, qr: null }));
+            fetchStatus();
+        } catch (err) {
+            console.error("Logout error:", err);
+            alert("Failed to terminate session.");
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
     useEffect(() => {
         fetchStatus();
         const interval = setInterval(fetchStatus, 4000); // Poll faster (4s) for QR updates
@@ -138,6 +154,12 @@ const AdminWhatsApp = () => {
                                          <div className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3">
                                             <div className="w-2 h-2 bg-[#25D366] rounded-full animate-pulse shadow-[0_0_10px_#25D366]" /> Heartbeat Monitor Live
                                          </div>
+                                         <button 
+                                            onClick={handleLogout}
+                                            className="mt-6 text-[10px] font-black uppercase tracking-[0.2em] text-rose-500 hover:text-rose-600 transition-colors flex items-center gap-2 group"
+                                          >
+                                            <WifiOff className="w-4 h-4 group-hover:scale-110 transition-transform" /> Terminate Session & Re-link
+                                          </button>
                                     </div>
                                 </motion.div>
                             ) : status?.qr ? (
