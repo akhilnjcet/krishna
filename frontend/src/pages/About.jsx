@@ -18,7 +18,7 @@ const About = () => {
         const fetchAbout = async () => {
             try {
                 const res = await api.get('/settings/public');
-                if (res.data) {
+                if (res.data && Array.isArray(res.data)) {
                     const settingsMap = {};
                     res.data.forEach(s => settingsMap[s.key] = s.value);
                     

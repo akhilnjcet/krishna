@@ -22,9 +22,11 @@ const Footer = () => {
                 const res = await api.get('/settings/public');
                 if (res.data && res.data.length > 0) {
                     const settingsObj = {};
-                    res.data.forEach(s => {
-                        settingsObj[s.key] = s.value;
-                    });
+                    if (res.data && Array.isArray(res.data)) {
+                        res.data.forEach(s => {
+                            settingsObj[s.key] = s.value;
+                        });
+                    }
                     setSettings(prev => ({ ...prev, ...settingsObj }));
                 }
             } catch (err) {

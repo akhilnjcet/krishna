@@ -141,10 +141,10 @@ const Home = () => {
                     api.get('/settings/public'),
                     api.get('/portfolio/gallery')
                 ]);
-                if (settingsRes.status === 'fulfilled' && settingsRes.value?.data?.length > 0) {
+                if (settingsRes.status === 'fulfilled' && Array.isArray(settingsRes.value.data)) {
                     const map = {};
                     settingsRes.value.data.forEach(s => map[s.key] = s.value);
-                    setSettings(prev => ({ ...prev, ...map }));
+                    setSettings(map);
                 }
                 if (projectsRes.status === 'fulfilled' && projectsRes.value?.data) {
                     // Filter out projects that have no images
