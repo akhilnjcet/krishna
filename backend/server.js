@@ -224,8 +224,17 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
 // Global JSON Error Handler (Prevents generic 500 HTML crashes)
 app.use((err, req, res, next) => {
     console.error('SERVER CRASH:', err);
+    
+    // Safety: Ensure CORS headers exist even on crash
+    const origin = req.headers.origin;
+    if (origin && (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production')) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+
     res.status(500).json({ 
         error: true,
+        success: false, // Unified format
         message: err.message || 'Internal Signal Breach',
         details: process.env.NODE_ENV !== 'production' ? err.stack : 'Telemetry active'
     });

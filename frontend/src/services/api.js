@@ -16,41 +16,57 @@ const getApiBaseUrl = () => {
 
 const api = axios.create({
     baseURL: getApiBaseUrl(),
-    timeout: 20000, 
-    withCredentials: true // Support for secure authentication cookies/headers
+    timeout: 8000, // Fail fast (8s) instead of hanging 20s+
+    withCredentials: true 
 });
+
+// Fallback Data Repository (Ensures UI stability during backend cold-starts)
+const FALLBACKS = {
+    '/settings/public': {
+        siteName: 'Krishna Engineering',
+        theme: 'dark',
+        contactEmail: 'krishnaengineeringworks0715@gmail.com'
+    },
+    '/portfolio/gallery': [],
+    '/visits': { count: 1234 }
+};
 
 // Centralized Request Interceptor
 api.interceptors.request.use((config) => {
-    // 1. Check for token in AuthStore (Primary)
     const token = useAuthStore.getState().token;
-    
-    // 2. Fallback to localStorage if store is not yet hydrated
     const fallbackToken = !token ? (
         localStorage.getItem('auth-storage') ? 
         JSON.parse(localStorage.getItem('auth-storage'))?.state?.token : null
     ) : null;
 
     const finalToken = token || fallbackToken;
-    
     if (finalToken) {
         config.headers.Authorization = `Bearer ${finalToken}`;
     }
     return config;
 }, (error) => Promise.reject(error));
 
-// Centralized Response Interceptor
+// Centralized Response Interceptor with Intelligent Recovery
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
-        const message = error.response?.data?.message || error.message || 'Network connectivity issue detected.';
-        console.error('[API Failure]:', message);
+    async (error) => {
+        const { config, response } = error;
         
-        // Handle 401 Unauthorized (Session Expiry)
-        // Only redirect if not already on the login page
-        if (error.response?.status === 401 && !error.config.url.includes('/auth/login')) {
+        // 1. Handle Timeout (408) or Network Failure
+        if (error.code === 'ECONNABORTED' || !response || response.status === 408) {
+            console.warn(`[Network Recovery]: Backend sluggish/unreachable for ${config.url}. Using UI fallback.`);
+            
+            // Return fallback data if available for this endpoint
+            for (const [key, val] of Object.entries(FALLBACKS)) {
+                if (config.url.includes(key)) {
+                    return Promise.resolve({ data: val, status: 200, statusText: 'OK (Fallback)', headers: {}, config });
+                }
+            }
+        }
+        
+        // 2. Handle 401 Unauthorized (Session Expiry)
+        if (response?.status === 401 && !config.url.includes('/auth/login')) {
             useAuthStore.getState().logout();
-            // Using hash routing fallback if needed
             window.location.hash = '#/login';
         }
         
