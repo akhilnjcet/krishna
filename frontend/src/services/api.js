@@ -3,8 +3,20 @@ import useAuthStore from '../stores/authStore';
 
 import useSignalStore from '../stores/signalStore';
 
+const getApiBaseUrl = () => {
+    // If explicitly provided in environment, use it
+    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+    
+    // In production, use relative path to allow Vercel rewrites to work seamlessly
+    if (import.meta.env.PROD) return '/api';
+    
+    // Fallback to signal store for local network testing
+    return useSignalStore.getState().getApiUrl();
+};
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || useSignalStore.getState().getApiUrl(),
+    baseURL: getApiBaseUrl(),
+    timeout: 15000, // 15s timeout to prevent infinite hangs
 });
 
 

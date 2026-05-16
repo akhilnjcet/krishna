@@ -10,12 +10,19 @@ export const getDirectImageUrl = (url) => {
 
     // Handle local storage paths (e.g., "uploads\image.jpg" or "uploads/image.jpg")
     if (url.startsWith('uploads') || url.includes('\\uploads') || url.includes('/uploads')) {
-        const apiUrl = import.meta.env.VITE_API_URL || useSignalStore.getState().getApiUrl();
-        const baseUrl = apiUrl.replace(/\/api$/, ''); // Remove /api suffix to get root
+        // If the URL already contains http/https, it's likely a full Cloudinary URL saved as is
+        if (url.startsWith('http')) return url;
+
+        const apiUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : useSignalStore.getState().getApiUrl());
+        const baseUrl = apiUrl.startsWith('http') ? apiUrl.replace(/\/api$/, '') : '';
         
-        // Normalize slashes and ensure path is relative to root
-        const normalizedPath = url.replace(/\\/g, '/');
-        return `${baseUrl}/${normalizedPath}`;
+        // Normalize slashes
+        const normalizedPath = url.replace(/\\/g, '/').replace(/^\/?/, '/'); // Ensure leading slash
+        
+        // If baseUrl is empty (relative /api), just return the normalized path relative to root
+        if (!baseUrl) return normalizedPath;
+        
+        return `${baseUrl}${normalizedPath}`;
     }
 
     // If it's already a direct lh3 link, just return it

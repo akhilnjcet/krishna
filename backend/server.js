@@ -31,10 +31,10 @@ app.use((req, res, next) => {
 
 // Connect to Database
 const connectDB = require('./config/database');
-connectDB().then(() => {
-    console.log('Database synchronization established.');
-}).catch(err => {
-    console.error('Critical Database Failure:', err.message);
+// Avoid top-level await to prevent Vercel function timeout during cold starts
+// Instead, the connection is managed by the middleware below
+connectDB().catch(err => {
+    console.error('Initial Database Connection Failed:', err.message);
 });
 
 // Vercel Database Connection Sync (Ensures DB is ready for every request)
@@ -76,8 +76,18 @@ app.use('/api/availability', require('./routes/availabilityRoutes'));
 app.use('/api/complaints', require('./routes/complaintRoutes'));
 app.use('/api/visits', require('./routes/visitRoutes'));
 app.use('/api/lodge-extras', require('./routes/lodgeExtraRoutes'));
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', message: 'API is running' });
+app.get('/api/health', async (req, res) => {
+    try {
+        await connectDB();
+        res.json({ 
+            status: 'ok', 
+            message: 'API is running',
+            db: mongoose.connection.readyState === 1 ? 'connected' : 'connecting',
+            timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+        res.status(503).json({ status: 'error', message: 'Database Unavailable', detail: err.message });
+    }
 });
 
 // Root Error Route
