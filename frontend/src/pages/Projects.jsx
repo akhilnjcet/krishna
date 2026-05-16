@@ -158,7 +158,7 @@ const Projects = () => {
                 </motion.div>
 
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-40">
+                    <div className="flex flex-col items-center justify-center py-20 md:py-40">
                         <div className="relative w-20 h-20">
                             <motion.div 
                                 animate={{ rotate: 360 }}
@@ -180,7 +180,7 @@ const Projects = () => {
                     <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="text-center py-40 rounded-[3rem] border-2 border-dashed border-white/5 bg-white/[0.01] backdrop-blur-3xl"
+                        className="text-center py-20 md:py-40 rounded-[3rem] border-2 border-dashed border-white/5 bg-white/[0.01] backdrop-blur-3xl"
                     >
                         <AlertCircle className="w-20 h-20 text-white/5 mx-auto mb-8" />
                         <p className="font-black uppercase tracking-[0.4em] text-gray-600">No project archives detected</p>

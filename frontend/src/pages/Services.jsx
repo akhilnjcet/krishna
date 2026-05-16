@@ -58,7 +58,7 @@ const Services = () => {
         <div className="bg-[#050505] min-h-screen pb-24 font-sans text-white">
 
             {/* CINEMATIC HEADER */}
-            <div className="relative pt-32 pb-24 px-4 overflow-hidden border-b-[1px] border-white/5">
+            <div className="relative pt-28 pb-16 md:pt-32 md:pb-24 px-4 overflow-hidden border-b-[1px] border-white/5">
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]"></div>
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-accent/5 blur-[120px] rounded-full"></div>
 
@@ -86,7 +86,7 @@ const Services = () => {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-24 space-y-24">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 md:mt-24 space-y-12 md:space-y-24">
                 {servicesData.map((service, index) => {
                     const isHighlighted = highlightedService === service.id;
                     return (
@@ -116,7 +116,7 @@ const Services = () => {
                                 </div>
                             </div>
 
-                            <div className="w-full lg:w-1/2 p-10 sm:p-16 lg:p-20 flex flex-col justify-center relative bg-[#0a0a0c]">
+                            <div className="w-full lg:w-1/2 p-8 sm:p-16 lg:p-20 flex flex-col justify-center relative bg-[#0a0a0c]">
                                 <div className="absolute top-0 right-0 p-10 text-white/[0.02] pointer-events-none">
                                     <Target className="w-40 h-40" />
                                 </div>
@@ -129,7 +129,7 @@ const Services = () => {
 
                                     <h2 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter mb-8 italic">{service.title}</h2>
 
-                                    <p className="text-gray-400 text-lg mb-12 font-bold leading-relaxed max-w-xl uppercase tracking-tight">
+                                    <p className="text-gray-400 text-base md:text-lg mb-8 md:mb-12 font-bold leading-relaxed max-w-xl uppercase tracking-tight">
                                         {service.desc}
                                     </p>
 
@@ -170,7 +170,7 @@ const Services = () => {
             </div>
 
             {/* Technical Detail Strip */}
-            <div className="bg-brand-accent py-12 mt-24 overflow-hidden whitespace-nowrap border-y border-black">
+            <div className="bg-brand-accent py-8 md:py-12 mt-16 md:mt-24 overflow-hidden whitespace-nowrap border-y border-black">
                 <div className="flex animate-scroll gap-20">
                     {[...Array(10)].map((_, i) => (
                         <div key={i} className="flex items-center gap-6 text-brand-950 font-black uppercase tracking-[0.5em] text-[10px]">

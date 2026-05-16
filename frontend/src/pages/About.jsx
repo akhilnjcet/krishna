@@ -49,7 +49,7 @@ const About = () => {
         <div className="bg-[#050505] min-h-screen text-white font-sans selection:bg-brand-accent selection:text-black pb-32">
             
             {/* HERO SECTION */}
-            <section className="relative h-[80vh] flex items-center justify-center overflow-hidden pt-20">
+            <section className="relative h-[60vh] md:h-[80vh] flex items-center justify-center overflow-hidden pt-20">
                 <div className="absolute inset-0 z-0">
                     <img 
                         src={aboutData.about_image} 
@@ -85,13 +85,13 @@ const About = () => {
             </section>
 
             {/* NARRATIVE SECTION */}
-            <section className="py-40 relative px-6">
+            <section className="py-20 md:py-40 relative px-6">
                 <div className="max-w-7xl mx-auto">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-24">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
                         <div className="lg:col-span-12 xl:col-span-7">
                             <span className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-accent mb-6 block italic">Corporate Manifesto</span>
-                            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter italic mb-12 leading-[0.9]">FORGING <br /> INTEGRITY.</h2>
-                            <p className="text-2xl md:text-3xl text-gray-500 font-bold uppercase tracking-tight leading-relaxed mb-16 italic">
+                            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter italic mb-8 md:mb-12 leading-[0.9]">FORGING <br /> INTEGRITY.</h2>
+                            <p className="text-xl md:text-3xl text-gray-500 font-bold uppercase tracking-tight leading-relaxed mb-10 md:mb-16 italic">
                                 {aboutData.about_content}
                             </p>
 
@@ -133,7 +133,7 @@ const About = () => {
             </section>
 
             {/* CORE VALUES */}
-            <section className="py-40 border-y border-white/5 bg-white/[0.01]">
+            <section className="py-20 md:py-40 border-y border-white/5 bg-white/[0.01]">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
                         {[
@@ -154,7 +154,7 @@ const About = () => {
             </section>
 
             {/* TEAM / HERITAGE STRIP */}
-            <section className="py-40 relative px-6 text-center">
+            <section className="py-20 md:py-40 relative px-6 text-center">
                 <div className="max-w-4xl mx-auto">
                     <Users className="w-24 h-24 text-white/5 mx-auto mb-16" />
                     <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter italic mb-12">BEYOND <br /> <span className="text-brand-accent">STRUCTURES.</span></h2>

@@ -79,7 +79,7 @@ const Blog = () => {
         <div className="bg-[#050505] min-h-screen pb-32 font-sans text-white">
 
             {/* CINEMATIC HEADER */}
-            <div className="relative pt-32 pb-24 px-4 overflow-hidden border-b-[1px] border-white/5">
+            <div className="relative pt-28 pb-16 md:pt-32 md:pb-24 px-4 overflow-hidden border-b-[1px] border-white/5">
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]"></div>
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-accent/5 blur-[120px] rounded-full"></div>
 
@@ -111,15 +111,15 @@ const Blog = () => {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-24">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 md:mt-24">
                 
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-40">
+                    <div className="flex flex-col items-center justify-center py-20 md:py-40">
                         <Loader2 className="w-16 h-16 text-brand-accent animate-spin mb-8" />
                         <p className="font-black uppercase tracking-[0.5em] text-[10px] text-gray-600">Retrieving Secure Archives...</p>
                     </div>
                 ) : fetchError ? (
-                    <div className="text-center py-40 bg-red-600/[0.02] rounded-[4rem] border-2 border-dashed border-red-600/10">
+                    <div className="text-center py-20 md:py-40 bg-red-600/[0.02] rounded-[4rem] border-2 border-dashed border-red-600/10">
                         <AlertTriangle className="w-20 h-20 text-red-600/20 mx-auto mb-8" />
                         <h3 className="text-white font-black uppercase tracking-widest text-lg mb-4 italic">Archival Protocol Mismatch</h3>
                         <p className="text-gray-600 font-bold uppercase tracking-[0.2em] mb-12 max-w-sm mx-auto leading-relaxed">
@@ -133,7 +133,7 @@ const Blog = () => {
                         </button>
                     </div>
                 ) : filteredPosts.length === 0 ? (
-                    <div className="text-center py-40 bg-white/[0.01] rounded-[4rem] border-2 border-dashed border-white/5">
+                    <div className="text-center py-20 md:py-40 bg-white/[0.01] rounded-[4rem] border-2 border-dashed border-white/5">
                         <AlertCircle className="w-20 h-20 text-white/5 mx-auto mb-8" />
                         <p className="text-gray-600 font-black uppercase tracking-[0.4em]">No matching intel logs found in current sector</p>
                     </div>

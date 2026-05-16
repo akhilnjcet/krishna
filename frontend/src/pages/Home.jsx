@@ -105,6 +105,7 @@ const TESTIMONIALS = [
 /* ─── Main Component ─────────────────────────────────────────────── */
 const Home = () => {
     const [projects, setProjects] = useState([]);
+    const [loadingProjects, setLoadingProjects] = useState(true);
     const [testimonialIdx, setTestimonialIdx] = useState(0);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const heroRef = useRef(null);
@@ -146,9 +147,13 @@ const Home = () => {
                     setSettings(prev => ({ ...prev, ...map }));
                 }
                 if (projectsRes.status === 'fulfilled' && projectsRes.value?.data) {
-                    setProjects(projectsRes.value.data);
+                    // Filter out projects that have no images
+                    const validProjects = projectsRes.value.data.filter(p => p.images && p.images.length > 0);
+                    setProjects(validProjects);
                 }
-            } catch (e) { console.error('Fetch error', e); }
+            } catch (e) { console.error('Fetch error', e); } finally {
+                setLoadingProjects(false);
+            }
         };
         fetchAll();
     }, []);
@@ -317,7 +322,7 @@ const Home = () => {
                 </section>
 
                 {/* Banner Ad Placement */}
-                <div className="bg-[#050B1A] pt-12 pb-6 border-b border-indigo-900/40">
+                <div className="bg-[#050B1A] pt-8 pb-4 md:pt-12 md:pb-6 border-b border-indigo-900/40">
                     <div className="max-w-7xl mx-auto px-6">
                         <AdBanner adSlot="7234567890" adFormat="horizontal" />
                     </div>
@@ -326,11 +331,11 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     2. ABOUT SECTION — Cinematic reveal   
                     ════════════════════════════════════════ */}
-                <section id="about" className="py-36 bg-[#060D1F] relative overflow-hidden">
+                <section id="about" className="py-20 md:py-36 bg-[#060D1F] relative overflow-hidden">
                     {/* Ambient glow */}
                     <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-900/20 rounded-full blur-[150px] pointer-events-none -translate-x-1/2 -translate-y-1/2" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
                             {/* Text */}
                             <motion.div
                                 initial="hidden" whileInView="visible"
@@ -340,7 +345,7 @@ const Home = () => {
                                 <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-6xl font-black text-white leading-tight tracking-tighter mb-8">
                                     {settings.about_title}
                                 </motion.h2>
-                                <motion.p variants={fadeUp} custom={2} className="text-slate-400 text-lg leading-relaxed mb-12 font-medium">
+                                <motion.p variants={fadeUp} custom={2} className="text-slate-400 text-lg leading-relaxed mb-8 md:mb-12 font-medium">
                                     {settings.about_content}
                                 </motion.p>
                                 <motion.div variants={fadeUp} custom={3} className="space-y-5">
@@ -359,7 +364,7 @@ const Home = () => {
                             <motion.div
                                 initial="hidden" whileInView="visible"
                                 viewport={{ once: true }} variants={fadeRight}
-                                className="relative h-[600px]"
+                                className="relative h-[400px] md:h-[600px]"
                             >
                                 <motion.div whileHover={{ scale: 1.03, rotate: -1 }} transition={{ type: 'spring', stiffness: 200 }}
                                     className="absolute top-0 left-0 right-16 h-[380px] rounded-[3rem] overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.5)]"
@@ -390,13 +395,13 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     3. SERVICES — 3D Perspective Cards     
                     ════════════════════════════════════════ */}
-                <section id="services" className="py-36 bg-white relative overflow-hidden">
+                <section id="services" className="py-20 md:py-36 bg-white relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-50 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/3 pointer-events-none opacity-60" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
-                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-24">
+                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12 md:mb-24">
                             <motion.p variants={fadeUp} custom={0} className="text-blue-500 font-black uppercase tracking-[0.4em] text-xs mb-4">What We Do</motion.p>
-                            <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter mb-6">End-to-End Metal Solutions</motion.h2>
-                            <motion.p variants={fadeUp} custom={2} className="text-slate-500 text-xl max-w-2xl mx-auto font-medium">
+                            <motion.h2 variants={fadeUp} custom={1} className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter mb-6">End-to-End Metal Solutions</motion.h2>
+                            <motion.p variants={fadeUp} custom={2} className="text-slate-500 text-lg md:text-xl max-w-2xl mx-auto font-medium">
                                 World-class engineering services tailored for industrial and residential needs.
                             </motion.p>
                         </motion.div>
@@ -453,15 +458,20 @@ const Home = () => {
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={stagger}
                             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-5"
                         >
-                            {(projects.length > 0 ? projects : [
+                            {loadingProjects ? (
+                                // Skeleton loader or empty slots while fetching
+                                [...Array(3)].map((_, i) => (
+                                    <div key={i} className="aspect-[4/3] rounded-[2rem] bg-white/5 animate-pulse" />
+                                ))
+                            ) : (projects.length > 0 ? projects.slice(0, 6) : [
                                 { images: [{ url: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=700&h=500&fit=crop' }], title: 'Industrial Steel Structure' },
                                 { images: [{ url: 'https://images.unsplash.com/photo-1541888087405-ebcfca2be2b1?w=700&h=500&fit=crop' }], title: 'Pipeline Welding' },
                                 { images: [{ url: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=700&h=500&fit=crop' }], title: 'Factory Roofing' },
                                 { images: [{ url: 'https://images.unsplash.com/photo-1510265236892-329bfd7de7a1?w=700&h=500&fit=crop' }], title: 'Custom Iron Gates' },
                                 { images: [{ url: 'https://images.unsplash.com/photo-1590496793907-9b24479abccb?w=700&h=500&fit=crop' }], title: 'Commercial Grills' },
                                 { images: [{ url: 'https://images.unsplash.com/photo-1621213349942-0f723e421cd0?w=700&h=500&fit=crop' }], title: 'On-site Repair' },
-                            ]).slice(0, 6).map((item, i) => {
-                                const imgUrl = item.images?.[0]?.url ? getDirectImageUrl(item.images[0].url) : item.images?.[0]?.url;
+                            ]).map((item, i) => {
+                                const imgUrl = item.images?.[0]?.url ? getDirectImageUrl(item.images[0].url) : '';
                                 return (
                                     <motion.div
                                         key={item._id || i}
@@ -497,12 +507,12 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     5. TESTIMONIALS — animated auto-slide  
                     ════════════════════════════════════════ */}
-                <section className="py-36 bg-white relative overflow-hidden">
+                <section className="py-20 md:py-36 bg-white relative overflow-hidden">
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-50 rounded-full blur-[100px] pointer-events-none opacity-60" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
-                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-20">
+                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12 md:mb-20">
                             <motion.p variants={fadeUp} custom={0} className="text-blue-500 font-black uppercase tracking-[0.4em] text-xs mb-4">Testimonials</motion.p>
-                            <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 tracking-tighter mb-4">Trusted by Kerala</motion.h2>
+                            <motion.h2 variants={fadeUp} custom={1} className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-4">Trusted by Kerala</motion.h2>
                             <motion.p variants={fadeUp} custom={2} className="text-slate-500 font-bold">⭐ 4.8/5 based on Google Reviews</motion.p>
                         </motion.div>
 
@@ -593,7 +603,7 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     7. CONTACT + MAP FOOTER               
                     ════════════════════════════════════════ */}
-                <section id="contact" className="py-36 bg-[#060D1F] text-white overflow-hidden">
+                <section id="contact" className="py-20 md:py-36 bg-[#060D1F] text-white overflow-hidden">
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
                             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>

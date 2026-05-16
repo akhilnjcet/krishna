@@ -1,9 +1,22 @@
+import useSignalStore from '../stores/signalStore';
+
 /**
  * Transforms various image hosting URLs (like Google Drive) into direct image links
  * that can be used in <img> tags.
+ * Also handles local upload paths by prepending the current API base URL.
  */
 export const getDirectImageUrl = (url) => {
     if (!url) return '';
+
+    // Handle local storage paths (e.g., "uploads\image.jpg" or "uploads/image.jpg")
+    if (url.startsWith('uploads') || url.includes('\\uploads') || url.includes('/uploads')) {
+        const apiUrl = import.meta.env.VITE_API_URL || useSignalStore.getState().getApiUrl();
+        const baseUrl = apiUrl.replace(/\/api$/, ''); // Remove /api suffix to get root
+        
+        // Normalize slashes and ensure path is relative to root
+        const normalizedPath = url.replace(/\\/g, '/');
+        return `${baseUrl}/${normalizedPath}`;
+    }
 
     // If it's already a direct lh3 link, just return it
     if (url.includes('googleusercontent.com')) return url;
