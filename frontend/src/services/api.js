@@ -16,26 +16,43 @@ const getApiBaseUrl = () => {
 
 const api = axios.create({
     baseURL: getApiBaseUrl(),
-    timeout: 15000, // 15s timeout to prevent infinite hangs
+    timeout: 20000, // 20s timeout for cloud handshakes
 });
 
-
+// Centralized Request Interceptor
 api.interceptors.request.use((config) => {
+    // 1. Check for token in AuthStore (Primary)
     const token = useAuthStore.getState().token;
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    
+    // 2. Fallback to localStorage if store is not yet hydrated
+    const fallbackToken = !token ? (
+        localStorage.getItem('auth-storage') ? 
+        JSON.parse(localStorage.getItem('auth-storage'))?.state?.token : null
+    ) : null;
+
+    const finalToken = token || fallbackToken;
+    
+    if (finalToken) {
+        config.headers.Authorization = `Bearer ${finalToken}`;
     }
     return config;
-});
+}, (error) => Promise.reject(error));
 
+// Centralized Response Interceptor
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // Only redirect to login if the error is 401 AND we are not currently trying to log in
+        const message = error.response?.data?.message || error.message || 'Network connectivity issue detected.';
+        console.error('[API Failure]:', message);
+        
+        // Handle 401 Unauthorized (Session Expiry)
+        // Only redirect if not already on the login page
         if (error.response?.status === 401 && !error.config.url.includes('/auth/login')) {
             useAuthStore.getState().logout();
+            // Using hash routing fallback if needed
             window.location.hash = '#/login';
         }
+        
         return Promise.reject(error);
     }
 );

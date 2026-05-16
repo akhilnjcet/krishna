@@ -1,37 +1,47 @@
 const mongoose = require('mongoose');
 
+const MONGODB_URI = process.env.MONGODB_URI;
+
+/**
+ * Global is used here to maintain a cached connection across hot reloads
+ * in development and serverless function invocations in production.
+ */
+let cached = global.mongoose;
+
+if (!cached) {
+    cached = global.mongoose = { conn: null, promise: null };
+}
+
 const connectDB = async () => {
-    if (mongoose.connection.readyState === 1) return; // Already connected
-    if (mongoose.connection.readyState === 2) {
-        // Wait for current connection attempt
-        return new Promise((resolve) => {
-            mongoose.connection.once('connected', resolve);
-            mongoose.connection.once('error', resolve); 
+    if (cached.conn) {
+        return cached.conn;
+    }
+
+    if (!cached.promise) {
+        const opts = {
+            serverSelectionTimeoutMS: 8000,
+            bufferCommands: false,
+        };
+
+        if (!MONGODB_URI) {
+            console.error('CRITICAL: MONGODB_URI is missing from environment variables.');
+            throw new Error('MONGODB_URI missing');
+        }
+
+        cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+            console.log(`MongoDB Connected: ${mongoose.connection.host}`);
+            return mongoose;
         });
     }
 
     try {
-        const uri = process.env.MONGODB_URI;
-        if (!uri) {
-            console.warn('WARNING: MONGODB_URI is not defined. Falling back to local defaults (this will fail in production).');
-        }
-
-        await mongoose.connect(uri || 'mongodb://127.0.0.1:27017/krishna-erp', {
-            serverSelectionTimeoutMS: 8000, // Slightly longer for cloud handshakes
-            bufferCommands: false,
-            connectTimeoutMS: 10000,
-        });
-        console.log(`MongoDB Connected: ${mongoose.connection.host}`);
-    } catch (error) {
-        console.error(`CRITICAL DB ERROR: ${error.message}`);
-        // Log more details if possible
-        if (error.name === 'MongooseServerSelectionError') {
-            console.error('Check your IP whitelisting on MongoDB Atlas and verify your connection string.');
-        }
-        throw error;
+        cached.conn = await cached.promise;
+    } catch (e) {
+        cached.promise = null;
+        throw e;
     }
+
+    return cached.conn;
 };
-
-
 
 module.exports = connectDB;
