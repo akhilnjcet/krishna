@@ -1,5 +1,7 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_mock');
 const Payment = require('../models/Payment');
+const User = require('../models/User');
+const { EVENTS, sendNotification } = require('../services/notificationService');
 
 exports.submitPayment = async (req, res) => {
     try {
@@ -17,6 +19,14 @@ exports.submitPayment = async (req, res) => {
             receiptUrl,
             status: 'pending' // Manual verification needed
         });
+
+        // Send Payment Received Notification (Non-blocking)
+        const data = {
+            name: req.user.name,
+            amount: amount,
+            room: 'Stay/Services'
+        };
+        sendNotification(EVENTS.PAYMENT_RECEIVED, req.user, data).catch(err => console.error('Payment Receive Notify Error:', err));
 
         res.status(201).json(newPayment);
     } catch (error) {
@@ -58,6 +68,19 @@ exports.verifyPayment = async (req, res) => {
         }, { new: true });
         
         if (!payment) return res.status(404).json({ message: 'Payment record not found' });
+
+        // Send Payment Notification (Non-blocking)
+        const customer = await User.findById(payment.customerId);
+        if (customer) {
+            const event = status === 'verified' ? EVENTS.PAYMENT_SUCCESS : EVENTS.PAYMENT_FAILED;
+            const data = {
+                name: customer.name,
+                amount: payment.amount,
+                room: 'Stay/Services' // Generic for payment controller
+            };
+            sendNotification(event, customer, data).catch(err => console.error('Payment Notify Error:', err));
+        }
+
         res.json(payment);
     } catch (error) {
         res.status(500).json({ message: error.message });

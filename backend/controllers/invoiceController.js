@@ -1,8 +1,17 @@
 const Invoice = require('../models/Invoice');
+const User = require('../models/User');
+const { EVENTS, sendNotification } = require('../services/notificationService');
 
 exports.createInvoice = async (req, res) => {
     try {
         const invoice = await Invoice.create(req.body);
+        
+        // Send Invoice Generated Notification (Non-blocking)
+        const customer = await User.findById(invoice.customerId);
+        if (customer) {
+            sendNotification(EVENTS.INVOICE_GENERATED, customer).catch(err => console.error('Invoice Notify Error:', err));
+        }
+
         res.status(201).json(invoice);
     } catch (error) {
         res.status(500).json({ message: error.message });

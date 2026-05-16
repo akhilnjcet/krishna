@@ -132,7 +132,7 @@ const Projects = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
-                    className="flex flex-wrap justify-center gap-3 mb-24"
+                    className="flex flex-wrap justify-center gap-2 md:gap-3 mb-16 md:mb-24"
                 >
                     {categories.map(cat => (
                         <motion.button
@@ -189,7 +189,7 @@ const Projects = () => {
                     <LayoutGroup>
                         <motion.div 
                             layout
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-12"
                         >
                             <AnimatePresence mode='popLayout'>
                                 {filteredProjects.map((project, idx) => (
@@ -204,14 +204,14 @@ const Projects = () => {
                                         className="group cursor-pointer relative"
                                         onClick={() => setSelectedProject(project)}
                                     >
-                                        <div className="relative aspect-[10/11] overflow-hidden rounded-[2.5rem] bg-[#0c0c0e] border border-white/10 group-hover:border-brand-accent/30 shadow-2xl transition-all duration-500">
+                                        <div className="relative aspect-[10/11] sm:aspect-[4/5] md:aspect-[10/11] overflow-hidden rounded-[2rem] md:rounded-[2.5rem] bg-[#0c0c0e] border border-white/10 group-hover:border-brand-accent/30 shadow-2xl transition-all duration-500">
                                             <div className="absolute inset-0 z-10 pointer-events-none border-[12px] border-white/0 group-hover:border-white/5 transition-all duration-500"></div>
                                             
                                             {project.images && project.images.length > 0 ? (
                                                 <img
                                                     src={getDirectImageUrl(project.images[0].url)}
                                                     alt={project.title}
-                                                    className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110 grayscale-[40%] group-hover:grayscale-0 contrast-[1.1]"
+                                                    className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110 grayscale-0 md:grayscale-[40%] group-hover:grayscale-0 contrast-[1.1]"
                                                 />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-white/5">
@@ -219,23 +219,23 @@ const Projects = () => {
                                                 </div>
                                             )}
                                             
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-60 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-10 translate-y-4 group-hover:translate-y-0 transition-transform">
-                                                <div className="mb-4 flex items-center gap-3">
-                                                    <div className="w-10 h-[2px] bg-brand-accent"></div>
-                                                    <span className="text-[9px] font-black text-brand-accent uppercase tracking-[0.3em]">
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90 md:opacity-60 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-10 translate-y-0 md:translate-y-4 group-hover:translate-y-0 transition-transform">
+                                                <div className="mb-2 md:mb-4 flex items-center gap-3">
+                                                    <div className="w-8 md:w-10 h-[2px] bg-brand-accent"></div>
+                                                    <span className="text-[8px] md:text-[9px] font-black text-brand-accent uppercase tracking-[0.3em]">
                                                         {project.category}
                                                     </span>
                                                 </div>
-                                                <h3 className="text-3xl font-black uppercase tracking-tighter leading-[0.85] text-white">
+                                                <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter leading-[0.85] text-white">
                                                     {project.title}
                                                 </h3>
                                                 
-                                                <div className="mt-8 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100">
-                                                    <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                <div className="mt-6 md:mt-8 flex items-center justify-between opacity-100 md:opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100">
+                                                    <div className="flex items-center gap-2 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                                                        <MapPin className="w-3.5 h-3.5 text-brand-accent" /> {project.location || 'SITE'}
                                                     </div>
-                                                    <div className="bg-brand-accent text-black p-3.5 rounded-full rotate-45 group-hover:rotate-0 transition-transform duration-500 shadow-[0_0_20px_#ffb40044]">
-                                                        <ArrowUpRight className="w-5 h-5" />
+                                                    <div className="bg-brand-accent text-black p-2.5 md:p-3.5 rounded-full rotate-0 md:rotate-45 group-hover:rotate-0 transition-transform duration-500 shadow-[0_0_20px_#ffb40044]">
+                                                        <ArrowUpRight className="w-4 h-4 md:w-5 md:h-5" />
                                                     </div>
                                                 </div>
                                             </div>

@@ -232,7 +232,11 @@ async function sendWhatsAppMessage(number, message) {
         
         const jid = `${cleanNumber}@s.whatsapp.net`;
         await sock.sendMessage(jid, { text: message });
-    } catch (error) {}
+        return true;
+    } catch (error) {
+        console.error('WhatsApp Send Error:', error.message);
+        return false;
+    }
 }
 
 // Business logic functions

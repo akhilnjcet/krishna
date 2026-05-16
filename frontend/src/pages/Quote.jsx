@@ -118,7 +118,7 @@ const Quote = () => {
                         </div>
 
                         <div className="p-8 md:p-12 bg-[#FDFDFD]">
-                            {error && <div className="bg-red-50 text-red-700 p-4 border-4 border-red-600 text-sm font-bold uppercase tracking-wide mb-8 flex items-center gap-3">
+                            {error && <div className="bg-rose-50 text-rose-700 p-4 border-4 border-red-600 text-[10px] font-black uppercase tracking-[0.2em] mb-8 flex items-center gap-3 shadow-[4px_4px_0_0_#e11d48]">
                                 <span className="text-xl">⚠️</span> {error}
                             </div>}
 

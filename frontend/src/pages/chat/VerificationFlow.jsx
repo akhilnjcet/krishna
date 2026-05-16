@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { db } from '../../services/firebase';
+import { db, getAuthInstance } from '../../services/firebase';
+import { signInAnonymously } from 'firebase/auth';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import useAuthStore from '../../stores/authStore';
 import { CheckCircle2, ChevronRight, Projector as Project, AlertCircle, Send, ArrowLeft } from 'lucide-react';
@@ -50,12 +51,18 @@ const VerificationFlow = ({ onComplete }) => {
 
     const submitRequest = async () => {
         try {
+            const auth = getAuthInstance();
+            // Ensure we are signed in to Firebase before writing
+            if (!auth.currentUser) {
+                await signInAnonymously(auth);
+            }
+
             await addDoc(collection(db, "chatRequests"), {
-                userId: user.id || user._id,
-                userName: user.name,
-                userEmail: user.email,
-                userRole: user.role || 'customer',
-                requestType: user.role === 'staff' ? 'staff-reference' : 'support',
+                userId: user?.id || user?._id || "unknown_id",
+                userName: user?.name || "Krisha Guest",
+                userEmail: user?.email || "no-email@krisha.com",
+                userRole: user?.role || 'customer',
+                requestType: user?.role === 'staff' ? 'staff-reference' : 'support',
                 projectId: selectedProject._id,
                 projectTitle: selectedProject.title,
                 reason: (selectedReason === "Other (technical detail)" || selectedReason === "Other (internal ref)") ? otherReason : selectedReason,
@@ -64,8 +71,8 @@ const VerificationFlow = ({ onComplete }) => {
             });
             setStep(3);
         } catch (err) {
-            console.error(err);
-            alert("Administrative Error: Channel Request Failed");
+            console.error("Firestore Request Failure:", err);
+            alert(`Krisha Buildings: Channel Request Failed - ${err.message || "Unknown Administrative Error"}`);
         }
     };
 
@@ -127,13 +134,38 @@ const VerificationFlow = ({ onComplete }) => {
                             )}
                         </div>
 
-                        <button 
-                            disabled={!selectedProject}
-                            onClick={() => setStep(2)}
-                            className="w-full bg-indigo-600 disabled:bg-slate-100 text-white disabled:text-slate-400 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 group shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700"
-                        >
-                            Confirm Selection <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </button>
+                        <div className="flex flex-col gap-4">
+                            <button 
+                                disabled={!selectedProject}
+                                onClick={() => setStep(2)}
+                                className="w-full bg-indigo-600 disabled:bg-slate-100 text-white disabled:text-slate-400 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 group shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700"
+                            >
+                                Confirm Selection <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </button>
+
+                            {(!selectedProject || projects.length === 0) && (
+                                <button 
+                                    onClick={async () => { 
+                                        try {
+                                            const auth = getAuthInstance();
+                                            if (!auth.currentUser) await signInAnonymously(auth);
+                                            setSelectedProject({ _id: '000000000000000000000000', title: 'General Support' }); 
+                                            setStep(2); 
+                                        } catch (err) {
+                                            console.error("General Inquiry Handshake Failure:", err);
+                                            let errorMsg = err.message;
+                                            if (err.code === 'auth/operation-not-allowed') {
+                                                errorMsg = "Administrative Action Required: Enable 'Anonymous' sign-in in your Firebase Console.";
+                                            }
+                                            alert(`Krisha Buildings: Security Handshake Failed - ${errorMsg}. Please refresh.`);
+                                        }
+                                    }}
+                                    className="w-full bg-slate-100 text-slate-500 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-slate-200 transition-all"
+                                >
+                                    Proceed with General Inquiry
+                                </button>
+                            )}
+                        </div>
                     </motion.div>
                 )}
 
@@ -190,8 +222,8 @@ const VerificationFlow = ({ onComplete }) => {
                              <CheckCircle2 className="w-12 h-12" />
                         </div>
                         <div className="space-y-2">
-                             <h2 className="text-3xl font-black text-slate-800 tracking-tight leading-none uppercase">Authentication Locked</h2>
-                             <p className="text-slate-500 font-medium px-12">Your channel request for Project #{selectedProject._id.substring(18)} has been submitted to HQ for administrative clearance.</p>
+                             <h2 className="text-3xl font-black text-slate-800 tracking-tight leading-none uppercase">Krisha Buildings: Authentication Locked</h2>
+                             <p className="text-slate-500 font-medium px-12">Your channel request for Project #{selectedProject._id?.substring(18) || "N/A"} has been submitted to HQ for administrative clearance.</p>
                         </div>
                         <div className="pt-8 flex flex-col items-center gap-4">
                              <button 

@@ -11,6 +11,8 @@ import {
     MessageSquare, ShieldAlert, History, ShieldCheck, ChevronRight,
     CheckCircle, XCircle, Clock, Plus, ArrowLeft
 } from 'lucide-react';
+import { auth, getAuthInstance } from '../../services/firebase';
+import { signInAnonymously } from 'firebase/auth';
 
 const SupportHub = () => {
     const { user } = useAuthStore();
@@ -23,6 +25,10 @@ const SupportHub = () => {
     const [chatType, setChatType] = useState('support'); // 'support' or 'staff-reference'
 
     useEffect(() => {
+        // Ensure Firebase Auth is initialized for Firestore writes
+        const auth = getAuthInstance();
+        signInAnonymously(auth).catch(err => console.error("Firebase Auth Fail:", err));
+
         if (!user) {
             // Use a slight timeout to avoid synchronous setState inside effect warning
             const timer = setTimeout(() => setLoading(false), 0);
@@ -261,7 +267,7 @@ const SupportHub = () => {
                 <div className="py-32 text-center bg-white rounded-[4rem] border-4 border-dashed border-slate-100">
                     <History className="w-20 h-20 text-slate-100 mx-auto mb-6" />
                     <p className="text-slate-300 font-black uppercase tracking-[0.4em] italic text-sm">Registry Sync: Error 404 - No {activeTab} Records Found</p>
-                    {user.role === 'customer' && activeTab === 'active' && (
+                    {(user.role === 'customer' || user.role === 'staff') && activeTab === 'active' && (
                          <button 
                          onClick={() => setView('verify')}
                          className="mt-8 bg-indigo-600 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:scale-105 transition-all"

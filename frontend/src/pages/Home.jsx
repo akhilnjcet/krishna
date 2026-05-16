@@ -436,22 +436,22 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     4. PORTFOLIO / GALLERY — animated grid 
                     ════════════════════════════════════════ */}
-                <section id="portfolio" className="py-36 bg-[#060D1F] overflow-hidden">
+                <section id="portfolio" className="py-20 md:py-36 bg-[#060D1F] relative">
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
-                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={stagger} className="flex flex-col md:flex-row md:items-end justify-between mb-12 md:mb-16 gap-6">
                             <div>
                                 <motion.p variants={fadeUp} custom={0} className="text-blue-400 font-black uppercase tracking-[0.4em] text-xs mb-3">Our Work</motion.p>
-                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-white tracking-tighter">Recent Projects</motion.h2>
+                                <motion.h2 variants={fadeUp} custom={1} className="text-4xl md:text-5xl font-black text-white tracking-tighter">Recent Projects</motion.h2>
                             </div>
                             <motion.div variants={fadeUp} custom={2}>
                                 <Link to="/projects" className="group flex items-center gap-3 text-slate-400 hover:text-white font-bold transition-colors">
-                                    View All <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
+                                    View All Archive <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
                                 </Link>
                             </motion.div>
                         </motion.div>
 
-                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}
-                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={stagger}
+                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-5"
                         >
                             {(projects.length > 0 ? projects : [
                                 { images: [{ url: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=700&h=500&fit=crop' }], title: 'Industrial Steel Structure' },
@@ -468,23 +468,23 @@ const Home = () => {
                                         variants={scaleIn}
                                         custom={i}
                                         whileHover={{ scale: 1.02 }}
-                                        className="group relative rounded-[2.5rem] overflow-hidden aspect-[4/3] bg-slate-800 cursor-pointer shadow-2xl"
+                                        className="group relative rounded-[2rem] md:rounded-[2.5rem] overflow-hidden aspect-[4/3] min-h-[280px] bg-slate-800 cursor-pointer shadow-2xl"
                                     >
                                         <motion.img
                                             whileHover={{ scale: 1.1 }}
                                             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                                             src={imgUrl}
                                             alt={item.title}
-                                            className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity duration-500"
+                                            className="w-full h-full object-cover opacity-100 md:opacity-70 group-hover:opacity-100 transition-opacity duration-500"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6 md:p-8">
                                             <div>
-                                                <p className="text-white/60 text-xs font-black uppercase tracking-widest mb-2">Completed Project</p>
-                                                <h3 className="text-2xl font-black text-white">{item.title}</h3>
+                                                <p className="text-white/60 text-[10px] font-black uppercase tracking-widest mb-1 md:mb-2">Completed Project</p>
+                                                <h3 className="text-xl md:text-2xl font-black text-white">{item.title}</h3>
                                             </div>
                                         </div>
-                                        {/* Corner badge */}
-                                        <div className="absolute top-5 right-5 w-10 h-10 rounded-2xl bg-black/30 border border-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {/* Corner badge - visible on mobile as it indicates interactivity */}
+                                        <div className="absolute top-4 right-4 md:top-5 md:right-5 w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-black/50 md:bg-black/30 border border-white/10 backdrop-blur-sm flex items-center justify-center opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                                             <ArrowRight className="w-4 h-4 text-white" />
                                         </div>
                                     </motion.div>
@@ -528,7 +528,7 @@ const Home = () => {
                                     </p>
                                     <div className="flex items-center gap-5">
                                         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-2xl font-black shadow-lg">
-                                            {TESTIMONIALS[testimonialIdx].name.charAt(0)}
+                                            {TESTIMONIALS[testimonialIdx]?.name?.charAt(0) || 'T'}
                                         </div>
                                         <div>
                                             <p className="font-black text-lg text-white">{TESTIMONIALS[testimonialIdx].name}</p>

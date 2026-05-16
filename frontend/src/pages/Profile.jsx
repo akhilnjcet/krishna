@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { User, Phone, Save, Loader2, ShieldAlert, Cpu, Battery, Smartphone } from 'lucide-react';
+import { User, Phone, Mail, Save, Loader2, ShieldAlert, Cpu, Battery, Smartphone } from 'lucide-react';
 import { Device } from '@capacitor/device';
 import api from '../services/api';
 import useAuthStore from '../stores/authStore';
 
 const Profile = () => {
     const { user, login } = useAuthStore();
-    const [formData, setFormData] = useState({ name: '', phone: '' });
+    const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
@@ -32,7 +32,8 @@ const Profile = () => {
             const res = await api.get('/auth/me');
             setFormData({
                 name: res.data.name || '',
-                phone: res.data.phone || res.data.phoneNumber || ''
+                phone: res.data.phone || res.data.phoneNumber || '',
+                email: res.data.email || ''
             });
         } catch (error) {
             console.error("Failed to load profile", error);
@@ -47,14 +48,15 @@ const Profile = () => {
         setMessage('');
         try {
             const res = await api.put('/auth/profile', formData);
-            setMessage('Profile updated successfully!');
+            setMessage('Krisha Buildings: Profile updated successfully.');
             // Update auth store slightly so name shows right away if needed
             if (user) {
                 login({ ...user, name: formData.name });
             }
         } catch (error) {
             console.error(error);
-            setMessage('Failed to update profile.');
+            const errorMsg = error.response?.data?.message || 'Update failed';
+            setMessage(`Krisha Buildings: System Error - ${errorMsg}`);
         } finally {
             setSaving(false);
         }
@@ -106,6 +108,21 @@ const Profile = () => {
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             className="w-full bg-slate-50 border border-slate-200 py-4 pl-12 pr-4 rounded-2xl font-bold text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
                             placeholder="Enter your full name"
+                        />
+                    </div>
+                </div>
+                
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Electronic Mail</label>
+                    <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                            type="email"
+                            required
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-200 py-4 pl-12 pr-4 rounded-2xl font-bold text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                            placeholder="Enter your email"
                         />
                     </div>
                 </div>

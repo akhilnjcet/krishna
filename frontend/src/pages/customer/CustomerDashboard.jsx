@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import {
     TrendingUp, Wallet, ShieldCheck, Activity, ChevronRight, Search, Bed, CalendarX,
-    CheckCircle2, Plus, X, AlertTriangle, Construction
+    CheckCircle2, Plus, X, AlertTriangle, Construction, Zap
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReportHeader from '../../components/ReportHeader';
@@ -276,7 +276,7 @@ const CustomerDashboard = () => {
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-colors ${
                                             selectedProject?._id === project._id ? 'bg-[#2563EB] text-white' : 'bg-white dark:bg-dark-surface text-[#6B7280] border border-slate-200 dark:border-dark-border'
                                         }`}>
-                                            {project.title.charAt(0)}
+                                            {project.title?.charAt(0) || 'P'}
                                         </div>
                                         <div>
                                             <p className={`text-sm font-bold ${selectedProject?._id === project._id ? 'text-[#111827] dark:text-dark-text' : 'text-[#6B7280] dark:text-dark-muted'}`}>{project.title}</p>

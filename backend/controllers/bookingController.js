@@ -1,5 +1,8 @@
 const Booking = require('../models/Booking');
 const Room = require('../models/Room');
+const User = require('../models/User');
+const { EVENTS, sendNotification } = require('../services/notificationService');
+const { format } = require('date-fns');
 
 exports.createBooking = async (req, res) => {
     try {
@@ -22,20 +25,40 @@ exports.createBooking = async (req, res) => {
         });
 
         if (overlap) {
+            // Send Booking Failed Notification (Non-blocking)
+            const user = await User.findById(userId);
+            if (user) {
+                sendNotification(EVENTS.BOOKING_FAILED, user).catch(err => console.error('Booking Failure Notify Error:', err));
+            }
             return res.status(409).json({ error: 'Room is already booked for these dates.' });
         }
 
+        const user = await User.findById(userId);
+        
         const booking = new Booking({
             userId,
             roomId,
             checkIn: ci,
             checkOut: co,
-            guestName,
-            guestPhone,
+            guestName: guestName || user?.name || 'Valued Guest',
+            guestPhone: guestPhone || user?.phoneNumber || user?.phone || 'N/A',
             totalAmount
         });
 
         await booking.save();
+
+        // Send Booking Success Notification (Non-blocking)
+        if (user) {
+            const room = await Room.findById(roomId);
+            const data = {
+                name: user.name,
+                room: room?.number || 'TBA',
+                checkin: format(ci, 'MMM d, yyyy'),
+                amount: totalAmount
+            };
+            sendNotification(EVENTS.BOOKING_CREATED, user, data).catch(err => console.error('Booking Success Notify Error:', err));
+        }
+
         res.status(201).json(booking);
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -83,7 +106,24 @@ exports.updateBookingStatus = async (req, res) => {
             req.params.id, 
             update, 
             { new: true }
-        );
+        ).populate('userId');
+
+        // Send Status Notifications (Non-blocking)
+        if (booking && booking.userId) {
+            let event = null;
+            if (status === 'checked-in') event = EVENTS.CHECKIN_SUCCESS;
+            else if (status === 'completed') event = EVENTS.CHECKOUT_COMPLETED;
+            
+            if (event) {
+                const room = await Room.findById(booking.roomId);
+                const data = {
+                    name: booking.userId.name,
+                    room: room?.number || 'TBA'
+                };
+                sendNotification(event, booking.userId, data).catch(err => console.error('Status Update Notify Error:', err));
+            }
+        }
+
         res.json(booking);
     } catch (err) {
         res.status(400).json({ error: err.message });

@@ -94,7 +94,7 @@ const StaffContacts = () => {
 
                             <div className="flex items-center gap-6 mb-8 mt-2">
                                 <div className="w-16 h-16 bg-slate-900 rounded-[1.5rem] flex items-center justify-center font-black text-white text-2xl shadow-xl group-hover:scale-105 transition-transform duration-500">
-                                    {contact.name?.charAt(0)}
+                                    {contact.name?.charAt(0) || 'U'}
                                 </div>
                                 <div className="text-left">
                                     <h3 className="font-black text-slate-900 text-lg uppercase tracking-tight group-hover:text-indigo-600 transition-colors leading-none mb-2">{contact.name}</h3>

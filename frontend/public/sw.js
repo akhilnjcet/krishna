@@ -7,8 +7,20 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Pass-through for now, required by PWA to be considered valid
-  event.respondWith(fetch(event.request));
+  // Safe-Pass for large biometric models and ads to prevent SW crashes
+  if (event.request.url.includes('models/') || event.request.url.includes('googlesyndication')) {
+    return; // Let the browser handle these normally
+  }
+
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      // Return a basic offline response if the network fails
+      return new Response('Network request failed. Ensure connection to Krisha Buildings HQ.', {
+        status: 408,
+        statusText: 'Network Timeout'
+      });
+    })
+  );
 });
 
 // Notifications

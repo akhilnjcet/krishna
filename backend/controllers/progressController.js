@@ -1,6 +1,8 @@
 const WorkProgress = require('../models/WorkProgress');
 const Project = require('../models/Project');
+const User = require('../models/User');
 const cloudinary = require('cloudinary').v2;
+const { EVENTS, sendNotification } = require('../services/notificationService');
 
 // Staff: Create Progress Update
 exports.createProgress = async (req, res) => {
@@ -29,12 +31,21 @@ exports.createProgress = async (req, res) => {
         });
 
         // Sync with Project model
-        await Project.findByIdAndUpdate(projectId, {
+        const updatedProject = await Project.findByIdAndUpdate(projectId, {
             progress: Number(progressPercentage),
             status: status.toLowerCase() === 'completed' ? 'completed' : 'in-progress',
             updateNotes: description,
             nextNotes: nextPlan
-        });
+        }, { new: true }).populate('customerId');
+        
+        // Send Progress Notifications (Non-blocking)
+        if (updatedProject && updatedProject.customerId) {
+            let event = EVENTS.WORK_PROGRESS;
+            if (updatedProject.status === 'completed') event = EVENTS.WORK_COMPLETED;
+            else if (updatedProject.progress > 0 && updatedProject.progress < 5) event = EVENTS.WORK_STARTED;
+
+            sendNotification(event, updatedProject.customerId, { progress: progressPercentage }).catch(err => console.error('Progress Notify Error:', err));
+        }
 
         res.status(201).json(progress);
     } catch (error) {

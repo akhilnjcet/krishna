@@ -22,7 +22,7 @@ api.interceptors.response.use(
         // Only redirect to login if the error is 401 AND we are not currently trying to log in
         if (error.response?.status === 401 && !error.config.url.includes('/auth/login')) {
             useAuthStore.getState().logout();
-            window.location.href = '/login';
+            window.location.hash = '#/login';
         }
         return Promise.reject(error);
     }

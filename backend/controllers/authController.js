@@ -2,14 +2,7 @@ const User = require('../models/User');
 const Attendance = require('../models/Attendance');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { sendAttendanceAlert, sendLoginAlert: sendWhatsAppLoginAlert } = require('../services/whatsappService');
-const { 
-    sendWelcomeEmail, 
-    sendPasswordResetOTP, 
-    sendLoginNotification, 
-    sendSignoutNotification, 
-    sendPasswordChangeConfirmation 
-} = require('../services/emailService');
+const { EVENTS, sendNotification } = require('../services/notificationService');
 
 const generateToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret123', {
@@ -35,13 +28,14 @@ exports.register = async (req, res) => {
             staff_id, name, email, username: username || email, password: hashedPassword, role: role || 'customer', department, designation, phone
         });
 
-        // Send Welcome Email (Non-blocking)
-        if (email) {
-            sendWelcomeEmail(email, name || username).catch(err => console.error('Greeting Error:', err));
-        }
+        // Send Registration Notification (Non-blocking)
+        sendNotification(EVENTS.USER_REGISTERED, user).catch(err => console.error('Registration Notify Error:', err));
 
-        res.status(201).json(user);
-    } catch (error) { res.status(500).json({ message: error.message }); }
+        res.status(201).json({
+            message: 'Krisha Buildings: Personnel record initialized successfully.',
+            user
+        });
+    } catch (error) { res.status(500).json({ message: `Krisha Buildings: Registration Breach - ${error.message}` }); }
 };
 
 exports.login = async (req, res) => {
@@ -60,31 +54,30 @@ exports.login = async (req, res) => {
             });
         }
 
-        const user = await User.findOne({ $or: [{ username: identifier }, { email: identifier }] });
+        const user = await User.findOne({ 
+            $or: [
+                { username: identifier }, 
+                { email: identifier },
+                { phone: identifier }
+            ] 
+        });
+
         if (user && await bcrypt.compare(password, user.password)) {
-            try {
-                // Send Notifications (Awaited but isolated in try-catch to prevent 500)
-                if (user.email) {
-                    await sendLoginNotification(user.email, user.name || user.username).catch(e => console.error('Email Fail:', e));
-                }
-                if (user.phoneNumber || user.phone) {
-                    await sendWhatsAppLoginAlert(user).catch(e => console.error('WA Fail:', e));
-                }
-            } catch (notifyErr) {
-                console.error('Notification critical failure:', notifyErr);
-            }
+                // Send Login Notification
+                sendNotification(EVENTS.LOGIN_SUCCESS, user).catch(e => console.error('Login Notify Fail:', e));
 
             const role = user.role || 'customer';
             const token = generateToken(user._id.toString(), role);
             
             res.json({
+                message: 'Krisha Buildings: Access authorized. Welcome back.',
                 _id: user._id, 
                 name: user.name, 
                 role: role, 
                 token: token
             });
-        } else { res.status(401).json({ message: 'Invalid credentials' }); }
-    } catch (error) { res.status(500).json({ message: error.message }); }
+        } else { res.status(401).json({ message: 'Krisha Buildings: Invalid credentials. Identity could not be verified.' }); }
+    } catch (error) { res.status(500).json({ message: `Krisha Buildings: Authentication System Failure - ${error.message}` }); }
 };
 
 const FaceData = require('../models/FaceData');
@@ -117,17 +110,12 @@ exports.verifyFace = async (req, res) => {
                 });
             }
 
-            // Send Notifications for Face Auth (Awaited for stability)
-            if (bestMatch.email) {
-                await sendLoginNotification(bestMatch.email, bestMatch.name || bestMatch.username).catch(err => console.error('Face Login Notify Error:', err));
-            }
-            if (bestMatch.phoneNumber || bestMatch.phone) {
-                await sendWhatsAppLoginAlert(bestMatch).catch(err => console.error('Face WhatsApp Notify Error:', err));
-            }
+            // Send Login Notification
+            sendNotification(EVENTS.LOGIN_SUCCESS, bestMatch).catch(err => console.error('Face Login Notify Error:', err));
 
-            res.json({ success: true, logType, user: bestMatch, attendance });
-        } else { res.status(401).json({ message: 'Face Not Recognized' }); }
-    } catch (error) { res.status(500).json({ message: error.message }); }
+            res.json({ success: true, message: 'Krisha Buildings: Biometric match established.', logType, user: bestMatch, attendance });
+        } else { res.status(401).json({ message: 'Krisha Buildings: Face not recognized in primary registry.' }); }
+    } catch (error) { res.status(500).json({ message: `Krisha Buildings: Biometric System Error - ${error.message}` }); }
 };
 
 exports.getMe = async (req, res) => {
@@ -139,19 +127,20 @@ exports.getMe = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
     try {
-        const { name, phone } = req.body;
+        const { name, phone, email } = req.body;
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
         
         if (name) user.name = name;
+        if (email) user.email = email;
         if (phone !== undefined) {
             user.phone = phone;
             user.phoneNumber = phone;
         }
         
         await user.save();
-        res.json({ message: 'Profile updated successfully', user });
-    } catch (error) { res.status(500).json({ message: error.message }); }
+        res.json({ message: 'Krisha Buildings: Profile metrics updated successfully.', user });
+    } catch (error) { res.status(500).json({ message: `Krisha Buildings: Profile Sync Error - ${error.message}` }); }
 };
 
 exports.getUsersByRole = async (req, res) => {
@@ -164,11 +153,12 @@ exports.getUsersByRole = async (req, res) => {
 
 exports.adminEditUser = async (req, res) => {
     try {
-        const { name, phone, password } = req.body;
+        const { name, phone, email, password } = req.body;
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
         
         if (name) user.name = name;
+        if (email) user.email = email;
         if (phone !== undefined) {
              user.phone = phone;
              user.phoneNumber = phone;
@@ -178,12 +168,12 @@ exports.adminEditUser = async (req, res) => {
              user.password = await bcrypt.hash(password, salt);
         }
         await user.save();
-        res.json({ message: 'User updated successfully', user });
-    } catch (error) { res.status(500).json({ message: error.message }); }
+        res.json({ message: 'Krisha Buildings: Administrative override successful. User updated.', user });
+    } catch (error) { res.status(500).json({ message: `Krisha Buildings: Administrative Error - ${error.message}` }); }
 };
 
 exports.logout = async (req, res) => {
-    res.status(200).json({ message: 'Signed out' });
+    res.status(200).json({ message: 'Krisha Buildings: Secure session terminated. Signed out.' });
 };
 
 exports.forgotPassword = async (req, res) => {
@@ -201,17 +191,17 @@ exports.forgotPassword = async (req, res) => {
             return res.status(500).json({ message: 'Failed to dispatch recovery signal. Check SMTP configuration.' });
         }
 
-        res.json({ message: 'OTP sent to your email' });
-    } catch (error) { res.status(500).json({ message: error.message }); }
+        res.json({ message: 'Krisha Buildings: Recovery token dispatched to registered email.' });
+    } catch (error) { res.status(500).json({ message: `Krisha Buildings: Security Breach - ${error.message}` }); }
 };
 
 exports.verifyOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
         const user = await User.findOne({ email, resetOTP: otp, otpExpiry: { $gt: Date.now() } });
-        if (!user) return res.status(400).json({ message: 'Invalid or expired OTP.' });
-        res.json({ message: 'Verified', verified: true });
-    } catch (error) { res.status(500).json({ message: error.message }); }
+        if (!user) return res.status(400).json({ message: 'Krisha Buildings: Verification failed. Invalid or expired token.' });
+        res.json({ message: 'Krisha Buildings: Identity confirmed.', verified: true });
+    } catch (error) { res.status(500).json({ message: `Krisha Buildings: Verification Error - ${error.message}` }); }
 };
 
 exports.resetPassword = async (req, res) => {
@@ -225,11 +215,9 @@ exports.resetPassword = async (req, res) => {
         user.otpExpiry = undefined;
         await user.save();
 
-        // Send Password Change Confirmation (Non-blocking)
-        if (email) {
-            sendPasswordChangeConfirmation(email, user.name || user.username).catch(err => console.error('Security Notify Error:', err));
-        }
+        // Send Password Reset Notification
+        sendNotification(EVENTS.PASSWORD_RESET, user).catch(err => console.error('Security Notify Error:', err));
 
-        res.json({ message: 'Success' });
-    } catch (error) { res.status(500).json({ message: error.message }); }
+        res.json({ message: 'Krisha Buildings: Security protocol complete. Password reset successful.' });
+    } catch (error) { res.status(500).json({ message: `Krisha Buildings: Reset Error - ${error.message}` }); }
 };

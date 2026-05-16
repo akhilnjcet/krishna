@@ -87,8 +87,12 @@ export default function LodgeCustomerDashboard() {
         e.preventDefault();
         try {
             await api.put('/auth/profile', profile);
-            alert('Profile updated successfully');
-        } catch (err) { alert('Update failed'); }
+            alert('Krisha Buildings: Profile updated successfully.');
+            fetchData(); // Refresh local state to ensure consistency
+        } catch (err) { 
+            const errorMsg = err.response?.data?.message || 'Update failed';
+            alert(`Krisha Buildings: System Error - ${errorMsg}`); 
+        }
     };
 
     const calculateExtensionAmount = (b, newDateStr) => {
@@ -402,7 +406,7 @@ export default function LodgeCustomerDashboard() {
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col items-center max-w-2xl mx-auto">
                         <div className="w-full text-center mb-12">
                             <div className="w-32 h-32 bg-indigo-600 text-white rounded-[3rem] items-center justify-center flex text-5xl font-black mx-auto mb-6 shadow-2xl shadow-indigo-600/30 font-poppins relative group cursor-pointer">
-                                {profile.name.charAt(0)}
+                                {profile.name?.charAt(0) || 'U'}
                                 <div className="absolute inset-0 bg-black/40 rounded-[3rem] items-center justify-center flex opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Camera className="w-8 h-8" />
                                 </div>
@@ -417,17 +421,21 @@ export default function LodgeCustomerDashboard() {
                                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Display Name</label>
                                     <input required className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Primary Contact</label>
-                                    <input required className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} />
+                                <div className="space-y-2 group">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2 flex items-center gap-2">
+                                        Primary Contact (Email Alerts)
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+                                    </label>
+                                    <input required className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all group-hover:border-indigo-200" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} />
+                                    <p className="text-[9px] font-bold text-slate-400 italic ml-2">Used for official booking receipts & verification.</p>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Phone Telemetry</label>
-                                    <input className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value={profile.phone || profile.phoneNumber || ''} onChange={e => setProfile({...profile, phone: e.target.value})} />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Secure Passcode</label>
-                                    <input type="password" placeholder="••••••••" className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value={profile.password} onChange={e => setProfile({...profile, password: e.target.value})} />
+                                <div className="space-y-2 group">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2 flex items-center gap-2">
+                                        Phone Telemetry (WhatsApp Link)
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    </label>
+                                    <input className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all group-hover:border-emerald-200" value={profile.phone || profile.phoneNumber || ''} onChange={e => setProfile({...profile, phone: e.target.value})} />
+                                    <p className="text-[9px] font-bold text-slate-400 italic ml-2">Enables real-time WhatsApp status updates.</p>
                                 </div>
                             </div>
                             <button type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black text-sm shadow-2xl shadow-indigo-600/30 hover:scale-105 hover:bg-indigo-700 transition-all flex items-center justify-center">

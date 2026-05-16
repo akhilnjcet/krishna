@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const BookingLodge = require('../models/BookingLodge');
+const Room = require('../models/Room');
+const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
+const { EVENTS, sendNotification } = require('../services/notificationService');
+const { format } = require('date-fns');
 
 // @route   POST /api/bookings
 // @desc    Create new lodge booking
@@ -37,6 +41,23 @@ router.post('/', protect, async (req, res) => {
       checkOut: end,
       totalAmount
     });
+
+    // Send Professional Notification (Non-blocking)
+    try {
+        const user = await User.findById(req.user.id || req.user._id);
+        const room = await Room.findById(roomId);
+        if (user && room) {
+            const data = {
+                name: user.name,
+                room: room.number || 'TBA',
+                checkin: format(start, 'MMM d, yyyy'),
+                amount: totalAmount
+            };
+            sendNotification(EVENTS.BOOKING_CREATED, user, data).catch(err => console.error('Booking Notify Fail:', err));
+        }
+    } catch (err) {
+        console.error('Notification logic fail:', err);
+    }
 
     res.status(201).json(booking);
   } catch (err) {

@@ -1,23 +1,37 @@
 const Quote = require('../models/Quote');
-const { sendStatusUpdateEmail } = require('../services/emailService');
+const User = require('../models/User');
+const { EVENTS, sendNotification } = require('../services/notificationService');
 
 // @desc    Submit a quote (Public)
 // @route   POST /api/quotes
 // @access  Public
 exports.submitQuote = async (req, res) => {
     try {
-        const estimatedCost = 5000 + Math.random() * 10000;
+        const { name, phone, location, serviceType, description } = req.body;
         
-        const newQuote = await Quote.create({
-            ...req.body,
-            userId: req.user._id, // Critical association
-            estimatedCost,
+        const newQuote = new Quote({
+            userId: req.user ? req.user._id : null,
+            name,
+            phone,
+            location,
+            serviceType,
+            description,
             status: 'new'
         });
 
-        res.status(201).json(newQuote);
+        await newQuote.save();
+        
+        res.status(201).json({
+            message: 'Krisha Buildings: Operation request logged successfully.',
+            quote: newQuote
+        });
+
+        // Send Quote Requested Notification (Non-blocking)
+        if (req.user) {
+            sendNotification(EVENTS.QUOTE_REQUESTED, req.user).catch(err => console.error('Quote Notify Error:', err));
+        }
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: `Krisha Buildings: Quote System Error - ${error.message}` });
     }
 };
 
@@ -56,8 +70,14 @@ exports.updateQuote = async (req, res) => {
         res.json(quote);
 
         // Notify Customer if status changed
-        if (req.body.status && quote.userId?.email) {
-            sendStatusUpdateEmail(quote.userId.email, quote.userId.name, `${quote.serviceType} Quote`, req.body.status).catch(console.error);
+        if (req.body.status && quote.userId) {
+            let event = null;
+            if (req.body.status === 'accepted') event = EVENTS.QUOTE_ACCEPTED;
+            else if (req.body.status === 'rejected') event = EVENTS.QUOTE_REJECTED;
+            
+            if (event) {
+                sendNotification(event, quote.userId).catch(console.error);
+            }
         }
     } catch (error) {
         res.status(500).json({ message: error.message });

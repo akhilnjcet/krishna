@@ -30,7 +30,7 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
-            return setError("Passwords do not match. Integrity check failed.");
+            return setError("Krisha Buildings: Passwords do not match. Integrity check failed.");
         }
 
         setLoading(true);
@@ -47,7 +47,7 @@ const Register = () => {
             login(response.data.user, response.data.token);
             navigate('/customer');
         } catch (err) {
-            setError(err.response?.data?.message || "Registration sequence interrupted. Please try again.");
+            setError(err.response?.data?.message || "Krisha Buildings: Registration sequence interrupted. Please try again.");
         } finally {
             setLoading(false);
         }

@@ -12,6 +12,15 @@ const path = require('path');
 const isVercel = process.env.VERCEL === '1';
 app.use('/uploads', express.static(isVercel ? '/tmp/uploads' : path.join(__dirname, 'uploads')));
 
+// Traffic Logger (Diagnostic)
+app.use((req, res, next) => {
+    const log = `[${new Date().toISOString()}] ${req.method} ${req.url} - ${req.ip}\n`;
+    const fs = require('fs');
+    const path = require('path');
+    fs.appendFileSync(path.join(__dirname, 'traffic.log'), log);
+    next();
+});
+
 // Institutional Security Headers (Anti-Caching for Sensitive Data)
 app.use((req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');

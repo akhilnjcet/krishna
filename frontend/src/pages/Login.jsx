@@ -72,7 +72,7 @@ const Login = () => {
                 }
             }
         } catch (err) {
-            setError(err.response?.data?.message || err.message || 'Identity verification failed.');
+            setError(err.response?.data?.message || err.message || 'Krisha Buildings: Identity verification failed.');
         } finally {
             setLoading(false);
         }
@@ -106,7 +106,7 @@ const Login = () => {
                                 onClick={() => { setLoginMode('identity'); setOtpSent(false); }}
                                 className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${loginMode === 'identity' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
                             >
-                                Admin ID
+                                Command Access
                             </button>
                             <button 
                                 onClick={() => setLoginMode('phone')}
@@ -134,7 +134,7 @@ const Login = () => {
                                                 value={identifier}
                                                 onChange={(e) => setIdentifier(e.target.value)}
                                                 className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 placeholder:text-slate-300"
-                                                placeholder="Admin User ID"
+                                                placeholder="Registry ID (Email/Phone)"
                                             />
                                         </div>
                                         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-4 focus-within:border-blue-500 transition-all">
@@ -145,7 +145,7 @@ const Login = () => {
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 placeholder:text-slate-300"
-                                                placeholder="Security Key"
+                                                placeholder="Security Passkey"
                                             />
                                         </div>
                                     </motion.div>

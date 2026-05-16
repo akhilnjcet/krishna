@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Complaint = require('../models/Complaint');
+const User = require('../models/User');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { EVENTS, sendNotification } = require('../services/notificationService');
 
 // @route   POST /api/complaints
 // @desc    Submit a complaint (Client)
@@ -17,6 +19,15 @@ router.post('/', protect, async (req, res) => {
       title,
       description
     });
+
+    // Send Complaint Submitted Notification (Non-blocking)
+    const data = {
+        name: req.user.name,
+        title: title || 'Maintenance Request',
+        id: complaint._id.toString().substring(0, 8)
+    };
+    sendNotification(EVENTS.COMPLAINT_SUBMITTED, req.user, data).catch(err => console.error('Complaint Submit Notify Error:', err));
+
     res.status(201).json(complaint);
   } catch (err) {
     res.status(500).json({ message: 'Server Error' });
@@ -62,6 +73,17 @@ router.put('/:id/resolve', protect, admin, async (req, res) => {
     complaint.status = 'resolved';
     complaint.resolvedAt = new Date();
     await complaint.save();
+
+    // Send Complaint Resolved Notification (Non-blocking)
+    const user = await User.findById(complaint.userId);
+    if (user) {
+      const data = {
+          name: user.name,
+          title: complaint.title || 'Maintenance Request'
+      };
+      sendNotification(EVENTS.COMPLAINT_RESOLVED, user, data).catch(err => console.error('Complaint Resolve Notify Error:', err));
+    }
+
     res.json(complaint);
   } catch (err) {
     res.status(500).json({ message: 'Server Error' });

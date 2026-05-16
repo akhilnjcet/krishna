@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api from '../services/api';
+import useAuthStore from './authStore';
 
 const STORAGE_KEY = 'krishna_lodge_data';
 

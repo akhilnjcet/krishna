@@ -31,7 +31,7 @@ export default function LodgeAdminManager() {
 
   // Edit Client / Reset Password
   const [editClient, setEditClient] = useState(null);
-  const [clientForm, setClientForm] = useState({ name: '', phone: '', password: '', status: 'active' });
+  const [clientForm, setClientForm] = useState({ id: '', name: '', phone: '', email: '', password: '', status: 'active' });
 
   // Assign Room
   const [assignModal, setAssignModal] = useState({ show: false, roomId: null, userId: '' });
@@ -244,9 +244,9 @@ export default function LodgeAdminManager() {
       e.preventDefault();
       try {
           await api.put(`/auth/${editClient._id}/admin-edit`, clientForm);
-          alert('Client updated successfully');
+          alert('Krisha Buildings: Tenant Profile Updated.');
           setEditClient(null); fetchClients();
-      } catch(e) { alert("Update failed"); }
+      } catch(e) { alert("Krisha Buildings: Update Synchronization Failed"); }
   };
 
   const deleteReview = async (id) => {
@@ -526,7 +526,7 @@ export default function LodgeAdminManager() {
                   {reviews.map(rev => (
                       <div key={rev._id} className="p-8 border rounded-[2rem] bg-indigo-50/20 relative group hover:border-indigo-200 transition-all">
                           <div className="flex items-center gap-4 mb-6">
-                              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-black text-indigo-600 shadow-sm border border-indigo-100">{rev.userId?.name.charAt(0)}</div>
+                              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-black text-indigo-600 shadow-sm border border-indigo-100">{rev.userId?.name?.charAt(0) || 'U'}</div>
                               <div>
                                   <p className="font-black text-slate-900">{rev.userId?.name}</p>
                                   <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest italic">{new Date(rev.createdAt).toLocaleDateString()}</p>
@@ -598,7 +598,7 @@ export default function LodgeAdminManager() {
                {clients.map(c => (
                   <div key={c._id} className={`p-6 border rounded-[1.5rem] flex justify-between items-center transition-all ${c.status === 'inactive' ? 'bg-rose-50 border-rose-100 opacity-60' : 'bg-slate-50 opacity-90 hover:bg-white hover:shadow-xl hover:scale-[1.02]'}`}>
                       <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg shadow-sm border ${c.status === 'inactive' ? 'bg-white text-rose-600 border-rose-200' : 'bg-white text-indigo-600 border-indigo-100'}`}>{c.name.charAt(0)}</div>
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg shadow-sm border ${c.status === 'inactive' ? 'bg-white text-rose-600 border-rose-200' : 'bg-white text-indigo-600 border-indigo-100'}`}>{c.name?.charAt(0) || 'U'}</div>
                           <div>
                               <p className="font-black text-slate-900 flex items-center gap-2">
                                 {c.name}
@@ -608,7 +608,10 @@ export default function LodgeAdminManager() {
                               <p className="text-[10px] font-bold text-indigo-500">{c.phone || c.phoneNumber || 'Contact Not Verified'}</p>
                           </div>
                       </div>
-                      <button onClick={() => { setEditClient(c); setClientForm({ name: c.name, phone: c.phone || '', password: '', status: c.status || 'active' }); }} className="p-3 bg-white text-slate-600 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 shadow-sm border transition-all">
+                      <button onClick={() => { 
+                              setEditClient(true); 
+                              setClientForm({ id: c._id, name: c.name, phone: c.phone || c.phoneNumber || '', email: c.email || '', status: c.status || 'active', password: '' }); 
+                          }} className="p-3 bg-white text-slate-600 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 shadow-sm border transition-all">
                           <Edit3 className="w-5 h-5"/>
                       </button>
                   </div>
@@ -744,7 +747,7 @@ export default function LodgeAdminManager() {
           <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex flex-col justify-center items-center p-4">
              <form onSubmit={handleClientEdit} className="bg-white p-10 rounded-[3rem] w-full max-w-lg relative shadow-2xl animate-in zoom-in duration-300">
                  <div className="text-center mb-10">
-                     <div className="w-20 h-20 bg-indigo-600 text-white rounded-[2rem] flex items-center justify-center text-4xl font-black mx-auto mb-6 shadow-2xl shadow-indigo-600/30">{clientForm.name.charAt(0)}</div>
+                     <div className="w-20 h-20 bg-indigo-600 text-white rounded-[2rem] flex items-center justify-center text-4xl font-black mx-auto mb-6 shadow-2xl shadow-indigo-600/30">{clientForm.name?.charAt(0) || 'U'}</div>
                      <h3 className="text-3xl font-black tracking-tight mb-2">Refine Identity</h3>
                      <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest italic">Manual System Override: CRM Profile</p>
                  </div>
@@ -753,6 +756,7 @@ export default function LodgeAdminManager() {
                  
                  <div className="space-y-4 mb-10">
                     <input placeholder="Full Name" required className="w-full bg-slate-50 border border-slate-100 p-5 rounded-2xl font-black text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={clientForm.name} onChange={e => setClientForm({...clientForm, name: e.target.value})} />
+                    <input placeholder="Electronic Mail" required type="email" className="w-full bg-slate-50 border border-slate-100 p-5 rounded-2xl font-black text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={clientForm.email} onChange={e => setClientForm({...clientForm, email: e.target.value})} />
                     <input placeholder="Phone Signal Address" className="w-full bg-slate-50 border border-slate-100 p-5 rounded-2xl font-black text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={clientForm.phone} onChange={e => setClientForm({...clientForm, phone: e.target.value})} />
                     <input placeholder="Reset Passcode (Leave blank to preserve)" type="password" className="w-full bg-rose-50 border-2 border-rose-100 p-5 rounded-2xl font-black text-rose-900 placeholder-rose-200 outline-none focus:ring-2 focus:ring-rose-500 transition-all" value={clientForm.password} onChange={e => setClientForm({...clientForm, password: e.target.value})} />
                     

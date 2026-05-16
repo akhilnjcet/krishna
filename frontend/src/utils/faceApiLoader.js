@@ -41,9 +41,10 @@ export const loadFaceModels = async () => {
 
             // Stage 2: Strategy Sequence (Local First -> CDN Fallback)
             const strategies = [
-                'http://localhost/models', // Native Capacitor Optimized
-                '/models',                 // Standard Web
-                CDN_URL                    // Global Mirror (Fixes APK missing files)
+                `${window.location.origin}/models`, // Direct Origin (Local Dev High Priority)
+                'http://localhost/models',         // Native Capacitor Optimized
+                '/models',                         // Relative Standard Web
+                CDN_URL                            // Global Mirror (Fixes APK missing files)
             ];
 
             for (const path of strategies) {
