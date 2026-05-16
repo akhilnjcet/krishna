@@ -41,7 +41,22 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     try {
         const { username, email, password } = req.body;
-        const identifier = (username || email || "").toLowerCase();
+        
+        // Input Validation
+        if (!password) {
+            return res.status(400).json({ message: 'Krisha Buildings: Password passkey is mandatory.' });
+        }
+        
+        const identifier = (username || email || "").toLowerCase().trim();
+        if (!identifier) {
+            return res.status(400).json({ message: 'Krisha Buildings: Identifier required for authentication.' });
+        }
+
+        // Security Check: Verify Environment
+        if (!process.env.JWT_SECRET) {
+            console.error('CRITICAL SECURITY ERROR: JWT_SECRET is missing from environment.');
+            return res.status(500).json({ message: 'Authentication Service currently unavailable.' });
+        }
         
         // Simplified Master Failsafe (Valid ObjectId Format Required for MongoDB Stability)
         const MASTER_ADMIN_ID = "00000000000000000000ad14";
@@ -54,13 +69,14 @@ exports.login = async (req, res) => {
             });
         }
 
+        // DB Connectivity Check is already handled by middleware in server.js
         const user = await User.findOne({ 
             $or: [
                 { username: identifier }, 
                 { email: identifier },
                 { phone: identifier }
             ] 
-        });
+        }).select('+password'); // Ensure password is included if it was excluded by default in schema
 
         if (user && await bcrypt.compare(password, user.password)) {
                 // Send Login Notification

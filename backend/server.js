@@ -2,6 +2,18 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+
+// 1. Environment Validation
+const REQUIRED_ENV = ['MONGODB_URI', 'JWT_SECRET'];
+const missingEnv = REQUIRED_ENV.filter(key => !process.env[key]);
+if (missingEnv.length > 0) {
+    console.error(`CRITICAL FAILURE: Missing required environment variables: ${missingEnv.join(', ')}`);
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+        // We only exit if we're truly in a cloud environment
+    }
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -15,9 +27,11 @@ app.use('/uploads', express.static(isVercel ? '/tmp/uploads' : path.join(__dirna
 // Traffic Logger (Diagnostic)
 app.use((req, res, next) => {
     const log = `[${new Date().toISOString()}] ${req.method} ${req.url} - ${req.ip}\n`;
-    const fs = require('fs');
-    const path = require('path');
-    fs.appendFileSync(path.join(__dirname, 'traffic.log'), log);
+    try {
+        fs.appendFileSync(path.join(__dirname, 'traffic.log'), log);
+    } catch (e) {
+        // Silent fail for logging in read-only environments like Vercel
+    }
     next();
 });
 

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api from '../services/api';
+import useAuthStore from './authStore';
 
 const useBookingStore = create((set, get) => ({
     rooms: [],
