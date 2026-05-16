@@ -18,7 +18,28 @@ if (missingEnv.length > 0) {
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+const allowedOrigins = [
+    'https://krishna-akhilnjcets-projects.vercel.app',
+    'https://krishna-git-main-akhilnjcets-projects.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:5000'
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS policy'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    credentials: true,
+    optionsSuccessStatus: 200
+}));
+
 app.use(express.json());
 const path = require('path');
 const isVercel = process.env.VERCEL === '1';
