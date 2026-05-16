@@ -16,7 +16,8 @@ const getApiBaseUrl = () => {
 
 const api = axios.create({
     baseURL: getApiBaseUrl(),
-    timeout: 20000, // 20s timeout for cloud handshakes
+    timeout: 20000, 
+    withCredentials: true // Support for secure authentication cookies/headers
 });
 
 // Centralized Request Interceptor

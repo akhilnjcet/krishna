@@ -40,6 +40,9 @@ app.use(cors({
     optionsSuccessStatus: 200
 }));
 
+// Instant Preflight Handler (Bypasses DB connection for speed)
+app.options('*', cors());
+
 app.use(express.json());
 const path = require('path');
 const isVercel = process.env.VERCEL === '1';
