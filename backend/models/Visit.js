@@ -12,4 +12,4 @@ const visitSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Visit', visitSchema);
+module.exports = mongoose.models.Visit || mongoose.model('Visit', visitSchema);

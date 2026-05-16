@@ -8,4 +8,4 @@ const systemSettingSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('SystemSetting', systemSettingSchema);
+module.exports = mongoose.models.SystemSetting || mongoose.model('SystemSetting', systemSettingSchema);
