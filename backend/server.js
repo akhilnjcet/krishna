@@ -6,7 +6,12 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['X-CSRF-Token', 'X-Requested-With', 'Accept', 'Accept-Version', 'Content-Length', 'Content-MD5', 'Content-Type', 'Date', 'X-Api-Version', 'Authorization']
+}));
 app.use(express.json());
 const path = require('path');
 const isVercel = process.env.VERCEL === '1';
@@ -154,9 +159,11 @@ app.get('/api/health/email', async (req, res) => {
     }
 });
 
-// Start WhatsApp Relay (Async, isolated)
-const { startWhatsAppConnection } = require('./services/whatsappService');
-startWhatsAppConnection().catch(e => console.error('WhatsApp Relay Failure:', e));
+// Start WhatsApp Relay (Async, isolated) - Only on non-Vercel environments (persistent servers)
+if (!isVercel) {
+    const { startWhatsAppConnection } = require('./services/whatsappService');
+    startWhatsAppConnection().catch(e => console.error('WhatsApp Relay Failure:', e));
+}
 
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     app.listen(PORT, () => {
