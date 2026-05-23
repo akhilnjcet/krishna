@@ -7,18 +7,8 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  
-  // Only intercept same-origin GET requests for static assets/pages
-  if (
-    url.pathname.startsWith('/api/') || 
-    url.origin !== self.location.origin ||
-    event.request.method !== 'GET'
-  ) {
-    return; // Pass-through directly to browser native fetch
-  }
-
-  event.respondWith(fetch(event.request));
+  // Empty fetch listener satisfies PWA installation requirements
+  // without intercepting or disrupting any network requests.
 });
 
 // Notifications
