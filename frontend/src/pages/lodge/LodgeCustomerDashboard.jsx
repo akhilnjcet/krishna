@@ -172,32 +172,45 @@ export default function LodgeCustomerDashboard() {
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
             {/* Sidebar */}
-            <div className="w-full md:w-80 bg-white border-r border-slate-200 p-8 flex flex-col shadow-sm">
-                <div className="mb-12">
+            <div className="w-full md:w-80 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-4 md:p-8 flex flex-col shadow-sm flex-shrink-0">
+                {/* Header (visible on desktop) */}
+                <div className="hidden md:block mb-12">
                     <h2 className="text-2xl font-black text-indigo-600 tracking-tight flex items-center">
                         <Shield className="w-8 h-8 mr-2" /> KRISHNA PORTAL
                     </h2>
                     <p className="text-slate-400 text-[10px] uppercase font-bold tracking-[0.2em] mt-1 ml-10">Client Dashboard</p>
                 </div>
 
-                <div className="space-y-2 flex-grow">
+                {/* Header (visible on mobile) */}
+                <div className="flex md:hidden items-center justify-between mb-4">
+                    <h2 className="text-lg font-black text-indigo-600 tracking-tight flex items-center">
+                        <Shield className="w-6 h-6 mr-2" /> KRISHNA PORTAL
+                    </h2>
+                    <button onClick={() => window.location.href = '/lodge'} className="p-2 text-slate-500 hover:text-red-600 bg-slate-50 hover:bg-red-50 rounded-xl transition-all">
+                        <LogOut className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Tabs List */}
+                <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 no-scrollbar flex-grow">
                     {TABS.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-bold transition-all ${
+                            className={`flex items-center gap-2 md:gap-4 px-4 py-2.5 md:px-6 md:py-4 rounded-xl md:rounded-2xl font-bold whitespace-nowrap transition-all ${
                                 activeTab === tab.id 
-                                ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 -translate-y-0.5' 
-                                : 'text-slate-500 hover:bg-slate-50'
+                                ? 'bg-indigo-600 text-white shadow-lg md:shadow-xl md:shadow-indigo-600/30' 
+                                : 'text-slate-500 bg-slate-50/50 md:bg-transparent hover:bg-slate-50'
                             }`}
                         >
-                            <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? 'text-white' : 'text-slate-400'}`} />
-                            {tab.label}
+                            <tab.icon className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === tab.id ? 'text-white' : 'text-slate-400'}`} />
+                            <span className="text-xs md:text-sm">{tab.label}</span>
                         </button>
                     ))}
                 </div>
 
-                <div className="mt-auto pt-8 border-t border-slate-100">
+                {/* Logout Button (visible on desktop) */}
+                <div className="hidden md:block mt-auto pt-8 border-t border-slate-100">
                     <button onClick={() => window.location.href = '/lodge'} className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-bold text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all">
                         <LogOut className="w-5 h-5" /> Logout
                     </button>
@@ -205,7 +218,7 @@ export default function LodgeCustomerDashboard() {
             </div>
 
             {/* Main Content */}
-            <div className="flex-grow p-6 md:p-12 overflow-y-auto max-h-screen">
+            <div className="flex-grow p-4 md:p-12 md:overflow-y-auto md:max-h-screen">
                 
                 {/* Bookings View */}
                 {activeTab === 'bookings' && (

@@ -46,7 +46,7 @@ export default function LodgeDetail() {
          </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10 h-[400px] rounded-2xl overflow-hidden shadow-lg border border-gray-100">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10 h-[250px] sm:h-[350px] md:h-[400px] rounded-2xl overflow-hidden shadow-lg border border-gray-100">
          <div className="md:col-span-3 bg-gray-200 h-full">
             {lodge.images?.[0] ? <img src={lodge.images[0]} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-blue-50 grid place-items-center text-blue-300 font-bold">No Image</div>}
          </div>

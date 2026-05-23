@@ -22,16 +22,19 @@ export default function LodgeHome() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 z-0 overflow-hidden">
              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent hidden sm:block"></div>
         </div>
-        <div className="absolute top-6 right-6 z-20 flex gap-4">
-            <button onClick={() => navigate('/lodge/dashboard')} className="text-white hover:text-blue-200 font-bold px-4 py-2 text-sm transition-colors border border-white/40 rounded-xl bg-white/10 backdrop-blur-md">My Dashboard</button>
-            <button onClick={() => navigate('/login')} className="bg-white/10 text-white font-bold px-4 py-2 border border-white/20 rounded-xl hover:bg-white/20 backdrop-blur-md text-sm shadow-lg transition-all">Portal Entrance</button>
+        <div className="absolute top-4 right-4 left-4 z-20 flex justify-between items-center md:right-6 md:top-6 md:left-auto md:justify-end md:gap-4">
+            <span className="text-white font-black text-sm tracking-tight italic md:hidden">KRISHNA</span>
+            <div className="flex gap-2 sm:gap-4">
+                <button onClick={() => navigate('/lodge/dashboard')} className="text-white hover:text-blue-200 font-bold px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm transition-colors border border-white/40 rounded-xl bg-white/10 backdrop-blur-md">My Dashboard</button>
+                <button onClick={() => navigate('/login')} className="bg-white/10 text-white font-bold px-3 py-1.5 sm:px-4 sm:py-2 border border-white/20 rounded-xl hover:bg-white/20 backdrop-blur-md text-xs sm:text-sm shadow-lg transition-all">Portal Entrance</button>
+            </div>
         </div>
 
         <div className="relative z-10 w-full max-w-4xl px-4 flex flex-col items-center mt-20">
-          <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6 text-center tracking-tight leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-6 text-center tracking-tight leading-tight">
             Krishna Building
           </h1>
-          <p className="text-xl text-blue-100 mb-10 text-center max-w-2xl">
+          <p className="text-base sm:text-lg md:text-xl text-blue-100 mb-10 text-center max-w-2xl">
             Manage your stay and easily browse available rooms strictly monitored via our dynamic availability matrix.
           </p>
           
@@ -42,7 +45,7 @@ export default function LodgeHome() {
           >
             <div className="flex-1 flex items-center bg-gray-100/50 rounded-xl px-4 py-3 border border-transparent">
                <MapPin className="text-gray-400 mr-3 w-5 h-5 flex-shrink-0" />
-               <p className="w-full text-gray-800 font-bold whitespace-nowrap">Krishna Building, Main Street</p>
+               <p className="w-full text-gray-800 font-bold text-sm sm:text-base">Krishna Building, Main Street</p>
             </div>
             <div className="flex-1 flex items-center bg-gray-100/50 rounded-xl px-4 py-3 border border-transparent hidden sm:flex opacity-60 cursor-not-allowed">
                <Calendar className="text-gray-400 mr-3 w-5 h-5 flex-shrink-0" />

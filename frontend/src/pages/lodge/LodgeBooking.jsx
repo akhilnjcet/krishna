@@ -108,18 +108,18 @@ export default function LodgeBookingCheckout() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         <div className="space-y-6">
-           <div className="bg-white border text-center border-gray-200 rounded-2xl shadow-sm p-6 flex flex-col items-center">
-              <h3 className="font-bold text-lg mb-4 flex items-center"><CalIcon className="w-5 h-5 mr-2 text-blue-600" /> Choose Range</h3>
-              <DayPicker
-                 mode="range"
-                 selected={dateRange}
-                 onSelect={setDateRange}
-                 disabled={isDateDisabled}
-                 className="p-3 font-sans rounded-xl bg-gray-50 border border-gray-100"
-                 modifiersClassNames={{ selected: 'bg-blue-600 text-white rounded-md', disabled: 'opacity-30 line-through' }}
-              />
-              <p className="text-sm text-gray-500 mt-4">Unavailable dates are blocked out.</p>
-           </div>
+            <div className="bg-white border text-center border-gray-200 rounded-2xl shadow-sm p-3 sm:p-6 flex flex-col items-center w-full max-w-full overflow-x-auto">
+               <h3 className="font-bold text-lg mb-4 flex items-center"><CalIcon className="w-5 h-5 mr-2 text-blue-600" /> Choose Range</h3>
+               <DayPicker
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  disabled={isDateDisabled}
+                  className="p-1 sm:p-3 font-sans rounded-xl bg-gray-50 border border-gray-100 max-w-full"
+                  modifiersClassNames={{ selected: 'bg-blue-600 text-white rounded-md', disabled: 'opacity-30 line-through' }}
+               />
+               <p className="text-sm text-gray-500 mt-4">Unavailable dates are blocked out.</p>
+            </div>
         </div>
 
         <div>
