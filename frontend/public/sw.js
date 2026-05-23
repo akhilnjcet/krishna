@@ -7,7 +7,17 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Pass-through for now, required by PWA to be considered valid
+  const url = new URL(event.request.url);
+  
+  // Only intercept same-origin GET requests for static assets/pages
+  if (
+    url.pathname.startsWith('/api/') || 
+    url.origin !== self.location.origin ||
+    event.request.method !== 'GET'
+  ) {
+    return; // Pass-through directly to browser native fetch
+  }
+
   event.respondWith(fetch(event.request));
 });
 
