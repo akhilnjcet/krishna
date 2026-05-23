@@ -6,10 +6,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener('fetch', (event) => {
-  // Empty fetch listener satisfies PWA installation requirements
-  // without intercepting or disrupting any network requests.
-});
+
 
 // Notifications
 self.addEventListener('push', (event) => {
