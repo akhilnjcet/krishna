@@ -40,11 +40,13 @@ export const loadFaceModels = async () => {
             await faceapi.tf.ready();
 
             // Stage 2: Strategy Sequence (Local First -> CDN Fallback)
-            const strategies = [
-                'http://localhost/models', // Native Capacitor Optimized
-                '/models',                 // Standard Web
-                CDN_URL                    // Global Mirror (Fixes APK missing files)
-            ];
+            const isNative = typeof window !== 'undefined' && !!window.Capacitor;
+            const strategies = [];
+            if (isNative) {
+                strategies.push('http://localhost/models'); // Native Capacitor Optimized
+            }
+            strategies.push('/models'); // Standard Web
+            strategies.push(CDN_URL);   // Global Mirror (Fixes APK missing files)
 
             for (const path of strategies) {
                 const success = await tryLoad(path);
