@@ -195,7 +195,7 @@ const Login = () => {
                                 <Link to="/forgot-password" size="sm" className="text-[10px] font-extrabold text-slate-300 hover:text-blue-600 uppercase tracking-widest transition-colors">
                                     Lost Access?
                                 </Link>
-                                <button type="button" onClick={() => setOtpSent(false)} className="text-[10px] font-extrabold text-blue-600 hover:underline uppercase tracking-widest transition-colors">
+                                <button type="button" onClick={() => otpSent ? setOtpSent(false) : navigate('/register')} className="text-[10px] font-extrabold text-blue-600 hover:underline uppercase tracking-widest transition-colors">
                                     {otpSent ? "Wrong Phone?" : "Register Member"}
                                 </button>
                             </div>

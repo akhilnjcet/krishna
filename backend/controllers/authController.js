@@ -40,7 +40,11 @@ exports.register = async (req, res) => {
             sendWelcomeEmail(email, name || username).catch(err => console.error('Greeting Error:', err));
         }
 
-        res.status(201).json(user);
+        const token = generateToken(user._id.toString(), user.role || 'customer');
+        res.status(201).json({
+            user,
+            token
+        });
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
