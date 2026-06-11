@@ -74,10 +74,16 @@ const AnimatedCounter = ({ target, suffix }) => {
 
     useEffect(() => {
         if (!started) return;
-        const num = parseInt(target.replace(/[^0-9]/g, ''));
+        const cleanTarget = target.replace(/,/g, '');
+        const num = parseFloat(cleanTarget);
+        if (isNaN(num)) {
+            setCount(0);
+            return;
+        }
         let start = 0;
-        const duration = 1800;
-        const step = Math.ceil(num / (duration / 16));
+        const duration = 1500;
+        const stepsCount = duration / 16;
+        const step = num / stepsCount;
         const timer = setInterval(() => {
             start += step;
             if (start >= num) { setCount(num); clearInterval(timer); }
@@ -86,9 +92,17 @@ const AnimatedCounter = ({ target, suffix }) => {
         return () => clearInterval(timer);
     }, [started, target]);
 
+    const cleanTarget = target.replace(/,/g, '');
+    const isFloat = cleanTarget.includes('.');
+    const decimalPlaces = isFloat ? cleanTarget.split('.')[1].length : 0;
+    const formattedCount = count.toLocaleString(undefined, {
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces
+    });
+
     return (
         <span ref={ref} className="tabular-nums">
-            {count.toLocaleString()}{suffix}
+            {formattedCount}{suffix}
         </span>
     );
 };
@@ -294,10 +308,10 @@ const Home = () => {
                                 Glassmorphism cards with animated counters */}
                             <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-10 border-t border-slate-200">
                                 {[
-                                    { label: 'Projects Completed', value: (settings.stat_projects || '1200+').replace(/[^0-9,]/g, ''), suffix: (settings.stat_projects || '1200+').replace(/[0-9,]/g, '') || '+', icon: <Layers className="w-7 h-7" />, color: 'from-blue-50/50 to-white', glow: 'shadow-blue-100/40', border: 'border-blue-100', iconColor: 'text-blue-600', bgIcon: 'bg-blue-50' },
-                                    { label: 'Happy Clients', value: (settings.stat_clients || '450+').replace(/[^0-9,]/g, ''), suffix: (settings.stat_clients || '450+').replace(/[0-9,]/g, '') || '+', icon: <Users className="w-7 h-7" />, color: 'from-cyan-50/50 to-white', glow: 'shadow-cyan-100/40', border: 'border-cyan-100', iconColor: 'text-cyan-600', bgIcon: 'bg-cyan-50' },
-                                    { label: 'Years Experience', value: (settings.stat_years || '25+').replace(/[^0-9]/g, ''), suffix: (settings.stat_years || '25+').replace(/[0-9]/g, '') || '+', icon: <Award className="w-7 h-7" />, color: 'from-yellow-50/50 to-white', glow: 'shadow-yellow-100/40', border: 'border-yellow-100', iconColor: 'text-yellow-600', bgIcon: 'bg-yellow-50' },
-                                    { label: 'Client Satisfaction', value: (settings.stat_satisfaction || '99%').replace(/[^0-9]/g, ''), suffix: (settings.stat_satisfaction || '99%').replace(/[0-9]/g, '') || '%', icon: <Shield className="w-7 h-7" />, color: 'from-green-50/50 to-white', glow: 'shadow-green-100/40', border: 'border-green-100', iconColor: 'text-green-600', bgIcon: 'bg-green-50' },
+                                    { label: 'Projects Completed', value: (settings.stat_projects || '1200+').replace(/[^0-9,.]/g, ''), suffix: (settings.stat_projects || '1200+').replace(/[0-9,. ]/g, '') || '+', icon: <Layers className="w-7 h-7" />, color: 'from-blue-50/50 to-white', glow: 'shadow-blue-100/40', border: 'border-blue-100', iconColor: 'text-blue-600', bgIcon: 'bg-blue-50' },
+                                    { label: 'Happy Clients', value: (settings.stat_clients || '450+').replace(/[^0-9,.]/g, ''), suffix: (settings.stat_clients || '450+').replace(/[0-9,. ]/g, '') || '+', icon: <Users className="w-7 h-7" />, color: 'from-cyan-50/50 to-white', glow: 'shadow-cyan-100/40', border: 'border-cyan-100', iconColor: 'text-cyan-600', bgIcon: 'bg-cyan-50' },
+                                    { label: 'Years Experience', value: (settings.stat_years || '25+').replace(/[^0-9.]/g, ''), suffix: (settings.stat_years || '25+').replace(/[0-9. ]/g, '') || '+', icon: <Award className="w-7 h-7" />, color: 'from-yellow-50/50 to-white', glow: 'shadow-yellow-100/40', border: 'border-yellow-100', iconColor: 'text-yellow-600', bgIcon: 'bg-yellow-50' },
+                                    { label: 'Client Satisfaction', value: (settings.stat_satisfaction || '99%').replace(/[^0-9.]/g, ''), suffix: (settings.stat_satisfaction || '99%').replace(/[0-9. ]/g, '') || '%', icon: <Shield className="w-7 h-7" />, color: 'from-green-50/50 to-white', glow: 'shadow-green-100/40', border: 'border-green-100', iconColor: 'text-green-600', bgIcon: 'bg-green-50' },
                                 ].map((stat, i) => (
                                     <motion.div
                                         key={i}
