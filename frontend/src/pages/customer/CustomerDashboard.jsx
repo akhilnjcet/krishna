@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import {
     TrendingUp, Wallet, ShieldCheck, Activity, ChevronRight, Search, Bed, CalendarX,
-    CheckCircle2, Plus, X, AlertTriangle, Construction
+    CheckCircle2, Plus, X, AlertTriangle, Construction, Zap, Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReportHeader from '../../components/ReportHeader';
