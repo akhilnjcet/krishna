@@ -39,24 +39,24 @@ const About = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-brand-accent/20 border-t-brand-accent rounded-full animate-spin" />
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="bg-[#050505] min-h-screen text-white font-sans selection:bg-brand-accent selection:text-black pb-32">
+        <div className="bg-slate-50 min-h-screen text-slate-800 font-sans selection:bg-brand-accent selection:text-slate-900 pb-32">
             
             {/* HERO SECTION */}
-            <section className="relative h-[80vh] flex items-center justify-center overflow-hidden pt-20">
+            <section className="relative h-[80vh] flex items-center justify-center overflow-hidden pt-20 bg-white">
                 <div className="absolute inset-0 z-0">
                     <img 
                         src={aboutData.about_image} 
                         alt="Corporate Hero" 
-                        className="w-full h-full object-cover grayscale-[40%]"
+                        className="w-full h-full object-cover grayscale-[20%]"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black via-black/40 to-[#050505]"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-slate-900/50 via-slate-900/20 to-slate-50"></div>
                 </div>
 
                 <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
@@ -65,11 +65,11 @@ const About = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1 }}
                     >
-                        <div className="inline-flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 px-8 py-3 rounded-full mb-10">
-                            <span className="w-3 h-3 rounded-full bg-brand-accent animate-pulse"></span>
-                            <span className="text-[11px] font-black uppercase tracking-[0.5em] text-gray-400 italic">Established 1999 // REINFORCED</span>
+                        <div className="inline-flex items-center gap-4 bg-white/90 backdrop-blur-md border border-slate-200 px-8 py-3 rounded-full mb-10 shadow-sm">
+                            <span className="w-3 h-3 rounded-full bg-blue-600 animate-pulse"></span>
+                            <span className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-500 italic">Established 1999 // REINFORCED</span>
                         </div>
-                        <h1 className="text-6xl md:text-9xl font-black uppercase tracking-tighter leading-[0.8] mb-12 italic">
+                        <h1 className="text-6xl md:text-9xl font-black uppercase tracking-tighter leading-[0.8] mb-12 italic text-white drop-shadow-md font-poppins">
                             {aboutData.about_title.split(' ').map((word, i) => (
                                 <span key={i} className={i === 2 ? "text-brand-accent" : ""}>
                                     {word}{' '}
@@ -81,7 +81,7 @@ const About = () => {
                 </div>
                 
                 {/* BLUEPRINT GRID */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(15,23,42,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(15,23,42,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
             </section>
 
             {/* NARRATIVE SECTION */}
@@ -89,9 +89,9 @@ const About = () => {
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-24">
                         <div className="lg:col-span-12 xl:col-span-7">
-                            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-accent mb-6 block italic">Corporate Manifesto</span>
-                            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter italic mb-12 leading-[0.9]">FORGING <br /> INTEGRITY.</h2>
-                            <p className="text-2xl md:text-3xl text-gray-500 font-bold uppercase tracking-tight leading-relaxed mb-16 italic">
+                            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-600 mb-6 block italic">Corporate Manifesto</span>
+                            <h2 className="text-5xl md:text-7xl font-black text-slate-900 uppercase tracking-tighter italic mb-12 leading-[0.9] font-poppins">FORGING <br /> INTEGRITY.</h2>
+                            <p className="text-2xl md:text-3xl text-slate-600 font-bold uppercase tracking-tight leading-relaxed mb-16 italic">
                                 {aboutData.about_content}
                             </p>
 
@@ -101,18 +101,18 @@ const About = () => {
                                     { label: 'Precision Engineering', desc: 'Micron-level accuracy in structural fabrication.', icon: <Target /> }
                                 ].map((item, i) => (
                                     <div key={i} className="space-y-4">
-                                        <div className="text-brand-accent">{item.icon}</div>
-                                        <h3 className="text-xl font-black uppercase tracking-widest">{item.label}</h3>
-                                        <p className="text-sm font-bold text-gray-600 uppercase tracking-tighter">{item.desc}</p>
+                                        <div className="text-blue-600">{item.icon}</div>
+                                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-widest font-poppins">{item.label}</h3>
+                                        <p className="text-sm font-bold text-slate-500 uppercase tracking-tighter">{item.desc}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
                         <div className="lg:col-span-12 xl:col-span-5 relative">
-                            <div className="sticky top-32 p-12 bg-white/[0.02] border border-white/5 rounded-[4rem] backdrop-blur-3xl">
-                                <Radio className="w-12 h-12 text-brand-accent mb-12 animate-pulse" />
-                                <h3 className="text-2xl font-black uppercase tracking-tighter mb-8 italic">OUR DNA</h3>
+                            <div className="sticky top-32 p-12 bg-white border border-slate-200/60 rounded-[4rem] shadow-xl shadow-slate-100/50">
+                                <Radio className="w-12 h-12 text-blue-600 mb-12 animate-pulse" />
+                                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-8 italic font-poppins">OUR DNA</h3>
                                 <div className="space-y-6">
                                     {[
                                         'Heavy Structural Design',
@@ -121,8 +121,8 @@ const About = () => {
                                         'Crane Supportive Truss',
                                         'Massive Site Execution'
                                     ].map((item, i) => (
-                                        <div key={i} className="flex items-center gap-6 text-[11px] font-black uppercase tracking-[0.4em] text-gray-500 hover:text-white transition-colors cursor-default">
-                                            <CheckCircle2 className="w-4 h-4 text-brand-accent" /> {item}
+                                        <div key={i} className="flex items-center gap-6 text-[11px] font-black uppercase tracking-[0.4em] text-slate-600 hover:text-slate-900 transition-colors cursor-default">
+                                            <CheckCircle2 className="w-4 h-4 text-blue-600" /> {item}
                                         </div>
                                     ))}
                                 </div>
@@ -133,7 +133,7 @@ const About = () => {
             </section>
 
             {/* CORE VALUES */}
-            <section className="py-40 border-y border-white/5 bg-white/[0.01]">
+            <section className="py-40 border-y border-slate-200/60 bg-white">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
                         {[
@@ -142,11 +142,11 @@ const About = () => {
                             { label: 'QUALITY', icon: <Settings /> },
                         ].map((v, i) => (
                             <div key={i} className="flex flex-col items-center text-center space-y-8">
-                                <div className="w-20 h-20 bg-brand-accent text-brand-950 rounded-3xl flex items-center justify-center rotate-12 hover:rotate-0 transition-transform duration-500">
+                                <div className="w-20 h-20 bg-blue-600 text-white rounded-3xl flex items-center justify-center rotate-12 hover:rotate-0 transition-transform duration-500 shadow-md">
                                     {React.cloneElement(v.icon, { size: 40 })}
                                 </div>
-                                <h3 className="text-4xl font-black uppercase tracking-tighter italic">{v.label}</h3>
-                                <div className="w-12 h-1 bg-brand-accent"></div>
+                                <h3 className="text-4xl font-black text-slate-900 uppercase tracking-tighter italic font-poppins">{v.label}</h3>
+                                <div className="w-12 h-1 bg-blue-600"></div>
                             </div>
                         ))}
                     </div>
@@ -156,23 +156,23 @@ const About = () => {
             {/* TEAM / HERITAGE STRIP */}
             <section className="py-40 relative px-6 text-center">
                 <div className="max-w-4xl mx-auto">
-                    <Users className="w-24 h-24 text-white/5 mx-auto mb-16" />
-                    <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter italic mb-12">BEYOND <br /> <span className="text-brand-accent">STRUCTURES.</span></h2>
-                    <p className="text-xl text-gray-500 font-bold uppercase tracking-widest leading-relaxed mb-20 max-w-2xl mx-auto">
+                    <Users className="w-24 h-24 text-slate-300 mx-auto mb-16" />
+                    <h2 className="text-6xl md:text-8xl font-black text-slate-900 uppercase tracking-tighter italic mb-12 font-poppins">BEYOND <br /> <span className="text-blue-600">STRUCTURES.</span></h2>
+                    <p className="text-xl text-slate-500 font-bold uppercase tracking-widest leading-relaxed mb-20 max-w-2xl mx-auto">
                         We build more than just industrial sheds. We build the backbone of national infrastructure and manufacturing progress.
                     </p>
                     <div className="inline-grid grid-cols-3 gap-20">
                         <div className="text-center">
-                            <div className="text-4xl font-black text-white italic mb-2 tracking-tighter">150+</div>
-                            <div className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-600">Specialists</div>
+                            <div className="text-4xl font-black text-blue-600 italic mb-2 tracking-tighter">150+</div>
+                            <div className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500">Specialists</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-4xl font-black text-white italic mb-2 tracking-tighter">0.1%</div>
-                            <div className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-600">Error Margin</div>
+                            <div className="text-4xl font-black text-blue-600 italic mb-2 tracking-tighter">0.1%</div>
+                            <div className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500">Error Margin</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-4xl font-black text-white italic mb-2 tracking-tighter">ISO</div>
-                            <div className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-600">Registered</div>
+                            <div className="text-4xl font-black text-blue-600 italic mb-2 tracking-tighter">ISO</div>
+                            <div className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500">Registered</div>
                         </div>
                     </div>
                 </div>

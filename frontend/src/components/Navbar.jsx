@@ -120,57 +120,65 @@ const Navbar = () => {
                 </div>
 
                 {/* Mobile Menu */}
-                {isOpen && (
-                    <div className="md:hidden bg-white border-t border-slate-100 shadow-2xl">
-                        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.name}
-                                    to={link.path}
-                                    className={`block px-5 py-4 text-sm font-bold rounded-2xl transition-all ${location.pathname === link.path
-                                            ? 'bg-blue-50 text-cta'
-                                            : 'text-textMain/70 hover:bg-slate-50'
-                                        }`}
-                                    onClick={() => setIsOpen(false)}
-                                >
-                                    {link.name}
-                                </Link>
-                            ))}
-                            <div className="pt-4 pb-2 px-3 space-y-3">
-                                {!isAuthenticated ? (
-                                    <>
-                                        <Link
-                                            to="/register"
-                                            className="block w-full text-center bg-cta text-white px-4 py-4 rounded-2xl font-bold transition-all"
-                                            onClick={() => setIsOpen(false)}
-                                        >
-                                            Join Now
-                                        </Link>
-                                        <Link
-                                            to="/login"
-                                            className="block w-full text-center bg-surface text-primary px-4 py-4 rounded-2xl font-bold transition-all"
-                                            onClick={() => setIsOpen(false)}
-                                        >
-                                            Member Login
-                                        </Link>
-                                    </>
-                                ) : (
-                                    <button
-                                        onClick={() => {
-                                            const { logout } = useAuthStore.getState();
-                                            logout();
-                                            navigate('/login', { replace: true });
-                                            setIsOpen(false);
-                                        }}
-                                        className="block w-full bg-rose-50 text-rose-600 px-4 py-4 rounded-2xl font-bold transition-all"
+                <AnimatePresence>
+                    {isOpen && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25, ease: 'easeInOut' }}
+                            className="md:hidden bg-white border-t border-slate-100 shadow-2xl overflow-hidden"
+                        >
+                            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                                {navLinks.map((link) => (
+                                    <Link
+                                        key={link.name}
+                                        to={link.path}
+                                        className={`block px-5 py-4 text-sm font-bold rounded-2xl transition-all ${location.pathname === link.path
+                                                ? 'bg-blue-50 text-cta'
+                                                : 'text-textMain/70 hover:bg-slate-50'
+                                            }`}
+                                        onClick={() => setIsOpen(false)}
                                     >
-                                        Log Out
-                                    </button>
-                                )}
+                                        {link.name}
+                                    </Link>
+                                ))}
+                                <div className="pt-4 pb-2 px-3 space-y-3">
+                                    {!isAuthenticated ? (
+                                        <>
+                                            <Link
+                                                to="/register"
+                                                className="block w-full text-center bg-cta text-white px-4 py-4 rounded-2xl font-bold transition-all"
+                                                onClick={() => setIsOpen(false)}
+                                            >
+                                                Join Now
+                                            </Link>
+                                            <Link
+                                                to="/login"
+                                                className="block w-full text-center bg-surface text-primary px-4 py-4 rounded-2xl font-bold transition-all"
+                                                onClick={() => setIsOpen(false)}
+                                            >
+                                                Member Login
+                                            </Link>
+                                        </>
+                                    ) : (
+                                        <button
+                                            onClick={() => {
+                                                const { logout } = useAuthStore.getState();
+                                                logout();
+                                                navigate('/login', { replace: true });
+                                                setIsOpen(false);
+                                            }}
+                                            className="block w-full bg-rose-50 text-rose-600 px-4 py-4 rounded-2xl font-bold transition-all"
+                                        >
+                                            Log Out
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
         </nav>
     );
 };

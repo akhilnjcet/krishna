@@ -23,32 +23,32 @@
   }
   
   body {
-    @apply antialiased text-textMain bg-white dark:bg-dark-bg dark:text-dark-text transition-colors duration-200;
+    @apply antialiased text-slate-700 bg-slate-50 transition-colors duration-200;
     font-family: 'Inter', sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold text-primary dark:text-blue-400 tracking-tight;
+    @apply font-bold text-slate-900 tracking-tight;
     font-family: 'Poppins', sans-serif;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-cta hover:bg-ctaHover text-white font-semibold rounded-xl px-6 py-3 transition-all transform active:scale-95 shadow-lg shadow-blue-100 dark:shadow-none;
+    @apply bg-cta hover:bg-ctaHover text-white font-semibold rounded-xl px-6 py-3 transition-all transform active:scale-95 shadow-lg shadow-blue-100;
   }
 
   .btn-outline {
-    @apply bg-transparent hover:bg-surface text-primary border-2 border-primary/20 font-semibold rounded-xl px-6 py-3 transition-all dark:text-blue-400 dark:border-blue-900/50 dark:hover:bg-dark-surface;
+    @apply bg-transparent hover:bg-surface text-primary border-2 border-primary/20 font-semibold rounded-xl px-6 py-3 transition-all;
   }
 
   .card-minimal {
-    @apply bg-surface rounded-3xl p-8 border border-white/50 shadow-xl shadow-slate-100/50 hover:shadow-2xl hover:shadow-blue-50 transition-all duration-300 dark:bg-dark-surface dark:border-dark-border dark:shadow-none;
+    @apply bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-100/50 hover:shadow-2xl hover:shadow-blue-50/70 transition-all duration-300;
   }
 
   .sticky-nav {
-    @apply sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-100 dark:bg-dark-bg/80 dark:border-dark-border;
+    @apply sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100;
   }
 
   .section-pad {

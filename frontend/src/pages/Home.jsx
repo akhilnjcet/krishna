@@ -188,13 +188,13 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     1. HERO SECTION — Immersive Animated 
                     ════════════════════════════════════════ */}
-                <section ref={heroRef} className="relative min-h-screen flex items-center bg-[#050B1A] overflow-hidden">
+                <section ref={heroRef} className="relative min-h-screen flex items-center bg-white overflow-hidden">
                     {/* Dynamic animated gradient bg */}
                     <motion.div
                         animate={{ background: [
-                            'radial-gradient(ellipse at 20% 50%, #1d4ed820 0%, transparent 60%)',
-                            'radial-gradient(ellipse at 80% 50%, #2563eb20 0%, transparent 60%)',
-                            'radial-gradient(ellipse at 20% 50%, #1d4ed820 0%, transparent 60%)',
+                            'radial-gradient(ellipse at 20% 50%, rgba(37,99,235,0.06) 0%, transparent 60%)',
+                            'radial-gradient(ellipse at 80% 50%, rgba(59,130,246,0.08) 0%, transparent 60%)',
+                            'radial-gradient(ellipse at 20% 50%, rgba(37,99,235,0.06) 0%, transparent 60%)',
                         ]}}
                         transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
                         className="absolute inset-0"
@@ -204,9 +204,9 @@ const Home = () => {
                     <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none">
                         <motion.span
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: 0.025 }}
+                            animate={{ opacity: 0.04 }}
                             transition={{ delay: 2 }}
-                            className="text-[22vw] font-black text-white uppercase tracking-tighter leading-none"
+                            className="text-[22vw] font-black text-blue-900/10 uppercase tracking-tighter leading-none"
                         >
                             KEW
                         </motion.span>
@@ -216,20 +216,20 @@ const Home = () => {
                     <motion.div
                         animate={{ x: mousePos.x * 60, y: mousePos.y * 40 }}
                         transition={{ type: 'spring', stiffness: 40, damping: 15 }}
-                        className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none"
+                        className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-blue-300/20 rounded-full blur-[120px] pointer-events-none"
                     />
                     <motion.div
                         animate={{ x: mousePos.x * -40, y: mousePos.y * 30 }}
                         transition={{ type: 'spring', stiffness: 40, damping: 15 }}
-                        className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none"
+                        className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-indigo-200/20 rounded-full blur-[100px] pointer-events-none"
                     />
 
                     {/* Grid overlay */}
-                    <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:60px_60px]" />
+                    <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.02)_1px,transparent_1px)] bg-[size:60px_60px]" />
 
                     {/* Parallax hero bg image */}
                     <motion.div style={{ y: smoothHeroY }} className="absolute inset-0 pointer-events-none">
-                        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1920&q=80')] bg-cover bg-center opacity-[0.07]" />
+                        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1920&q=80')] bg-cover bg-center opacity-[0.04]" />
                     </motion.div>
 
                     {/* Hero content */}
@@ -238,27 +238,27 @@ const Home = () => {
 
                             {/* Badge */}
                             <motion.div variants={fadeUp} custom={0}
-                                className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm mb-12"
+                                className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-blue-50/80 border border-blue-100 backdrop-blur-sm mb-12"
                             >
                                 <motion.span
                                     animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
                                     transition={{ duration: 2, repeat: Infinity }}
-                                    className="w-2 h-2 rounded-full bg-blue-400"
+                                    className="w-2 h-2 rounded-full bg-blue-600"
                                 />
-                                <span className="text-blue-300 text-xs font-black uppercase tracking-[0.3em]">
+                                <span className="text-blue-700 text-xs font-black uppercase tracking-[0.3em]">
                                     Established 1999 · Certified Excellence
                                 </span>
                             </motion.div>
 
                             {/* Animated headline */}
                             <motion.div variants={stagger} className="mb-8">
-                                <div className="text-[clamp(3rem,8vw,6.5rem)] font-black text-white leading-[0.95] tracking-[-0.03em] font-poppins">
+                                <div className="text-[clamp(3rem,8vw,6.5rem)] font-black text-slate-900 leading-[0.95] tracking-[-0.03em] font-poppins">
                                     <WordReveal text="Precision" className="block" />
                                     <span className="block overflow-hidden">
                                         <motion.span
                                             variants={fadeUp}
                                             custom={2}
-                                            className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500"
+                                            className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-cta to-blue-600"
                                         >
                                             Engineering
                                         </motion.span>
@@ -268,7 +268,7 @@ const Home = () => {
                             </motion.div>
 
                             <motion.p variants={fadeUp} custom={5}
-                                className="text-lg md:text-xl text-slate-400 mb-14 max-w-2xl leading-relaxed font-medium"
+                                className="text-lg md:text-xl text-slate-600 mb-14 max-w-2xl leading-relaxed font-medium"
                             >
                                 Kerala's premier industrial fabrication & welding specialists.
                                 Over two decades of precision engineering — delivered on-time, every time.
@@ -276,15 +276,15 @@ const Home = () => {
 
                             {/* CTA Buttons */}
                             <motion.div variants={fadeUp} custom={6} className="flex flex-wrap gap-5 mb-24">
-                                <Link to="/quote" className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl text-base flex items-center gap-3 overflow-hidden shadow-[0_0_40px_rgba(37,99,235,0.4)] transition-all hover:shadow-[0_0_60px_rgba(37,99,235,0.6)] hover:-translate-y-1">
+                                <Link to="/quote" className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl text-base flex items-center gap-3 overflow-hidden shadow-[0_0_40px_rgba(37,99,235,0.2)] transition-all hover:shadow-[0_0_60px_rgba(37,99,235,0.4)] hover:-translate-y-1">
                                     <span className="relative z-10">Start Your Project</span>
                                     <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform relative z-10" />
                                     {/* shimmer sweep */}
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                                 </Link>
-                                <a href="tel:+918594030186" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl border border-white/10 hover:border-white/30 flex items-center gap-3 transition-all hover:-translate-y-1 text-base">
+                                <a href="tel:+918594030186" className="px-8 py-4 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-2xl border border-slate-200 hover:border-slate-300 flex items-center gap-3 transition-all hover:-translate-y-1 text-base shadow-sm">
                                     <motion.span animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                                        <Phone className="w-5 h-5 text-blue-400" />
+                                        <Phone className="w-5 h-5 text-blue-600" />
                                     </motion.span>
                                     Speak with Experts
                                 </a>
@@ -292,27 +292,27 @@ const Home = () => {
 
                             {/* ── PERFORMANCE METRICS ── 
                                 Glassmorphism cards with animated counters */}
-                            <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-10 border-t border-white/10">
+                            <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-10 border-t border-slate-200">
                                 {[
-                                    { label: 'Projects Completed', value: (settings.stat_projects || '1200+').replace(/[^0-9,]/g, ''), suffix: (settings.stat_projects || '1200+').replace(/[0-9,]/g, '') || '+', icon: <Layers className="w-7 h-7" />, color: 'from-blue-500/20 to-blue-600/5', glow: 'shadow-blue-500/20', border: 'border-blue-500/20', iconColor: 'text-blue-400' },
-                                    { label: 'Happy Clients', value: (settings.stat_clients || '450+').replace(/[^0-9,]/g, ''), suffix: (settings.stat_clients || '450+').replace(/[0-9,]/g, '') || '+', icon: <Users className="w-7 h-7" />, color: 'from-cyan-500/20 to-cyan-600/5', glow: 'shadow-cyan-500/20', border: 'border-cyan-500/20', iconColor: 'text-cyan-400' },
-                                    { label: 'Years Experience', value: (settings.stat_years || '25+').replace(/[^0-9]/g, ''), suffix: (settings.stat_years || '25+').replace(/[0-9]/g, '') || '+', icon: <Award className="w-7 h-7" />, color: 'from-yellow-500/20 to-yellow-600/5', glow: 'shadow-yellow-500/20', border: 'border-yellow-500/20', iconColor: 'text-yellow-400' },
-                                    { label: 'Client Satisfaction', value: (settings.stat_satisfaction || '99%').replace(/[^0-9]/g, ''), suffix: (settings.stat_satisfaction || '99%').replace(/[0-9]/g, '') || '%', icon: <Shield className="w-7 h-7" />, color: 'from-green-500/20 to-green-600/5', glow: 'shadow-green-500/20', border: 'border-green-500/20', iconColor: 'text-green-400' },
+                                    { label: 'Projects Completed', value: (settings.stat_projects || '1200+').replace(/[^0-9,]/g, ''), suffix: (settings.stat_projects || '1200+').replace(/[0-9,]/g, '') || '+', icon: <Layers className="w-7 h-7" />, color: 'from-blue-50/50 to-white', glow: 'shadow-blue-100/40', border: 'border-blue-100', iconColor: 'text-blue-600', bgIcon: 'bg-blue-50' },
+                                    { label: 'Happy Clients', value: (settings.stat_clients || '450+').replace(/[^0-9,]/g, ''), suffix: (settings.stat_clients || '450+').replace(/[0-9,]/g, '') || '+', icon: <Users className="w-7 h-7" />, color: 'from-cyan-50/50 to-white', glow: 'shadow-cyan-100/40', border: 'border-cyan-100', iconColor: 'text-cyan-600', bgIcon: 'bg-cyan-50' },
+                                    { label: 'Years Experience', value: (settings.stat_years || '25+').replace(/[^0-9]/g, ''), suffix: (settings.stat_years || '25+').replace(/[0-9]/g, '') || '+', icon: <Award className="w-7 h-7" />, color: 'from-yellow-50/50 to-white', glow: 'shadow-yellow-100/40', border: 'border-yellow-100', iconColor: 'text-yellow-600', bgIcon: 'bg-yellow-50' },
+                                    { label: 'Client Satisfaction', value: (settings.stat_satisfaction || '99%').replace(/[^0-9]/g, ''), suffix: (settings.stat_satisfaction || '99%').replace(/[0-9]/g, '') || '%', icon: <Shield className="w-7 h-7" />, color: 'from-green-50/50 to-white', glow: 'shadow-green-100/40', border: 'border-green-100', iconColor: 'text-green-600', bgIcon: 'bg-green-50' },
                                 ].map((stat, i) => (
                                     <motion.div
                                         key={i}
                                         variants={scaleIn}
                                         custom={i}
                                         whileHover={{ y: -10, scale: 1.03 }}
-                                        className={`relative p-6 rounded-3xl bg-gradient-to-br ${stat.color} border ${stat.border} backdrop-blur-xl shadow-xl ${stat.glow} overflow-hidden cursor-default group`}
+                                        className={`relative p-6 rounded-3xl bg-gradient-to-br ${stat.color} border ${stat.border} shadow-xl ${stat.glow} overflow-hidden cursor-default group`}
                                     >
                                         {/* Background shine on hover */}
-                                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                                        <div className={`mb-4 ${stat.iconColor} group-hover:scale-110 transition-transform`}>{stat.icon}</div>
-                                        <div className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-2">
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-slate-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                                        <div className={`w-12 h-12 ${stat.bgIcon} rounded-2xl flex items-center justify-center mb-4 ${stat.iconColor} group-hover:scale-110 transition-transform`}>{stat.icon}</div>
+                                        <div className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-2">
                                             <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                                         </div>
-                                        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-white/40 group-hover:text-white/70 transition-colors">
+                                        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-600 transition-colors">
                                             {stat.label}
                                         </div>
                                         {/* Bottom accent line */}
@@ -327,17 +327,18 @@ const Home = () => {
                     <motion.div
                         animate={{ y: [0, 10, 0] }}
                         transition={{ duration: 2, repeat: Infinity }}
-                        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30"
+                        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-400/50"
                     >
                         <span className="text-[9px] font-black uppercase tracking-[0.4em]">Scroll</span>
-                        <div className="w-5 h-9 rounded-full border border-white/20 flex justify-center pt-1.5">
-                            <motion.div animate={{ y: [0, 12, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-1 h-2 bg-white/40 rounded-full" />
+                        <div className="w-5 h-9 rounded-full border border-slate-300 flex justify-center pt-1.5">
+                            <motion.div animate={{ y: [0, 12, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-1 h-2 bg-slate-400 rounded-full" />
                         </div>
                     </motion.div>
                 </section>
 
                 {/* Banner Ad Placement */}
-                <div className="bg-[#050B1A] pt-12 pb-6 border-b border-indigo-900/40">
+                {/* Banner Ad Placement */}
+                <div className="bg-slate-50 pt-12 pb-6 border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-6">
                         <AdBanner adSlot="7234567890" adFormat="horizontal" />
                     </div>
@@ -346,9 +347,9 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     2. ABOUT SECTION — Cinematic reveal   
                     ════════════════════════════════════════ */}
-                <section id="about" className="py-36 bg-[#060D1F] relative overflow-hidden">
+                <section id="about" className="py-36 bg-[#F8FAFC] relative overflow-hidden">
                     {/* Ambient glow */}
-                    <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-900/20 rounded-full blur-[150px] pointer-events-none -translate-x-1/2 -translate-y-1/2" />
+                    <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-100/30 rounded-full blur-[150px] pointer-events-none -translate-x-1/2 -translate-y-1/2 opacity-40" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
                             {/* Text */}
@@ -356,20 +357,20 @@ const Home = () => {
                                 initial="hidden" whileInView="visible"
                                 viewport={{ once: true, margin: "-80px" }} variants={stagger}
                             >
-                                <motion.p variants={fadeUp} custom={0} className="text-blue-400 font-black uppercase tracking-[0.4em] text-xs mb-5">Our Story</motion.p>
-                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-6xl font-black text-white leading-tight tracking-tighter mb-8">
+                                <motion.p variants={fadeUp} custom={0} className="text-blue-600 font-black uppercase tracking-[0.4em] text-xs mb-5">Our Story</motion.p>
+                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-6xl font-black text-slate-900 leading-tight tracking-tighter mb-8 font-poppins">
                                     {settings.about_title}
                                 </motion.h2>
-                                <motion.p variants={fadeUp} custom={2} className="text-slate-400 text-lg leading-relaxed mb-12 font-medium">
+                                <motion.p variants={fadeUp} custom={2} className="text-slate-600 text-lg leading-relaxed mb-12 font-medium">
                                     {settings.about_content}
                                 </motion.p>
                                 <motion.div variants={fadeUp} custom={3} className="space-y-5">
                                     {['ISI Certified Steel Works', 'On-Site Mobile Fabrication Units', '25+ Year Track Record of Delivery', 'Transparent, Competitive Pricing'].map((item, i) => (
                                         <div key={i} className="flex items-center gap-4">
-                                            <div className="w-6 h-6 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
-                                                <CheckCircle className="w-3.5 h-3.5 text-blue-400" />
+                                            <div className="w-6 h-6 rounded-full bg-blue-50 border border-blue-200/50 flex items-center justify-center flex-shrink-0">
+                                                <CheckCircle className="w-3.5 h-3.5 text-blue-600" />
                                             </div>
-                                            <span className="text-slate-300 font-semibold">{item}</span>
+                                            <span className="text-slate-700 font-semibold">{item}</span>
                                         </div>
                                     ))}
                                 </motion.div>
@@ -382,16 +383,16 @@ const Home = () => {
                                 className="relative h-[600px]"
                             >
                                 <motion.div whileHover={{ scale: 1.03, rotate: -1 }} transition={{ type: 'spring', stiffness: 200 }}
-                                    className="absolute top-0 left-0 right-16 h-[380px] rounded-[3rem] overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.5)]"
+                                    className="absolute top-0 left-0 right-16 h-[380px] rounded-[3rem] overflow-hidden shadow-[0_25px_50px_rgba(15,23,42,0.15)]"
                                 >
                                     <img src="https://images.unsplash.com/photo-1542626991-cbc4e32524cc?w=700&h=500&fit=crop" alt="Welding" className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-blue-950/60 to-transparent" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
                                 </motion.div>
                                 <motion.div whileHover={{ scale: 1.03, rotate: 1 }} transition={{ type: 'spring', stiffness: 200 }}
-                                    className="absolute bottom-0 right-0 left-16 h-[280px] rounded-[3rem] overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.5)] border border-white/5"
+                                    className="absolute bottom-0 right-0 left-16 h-[280px] rounded-[3rem] overflow-hidden shadow-[0_25px_50px_rgba(15,23,42,0.15)] border border-slate-100"
                                 >
                                     <img src="https://images.unsplash.com/photo-1502444330042-d1a1ddf9bb5b?w=700&h=400&fit=crop" alt="Fabrication" className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-blue-950/60 to-transparent" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
                                 </motion.div>
                                 {/* Floating stat badge */}
                                 <motion.div
@@ -456,22 +457,22 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     4. PORTFOLIO / GALLERY — animated grid 
                     ════════════════════════════════════════ */}
-                <section id="portfolio" className="py-36 bg-[#060D1F] overflow-hidden">
+                <section id="portfolio" className="py-36 bg-slate-50 overflow-hidden border-y border-slate-200/50">
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
                             <div>
-                                <motion.p variants={fadeUp} custom={0} className="text-blue-400 font-black uppercase tracking-[0.4em] text-xs mb-3">Our Work</motion.p>
-                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-white tracking-tighter">Recent Projects</motion.h2>
+                                <motion.p variants={fadeUp} custom={0} className="text-blue-600 font-black uppercase tracking-[0.4em] text-xs mb-3">Our Work</motion.p>
+                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 tracking-tighter">Recent Projects</motion.h2>
                             </div>
                             <motion.div variants={fadeUp} custom={2}>
-                                <Link to="/projects" className="group flex items-center gap-3 text-slate-400 hover:text-white font-bold transition-colors">
+                                <Link to="/projects" className="group flex items-center gap-3 text-slate-500 hover:text-primary font-bold transition-colors">
                                     View All <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
                                 </Link>
                             </motion.div>
                         </motion.div>
 
                         {/* Auto-scrolling Project Slideshow */}
-                        <div className="relative w-full max-w-4xl mx-auto h-[350px] sm:h-[450px] rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 group cursor-pointer">
+                        <div className="relative w-full max-w-4xl mx-auto h-[350px] sm:h-[450px] rounded-[2.5rem] overflow-hidden shadow-xl border border-slate-200/60 group cursor-pointer bg-white">
                             <Link to="/projects" className="block w-full h-full relative">
                                 <AnimatePresence mode="wait">
                                     <motion.div
@@ -488,7 +489,7 @@ const Home = () => {
                                             className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700"
                                         />
                                         {/* Overlay */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-8 sm:p-12">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent flex flex-col justify-end p-8 sm:p-12">
                                             <p className="text-blue-400 text-xs font-black uppercase tracking-widest mb-2">Completed Project</p>
                                             <h3 className="text-3xl sm:text-4xl font-black text-white leading-tight mb-4">{displayedProjects[activeProjectIdx]?.title}</h3>
                                             <span className="inline-flex items-center gap-2 text-white/70 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">
@@ -542,24 +543,24 @@ const Home = () => {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: -30, scale: 0.97 }}
                                     transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                                    className="bg-gradient-to-br from-slate-900 to-blue-950 p-12 md:p-16 rounded-[3rem] text-white relative shadow-2xl shadow-blue-900/20 border border-white/5"
+                                    className="bg-white p-12 md:p-16 rounded-[3rem] text-slate-800 relative shadow-2xl shadow-slate-100/70 border border-slate-100"
                                 >
-                                    <Quote className="w-16 h-16 text-blue-400/20 absolute top-8 left-8" />
-                                    <div className="flex text-yellow-400 mb-8 gap-1">
+                                    <Quote className="w-16 h-16 text-blue-500/5 absolute top-8 left-8" />
+                                    <div className="flex text-yellow-500 mb-8 gap-1">
                                         {[...Array(TESTIMONIALS[testimonialIdx].rating)].map((_, j) => (
                                             <Star key={j} className="w-5 h-5 fill-current" />
                                         ))}
                                     </div>
-                                    <p className="text-2xl md:text-3xl font-semibold leading-relaxed text-white/90 mb-12 italic">
+                                    <p className="text-2xl md:text-3xl font-semibold leading-relaxed text-slate-700 mb-12 italic">
                                         "{TESTIMONIALS[testimonialIdx].text}"
                                     </p>
                                     <div className="flex items-center gap-5">
-                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-2xl font-black shadow-lg">
+                                        <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200/50 flex items-center justify-center text-2xl font-black text-blue-600 shadow-sm">
                                             {TESTIMONIALS[testimonialIdx].name.charAt(0)}
                                         </div>
                                         <div>
-                                            <p className="font-black text-lg text-white">{TESTIMONIALS[testimonialIdx].name}</p>
-                                            <p className="text-blue-300 text-sm font-bold">{TESTIMONIALS[testimonialIdx].role}</p>
+                                            <p className="font-black text-lg text-slate-900">{TESTIMONIALS[testimonialIdx].name}</p>
+                                            <p className="text-blue-600 text-sm font-bold">{TESTIMONIALS[testimonialIdx].role}</p>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -618,15 +619,15 @@ const Home = () => {
                 </section>
 
                 {/* ════════════════════════════════════════
-                    7. CONTACT + MAP FOOTER               
+                    7. CONTACT SECTION                     
                     ════════════════════════════════════════ */}
-                <section id="contact" className="py-36 bg-[#060D1F] text-white overflow-hidden">
+                <section id="contact" className="py-36 bg-slate-50 text-slate-800 overflow-hidden border-t border-slate-200/50">
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
                             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
-                                <motion.p variants={fadeUp} custom={0} className="text-blue-400 font-black uppercase tracking-[0.4em] text-xs mb-4">Get In Touch</motion.p>
-                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black tracking-tighter mb-6">Free Consultation</motion.h2>
-                                <motion.p variants={fadeUp} custom={2} className="text-slate-400 text-lg mb-12">Have a project in mind? Let's discuss. We provide estimates across Kerala.</motion.p>
+                                <motion.p variants={fadeUp} custom={0} className="text-blue-600 font-black uppercase tracking-[0.4em] text-xs mb-4">Get In Touch</motion.p>
+                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 tracking-tighter mb-6 font-poppins">Free Consultation</motion.h2>
+                                <motion.p variants={fadeUp} custom={2} className="text-slate-600 text-lg mb-12 font-medium">Have a project in mind? Let's discuss. We provide estimates across Kerala.</motion.p>
                                 <motion.div variants={stagger} className="space-y-6">
                                     {[
                                         { icon: <Phone className="w-5 h-5" />, label: 'Direct Line', value: settings.footer_phone, href: `tel:${settings.footer_phone}` },
@@ -635,14 +636,14 @@ const Home = () => {
                                     ].map((item, i) => (
                                         <motion.div key={i} variants={fadeUp} custom={i + 3}>
                                             {item.href ? (
-                                                <a href={item.href} className="flex items-center gap-5 p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-blue-500/30 hover:bg-white/8 transition-all group">
-                                                    <div className={`w-12 h-12 rounded-2xl ${item.green ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>{item.icon}</div>
-                                                    <div><p className="text-slate-500 text-xs font-black uppercase tracking-wider mb-1">{item.label}</p><p className="text-white font-bold text-lg">{item.value}</p></div>
+                                                <a href={item.href} className="flex items-center gap-5 p-5 rounded-2xl bg-white border border-slate-200/60 shadow-sm hover:border-blue-500/30 hover:bg-blue-50/20 hover:shadow-md transition-all group">
+                                                    <div className={`w-12 h-12 rounded-2xl ${item.green ? 'bg-green-500/20 text-green-600' : 'bg-blue-500/20 text-blue-600'} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>{item.icon}</div>
+                                                    <div><p className="text-slate-400 text-xs font-black uppercase tracking-wider mb-1">{item.label}</p><p className="text-slate-800 font-black text-lg">{item.value}</p></div>
                                                 </a>
                                             ) : (
-                                                <div className="flex items-center gap-5 p-5 rounded-2xl bg-white/5 border border-white/5">
-                                                    <div className="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0">{item.icon}</div>
-                                                    <div><p className="text-slate-500 text-xs font-black uppercase tracking-wider mb-1">{item.label}</p><p className="text-white font-bold">{item.value}</p></div>
+                                                <div className="flex items-center gap-5 p-5 rounded-2xl bg-white border border-slate-200/60 shadow-sm">
+                                                    <div className="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-600 flex items-center justify-center flex-shrink-0">{item.icon}</div>
+                                                    <div><p className="text-slate-400 text-xs font-black uppercase tracking-wider mb-1">{item.label}</p><p className="text-slate-800 font-bold">{item.value}</p></div>
                                                 </div>
                                             )}
                                         </motion.div>
@@ -652,29 +653,29 @@ const Home = () => {
 
                             {/* Contact Form */}
                             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeRight}
-                                className="bg-white/5 border border-white/10 rounded-[3rem] p-10 backdrop-blur-xl"
+                                className="bg-white border border-slate-200/60 rounded-[3rem] p-10 shadow-xl shadow-slate-100/55"
                             >
-                                <h3 className="text-2xl font-black mb-8">Send a Message</h3>
+                                <h3 className="text-2xl font-black text-slate-900 mb-8 font-poppins">Send a Message</h3>
                                 <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); alert("Message sent! We'll contact you within 2 hours."); }}>
                                     {[
                                         { label: 'Full Name', type: 'text', placeholder: 'Your Name' },
                                         { label: 'Phone Number', type: 'tel', placeholder: '+91 00000 00000' },
                                     ].map((field, i) => (
                                         <div key={i}>
-                                            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">{field.label}</label>
+                                            <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">{field.label}</label>
                                             <input type={field.type} placeholder={field.placeholder} required
-                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:bg-white/8 transition-all"
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all font-medium text-sm"
                                             />
                                         </div>
                                     ))}
                                     <div>
-                                        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Message</label>
+                                        <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Message</label>
                                         <textarea rows={4} placeholder="Tell us about your project..." required
-                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-all resize-none"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all resize-none font-medium text-sm"
                                         />
                                     </div>
                                     <motion.button type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                                        className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl transition-colors shadow-lg shadow-blue-600/30 text-lg flex items-center justify-center gap-3 group"
+                                        className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl transition-colors shadow-lg shadow-blue-600/20 text-lg flex items-center justify-center gap-3 group"
                                     >
                                         Send Message <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
                                     </motion.button>
@@ -684,31 +685,12 @@ const Home = () => {
 
                         {/* Map */}
                         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
-                            className="mt-16 rounded-[2.5rem] overflow-hidden h-64 border border-white/10"
+                            className="mt-16 rounded-[2.5rem] overflow-hidden h-64 border border-slate-200/60 shadow-sm bg-white"
                         >
-                            <iframe src={settings.map_embed_url} width="100%" height="100%" style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg)' }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Location Map" />
+                            <iframe src={settings.map_embed_url} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Location Map" />
                         </motion.div>
                     </div>
                 </section>
-
-                {/* ════════════════════════════════════════
-                    FOOTER — minimal animated              
-                    ════════════════════════════════════════ */}
-                <footer className="bg-[#030810] border-t border-white/5 py-10 text-center">
-                    <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-                        className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-slate-600 text-sm font-bold"
-                    >
-                        <Link to="/" className="text-white font-black text-xl tracking-tighter hover:text-blue-400 transition-colors">
-                            KRISHNA <span className="text-blue-500">EW</span>
-                        </Link>
-                        <p>© {new Date().getFullYear()} Krishna Engineering Works · All Rights Reserved</p>
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                            <span className="text-green-400">Services Active 24/7</span>
-                        </div>
-                    </motion.div>
-                </footer>
-
             </div>
         </>
     );

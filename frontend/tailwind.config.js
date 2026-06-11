@@ -23,6 +23,8 @@ export default {
                     900: '#0F172A',
                     950: '#020617', // Deeper for Dark Mode background
                 },
+                'brand-accent': '#EAB308', // Warm Amber/Gold for Industrial Trust
+                'brand-accentHover': '#CA8A04',
                 dark: {
                     bg: '#020617',
                     surface: '#0B1222',

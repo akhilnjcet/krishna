@@ -55,25 +55,25 @@ const Services = () => {
     };
 
     return (
-        <div className="bg-[#050505] min-h-screen pb-24 font-sans text-white">
+        <div className="bg-slate-50 min-h-screen pb-24 font-sans text-slate-800">
 
             {/* CINEMATIC HEADER */}
-            <div className="relative pt-32 pb-24 px-4 overflow-hidden border-b-[1px] border-white/5">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]"></div>
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-accent/5 blur-[120px] rounded-full"></div>
+            <div className="relative pt-32 pb-24 px-4 overflow-hidden border-b-[1px] border-slate-200 bg-white">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.01]"></div>
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-300/10 blur-[120px] rounded-full"></div>
 
                 <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-center">
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-3 text-brand-accent font-black text-[10px] uppercase tracking-[0.4em] mb-6"
+                        className="flex items-center gap-3 text-blue-600 font-black text-[10px] uppercase tracking-[0.4em] mb-6"
                     >
                         <Settings className="w-4 h-4" /> Capabilities Portfolio
                     </motion.div>
-                    <h1 className="text-6xl md:text-8xl font-black text-white uppercase tracking-tighter mb-8 text-center italic">
-                        CORE <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-white">OPERATIONS.</span>
+                    <h1 className="text-6xl md:text-8xl font-black text-slate-900 uppercase tracking-tighter mb-8 text-center italic font-poppins">
+                        CORE <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-blue-500">OPERATIONS.</span>
                     </h1>
-                    <p className="text-lg text-gray-500 max-w-2xl mx-auto font-bold text-center uppercase tracking-tight">
+                    <p className="text-lg text-slate-500 max-w-2xl mx-auto font-bold text-center uppercase tracking-tight">
                         Unyielding structural engineering solutions tailored for heavy industry and commercial applications.
                     </p>
                     
@@ -97,58 +97,58 @@ const Services = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, margin: "-100px" }}
                             transition={{ duration: 0.8 }}
-                            className={`flex flex-col lg:flex-row bg-white/[0.02] border border-white/5 rounded-[3rem] overflow-hidden backdrop-blur-3xl group transition-all duration-500 ${isHighlighted ? 'border-brand-accent bg-brand-accent/[0.03] shadow-[0_0_50px_rgba(255,180,0,0.1)]' : ''}`}
+                            className={`flex flex-col lg:flex-row bg-white border border-slate-200/60 rounded-[3rem] overflow-hidden shadow-xl shadow-slate-100/50 group transition-all duration-500 ${isHighlighted ? 'border-blue-500 bg-blue-50/10 shadow-[0_0_50px_rgba(37,99,235,0.06)]' : ''}`}
                         >
-                            <div className="w-full lg:w-1/2 h-80 lg:h-auto relative overflow-hidden bg-white/5 flex items-center justify-center">
+                            <div className="w-full lg:w-1/2 h-80 lg:h-auto relative overflow-hidden bg-slate-100 flex items-center justify-center">
                                 {/* LOADER FOR EACH IMAGE */}
-                                <div className="absolute animate-pulse text-brand-accent/20 font-black text-[10px] uppercase tracking-[0.5em]">Establishing Connection...</div>
+                                <div className="absolute animate-pulse text-blue-500/20 font-black text-[10px] uppercase tracking-[0.5em]">Establishing Connection...</div>
                                 <img 
                                     src={service.image} 
                                     alt={service.title} 
                                     onError={handleImgError}
                                     className="absolute inset-0 w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000 z-10" 
                                 />
-                                <div className="absolute inset-x-0 inset-y-0 bg-black/10 transition-opacity group-hover:opacity-0 z-20" />
+                                <div className="absolute inset-x-0 inset-y-0 bg-slate-900/10 transition-opacity group-hover:opacity-0 z-20" />
                                 <div className="absolute bottom-10 left-10 flex items-center gap-4 z-30">
-                                    <div className="bg-brand-accent text-black font-black text-3xl px-6 py-2 rounded-xl italic shadow-2xl">
+                                    <div className="bg-blue-600 text-white font-black text-3xl px-6 py-2 rounded-xl italic shadow-2xl">
                                         0{index + 1}
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="w-full lg:w-1/2 p-10 sm:p-16 lg:p-20 flex flex-col justify-center relative bg-[#0a0a0c]">
-                                <div className="absolute top-0 right-0 p-10 text-white/[0.02] pointer-events-none">
+                            <div className="w-full lg:w-1/2 p-10 sm:p-16 lg:p-20 flex flex-col justify-center relative bg-white">
+                                <div className="absolute top-0 right-0 p-10 text-slate-100 pointer-events-none">
                                     <Target className="w-40 h-40" />
                                 </div>
 
                                 <div className="relative z-10">
                                     <div className="flex items-center gap-4 mb-6">
-                                        <div className="w-12 h-1 bg-brand-accent"></div>
-                                        <span className="text-brand-accent font-black text-[10px] uppercase tracking-[0.4em]">{service.id} unit</span>
+                                        <div className="w-12 h-1 bg-blue-600"></div>
+                                        <span className="text-blue-600 font-black text-[10px] uppercase tracking-[0.4em]">{service.id} unit</span>
                                     </div>
 
-                                    <h2 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter mb-8 italic">{service.title}</h2>
+                                    <h2 className="text-4xl sm:text-6xl font-black text-slate-900 uppercase tracking-tighter mb-8 italic font-poppins">{service.title}</h2>
 
-                                    <p className="text-gray-400 text-lg mb-12 font-bold leading-relaxed max-w-xl uppercase tracking-tight">
+                                    <p className="text-slate-600 text-base leading-relaxed mb-10 max-w-xl font-medium">
                                         {service.desc}
                                     </p>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-16">
                                         <div className="space-y-4">
-                                            <h3 className="text-[9px] font-black tracking-[0.3em] uppercase text-gray-500 mb-4 flex items-center gap-2">
-                                                <CheckSquare className="w-3 h-3 text-brand-accent" /> Control Sequence
+                                            <h3 className="text-[9px] font-black tracking-[0.3em] uppercase text-slate-400 mb-4 flex items-center gap-2">
+                                                <CheckSquare className="w-3 h-3 text-blue-600" /> Control Sequence
                                             </h3>
                                             <div className="space-y-3">
                                                 {service.process.map((step, i) => (
-                                                    <div key={i} className="flex items-center text-white/40 font-black uppercase tracking-widest text-[8px] group-hover:text-white transition-colors">
-                                                        <span className="text-brand-accent mr-3 font-black">X</span>
+                                                    <div key={i} className="flex items-center text-slate-400 font-black uppercase tracking-widest text-[8px] group-hover:text-slate-800 transition-colors">
+                                                        <span className="text-blue-600 mr-3 font-black">X</span>
                                                         {step}
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
-                                        <div className="hidden sm:flex flex-col items-center justify-center border-l border-white/5 pl-8">
-                                            <div className="text-brand-accent/20 group-hover:text-brand-accent transition-colors">
+                                        <div className="hidden sm:flex flex-col items-center justify-center border-l border-slate-100 pl-8">
+                                            <div className="text-blue-600/10 group-hover:text-blue-600/30 transition-colors">
                                                 {React.cloneElement(service.icon, { size: 64 })}
                                             </div>
                                         </div>
@@ -156,7 +156,7 @@ const Services = () => {
 
                                     <Link 
                                         to={`/quote?service=${service.id}`} 
-                                        className="group/btn relative inline-flex items-center gap-4 bg-brand-accent text-black px-10 py-5 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white transition-all overflow-hidden active:scale-95 shadow-xl"
+                                        className="group/btn relative inline-flex items-center gap-4 bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-slate-900 transition-all overflow-hidden active:scale-95 shadow-xl"
                                     >
                                         <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700"></div>
                                         Request Deployment Specs
@@ -170,10 +170,10 @@ const Services = () => {
             </div>
 
             {/* Technical Detail Strip */}
-            <div className="bg-brand-accent py-12 mt-24 overflow-hidden whitespace-nowrap border-y border-black">
+            <div className="bg-blue-600 py-12 mt-24 overflow-hidden whitespace-nowrap border-y border-blue-700">
                 <div className="flex animate-scroll gap-20">
                     {[...Array(10)].map((_, i) => (
-                        <div key={i} className="flex items-center gap-6 text-brand-950 font-black uppercase tracking-[0.5em] text-[10px]">
+                        <div key={i} className="flex items-center gap-6 text-white font-black uppercase tracking-[0.5em] text-[10px]">
                             <Settings className="w-4 h-4" /> REINFORCED QUALITY <Target className="w-4 h-4" /> ISO CERTIFIED <Zap className="w-4 h-4" /> HEAVY DUTY
                         </div>
                     ))}
