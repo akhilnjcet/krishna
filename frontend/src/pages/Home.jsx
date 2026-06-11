@@ -106,6 +106,7 @@ const TESTIMONIALS = [
 const Home = () => {
     const [projects, setProjects] = useState([]);
     const [testimonialIdx, setTestimonialIdx] = useState(0);
+    const [activeProjectIdx, setActiveProjectIdx] = useState(0);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const heroRef = useRef(null);
 
@@ -158,6 +159,25 @@ const Home = () => {
         const t = setInterval(() => setTestimonialIdx(i => (i + 1) % TESTIMONIALS.length), 5000);
         return () => clearInterval(t);
     }, []);
+
+    const defaultProjects = [
+        { images: [{ url: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=700&h=500&fit=crop' }], title: 'Industrial Steel Structure' },
+        { images: [{ url: 'https://images.unsplash.com/photo-1541888087405-ebcfca2be2b1?w=700&h=500&fit=crop' }], title: 'Pipeline Welding' },
+        { images: [{ url: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=700&h=500&fit=crop' }], title: 'Factory Roofing' },
+        { images: [{ url: 'https://images.unsplash.com/photo-1510265236892-329bfd7de7a1?w=700&h=500&fit=crop' }], title: 'Custom Iron Gates' },
+        { images: [{ url: 'https://images.unsplash.com/photo-1590496793907-9b24479abccb?w=700&h=500&fit=crop' }], title: 'Commercial Grills' },
+        { images: [{ url: 'https://images.unsplash.com/photo-1621213349942-0f723e421cd0?w=700&h=500&fit=crop' }], title: 'On-site Repair' }
+    ];
+    const displayedProjects = (projects && projects.length > 0) ? projects.slice(0, 6) : defaultProjects;
+
+    useEffect(() => {
+        const pCount = displayedProjects.length;
+        if (pCount === 0) return;
+        const pInterval = setInterval(() => {
+            setActiveProjectIdx(i => (i + 1) % pCount);
+        }, 4000);
+        return () => clearInterval(pInterval);
+    }, [displayedProjects.length]);
 
     return (
         <>
@@ -450,47 +470,54 @@ const Home = () => {
                             </motion.div>
                         </motion.div>
 
-                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}
-                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
-                        >
-                            {(projects.length > 0 ? projects : [
-                                { images: [{ url: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=700&h=500&fit=crop' }], title: 'Industrial Steel Structure' },
-                                { images: [{ url: 'https://images.unsplash.com/photo-1541888087405-ebcfca2be2b1?w=700&h=500&fit=crop' }], title: 'Pipeline Welding' },
-                                { images: [{ url: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=700&h=500&fit=crop' }], title: 'Factory Roofing' },
-                                { images: [{ url: 'https://images.unsplash.com/photo-1510265236892-329bfd7de7a1?w=700&h=500&fit=crop' }], title: 'Custom Iron Gates' },
-                                { images: [{ url: 'https://images.unsplash.com/photo-1590496793907-9b24479abccb?w=700&h=500&fit=crop' }], title: 'Commercial Grills' },
-                                { images: [{ url: 'https://images.unsplash.com/photo-1621213349942-0f723e421cd0?w=700&h=500&fit=crop' }], title: 'On-site Repair' },
-                            ]).slice(0, 6).map((item, i) => {
-                                const imgUrl = item.images?.[0]?.url ? getDirectImageUrl(item.images[0].url) : item.images?.[0]?.url;
-                                return (
+                        {/* Auto-scrolling Project Slideshow */}
+                        <div className="relative w-full max-w-4xl mx-auto h-[350px] sm:h-[450px] rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 group cursor-pointer">
+                            <Link to="/projects" className="block w-full h-full relative">
+                                <AnimatePresence mode="wait">
                                     <motion.div
-                                        key={item._id || i}
-                                        variants={scaleIn}
-                                        custom={i}
-                                        whileHover={{ scale: 1.02 }}
-                                        className="group relative rounded-[2.5rem] overflow-hidden aspect-[4/3] bg-slate-800 cursor-pointer shadow-2xl"
+                                        key={activeProjectIdx}
+                                        initial={{ opacity: 0, scale: 1.05 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.6 }}
+                                        className="absolute inset-0 w-full h-full"
                                     >
-                                        <motion.img
-                                            whileHover={{ scale: 1.1 }}
-                                            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                                            src={imgUrl}
-                                            alt={item.title}
-                                            className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity duration-500"
+                                        <img
+                                            src={displayedProjects[activeProjectIdx]?.images?.[0]?.url ? getDirectImageUrl(displayedProjects[activeProjectIdx].images[0].url) : (displayedProjects[activeProjectIdx]?.images?.[0]?.url || displayedProjects[activeProjectIdx]?.url)}
+                                            alt={displayedProjects[activeProjectIdx]?.title}
+                                            className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
-                                            <div>
-                                                <p className="text-white/60 text-xs font-black uppercase tracking-widest mb-2">Completed Project</p>
-                                                <h3 className="text-2xl font-black text-white">{item.title}</h3>
-                                            </div>
-                                        </div>
-                                        {/* Corner badge */}
-                                        <div className="absolute top-5 right-5 w-10 h-10 rounded-2xl bg-black/30 border border-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <ArrowRight className="w-4 h-4 text-white" />
+                                        {/* Overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-8 sm:p-12">
+                                            <p className="text-blue-400 text-xs font-black uppercase tracking-widest mb-2">Completed Project</p>
+                                            <h3 className="text-3xl sm:text-4xl font-black text-white leading-tight mb-4">{displayedProjects[activeProjectIdx]?.title}</h3>
+                                            <span className="inline-flex items-center gap-2 text-white/70 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">
+                                                View all photos <ArrowRight className="w-4 h-4" />
+                                            </span>
                                         </div>
                                     </motion.div>
-                                );
-                            })}
-                        </motion.div>
+                                </AnimatePresence>
+                                
+                                {/* Right arrow hover indicator */}
+                                <div className="absolute top-5 right-5 w-10 h-10 rounded-2xl bg-black/30 border border-white/10 backdrop-blur-sm flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-20">
+                                    <ArrowRight className="w-4 h-4 text-white" />
+                                </div>
+                            </Link>
+
+                            {/* Dot Indicators */}
+                            <div className="absolute bottom-6 right-8 flex gap-2 z-20">
+                                {displayedProjects.map((_, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            setActiveProjectIdx(idx);
+                                        }}
+                                        className={`h-2 rounded-full transition-all duration-300 ${idx === activeProjectIdx ? 'bg-blue-500 w-6' : 'bg-white/40 w-2'}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </section>
 

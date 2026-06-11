@@ -262,13 +262,13 @@ const Projects = () => {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className="bg-[#0c0c0e] max-w-[1300px] w-full h-full max-h-[90vh] rounded-[3rem] border border-white/10 relative z-10 flex flex-col lg:flex-row overflow-hidden shadow-2xl"
+                                className="bg-[#0c0c0e] max-w-[1300px] w-full h-full max-h-[90vh] rounded-[2.5rem] border border-white/10 relative z-10 flex flex-col lg:flex-row overflow-hidden shadow-2xl"
                             >
                                 <button
                                     onClick={() => setSelectedProject(null)}
-                                    className="absolute top-8 right-8 bg-white text-black p-4 rounded-full z-50 transition-all active:scale-90 hover:rotate-90 flex items-center justify-center"
+                                    className="absolute top-4 right-4 bg-white text-black p-2.5 sm:p-4 rounded-full z-50 transition-all active:scale-90 hover:rotate-90 flex items-center justify-center shadow-lg"
                                 >
-                                    <X className="w-6 h-6" />
+                                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </button>
 
                                 <div className="lg:w-[60%] relative h-[45vh] lg:h-auto bg-black flex overflow-x-auto snap-x snap-mandatory scrollbar-hide group">
@@ -281,7 +281,7 @@ const Projects = () => {
                                                     className="w-full h-full object-cover grayscale-[30%] hover:grayscale-0 transition-all duration-700"
                                                 />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
-                                                <div className="absolute top-10 left-10 text-[10px] font-black text-white/40 uppercase tracking-[0.5em] bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                                                <div className="absolute top-6 left-6 text-[9px] font-black text-white/40 uppercase tracking-[0.5em] bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
                                                     Frame {idx + 1} / {selectedProject.images.length}
                                                 </div>
                                             </div>
@@ -291,7 +291,7 @@ const Projects = () => {
                                     )}
                                     
                                     {selectedProject.images?.length > 1 && (
-                                        <div className="absolute bottom-10 left-10 flex gap-1 z-20">
+                                        <div className="absolute bottom-6 left-6 flex gap-1 z-20">
                                             {selectedProject.images.map((_, i) => (
                                                 <div key={i} className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
                                                     <motion.div 
@@ -305,13 +305,13 @@ const Projects = () => {
                                     )}
                                 </div>
 
-                                <div className="lg:w-[40%] p-10 md:p-16 flex flex-col bg-[#0c0c0e] border-l border-white/5">
+                                <div className="lg:w-[40%] p-6 sm:p-10 md:p-16 flex flex-col bg-[#0c0c0e] border-t lg:border-t-0 lg:border-l border-white/5 overflow-y-auto max-h-[45vh] lg:max-h-none flex-grow">
                                     <motion.div 
                                         initial={{ opacity: 0, x: 30 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: 0.2 }}
                                     >
-                                        <div className="flex flex-wrap items-center gap-4 mb-10">
+                                        <div className="flex flex-wrap items-center gap-3 mb-6 md:mb-10">
                                             <span className="px-4 py-1.5 bg-brand-accent text-black text-[9px] font-black uppercase tracking-[0.4em] rounded-md shadow-[0_0_20px_#ffb40044]">
                                                 {selectedProject.category}
                                             </span>
@@ -322,15 +322,15 @@ const Projects = () => {
                                             )}
                                         </div>
 
-                                        <h2 className="text-5xl md:text-6xl font-black text-white mb-10 uppercase tracking-tighter leading-[0.85] italic">
+                                        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 md:mb-10 uppercase tracking-tighter leading-[0.85] italic">
                                             {selectedProject.title}
                                         </h2>
 
-                                        <div className="space-y-8 text-gray-500 text-sm md:text-lg font-medium leading-relaxed mb-16">
+                                        <div className="space-y-4 md:space-y-8 text-gray-500 text-sm md:text-lg font-medium leading-relaxed mb-8 md:mb-16">
                                             <p className="border-L-4 border-brand-accent pl-6">{selectedProject.description}</p>
                                             
                                             {selectedProject.projectDate && (
-                                                <div className="pt-10 flex items-center gap-10">
+                                                <div className="pt-6 md:pt-10 flex items-center gap-10">
                                                     <div>
                                                         <div className="text-[9px] font-black uppercase text-gray-700 tracking-[0.3em] mb-2">Completion</div>
                                                         <div className="text-white font-black text-xl uppercase tracking-tighter">
@@ -346,10 +346,10 @@ const Projects = () => {
                                         </div>
                                     </motion.div>
 
-                                    <div className="mt-auto pt-10 border-t border-white/5 flex flex-col gap-4">
+                                    <div className="mt-auto pt-6 md:pt-10 border-t border-white/5 flex flex-col gap-3">
                                         <Link 
                                             to={`/quote?service=${selectedProject.category}&project=${selectedProject._id}`} 
-                                            className="group block w-full bg-brand-accent text-black py-6 px-10 text-center text-[10px] font-black uppercase tracking-[0.5em] transition-all hover:bg-white active:scale-95 rounded-2xl shadow-2xl relative overflow-hidden"
+                                            className="group block w-full bg-brand-accent text-black py-4 sm:py-6 px-10 text-center text-[10px] font-black uppercase tracking-[0.5em] transition-all hover:bg-white active:scale-95 rounded-2xl shadow-2xl relative overflow-hidden"
                                         >
                                             <motion.div 
                                                 className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700"
@@ -358,7 +358,7 @@ const Projects = () => {
                                         </Link>
                                         <button 
                                             onClick={() => setSelectedProject(null)}
-                                            className="w-full py-4 text-[9px] font-black uppercase tracking-[0.3em] text-gray-600 hover:text-white transition-colors"
+                                            className="w-full py-3 text-[9px] font-black uppercase tracking-[0.3em] text-gray-600 hover:text-white transition-colors"
                                         >
                                             Return to Archives
                                         </button>

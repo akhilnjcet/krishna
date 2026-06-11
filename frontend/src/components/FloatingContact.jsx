@@ -60,31 +60,31 @@ const FloatingContact = () => {
     ];
 
     return (
-        <div className="fixed bottom-6 left-6 md:bottom-10 md:right-10 z-[100] flex flex-col gap-4 pointer-events-none group md:items-end">
+        <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[100] flex flex-col gap-3 pointer-events-none group items-end">
             <AnimatePresence>
                 {contacts.map((contact, idx) => (
                     <motion.a
                         key={contact.id}
                         href={contact.link}
-                        initial={{ opacity: 0, x: -50, scale: 0.8 }}
-                        animate={{ opacity: 0.4, x: 0, scale: 1 }}
-                        whileHover={{ opacity: 1, x: 10 }}
-                        transition={{ delay: 0.5 + idx * 0.1, duration: 0.4 }}
-                        className={`pointer-events-auto flex items-center gap-4 p-4 rounded-2xl shadow-2xl relative overflow-hidden transition-all hover:pr-12 ${contact.color} ${contact.textColor} border-2 border-black/10 backdrop-blur-md`}
+                        initial={{ opacity: 0, x: 50, scale: 0.8 }}
+                        animate={{ opacity: 0.8, x: 0, scale: 1 }}
+                        whileHover={{ opacity: 1, scale: 1.05 }}
+                        transition={{ delay: 0.2 + idx * 0.1, duration: 0.4 }}
+                        className={`pointer-events-auto flex items-center justify-center md:justify-start gap-0 md:gap-4 w-12 h-12 md:w-auto md:h-auto p-0 md:p-4 rounded-full md:rounded-2xl shadow-2xl relative overflow-hidden transition-all md:hover:pr-12 ${contact.color} ${contact.textColor} border-2 border-black/10 backdrop-blur-md`}
                     >
                         {/* Glow effect */}
                         <div className="absolute inset-0 bg-gradient-to-l from-transparent via-white/20 to-transparent translate-x-full group-hover:-translate-x-full transition-transform duration-700" />
                         
-                        <div className="absolute left-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute left-4 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
                             <ArrowRight className="w-4 h-4 rotate-180" />
                         </div>
 
-                        <div className="flex flex-col text-left whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[200px] transition-all duration-500 ease-in-out">
+                        <div className="hidden md:flex flex-col text-left whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[200px] transition-all duration-500 ease-in-out">
                             <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 opacity-60">System Link</span>
                             <span className="text-xs font-black uppercase tracking-tight">{contact.label}</span>
                         </div>
 
-                        <div className="relative z-10 flex items-center justify-center">
+                        <div className="relative z-10 flex items-center justify-center w-12 h-12 md:w-auto md:h-auto">
                             {contact.icon}
                         </div>
                     </motion.a>
@@ -92,7 +92,7 @@ const FloatingContact = () => {
             </AnimatePresence>
             
             {/* BRAVO UNIT DEPLOYMENT MARKER */}
-            <div className="mt-4 px-4 py-2 bg-brand-950/40 backdrop-blur-md border border-white/5 rounded-full inline-flex items-center gap-2 self-start md:self-end pointer-events-auto opacity-40 hover:opacity-100 transition-opacity cursor-default">
+            <div className="mt-2 px-3 py-1.5 bg-brand-950/60 backdrop-blur-md border border-white/5 rounded-full hidden md:inline-flex items-center gap-2 self-end pointer-events-auto opacity-40 hover:opacity-100 transition-opacity cursor-default">
                 <div className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-ping"></div>
                 <span className="text-[8px] font-black text-white/40 uppercase tracking-[0.3em]">Direct Comms</span>
             </div>
