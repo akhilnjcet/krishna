@@ -161,7 +161,7 @@ const About = () => {
                     <p className="text-xl text-slate-500 font-bold uppercase tracking-widest leading-relaxed mb-20 max-w-2xl mx-auto">
                         We build more than just industrial sheds. We build the backbone of national infrastructure and manufacturing progress.
                     </p>
-                    <div className="inline-grid grid-cols-3 gap-20">
+                    <div className="inline-grid grid-cols-2 gap-20">
                         <div className="text-center">
                             <div className="text-4xl font-black text-blue-600 italic mb-2 tracking-tighter">150+</div>
                             <div className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500">Specialists</div>
@@ -169,10 +169,6 @@ const About = () => {
                         <div className="text-center">
                             <div className="text-4xl font-black text-blue-600 italic mb-2 tracking-tighter">0.1%</div>
                             <div className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500">Error Margin</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-4xl font-black text-blue-600 italic mb-2 tracking-tighter">ISO</div>
-                            <div className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500">Registered</div>
                         </div>
                     </div>
                 </div>
