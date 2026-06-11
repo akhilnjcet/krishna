@@ -6,6 +6,7 @@ const { sendAttendanceAlert, sendLoginAlert: sendWhatsAppLoginAlert } = require(
 const { 
     sendWelcomeEmail, 
     sendPasswordResetOTP, 
+    sendLoginOTP,
     sendLoginNotification, 
     sendSignoutNotification, 
     sendPasswordChangeConfirmation 
@@ -236,4 +237,69 @@ exports.resetPassword = async (req, res) => {
 
         res.json({ message: 'Success' });
     } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+exports.requestLoginOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ message: 'Email address is required.' });
+        
+        const user = await User.findOne({ email: email.toLowerCase().trim() });
+        if (!user) {
+            return res.status(404).json({ message: 'Email not registered. Please register first.' });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.resetOTP = otp;
+        user.otpExpiry = Date.now() + 300000; // 5 minutes
+        await user.save();
+
+        const emailSent = await sendLoginOTP(user.email, otp);
+        if (!emailSent) {
+            return res.status(500).json({ message: 'Failed to send OTP email.' });
+        }
+
+        res.json({ message: 'OTP sent to your email.' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.loginWithOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) {
+            return res.status(400).json({ message: 'Email and OTP are required.' });
+        }
+
+        const user = await User.findOne({ 
+            email: email.toLowerCase().trim(), 
+            resetOTP: otp, 
+            otpExpiry: { $gt: Date.now() } 
+        });
+
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid or expired OTP.' });
+        }
+
+        user.resetOTP = undefined;
+        user.otpExpiry = undefined;
+        user.last_login = new Date();
+        await user.save();
+
+        // Send login alert notification
+        sendLoginNotification(user.email, user.name || user.username).catch(err => console.error('Notify fail:', err));
+
+        const role = user.role || 'customer';
+        const token = generateToken(user._id.toString(), role);
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            role: role,
+            token: token
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };

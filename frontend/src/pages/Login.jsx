@@ -6,10 +6,10 @@ import api from '../services/api';
 import useAuthStore from '../stores/authStore';
 
 const Login = () => {
-    const [loginMode, setLoginMode] = useState('identity'); // 'identity' or 'phone'
+    const [loginMode, setLoginMode] = useState('identity'); // 'identity' or 'mail'
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
-    const [phone, setPhone] = useState('');
+    const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
     const [otpSent, setOtpSent] = useState(false);
     const [error, setError] = useState('');
@@ -56,27 +56,24 @@ const Login = () => {
                     navigate('/customer');
                 }
             } else {
-                // Phone OTP Flow
+                // Email OTP Flow
                 if (!otpSent) {
-                    // Mock OTP request
-                    await new Promise(r => setTimeout(r, 1000));
+                    await api.post('/auth/login-otp/request', { email });
                     setOtpSent(true);
-                    setLoading(false);
-                    return;
                 } else {
-                    // Mock OTP verification
-                    if (otp === '123456' || otp === '000000') {
-                        // In a real app, this would verify with backend and return a user/token
-                        // For now, we simulate success for customer
-                        const mockUser = {
-                            name: 'Guest User',
-                            mobile: phone,
-                            role: 'customer'
-                        };
-                        login(mockUser, 'mock-token-otp');
-                        navigate('/customer');
+                    const response = await api.post('/auth/login-otp/verify', { email, otp });
+                    const rawData = response.data;
+                    const token = rawData.token || rawData.user?.token;
+                    const userObj = rawData.user || rawData;
+                    login(userObj, token);
+                    
+                    const role = userObj.role || userObj.user?.role;
+                    if (role === 'admin') {
+                        navigate('/admin');
+                    } else if (role === 'staff') {
+                        navigate('/staff');
                     } else {
-                        throw new Error('Invalid OTP Code');
+                        navigate('/customer');
                     }
                 }
             }
@@ -118,10 +115,10 @@ const Login = () => {
                                 Admin ID
                             </button>
                             <button 
-                                onClick={() => setLoginMode('phone')}
-                                className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${loginMode === 'phone' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+                                onClick={() => setLoginMode('mail')}
+                                className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${loginMode === 'mail' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
                             >
-                                Phone/OTP
+                                Mail/OTP
                             </button>
                         </div>
 
@@ -160,22 +157,22 @@ const Login = () => {
                                     </motion.div>
                                 ) : (
                                     <motion.div 
-                                        key="phone"
+                                        key="mail"
                                         initial={{ opacity: 0, x: 20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -20 }}
                                         className="space-y-4"
                                     >
                                         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-4 focus-within:border-blue-500 transition-all">
-                                            <Smartphone className="w-5 h-5 text-slate-400" />
+                                            <Mail className="w-5 h-5 text-slate-400" />
                                             <input
-                                                type="tel"
+                                                type="email"
                                                 required
                                                 disabled={otpSent}
-                                                value={phone}
-                                                onChange={(e) => setPhone(e.target.value)}
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
                                                 className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 placeholder:text-slate-300"
-                                                placeholder="Registered Mobile"
+                                                placeholder="Registered Email"
                                             />
                                         </div>
                                         {otpSent && (
@@ -205,7 +202,7 @@ const Login = () => {
                                     Lost Access?
                                 </Link>
                                 <button type="button" onClick={() => otpSent ? setOtpSent(false) : navigate('/register')} className="text-[10px] font-extrabold text-blue-600 hover:underline uppercase tracking-widest transition-colors">
-                                    {otpSent ? "Wrong Phone?" : "Register Member"}
+                                    {otpSent ? "Wrong Email?" : "Register Member"}
                                 </button>
                             </div>
 
@@ -223,7 +220,7 @@ const Login = () => {
                             >
                                 {loading ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : (
                                     <>
-                                        {otpSent ? "Verify & Command" : loginMode === 'phone' ? "Send OTP Code" : "Initial Authorization"}
+                                        {otpSent ? "Verify & Command" : loginMode === 'mail' ? "Send OTP Code" : "Initial Authorization"}
                                         <ArrowRight className="w-4 h-4" />
                                     </>
                                 )}

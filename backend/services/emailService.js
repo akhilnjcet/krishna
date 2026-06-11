@@ -143,9 +143,31 @@ You can log in to your dashboard to view more details.`
     }
 };
 
+const sendLoginOTP = async (email, otp) => {
+    try {
+        const transporter = createTransporter();
+        const mailOptions = {
+            from: `"Krishna Engineering Works" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: 'Login Verification OTP - Krishna Engineering Portal',
+            text: `Your login OTP code is: ${otp}
+
+Valid for 5 minutes. Please enter this code on the login portal to verify your access. Do not share this OTP with anyone.`
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Login OTP email sent: ' + info.response);
+        return true;
+    } catch (error) {
+        console.error('Error sending login OTP email:', error);
+        return false;
+    }
+};
+
 module.exports = {
     sendWelcomeEmail,
     sendPasswordResetOTP,
+    sendLoginOTP,
     sendLoginNotification,
     sendSignoutNotification,
     sendPasswordChangeConfirmation,
