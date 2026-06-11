@@ -44,8 +44,17 @@ const Login = () => {
                 
                 const rawData = response.data;
                 const token = rawData.token || rawData.user?.token;
-                login(rawData.user || rawData, token);
-                navigate(rawData.user?.role === 'admin' ? '/admin' : '/customer');
+                const userObj = rawData.user || rawData;
+                login(userObj, token);
+                
+                const role = userObj.role || userObj.user?.role;
+                if (role === 'admin') {
+                    navigate('/admin');
+                } else if (role === 'staff') {
+                    navigate('/staff');
+                } else {
+                    navigate('/customer');
+                }
             } else {
                 // Phone OTP Flow
                 if (!otpSent) {
