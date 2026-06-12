@@ -15,8 +15,14 @@ const defaultRooms = [
     advance: 0,
     electricityBill: 0,
     waterBill: 0,
+    wifiBill: 0,
+    maintenanceBill: 0,
+    advanceRentBill: 0,
     electricityStatus: 'pending',
     waterStatus: 'pending',
+    wifiStatus: 'pending',
+    maintenanceStatus: 'pending',
+    advanceRentStatus: 'pending',
     notes: '',
     checkIn: null,
     checkOut: null,
@@ -32,8 +38,14 @@ const defaultRooms = [
     advance: 0,
     electricityBill: 0,
     waterBill: 0,
+    wifiBill: 0,
+    maintenanceBill: 0,
+    advanceRentBill: 0,
     electricityStatus: 'pending',
     waterStatus: 'pending',
+    wifiStatus: 'pending',
+    maintenanceStatus: 'pending',
+    advanceRentStatus: 'pending',
     notes: '',
     checkIn: null,
     checkOut: null,
@@ -303,18 +315,24 @@ const useLodgeStore = create((set, get) => ({
       rooms: state.rooms.map((r) =>
         r.id === roomId
           ? {
-              ...r,
-              status: 'available',
-              tenant: null,
-              pin: null, 
-              dueDate: null,
-              advance: 0,
-              electricityBill: 0,
-              waterBill: 0,
-              electricityStatus: 'pending',
-              waterStatus: 'pending',
-              checkOut: new Date().toISOString(),
-            }
+               ...r,
+               status: 'available',
+               tenant: null,
+               pin: null, 
+               dueDate: null,
+               advance: 0,
+               electricityBill: 0,
+               waterBill: 0,
+               wifiBill: 0,
+               maintenanceBill: 0,
+               advanceRentBill: 0,
+               electricityStatus: 'pending',
+               waterStatus: 'pending',
+               wifiStatus: 'pending',
+               maintenanceStatus: 'pending',
+               advanceRentStatus: 'pending',
+               checkOut: new Date().toISOString(),
+             }
           : r
       ),
     }));
@@ -355,7 +373,7 @@ const useLodgeStore = create((set, get) => ({
       ),
     }));
 
-    if (payment.type === 'electricity' || payment.type === 'water') {
+    if (['electricity', 'water', 'wifi', 'maintenance', 'advanceRent'].includes(payment.type)) {
         const room = state.rooms.find(r => r.number === payment.roomNumber);
         if (room) {
             get().markBillPaid(room.id, payment.type, payment.amount);
@@ -466,9 +484,8 @@ const useLodgeStore = create((set, get) => ({
 
   // --- Bills ---
   setBill: (roomId, billType, amount) => {
-    const field = billType === 'electricity' ? 'electricityBill' : 'waterBill';
-    const statusField =
-      billType === 'electricity' ? 'electricityStatus' : 'waterStatus';
+    const field = `${billType}Bill`;
+    const statusField = `${billType}Status`;
     set((state) => ({
       rooms: state.rooms.map((r) =>
         r.id === roomId ? { ...r, [field]: amount, [statusField]: 'pending' } : r
@@ -478,9 +495,8 @@ const useLodgeStore = create((set, get) => ({
   },
 
   markBillPaid: (roomId, billType, amountPaid) => {
-    const field = billType === 'electricity' ? 'electricityBill' : 'waterBill';
-    const statusField =
-      billType === 'electricity' ? 'electricityStatus' : 'waterStatus';
+    const field = `${billType}Bill`;
+    const statusField = `${billType}Status`;
     set((state) => ({
       rooms: state.rooms.map((r) => {
         if (r.id === roomId) {

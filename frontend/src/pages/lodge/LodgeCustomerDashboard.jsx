@@ -248,6 +248,12 @@ export default function LodgeCustomerDashboard() {
                                                 }`}>
                                                     {b.status === 'active' ? 'Live Residency' : b.status}
                                                 </span>
+                                                {b.status === 'active' && (
+                                                    <span className="bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-100 flex items-center gap-1.5">
+                                                        <Clock className="w-3 h-3 text-amber-500" />
+                                                        {Math.max(0, Math.ceil((new Date(b.checkOut) - new Date()) / (1000 * 60 * 60 * 24)))} Days Left
+                                                    </span>
+                                                )}
                                                 <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">ID: #{b._id.slice(-6).toUpperCase()}</span>
                                             </div>
 

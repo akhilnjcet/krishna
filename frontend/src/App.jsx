@@ -426,6 +426,11 @@ const App = () => {
               <Route path="admin-login" element={<AdminLogin />} />
               <Route path="admin" element={<LodgeAdminDashboard />} />
               <Route path="dashboard" element={<LodgeCustomerDashboard />} />
+              <Route path="rooms" element={<RoomSelection />} />
+              <Route path="room/:roomNumber" element={<RoomDashboard />} />
+              <Route path="payment/:roomNumber/:type" element={<PaymentSystem />} />
+              <Route path="complaint/:roomNumber" element={<ComplaintSystem />} />
+              <Route path="history/:roomNumber" element={<PaymentHistory />} />
             </Route>
 
             {/* Fallback */}

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
     ArrowLeft, CreditCard, Smartphone, CheckCircle2, 
-    ShieldCheck, IndianRupee, Zap, Droplets, Info
+    ShieldCheck, IndianRupee, Zap, Droplets, Info, Wifi, Wrench
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 
@@ -24,8 +24,11 @@ const PaymentSystem = () => {
     useEffect(() => {
         if (room) {
             if (type === 'rent') setAmount(room.rent.toString());
-            else if (type === 'electricity') setAmount(room.electricityBill.toString());
-            else if (type === 'water') setAmount(room.waterBill.toString());
+            else if (type === 'electricity') setAmount((room.electricityBill || 0).toString());
+            else if (type === 'water') setAmount((room.waterBill || 0).toString());
+            else if (type === 'wifi') setAmount((room.wifiBill || 0).toString());
+            else if (type === 'maintenance') setAmount((room.maintenanceBill || 0).toString());
+            else if (type === 'advanceRent') setAmount((room.advanceRentBill || 0).toString());
         }
     }, [room, type]);
 
@@ -83,7 +86,7 @@ const PaymentSystem = () => {
             });
 
             if (!isWaiting) {
-                if (type === 'electricity' || type === 'water') {
+                if (['electricity', 'water', 'wifi', 'maintenance', 'advanceRent'].includes(type)) {
                     markBillPaid(room.id, type, parseFloat(amount));
                 }
             }
@@ -141,7 +144,10 @@ const PaymentSystem = () => {
                         <div className="bg-white rounded-3xl p-8 shadow-xl shadow-blue-900/5 border border-slate-100 text-center">
                             <div className="inline-flex items-center justify-center p-3 bg-blue-50 text-[#2D5BE3] rounded-2xl mb-4">
                                 {type === 'rent' ? <CreditCard className="w-6 h-6"/> : 
-                                 type === 'electricity' ? <Zap className="w-6 h-6"/> : <Droplets className="w-6 h-6"/>}
+                                 type === 'electricity' ? <Zap className="w-6 h-6"/> : 
+                                 type === 'water' ? <Droplets className="w-6 h-6"/> : 
+                                 type === 'wifi' ? <Wifi className="w-6 h-6"/> : 
+                                 type === 'maintenance' ? <Wrench className="w-6 h-6"/> : <IndianRupee className="w-6 h-6"/>}
                             </div>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Total Outstanding</p>
                             <div className="flex items-center justify-center gap-1 mb-2">

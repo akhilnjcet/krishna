@@ -6,7 +6,7 @@ import {
     LogOut, UserPlus, Trash2, CheckCircle2, Phone, 
     ArrowUpRight, IndianRupee, Clock, Plus, X, List, History, Settings,
     Cloud, RefreshCw, Search, Loader2, ShieldCheck, MapPin, FileText,
-    Download, User, Edit3, Calendar, Users
+    Download, User, Edit3, Calendar, Users, Wifi
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 import useBookingStore from '../../stores/bookingStore';
@@ -407,11 +407,19 @@ const LodgeAdminDashboard = () => {
                                 </div>
                                 
                                 <div className="grid grid-cols-3 gap-3 mb-8">
-                                    {['rent', 'electricity', 'water'].map(type => {
+                                    {['rent', 'electricity', 'water', 'wifi', 'maintenance', 'advanceRent'].map(type => {
                                         const typeTotal = payments.filter(p => p.type === type).reduce((s, p) => s + p.amount, 0);
+                                        const labelMap = {
+                                            rent: 'Rent',
+                                            electricity: 'Electricity',
+                                            water: 'Water',
+                                            wifi: 'WiFi',
+                                            maintenance: 'Maintenance',
+                                            advanceRent: 'Advance Rent'
+                                        };
                                         return (
                                             <div key={type} className="p-3 bg-slate-50 rounded-2xl text-center">
-                                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">{type}</p>
+                                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">{labelMap[type] || type}</p>
                                                 <p className="text-xs font-black text-slate-800 tracking-tighter">₹{typeTotal.toLocaleString()}</p>
                                             </div>
                                         );
@@ -784,7 +792,7 @@ const LodgeAdminDashboard = () => {
                                                 <Lightbulb className="w-5 h-5 text-yellow-600" />
                                                 <div>
                                                     <p className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest">Electricity</p>
-                                                    <p className="text-sm font-black text-slate-800">₹{room.electricityBill}</p>
+                                                    <p className="text-sm font-black text-slate-800">₹{room.electricityBill || 0}</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-2">
@@ -820,7 +828,7 @@ const LodgeAdminDashboard = () => {
                                                 <Clock className="w-5 h-5 text-cyan-600" />
                                                 <div>
                                                     <p className="text-[10px] font-bold text-cyan-600 uppercase tracking-widest">Water Bill</p>
-                                                    <p className="text-sm font-black text-slate-800">₹{room.waterBill}</p>
+                                                    <p className="text-sm font-black text-slate-800">₹{room.waterBill || 0}</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-2">
@@ -845,6 +853,114 @@ const LodgeAdminDashboard = () => {
                                                     </button>
                                                 )}
                                                 {room.waterStatus === 'paid' && (
+                                                    <CheckCircle2 className="w-6 h-6 text-emerald-500 mt-2" />
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* WiFi */}
+                                        <div className="flex items-center justify-between p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100/50">
+                                            <div className="flex items-center gap-3">
+                                                <Wifi className="w-5 h-5 text-indigo-600" />
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">WiFi Bill</p>
+                                                    <p className="text-sm font-black text-slate-800">₹{room.wifiBill || 0}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => {
+                                                        const amt = prompt('Enter WiFi Bill Amount:');
+                                                        if(amt) setBill(room.id, 'wifi', parseFloat(amt));
+                                                    }}
+                                                    className="p-3 bg-white text-slate-400 rounded-xl border border-indigo-100"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
+                                                {room.wifiBill > 0 && room.wifiStatus === 'pending' && (
+                                                    <button 
+                                                        onClick={() => {
+                                                            const amt = prompt('Amount paid (WiFi):', room.wifiBill);
+                                                            if (amt !== null) markBillPaid(room.id, 'wifi', parseFloat(amt));
+                                                        }}
+                                                        className="px-4 py-2 bg-indigo-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-indigo-200"
+                                                    >
+                                                        Pay
+                                                    </button>
+                                                )}
+                                                {room.wifiStatus === 'paid' && (
+                                                    <CheckCircle2 className="w-6 h-6 text-emerald-500 mt-2" />
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Maintenance */}
+                                        <div className="flex items-center justify-between p-4 bg-rose-50/30 rounded-2xl border border-rose-100/50">
+                                            <div className="flex items-center gap-3">
+                                                <Settings className="w-5 h-5 text-rose-600" />
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest">Maintenance</p>
+                                                    <p className="text-sm font-black text-slate-800">₹{room.maintenanceBill || 0}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => {
+                                                        const amt = prompt('Enter Maintenance Bill Amount:');
+                                                        if(amt) setBill(room.id, 'maintenance', parseFloat(amt));
+                                                    }}
+                                                    className="p-3 bg-white text-slate-400 rounded-xl border border-rose-100"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
+                                                {room.maintenanceBill > 0 && room.maintenanceStatus === 'pending' && (
+                                                    <button 
+                                                        onClick={() => {
+                                                            const amt = prompt('Amount paid (Maintenance):', room.maintenanceBill);
+                                                            if (amt !== null) markBillPaid(room.id, 'maintenance', parseFloat(amt));
+                                                        }}
+                                                        className="px-4 py-2 bg-rose-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-rose-200"
+                                                    >
+                                                        Pay
+                                                    </button>
+                                                )}
+                                                {room.maintenanceStatus === 'paid' && (
+                                                    <CheckCircle2 className="w-6 h-6 text-emerald-500 mt-2" />
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Advance Rent */}
+                                        <div className="flex items-center justify-between p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100/50">
+                                            <div className="flex items-center gap-3">
+                                                <IndianRupee className="w-5 h-5 text-emerald-600" />
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Advance Rent</p>
+                                                    <p className="text-sm font-black text-slate-800">₹{room.advanceRentBill || 0}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => {
+                                                        const amt = prompt('Enter Advance Rent Bill Amount:');
+                                                        if(amt) setBill(room.id, 'advanceRent', parseFloat(amt));
+                                                    }}
+                                                    className="p-3 bg-white text-slate-400 rounded-xl border border-emerald-100"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
+                                                {room.advanceRentBill > 0 && room.advanceRentStatus === 'pending' && (
+                                                    <button 
+                                                        onClick={() => {
+                                                            const amt = prompt('Amount paid (Advance Rent):', room.advanceRentBill);
+                                                            if (amt !== null) markBillPaid(room.id, 'advanceRent', parseFloat(amt));
+                                                        }}
+                                                        className="px-4 py-2 bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-emerald-200"
+                                                    >
+                                                        Pay
+                                                    </button>
+                                                )}
+                                                {room.advanceRentStatus === 'paid' && (
                                                     <CheckCircle2 className="w-6 h-6 text-emerald-500 mt-2" />
                                                 )}
                                             </div>

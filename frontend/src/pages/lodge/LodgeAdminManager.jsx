@@ -563,6 +563,22 @@ export default function LodgeAdminManager() {
                              <div className="h-3 w-[1px] bg-slate-200"></div>
                              <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest">Rate: ₹{b.roomId?.price || 0} / {b.roomId?.rentCycle || 'monthly'}</p>
                           </div>
+                          {/* Booking Dates and Remaining Time */}
+                          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 font-semibold">
+                              <span className="flex items-center gap-1">
+                                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                  Stay: <strong className="text-slate-700">{new Date(b.checkIn).toLocaleDateString()}</strong> - <strong className="text-slate-700">{new Date(b.checkOut).toLocaleDateString()}</strong>
+                              </span>
+                              {b.status === 'active' && (
+                                  <>
+                                      <div className="h-3 w-[1px] bg-slate-200"></div>
+                                      <span className="flex items-center gap-1 text-indigo-600">
+                                          <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                                          Remaining: <strong>{Math.max(0, Math.ceil((new Date(b.checkOut) - new Date()) / (1000 * 60 * 60 * 24)))} days</strong>
+                                      </span>
+                                  </>
+                              )}
+                          </div>
                       </div>
                       <div className="flex gap-2 w-full md:w-auto">
                            <button onClick={() => { setActiveTab('finance'); setPaymentModal({ show: true, customerId: b.userId?._id, amount: b.roomId?.price || '', notes: `Manual Rent Settlement: ${b.roomId?.type || 'Unit'}` }); }} className="flex-1 md:flex-none bg-slate-900 text-white px-6 py-3 rounded-2xl text-xs font-black shadow-lg shadow-slate-900/10 active:scale-95 transition-all">Collect Rent</button>

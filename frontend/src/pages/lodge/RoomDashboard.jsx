@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
     ArrowLeft, User, DollarSign, Calendar, Zap, Droplets, 
-    AlertCircle, CreditCard, History, ChevronRight, Activity, Download
+    AlertCircle, CreditCard, History, ChevronRight, Activity, Download, Wifi, Wrench
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 import { jsPDF } from 'jspdf';
@@ -40,14 +40,33 @@ const RoomDashboard = () => {
     const stats = [
         { label: 'Monthly Rent', value: `₹${room.rent}`, icon: DollarSign, color: 'blue' },
         { label: 'Due Date', value: room.dueDate ? new Date(room.dueDate).toLocaleDateString() : 'Not Set', icon: Calendar, color: 'amber' },
-        { label: 'Electricity', value: `₹${room.electricityBill}`, icon: Zap, color: 'yellow' },
-        { label: 'Water', value: `₹${room.waterBill}`, icon: Droplets, color: 'cyan' }
+        { label: 'Electricity', value: `₹${room.electricityBill || 0}`, icon: Zap, color: 'yellow' },
+        { label: 'Water', value: `₹${room.waterBill || 0}`, icon: Droplets, color: 'cyan' },
+        { label: 'WiFi', value: `₹${room.wifiBill || 0}`, icon: Wifi, color: 'indigo' },
+        { label: 'Maintenance', value: `₹${room.maintenanceBill || 0}`, icon: Wrench, color: 'rose' },
+        { label: 'Advance Rent', value: `₹${room.advanceRentBill || 0}`, icon: DollarSign, color: 'emerald' }
     ];
+
+    const activeBillsActions = [];
+    if (room.electricityBill > 0 && room.electricityStatus === 'pending') {
+        activeBillsActions.push({ label: 'Electricity Bill', icon: Zap, path: `/lodge/payment/${roomNumber}/electricity`, color: 'bg-yellow-500' });
+    }
+    if (room.waterBill > 0 && room.waterStatus === 'pending') {
+        activeBillsActions.push({ label: 'Water Bill', icon: Droplets, path: `/lodge/payment/${roomNumber}/water`, color: 'bg-cyan-500' });
+    }
+    if (room.wifiBill > 0 && room.wifiStatus === 'pending') {
+        activeBillsActions.push({ label: 'WiFi Bill', icon: Wifi, path: `/lodge/payment/${roomNumber}/wifi`, color: 'bg-indigo-600' });
+    }
+    if (room.maintenanceBill > 0 && room.maintenanceStatus === 'pending') {
+        activeBillsActions.push({ label: 'Maintenance Bill', icon: Wrench, path: `/lodge/payment/${roomNumber}/maintenance`, color: 'bg-rose-600' });
+    }
+    if (room.advanceRentBill > 0 && room.advanceRentStatus === 'pending') {
+        activeBillsActions.push({ label: 'Advance Rent', icon: DollarSign, path: `/lodge/payment/${roomNumber}/advanceRent`, color: 'bg-emerald-600' });
+    }
 
     const actions = [
         { label: 'Pay Rent', icon: CreditCard, path: `/lodge/payment/${roomNumber}/rent`, color: 'bg-blue-600' },
-        { label: 'Electricity Bill', icon: Zap, path: `/lodge/payment/${roomNumber}/electricity`, color: 'bg-yellow-500' },
-        { label: 'Water Bill', icon: Droplets, path: `/lodge/payment/${roomNumber}/water`, color: 'bg-cyan-500' },
+        ...activeBillsActions,
         { label: 'Report Complaint', icon: AlertCircle, path: `/lodge/complaint/${roomNumber}`, color: 'bg-red-500' }
     ];
 
@@ -64,6 +83,9 @@ const RoomDashboard = () => {
             ["Due Date", room.dueDate ? new Date(room.dueDate).toLocaleDateString() : "Not Set"],
             ["Electricity Due", `INR ${room.electricityBill || 0}`],
             ["Water Due", `INR ${room.waterBill || 0}`],
+            ["WiFi Due", `INR ${room.wifiBill || 0}`],
+            ["Maintenance Due", `INR ${room.maintenanceBill || 0}`],
+            ["Advance Rent Due", `INR ${room.advanceRentBill || 0}`],
             ["Status", room.status.toUpperCase()]
         ];
 
