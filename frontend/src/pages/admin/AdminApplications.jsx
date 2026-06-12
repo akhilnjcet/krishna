@@ -67,6 +67,7 @@ const AdminApplications = () => {
         switch(status) {
             case 'approved': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
             case 'rejected': return 'bg-red-100 text-red-700 border-red-200';
+            case 'reviewed': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
             default: return 'bg-amber-100 text-amber-700 border-amber-200 animate-pulse';
         }
     };
@@ -86,7 +87,7 @@ const AdminApplications = () => {
                 <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4">
                     <Filter className="w-5 h-5 text-slate-400" />
                     <div className="flex bg-slate-100 p-1 rounded-2xl flex-1 overflow-x-auto">
-                        {['', 'pending', 'approved', 'rejected'].map((s) => (
+                        {['', 'pending', 'reviewed', 'approved', 'rejected'].map((s) => (
                             <button
                                 key={s}
                                 onClick={() => setFilterStatus(s)}
@@ -211,15 +212,23 @@ const AdminApplications = () => {
                                             )}
                                         </div>
                                     </td>
-                                    <td className="p-8 text-right">
-                                        {app.status === 'pending' ? (
+                                    <td className="p-8 text-right font-black uppercase tracking-widest text-xs">
+                                        {app.status === 'pending' || app.status === 'reviewed' ? (
                                             <div className="flex justify-end gap-3 translate-x-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
                                                 <button 
                                                     onClick={() => { setSelectedApp(app); setPendingAction('approved'); setShowRemarkModal(true); }}
                                                     className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl transition shadow-xl shadow-emerald-600/20 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
                                                 >
-                                                    <BadgeCheck className="w-4 h-4" /> Approve
+                                                    <BadgeCheck className="w-4 h-4" /> Pay Amount
                                                 </button>
+                                                {app.status === 'pending' && (
+                                                    <button 
+                                                        onClick={() => { setSelectedApp(app); setPendingAction('reviewed'); setShowRemarkModal(true); }}
+                                                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl transition shadow-xl shadow-indigo-600/20 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+                                                    >
+                                                        <Sparkle className="w-4 h-4" /> Review
+                                                    </button>
+                                                )}
                                                 <button 
                                                     onClick={() => { setSelectedApp(app); setPendingAction('rejected'); setShowRemarkModal(true); }}
                                                     className="bg-slate-900 hover:bg-red-600 text-white px-5 py-3 rounded-2xl transition shadow-xl shadow-slate-900/20 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
@@ -254,7 +263,7 @@ const AdminApplications = () => {
                         >
                             <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-2 italic">Official Verdict</h3>
                             <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px] mb-8">
-                                Application ID: {selectedApp._id.slice(-8).toUpperCase()} | Action: <span className={pendingAction === 'approved' ? 'text-emerald-500' : 'text-red-500'}>{pendingAction}</span>
+                                Application ID: {selectedApp._id.slice(-8).toUpperCase()} | Action: <span className={pendingAction === 'approved' ? 'text-emerald-500' : pendingAction === 'reviewed' ? 'text-indigo-500' : 'text-rose-500'}>{pendingAction}</span>
                             </p>
                             
                             <div className="space-y-6">
@@ -279,7 +288,11 @@ const AdminApplications = () => {
                                     <button 
                                         onClick={handleUpdateStatus}
                                         className={`flex-[2] px-8 py-5 rounded-3xl text-white font-black uppercase tracking-widest text-[10px] shadow-2xl transition active:scale-95 ${
-                                            pendingAction === 'approved' ? 'bg-emerald-600 shadow-emerald-500/30' : 'bg-slate-900 shadow-slate-900/30'
+                                            pendingAction === 'approved' 
+                                            ? 'bg-emerald-600 shadow-emerald-500/30' 
+                                            : pendingAction === 'reviewed' 
+                                            ? 'bg-indigo-600 shadow-indigo-500/30' 
+                                            : 'bg-slate-900 shadow-slate-900/30'
                                         }`}
                                     >
                                         Confirm & Process Application

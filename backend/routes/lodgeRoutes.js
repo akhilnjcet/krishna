@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Lodge = require('../models/Lodge');
 const { protect, admin } = require('../middleware/authMiddleware');
+const lodgeController = require('../controllers/lodgeController');
+
+router.get('/sync', protect, lodgeController.getLodgeData);
+router.post('/sync', protect, lodgeController.syncLodgeData);
 
 router.get('/', async (req, res) => {
   try {

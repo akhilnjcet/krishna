@@ -46,9 +46,9 @@ export default function LodgeAdminManager() {
   useEffect(() => {
     if(!selectedLodge) return;
     if(activeTab === 'dashboard') fetchStats();
-    if(activeTab === 'rooms') fetchRooms(selectedLodge._id);
+    if(activeTab === 'rooms') { fetchRooms(selectedLodge._id); fetchClients(); }
     if(activeTab === 'registry') fetchClients();
-    if(activeTab === 'finance') fetchPayments();
+    if(activeTab === 'finance') { fetchPayments(); fetchClients(); }
     if(activeTab === 'maintenance') fetchComplaints();
     if(activeTab === 'occupancy') fetchBookings();
     if(activeTab === 'reviews') fetchReviews();

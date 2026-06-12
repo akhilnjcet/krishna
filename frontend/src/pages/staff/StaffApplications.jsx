@@ -32,6 +32,7 @@ const StaffApplications = () => {
         switch(status?.toLowerCase()) {
             case 'approved': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
             case 'rejected': return 'bg-rose-50 text-rose-600 border-rose-100';
+            case 'reviewed': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
             default: return 'bg-amber-50 text-amber-600 border-amber-100';
         }
     };
@@ -157,6 +158,7 @@ const StaffApplications = () => {
                         <div className="space-y-6 relative z-10">
                             {[
                                 { status: 'Pending', desc: 'Application is awaiting administrative review.', color: 'bg-amber-400' },
+                                { status: 'Reviewed', desc: 'Request reviewed and staged for payout decision.', color: 'bg-indigo-400' },
                                 { status: 'Approved', desc: 'Request authorized and scheduled.', color: 'bg-emerald-400' },
                                 { status: 'Rejected', desc: 'Request declined by operations lead.', color: 'bg-rose-400' }
                             ].map(s => (

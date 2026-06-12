@@ -95,6 +95,16 @@ const StaffFinance = () => {
                 columns={['Period', 'Base', 'Deduction', 'Net', 'Status']}
             />
 
+            {/* Request Advance Action */}
+            <div className="flex justify-end pr-2 -mt-4">
+                <button 
+                    onClick={() => setAdvanceModalOpen(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-indigo-600/25 active:scale-95 transition-all"
+                >
+                    <Send className="w-4 h-4" /> Request Salary Advance
+                </button>
+            </div>
+
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {stats.map((stat) => (

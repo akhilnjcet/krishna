@@ -156,7 +156,7 @@ const useLodgeStore = create((set, get) => ({
 
     set({ isSyncing: true });
     try {
-        const res = await api.get('/lodge');
+        const res = await api.get('/lodge/sync');
         if (res.data && res.data.rooms && res.data.rooms.length > 0) {
             // Merge logic or direct set
             set({

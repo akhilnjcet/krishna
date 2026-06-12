@@ -14,7 +14,7 @@ const applicationSchema = new mongoose.Schema({
     endDate: { type: Date },   // For leave requests
     status: { 
         type: String, 
-        enum: ['pending', 'approved', 'rejected'], 
+        enum: ['pending', 'approved', 'rejected', 'reviewed'], 
         default: 'pending' 
     },
     adminRemark: { type: String },
