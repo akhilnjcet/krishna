@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Linkedin, Facebook, Instagram } from 'lucide-react';
 import api from '../services/api';
 
 const Footer = () => {
@@ -10,7 +11,7 @@ const Footer = () => {
         footer_email: 'HELLO@KRISHNAENGG.COM',
         social_in: '#',
         social_fb: '#',
-        social_x: '#',
+        social_instagram: '#',
         footer_copyright: 'KRISHNA ENGINEERING WORKS. UNYIELDING QUALITY.',
         footer_tos: '',
         footer_privacy: ''
@@ -59,9 +60,33 @@ const Footer = () => {
                             {settings.footer_description}
                         </p>
                         <div className="flex gap-4">
-                            <a href={settings.social_in} target="_blank" rel="noreferrer" className="w-10 h-10 bg-white border-2 border-slate-200 flex items-center justify-center hover:bg-brand-accent hover:border-brand-accent transition text-slate-500 hover:text-primary font-black cursor-pointer uppercase text-xs shadow-sm">IN</a>
-                            <a href={settings.social_fb} target="_blank" rel="noreferrer" className="w-10 h-10 bg-white border-2 border-slate-200 flex items-center justify-center hover:bg-brand-accent hover:border-brand-accent transition text-slate-500 hover:text-primary font-black cursor-pointer uppercase text-xs shadow-sm">FB</a>
-                            <a href={settings.social_x} target="_blank" rel="noreferrer" className="w-10 h-10 bg-white border-2 border-slate-200 flex items-center justify-center hover:bg-brand-accent hover:border-brand-accent transition text-slate-500 hover:text-primary font-black cursor-pointer uppercase text-xs shadow-sm">X</a>
+                            <a 
+                                href={settings.social_in} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="w-10 h-10 bg-[#0077b5] text-white flex items-center justify-center rounded-xl shadow-md hover:shadow-[0_10px_20px_-10px_rgba(0,119,181,0.6)] hover:scale-110 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+                                aria-label="LinkedIn"
+                            >
+                                <Linkedin size={18} className="stroke-[2]" />
+                            </a>
+                            <a 
+                                href={settings.social_fb} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="w-10 h-10 bg-[#1877f2] text-white flex items-center justify-center rounded-xl shadow-md hover:shadow-[0_10px_20px_-10px_rgba(24,119,242,0.6)] hover:scale-110 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+                                aria-label="Facebook"
+                            >
+                                <Facebook size={18} className="stroke-[2]" />
+                            </a>
+                            <a 
+                                href={settings.social_instagram} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="w-10 h-10 bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white flex items-center justify-center rounded-xl shadow-md hover:shadow-[0_10px_20px_-10px_rgba(238,42,123,0.6)] hover:scale-110 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+                                aria-label="Instagram"
+                            >
+                                <Instagram size={18} className="stroke-[2]" />
+                            </a>
                         </div>
                     </div>
 

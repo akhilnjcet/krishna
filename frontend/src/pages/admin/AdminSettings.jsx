@@ -22,7 +22,7 @@ const AdminSettings = () => {
         footer_email: 'HELLO@KRISHNAENGG.COM',
         social_in: '',
         social_fb: '',
-        social_x: '',
+        social_instagram: '',
         map_embed_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3917.86141356417!2d76.3951277!3d10.8981353!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba7d7df303996fd%3A0xe144438f2273f6f2!2sKrishna%20engineering%20works%20thiruzhiyode.(welding%20workshop)!5e0!3m2!1sen!2sin!4v1775472335434!5m2!1sen!2sin',
         // Engagement Relay (Floating)
         floating_whatsapp: '919447940835',
@@ -356,7 +356,7 @@ const AdminSettings = () => {
                                             <Share2 className="w-3 h-3" /> Social Uplink Frequency
                                         </h4>
                                         <div className="grid grid-cols-3 gap-4">
-                                            {['in', 'fb', 'x'].map(social => (
+                                            {['in', 'fb', 'instagram'].map(social => (
                                                 <div key={social} className="relative">
                                                     <input 
                                                         value={settings[`social_${social}`] || ''}
