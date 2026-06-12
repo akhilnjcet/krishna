@@ -51,15 +51,25 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                 );
             })}
             
-            <a 
-                href={import.meta.env.VITE_LODGE_BOOKING_URL || "https://your-lodge-booking-vercel-url.vercel.app"}
-                target="_blank" 
-                rel="noreferrer"
-                className="flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-semibold transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 mt-4 hover:bg-emerald-500"
-            >
-                <Home className="w-5 h-5 flex-shrink-0 text-white" />
-                <span className="truncate">Book Your Room</span>
-            </a>
+            {import.meta.env.VITE_LODGE_BOOKING_URL ? (
+                <a 
+                    href={import.meta.env.VITE_LODGE_BOOKING_URL}
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-semibold transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 mt-4 hover:bg-emerald-500"
+                >
+                    <Home className="w-5 h-5 flex-shrink-0 text-white" />
+                    <span className="truncate">Book Your Room</span>
+                </a>
+            ) : (
+                <Link 
+                    to="/lodge"
+                    className="flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-semibold transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 mt-4 hover:bg-emerald-500"
+                >
+                    <Home className="w-5 h-5 flex-shrink-0 text-white" />
+                    <span className="truncate">Book Your Room</span>
+                </Link>
+            )}
         </nav>
 
         {/* Footer */}
