@@ -58,10 +58,10 @@ const Quote = () => {
 
                 <div className="mb-10 pl-4 border-l-8 border-brand-accent">
                     <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-4xl md:text-6xl font-black text-brand-950 uppercase tracking-tighter leading-none mb-3">
-                        JOB <span className="text-gray-400">ESTIMATE</span>
+                        REQUEST <span className="text-gray-400">A QUOTE</span>
                     </motion.h1>
                     <p className="text-lg text-brand-700 font-bold uppercase tracking-widest text-sm">
-                        Automated Heavy Industry Cost Calculator
+                        Submit Your Project Specifications to our Engineering Team
                     </p>
                 </div>
 
@@ -113,7 +113,7 @@ const Quote = () => {
                     >
                         {/* Form Header Bar */}
                         <div className="bg-brand-950 text-white p-4 flex justify-between items-center border-b-4 border-brand-accent">
-                            <span className="font-black tracking-widest uppercase text-xs">Job Parameter Input</span>
+                            <span className="font-black tracking-widest uppercase text-xs">Quote Request Form</span>
                             <span className="text-brand-accent font-black">SYS.1</span>
                         </div>
 
@@ -202,8 +202,8 @@ const Quote = () => {
                                         className={`w-full bg-brand-accent hover:bg-brand-accentHover text-brand-950 font-black tracking-widest uppercase text-lg py-5 border-4 border-brand-950 shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all flex items-center justify-center ${loading ? 'opacity-80 pointer-events-none' : ''}`}
                                     >
                                         {loading ? (
-                                            <span className="animate-pulse">PROCESSING DATA...</span>
-                                        ) : 'EXECUTE CALCULATION'}
+                                            <span className="animate-pulse">SUBMITTING REQUEST...</span>
+                                        ) : 'SUBMIT QUOTE REQUEST'}
                                     </button>
                                 </div>
                             </form>

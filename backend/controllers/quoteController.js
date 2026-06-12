@@ -11,7 +11,7 @@ exports.submitQuote = async (req, res) => {
         const newQuote = await Quote.create({
             ...req.body,
             userId: req.user._id, // Critical association
-            estimatedCost,
+            estimatedCost: 0,
             status: 'new'
         });
 

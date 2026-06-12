@@ -69,7 +69,7 @@ const AdminQuotes = () => {
         <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200 shadow-xl">
                 <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Sales & Estimation</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Sales & Quotes</div>
                     <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900">Inbound Quotes Log</h2>
                 </div>
             </div>
@@ -154,8 +154,10 @@ const AdminQuotes = () => {
                                     </div>
 
                                     <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
-                                        <div className="text-sm font-black text-slate-500 uppercase tracking-widest">Base Estimate</div>
-                                        <div className="text-3xl font-black text-indigo-600">₹ {quote.estimatedCost?.toLocaleString()}</div>
+                                        <div className="text-sm font-black text-slate-500 uppercase tracking-widest">Pricing Quote</div>
+                                        <div className="text-3xl font-black text-indigo-600">
+                                            {quote.estimatedCost ? `₹ ${quote.estimatedCost.toLocaleString()}` : 'Pending Pricing'}
+                                        </div>
                                     </div>
                                 </div>
 

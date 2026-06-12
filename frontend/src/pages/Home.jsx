@@ -133,7 +133,8 @@ const Home = () => {
         stat_clients: '450+',
         stat_satisfaction: '99%',
         footer_address: 'Thiruvazhiyode, Sreekrishnapuram, Kerala 679514',
-        footer_phone: '+91 9447940835', floating_whatsapp: '919447940835'
+        footer_phone: '+91 9447940835', floating_whatsapp: '919447940835',
+        floating_phone: '+919447940835'
     });
 
     /* Parallax scroll — only moves bg, content stays visible */
@@ -296,7 +297,7 @@ const Home = () => {
                                     {/* shimmer sweep */}
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                                 </Link>
-                                <a href="tel:+918594030186" className="px-8 py-4 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-2xl border border-slate-200 hover:border-slate-300 flex items-center gap-3 transition-all hover:-translate-y-1 text-base shadow-sm">
+                                 <a href={(settings.floating_phone || settings.footer_phone || '+918594030186').startsWith('tel:') ? (settings.floating_phone || settings.footer_phone || '+918594030186') : `tel:${(settings.floating_phone || settings.footer_phone || '+918594030186').replace(/\s+/g, '')}`} className="px-8 py-4 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-2xl border border-slate-200 hover:border-slate-300 flex items-center gap-3 transition-all hover:-translate-y-1 text-base shadow-sm">
                                     <motion.span animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
                                         <Phone className="w-5 h-5 text-blue-600" />
                                     </motion.span>

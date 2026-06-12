@@ -46,7 +46,7 @@ const CustomerQuotes = () => {
         <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-transparent">
             <div className="flex flex-col mb-8 border-l-8 border-brand-accent pl-6 md:pl-8">
                 <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-brand-500 mb-2 italic">Operation Estimation Brief</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-brand-500 mb-2 italic">Operation Quotes Brief</div>
                     <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-brand-950">Project <span className="text-gray-400">Quotations</span></h2>
                 </div>
             </div>
@@ -54,7 +54,7 @@ const CustomerQuotes = () => {
             {quotes.length === 0 ? (
                 <div className="bg-white border-4 border-brand-950 p-20 text-center shadow-solid">
                      <FileText className="w-16 h-16 text-gray-100 mx-auto mb-4" />
-                     <p className="text-gray-400 font-bold uppercase tracking-widest italic">No estimations currently logged for this profile.</p>
+                     <p className="text-gray-400 font-bold uppercase tracking-widest italic">No quote requests currently logged for this profile.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -146,8 +146,10 @@ const CustomerQuotes = () => {
 
                                 <div className="mt-auto pt-6 border-t-2 border-dashed border-gray-200 flex items-center justify-between">
                                     <div>
-                                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-1">Preliminary Calculation</p>
-                                        <p className="text-3xl font-black text-brand-950 italic">₹ {quote.estimatedCost?.toLocaleString()}</p>
+                                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-1">Finalized Quote Cost</p>
+                                        <p className="text-3xl font-black text-brand-950 italic">
+                                            {quote.status === 'accepted' && quote.estimatedCost ? `₹ ${quote.estimatedCost.toLocaleString()}` : 'Awaiting Review'}
+                                        </p>
                                     </div>
                                     
                                     <button 
