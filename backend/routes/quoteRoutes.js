@@ -4,7 +4,7 @@ const { submitQuote, getQuotes, updateQuote, deleteQuote, getMyQuotes } = requir
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.route('/')
-    .post(submitQuote)
+    .post(protect, submitQuote)
     .get(protect, authorize('admin', 'staff'), getQuotes);
 
 router.get('/my-quotes', protect, getMyQuotes);

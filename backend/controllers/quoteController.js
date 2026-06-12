@@ -1,16 +1,14 @@
 const Quote = require('../models/Quote');
 const { sendStatusUpdateEmail } = require('../services/emailService');
 
-// @desc    Submit a quote (Public)
+// @desc    Submit a quote (Private)
 // @route   POST /api/quotes
-// @access  Public
+// @access  Private
 exports.submitQuote = async (req, res) => {
     try {
-        const estimatedCost = 5000 + Math.random() * 10000;
-        
         const newQuote = await Quote.create({
             ...req.body,
-            userId: req.user._id, // Critical association
+            userId: req.user ? req.user._id : null, // Safe optional association
             estimatedCost: 0,
             status: 'new'
         });
