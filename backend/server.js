@@ -9,8 +9,11 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 
 // Initialize Socket.io
+const isVercel = process.env.VERCEL === '1';
 const socketUtil = require('./utils/socket');
-socketUtil.init(server);
+if (!isVercel) {
+    socketUtil.init(server);
+}
 
 app.use(cors({
     origin: true,
