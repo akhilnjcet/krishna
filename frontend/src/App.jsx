@@ -46,6 +46,7 @@ import AdminAIChat from './pages/admin/AdminAIChat';
 import AdminApplications from './pages/admin/AdminApplications';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminWhatsApp from './pages/admin/AdminWhatsApp';
+import AdminNotifications from './pages/admin/AdminNotifications';
 
 // Staff Pages
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -385,6 +386,7 @@ const App = () => {
               <Route path="applications" element={<AdminApplications />} />
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="whatsapp" element={<AdminWhatsApp />} />
+              <Route path="notifications" element={<AdminNotifications />} />
               <Route path="live-chat" element={<SupportHub />} />
               <Route path="profile" element={<Profile />} />
               <Route path="lodge-manager" element={<LodgeAdminManager />} />

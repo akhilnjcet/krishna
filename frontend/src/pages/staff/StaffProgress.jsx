@@ -32,6 +32,63 @@ const StaffProgress = () => {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [previews, setPreviews] = useState([]);
 
+    const [showStatusForm, setShowStatusForm] = useState(false);
+    const [selectedStatusProject, setSelectedStatusProject] = useState(null);
+    const [statusForm, setStatusForm] = useState({
+        status: 'In Progress',
+        reason: 'Tool Maintenance',
+        customReason: '',
+        remarks: '',
+        expectedResumeDate: ''
+    });
+
+    const handleRestartProject = async (projectId) => {
+        if (!window.confirm("Are you sure you want to restart work on this project?")) return;
+        setSubmitting(true);
+        try {
+            await api.put(`/projects/${projectId}/status`, { status: 'Restarted' });
+            alert("Project restarted successfully! Admin has been notified.");
+            fetchData();
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || "Failed to restart project.");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleStatusSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedStatusProject) return;
+
+        setSubmitting(true);
+        const finalReason = statusForm.reason === 'Other (Custom Reason)' ? statusForm.customReason : statusForm.reason;
+
+        try {
+            await api.put(`/projects/${selectedStatusProject._id}/status`, {
+                status: statusForm.status,
+                reason: ['Delayed', 'Stopped'].includes(statusForm.status) ? finalReason : undefined,
+                remarks: ['Delayed', 'Stopped'].includes(statusForm.status) ? statusForm.remarks : undefined,
+                expectedResumeDate: ['Delayed', 'Stopped'].includes(statusForm.status) && statusForm.expectedResumeDate ? statusForm.expectedResumeDate : undefined
+            });
+            alert("Project status updated successfully!");
+            setShowStatusForm(false);
+            setStatusForm({
+                status: 'In Progress',
+                reason: 'Tool Maintenance',
+                customReason: '',
+                remarks: '',
+                expectedResumeDate: ''
+            });
+            fetchData();
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || "Failed to update project status.");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -295,10 +352,126 @@ const StaffProgress = () => {
                                 </form>
                             </motion.div>
                         )}
-                        </AnimatePresence>
+                        {showStatusForm && selectedStatusProject && (
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="bg-white border-8 border-brand-950 shadow-solid p-8"
+                            >
+                                <div className="flex justify-between items-center mb-10 border-b-4 border-brand-50 pb-6">
+                                    <h2 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3 text-brand-accent">
+                                        <PenTool className="w-6 h-6" /> UPDATE PROJECT STATUS
+                                    </h2>
+                                    <button onClick={() => setShowStatusForm(false)} className="bg-brand-50 p-2 hover:bg-brand-950 hover:text-white transition-colors">
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                </div>
 
+                                <form onSubmit={handleStatusSubmit} className="space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-2 md:col-span-2">
+                                            <label className="text-[10px] font-black text-brand-600 uppercase tracking-widest ml-2">Project Name</label>
+                                            <div className="w-full px-6 py-4 bg-brand-50 border-4 border-brand-950 font-black text-sm text-brand-950">
+                                                {selectedStatusProject.title}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-brand-600 uppercase tracking-widest ml-2">Operational Status</label>
+                                            <select 
+                                                required
+                                                className="w-full px-6 py-4 bg-brand-50 border-4 border-brand-200 outline-none focus:border-brand-950 font-black text-sm"
+                                                value={statusForm.status}
+                                                onChange={e => setStatusForm({...statusForm, status: e.target.value})}
+                                            >
+                                                <option value="In Progress">In Progress</option>
+                                                <option value="Delayed">Delayed</option>
+                                                <option value="Stopped">Stopped</option>
+                                                <option value="Completed">Completed</option>
+                                            </select>
+                                        </div>
+
+                                        {['Delayed', 'Stopped'].includes(statusForm.status) && (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-brand-600 uppercase tracking-widest ml-2">Delay/Stop Reason</label>
+                                                    <select 
+                                                        required
+                                                        className="w-full px-6 py-4 bg-brand-50 border-4 border-brand-200 outline-none focus:border-brand-950 font-black text-sm"
+                                                        value={statusForm.reason}
+                                                        onChange={e => setStatusForm({...statusForm, reason: e.target.value})}
+                                                    >
+                                                        <option value="Tool Maintenance">Tool Maintenance</option>
+                                                        <option value="Power Cut">Power Cut</option>
+                                                        <option value="Machine Breakdown">Machine Breakdown</option>
+                                                        <option value="Material Shortage">Material Shortage</option>
+                                                        <option value="Labour Shortage">Labour Shortage</option>
+                                                        <option value="Weather Conditions">Weather Conditions</option>
+                                                        <option value="Transportation Issue">Transportation Issue</option>
+                                                        <option value="Client Request">Client Request</option>
+                                                        <option value="Other (Custom Reason)">Other (Custom Reason)</option>
+                                                    </select>
+                                                </div>
+
+                                                {statusForm.reason === 'Other (Custom Reason)' && (
+                                                    <div className="space-y-2 md:col-span-2">
+                                                        <label className="text-[10px] font-black text-brand-600 uppercase tracking-widest ml-2">Custom Reason</label>
+                                                        <input 
+                                                            required
+                                                            type="text"
+                                                            placeholder="Describe custom reason..."
+                                                            className="w-full px-6 py-4 bg-brand-50 border-4 border-brand-200 outline-none focus:border-brand-950 font-bold text-sm"
+                                                            value={statusForm.customReason}
+                                                            onChange={e => setStatusForm({...statusForm, customReason: e.target.value})}
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                <div className="space-y-2 md:col-span-2">
+                                                    <label className="text-[10px] font-black text-brand-600 uppercase tracking-widest ml-2">Remarks / Description</label>
+                                                    <textarea 
+                                                        required
+                                                        rows="3"
+                                                        placeholder="Provide details about the status change..."
+                                                        className="w-full px-6 py-4 bg-brand-50 border-4 border-brand-200 outline-none focus:border-brand-950 font-medium text-sm"
+                                                        value={statusForm.remarks}
+                                                        onChange={e => setStatusForm({...statusForm, remarks: e.target.value})}
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-brand-600 uppercase tracking-widest ml-2">Expected Resume Date (Optional)</label>
+                                                    <input 
+                                                        type="date"
+                                                        className="w-full px-6 py-4 bg-brand-50 border-4 border-brand-200 outline-none focus:border-brand-950 font-bold text-sm"
+                                                        value={statusForm.expectedResumeDate}
+                                                        onChange={e => setStatusForm({...statusForm, expectedResumeDate: e.target.value})}
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    <div className="pt-8">
+                                        <button 
+                                            disabled={submitting}
+                                            className="w-full bg-brand-950 text-white py-6 font-black uppercase tracking-[0.3em] text-lg shadow-solid active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-4 disabled:opacity-50"
+                                        >
+                                            {submitting ? (
+                                                <><Loader2 className="w-6 h-6 animate-spin" /> SUBMITTING...</>
+                                            ) : (
+                                                'TRANSMIT STATUS UPDATE'
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
+ 
                         {/* Summary View for Staff */}
-                        {!showForm && (
+                        {!showForm && !showStatusForm && (
                             <div className="bg-white border-8 border-brand-950 p-8 shadow-solid">
                                 <div className="flex items-center gap-4 mb-8">
                                     <BarChart3 className="w-10 h-10 text-brand-accent" />
@@ -307,15 +480,22 @@ const StaffProgress = () => {
                                         <p className="text-[10px] font-bold text-brand-500 uppercase">Real-time completion monitoring</p>
                                     </div>
                                 </div>
-
+ 
                                 <div className="space-y-6">
                                     {projects.length === 0 ? (
                                         <div className="text-center py-10 text-brand-400 font-bold uppercase tracking-widest text-xs">No projects currently assigned.</div>
                                     ) : projects.map(project => (
-                                        <div key={project._id} className="border-4 border-brand-50 p-6 flex flex-col md:flex-row justify-between items-center gap-6">
+                                        <div key={project._id} className="border-4 border-brand-50 p-6 flex flex-col lg:flex-row justify-between items-center gap-6">
                                             <div className="flex-grow">
                                                 <div className="flex items-center gap-3 mb-1">
-                                                    <span className="bg-brand-950 text-brand-accent px-2 py-0.5 text-[8px] font-black uppercase italic tracking-widest">Active</span>
+                                                    <span className={`px-2 py-0.5 text-[8px] font-black uppercase italic tracking-widest ${
+                                                        project.status === 'Delayed' ? 'bg-amber-500 text-brand-950' :
+                                                        project.status === 'Stopped' ? 'bg-rose-600 text-white' :
+                                                        project.status === 'Completed' ? 'bg-emerald-600 text-white' :
+                                                        'bg-brand-950 text-brand-accent'
+                                                    }`}>
+                                                        {project.status || 'Active'}
+                                                    </span>
                                                     <h3 className="text-xl font-black uppercase tracking-tight">{project.title}</h3>
                                                 </div>
                                                 <div className="flex items-center gap-4 text-brand-500 text-[10px] font-black tracking-widest uppercase">
@@ -323,8 +503,8 @@ const StaffProgress = () => {
                                                     <span>{project.serviceType}</span>
                                                 </div>
                                             </div>
-
-                                            <div className="w-full md:w-64">
+ 
+                                            <div className="w-full lg:w-64">
                                                 <div className="flex justify-between items-center mb-2 px-1">
                                                     <span className="text-[10px] font-black uppercase tracking-widest text-brand-600">Progress</span>
                                                     <span className="text-sm font-black text-brand-950">{project.progress}%</span>
@@ -337,15 +517,42 @@ const StaffProgress = () => {
                                                 </div>
                                             </div>
                                             
-                                            <button 
-                                                onClick={() => {
-                                                    setFormData({...formData, projectId: project._id, progressPercentage: project.progress});
-                                                    setShowForm(true);
-                                                } }
-                                                className="bg-brand-950 text-white px-6 py-3 font-black uppercase tracking-widest text-[10px] hover:bg-brand-accent hover:text-brand-950 transition-all active:scale-95 shadow-custom"
-                                            >
-                                                UPDATE
-                                            </button>
+                                            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+                                                {(project.status === 'Delayed' || project.status === 'Stopped') && (
+                                                    <button 
+                                                        disabled={submitting}
+                                                        onClick={() => handleRestartProject(project._id)}
+                                                        className="bg-emerald-600 text-white px-4 py-3 font-black uppercase tracking-widest text-[9px] hover:bg-emerald-500 transition-all active:scale-95 shadow-custom disabled:opacity-50"
+                                                    >
+                                                        RESTART WORK
+                                                    </button>
+                                                )}
+                                                <button 
+                                                    onClick={() => {
+                                                        setSelectedStatusProject(project);
+                                                        setStatusForm({
+                                                            status: project.status === 'In Progress' ? 'In Progress' : (project.status || 'In Progress'),
+                                                            reason: 'Tool Maintenance',
+                                                            customReason: '',
+                                                            remarks: '',
+                                                            expectedResumeDate: ''
+                                                        });
+                                                        setShowStatusForm(true);
+                                                    }}
+                                                    className="bg-slate-800 text-white px-4 py-3 font-black uppercase tracking-widest text-[9px] hover:bg-slate-700 transition-all active:scale-95 shadow-custom"
+                                                >
+                                                    STATUS
+                                                </button>
+                                                <button 
+                                                    onClick={() => {
+                                                        setFormData({...formData, projectId: project._id, progressPercentage: project.progress});
+                                                        setShowForm(true);
+                                                    } }
+                                                    className="bg-brand-950 text-white px-4 py-3 font-black uppercase tracking-widest text-[9px] hover:bg-brand-accent hover:text-brand-950 transition-all active:scale-95 shadow-custom"
+                                                >
+                                                    UPDATE
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

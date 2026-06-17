@@ -2,9 +2,15 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const http = require('http');
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
+
+// Initialize Socket.io
+const socketUtil = require('./utils/socket');
+socketUtil.init(server);
 
 app.use(cors({
     origin: true,
@@ -46,6 +52,7 @@ app.use(async (req, res, next) => {
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
+app.use('/api', require('./routes/projectStatusRoutes'));
 app.use('/api/portfolio', require('./routes/portfolioRoutes'));
 app.use('/api/quotes', require('./routes/quoteRoutes'));
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
@@ -166,7 +173,7 @@ if (!isVercel) {
 }
 
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
     });
 }

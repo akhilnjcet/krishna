@@ -6,7 +6,7 @@ const projectSchema = new mongoose.Schema({
     serviceType: { type: String, required: true },
     assignedStaff: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     deadline: { type: Date },
-    status: { type: String, enum: ['pending', 'in-progress', 'completed', 'cancelled'], default: 'pending' },
+    status: { type: String, enum: ['pending', 'in-progress', 'completed', 'cancelled', 'In Progress', 'Delayed', 'Stopped', 'Completed', 'Restarted'], default: 'pending' },
     budget: { type: Number, default: 0 },
     progress: { type: Number, default: 0 },
     sitePhotos: [{ type: String }],

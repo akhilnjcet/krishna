@@ -19,9 +19,15 @@ const AdminDashboard = () => {
         registeredFaces: 0,
         pendingLeaves: 0,
         activeProjects: 0,
-        pendingQuotes: 0
+        pendingQuotes: 0,
+        activeProjectsCount: 0,
+        delayedProjectsCount: 0,
+        stoppedProjectsCount: 0,
+        completedProjectsCount: 0,
+        unreadCount: 0
     });
     const [recentLogs, setRecentLogs] = useState([]);
+    const [recentNotifications, setRecentNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const handleQuickReport = () => {
@@ -44,12 +50,16 @@ const AdminDashboard = () => {
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            const [staffRes, logsRes, leaveRes, projectRes, quoteRes] = await Promise.all([
+            const [staffRes, logsRes, leaveRes, projectRes, quoteRes, statsRes] = await Promise.all([
                 api.get('/staff'),
                 api.get('/attendance'),
                 api.get('/leave'),
                 api.get('/projects'),
-                api.get('/quotes')
+                api.get('/quotes'),
+                api.get('/projects/dashboard/stats').catch(e => {
+                    console.warn("Stats API failed, using fallback:", e);
+                    return { data: { activeCount: 0, delayedCount: 0, stoppedCount: 0, completedCount: 0, unreadCount: 0, recentNotifications: [] } };
+                })
             ]);
             
             const staffList = Array.isArray(staffRes.data) ? staffRes.data : [];
@@ -57,6 +67,7 @@ const AdminDashboard = () => {
             const leaveList = Array.isArray(leaveRes.data) ? leaveRes.data : [];
             const projectList = Array.isArray(projectRes.data) ? projectRes.data : [];
             const quoteList = Array.isArray(quoteRes.data) ? quoteRes.data : [];
+            const projectStats = statsRes.data || {};
 
             const today = new Date().toISOString().split('T')[0];
 
@@ -67,10 +78,16 @@ const AdminDashboard = () => {
                 registeredFaces: staffList.filter(s => s.faceDescriptor?.length > 0).length,
                 pendingLeaves: leaveList.filter(l => l.status === 'pending').length,
                 activeProjects: projectList.length,
-                pendingQuotes: quoteList.filter(q => q.status === 'pending').length
+                pendingQuotes: quoteList.filter(q => q.status === 'pending').length,
+                activeProjectsCount: projectStats.activeCount || 0,
+                delayedProjectsCount: projectStats.delayedCount || 0,
+                stoppedProjectsCount: projectStats.stoppedCount || 0,
+                completedProjectsCount: projectStats.completedCount || 0,
+                unreadCount: projectStats.unreadCount || 0
             });
 
             setRecentLogs(logsList.slice(0, 6));
+            setRecentNotifications(projectStats.recentNotifications || []);
         } catch (err) {
             console.error("Dashboard fetch error:", err);
         } finally {
@@ -120,62 +137,67 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {/* High-Impact Stat Cards */}
-            <motion.div 
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-            >
-                {[
-                    { label: 'Total Workforce', value: stats.totalStaff, icon: Users, color: 'blue', desc: 'Active field staff' },
-                    { label: 'Active Projects', value: stats.activeProjects, icon: Layers, color: 'indigo', desc: 'In-progress works' },
-                    { label: 'Today Verified', value: stats.todayLogs, icon: UserCheck, color: 'emerald', desc: 'Facial recognition scans' },
-                    { label: 'Pending Quotes', value: stats.pendingQuotes, icon: Filter, color: 'amber', desc: 'Awaiting response' }
-                ].map((item, i) => (
-                    <motion.div 
-                        key={i} 
-                        variants={itemVariants}
-                        className="bg-white dark:bg-dark-surface p-8 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group relative overflow-hidden"
-                    >
-                        <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 opacity-[0.03] group-hover:opacity-[0.08] dark:opacity-[0.05] transition-opacity`}>
-                            <item.icon className="w-full h-full" />
-                        </div>
-                        <div className={`w-14 h-14 bg-${item.color}-50 dark:bg-blue-950/30 text-${item.color}-600 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 shadow-sm`}>
-                            <item.icon className="w-7 h-7" />
-                        </div>
-                        <p className="text-[#6B7280] dark:text-dark-muted font-bold uppercase tracking-widest text-[10px] mb-1">{item.label}</p>
-                        <div className="flex items-baseline gap-2">
-                            <p className="text-4xl font-bold text-[#111827] dark:text-dark-text">{item.value}</p>
-                            <span className="text-[10px] font-bold text-emerald-600">+4%</span>
-                        </div>
-                        <p className="text-[11px] text-[#6B7280] dark:text-dark-muted mt-4 font-medium">{item.desc}</p>
-                    </motion.div>
-                ))}
-            </motion.div>
+            {/* Project Operational Status Metrics */}
+            <div className="space-y-4">
+                <h2 className="text-xl font-bold text-[#111827] dark:text-dark-text tracking-tight font-poppins">
+                    Project Operational <span className="text-[#2563EB]">Metrics</span>
+                </h2>
+                <motion.div 
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="grid grid-cols-2 lg:grid-cols-4 gap-6"
+                >
+                    {[
+                        { label: 'Active Projects', value: stats.activeProjectsCount, icon: Layers, color: 'blue', desc: 'Work in progress' },
+                        { label: 'Delayed Projects', value: stats.delayedProjectsCount, icon: AlertCircle, color: 'amber', desc: 'Awaiting resolution' },
+                        { label: 'Stopped Projects', value: stats.stoppedProjectsCount, icon: AlertCircle, color: 'rose', desc: 'Work suspended' },
+                        { label: 'Completed Projects', value: stats.completedProjectsCount, icon: UserCheck, color: 'emerald', desc: 'Finished milestones' }
+                    ].map((item, i) => (
+                        <motion.div 
+                            key={i} 
+                            variants={itemVariants}
+                            onClick={() => navigate('/admin/projects')}
+                            className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+                        >
+                            <div className="flex justify-between items-start mb-4">
+                                <div className={`w-10 h-10 bg-${item.color}-50 dark:bg-blue-950/30 text-${item.color}-600 rounded-xl flex items-center justify-center`}>
+                                    <item.icon className="w-5 h-5" />
+                                </div>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-${item.color}-50 dark:bg-blue-950/20 text-${item.color}-600`}>
+                                    Status
+                                </span>
+                            </div>
+                            <p className="text-[#6B7280] dark:text-dark-muted font-bold uppercase tracking-widest text-[9px] mb-1">{item.label}</p>
+                            <p className="text-3xl font-bold text-[#111827] dark:text-dark-text">{item.value}</p>
+                            <p className="text-[10px] text-[#6B7280] dark:text-dark-muted mt-2 font-medium">{item.desc}</p>
+                        </motion.div>
+                    ))}
+                </motion.div>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Activity Feed */}
-                <div className="lg:col-span-2 bg-white dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm p-8 md:p-10">
+                <div className="bg-white dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm p-8 md:p-10">
                     <div className="flex items-center justify-between mb-10">
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl text-blue-600">
                                 <TrendingUp className="w-6 h-6" />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-bold text-[#111827] dark:text-dark-text">Security Log Activity</h2>
-                                <p className="text-sm text-[#6B7280] dark:text-dark-muted font-medium">Real-time facial recognition status</p>
+                                <h2 className="text-2xl font-bold text-[#111827] dark:text-dark-text">Biometrics Logs</h2>
+                                <p className="text-sm text-[#6B7280] dark:text-dark-muted font-medium">Facial verification</p>
                             </div>
                         </div>
                         <button 
                             onClick={() => navigate('/admin/logs')}
                             className="bg-[#F8FAFC] text-[#2563EB] hover:bg-blue-50 p-2.5 rounded-xl transition-all flex items-center gap-2 text-sm font-bold"
                         >
-                            View All <ArrowUpRight className="w-4 h-4" />
+                            Logs <ArrowUpRight className="w-4 h-4" />
                         </button>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
                         {loading ? (
                              <div className="h-64 flex items-center justify-center space-x-3">
                                 <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
@@ -188,22 +210,79 @@ const AdminDashboard = () => {
                                 <p className="font-bold opacity-40">No activity captured yet today.</p>
                             </div>
                         ) : recentLogs.map((log, i) => (
-                            <div key={i} className="flex items-center justify-between p-5 border border-[#E2E8F0] dark:border-dark-border rounded-2xl hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/20 dark:hover:bg-blue-900/10 transition-all duration-300 group">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 bg-[#F8FAFC] dark:bg-dark-bg rounded-2xl flex items-center justify-center font-bold text-[#2563EB] border border-[#E2E8F0] dark:border-dark-border shadow-sm transform group-hover:rotate-6 transition-transform">
+                            <div key={i} className="flex items-center justify-between p-4 border border-[#E2E8F0] dark:border-dark-border rounded-2xl hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/20 dark:hover:bg-blue-900/10 transition-all duration-300 group">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 bg-[#F8FAFC] dark:bg-dark-bg rounded-xl flex items-center justify-center font-bold text-[#2563EB] border border-[#E2E8F0] dark:border-dark-border shadow-sm transform group-hover:rotate-6 transition-transform">
                                         {(log.full_name || log.name || 'S').charAt(0)}
                                     </div>
                                     <div>
-                                        <p className="font-bold text-[#111827] dark:text-dark-text">{log.full_name || log.name}</p>
-                                        <div className="flex items-center gap-3 text-xs text-[#6B7280] dark:text-dark-muted font-medium mt-1">
+                                        <p className="font-bold text-sm text-[#111827] dark:text-dark-text">{log.full_name || log.name}</p>
+                                        <div className="flex items-center gap-2 text-xs text-[#6B7280] dark:text-dark-muted font-medium mt-1">
                                             <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {log.login_time ? new Date(log.login_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}</span>
-                                            <span className="flex items-center gap-1 font-bold text-blue-600">{(Number(log.face_match_confidence || 0) * 100).toFixed(0)}% Confidence</span>
                                         </div>
                                     </div>
                                 </div>
-                                <button className="p-2 text-[#6B7280] hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100">
-                                    <ChevronRight className="w-5 h-5" />
-                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Recent Project Alerts Feed */}
+                <div className="bg-white dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm p-8 md:p-10">
+                    <div className="flex items-center justify-between mb-10">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-rose-50 dark:bg-rose-950/20 rounded-2xl text-rose-600">
+                                <AlertCircle className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-[#111827] dark:text-dark-text">Project Alerts</h2>
+                                <p className="text-sm text-[#6B7280] dark:text-dark-muted font-medium">Real-time status tracking</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => navigate('/admin/notifications')}
+                            className="bg-[#F8FAFC] text-[#2563EB] hover:bg-blue-50 p-2.5 rounded-xl transition-all flex items-center gap-2 text-sm font-bold"
+                        >
+                            View All <ArrowUpRight className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
+                        {loading ? (
+                             <div className="h-64 flex items-center justify-center space-x-3">
+                                <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+                             </div>
+                        ) : recentNotifications.length === 0 ? (
+                            <div className="h-64 flex flex-col items-center justify-center text-[#6B7280] dark:text-dark-muted gap-4">
+                                <Bell className="w-12 h-12 opacity-10" />
+                                <p className="font-bold opacity-40">All projects operational.</p>
+                            </div>
+                        ) : recentNotifications.map((notif, i) => (
+                            <div key={i} className="p-4 border border-[#E2E8F0] dark:border-dark-border rounded-2xl hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/10 dark:hover:bg-blue-900/10 transition-all duration-300">
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                                        notif.type === 'Delayed' ? 'bg-amber-100 text-amber-800' :
+                                        notif.type === 'Stopped' ? 'bg-red-100 text-red-800' :
+                                        notif.type === 'Restarted' ? 'bg-emerald-100 text-emerald-800' :
+                                        'bg-blue-100 text-blue-800'
+                                    }`}>
+                                        {notif.type}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-bold">
+                                        {new Date(notif.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    </span>
+                                </div>
+                                <h4 className="font-bold text-sm text-[#111827] dark:text-dark-text">{notif.projectName}</h4>
+                                <p className="text-xs text-slate-500 dark:text-dark-muted mt-1">
+                                    <span className="font-semibold text-slate-700 dark:text-dark-text">By:</span> {notif.updatedBy?.name || 'Staff'}
+                                </p>
+                                {notif.reason && (
+                                    <p className="text-[11px] text-slate-600 dark:text-dark-muted mt-1 bg-slate-50 dark:bg-dark-bg p-1.5 rounded border border-slate-100 dark:border-dark-border">
+                                        <span className="font-bold text-amber-600">Reason:</span> {notif.reason}
+                                    </p>
+                                )}
                             </div>
                         ))}
                     </div>

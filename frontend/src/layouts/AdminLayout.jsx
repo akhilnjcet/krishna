@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
     LayoutDashboard, Layers, Image as ImageIcon, FileText, BookOpen,
@@ -8,6 +8,9 @@ import {
     Clock, AlertCircle, Radio, MessageCircle, ChevronLeft
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getSocket } from '../utils/socket';
+import api from '../services/api';
 
 const SIDEBAR_W = 'w-[280px]';
 
@@ -17,6 +20,7 @@ const SIDEBAR_ITEMS = [
     { name: 'Attendance Hub',  path: '/admin/logs',         icon: Clock },
     { name: 'Leave Requests',  path: '/admin/leave',        icon: ClipboardList },
     { name: 'Projects Hub',    path: '/admin/projects',     icon: Layers },
+    { name: 'Notification Center', path: '/admin/notifications', icon: Bell },
     { name: 'Visual Portfolio', path: '/admin/portfolio',    icon: ImageIcon },
     { name: 'Formal Quotes',   path: '/admin/quotes',       icon: Receipt },
     { name: 'Financial Hub',   path: '/admin/finance',      icon: BadgeIndianRupee },
@@ -101,6 +105,70 @@ const AdminLayout = () => {
     const navigate = useNavigate();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [desktopOpen, setDesktopOpen] = useState(true);
+
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [toast, setToast] = useState({ 
+        show: false, 
+        title: '', 
+        message: '', 
+        projectName: '', 
+        updatedBy: '', 
+        reason: '', 
+        remarks: '', 
+        timestamp: '' 
+    });
+
+    const fetchNotifications = async () => {
+        try {
+            const statsRes = await api.get('/projects/dashboard/stats');
+            setUnreadCount(statsRes.data.unreadCount || 0);
+            setNotifications(statsRes.data.recentNotifications || []);
+        } catch (err) {
+            console.error("Failed to fetch notifications in layout:", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchNotifications();
+
+        const socket = getSocket();
+        socket.connect();
+        
+        socket.emit('join-room', 'admin');
+
+        socket.on('admin-notification', (notif) => {
+            console.log("🔔 Real-time Admin Notification Received:", notif);
+            setUnreadCount(prev => prev + 1);
+            setNotifications(prev => [notif, ...prev.slice(0, 9)]);
+
+            setToast({
+                show: true,
+                title: notif.title,
+                message: notif.message,
+                projectName: notif.projectName,
+                updatedBy: notif.updatedBy?.name || 'Staff',
+                reason: notif.reason,
+                remarks: notif.remarks,
+                timestamp: new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
+            setTimeout(() => {
+                setToast(t => ({ ...t, show: false }));
+            }, 6000);
+        });
+
+        const interval = setInterval(() => {
+            fetchNotifications();
+        }, 12000);
+
+        return () => {
+            socket.off('admin-notification');
+            socket.disconnect();
+            clearInterval(interval);
+        };
+    }, []);
 
     const role = user?.role || user?.user?.role;
 
@@ -191,11 +259,66 @@ const AdminLayout = () => {
                         </h1>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <button className="relative p-2 text-blue-100 hover:bg-white/10 rounded-xl transition-all">
+                    <div className="flex items-center gap-2 relative">
+                        <button 
+                            onClick={() => setShowDropdown(prev => !prev)}
+                            className="relative p-2 text-blue-100 hover:bg-white/10 rounded-xl transition-all"
+                        >
                             <Bell className="w-5 h-5" />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full border-2 border-blue-700" />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-1 right-1 bg-yellow-400 text-blue-900 text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-blue-700 animate-pulse">
+                                    {unreadCount}
+                                </span>
+                            )}
                         </button>
+
+                        {/* Bell Dropdown */}
+                        {showDropdown && (
+                            <div className="absolute right-0 top-12 w-80 bg-white dark:bg-dark-surface rounded-2xl shadow-2xl border border-slate-100 dark:border-dark-border py-4 z-50 text-slate-800 animate-in fade-in slide-in-from-top-3 duration-200">
+                                <div className="px-4 pb-3 border-b border-slate-100 dark:border-dark-border flex justify-between items-center">
+                                    <span className="text-xs font-black uppercase tracking-wider text-slate-400">Recent Alerts</span>
+                                    {unreadCount > 0 && (
+                                        <span className="bg-blue-50 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded-full">
+                                            {unreadCount} New
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-dark-border">
+                                    {notifications.length === 0 ? (
+                                        <div className="px-4 py-8 text-center text-xs text-slate-400 font-bold uppercase tracking-wider">
+                                            No notifications
+                                        </div>
+                                    ) : (
+                                        notifications.slice(0, 5).map(n => (
+                                            <div 
+                                                key={n._id} 
+                                                onClick={() => { setShowDropdown(false); navigate('/admin/notifications'); }}
+                                                className={`px-4 py-3 hover:bg-slate-50 dark:hover:bg-dark-bg cursor-pointer transition-all ${!n.isRead ? 'bg-blue-50/20' : ''}`}
+                                            >
+                                                <p className="text-xs font-bold text-slate-800 dark:text-dark-text flex items-center gap-1.5">
+                                                    <span>{n.title}</span>
+                                                </p>
+                                                <p className="text-[10px] font-bold text-slate-500 dark:text-dark-muted mt-0.5">Project: {n.projectName}</p>
+                                                {n.reason && <p className="text-[9px] font-semibold text-amber-600 mt-0.5">Reason: {n.reason}</p>}
+                                                <p className="text-[9px] text-slate-400 mt-1">
+                                                    {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                                <div className="px-4 pt-3 border-t border-slate-100 dark:border-dark-border text-center">
+                                    <Link 
+                                        to="/admin/notifications" 
+                                        onClick={() => setShowDropdown(false)}
+                                        className="text-xs font-bold text-[#2563EB] hover:underline uppercase tracking-wider"
+                                    >
+                                        View All
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex items-center gap-2">
                             <p className="text-sm font-bold text-white hidden sm:block truncate max-w-[100px]">{user?.name || user?.user?.name || "Admin"}</p>
                             <div className="w-8 h-8 bg-white/20 rounded-xl border border-white/20 flex items-center justify-center text-white">
@@ -210,6 +333,53 @@ const AdminLayout = () => {
                         <Outlet />
                     </div>
                 </main>
+
+                {/* WhatsApp-Style Popup Toast */}
+                <AnimatePresence>
+                    {toast.show && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                            className="fixed bottom-6 right-6 z-[9999] w-96 bg-white dark:bg-dark-surface rounded-3xl shadow-2xl border-4 border-brand-950 p-6 flex items-start gap-4 cursor-pointer text-slate-800"
+                            onClick={() => {
+                                setToast(t => ({ ...t, show: false }));
+                                navigate('/admin/notifications');
+                            }}
+                        >
+                            <div className="w-10 h-10 bg-brand-950 text-white rounded-2xl flex items-center justify-center flex-shrink-0 font-black shadow-md text-lg">
+                                💬
+                            </div>
+                            <div className="flex-grow min-w-0">
+                                <div className="flex justify-between items-start">
+                                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">System Alert</span>
+                                    <span className="text-[9px] text-slate-400 font-bold">{toast.timestamp}</span>
+                                </div>
+                                <h4 className="font-bold text-sm text-[#111827] dark:text-dark-text mt-1">{toast.title}</h4>
+                                <p className="text-xs text-slate-600 dark:text-dark-muted mt-1 leading-relaxed">
+                                    Project: <span className="font-bold text-slate-800 dark:text-dark-text">{toast.projectName}</span>
+                                </p>
+                                <p className="text-xs text-slate-500 mt-0.5">Updated By: {toast.updatedBy}</p>
+                                {toast.reason && (
+                                    <div className="mt-2.5 p-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 rounded-xl text-[10px] text-amber-800 dark:text-amber-200">
+                                        <span className="font-bold">Reason:</span> {toast.reason}
+                                        {toast.remarks && <p className="mt-1 font-medium italic">"{toast.remarks}"</p>}
+                                    </div>
+                                )}
+                            </div>
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setToast(t => ({ ...t, show: false }));
+                                }}
+                                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 flex-shrink-0"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );
