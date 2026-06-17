@@ -49,33 +49,46 @@ exports.register = async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
+const findOrCreateMasterAdmin = async () => {
+    const MASTER_ADMIN_ID = "00000000000000000000ad14";
+    let master = await User.findById(MASTER_ADMIN_ID);
+    if (master) return master;
+
+    master = await User.findOne({ $or: [{ username: 'admin' }, { email: 'admin@krishna.com' }] });
+    if (master) return master;
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('123', salt);
+    master = new User({
+        _id: MASTER_ADMIN_ID,
+        name: 'Master Admin',
+        email: 'admin@krishna.com',
+        username: 'admin',
+        password: hashedPassword,
+        role: 'admin',
+        status: 'active'
+    });
+    try {
+        await master.save();
+    } catch (e) {
+        master = await User.findOne({ $or: [{ username: 'admin' }, { email: 'admin@krishna.com' }] });
+    }
+    return master;
+};
+
 exports.login = async (req, res) => {
     try {
         const { username, email, password } = req.body;
         const identifier = (username || email || "").toLowerCase();
         
         // Simplified Master Failsafe (Valid ObjectId Format Required for MongoDB Stability)
-        const MASTER_ADMIN_ID = "00000000000000000000ad14";
         if ((identifier === 'admin' || identifier === 'admin@krishna.com') && password === '123') {
-            let master = await User.findById(MASTER_ADMIN_ID);
-            if (!master) {
-                const salt = await bcrypt.genSalt(10);
-                const hashedPassword = await bcrypt.hash('123', salt);
-                await User.create({
-                    _id: MASTER_ADMIN_ID,
-                    name: 'Master Admin',
-                    email: 'admin@krishna.com',
-                    username: 'admin',
-                    password: hashedPassword,
-                    role: 'admin',
-                    status: 'active'
-                });
-            }
+            const master = await findOrCreateMasterAdmin();
             return res.json({
-                _id: MASTER_ADMIN_ID,
-                name: 'Master Admin',
+                _id: master._id,
+                name: master.name,
                 role: 'admin',
-                token: generateToken(MASTER_ADMIN_ID, 'admin')
+                token: generateToken(master._id.toString(), 'admin')
             });
         }
 
@@ -152,18 +165,14 @@ exports.verifyFace = async (req, res) => {
 exports.getMe = async (req, res) => {
     try {
         let user = await User.findById(req.user.id).select('-password');
-        if (!user && req.user.id === '00000000000000000000ad14') {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash('123', salt);
-            user = await User.create({
-                _id: '00000000000000000000ad14',
-                name: 'Master Admin',
-                email: 'admin@krishna.com',
-                username: 'admin',
-                password: hashedPassword,
-                role: 'admin',
-                status: 'active'
-            });
+        if (!user && (req.user.id === '00000000000000000000ad14' || req.user.role === 'admin')) {
+            user = await findOrCreateMasterAdmin();
+            if (user) {
+                // Return a copy without password field
+                const userObj = user.toObject();
+                delete userObj.password;
+                return res.json(userObj);
+            }
         }
         res.json(user);
     } catch (error) { res.status(500).json({ message: error.message }); }
@@ -174,18 +183,8 @@ exports.updateProfile = async (req, res) => {
         const { name, phone } = req.body;
         let user = await User.findById(req.user.id);
         if (!user) {
-            if (req.user.id === '00000000000000000000ad14') {
-                const salt = await bcrypt.genSalt(10);
-                const hashedPassword = await bcrypt.hash('123', salt);
-                user = await User.create({
-                    _id: '00000000000000000000ad14',
-                    name: 'Master Admin',
-                    email: 'admin@krishna.com',
-                    username: 'admin',
-                    password: hashedPassword,
-                    role: 'admin',
-                    status: 'active'
-                });
+            if (req.user.id === '00000000000000000000ad14' || req.user.role === 'admin') {
+                user = await findOrCreateMasterAdmin();
             } else {
                 return res.status(404).json({ message: 'User not found' });
             }
