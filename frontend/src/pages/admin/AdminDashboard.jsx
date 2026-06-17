@@ -7,7 +7,8 @@ import {
   Users, Calendar, Clock, Lock, ArrowUpRight, 
   TrendingUp, Activity, UserCheck, ShieldCheck, 
   ArrowRight, ChevronRight, Search, Filter,
-  Layers, Package, AlertCircle, Download, DoorOpen
+  Layers, Package, AlertCircle, Download, DoorOpen,
+  Bell
 } from 'lucide-react';
 
 const AdminDashboard = () => {
