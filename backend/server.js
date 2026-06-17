@@ -23,7 +23,6 @@ app.use(cors({
 }));
 app.use(express.json());
 const path = require('path');
-const isVercel = process.env.VERCEL === '1';
 app.use('/uploads', express.static(isVercel ? '/tmp/uploads' : path.join(__dirname, 'uploads')));
 
 // Institutional Security Headers (Anti-Caching for Sensitive Data)
