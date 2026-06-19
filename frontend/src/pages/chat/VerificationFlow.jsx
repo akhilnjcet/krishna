@@ -51,13 +51,13 @@ const VerificationFlow = ({ onComplete }) => {
     const submitRequest = async () => {
         try {
             await addDoc(collection(db, "chatRequests"), {
-                userId: user.id || user._id,
-                userName: user.name,
-                userEmail: user.email,
+                userId: user.id || user._id || "",
+                userName: user.name || "",
+                userEmail: user.email || "",
                 userRole: user.role || 'customer',
                 requestType: user.role === 'staff' ? 'staff-reference' : 'support',
-                projectId: selectedProject._id,
-                projectTitle: selectedProject.title,
+                projectId: selectedProject._id || "",
+                projectTitle: selectedProject.title || "",
                 reason: (selectedReason === "Other (technical detail)" || selectedReason === "Other (internal ref)") ? otherReason : selectedReason,
                 status: 'pending',
                 createdAt: serverTimestamp()

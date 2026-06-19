@@ -141,8 +141,8 @@ const RealTimeChat = ({ chatId: propChatId }) => {
         try {
             await addDoc(collection(db, "messages"), {
                 chatId: activeRoom.id,
-                senderId: user.id || user._id,
-                senderName: user.name,
+                senderId: user.id || user._id || "",
+                senderName: user.name || "",
                 text: msgText,
                 timestamp: serverTimestamp(),
                 seen: false,

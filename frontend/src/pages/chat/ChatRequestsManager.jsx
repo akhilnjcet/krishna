@@ -26,9 +26,9 @@ const ChatRequestsManager = () => {
             if (action === 'approve') {
                 // 1. Create a Chat Room
                 const newRoom = await addDoc(collection(db, "chatRooms"), {
-                    userId,
-                    participants: [userId, 'admin'], // 'admin' is the high-level monitor ID
-                    title: `${userName} - ${projectTitle}`,
+                    userId: userId || "",
+                    participants: [userId || "", 'admin'], // 'admin' is the high-level monitor ID
+                    title: `${userName || ""} - ${projectTitle || ""}`,
                     status: 'active',
                     createdAt: serverTimestamp(),
                     lastMessage: "Channel established. Support is active.",
