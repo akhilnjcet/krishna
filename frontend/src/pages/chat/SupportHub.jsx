@@ -14,6 +14,11 @@ import {
 
 const SupportHub = () => {
     const { user } = useAuthStore();
+    const role = user?.role || user?.user?.role;
+    const name = user?.name || user?.user?.name || 'User';
+    const email = user?.email || user?.user?.email || '';
+    const userId = user?.id || user?._id || user?.user?.id || user?.user?._id || '';
+
     const [activeTickets, setActiveTickets] = useState([]);
     const [closedTickets, setClosedTickets] = useState([]);
     const [activeChat, setActiveChat] = useState(null);
@@ -30,7 +35,7 @@ const SupportHub = () => {
         }
 
         let q;
-        if (user.role === 'admin') {
+        if (role === 'admin') {
             q = collection(db, "chatRequests");
         } else {
             // Staff and Customers only see their own requests OR staff sees all support?
@@ -39,7 +44,7 @@ const SupportHub = () => {
             // BUT see their own "staff-reference" chats.
             q = query(
                 collection(db, "chatRequests"), 
-                where("userId", "==", user.id || user._id || "")
+                where("userId", "==", userId)
             );
         }
 
@@ -73,7 +78,7 @@ const SupportHub = () => {
             await updateDoc(doc(db, "chatRequests", ticketId), {
                 status: 'closed',
                 closedAt: serverTimestamp(),
-                closedBy: user.name
+                closedBy: name
             });
             if (roomId) {
                 await updateDoc(doc(db, "chatRooms", roomId), {
@@ -149,7 +154,7 @@ const SupportHub = () => {
                 <h1 className="text-4xl font-black text-slate-800 tracking-tighter uppercase italic">Communication Hub</h1>
                 <p className="text-slate-500 font-bold tracking-widest uppercase text-[10px]">Secure End-to-End Encrypted Tunnel</p>
                 
-                {user.role !== 'customer' && (
+                {role !== 'customer' && (
                     <div className="flex justify-center gap-4 mt-8">
                         <button 
                             onClick={() => setChatType('support')}
@@ -202,9 +207,9 @@ const SupportHub = () => {
                     {(activeTab === 'active' ? activeTickets : closedTickets)
                         .filter(t => {
                             // Admins see ALL tickets (both support + staff-reference)
-                            if (user.role === 'admin') return true;
+                            if (role === 'admin') return true;
                             // Customers see all their own tickets regardless of type
-                            if (user.role === 'customer') return true;
+                            if (role === 'customer') return true;
                             // Staff: filter by selected chatType tab
                             return t.requestType === chatType;
                         })
@@ -270,7 +275,7 @@ const SupportHub = () => {
                                         </button>
                                     </>
                                 ) : ticket.status === 'pending' ? (
-                                    user.role === 'admin' ? (
+                                    role === 'admin' ? (
                                         <div className="flex gap-4 w-full">
                                             <button 
                                                 onClick={() => handleAction(ticket.id, ticket.userId, ticket.userName, ticket.projectId, ticket.projectTitle, 'reject')}
@@ -299,7 +304,7 @@ const SupportHub = () => {
                         </div>
                     ))}
                     
-                    {activeTab === 'active' && (user.role === 'customer' || user.role === 'staff') && (
+                    {activeTab === 'active' && (role === 'customer' || role === 'staff') && (
                         <button 
                             onClick={() => setView('verify')}
                             className="bg-white p-10 rounded-[3rem] border-4 border-dashed border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition-all flex flex-col items-center justify-center text-center group min-h-[400px] active:scale-98"
@@ -308,7 +313,7 @@ const SupportHub = () => {
                                 <Plus className="w-12 h-12" />
                             </div>
                             <h4 className="text-lg font-black text-slate-400 group-hover:text-indigo-600 uppercase tracking-[0.3em]">
-                                {user.role === 'staff' ? 'Initialize Project Channel' : 'Open Support Protocol'}
+                                {role === 'staff' ? 'Initialize Project Channel' : 'Open Support Protocol'}
                             </h4>
                         </button>
                     )}
@@ -319,7 +324,7 @@ const SupportHub = () => {
                 <div className="py-32 text-center bg-white rounded-[4rem] border-4 border-dashed border-slate-100">
                     <History className="w-20 h-20 text-slate-100 mx-auto mb-6" />
                     <p className="text-slate-300 font-black uppercase tracking-[0.4em] italic text-sm">Registry Sync: Error 404 - No {activeTab} Records Found</p>
-                    {user.role === 'customer' && activeTab === 'active' && (
+                    {role === 'customer' && activeTab === 'active' && (
                          <button 
                          onClick={() => setView('verify')}
                          className="mt-8 bg-indigo-600 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:scale-105 transition-all"

@@ -25,6 +25,11 @@ const STAFF_REASONS = [
 
 const VerificationFlow = ({ onComplete }) => {
     const { user } = useAuthStore();
+    const role = user?.role || user?.user?.role || 'customer';
+    const name = user?.name || user?.user?.name || '';
+    const email = user?.email || user?.user?.email || '';
+    const userId = user?.id || user?._id || user?.user?.id || user?.user?._id || '';
+
     const [projects, setProjects] = useState([]);
     const [step, setStep] = useState(1); // 1: project, 2: reason, 3: success
     const [selectedProject, setSelectedProject] = useState(null);
@@ -32,7 +37,7 @@ const VerificationFlow = ({ onComplete }) => {
     const [otherReason, setOtherReason] = useState("");
     const [loading, setLoading] = useState(true);
 
-    const REASONS = user?.role === 'staff' ? STAFF_REASONS : CUSTOMER_REASONS;
+    const REASONS = role === 'staff' ? STAFF_REASONS : CUSTOMER_REASONS;
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -51,11 +56,11 @@ const VerificationFlow = ({ onComplete }) => {
     const submitRequest = async () => {
         try {
             await addDoc(collection(db, "chatRequests"), {
-                userId: user.id || user._id || "",
-                userName: user.name || "",
-                userEmail: user.email || "",
-                userRole: user.role || 'customer',
-                requestType: user.role === 'staff' ? 'staff-reference' : 'support',
+                userId: userId,
+                userName: name,
+                userEmail: email,
+                userRole: role,
+                requestType: role === 'staff' ? 'staff-reference' : 'support',
                 projectId: selectedProject._id || "",
                 projectTitle: selectedProject.title || "",
                 reason: (selectedReason === "Other (technical detail)" || selectedReason === "Other (internal ref)") ? otherReason : selectedReason,

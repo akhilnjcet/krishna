@@ -13,6 +13,87 @@ const AIChatWidget = () => {
     const [leadForm, setLeadForm] = useState({ show: false, name: '', phone: '', requirement: '' });
     const messagesEndRef = useRef(null);
 
+    // Draggable position state
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [dragStart, setDragStart] = useState(null);
+    const [hasDragged, setHasDragged] = useState(false);
+
+    useEffect(() => {
+        if (!dragStart) return;
+
+        const handleMove = (clientX, clientY) => {
+            const dx = clientX - dragStart.startX;
+            const dy = clientY - dragStart.startY;
+            
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                setHasDragged(true);
+            }
+            
+            setPosition({
+                x: dragStart.posX + dx,
+                y: dragStart.posY + dy
+            });
+        };
+
+        const onMouseMove = (e) => {
+            handleMove(e.clientX, e.clientY);
+        };
+
+        const onTouchMove = (e) => {
+            if (e.touches.length === 0) return;
+            handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        };
+
+        const onEnd = () => {
+            setDragStart(null);
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onEnd);
+        window.addEventListener('touchmove', onTouchMove);
+        window.addEventListener('touchend', onEnd);
+
+        return () => {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onEnd);
+            window.removeEventListener('touchmove', onTouchMove);
+            window.removeEventListener('touchend', onEnd);
+        };
+    }, [dragStart]);
+
+    const startDrag = (clientX, clientY) => {
+        setHasDragged(false);
+        setDragStart({
+            startX: clientX,
+            startY: clientY,
+            posX: position.x,
+            posY: position.y
+        });
+    };
+
+    const handleMouseDown = (e) => {
+        if (e.button !== 0) return; // Left click only
+        // Prevent drag on close button or inputs
+        if (e.target.closest('.close-btn') || e.target.closest('input') || e.target.closest('textarea')) return;
+        startDrag(e.clientX, e.clientY);
+    };
+
+    const handleTouchStart = (e) => {
+        if (e.touches.length === 0) return;
+        // Prevent drag on close button or inputs
+        if (e.target.closest('.close-btn') || e.target.closest('input') || e.target.closest('textarea')) return;
+        startDrag(e.touches[0].clientX, e.touches[0].clientY);
+    };
+
+    const handleToggleClick = (e) => {
+        if (hasDragged) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        setIsOpen(!isOpen);
+    };
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
@@ -70,7 +151,15 @@ const AIChatWidget = () => {
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-[100] font-sans">
+        <div 
+            className="fixed z-[100] font-sans"
+            style={{ 
+                bottom: '24px', 
+                right: '24px',
+                transform: `translate(${position.x}px, ${position.y}px)`,
+                touchAction: 'none'
+            }}
+        >
             <AnimatePresence>
                 {isOpen && (
                     <motion.div 
@@ -80,7 +169,11 @@ const AIChatWidget = () => {
                         className="absolute bottom-20 right-0 w-[90vw] md:w-[380px] h-[550px] max-h-[80vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200"
                     >
                         {/* Header */}
-                        <div className="bg-brand-900 text-white p-4 flex items-center justify-between shadow-md">
+                        <div 
+                            onMouseDown={handleMouseDown}
+                            onTouchStart={handleTouchStart}
+                            className="bg-brand-900 text-white p-4 flex items-center justify-between shadow-md cursor-grab active:cursor-grabbing select-none"
+                        >
                             <div className="flex items-center gap-3">
                                 <div className="relative">
                                     <div className="w-10 h-10 bg-brand-800 rounded-full flex items-center justify-center">
@@ -95,11 +188,11 @@ const AIChatWidget = () => {
                                     </p>
                                 </div>
                             </div>
-                            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-brand-800 rounded-lg transition-colors">
+                            <button onClick={() => setIsOpen(false)} className="close-btn p-2 hover:bg-brand-800 rounded-lg transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-
+ 
                         {/* Quick Actions */}
                         <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex gap-2 overflow-x-auto mx-auto scrollbar-hide w-full">
                             <a href="tel:+919446000000" className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-bold bg-white border border-slate-200 px-3 py-1.5 rounded-full text-brand-900 shadow-sm hover:border-brand-accent transition-colors">
@@ -109,7 +202,7 @@ const AIChatWidget = () => {
                                 <FileText className="w-3 h-3 text-brand-accent" /> Get Quote
                             </button>
                         </div>
-
+ 
                         {/* Chat Body */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
                             {messages.map((msg, i) => (
@@ -123,7 +216,7 @@ const AIChatWidget = () => {
                                     </div>
                                 </div>
                             ))}
-
+ 
                             {isTyping && (
                                 <div className="flex justify-start">
                                     <div className="bg-white border border-slate-200 px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-1">
@@ -133,7 +226,7 @@ const AIChatWidget = () => {
                                     </div>
                                 </div>
                             )}
-
+ 
                             {leadForm.show && (
                                 <form onSubmit={submitLead} className="bg-white border-2 border-brand-accent/30 rounded-xl p-4 shadow-sm animate-in slide-in-from-bottom-2">
                                     <h4 className="text-[11px] font-bold uppercase tracking-wider text-brand-accent mb-3">Instant Callback Request</h4>
@@ -154,10 +247,10 @@ const AIChatWidget = () => {
                                     </div>
                                 </form>
                             )}
-
+ 
                             <div ref={messagesEndRef} />
                         </div>
-
+ 
                         {/* Input Area */}
                         <div className="p-3 bg-white border-t border-slate-200">
                             <form onSubmit={handleSend} className="flex items-center gap-2 relative">
@@ -176,10 +269,12 @@ const AIChatWidget = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
-
+ 
             <button 
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-14 h-14 bg-brand-900 border-2 border-brand-accent hover:bg-black text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 active:scale-95 z-50 relative group"
+                onClick={handleToggleClick}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
+                className="w-14 h-14 bg-brand-900 border-2 border-brand-accent hover:bg-black text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 active:scale-95 z-50 relative group cursor-grab active:cursor-grabbing"
             >
                 {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
                 {!isOpen && (

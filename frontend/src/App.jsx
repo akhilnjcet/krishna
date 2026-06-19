@@ -353,7 +353,7 @@ const App = () => {
             <Layout>
               <SecurityWrapper>
                 <Routes>
-            <Route path="/" element={Capacitor.isNativePlatform() ? <LodgeHome /> : <Home />} />
+            <Route path="/" element={<Home />} />
             <Route path="/engineering" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />

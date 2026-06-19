@@ -11,6 +11,10 @@ import useAuthStore from '../../stores/authStore';
 
 const RealTimeChat = ({ chatId: propChatId }) => {
     const { user } = useAuthStore();
+    const role = user?.role || user?.user?.role;
+    const name = user?.name || user?.user?.name || 'User';
+    const userId = user?.id || user?._id || user?.user?.id || user?.user?._id || '';
+
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
     const [activeRoom, setActiveRoom] = useState(null);
@@ -44,11 +48,11 @@ const RealTimeChat = ({ chatId: propChatId }) => {
         if (!user) return;
         
         let q;
-        if (user.role === 'admin' || user.role === 'staff') {
+        if (role === 'admin' || role === 'staff') {
             q = collection(db, "chatRooms");
         } else {
             // High-reliability query for customers
-            q = query(collection(db, "chatRooms"), where("participants", "array-contains", user.id || user._id));
+            q = query(collection(db, "chatRooms"), where("participants", "array-contains", userId));
         }
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -86,7 +90,7 @@ const RealTimeChat = ({ chatId: propChatId }) => {
 
             // Auto-mark seen & Notify
             msgs.forEach(m => {
-                const isFromOther = m.senderId !== (user.id || user._id);
+                const isFromOther = m.senderId !== userId;
                 if (!m.seen && isFromOther) {
                     updateDoc(doc(db, "messages", m.id), { seen: true });
                     
@@ -141,8 +145,8 @@ const RealTimeChat = ({ chatId: propChatId }) => {
         try {
             await addDoc(collection(db, "messages"), {
                 chatId: activeRoom.id,
-                senderId: user.id || user._id || "",
-                senderName: user.name || "",
+                senderId: userId,
+                senderName: name,
                 text: msgText,
                 timestamp: serverTimestamp(),
                 seen: false,
@@ -216,7 +220,7 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                         <div className="flex justify-center mb-6"><span className="bg-[#fff9ee] text-[#54656f] px-4 py-1 rounded-xl text-[11px] font-semibold uppercase tracking-wider shadow-sm border border-slate-100">Today</span></div>
                         
                         {messages.length > 0 ? messages.map((msg, index) => {
-                            const isMe = msg.senderId === (user.id || user._id);
+                            const isMe = msg.senderId === userId;
                             return (
                                 <div key={msg.id || index} className={`flex w-full mb-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
                                     <div className={`max-w-[85%] md:max-w-[70%] px-3 py-1.5 rounded-lg text-[14.5px] shadow-sm relative ${isMe ? 'bg-[#dcf8c6] text-[#111b21] rounded-tr-none' : 'bg-white text-[#111b21] rounded-tl-none'}`}>
