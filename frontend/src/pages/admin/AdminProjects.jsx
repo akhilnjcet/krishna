@@ -33,13 +33,18 @@ const AdminProjects = () => {
         customerId: '',
         serviceType: '',
         budget: '',
-        deadline: ''
+        deadline: '',
+        assignedStaff: []
     });
     const [customers, setCustomers] = useState([]);
+    const [staffList, setStaffList] = useState([]);
+    const [showStaffModal, setShowStaffModal] = useState(false);
+    const [editAssignedStaff, setEditAssignedStaff] = useState([]);
 
     useEffect(() => {
         fetchProjects();
         fetchCustomers();
+        fetchStaff();
     }, []);
 
     const fetchProjects = async () => {
@@ -63,18 +68,42 @@ const AdminProjects = () => {
         }
     };
 
+    const fetchStaff = async () => {
+        try {
+            const res = await api.get('/staff');
+            setStaffList(res.data);
+        } catch (err) {
+            console.error('Fetch Staff Error:', err);
+        }
+    };
+
     const handleCreateProject = async (e) => {
         e.preventDefault();
         try {
             await api.post('/projects', formData);
             fetchProjects();
             setShowModal(false);
-            setFormData({ title: '', customerId: '', serviceType: '', budget: '', deadline: '' });
+            setFormData({ title: '', customerId: '', serviceType: '', budget: '', deadline: '', assignedStaff: [] });
             alert("Project created successfully!");
         } catch (err) {
             const msg = err.response?.data?.message || "Failed to create project.";
             const tip = err.response?.data?.tip || "";
             alert(`${msg}\n${tip}`);
+        }
+    };
+
+    const handleUpdateStaffAssignment = async (e) => {
+        e.preventDefault();
+        try {
+            await api.put(`/projects/${selectedProject._id}`, {
+                assignedStaff: editAssignedStaff
+            });
+            fetchProjects();
+            setShowStaffModal(false);
+            setSelectedProject(null);
+            alert("Staff assignments updated successfully!");
+        } catch (err) {
+            alert("Failed to update staff assignments: " + (err.response?.data?.message || err.message));
         }
     };
 
@@ -131,7 +160,14 @@ const AdminProjects = () => {
                                 >
                                     <td className="p-6">
                                         <div className="font-black text-slate-900 text-lg uppercase tracking-tight">{prj.title}</div>
-                                        <div className="text-[10px] uppercase tracking-widest text-indigo-500 font-black">ID: {prj._id.slice(-8).toUpperCase()}</div>
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            <span className="text-[10px] uppercase tracking-widest text-indigo-500 font-black">ID: {prj._id.slice(-8).toUpperCase()}</span>
+                                            {prj.assignedStaff && prj.assignedStaff.length > 0 && (
+                                                <span className="text-[10px] text-slate-400 font-medium">
+                                                    • Assigned: {prj.assignedStaff.map(s => s.name).join(', ')}
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="p-6 text-slate-600 uppercase text-xs font-black">
                                        {prj.serviceType}
@@ -161,7 +197,15 @@ const AdminProjects = () => {
                                         >
                                             <MessageSquare className="w-4 h-4" />
                                         </button>
-                                        <button className="bg-slate-100 text-slate-600 p-2 rounded-xl hover:bg-indigo-600 hover:text-white transition">
+                                        <button 
+                                            onClick={() => {
+                                                setSelectedProject(prj);
+                                                setEditAssignedStaff(prj.assignedStaff.map(s => s._id || s));
+                                                setShowStaffModal(true);
+                                            }}
+                                            className="bg-slate-100 text-slate-600 p-2 rounded-xl hover:bg-indigo-600 hover:text-white transition"
+                                            title="Manage Assigned Staff"
+                                        >
                                             <Briefcase className="w-4 h-4" />
                                         </button>
                                     </td>
@@ -273,7 +317,91 @@ const AdminProjects = () => {
                                         <input type="date" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" />
                                     </div>
                                 </div>
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Assign Staff Members</label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                                        {staffList.map(staff => {
+                                            const checked = formData.assignedStaff.includes(staff._id);
+                                            return (
+                                                <label key={staff._id} className="flex items-center gap-3 cursor-pointer hover:bg-slate-100 p-2 rounded-lg transition-colors">
+                                                    <input 
+                                                        type="checkbox"
+                                                        checked={checked}
+                                                        onChange={() => {
+                                                            const newAssigned = checked 
+                                                                ? formData.assignedStaff.filter(id => id !== staff._id)
+                                                                : [...formData.assignedStaff, staff._id];
+                                                            setFormData({...formData, assignedStaff: newAssigned});
+                                                        }}
+                                                        className="w-4 h-4 rounded accent-indigo-600"
+                                                    />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-bold text-slate-800">{staff.name}</span>
+                                                        <span className="text-[9px] text-slate-400 font-bold uppercase">{staff.designation}</span>
+                                                    </div>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                                 <button type="submit" className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition">Commence Operations</button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Staff Assignment Modal */}
+            <AnimatePresence>
+                {showStaffModal && selectedProject && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
+                        >
+                            <button 
+                                onClick={() => {
+                                    setShowStaffModal(false);
+                                    setSelectedProject(null);
+                                }} 
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full"
+                            >
+                                <X className="w-6 h-6 text-slate-400" />
+                            </button>
+
+                            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-2">Assign Staff</h2>
+                            <p className="text-slate-500 font-medium mb-8 font-sans">Manage staff assigned to: <span className="font-black text-indigo-600 uppercase">{selectedProject.title}</span></p>
+
+                            <form onSubmit={handleUpdateStaffAssignment} className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Select Assigned Staff</label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                                        {staffList.map(staff => {
+                                            const checked = editAssignedStaff.includes(staff._id);
+                                            return (
+                                                <label key={staff._id} className="flex items-center gap-3 cursor-pointer hover:bg-slate-100 p-2 rounded-lg transition-colors">
+                                                    <input 
+                                                        type="checkbox"
+                                                        checked={checked}
+                                                        onChange={() => {
+                                                            const newAssigned = checked 
+                                                                ? editAssignedStaff.filter(id => id !== staff._id)
+                                                                : [...editAssignedStaff, staff._id];
+                                                            setEditAssignedStaff(newAssigned);
+                                                        }}
+                                                        className="w-4 h-4 rounded accent-indigo-600"
+                                                    />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-bold text-slate-800">{staff.name}</span>
+                                                        <span className="text-[9px] text-slate-400 font-bold uppercase">{staff.designation}</span>
+                                                    </div>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                                <button type="submit" className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition">Update Assignments</button>
                             </form>
                         </motion.div>
                     </div>
