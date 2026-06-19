@@ -5,7 +5,7 @@ import RealTimeChat from './RealTimeChat';
 import { db } from '../../services/firebase';
 import { 
     collection, query, where, onSnapshot, 
-    doc, updateDoc, serverTimestamp 
+    doc, updateDoc, serverTimestamp, addDoc 
 } from 'firebase/firestore';
 import { 
     MessageSquare, ShieldAlert, History, ShieldCheck, ChevronRight,
@@ -46,8 +46,15 @@ const SupportHub = () => {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             
-            // Manual sort locally to avoid Firestore index requirement
-            all.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+            // Manual sort locally to avoid Firestore index requirement, placing pending at the top
+            all.sort((a, b) => {
+                if (a.status === 'pending' && b.status !== 'pending') return -1;
+                if (a.status !== 'pending' && b.status === 'pending') return 1;
+                
+                const timeA = a.createdAt?.seconds || 0;
+                const timeB = b.createdAt?.seconds || 0;
+                return timeB - timeA;
+            });
 
             setActiveTickets(all.filter(t => t.status !== 'closed' && t.status !== 'rejected'));
             setClosedTickets(all.filter(t => t.status === 'closed'));
@@ -78,6 +85,40 @@ const SupportHub = () => {
             setView('entry');
         } catch (err) {
             console.error("Closure protocol failure:", err);
+        }
+    };
+
+    const handleAction = async (requestId, userId, userName, projectId, projectTitle, action) => {
+        try {
+            if (action === 'approve') {
+                // 1. Create a Chat Room
+                const newRoom = await addDoc(collection(db, "chatRooms"), {
+                    userId: userId || "",
+                    participants: [userId || "", 'admin'], // 'admin' is the high-level monitor ID
+                    title: `${userName || ""} - ${projectTitle || ""}`,
+                    status: 'active',
+                    createdAt: serverTimestamp(),
+                    lastMessage: "Channel established. Support is active.",
+                    lastMessageTime: serverTimestamp()
+                });
+
+                // 2. Update Request Status and link to Room
+                await updateDoc(doc(db, "chatRequests", requestId), {
+                    status: 'approved',
+                    chatId: newRoom.id,
+                    approvedAt: serverTimestamp()
+                });
+                alert("Channel Successfully Initialized.");
+            } else {
+                await updateDoc(doc(db, "chatRequests", requestId), {
+                    status: 'rejected',
+                    rejectedAt: serverTimestamp()
+                });
+                alert("Request Terminated.");
+            }
+        } catch (err) {
+            console.error("Administrative Auth failure", err);
+            alert("Action failed: " + err.message);
         }
     };
 
@@ -229,9 +270,26 @@ const SupportHub = () => {
                                         </button>
                                     </>
                                 ) : ticket.status === 'pending' ? (
-                                    <div className="flex-1 bg-amber-50 text-amber-600 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 border-2 border-amber-500 border-dashed animate-pulse">
-                                        <Clock className="w-5 h-5" /> Authorization Pending
-                                    </div>
+                                    user.role === 'admin' ? (
+                                        <div className="flex gap-4 w-full">
+                                            <button 
+                                                onClick={() => handleAction(ticket.id, ticket.userId, ticket.userName, ticket.projectId, ticket.projectTitle, 'reject')}
+                                                className="flex-1 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-slate-200"
+                                            >
+                                                <XCircle className="w-4 h-4" /> Terminate
+                                            </button>
+                                            <button 
+                                                onClick={() => handleAction(ticket.id, ticket.userId, ticket.userName, ticket.projectId, ticket.projectTitle, 'approve')}
+                                                className="flex-[2] bg-indigo-600 hover:bg-emerald-600 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-100"
+                                            >
+                                                <CheckCircle className="w-4 h-4" /> Authenticate
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex-1 bg-amber-50 text-amber-600 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 border-2 border-amber-500 border-dashed animate-pulse">
+                                            <Clock className="w-5 h-5" /> Authorization Pending
+                                        </div>
+                                    )
                                 ) : ticket.status === 'closed' && (
                                     <div className="flex-1 bg-slate-100 text-slate-400 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 border-2 border-slate-300 italic">
                                         <CheckCircle className="w-5 h-5" /> Resolved • {ticket.closedAt ? new Date(ticket.closedAt.toDate()).toLocaleDateString() : 'Historical'}
