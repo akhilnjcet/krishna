@@ -15,6 +15,7 @@ const FaceCapture = ({ onCapture }) => {
     const [status, setStatus] = useState('initializing'); // initializing, idle, scanning, success, error
     const [message, setMessage] = useState('Initializing Biometric Engine...');
     const [capturedFrames, setCapturedFrames] = useState([]);
+    const [finalDescriptor, setFinalDescriptor] = useState(null);
     const streamRef = useRef(null);
     const scanActiveRef = useRef(false);
 
@@ -93,7 +94,7 @@ const FaceCapture = ({ onCapture }) => {
                         setStatus('success');
                         setMessage('BIOMETRIC PROFILE GENERATED SUCCESSFULLY');
                         stopVideo();
-                        onCapture(averagedDescriptor);
+                        setFinalDescriptor(averagedDescriptor);
                         return;
                     }
                 } else {
@@ -113,9 +114,9 @@ const FaceCapture = ({ onCapture }) => {
 
 
     return (
-        <div className="w-full flex flex-col items-center gap-8 py-4">
+        <div className="w-full flex flex-col items-center gap-4 md:gap-8 py-2 md:py-4">
             
-            <div className="relative w-full aspect-square max-w-lg bg-slate-950 rounded-[3rem] overflow-hidden shadow-2xl border-4 border-indigo-500/30 group">
+            <div className="relative w-full aspect-video md:aspect-[4/3] max-w-md bg-slate-950 rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-4 border-indigo-500/30 group">
                 
                 {/* Visual Overlays */}
                 <AnimatePresence>
@@ -209,6 +210,16 @@ const FaceCapture = ({ onCapture }) => {
                             <CheckCircle2 className="w-4 h-4" /> Biometric Token Generated
                         </div>
                         <p className="text-slate-400 text-xs font-medium max-w-sm text-center italic">Proceed to link this biometric profile with the staff member's digital account.</p>
+                        <button 
+                            onClick={() => {
+                                if (finalDescriptor) {
+                                    onCapture(finalDescriptor);
+                                }
+                            }}
+                            className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-emerald-600/20 transition-all active:scale-95 flex items-center gap-2"
+                        >
+                            <ShieldCheck className="w-4 h-4" /> OK
+                        </button>
                     </div>
                 )}
 

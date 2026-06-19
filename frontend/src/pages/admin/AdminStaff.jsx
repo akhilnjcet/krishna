@@ -600,7 +600,7 @@ const AdminStaff = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl p-10 flex flex-col items-center"
+                            className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl p-6 md:p-10 flex flex-col items-center max-h-[95vh] overflow-y-auto"
                         >
                             <div className="w-20 h-20 bg-indigo-50 rounded-[2rem] flex items-center justify-center mb-6">
                                 <Camera className="w-10 h-10 text-indigo-600" />
