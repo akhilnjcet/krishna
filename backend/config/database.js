@@ -4,9 +4,9 @@ const connectDB = async () => {
     if (mongoose.connection.readyState === 1) return; // Already connected
     if (mongoose.connection.readyState === 2) {
         // Wait for current connection attempt
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             mongoose.connection.once('connected', resolve);
-            mongoose.connection.once('error', resolve); 
+            mongoose.connection.once('error', reject); 
         });
     }
 
