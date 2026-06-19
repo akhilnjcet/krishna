@@ -5,10 +5,12 @@ import {
     Settings, LogOut, Clock, Link, Check, X, Building, BarChart3, ShieldAlert
 } from 'lucide-react';
 import api from '../../services/api';
+import { getDirectImageUrl } from '../../utils/imageUtils';
 
 export default function LodgeAdminManager() {
   const [selectedLodge, setSelectedLodge] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeGalleryRoom, setActiveGalleryRoom] = useState(null);
 
   // Core Data
   const [rooms, setRooms] = useState([]);
@@ -20,10 +22,29 @@ export default function LodgeAdminManager() {
 
   // Forms & Modals
   const [showRoomForm, setShowRoomForm] = useState(false);
-  const [roomForm, setRoomForm] = useState({ type: 'Standard', price: '', rentCycle: 'monthly', maxGuests: '', description: '', interiorFiles: [], exteriorFiles: [] });
+  const [roomForm, setRoomForm] = useState({ 
+    type: 'Standard', 
+    price: '', 
+    rentCycle: 'monthly', 
+    maxGuests: '', 
+    description: '', 
+    interiorFiles: [], 
+    exteriorFiles: [],
+    interiorDriveUrls: '',
+    exteriorDriveUrls: '',
+    videoUrl: ''
+  });
 
   const [showLodgeEdit, setShowLodgeEdit] = useState(false);
-  const [lodgeForm, setLodgeForm] = useState({ name: '', description: '', address: '', lat: '', lng: '', images: [] });
+  const [lodgeForm, setLodgeForm] = useState({ 
+    name: '', 
+    description: '', 
+    address: '', 
+    lat: '', 
+    lng: '', 
+    images: [],
+    driveUrls: ''
+  });
 
   // Edit Room
   const [editingRoom, setEditingRoom] = useState(null);
@@ -147,18 +168,48 @@ export default function LodgeAdminManager() {
       formData.append('maxGuests', roomForm.maxGuests);
       formData.append('description', roomForm.description);
       formData.append('lodgeId', selectedLodge._id);
+      formData.append('videoUrl', roomForm.videoUrl || '');
       
       Array.from(roomForm.interiorFiles || []).forEach(f => formData.append('interiorPhotos', f));
       Array.from(roomForm.exteriorFiles || []).forEach(f => formData.append('exteriorPhotos', f));
 
-      if(editingRoom) {
+      if (roomForm.interiorDriveUrls) {
+          roomForm.interiorDriveUrls.split(',').forEach(u => {
+              if (u.trim()) formData.append('interiorDriveUrls', u.trim());
+          });
+      }
+      if (roomForm.exteriorDriveUrls) {
+          roomForm.exteriorDriveUrls.split(',').forEach(u => {
+              if (u.trim()) formData.append('exteriorDriveUrls', u.trim());
+          });
+      }
+
+      if (editingRoom) {
+          // Preserve existing photos
+          (editingRoom.interiorPhotos || []).forEach(img => {
+              formData.append('existingInterior', JSON.stringify(img));
+          });
+          (editingRoom.exteriorPhotos || []).forEach(img => {
+              formData.append('existingExterior', JSON.stringify(img));
+          });
           await api.put(`/rooms/${editingRoom._id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' }});
       } else {
           await api.post('/rooms', formData, { headers: { 'Content-Type': 'multipart/form-data' }});
       }
       setShowRoomForm(false); 
       setEditingRoom(null);
-      setRoomForm({ type: 'Standard', price: '', rentCycle: 'monthly', maxGuests: '', description: '', interiorFiles: [], exteriorFiles: [] });
+      setRoomForm({ 
+        type: 'Standard', 
+        price: '', 
+        rentCycle: 'monthly', 
+        maxGuests: '', 
+        description: '', 
+        interiorFiles: [], 
+        exteriorFiles: [],
+        interiorDriveUrls: '',
+        exteriorDriveUrls: '',
+        videoUrl: ''
+      });
       fetchRooms(selectedLodge._id);
     } catch(err) { 
         console.error('Room Save Error:', err);
@@ -174,6 +225,19 @@ export default function LodgeAdminManager() {
           formData.append('description', lodgeForm.description);
           formData.append('location', JSON.stringify({ address: lodgeForm.address, lat: lodgeForm.lat, lng: lodgeForm.lng }));
           Array.from(lodgeForm.images || []).forEach(f => formData.append('newImages', f));
+          
+          if (lodgeForm.driveUrls) {
+              lodgeForm.driveUrls.split(',').forEach(u => {
+                  if (u.trim()) formData.append('driveUrls', u.trim());
+              });
+          }
+
+          // Preserve existing images
+          if (selectedLodge && selectedLodge.images) {
+              selectedLodge.images.forEach(img => {
+                  formData.append('existingImages', JSON.stringify(img));
+              });
+          }
           
           await api.put(`/lodge/${selectedLodge._id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' }});
           alert('Building updated!');
@@ -464,12 +528,24 @@ export default function LodgeAdminManager() {
                         <input placeholder="Short catchy details..." required className="w-full border p-3 rounded-xl font-medium" value={roomForm.description} onChange={e => setRoomForm({...roomForm, description: e.target.value})} />
                     </div>
                     <div className="col-span-2">
-                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 mb-1 block">Interior Photos (Multiple)</label>
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 mb-1 block">Interior Photos (Multiple Files)</label>
                         <input type="file" multiple accept="image/*" className="w-full border p-2 rounded-xl bg-white" onChange={e => setRoomForm({...roomForm, interiorFiles: e.target.files})} />
                     </div>
                     <div className="col-span-2">
-                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 mb-1 block">Exterior Photos (Multiple)</label>
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 mb-1 block">Exterior Photos (Multiple Files)</label>
                         <input type="file" multiple accept="image/*" className="w-full border p-2 rounded-xl bg-white" onChange={e => setRoomForm({...roomForm, exteriorFiles: e.target.files})} />
+                    </div>
+                    <div className="col-span-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 mb-1 block">Interior G-Drive URL(s) (Comma Separated)</label>
+                        <input placeholder="https://drive.google.com/..." className="w-full border p-3 rounded-xl font-medium" value={roomForm.interiorDriveUrls || ''} onChange={e => setRoomForm({...roomForm, interiorDriveUrls: e.target.value})} />
+                    </div>
+                    <div className="col-span-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 mb-1 block">Exterior G-Drive URL(s) (Comma Separated)</label>
+                        <input placeholder="https://drive.google.com/..." className="w-full border p-3 rounded-xl font-medium" value={roomForm.exteriorDriveUrls || ''} onChange={e => setRoomForm({...roomForm, exteriorDriveUrls: e.target.value})} />
+                    </div>
+                    <div className="col-span-2 lg:col-span-4">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 mb-1 block">Video URL (YouTube, G-Drive, or Direct link)</label>
+                        <input placeholder="https://youtube.com/watch?v=... or direct mp4" className="w-full border p-3 rounded-xl font-medium" value={roomForm.videoUrl || ''} onChange={e => setRoomForm({...roomForm, videoUrl: e.target.value})} />
                     </div>
                     <button type="submit" className="bg-indigo-600 text-white p-4 rounded-2xl col-span-2 lg:col-span-4 font-black shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">
                         {editingRoom ? 'Commit Changes' : 'Publish Unit Live'}
@@ -483,6 +559,46 @@ export default function LodgeAdminManager() {
                        <div className="relative z-10 w-full">
                           <h4 className="font-black text-slate-900 text-xl tracking-tight uppercase">{r.type} <span className="text-[10px] text-slate-400 border border-slate-200 px-3 py-1 rounded-full font-bold ml-3 bg-slate-50 uppercase tracking-widest">Cap: {r.maxGuests}</span></h4>
                           <p className="text-sm text-slate-500 mt-2 line-clamp-1 font-medium">{r.description}</p>
+                          
+                          {/* Photos & Videos Display */}
+                          {(() => {
+                              const allPhotos = [...(r.interiorPhotos || []), ...(r.exteriorPhotos || [])];
+                              return (
+                                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                                      {allPhotos.slice(0, 3).map((img, idx) => (
+                                          <div key={idx} className="w-14 h-14 border rounded-xl overflow-hidden bg-slate-50 shadow-sm">
+                                              <img src={getDirectImageUrl(img.url)} className="w-full h-full object-cover animate-in fade-in" alt="Room thumbnail" />
+                                          </div>
+                                      ))}
+                                      {allPhotos.length > 3 && (
+                                          <button 
+                                              type="button"
+                                              onClick={() => setActiveGalleryRoom(r)}
+                                              className="w-14 h-14 border bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl flex flex-col items-center justify-center font-black active:scale-95 transition-all shadow-sm text-[10px] tracking-tighter uppercase"
+                                          >
+                                              <span>+{allPhotos.length - 3}</span>
+                                              <span>More</span>
+                                          </button>
+                                      )}
+                                      {allPhotos.length <= 3 && allPhotos.length > 0 && (
+                                          <button 
+                                              type="button"
+                                              onClick={() => setActiveGalleryRoom(r)}
+                                              className="w-14 h-14 border bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center font-black active:scale-95 transition-all shadow-sm text-[9px] uppercase tracking-widest"
+                                          >
+                                              View
+                                          </button>
+                                      )}
+                                      {r.videoUrl && (
+                                          <div className="w-8 h-8 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-red-500 shadow-sm relative ml-2" title="Room Tour Video Loaded">
+                                              <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping absolute"></span>
+                                              <span className="w-2 h-2 bg-red-600 rounded-full relative"></span>
+                                          </div>
+                                      )}
+                                  </div>
+                              );
+                          })()}
+
                           <div className="mt-6 flex items-center gap-4">
                              <p className="font-black text-indigo-600 text-2xl font-poppins tracking-tighter">₹{r.price.toLocaleString()}<span className="text-xs text-slate-400 font-bold uppercase ml-1 tracking-widest">/ {r.rentCycle}</span></p>
                              <div className="h-4 w-[1px] bg-slate-200 mx-2"></div>
@@ -490,7 +606,7 @@ export default function LodgeAdminManager() {
                                 <button onClick={() => setAssignModal({ show:true, roomId: r._id, userId: '' })} className="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-emerald-50 hover:text-emerald-600 transition-colors shadow-sm" title="Manually Assign Tenant">
                                     <UserPlus className="w-5 h-5"/>
                                 </button>
-                                <button onClick={() => { setEditingRoom(r); setRoomForm({ type: r.type, price: r.price, rentCycle: r.rentCycle || 'monthly', maxGuests: r.maxGuests, description: r.description, interiorFiles: [], exteriorFiles: [] }); setShowRoomForm(true); }} className="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-amber-50 hover:text-amber-600 transition-colors shadow-sm">
+                                <button onClick={() => { setEditingRoom(r); setRoomForm({ type: r.type, price: r.price, rentCycle: r.rentCycle || 'monthly', maxGuests: r.maxGuests, description: r.description, interiorFiles: [], exteriorFiles: [], interiorDriveUrls: '', exteriorDriveUrls: '', videoUrl: r.videoUrl || '' }); setShowRoomForm(true); }} className="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-amber-50 hover:text-amber-600 transition-colors shadow-sm">
                                     <Edit3 className="w-5 h-5"/>
                                 </button>
                                 <button onClick={() => deleteRoom(r._id)} className="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-colors shadow-sm">
@@ -692,6 +808,10 @@ export default function LodgeAdminManager() {
                          <input type="file" multiple accept="image/*" className="w-full border-2 border-slate-100 p-3 rounded-2xl bg-slate-50" onChange={e => setLodgeForm({...lodgeForm, images: e.target.files})} />
                          <p className="text-xs text-slate-400 mt-2 font-medium italic ml-2">These will be appended to any existing photos.</p>
                      </div>
+                     <div className="col-span-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Connect Drive Link(s) (Comma Separated)</label>
+                         <input placeholder="https://drive.google.com/..." className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold font-poppins text-indigo-600 placeholder-slate-300" value={lodgeForm.driveUrls || ''} onChange={e => setLodgeForm({...lodgeForm, driveUrls: e.target.value})} />
+                     </div>
                  </div>
                  
                  <button type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-[2.5rem] font-black shadow-xl shadow-indigo-600/30 hover:scale-[1.02] active:scale-95 transition-all">Synchronize Building Matrix</button>
@@ -768,6 +888,125 @@ export default function LodgeAdminManager() {
           </div>
       )}
 
+      {activeGalleryRoom && (
+          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex flex-col justify-center items-center p-4">
+              <div className="bg-white p-8 rounded-[3rem] w-full max-w-4xl relative shadow-2xl animate-in zoom-in duration-300 flex flex-col max-h-[90vh]">
+                  <h3 className="text-3xl font-black mb-2 tracking-tight uppercase">{activeGalleryRoom.type} Room Assets</h3>
+                  <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest italic mb-6">Viewing all linked photo & video assets</p>
+                  <button type="button" onClick={() => setActiveGalleryRoom(null)} className="absolute top-10 right-10 text-slate-400 bg-slate-50 p-3 rounded-full hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm border border-slate-100"><X className="w-5 h-5"/></button>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-y-auto pr-2 flex-grow">
+                      {/* Video Player Column */}
+                      {activeGalleryRoom.videoUrl && (
+                          <div className="lg:col-span-5 space-y-4">
+                              <h4 className="font-black text-sm uppercase text-slate-400 tracking-wider">Video Tour</h4>
+                              {renderVideoPlayer(activeGalleryRoom.videoUrl)}
+                          </div>
+                      )}
+                      
+                      {/* Photos Grid Column */}
+                      <div className={`${activeGalleryRoom.videoUrl ? 'lg:col-span-7' : 'lg:col-span-12'} space-y-4`}>
+                          <h4 className="font-black text-sm uppercase text-slate-400 tracking-wider">Photos</h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                              {[...(activeGalleryRoom.interiorPhotos || []), ...(activeGalleryRoom.exteriorPhotos || [])].map((img, idx) => (
+                                  <div key={idx} className="relative aspect-square border rounded-2xl overflow-hidden bg-slate-50 group">
+                                      <img src={getDirectImageUrl(img.url)} className="w-full h-full object-cover" alt="Gallery asset" />
+                                      <button 
+                                          onClick={async () => {
+                                              if (confirm('Delete this photo?')) {
+                                                  try {
+                                                      await api.delete(`/rooms/${activeGalleryRoom._id}/photo`, { data: { photoUrl: img.url } });
+                                                      alert('Photo deleted');
+                                                      const updatedRooms = await api.get(`/rooms/lodge/${selectedLodge._id}`);
+                                                      setRooms(updatedRooms.data);
+                                                      const updatedRoom = updatedRooms.data.find(rm => rm._id === activeGalleryRoom._id);
+                                                      if (updatedRoom) {
+                                                          setActiveGalleryRoom(updatedRoom);
+                                                      } else {
+                                                          setActiveGalleryRoom(null);
+                                                      }
+                                                  } catch (e) {
+                                                      alert('Failed to delete photo');
+                                                  }
+                                              }
+                                          }}
+                                          className="absolute inset-0 bg-red-600/80 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-xs font-black uppercase tracking-widest"
+                                      >
+                                          Delete
+                                      </button>
+                                  </div>
+                              ))}
+                              {[...(activeGalleryRoom.interiorPhotos || []), ...(activeGalleryRoom.exteriorPhotos || [])].length === 0 && (
+                                  <p className="text-slate-400 text-xs font-bold col-span-full py-10 text-center uppercase tracking-widest italic">No photos uploaded for this room.</p>
+                              )}
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
+
     </div>
-  )
+  );
 }
+
+const renderVideoPlayer = (url) => {
+    if (!url) return null;
+    
+    // YouTube
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        let videoId = '';
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        if (match && match[2].length === 11) {
+            videoId = match[2];
+        }
+        if (videoId) {
+            return (
+                <iframe 
+                    className="w-full aspect-video rounded-2xl border shadow-sm"
+                    src={`https://www.youtube.com/embed/${videoId}`}
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                ></iframe>
+            );
+        }
+    }
+    
+    // Google Drive
+    if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+        let fileId = '';
+        const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (fileIdMatch && fileIdMatch[1]) {
+            fileId = fileIdMatch[1];
+        } else {
+            const idParamMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (idParamMatch && idParamMatch[1]) {
+                fileId = idParamMatch[1];
+            }
+        }
+        if (fileId) {
+            return (
+                <iframe 
+                    className="w-full aspect-video rounded-2xl border shadow-sm"
+                    src={`https://drive.google.com/file/d/${fileId}/preview`}
+                    title="Google Drive video player"
+                    frameBorder="0"
+                    allow="autoplay"
+                    allowFullScreen
+                ></iframe>
+            );
+        }
+    }
+
+    // Default HTML5 video player
+    return (
+        <video 
+            src={url} 
+            controls 
+            className="w-full rounded-2xl border shadow-sm animate-in fade-in"
+        />
+    );
+};

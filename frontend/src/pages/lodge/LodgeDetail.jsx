@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Users, CheckCircle, Navigation } from 'lucide-react';
+import { MapPin, Users, CheckCircle, Navigation, X, Play } from 'lucide-react';
 import api from '../../services/api';
+import { getDirectImageUrl } from '../../utils/imageUtils';
 
 export default function LodgeDetail() {
   const { id } = useParams();
@@ -9,6 +10,7 @@ export default function LodgeDetail() {
   const [lodge, setLodge] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeGalleryRoom, setActiveGalleryRoom] = useState(null);
 
   useEffect(() => {
     if (id) fetchData();
@@ -48,12 +50,12 @@ export default function LodgeDetail() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10 h-[250px] sm:h-[350px] md:h-[400px] rounded-2xl overflow-hidden shadow-lg border border-gray-100">
          <div className="md:col-span-3 bg-gray-200 h-full">
-            {lodge.images?.[0] ? <img src={lodge.images[0]} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-blue-50 grid place-items-center text-blue-300 font-bold">No Image</div>}
+            {lodge.images?.[0] ? <img src={getDirectImageUrl(typeof lodge.images[0] === 'string' ? lodge.images[0] : (lodge.images[0].url || ''))} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-blue-50 grid place-items-center text-blue-300 font-bold">No Image</div>}
          </div>
          <div className="hidden md:flex flex-col gap-4 h-full">
              {[1,2].map(i => (
                 <div key={i} className="flex-1 bg-gray-200">
-                   {lodge.images?.[i] ? <img src={lodge.images[i]} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-blue-100/50" />}
+                   {lodge.images?.[i] ? <img src={getDirectImageUrl(typeof lodge.images[i] === 'string' ? lodge.images[i] : (lodge.images[i].url || ''))} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-blue-100/50" />}
                 </div>
              ))}
          </div>
@@ -77,23 +79,51 @@ export default function LodgeDetail() {
 
             <section>
                <h2 className="text-2xl font-bold text-gray-900 mb-6">Choose your room</h2>
-               {rooms.length === 0 ? <p className="text-gray-500">No rooms listed.</p> : (
-                  <div className="space-y-4">
-                     {rooms.map(room => (
-                        <div key={room._id} className="border hover:border-blue-300 rounded-xl p-6 flex flex-col md:flex-row justify-between bg-white shadow-sm transition-colors">
-                           <div className="flex-1">
-                              <h3 className="text-xl font-bold mb-2">{room.type}</h3>
-                              <div className="flex items-center text-gray-600 mb-3 text-sm"><Users className="w-4 h-4 mr-1" /> Max {room.maxGuests}</div>
-                              <p className="text-gray-600 text-sm">{room.description}</p>
-                           </div>
-                           <div className="mt-4 md:mt-0 md:text-right">
-                              <div className="mb-3"><span className="text-2xl font-extrabold text-blue-600">${room.price}</span><span className="text-gray-500"> / night</span></div>
-                              <button onClick={() => navigate(`/lodge/book/${room._id}`)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg">Reserve Dates</button>
-                           </div>
-                        </div>
-                     ))}
-                  </div>
-               )}
+                {rooms.length === 0 ? <p className="text-gray-500">No rooms listed.</p> : (
+                   <div className="space-y-4">
+                      {rooms.map(room => {
+                         const allPhotos = [...(room.interiorPhotos || []), ...(room.exteriorPhotos || [])];
+                         return (
+                            <div key={room._id} className="border hover:border-blue-300 rounded-xl p-6 flex flex-col md:flex-row justify-between bg-white shadow-sm transition-colors gap-6">
+                               <div className="flex-1 flex flex-col sm:flex-row gap-6">
+                                  {allPhotos.length > 0 && (
+                                     <div className="w-full sm:w-48 h-32 bg-slate-50 border rounded-xl overflow-hidden relative flex-shrink-0 group cursor-pointer" onClick={() => setActiveGalleryRoom(room)}>
+                                        <img src={getDirectImageUrl(allPhotos[0].url)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Room preview" />
+                                        {allPhotos.length > 1 && (
+                                           <span className="absolute bottom-2 right-2 bg-slate-900/70 text-white text-xs px-2 py-1 rounded font-bold">
+                                              +{allPhotos.length - 1} photos
+                                           </span>
+                                        )}
+                                        {room.videoUrl && (
+                                           <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] uppercase tracking-widest px-2 py-0.5 rounded font-black flex items-center gap-1 shadow">
+                                              <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
+                                              Video tour
+                                           </span>
+                                        )}
+                                     </div>
+                                  )}
+                                  <div>
+                                     <h3 className="text-xl font-bold mb-2 flex items-center gap-3">
+                                        {room.type}
+                                        {allPhotos.length > 0 && (
+                                           <button onClick={() => setActiveGalleryRoom(room)} className="text-xs text-blue-600 hover:text-blue-700 font-bold bg-blue-50 hover:bg-blue-100/85 px-2.5 py-1 rounded-lg transition-colors">
+                                              View Gallery
+                                           </button>
+                                        )}
+                                     </h3>
+                                     <div className="flex items-center text-gray-600 mb-3 text-sm"><Users className="w-4 h-4 mr-1" /> Max {room.maxGuests}</div>
+                                     <p className="text-gray-600 text-sm leading-relaxed">{room.description}</p>
+                                  </div>
+                               </div>
+                               <div className="mt-4 md:mt-0 md:text-right flex flex-col justify-between items-end flex-shrink-0">
+                                  <div className="mb-3"><span className="text-2xl font-extrabold text-blue-600">₹{room.price.toLocaleString()}</span><span className="text-gray-500"> / night</span></div>
+                                  <button onClick={() => navigate(`/lodge/book/${room._id}`)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg">Reserve Dates</button>
+                               </div>
+                            </div>
+                         );
+                      })}
+                   </div>
+                )}
             </section>
          </div>
 
@@ -113,6 +143,102 @@ export default function LodgeDetail() {
             </div>
          </div>
       </div>
+
+      {activeGalleryRoom && (
+         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex flex-col justify-center items-center p-4">
+             <div className="bg-white p-8 rounded-[2rem] w-full max-w-4xl relative shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
+                 <h3 className="text-3xl font-black mb-2 tracking-tight uppercase">{activeGalleryRoom.type} Room Assets</h3>
+                 <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest italic mb-6">Viewing all linked photo & video assets</p>
+                 <button type="button" onClick={() => setActiveGalleryRoom(null)} className="absolute top-10 right-10 text-slate-400 bg-slate-50 p-3 rounded-full hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm border border-slate-100"><X className="w-5 h-5"/></button>
+                 
+                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-y-auto pr-2 flex-grow">
+                     {/* Video Player Column */}
+                     {activeGalleryRoom.videoUrl && (
+                         <div className="lg:col-span-5 space-y-4">
+                             <h4 className="font-black text-sm uppercase text-slate-400 tracking-wider">Video Tour</h4>
+                             {renderVideoPlayer(activeGalleryRoom.videoUrl)}
+                         </div>
+                     )}
+                     
+                     {/* Photos Grid Column */}
+                     <div className={`${activeGalleryRoom.videoUrl ? 'lg:col-span-7' : 'lg:col-span-12'} space-y-4`}>
+                         <h4 className="font-black text-sm uppercase text-slate-400 tracking-wider">Photos</h4>
+                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                             {[...(activeGalleryRoom.interiorPhotos || []), ...(activeGalleryRoom.exteriorPhotos || [])].map((img, idx) => (
+                                 <div key={idx} className="relative aspect-square border rounded-2xl overflow-hidden bg-slate-50">
+                                     <img src={getDirectImageUrl(img.url)} className="w-full h-full object-cover" alt="Gallery asset" />
+                                 </div>
+                             ))}
+                             {[...(activeGalleryRoom.interiorPhotos || []), ...(activeGalleryRoom.exteriorPhotos || [])].length === 0 && (
+                                 <p className="text-slate-400 text-xs font-bold col-span-full py-10 text-center uppercase tracking-widest italic">No photos uploaded for this room.</p>
+                             )}
+                         </div>
+                     </div>
+                 </div>
+             </div>
+         </div>
+      )}
     </div>
   );
 }
+
+const renderVideoPlayer = (url) => {
+    if (!url) return null;
+    
+    // YouTube
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        let videoId = '';
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        if (match && match[2].length === 11) {
+            videoId = match[2];
+        }
+        if (videoId) {
+            return (
+                <iframe 
+                    className="w-full aspect-video rounded-2xl border shadow-sm"
+                    src={`https://www.youtube.com/embed/${videoId}`}
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                ></iframe>
+            );
+        }
+    }
+    
+    // Google Drive
+    if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+        let fileId = '';
+        const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (fileIdMatch && fileIdMatch[1]) {
+            fileId = fileIdMatch[1];
+        } else {
+            const idParamMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (idParamMatch && idParamMatch[1]) {
+                fileId = idParamMatch[1];
+            }
+        }
+        if (fileId) {
+            return (
+                <iframe 
+                    className="w-full aspect-video rounded-2xl border shadow-sm"
+                    src={`https://drive.google.com/file/d/${fileId}/preview`}
+                    title="Google Drive video player"
+                    frameBorder="0"
+                    allow="autoplay"
+                    allowFullScreen
+                ></iframe>
+            );
+        }
+    }
+
+    // Default HTML5 video player
+    return (
+        <video 
+            src={url} 
+            controls 
+            className="w-full rounded-2xl border shadow-sm animate-in fade-in"
+        />
+    );
+};

@@ -3,6 +3,8 @@ import { useLocation, Link } from 'react-router-dom';
 import { MapPin, Star } from 'lucide-react';
 import api from '../../services/api';
 
+import { getDirectImageUrl } from '../../utils/imageUtils';
+
 export default function LodgeSearch() {
   const { search } = useLocation();
   const queryParams = new URLSearchParams(search);
@@ -88,7 +90,7 @@ export default function LodgeSearch() {
                 <div key={lodge._id} className="bg-white border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col sm:flex-row">
                   <div className="sm:w-72 h-48 sm:h-auto bg-gray-200 relative">
                     {lodge.images && lodge.images[0] ? (
-                       <img src={lodge.images[0]} alt={lodge.name} className="w-full h-full object-cover" />
+                       <img src={getDirectImageUrl(typeof lodge.images[0] === 'string' ? lodge.images[0] : (lodge.images[0].url || ''))} alt={lodge.name} className="w-full h-full object-cover" />
                     ) : (
                        <div className="w-full h-full flex items-center justify-center"><span className="text-gray-400">No Image</span></div>
                     )}

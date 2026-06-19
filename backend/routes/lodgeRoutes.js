@@ -77,6 +77,16 @@ router.put('/:id', protect, admin, upload.array('newImages', 5), async (req, res
         }));
         images = [...images, ...newImages];
     }
+
+    // Handle Google Drive links
+    if (req.body.driveUrls) {
+        const driveUrls = Array.isArray(req.body.driveUrls) ? req.body.driveUrls : [req.body.driveUrls];
+        driveUrls.forEach(url => {
+            if (url && url.trim()) {
+                images.push({ url: url.trim(), publicId: 'drive_link' });
+            }
+        });
+    }
     
     updateData.images = images;
 

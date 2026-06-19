@@ -10,6 +10,7 @@ const roomSchema = new mongoose.Schema({
   amenities: [{ type: String }],
   interiorPhotos: [{ url: String, publicId: String }],
   exteriorPhotos: [{ url: String, publicId: String }],
+  videoUrl: { type: String },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 

@@ -58,6 +58,20 @@ router.put('/:id', protect, admin, upload.fields(roomUploadFields), async (req, 
             exteriorPhotos = [...exteriorPhotos, ...newExt];
         }
 
+        // Parse Google Drive Links
+        if (req.body.interiorDriveUrls) {
+            const urls = Array.isArray(req.body.interiorDriveUrls) ? req.body.interiorDriveUrls : [req.body.interiorDriveUrls];
+            urls.forEach(url => {
+                if (url && url.trim()) interiorPhotos.push({ url: url.trim(), publicId: 'drive_link' });
+            });
+        }
+        if (req.body.exteriorDriveUrls) {
+            const urls = Array.isArray(req.body.exteriorDriveUrls) ? req.body.exteriorDriveUrls : [req.body.exteriorDriveUrls];
+            urls.forEach(url => {
+                if (url && url.trim()) exteriorPhotos.push({ url: url.trim(), publicId: 'drive_link' });
+            });
+        }
+
         updateData.interiorPhotos = interiorPhotos;
         updateData.exteriorPhotos = exteriorPhotos;
 
@@ -72,7 +86,7 @@ router.put('/:id', protect, admin, upload.fields(roomUploadFields), async (req, 
 router.post('/', protect, admin, upload.fields(roomUploadFields), async (req, res) => {
   console.log('[DEBUG] Incoming Room Data:', req.body);
   try {
-    const { lodgeId, type, price, rentCycle, maxGuests, description, amenities } = req.body;
+    const { lodgeId, type, price, rentCycle, maxGuests, description, amenities, videoUrl } = req.body;
 
     // 1. Validate required fields
     if (!lodgeId || !type || !price || !maxGuests) {
@@ -105,6 +119,20 @@ router.post('/', protect, admin, upload.fields(roomUploadFields), async (req, re
         }
     }
 
+    // Parse Google Drive Links
+    if (req.body.interiorDriveUrls) {
+        const urls = Array.isArray(req.body.interiorDriveUrls) ? req.body.interiorDriveUrls : [req.body.interiorDriveUrls];
+        urls.forEach(url => {
+            if (url && url.trim()) interiorPhotos.push({ url: url.trim(), publicId: 'drive_link' });
+        });
+    }
+    if (req.body.exteriorDriveUrls) {
+        const urls = Array.isArray(req.body.exteriorDriveUrls) ? req.body.exteriorDriveUrls : [req.body.exteriorDriveUrls];
+        urls.forEach(url => {
+            if (url && url.trim()) exteriorPhotos.push({ url: url.trim(), publicId: 'drive_link' });
+        });
+    }
+
     // 3. Create room
     const room = await Room.create({
       lodgeId, 
@@ -115,7 +143,8 @@ router.post('/', protect, admin, upload.fields(roomUploadFields), async (req, re
       description: description || '', 
       amenities: amenities || [],
       interiorPhotos,
-      exteriorPhotos
+      exteriorPhotos,
+      videoUrl: videoUrl || ''
     });
 
     console.log('[SUCCESS] Room Saved:', room._id);
@@ -127,6 +156,22 @@ router.post('/', protect, admin, upload.fields(roomUploadFields), async (req, re
       error: err.message 
     });
   }
+});
+router.delete('/:id/photo', protect, admin, async (req, res) => {
+    try {
+        const { photoUrl } = req.body;
+        const room = await Room.findById(req.params.id);
+        if (!room) return res.status(404).json({ message: 'Room not found' });
+
+        room.interiorPhotos = room.interiorPhotos.filter(p => p.url !== photoUrl);
+        room.exteriorPhotos = room.exteriorPhotos.filter(p => p.url !== photoUrl);
+
+        await room.save();
+        res.json(room);
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error' });
+    }
 });
 
 module.exports = router;

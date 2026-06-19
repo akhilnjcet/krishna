@@ -366,7 +366,7 @@ const Home = () => {
                                     {settings.about_content}
                                 </motion.p>
                                 <motion.div variants={fadeUp} custom={3} className="space-y-5">
-                                    {['ISI Certified Steel Works', 'On-Site Mobile Fabrication Units', '25+ Year Track Record of Delivery', 'Transparent, Competitive Pricing'].map((item, i) => (
+                                    {['Experienced Steel Works', 'On-Site Mobile Fabrication Units', '25+ Year Track Record of Delivery', 'Transparent, Competitive Pricing'].map((item, i) => (
                                         <div key={i} className="flex items-center gap-4">
                                             <div className="w-6 h-6 rounded-full bg-blue-50 border border-blue-200/50 flex items-center justify-center flex-shrink-0">
                                                 <CheckCircle className="w-3.5 h-3.5 text-blue-600" />
@@ -549,7 +549,7 @@ const Home = () => {
                                     {[
                                         { text: '⭐ 4.8+ Rated Company', desc: 'Consistently high performance and client feedback ratings.' },
                                         { text: '🏆 Trusted Industrial Service Provider', desc: 'Serving Kerala\'s heavy industries with excellence.' },
-                                        { text: '✅ Professional Team', desc: 'ISI Certified engineers and expert AWS/ASME standard welders.' },
+                                        { text: '✅ Experienced Team', desc: 'Experienced engineers and expert AWS/ASME standard welders.' },
                                         { text: '✅ Quality Assured Work', desc: 'Strict inspection protocols on raw materials and final weld joints.' },
                                         { text: '✅ Timely Project Delivery', desc: 'Rigorous project management to guarantee on-time handover.' },
                                         { text: '✅ Customer Satisfaction Focused', desc: 'Dedicated support lines and transparent quoting.' },
@@ -572,8 +572,8 @@ const Home = () => {
                             >
                                 {[
                                     { title: '⭐ 4.8+ Google Rating', desc: '4.8+ Rated on Google Business Profile', sub: 'Verified Client Reviews', icon: <Star className="w-8 h-8 text-yellow-500 fill-current" />, color: 'from-yellow-50/50 to-white', border: 'border-yellow-100', shadow: 'shadow-yellow-100/30' },
-                                    { title: '🏗️ 500+ Projects Completed', desc: 'Successfully executed fabrication and erection projects.', sub: 'Industrial & Residential', icon: <Layers className="w-8 h-8 text-blue-600" />, color: 'from-blue-50/50 to-white', border: 'border-blue-100', shadow: 'shadow-blue-100/30' },
-                                    { title: '👷 100+ Happy Clients', desc: 'Active customers across industrial factories & residential sectors.', sub: '100% Retained Service contracts', icon: <Users className="w-8 h-8 text-cyan-600" />, color: 'from-cyan-50/50 to-white', border: 'border-cyan-100', shadow: 'shadow-cyan-100/30' },
+                                    { title: `🏗️ ${settings.stat_projects || '22,500+'} Projects Completed`, desc: 'Successfully executed fabrication and erection projects.', sub: 'Industrial & Residential', icon: <Layers className="w-8 h-8 text-blue-600" />, color: 'from-blue-50/50 to-white', border: 'border-blue-100', shadow: 'shadow-blue-100/30' },
+                                    { title: `👷 ${settings.stat_clients || '5,000+'} Happy Clients`, desc: 'Active customers across industrial factories & residential sectors.', sub: '100% Retained Service contracts', icon: <Users className="w-8 h-8 text-cyan-600" />, color: 'from-cyan-50/50 to-white', border: 'border-cyan-100', shadow: 'shadow-cyan-100/30' },
                                     { title: '📍 Services Across Kerala', desc: 'Statewide logistics and on-site mobile fabrication units.', sub: 'All 14 Districts Covered', icon: <MapPin className="w-8 h-8 text-emerald-600" />, color: 'from-emerald-50/50 to-white', border: 'border-emerald-100', shadow: 'shadow-emerald-100/30' },
                                     { title: '⏱️ On-Time Delivery Commitment', desc: 'Rigid adherence to contract timelines and scheduled handovers.', sub: 'Zero Project Overruns', icon: <Clock className="w-8 h-8 text-indigo-600" />, color: 'from-indigo-50/50 to-white', border: 'border-indigo-100', shadow: 'shadow-indigo-100/30' },
                                 ].map((card, idx) => (
