@@ -12,13 +12,11 @@ export default function LodgeCustomerDashboard() {
     const [bookings, setBookings] = useState([]);
     const [wishlist, setWishlist] = useState([]);
     const [payments, setPayments] = useState([]);
-    const [myReviews, setMyReviews] = useState([]);
     const [myComplaints, setMyComplaints] = useState([]);
     const [profile, setProfile] = useState({ name: '', email: '', phone: '', password: '' });
     const [loading, setLoading] = useState(true);
 
     // Modals
-    const [reviewModal, setReviewModal] = useState({ show: false, bookingId: null, lodgeId: null, rating: 5, comment: '' });
     const [extendModal, setExtendModal] = useState({ show: false, booking: null, newDate: '', extraAmount: 0 });
     const [complaintModal, setComplaintModal] = useState({ show: false, bookingId: '', title: '', description: '' });
 
@@ -29,18 +27,16 @@ export default function LodgeCustomerDashboard() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [bookRes, wishRes, payRes, userRes, reviewRes, compRes] = await Promise.all([
+            const [bookRes, wishRes, payRes, userRes, compRes] = await Promise.all([
                 api.get('/bookings/my-bookings'),
                 api.get('/lodge-extras/wishlist').catch(() => ({ data: [] })),
                 api.get('/payments/my-payments').catch(() => ({ data: [] })),
                 api.get('/auth/me'),
-                api.get('/lodge-extras/reviews/my-reviews').catch(() => ({ data: [] })),
                 api.get('/complaints/my-complaints').catch(() => ({ data: [] }))
             ]);
             setBookings(bookRes.data);
             setWishlist(wishRes.data || []);
             setPayments(payRes.data || []);
-            setMyReviews(reviewRes.data || []);
             setMyComplaints(compRes.data || []);
             setProfile({ ...userRes.data, password: '' });
         } catch (err) {
@@ -69,19 +65,7 @@ export default function LodgeCustomerDashboard() {
         } catch (err) { console.error(err); }
     };
 
-    const submitReview = async (e) => {
-        e.preventDefault();
-        try {
-            await api.post('/lodge-extras/reviews', {
-                lodgeId: reviewModal.lodgeId,
-                bookingId: reviewModal.bookingId,
-                rating: reviewModal.rating,
-                comment: reviewModal.comment
-            });
-            alert('Thank you for your feedback!');
-            setReviewModal({ show: false, bookingId: null, lodgeId: null, rating: 5, comment: '' });
-        } catch (err) { alert('Failed to submit review'); }
-    };
+
 
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
@@ -164,7 +148,6 @@ export default function LodgeCustomerDashboard() {
         { id: 'bookings', label: 'My Bookings', icon: LayoutDashboard },
         { id: 'wishlist', label: 'Wishlist', icon: Heart },
         { id: 'payments', label: 'Payment History', icon: CreditCard },
-        { id: 'reviews', label: 'My Reviews', icon: Star },
         { id: 'maintenance', label: 'Maintenance Support', icon: AlertCircle },
         { id: 'profile', label: 'Profile Management', icon: User },
     ];
@@ -283,7 +266,7 @@ export default function LodgeCustomerDashboard() {
                                         </div>
 
                                         <div className="flex flex-col justify-center gap-3 lg:w-56 shrink-0">
-                                            {b.status === 'active' ? (
+                                            {b.status === 'active' && (
                                                 <>
                                                     {b.extensionRequest?.status === 'pending' ? (
                                                         <div className="w-full bg-amber-50 text-amber-600 py-3.5 rounded-2xl font-black text-sm border border-amber-100 flex items-center justify-center">
@@ -298,14 +281,8 @@ export default function LodgeCustomerDashboard() {
                                                         <Trash2 className="w-4 h-4 mr-2" /> Cancel Request
                                                     </button>
                                                 </>
-                                            ) : b.status === 'completed' && (
-                                                <button 
-                                                    onClick={() => setReviewModal({ show: true, bookingId: b._id, lodgeId: b.lodgeId?._id, rating: 5, comment: '' })}
-                                                    className="w-full bg-indigo-100 text-indigo-700 py-3.5 rounded-2xl font-black text-sm hover:bg-indigo-200 transition-all flex items-center justify-center"
-                                                >
-                                                    <Star className="w-4 h-4 mr-2" /> Review Experience
-                                                </button>
                                             )}
+
                                             <button onClick={() => downloadInvoice(b._id)} className="w-full bg-slate-100 text-slate-700 py-3.5 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all flex items-center justify-center border border-slate-200">
                                                 <Download className="w-4 h-4 mr-2" /> Get Invoice
                                             </button>
@@ -456,35 +433,7 @@ export default function LodgeCustomerDashboard() {
                     </div>
                 )}
 
-                {/* Reviews View */}
-                {activeTab === 'reviews' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">My Reviews</h1>
-                        <p className="text-slate-500 font-medium mb-10">Feedback you've provided for your past residencies.</p>
-                        
-                        <div className="grid md:grid-cols-2 gap-6">
-                            {myReviews.map(r => (
-                                <div key={r._id} className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <h3 className="font-black text-xl text-slate-900">{r.lodgeId?.name || 'Krishna Building'}</h3>
-                                        <div className="flex gap-0.5">
-                                            {[1,2,3,4,5].map(s => <Star key={s} className={`w-4 h-4 ${r.rating >= s ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />)}
-                                        </div>
-                                    </div>
-                                    <p className="text-slate-600 font-medium italic">"{r.comment}"</p>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-6">{new Date(r.createdAt).toLocaleDateString()}</p>
-                                </div>
-                            ))}
-                            {myReviews.length === 0 && (
-                                <div className="col-span-2 text-center py-20 bg-slate-50 border border-slate-100 rounded-[2rem]">
-                                    <Star className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                                    <h3 className="text-xl font-bold text-slate-900 mb-2">No Reviews Yet</h3>
-                                    <p className="text-slate-500">You haven't left any feedback for your completed stays.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
+
 
                 {/* Maintenance View */}
                 {activeTab === 'maintenance' && (
@@ -524,35 +473,7 @@ export default function LodgeCustomerDashboard() {
                 )}
             </div>
 
-            {/* Review Modal */}
-            {reviewModal.show && (
-                <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4">
-                    <form onSubmit={submitReview} className="bg-white rounded-[3rem] p-10 w-full max-w-xl shadow-2xl relative animate-in zoom-in duration-300">
-                        <button type="button" onClick={() => setReviewModal({ show: false, bookingId: null, lodgeId: null, rating: 5, comment: '' })} className="absolute top-8 right-8 text-slate-400 hover:text-red-500 p-2 bg-slate-50 rounded-full transition-all">
-                            <X className="w-6 h-6" />
-                        </button>
 
-                        <div className="text-center mb-10">
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Review Residency Stay</h3>
-                            <p className="text-slate-500 font-medium mt-2 italic">How was your environment in Krishna Building?</p>
-                        </div>
-
-                        <div className="flex justify-center gap-2 mb-10">
-                            {[1,2,3,4,5].map(star => (
-                                <button key={star} type="button" onClick={() => setReviewModal({...reviewModal, rating: star})} className="p-2 transition-all hover:scale-110">
-                                    <Star className={`w-12 h-12 ${reviewModal.rating >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200'}`} />
-                                </button>
-                            ))}
-                        </div>
-
-                        <textarea required placeholder="Describe your stay experience..." rows="5" className="w-full bg-slate-50 border border-slate-200 p-6 rounded-3xl font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 mb-8 transition-all" value={reviewModal.comment} onChange={e => setReviewModal({...reviewModal, comment: e.target.value})} />
-                        
-                        <button type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black text-sm shadow-xl shadow-indigo-600/30 hover:bg-indigo-700 transition-all">
-                            Submit Engineering Review
-                        </button>
-                    </form>
-                </div>
-            )}
 
             {/* Extension Modal */}
             {extendModal.show && (

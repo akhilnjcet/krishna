@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
     Phone, MessageCircle, MapPin, CheckCircle,
     ArrowRight, Wrench, Shield, Zap, Settings, Award, Layers, Users,
-    ChevronLeft, ChevronRight, Quote, Star
+    ChevronLeft, ChevronRight, Quote, Star, Clock
 } from 'lucide-react';
 import FloatingContact from '../components/FloatingContact';
 import api from '../services/api';
@@ -107,19 +107,9 @@ const AnimatedCounter = ({ target, suffix }) => {
     );
 };
 
-/* ─── Testimonials data ──────────────────────────────────────────── */
-const TESTIMONIALS = [
-    { name: 'Rajeev Nair', role: 'Warehouse Owner, Kochi', rating: 5, text: 'Exceptional service! They completed our entire structural roofing for the new warehouse ahead of schedule. Highly professional team.' },
-    { name: 'Mathew Thomas', role: 'Residential Client, Thrissur', rating: 5, text: 'Krishna Engineering replaced my old gates with stunning modern designs. The finish is extremely durable and surprisingly budget-friendly.' },
-    { name: 'Siddharth Menon', role: 'Factory Manager, Ernakulam', rating: 5, text: 'Their on-site welding team saved us from a major production halt. Very fast response, extremely high-quality repair work.' },
-    { name: 'Anil Kumar', role: 'Contractor, Palakkad', rating: 5, text: 'Great experience. Affordable prices and very transparent quoting process. Will highly recommend for any fabrication work in Kerala.' },
-    { name: 'Gokul Krishna', role: 'Showroom Owner, Kozhikode', rating: 5, text: 'Best welding services in Ernakulam. The team is very skilled and the owner himself ensures quality. Custom racks look excellent.' },
-];
-
 /* ─── Main Component ─────────────────────────────────────────────── */
 const Home = () => {
     const [projects, setProjects] = useState([]);
-    const [testimonialIdx, setTestimonialIdx] = useState(0);
     const [activeProjectIdx, setActiveProjectIdx] = useState(0);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const heroRef = useRef(null);
@@ -169,11 +159,7 @@ const Home = () => {
         fetchAll();
     }, []);
 
-    /* Auto-advance testimonials */
-    useEffect(() => {
-        const t = setInterval(() => setTestimonialIdx(i => (i + 1) % TESTIMONIALS.length), 5000);
-        return () => clearInterval(t);
-    }, []);
+
 
     const defaultProjects = [
         { images: [{ url: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=700&h=500&fit=crop' }], title: 'Industrial Steel Structure' },
@@ -538,67 +524,78 @@ const Home = () => {
                 </section>
 
                 {/* ════════════════════════════════════════
-                    5. TESTIMONIALS — animated auto-slide  
+                    5. PROFESSIONAL TRUST & REPUTATION SECTION
                     ════════════════════════════════════════ */}
                 <section className="py-36 bg-white relative overflow-hidden">
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-50 rounded-full blur-[100px] pointer-events-none opacity-60" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
-                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-20">
-                            <motion.p variants={fadeUp} custom={0} className="text-blue-500 font-black uppercase tracking-[0.4em] text-xs mb-4">Testimonials</motion.p>
-                            <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 tracking-tighter mb-4">Trusted by Kerala</motion.h2>
-                            <motion.p variants={fadeUp} custom={2} className="text-slate-500 font-bold">⭐ 4.8/5 based on Google Reviews</motion.p>
+                        {/* Header */}
+                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-24">
+                            <motion.p variants={fadeUp} custom={0} className="text-blue-500 font-black uppercase tracking-[0.4em] text-xs mb-4">Reputation & Trust</motion.p>
+                            <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 tracking-tighter mb-4">Uncompromising Quality & Standards</motion.h2>
+                            <motion.p variants={fadeUp} custom={2} className="text-slate-500 text-lg max-w-2xl mx-auto font-medium">
+                                Trusted by industrial and residential clients across Kerala. Certified expertise and a proven track record.
+                            </motion.p>
                         </motion.div>
 
-                        {/* Testimonial Carousel */}
-                        <div className="max-w-4xl mx-auto">
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={testimonialIdx}
-                                    initial={{ opacity: 0, y: 30, scale: 0.97 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: -30, scale: 0.97 }}
-                                    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                                    className="bg-white p-12 md:p-16 rounded-[3rem] text-slate-800 relative shadow-2xl shadow-slate-100/70 border border-slate-100"
-                                >
-                                    <Quote className="w-16 h-16 text-blue-500/5 absolute top-8 left-8" />
-                                    <div className="flex text-yellow-500 mb-8 gap-1">
-                                        {[...Array(TESTIMONIALS[testimonialIdx].rating)].map((_, j) => (
-                                            <Star key={j} className="w-5 h-5 fill-current" />
-                                        ))}
-                                    </div>
-                                    <p className="text-2xl md:text-3xl font-semibold leading-relaxed text-slate-700 mb-12 italic">
-                                        "{TESTIMONIALS[testimonialIdx].text}"
-                                    </p>
-                                    <div className="flex items-center gap-5">
-                                        <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200/50 flex items-center justify-center text-2xl font-black text-blue-600 shadow-sm">
-                                            {TESTIMONIALS[testimonialIdx].name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <p className="font-black text-lg text-slate-900">{TESTIMONIALS[testimonialIdx].name}</p>
-                                            <p className="text-blue-600 text-sm font-bold">{TESTIMONIALS[testimonialIdx].role}</p>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            </AnimatePresence>
-
-                            {/* Controls */}
-                            <div className="flex items-center justify-center gap-6 mt-10">
-                                <button onClick={() => setTestimonialIdx(i => (i - 1 + TESTIMONIALS.length) % TESTIMONIALS.length)}
-                                    className="w-12 h-12 rounded-2xl border border-slate-200 flex items-center justify-center text-slate-500 hover:border-blue-500 hover:text-blue-600 transition-all hover:-translate-x-1">
-                                    <ChevronLeft className="w-5 h-5" />
-                                </button>
-                                <div className="flex gap-2">
-                                    {TESTIMONIALS.map((_, i) => (
-                                        <button key={i} onClick={() => setTestimonialIdx(i)}
-                                            className={`h-2 rounded-full transition-all duration-500 ${i === testimonialIdx ? 'bg-blue-600 w-8' : 'bg-slate-300 w-2'}`}
-                                        />
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+                            {/* Left Side: Core Trust Badges */}
+                            <motion.div 
+                                initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}
+                                className="lg:col-span-5 bg-gradient-to-br from-slate-50 to-blue-50/20 border border-slate-100 rounded-[2.5rem] p-10 shadow-xl shadow-slate-100/50"
+                            >
+                                <h3 className="text-2xl font-black text-slate-900 mb-8 tracking-tight border-l-4 border-blue-600 pl-4">Our Quality Guarantees</h3>
+                                <div className="space-y-6">
+                                    {[
+                                        { text: '⭐ 4.8+ Rated Company', desc: 'Consistently high performance and client feedback ratings.' },
+                                        { text: '🏆 Trusted Industrial Service Provider', desc: 'Serving Kerala\'s heavy industries with excellence.' },
+                                        { text: '✅ Professional Team', desc: 'ISI Certified engineers and expert AWS/ASME standard welders.' },
+                                        { text: '✅ Quality Assured Work', desc: 'Strict inspection protocols on raw materials and final weld joints.' },
+                                        { text: '✅ Timely Project Delivery', desc: 'Rigorous project management to guarantee on-time handover.' },
+                                        { text: '✅ Customer Satisfaction Focused', desc: 'Dedicated support lines and transparent quoting.' },
+                                    ].map((badge, idx) => (
+                                        <motion.div key={idx} variants={fadeUp} className="flex gap-4 items-start">
+                                            <div className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0" />
+                                            <div>
+                                                <h4 className="font-bold text-slate-900 text-sm">{badge.text}</h4>
+                                                <p className="text-xs text-slate-500 font-medium mt-0.5">{badge.desc}</p>
+                                            </div>
+                                        </motion.div>
                                     ))}
                                 </div>
-                                <button onClick={() => setTestimonialIdx(i => (i + 1) % TESTIMONIALS.length)}
-                                    className="w-12 h-12 rounded-2xl border border-slate-200 flex items-center justify-center text-slate-500 hover:border-blue-500 hover:text-blue-600 transition-all hover:translate-x-1">
-                                    <ChevronRight className="w-5 h-5" />
-                                </button>
-                            </div>
+                            </motion.div>
+
+                            {/* Right Side: Trust & Stats Grid */}
+                            <motion.div 
+                                initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}
+                                className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6"
+                            >
+                                {[
+                                    { title: '⭐ 4.8+ Google Rating', desc: '4.8+ Rated on Google Business Profile', sub: 'Verified Client Reviews', icon: <Star className="w-8 h-8 text-yellow-500 fill-current" />, color: 'from-yellow-50/50 to-white', border: 'border-yellow-100', shadow: 'shadow-yellow-100/30' },
+                                    { title: '🏗️ 500+ Projects Completed', desc: 'Successfully executed fabrication and erection projects.', sub: 'Industrial & Residential', icon: <Layers className="w-8 h-8 text-blue-600" />, color: 'from-blue-50/50 to-white', border: 'border-blue-100', shadow: 'shadow-blue-100/30' },
+                                    { title: '👷 100+ Happy Clients', desc: 'Active customers across industrial factories & residential sectors.', sub: '100% Retained Service contracts', icon: <Users className="w-8 h-8 text-cyan-600" />, color: 'from-cyan-50/50 to-white', border: 'border-cyan-100', shadow: 'shadow-cyan-100/30' },
+                                    { title: '📍 Services Across Kerala', desc: 'Statewide logistics and on-site mobile fabrication units.', sub: 'All 14 Districts Covered', icon: <MapPin className="w-8 h-8 text-emerald-600" />, color: 'from-emerald-50/50 to-white', border: 'border-emerald-100', shadow: 'shadow-emerald-100/30' },
+                                    { title: '⏱️ On-Time Delivery Commitment', desc: 'Rigid adherence to contract timelines and scheduled handovers.', sub: 'Zero Project Overruns', icon: <Clock className="w-8 h-8 text-indigo-600" />, color: 'from-indigo-50/50 to-white', border: 'border-indigo-100', shadow: 'shadow-indigo-100/30' },
+                                ].map((card, idx) => (
+                                    <motion.div 
+                                        key={idx}
+                                        variants={scaleIn}
+                                        custom={idx}
+                                        whileHover={{ y: -8, scale: 1.02 }}
+                                        className={`p-8 bg-gradient-to-br ${card.color} border ${card.border} rounded-[2.5rem] shadow-xl ${card.shadow} flex flex-col items-start transition-all cursor-default group ${idx === 4 ? 'sm:col-span-2' : ''}`}
+                                    >
+                                        <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-slate-50 mb-6 group-hover:scale-110 transition-transform">
+                                            {card.icon}
+                                        </div>
+                                        <h4 className="text-xl font-black text-slate-900 tracking-tight mb-2">{card.title}</h4>
+                                        <p className="text-xs text-slate-500 font-semibold leading-relaxed flex-grow">{card.desc}</p>
+                                        <div className="w-full border-t border-slate-100/50 pt-4 mt-6 flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                            <span>{card.sub}</span>
+                                            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-600">Verified ✓</span>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </motion.div>
                         </div>
                     </div>
                 </section>

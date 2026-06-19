@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Building2, Plus, DoorOpen, List, Trash2, Edit3, UserPlus, 
     Calendar, IndianRupee, AlertTriangle, Users, CheckCircle, 
-    Settings, LogOut, Clock, Link, Check, X, Building, BarChart3, Star, ShieldAlert
+    Settings, LogOut, Clock, Link, Check, X, Building, BarChart3, ShieldAlert
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -16,7 +16,6 @@ export default function LodgeAdminManager() {
   const [payments, setPayments] = useState([]);
   const [complaints, setComplaints] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState({ totalBookings: 0, totalRevenue: 0, totalUsers: 0, occupancyRate: 0, activeBookings: 0 });
 
   // Forms & Modals
@@ -51,7 +50,6 @@ export default function LodgeAdminManager() {
     if(activeTab === 'finance') { fetchPayments(); fetchClients(); }
     if(activeTab === 'maintenance') fetchComplaints();
     if(activeTab === 'occupancy') fetchBookings();
-    if(activeTab === 'reviews') fetchReviews();
   }, [activeTab, selectedLodge]);
 
   const fetchBaseLodge = async () => {
@@ -132,12 +130,7 @@ export default function LodgeAdminManager() {
     const res = await api.get('/bookings/all');
     setBookings(res.data);
   };
-  const fetchReviews = async () => {
-      try {
-          const res = await api.get('/lodge-extras/reviews');
-          setReviews(res.data);
-      } catch (e) { console.error(e); }
-  };
+
 
   // ROOM LOGIC
   const handleRoomSubmit = async (e) => {
@@ -249,12 +242,7 @@ export default function LodgeAdminManager() {
       } catch(e) { alert("Update failed"); }
   };
 
-  const deleteReview = async (id) => {
-      if(confirm('Delete this review permanently?')) {
-          await api.delete(`/lodge-extras/reviews/${id}`);
-          fetchReviews();
-      }
-  }
+
 
   // FINANCE LOGIC
   const handleVerifyPayment = async (id) => {
@@ -292,7 +280,6 @@ export default function LodgeAdminManager() {
       { id: 'occupancy', icon: Calendar, label: 'Occupancy' },
       { id: 'registry', icon: Users, label: 'Registry' },
       { id: 'finance', icon: IndianRupee, label: 'Finance' },
-      { id: 'reviews', icon: Star, label: 'Reviews' },
       { id: 'maintenance', icon: AlertTriangle, label: 'Maintenance' }
   ];
 
@@ -518,33 +505,7 @@ export default function LodgeAdminManager() {
          </div>
       )}
 
-      {/* REVIEWS TAB */}
-      {activeTab === 'reviews' && (
-          <div className="bg-white rounded-[2rem] shadow-sm border p-8 animate-in fade-in transition-all">
-              <h2 className="text-xl font-bold mb-8 flex items-center"><Star className="w-6 h-6 mr-2 text-indigo-500"/> Managing Feedback</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {reviews.map(rev => (
-                      <div key={rev._id} className="p-8 border rounded-[2rem] bg-indigo-50/20 relative group hover:border-indigo-200 transition-all">
-                          <div className="flex items-center gap-4 mb-6">
-                              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-black text-indigo-600 shadow-sm border border-indigo-100">{rev.userId?.name.charAt(0)}</div>
-                              <div>
-                                  <p className="font-black text-slate-900">{rev.userId?.name}</p>
-                                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest italic">{new Date(rev.createdAt).toLocaleDateString()}</p>
-                              </div>
-                              <div className="ml-auto flex gap-0.5">
-                                  {[1,2,3,4,5].map(s => <Star key={s} className={`w-4 h-4 ${rev.rating >= s ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />)}
-                              </div>
-                          </div>
-                          <p className="text-slate-600 font-medium leading-relaxed italic text-sm">"{rev.comment}"</p>
-                          <button onClick={() => deleteReview(rev._id)} className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity p-2 text-rose-500 hover:bg-rose-50 rounded-xl">
-                              <Trash2 className="w-4 h-4" />
-                          </button>
-                      </div>
-                  ))}
-                  {reviews.length === 0 && <p className="text-slate-400 font-bold p-20 text-center border-4 border-dashed rounded-[3rem] col-span-2">No reviews cataloged yet.</p> }
-              </div>
-          </div>
-      )}
+
 
       {/* OCCUPANCY TAB */}
       {activeTab === 'occupancy' && (
