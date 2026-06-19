@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Users, CheckCircle, Navigation, X, Play } from 'lucide-react';
+import { MapPin, Users, CheckCircle, Navigation, X, Play, ArrowLeft } from 'lucide-react';
 import api from '../../services/api';
 import { getDirectImageUrl } from '../../utils/imageUtils';
 
@@ -40,6 +40,14 @@ export default function LodgeDetail() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
+      <div className="mb-6">
+         <button 
+             onClick={() => navigate('/lodge/search')}
+             className="flex items-center gap-2 px-4 py-2 border rounded-xl hover:bg-slate-50 transition-colors font-bold text-sm text-slate-600 shadow-sm bg-white"
+         >
+             <ArrowLeft className="w-4.5 h-4.5" /> Back to Search
+         </button>
+      </div>
       <div className="mb-6">
          <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-2">{lodge.name}</h1>
          <div className="flex items-center text-gray-600">

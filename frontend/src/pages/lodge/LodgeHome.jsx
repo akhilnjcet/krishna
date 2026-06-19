@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Calendar, MapPin, Users, Navigation } from 'lucide-react';
+import { Search, Calendar, MapPin, Users, Navigation, ArrowLeft } from 'lucide-react';
 
 export default function LodgeHome() {
   const [location, setLocation] = useState('');
@@ -22,9 +22,12 @@ export default function LodgeHome() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 z-0 overflow-hidden">
              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent hidden sm:block"></div>
         </div>
-        <div className="absolute top-4 right-4 left-4 z-20 flex justify-between items-center md:right-6 md:top-6 md:left-auto md:justify-end md:gap-4">
-            <span className="text-white font-black text-sm tracking-tight italic md:hidden">KRISHNA</span>
+        <div className="absolute top-4 right-4 left-4 z-20 flex justify-between items-center md:right-6 md:top-6 md:left-6 md:justify-between">
+            <span className="text-white font-black text-sm tracking-tight italic">KRISHNA</span>
             <div className="flex gap-2 sm:gap-4">
+                <button onClick={() => navigate('/')} className="text-white hover:text-blue-200 font-bold px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm transition-colors border border-white/40 rounded-xl bg-white/10 backdrop-blur-md flex items-center gap-1.5 shadow">
+                    <ArrowLeft className="w-4 h-4" /> Main Home
+                </button>
                 <button onClick={() => navigate('/lodge/dashboard')} className="text-white hover:text-blue-200 font-bold px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm transition-colors border border-white/40 rounded-xl bg-white/10 backdrop-blur-md">My Dashboard</button>
                 <button onClick={() => navigate('/login')} className="bg-white/10 text-white font-bold px-3 py-1.5 sm:px-4 sm:py-2 border border-white/20 rounded-xl hover:bg-white/20 backdrop-blur-md text-xs sm:text-sm shadow-lg transition-all">Portal Entrance</button>
             </div>

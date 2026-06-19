@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
     LayoutDashboard, Calendar, Heart, User, CreditCard, 
     LogOut, Star, MessageSquare, MapPin, Download, 
     Trash2, Search, ArrowRight, Shield, CheckCircle, 
-    Clock, AlertCircle, RefreshCcw, Camera, Map, Plus, X
+    Clock, AlertCircle, RefreshCcw, Camera, Map, Plus, X, ArrowLeft
 } from 'lucide-react';
 import api from '../../services/api';
+import useAuthStore from '../../stores/authStore';
 
 export default function LodgeCustomerDashboard() {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('bookings');
     const [bookings, setBookings] = useState([]);
     const [wishlist, setWishlist] = useState([]);
@@ -166,10 +169,13 @@ export default function LodgeCustomerDashboard() {
 
                 {/* Header (visible on mobile) */}
                 <div className="flex md:hidden items-center justify-between mb-4">
+                    <button onClick={() => navigate('/lodge')} className="p-2 text-slate-500 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded-xl transition-all" title="Lodge Home">
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
                     <h2 className="text-lg font-black text-indigo-600 tracking-tight flex items-center">
-                        <Shield className="w-6 h-6 mr-2" /> KRISHNA PORTAL
+                        <Shield className="w-5 h-5 mr-1" /> PORTAL
                     </h2>
-                    <button onClick={() => window.location.href = '/lodge'} className="p-2 text-slate-500 hover:text-red-600 bg-slate-50 hover:bg-red-50 rounded-xl transition-all">
+                    <button onClick={() => { useAuthStore.getState().logout(); navigate('/login'); }} className="p-2 text-slate-500 hover:text-red-600 bg-slate-50 hover:bg-red-50 rounded-xl transition-all" title="Logout">
                         <LogOut className="w-5 h-5" />
                     </button>
                 </div>
@@ -192,10 +198,16 @@ export default function LodgeCustomerDashboard() {
                     ))}
                 </div>
 
-                {/* Logout Button (visible on desktop) */}
-                <div className="hidden md:block mt-auto pt-8 border-t border-slate-100">
-                    <button onClick={() => window.location.href = '/lodge'} className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-bold text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all">
-                        <LogOut className="w-5 h-5" /> Logout
+                {/* Back / Logout Buttons (visible on desktop) */}
+                <div className="hidden md:flex flex-col gap-2 mt-auto pt-8 border-t border-slate-100">
+                    <button onClick={() => navigate('/lodge')} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-all text-sm">
+                        <ArrowLeft className="w-4.5 h-4.5" /> Lodge Home
+                    </button>
+                    <button onClick={() => navigate('/')} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-all text-sm">
+                        <ArrowLeft className="w-4.5 h-4.5" /> Main Home
+                    </button>
+                    <button onClick={() => { useAuthStore.getState().logout(); navigate('/login'); }} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-red-500 hover:bg-red-50 transition-all text-sm">
+                        <LogOut className="w-4.5 h-4.5" /> Logout Portal
                     </button>
                 </div>
             </div>

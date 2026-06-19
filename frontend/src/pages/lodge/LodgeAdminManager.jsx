@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Building2, Plus, DoorOpen, List, Trash2, Edit3, UserPlus, 
     Calendar, IndianRupee, AlertTriangle, Users, CheckCircle, 
-    Settings, LogOut, Clock, Link, Check, X, Building, BarChart3, ShieldAlert
+    Settings, LogOut, Clock, Link, Check, X, Building, BarChart3, ShieldAlert, ArrowLeft
 } from 'lucide-react';
 import api from '../../services/api';
 import { getDirectImageUrl } from '../../utils/imageUtils';
@@ -401,6 +401,9 @@ export default function LodgeAdminManager() {
     <div className="p-8 max-w-7xl mx-auto min-h-screen">
       <div className="mb-8 flex justify-between items-center">
          <div className="flex items-center gap-4">
+             <button onClick={() => window.history.back()} className="p-3 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors shadow-sm" title="Go Back">
+                 <ArrowLeft className="w-5 h-5"/>
+             </button>
              <h1 className="text-3xl font-bold flex items-center text-gray-800 tracking-tight">
                  <Building2 className="w-8 h-8 mr-3 text-indigo-600"/> 
                  {selectedLodge.name} Command
@@ -547,6 +550,42 @@ export default function LodgeAdminManager() {
                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 mb-1 block">Video URL (YouTube, G-Drive, or Direct link)</label>
                         <input placeholder="https://youtube.com/watch?v=... or direct mp4" className="w-full border p-3 rounded-xl font-medium" value={roomForm.videoUrl || ''} onChange={e => setRoomForm({...roomForm, videoUrl: e.target.value})} />
                     </div>
+                    {editingRoom && [...(editingRoom.interiorPhotos || []), ...(editingRoom.exteriorPhotos || [])].length > 0 && (
+                        <div className="col-span-2 lg:col-span-4 border-t pt-4 mt-4">
+                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 mb-2 block">Current Photos (Hover & Click to Delete)</label>
+                            <div className="flex flex-wrap gap-3">
+                                {[...(editingRoom.interiorPhotos || []), ...(editingRoom.exteriorPhotos || [])].map((img, idx) => (
+                                    <div key={idx} className="relative w-20 h-20 border rounded-xl overflow-hidden bg-white shadow-sm group">
+                                        <img src={getDirectImageUrl(img.url)} className="w-full h-full object-cover" alt="Current room asset" />
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                if (confirm('Delete this photo?')) {
+                                                    try {
+                                                        await api.delete(`/rooms/${editingRoom._id}/photo`, { data: { photoUrl: img.url } });
+                                                        alert('Photo deleted');
+                                                        const updatedRooms = await api.get(`/rooms/lodge/${selectedLodge._id}`);
+                                                        setRooms(updatedRooms.data);
+                                                        const updatedRoom = updatedRooms.data.find(rm => rm._id === editingRoom._id);
+                                                        if (updatedRoom) {
+                                                            setEditingRoom(updatedRoom);
+                                                        } else {
+                                                            setEditingRoom(null);
+                                                        }
+                                                    } catch (e) {
+                                                        alert('Failed to delete photo');
+                                                    }
+                                                }
+                                            }}
+                                            className="absolute inset-0 bg-red-600/80 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[10px] font-black uppercase tracking-wider"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     <button type="submit" className="bg-indigo-600 text-white p-4 rounded-2xl col-span-2 lg:col-span-4 font-black shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">
                         {editingRoom ? 'Commit Changes' : 'Publish Unit Live'}
                     </button>
@@ -803,11 +842,37 @@ export default function LodgeAdminManager() {
                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Public Description</label>
                          <textarea placeholder="Description" required rows="3" className="w-full border-2 border-slate-100 p-4 rounded-2xl font-medium" value={lodgeForm.description} onChange={e => setLodgeForm({...lodgeForm, description: e.target.value})} />
                      </div>
-                     <div className="col-span-2">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Upload Lodge Photos (Multiple)</label>
-                         <input type="file" multiple accept="image/*" className="w-full border-2 border-slate-100 p-3 rounded-2xl bg-slate-50" onChange={e => setLodgeForm({...lodgeForm, images: e.target.files})} />
-                         <p className="text-xs text-slate-400 mt-2 font-medium italic ml-2">These will be appended to any existing photos.</p>
-                     </div>
+                     {selectedLodge && selectedLodge.images && selectedLodge.images.length > 0 && (
+                          <div className="col-span-2">
+                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2 block">Current Lodge Photos (Hover & Click to Delete)</label>
+                              <div className="flex flex-wrap gap-2">
+                                  {selectedLodge.images.map((img, idx) => (
+                                      <div key={idx} className="relative w-16 h-16 border rounded-xl overflow-hidden bg-slate-50 group">
+                                          <img src={getDirectImageUrl(typeof img === 'string' ? img : img.url)} className="w-full h-full object-cover" alt="Lodge asset" />
+                                          <button
+                                              type="button"
+                                              onClick={() => {
+                                                  if (confirm('Delete this photo from building? (Takes effect after saving)')) {
+                                                      setSelectedLodge({
+                                                          ...selectedLodge,
+                                                          images: selectedLodge.images.filter(i => (typeof i === 'string' ? i : i.url) !== (typeof img === 'string' ? img : img.url))
+                                                      });
+                                                  }
+                                              }}
+                                              className="absolute inset-0 bg-red-600/80 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] font-black uppercase tracking-widest"
+                                          >
+                                              Delete
+                                          </button>
+                                      </div>
+                                  ))}
+                              </div>
+                          </div>
+                      )}
+                      <div className="col-span-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Upload Lodge Photos (Multiple)</label>
+                          <input type="file" multiple accept="image/*" className="w-full border-2 border-slate-100 p-3 rounded-2xl bg-slate-50" onChange={e => setLodgeForm({...lodgeForm, images: e.target.files})} />
+                          <p className="text-xs text-slate-400 mt-2 font-medium italic ml-2">These will be appended to any existing photos.</p>
+                      </div>
                      <div className="col-span-2">
                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Connect Drive Link(s) (Comma Separated)</label>
                          <input placeholder="https://drive.google.com/..." className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold font-poppins text-indigo-600 placeholder-slate-300" value={lodgeForm.driveUrls || ''} onChange={e => setLodgeForm({...lodgeForm, driveUrls: e.target.value})} />

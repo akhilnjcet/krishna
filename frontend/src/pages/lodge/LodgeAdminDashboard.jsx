@@ -6,7 +6,7 @@ import {
     LogOut, UserPlus, Trash2, CheckCircle2, Phone, 
     ArrowUpRight, IndianRupee, Clock, Plus, X, List, History, Settings,
     Cloud, RefreshCw, Search, Loader2, ShieldCheck, MapPin, FileText,
-    Download, User, Edit3, Calendar, Users, Wifi
+    Download, User, Edit3, Calendar, Users, Wifi, ArrowLeft
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 import useBookingStore from '../../stores/bookingStore';
@@ -340,17 +340,35 @@ const LodgeAdminDashboard = () => {
             <div className="bg-[#111827] pt-12 pb-24 px-6 text-white overflow-hidden relative">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="relative z-10 flex justify-between items-start mb-8">
-
-                    <div>
-                        <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Lodge <br /><span className="text-blue-500">Command.</span></h1>
-                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em] mt-2">Krishna ERP Cloud Node</p>
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => navigate('/admin')}
+                            className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-slate-400"
+                            title="Back to Main Admin"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
+                        <div>
+                            <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Lodge <br /><span className="text-blue-500">Command.</span></h1>
+                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em] mt-2">Krishna ERP Cloud Node</p>
+                        </div>
                     </div>
-                    <button 
-                        onClick={() => { logoutAdmin(); useAuthStore.getState().logout(); navigate('/lodge/admin-login'); }}
-                        className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-slate-400"
-                    >
-                        <LogOut className="w-5 h-5" />
-                    </button>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => navigate('/lodge')}
+                            className="px-4 py-3 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+                            title="Lodge Home"
+                        >
+                            Lodge Home
+                        </button>
+                        <button 
+                            onClick={() => { logoutAdmin(); useAuthStore.getState().logout(); navigate('/lodge/admin-login'); }}
+                            className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-slate-400"
+                            title="Logout Portal"
+                        >
+                            <LogOut className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Tab Navigation */}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { addDays, format, isWithinInterval, differenceInDays } from 'date-fns';
-import { AlertCircle, Calendar as CalIcon, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Calendar as CalIcon, ShieldCheck, ArrowLeft } from 'lucide-react';
 import 'react-day-picker/dist/style.css';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
@@ -104,6 +104,14 @@ export default function LodgeBookingCheckout() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
+      <div className="mb-6">
+         <button 
+             onClick={() => navigate(-1)}
+             className="flex items-center gap-2 px-4 py-2 border rounded-xl hover:bg-slate-50 transition-colors font-bold text-sm text-slate-600 shadow-sm bg-white"
+         >
+             <ArrowLeft className="w-4.5 h-4.5" /> Go Back
+         </button>
+      </div>
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Secure Checkout</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
