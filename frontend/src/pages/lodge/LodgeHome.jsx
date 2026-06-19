@@ -38,28 +38,14 @@ export default function LodgeHome() {
             Manage your stay and easily browse available rooms strictly monitored via our dynamic availability matrix.
           </p>
           
-          {/* Search Bar */}
-          <form 
-            onSubmit={handleSearch}
-            className="w-full bg-white p-2 rounded-2xl shadow-2xl flex flex-col md:flex-row gap-2"
+          {/* Booking Action CTA */}
+          <button 
+            onClick={() => navigate('/lodge/search')}
+            className="group px-10 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black rounded-[2rem] transition-all duration-300 shadow-2xl shadow-indigo-600/30 active:scale-95 flex items-center justify-center gap-3 text-base sm:text-lg uppercase tracking-widest"
           >
-            <div className="flex-1 flex items-center bg-gray-100/50 rounded-xl px-4 py-3 border border-transparent">
-               <MapPin className="text-gray-400 mr-3 w-5 h-5 flex-shrink-0" />
-               <p className="w-full text-gray-800 font-bold text-sm sm:text-base">Krishna Building, Main Street</p>
-            </div>
-            <div className="flex-1 flex items-center bg-gray-100/50 rounded-xl px-4 py-3 border border-transparent hidden sm:flex opacity-60 cursor-not-allowed">
-               <Calendar className="text-gray-400 mr-3 w-5 h-5 flex-shrink-0" />
-               <span className="text-gray-500 flex-1 truncate">Check in — Check out</span>
-            </div>
-            
-            <button 
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg flex items-center justify-center -ml-1 sm:ml-0"
-            >
-              <Search className="w-5 h-5 mr-2" />
-              Search
-            </button>
-          </form>
+            Start Your Booking
+            <Navigation className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          </button>
         </div>
       </div>
 
