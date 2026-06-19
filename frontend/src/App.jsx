@@ -180,6 +180,10 @@ const Layout = ({ children }) => {
                       location.pathname.startsWith('/lodge');
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  useEffect(() => {
     // Only track once per app session
     if (!hasTrackedVisit.current) {
       const trackVisit = async () => {
