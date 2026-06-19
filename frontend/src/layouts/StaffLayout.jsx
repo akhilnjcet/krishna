@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, UserCheck, Wallet, CalendarDays, Users,
-    MessageSquare, CheckSquare, LogOut, Menu, X, Bell, User, ChevronLeft
+    MessageSquare, CheckSquare, LogOut, Menu, X, Bell, User, ChevronLeft,
+    ClipboardList
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 
@@ -13,6 +14,7 @@ const navItems = [
     { name: 'Scan Attendance',  path: '/staff/attendance',   icon: UserCheck },
     { name: 'My Timesheets',    path: '/staff/timesheets',   icon: CalendarDays },
     { name: 'Task Board',       path: '/staff/tasks',        icon: CheckSquare },
+    { name: 'Project Reporting', path: '/staff/progress',     icon: ClipboardList },
     { name: 'Payout Hub',       path: '/staff/salary',       icon: Wallet },
     { name: 'Leave Tracker',    path: '/staff/leave',        icon: CalendarDays },
     { name: 'Track Requests',   path: '/staff/applications', icon: CheckSquare },
