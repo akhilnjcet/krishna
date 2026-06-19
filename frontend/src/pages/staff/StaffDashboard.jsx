@@ -15,7 +15,8 @@ import {
     Zap,
     Briefcase,
     LayoutDashboard,
-    ArrowRight
+    ArrowRight,
+    AlertCircle
 } from 'lucide-react';
 import ReportHeader from '../../components/ReportHeader';
 
@@ -62,6 +63,12 @@ const StaffDashboard = () => {
                                 className="bg-white text-[#2563EB] px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 hover:translate-y-[-2px] hover:shadow-xl transition-all"
                             >
                                 <ShieldCheck className="w-5 h-5" /> Mark Presence
+                            </button>
+                            <button 
+                                onClick={() => navigate('/staff/progress?action=status')}
+                                className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 hover:translate-y-[-2px] hover:shadow-xl border border-red-600 transition-all"
+                            >
+                                <AlertCircle className="w-5 h-5" /> Report Delay / Stop
                             </button>
                             <button 
                                 onClick={() => navigate('/staff/progress')}

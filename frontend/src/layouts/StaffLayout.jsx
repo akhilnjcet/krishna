@@ -14,7 +14,7 @@ const navItems = [
     { name: 'Scan Attendance',  path: '/staff/attendance',   icon: UserCheck },
     { name: 'My Timesheets',    path: '/staff/timesheets',   icon: CalendarDays },
     { name: 'Task Board',       path: '/staff/tasks',        icon: CheckSquare },
-    { name: 'Project Reporting', path: '/staff/progress',     icon: ClipboardList },
+    { name: 'Project Delay / Stop', path: '/staff/progress',     icon: ClipboardList },
     { name: 'Payout Hub',       path: '/staff/salary',       icon: Wallet },
     { name: 'Leave Tracker',    path: '/staff/leave',        icon: CalendarDays },
     { name: 'Track Requests',   path: '/staff/applications', icon: CheckSquare },

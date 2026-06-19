@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../../stores/authStore';
 import api from '../../services/api';
 import { 
@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const StaffProgress = () => {
     const { user, isAuthenticated } = useAuthStore();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -73,6 +74,7 @@ const StaffProgress = () => {
             });
             alert("Project status updated successfully!");
             setShowStatusForm(false);
+            setSelectedStatusProject(null);
             setStatusForm({
                 status: 'In Progress',
                 reason: 'Tool Maintenance',
@@ -92,6 +94,22 @@ const StaffProgress = () => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        if (queryParams.get('action') === 'status' && projects.length > 0) {
+            setSelectedStatusProject(null);
+            setStatusForm({
+                status: 'Delayed',
+                reason: 'Tool Maintenance',
+                customReason: '',
+                remarks: '',
+                expectedResumeDate: ''
+            });
+            setShowStatusForm(true);
+            navigate('/staff/progress', { replace: true });
+        }
+    }, [location.search, projects, navigate]);
 
     const fetchData = async () => {
         try {
@@ -175,18 +193,36 @@ const StaffProgress = () => {
                     <ArrowLeft className="w-4 h-4" /> Back to Dashboard
                 </button>
 
-                <div className="bg-brand-950 text-white p-8 border-b-8 border-brand-accent shadow-solid mb-12 flex justify-between items-center">
+                <div className="bg-brand-950 text-white p-8 border-b-8 border-brand-accent shadow-solid mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl font-black uppercase tracking-tighter italic">SITE PROGRESS LOG</h1>
+                        <h1 className="text-3xl font-black uppercase tracking-tighter italic">PROJECT STATUS & DELAY LOG</h1>
                         <p className="text-[10px] font-bold text-brand-400 uppercase tracking-[0.2em] mt-1">Operational Reporting Module v2.0</p>
                     </div>
-                    {!showForm && (
-                        <button 
-                            onClick={() => setShowForm(true)}
-                            className="bg-brand-accent text-brand-950 px-6 py-3 font-black uppercase tracking-widest text-xs flex items-center gap-2 border-2 border-white hover:bg-white transition-all shadow-custom"
-                        >
-                            <Plus className="w-4 h-4" /> New Update
-                        </button>
+                    {!showForm && !showStatusForm && (
+                        <div className="flex flex-wrap gap-3">
+                            <button 
+                                onClick={() => {
+                                    setSelectedStatusProject(null);
+                                    setStatusForm({
+                                        status: 'Delayed',
+                                        reason: 'Tool Maintenance',
+                                        customReason: '',
+                                        remarks: '',
+                                        expectedResumeDate: ''
+                                    });
+                                    setShowStatusForm(true);
+                                }}
+                                className="bg-red-600 text-white px-6 py-3 font-black uppercase tracking-widest text-xs flex items-center gap-2 border-2 border-white hover:bg-red-500 transition-all shadow-custom"
+                            >
+                                <AlertCircle className="w-4 h-4" /> Report Delay/Stop
+                            </button>
+                            <button 
+                                onClick={() => setShowForm(true)}
+                                className="bg-brand-accent text-brand-950 px-6 py-3 font-black uppercase tracking-widest text-xs flex items-center gap-2 border-2 border-white hover:bg-white transition-all shadow-custom"
+                            >
+                                <Plus className="w-4 h-4" /> New Update
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -352,7 +388,7 @@ const StaffProgress = () => {
                                 </form>
                             </motion.div>
                         )}
-                        {showStatusForm && selectedStatusProject && (
+                        {showStatusForm && (
                             <motion.div 
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -363,7 +399,13 @@ const StaffProgress = () => {
                                     <h2 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3 text-brand-accent">
                                         <PenTool className="w-6 h-6" /> UPDATE PROJECT STATUS
                                     </h2>
-                                    <button onClick={() => setShowStatusForm(false)} className="bg-brand-50 p-2 hover:bg-brand-950 hover:text-white transition-colors">
+                                    <button 
+                                        onClick={() => {
+                                            setShowStatusForm(false);
+                                            setSelectedStatusProject(null);
+                                        }} 
+                                        className="bg-brand-50 p-2 hover:bg-brand-950 hover:text-white transition-colors"
+                                    >
                                         <X className="w-6 h-6" />
                                     </button>
                                 </div>
@@ -372,9 +414,27 @@ const StaffProgress = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-2 md:col-span-2">
                                             <label className="text-[10px] font-black text-brand-600 uppercase tracking-widest ml-2">Project Name</label>
-                                            <div className="w-full px-6 py-4 bg-brand-50 border-4 border-brand-950 font-black text-sm text-brand-950">
-                                                {selectedStatusProject.title}
-                                            </div>
+                                            {selectedStatusProject && selectedStatusProject._id ? (
+                                                <div className="w-full px-6 py-4 bg-brand-50 border-4 border-brand-950 font-black text-sm text-brand-950">
+                                                    {selectedStatusProject.title}
+                                                </div>
+                                            ) : (
+                                                <select 
+                                                    required
+                                                    className="w-full px-6 py-4 bg-brand-50 border-4 border-brand-200 outline-none focus:border-brand-950 font-black text-sm"
+                                                    value={statusForm.projectId || ''}
+                                                    onChange={e => {
+                                                        const proj = projects.find(p => p._id === e.target.value);
+                                                        setSelectedStatusProject(proj);
+                                                        setStatusForm({...statusForm, projectId: e.target.value});
+                                                    }}
+                                                >
+                                                    <option value="">Select Project...</option>
+                                                    {projects.map(p => (
+                                                        <option key={p._id} value={p._id}>{p.title} - {p.location}</option>
+                                                    ))}
+                                                </select>
+                                            )}
                                         </div>
 
                                         <div className="space-y-2">
