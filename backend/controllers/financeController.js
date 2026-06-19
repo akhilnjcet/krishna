@@ -16,7 +16,7 @@ exports.getAdminOverview = async (req, res) => {
             .filter(inv => inv.paymentStatus === 'paid')
             .reduce((sum, inv) => sum + inv.amount, 0);
 
-        const totalStaffExpense = salaries.reduce((sum, sal) => sum + sal.salaryAmount, 0);
+        const totalStaffExpense = salaries.reduce((sum, sal) => sum + (sal.netSalary || sal.salaryAmount || 0), 0);
         const totalOtherExpense = expenses.reduce((sum, exp) => sum + exp.amount, 0);
         const totalExpense = totalStaffExpense + totalOtherExpense;
 
@@ -97,7 +97,11 @@ exports.addSalary = async (req, res) => {
         const { staffId, month, salaryAmount, paymentStatus } = req.body;
         const salary = await Salary.findOneAndUpdate(
             { staffId, month },
-            { salaryAmount, paymentStatus },
+            { 
+                baseSalary: salaryAmount, 
+                netSalary: salaryAmount, 
+                paymentStatus 
+            },
             { upsert: true, new: true }
         );
         res.status(201).json(salary);

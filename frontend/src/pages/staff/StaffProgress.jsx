@@ -463,10 +463,12 @@ const StaffProgress = () => {
                                                         onChange={e => setStatusForm({...statusForm, reason: e.target.value})}
                                                     >
                                                         <option value="Tool Maintenance">Tool Maintenance</option>
-                                                        <option value="Power Cut">Power Cut</option>
+                                                        <option value="Power Failure">Power Failure</option>
                                                         <option value="Machine Breakdown">Machine Breakdown</option>
                                                         <option value="Material Shortage">Material Shortage</option>
                                                         <option value="Labour Shortage">Labour Shortage</option>
+                                                        <option value="Safety Incident">Safety Incident</option>
+                                                        <option value="Emergency Issue">Emergency Issue</option>
                                                         <option value="Weather Conditions">Weather Conditions</option>
                                                         <option value="Transportation Issue">Transportation Issue</option>
                                                         <option value="Client Request">Client Request</option>

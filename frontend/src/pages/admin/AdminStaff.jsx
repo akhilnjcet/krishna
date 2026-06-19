@@ -51,7 +51,15 @@ const AdminStaff = () => {
         bank_name: '',
         account_number: '',
         ifsc_code: '',
-        base_salary: ''
+        base_salary: '',
+        joiningDate: new Date().toISOString().split('T')[0],
+        address: '',
+        emergencyContact: '',
+        salaryType: 'Monthly',
+        overtimeRate: 0,
+        bonusAmount: 0,
+        advanceAmount: 0,
+        deductionAmount: 0
     });
 
     const fetchStaff = useCallback(async () => {
@@ -107,7 +115,10 @@ const AdminStaff = () => {
             department: '', designation: '', username: '', password: '', 
             role: 'staff', status: 'active',
             upi_id: '', bank_name: '', account_number: '', 
-            ifsc_code: '', base_salary: ''
+            ifsc_code: '', base_salary: '',
+            joiningDate: new Date().toISOString().split('T')[0],
+            address: '', emergencyContact: '', salaryType: 'Monthly',
+            overtimeRate: 0, bonusAmount: 0, advanceAmount: 0, deductionAmount: 0
         });
         setSelectedStaff(null);
     };
@@ -395,7 +406,15 @@ const AdminStaff = () => {
                                                         bank_name: member.bank_name || '',
                                                         account_number: member.account_number || '',
                                                         ifsc_code: member.ifsc_code || '',
-                                                        base_salary: member.base_salary || ''
+                                                        base_salary: member.base_salary || '',
+                                                        joiningDate: member.joiningDate ? new Date(member.joiningDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                                                        address: member.address || '',
+                                                        emergencyContact: member.emergencyContact || '',
+                                                        salaryType: member.salaryType || 'Monthly',
+                                                        overtimeRate: member.overtimeRate || 0,
+                                                        bonusAmount: member.bonusAmount || 0,
+                                                        advanceAmount: member.advanceAmount || 0,
+                                                        deductionAmount: member.deductionAmount || 0
                                                     });
                                                     setShowEditModal(true); 
                                                 }}
@@ -493,13 +512,54 @@ const AdminStaff = () => {
                                     </div>
                                 )}
 
+                                {/* --- Profile Parameters Section --- */}
+                                <div className="md:col-span-2 pt-6 border-t border-slate-100 mt-4">
+                                    <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-4">Profile Parameters</h4>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Joining Date</label>
+                                    <input type="date" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" value={formData.joiningDate} onChange={e => setFormData({...formData, joiningDate: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Emergency Contact</label>
+                                    <input type="text" placeholder="Contact Name & Phone" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.emergencyContact} onChange={e => setFormData({...formData, emergencyContact: e.target.value})} />
+                                </div>
+                                <div className="md:col-span-2 space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Address</label>
+                                    <textarea rows={2} placeholder="Full Residing Address..." className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+                                </div>
+
                                 {/* --- Financial Data Section --- */}
                                 <div className="md:col-span-2 pt-6 border-t border-slate-100 mt-4">
                                     <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-4">Financial Protocol Registry</h4>
                                 </div>
                                 <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Salary Type</label>
+                                    <select className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" value={formData.salaryType} onChange={e => setFormData({...formData, salaryType: e.target.value})}>
+                                        <option value="Monthly">Monthly</option>
+                                        <option value="Daily Wage">Daily Wage</option>
+                                        <option value="Contract">Contract</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Base Salary (INR)</label>
                                     <input type="number" placeholder="25000" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.base_salary} onChange={e => setFormData({...formData, base_salary: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Overtime Rate Per Hour (INR)</label>
+                                    <input type="number" placeholder="150" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.overtimeRate} onChange={e => setFormData({...formData, overtimeRate: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Bonus Amount (INR)</label>
+                                    <input type="number" placeholder="0" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.bonusAmount} onChange={e => setFormData({...formData, bonusAmount: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Advance Amount (INR)</label>
+                                    <input type="number" placeholder="0" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.advanceAmount} onChange={e => setFormData({...formData, advanceAmount: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Deduction Amount (INR)</label>
+                                    <input type="number" placeholder="0" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.deductionAmount} onChange={e => setFormData({...formData, deductionAmount: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">UPI ID (for Direct Pay)</label>

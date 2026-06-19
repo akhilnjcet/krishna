@@ -5,7 +5,7 @@ import {
     BarChart3, Users, ClipboardList, BadgeIndianRupee, MessageSquare,
     Calculator, Receipt, TrendingUp, Settings, LogOut, Menu, X, Bell,
     Search, HelpCircle, ChevronRight, User, Filter, LayoutGrid, Activity,
-    Clock, AlertCircle, Radio, MessageCircle, ChevronLeft
+    Clock, AlertCircle, Radio, MessageCircle, ChevronLeft, CheckSquare
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,6 +20,7 @@ const SIDEBAR_ITEMS = [
     { name: 'Attendance Hub',  path: '/admin/logs',         icon: Clock },
     { name: 'Leave Requests',  path: '/admin/leave',        icon: ClipboardList },
     { name: 'Projects Hub',    path: '/admin/projects',     icon: Layers },
+    { name: 'Task Assignment Hub', path: '/admin/tasks',    icon: CheckSquare },
     { name: 'Notification Center', path: '/admin/notifications', icon: Bell },
     { name: 'Visual Portfolio', path: '/admin/portfolio',    icon: ImageIcon },
     { name: 'Formal Quotes',   path: '/admin/quotes',       icon: Receipt },
@@ -99,6 +100,57 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
     </div>
 );
 
+let audioCtx = null;
+
+const playSirenNode = (volume = 0.3) => {
+    try {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.45);
+
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.9);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.9);
+
+        setTimeout(() => {
+            if (!audioCtx) return;
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+
+            osc2.type = 'sawtooth';
+            osc2.frequency.setValueAtTime(660, audioCtx.currentTime);
+            osc2.frequency.exponentialRampToValueAtTime(330, audioCtx.currentTime + 0.45);
+
+            gain2.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.9);
+
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+
+            osc2.start();
+            osc2.stop(audioCtx.currentTime + 0.9);
+        }, 500);
+
+    } catch (err) {
+        console.error("❌ Audio synthesis failed:", err.message);
+    }
+};
+
 const AdminLayout = () => {
     const { user, isAuthenticated, logout } = useAuthStore();
     const location = useLocation();
@@ -120,6 +172,10 @@ const AdminLayout = () => {
         timestamp: '' 
     });
 
+    const [criticalAlerts, setCriticalAlerts] = useState([]);
+    const [isMuted, setIsMuted] = useState(false);
+    const [activePopupAlert, setActivePopupAlert] = useState(null);
+
     const fetchNotifications = async () => {
         try {
             const statsRes = await api.get('/projects/dashboard/stats');
@@ -130,8 +186,66 @@ const AdminLayout = () => {
         }
     };
 
+    const fetchActiveAlerts = async () => {
+        try {
+            const res = await api.get('/notifications?status=Active');
+            const activeNotifs = res.data;
+            const criticals = activeNotifs.filter(n => n.priority === 'Critical' && n.status === 'Active');
+            setCriticalAlerts(criticals);
+        } catch (err) {
+            console.error("Failed to fetch active alerts:", err);
+        }
+    };
+
+    const fetchAllAlertState = async () => {
+        await fetchNotifications();
+        await fetchActiveAlerts();
+    };
+
+    const registerPushSubscription = async () => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            console.warn("⚠️ Push messaging is not supported in this browser.");
+            return;
+        }
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                console.warn("⚠️ Web Push notification permission denied.");
+                return;
+            }
+
+            const keyRes = await api.get('/notifications/vapid');
+            const publicVapidKey = keyRes.data.publicKey;
+
+            const urlBase64ToUint8Array = (base64String) => {
+                const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+                const rawData = window.atob(base64);
+                const outputArray = new Uint8Array(rawData.length);
+                for (let i = 0; i < rawData.length; ++i) {
+                    outputArray[i] = rawData.charCodeAt(i);
+                }
+                return outputArray;
+            };
+
+            const convertedVapidKey = urlBase64ToUint8Array(publicVapidKey);
+
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: convertedVapidKey
+            });
+
+            await api.post('/notifications/subscribe', { subscription });
+            console.log("🔑 Web Push subscription verified with server.");
+        } catch (error) {
+            console.error("❌ Failed to register push subscription:", error);
+        }
+    };
+
     useEffect(() => {
-        fetchNotifications();
+        fetchAllAlertState();
+        registerPushSubscription();
 
         const socket = getSocket();
         socket.connect();
@@ -142,33 +256,93 @@ const AdminLayout = () => {
             console.log("🔔 Real-time Admin Notification Received:", notif);
             setUnreadCount(prev => prev + 1);
             setNotifications(prev => [notif, ...prev.slice(0, 9)]);
+            fetchActiveAlerts();
 
-            setToast({
-                show: true,
-                title: notif.title,
-                message: notif.message,
-                projectName: notif.projectName,
-                updatedBy: notif.updatedBy?.name || 'Staff',
-                reason: notif.reason,
-                remarks: notif.remarks,
-                timestamp: new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            // Open priority popup modal for Critical/High/Medium priority alerts
+            if (['Critical', 'High', 'Medium'].includes(notif.priority)) {
+                setActivePopupAlert(notif);
+            } else {
+                setToast({
+                    show: true,
+                    title: notif.title,
+                    message: notif.message,
+                    projectName: notif.projectName,
+                    updatedBy: notif.updatedBy?.name || 'Staff',
+                    reason: notif.reason,
+                    remarks: notif.remarks,
+                    timestamp: new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                });
+
+                setTimeout(() => {
+                    setToast(t => ({ ...t, show: false }));
+                }, 6000);
+            }
+        });
+
+        socket.on('admin-notification-update', (updatedNotif) => {
+            console.log("🔔 Real-time Notification Update Received:", updatedNotif);
+            fetchAllAlertState();
+            
+            setActivePopupAlert(currentPopup => {
+                if (currentPopup && currentPopup._id === updatedNotif._id) {
+                    if (updatedNotif.status !== 'Active') {
+                        return null;
+                    }
+                }
+                return currentPopup;
             });
-
-            setTimeout(() => {
-                setToast(t => ({ ...t, show: false }));
-            }, 6000);
         });
 
         const interval = setInterval(() => {
-            fetchNotifications();
+            fetchAllAlertState();
         }, 12000);
 
         return () => {
             socket.off('admin-notification');
+            socket.off('admin-notification-update');
             socket.disconnect();
             clearInterval(interval);
         };
     }, []);
+
+    useEffect(() => {
+        if (criticalAlerts.length === 0 || isMuted) {
+            return;
+        }
+
+        const triggerAlertCycle = () => {
+            const now = new Date();
+            let volume = 0.3;
+            let hasEscalated = false;
+
+            for (const alert of criticalAlerts) {
+                const created = new Date(alert.createdAt);
+                const diffMinutes = (now - created) / 60000;
+                if (diffMinutes > 5) {
+                     hasEscalated = true;
+                     break;
+                }
+            }
+
+            if (hasEscalated) {
+                volume = 0.85;
+                if (Notification.permission === 'granted') {
+                    new Notification("🚨 CRITICAL ALERT ESCALATION", {
+                        body: "A critical alert has remained unresolved for more than 5 minutes!",
+                        icon: '/logo192.png',
+                        tag: 'escalation-alert'
+                    });
+                }
+            }
+
+            playSirenNode(volume);
+        };
+
+        triggerAlertCycle();
+        const sirenInterval = setInterval(triggerAlertCycle, 10000);
+
+        return () => clearInterval(sirenInterval);
+    }, [criticalAlerts, isMuted]);
 
     const role = user?.role || user?.user?.role;
 
@@ -378,6 +552,145 @@ const AdminLayout = () => {
                                 <X className="w-4 h-4" />
                             </button>
                         </motion.div>
+                    )}
+
+                    {/* Mute Siren Floating Control Bar */}
+                    {criticalAlerts.length > 0 && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 50 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 50 }}
+                            className="fixed bottom-24 left-6 z-[9998] bg-rose-600 text-white px-6 py-4 rounded-3xl shadow-2xl border-4 border-white flex flex-col sm:flex-row items-center gap-4 animate-bounce"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-white text-rose-600 rounded-full flex items-center justify-center font-black animate-pulse">
+                                    🚨
+                                </div>
+                                <div>
+                                    <p className="text-xs font-black uppercase tracking-widest leading-none">Critical Incident Active</p>
+                                    <p className="text-[10px] text-rose-200 mt-1 font-bold">{criticalAlerts.length} unresolved safety or breakdown alerts</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
+                                <button 
+                                    onClick={() => setIsMuted(prev => !prev)}
+                                    className="bg-white text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap"
+                                >
+                                    {isMuted ? '🔇 Unmute' : '🔊 Mute Siren'}
+                                </button>
+                                <button 
+                                    onClick={() => navigate('/admin/notifications')}
+                                    className="bg-brand-950 text-white hover:bg-slate-900 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap"
+                                >
+                                    ⚠️ View & Stop
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* Emergency Priority Alert Modal Popup */}
+                    {activePopupAlert && (
+                        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className={`w-full max-w-lg bg-white dark:bg-dark-surface rounded-3xl shadow-2xl border-t-8 p-8 ${
+                                    activePopupAlert.priority === 'Critical' ? 'border-red-600' :
+                                    activePopupAlert.priority === 'High' ? 'border-orange-500' :
+                                    activePopupAlert.priority === 'Medium' ? 'border-yellow-400' :
+                                    'border-blue-500'
+                                }`}
+                            >
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold shadow-md ${
+                                        activePopupAlert.priority === 'Critical' ? 'bg-red-50 text-red-600' :
+                                        activePopupAlert.priority === 'High' ? 'bg-orange-50 text-orange-500' :
+                                        activePopupAlert.priority === 'Medium' ? 'bg-yellow-50 text-yellow-600' :
+                                        'bg-blue-50 text-blue-600'
+                                    }`}>
+                                        {activePopupAlert.priority === 'Critical' ? '🚨' :
+                                         activePopupAlert.priority === 'High' ? '⚠️' :
+                                         activePopupAlert.priority === 'Medium' ? '⚡' : 'ℹ️'}
+                                    </div>
+                                    <div>
+                                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                            activePopupAlert.priority === 'Critical' ? 'bg-red-100 text-red-700' :
+                                            activePopupAlert.priority === 'High' ? 'bg-orange-100 text-orange-700' :
+                                            activePopupAlert.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-blue-100 text-blue-700'
+                                        }`}>
+                                            {activePopupAlert.priority} Emergency Alert
+                                        </span>
+                                        <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-dark-text mt-1">{activePopupAlert.title}</h3>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4 bg-slate-50 dark:bg-dark-bg p-5 rounded-2xl border border-slate-100 dark:border-dark-border mb-6">
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-slate-400 font-bold uppercase tracking-wider">Project:</span>
+                                        <span className="font-extrabold text-slate-800 dark:text-dark-text">{activePopupAlert.projectName}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-slate-400 font-bold uppercase tracking-wider">Reported By:</span>
+                                        <span className="font-extrabold text-slate-800 dark:text-dark-text">{activePopupAlert.updatedBy?.name || 'Staff User'}</span>
+                                    </div>
+                                    {activePopupAlert.reason && (
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-slate-400 font-bold uppercase tracking-wider">Reason:</span>
+                                            <span className="font-extrabold text-amber-600 dark:text-amber-400">{activePopupAlert.reason}</span>
+                                        </div>
+                                    )}
+                                    {activePopupAlert.remarks && (
+                                        <div className="border-t border-slate-200/50 dark:border-dark-border/50 pt-3">
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Remarks:</p>
+                                            <p className="text-xs text-slate-600 dark:text-dark-muted font-medium italic">"{activePopupAlert.remarks}"</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex flex-wrap gap-3 justify-end">
+                                    <button 
+                                        onClick={() => {
+                                            setActivePopupAlert(null);
+                                        }}
+                                        className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+                                    >
+                                        Dismiss
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            setActivePopupAlert(null);
+                                            navigate(`/admin/projects?id=${activePopupAlert.projectId}`);
+                                        }}
+                                        className="px-5 py-3 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-xs font-extrabold transition-all"
+                                    >
+                                        View Project
+                                    </button>
+                                    <button 
+                                        onClick={async () => {
+                                            try {
+                                                await api.put(`/notifications/${activePopupAlert._id}/acknowledge`, {
+                                                    remarks: 'Quick Acknowledged via Alert Popup Modal'
+                                                });
+                                                setActivePopupAlert(null);
+                                                fetchAllAlertState();
+                                            } catch (err) {
+                                                console.error("Acknowledge failure:", err);
+                                            }
+                                        }}
+                                        className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-white shadow-lg transition-all ${
+                                            activePopupAlert.priority === 'Critical' ? 'bg-red-600 hover:bg-red-500 shadow-red-500/20' :
+                                            activePopupAlert.priority === 'High' ? 'bg-orange-50 hover:bg-orange-400 shadow-orange-500/20' :
+                                            activePopupAlert.priority === 'Medium' ? 'bg-yellow-50 hover:bg-yellow-400 text-slate-900 shadow-yellow-500/20' :
+                                            'bg-blue-600 hover:bg-blue-500 shadow-blue-500/20'
+                                        }`}
+                                    >
+                                        Acknowledge Alert
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
                     )}
                 </AnimatePresence>
             </div>

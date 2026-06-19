@@ -159,39 +159,122 @@ export const generateQuotePDF = (quote) => {
 };
 
 export const generateSalaryPDF = (salary, user) => {
+    if (!salary) return;
     const doc = new jsPDF();
-    addHeader(doc, 'Monthly Salary Statement');
+    addHeader(doc, 'Pay Slip / Salary Statement');
 
-    doc.setTextColor(...THEME.textDark);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Employee Name: ${user.name.toUpperCase()}`, 15, 65);
-    doc.text(`Pay Period: ${salary.month} ${salary.year || new Date().getFullYear()}`, 15, 72);
+    const emp = salary.staffId || user || {};
+    const empId = emp.staff_id || emp.id || 'N/A';
+    const empName = emp.name || 'Employee';
+    const dept = emp.department || 'Operations';
+    const desig = emp.designation || 'Staff';
+    const joining = emp.joiningDate ? new Date(emp.joiningDate).toLocaleDateString() : 'N/A';
+    const phoneNum = emp.phone || emp.phoneNumber || 'N/A';
 
+    const bankName = emp.bank_name || 'N/A';
+    const accNum = emp.account_number || 'N/A';
+    const ifsc = emp.ifsc_code || 'N/A';
+    const upi = emp.upi_id || 'N/A';
+
+    // Renders the employee & bank details side-by-side using table
     autoTable(doc, {
-        startY: 80,
-        head: [['Earnings Category', 'Description', 'Amount (INR)']],
+        startY: 55,
+        head: [['EMPLOYEE INFORMATION', 'BANK & TRANSACTION']],
         body: [
-            ['Base Remuneration', 'Standard Monthly Payout', `₹ ${salary.salaryAmount?.toLocaleString()}`],
-            ['Attendance Bonus', 'Performance Index Multiplier', '₹ 0'],
-            ['Gross Payable', 'Before Statutory Deductions', `₹ ${salary.salaryAmount?.toLocaleString()}`],
-            ['Deductions', 'TDS / PF / Advances', '₹ 0'],
+            [`ID: ${empId}\nName: ${empName.toUpperCase()}\nDept: ${dept}\nDesignation: ${desig}\nJoining Date: ${joining}\nPhone: ${phoneNum}`,
+             `Bank: ${bankName}\nAccount: ${accNum}\nIFSC: ${ifsc}\nUPI ID: ${upi}\nMonth: ${salary.month}\nType: ${salary.salaryType || 'Monthly'}`]
         ],
-        theme: 'striped',
-        headStyles: { fillColor: THEME.accent },
-        styles: { fontSize: 9, cellPadding: 5 }
+        theme: 'grid',
+        headStyles: { fillColor: THEME.primary, textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 8.5, cellPadding: 4, overflow: 'linebreak' }
     });
 
-    const finalY = doc.lastAutoTable.finalY + 15;
-    doc.setFontSize(14);
-    doc.text(`NET DISBURSED AMOUNT:  ₹ ${salary.salaryAmount?.toLocaleString()}`, 15, finalY + 10);
+    const attendanceY = doc.lastAutoTable.finalY + 8;
     
-    doc.setFontSize(10);
-    doc.setTextColor(0, 150, 0);
-    doc.text(`TRANSACTION STATUS: ${salary.paymentStatus.toUpperCase()}`, 15, finalY + 20);
+    // Attendance & Overtime summaries
+    autoTable(doc, {
+        startY: attendanceY,
+        head: [['ATTENDANCE SUMMARY', 'OVERTIME SUMMARY']],
+        body: [
+            [`Total Working Days: ${salary.totalWorkingDays || 0}\nPresent Days: ${salary.presentDays || 0}\nHalf Days: ${salary.halfDays || 0}\nAbsent Days: ${salary.absentDays || 0}\nLeaves Taken: ${salary.leaveDays || 0}\nHolidays: ${salary.holidays || 0}`,
+             `Overtime Hours: ${salary.overtimeHours || 0} hrs\nOT Rate/Hr: ₹${salary.overtimeRate || emp.overtimeRate || 0}\nTotal OT Earnings: ₹${(salary.overtimeEarnings || 0).toLocaleString()}`]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 8.5, cellPadding: 4 }
+    });
+
+    const ledgerY = doc.lastAutoTable.finalY + 8;
+
+    // Financial breakdown ledger
+    const baseVal = salary.baseSalary || salary.base_salary || 0;
+    const calcBase = salary.calculatedBase !== undefined ? salary.calculatedBase : (salary.salaryType === 'Daily Wage' ? (baseVal * ((salary.presentDays || 0) + ((salary.halfDays || 0) * 0.5))) : baseVal);
+    const otEarn = salary.overtimeEarnings || 0;
+    const bonusVal = salary.bonus !== undefined ? salary.bonus : (salary.bonusAmount || 0);
+    const dedVal = salary.deductions !== undefined ? salary.deductions : (salary.deductionAmount || 0);
+    const advVal = salary.advanceRecovery !== undefined ? salary.advanceRecovery : (salary.advanceAmount || 0);
+    const netVal = salary.netSalary || salary.salaryAmount || 0;
+
+    autoTable(doc, {
+        startY: ledgerY,
+        head: [['EARNINGS & MODIFIERS', 'AMOUNT (INR)', 'DEDUCTIONS', 'AMOUNT (INR)']],
+        body: [
+            ['Base Pay', `₹ ${baseVal.toLocaleString()}`, 'Advance Recovery', `₹ ${advVal.toLocaleString()}`],
+            ['Calculated Base (Wages/Sal)', `₹ ${calcBase.toLocaleString()}`, 'Other Deductions', `₹ ${dedVal.toLocaleString()}`],
+            ['Overtime Earnings', `₹ ${otEarn.toLocaleString()}`, '', ''],
+            ['Performance Bonus', `₹ ${bonusVal.toLocaleString()}`, '', ''],
+            ['Gross Earnings', `₹ ${(calcBase + otEarn + bonusVal).toLocaleString()}`, 'Total Deductions', `₹ ${(advVal + dedVal).toLocaleString()}`],
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: THEME.primary, textColor: 255 },
+        styles: { fontSize: 8.5, cellPadding: 4 },
+        columnStyles: { 
+            0: { fontStyle: 'bold' },
+            2: { fontStyle: 'bold' },
+            1: { halign: 'right' },
+            3: { halign: 'right' }
+        }
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+    
+    // Net Salary Block
+    doc.setFillColor(...THEME.bgLight);
+    doc.rect(15, finalY, 180, 20, 'F');
+    doc.setFontSize(11);
+    doc.setTextColor(...THEME.textDark);
+    doc.setFont('helvetica', 'bold');
+    doc.text('NET DISBURSED PAYROLL AMOUNT:', 20, finalY + 12);
+    doc.setFontSize(15);
+    doc.setTextColor(...THEME.accent);
+    doc.text(`₹ ${netVal.toLocaleString()}`, 190, finalY + 13, { align: 'right' });
+
+    // Status Indicator & Signature block
+    doc.setFontSize(9);
+    doc.setTextColor(salary.paymentStatus === 'paid' ? [0, 150, 0] : [200, 100, 0]);
+    doc.text(`PAYMENT STATUS: ${(salary.paymentStatus || 'unpaid').toUpperCase()}`, 15, finalY + 30);
+    if (salary.paidAt) {
+        doc.setFontSize(7.5);
+        doc.setTextColor(...THEME.textMuted);
+        doc.text(`Paid On: ${new Date(salary.paidAt).toLocaleString()}`, 15, finalY + 35);
+    }
+
+    // Signature Area
+    const pageW = doc.internal.pageSize.width;
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(pageW - 80, finalY + 45, pageW - 15, finalY + 45);
+    doc.setFontSize(8.5);
+    doc.setTextColor(...THEME.textDark);
+    doc.setFont('helvetica', 'bold');
+    doc.text('AUTHORIZED SIGNATURE', pageW - 47.5, finalY + 50, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...THEME.textMuted);
+    doc.text('KRISHNA ENGINEERING WORKS', pageW - 47.5, finalY + 54, { align: 'center' });
 
     addFooter(doc);
-    savePDF(doc, `SalarySlip_${salary.month}_${user.name.replace(/\s+/g, '_')}.pdf`);
+    savePDF(doc, `SalarySlip_${salary.month}_${empName.replace(/\s+/g, '_')}.pdf`);
 };
 
 export const generateInvoicePDF = (invoice) => {

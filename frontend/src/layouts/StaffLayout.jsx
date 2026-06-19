@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, UserCheck, Wallet, CalendarDays, Users,
@@ -6,6 +6,9 @@ import {
     ClipboardList
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
+import { getSocket } from '../utils/socket';
+import api from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const SIDEBAR_W = 'w-64';
 
@@ -80,6 +83,30 @@ const StaffLayout = () => {
     const navigate = useNavigate();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [desktopOpen, setDesktopOpen] = useState(true);
+    
+    const [taskPopup, setTaskPopup] = useState({ show: false, task: null });
+
+    useEffect(() => {
+        if (!isAuthenticated || !user) return;
+        const socket = getSocket();
+        socket.connect();
+        
+        const userId = user._id || user.id;
+        if (userId) {
+            socket.emit('join-room', userId);
+            console.log(`👤 Staff socket joined room: ${userId}`);
+        }
+
+        socket.on('new-task-assigned', (taskData) => {
+            console.log("🔔 New Task Assigned Socket Event:", taskData);
+            setTaskPopup({ show: true, task: taskData });
+        });
+
+        return () => {
+            socket.off('new-task-assigned');
+            socket.disconnect();
+        };
+    }, [isAuthenticated, user]);
 
     if (!isAuthenticated || user?.role !== 'staff') {
         if (user?.role === 'admin') return <Navigate to="/admin" replace />;
@@ -156,6 +183,86 @@ const StaffLayout = () => {
                     </div>
                 </main>
             </div>
+
+            {/* Interactive New Task Assigned Popup Overlay */}
+            <AnimatePresence>
+                {taskPopup.show && taskPopup.task && (
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="w-full max-w-md bg-white rounded-3xl shadow-2xl border-t-8 border-t-blue-600 p-6 text-slate-800"
+                        >
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg">
+                                    🔔
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest">New Task Assigned</h4>
+                                    <p className="text-[10px] text-slate-400 font-bold">Immediate operational assignment</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6 text-xs font-bold">
+                                <div className="flex justify-between">
+                                    <span className="text-slate-400">Task:</span>
+                                    <span className="text-slate-800 font-extrabold">{taskPopup.task.title}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-400">Project:</span>
+                                    <span className="text-slate-800 font-extrabold">{taskPopup.task.projectName}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-400">Assigned By:</span>
+                                    <span className="text-slate-800 font-extrabold">{taskPopup.task.assignedBy}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-400">Due Date:</span>
+                                    <span className="text-slate-800 font-extrabold">
+                                        {taskPopup.task.dueDate ? new Date(taskPopup.task.dueDate).toLocaleDateString() : 'ASAP'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 justify-end">
+                                <button 
+                                    onClick={() => setTaskPopup({ show: false, task: null })}
+                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+                                >
+                                    Dismiss
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        setTaskPopup({ show: false, task: null });
+                                        navigate('/staff/tasks');
+                                    }}
+                                    className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-xs font-bold transition-all"
+                                >
+                                    View Task
+                                </button>
+                                <button 
+                                    onClick={async () => {
+                                        try {
+                                            await api.put(`/tasks/${taskPopup.task._id}/status`, { status: 'In Progress' });
+                                            setTaskPopup({ show: false, task: null });
+                                            navigate('/staff/tasks');
+                                            if (window.location.hash === '#/staff/tasks') {
+                                                window.location.reload();
+                                            }
+                                        } catch (err) {
+                                            alert("Failed to accept task.");
+                                        }
+                                    }}
+                                    className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-500/25"
+                                >
+                                    Accept Task
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

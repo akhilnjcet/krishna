@@ -37,6 +37,33 @@ const adminNotificationSchema = new mongoose.Schema({
         type: Boolean, 
         default: false 
     },
+    priority: {
+        type: String,
+        enum: ['Critical', 'High', 'Medium', 'Low'],
+        default: 'Low'
+    },
+    status: {
+        type: String,
+        enum: ['Active', 'Acknowledged', 'Resolved'],
+        default: 'Active'
+    },
+    acknowledgedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    acknowledgedAt: {
+        type: Date
+    },
+    resolvedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    resolvedAt: {
+        type: Date
+    },
+    resolutionNotes: {
+        type: String
+    },
     createdAt: { 
         type: Date, 
         default: Date.now 

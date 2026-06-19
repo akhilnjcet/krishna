@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
+const DailyAttendance = require('../models/DailyAttendance');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { sendAttendanceAlert, sendLoginAlert: sendWhatsAppLoginAlert } = require('../services/whatsappService');
@@ -147,6 +148,11 @@ exports.verifyFace = async (req, res) => {
                 attendance = await Attendance.create({
                     staff_id: bestMatch._id, full_name: bestMatch.name, login_time: now, date: today, face_verified: true, type: 'IN'
                 });
+                await DailyAttendance.findOneAndUpdate(
+                    { staffId: bestMatch._id, date: today },
+                    { status: 'Present', markedBy: bestMatch._id, updatedAt: now },
+                    { upsert: true, new: true }
+                );
             }
 
             // Send Notifications for Face Auth (Awaited for stability)

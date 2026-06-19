@@ -44,7 +44,9 @@ exports.addStaff = async (req, res) => {
         const { 
             staff_id, full_name, name, phone_number, phone, email, 
             department, designation, username, password, role, status,
-            upi_id, bank_name, account_number, ifsc_code, base_salary
+            upi_id, bank_name, account_number, ifsc_code, base_salary,
+            joiningDate, address, emergencyContact, salaryType, overtimeRate,
+            bonusAmount, advanceAmount, deductionAmount
         } = req.body;
 
         const userExists = await User.findOne({ $or: [{ email }, { username }, { staff_id }] });
@@ -71,7 +73,15 @@ exports.addStaff = async (req, res) => {
             bank_name,
             account_number,
             ifsc_code,
-            base_salary: parseFloat(base_salary) || 0
+            base_salary: parseFloat(base_salary) || 0,
+            joiningDate: joiningDate || Date.now(),
+            address,
+            emergencyContact,
+            salaryType: salaryType || 'Monthly',
+            overtimeRate: parseFloat(overtimeRate) || 0,
+            bonusAmount: parseFloat(bonusAmount) || 0,
+            advanceAmount: parseFloat(advanceAmount) || 0,
+            deductionAmount: parseFloat(deductionAmount) || 0
         });
 
         // Send Welcome Message via WhatsApp
@@ -94,7 +104,9 @@ exports.updateStaff = async (req, res) => {
         const { 
             full_name, name, phone_number, phone, email, 
             department, designation, status, role,
-            upi_id, bank_name, account_number, ifsc_code, base_salary
+            upi_id, bank_name, account_number, ifsc_code, base_salary,
+            joiningDate, address, emergencyContact, salaryType, overtimeRate,
+            bonusAmount, advanceAmount, deductionAmount
         } = req.body;
 
         staff.name = name || full_name || staff.name;
@@ -110,6 +122,15 @@ exports.updateStaff = async (req, res) => {
         staff.account_number = account_number !== undefined ? account_number : staff.account_number;
         staff.ifsc_code = ifsc_code !== undefined ? ifsc_code : staff.ifsc_code;
         staff.base_salary = base_salary !== undefined ? parseFloat(base_salary) : staff.base_salary;
+        
+        staff.joiningDate = joiningDate !== undefined ? joiningDate : staff.joiningDate;
+        staff.address = address !== undefined ? address : staff.address;
+        staff.emergencyContact = emergencyContact !== undefined ? emergencyContact : staff.emergencyContact;
+        staff.salaryType = salaryType !== undefined ? salaryType : staff.salaryType;
+        staff.overtimeRate = overtimeRate !== undefined ? parseFloat(overtimeRate) : staff.overtimeRate;
+        staff.bonusAmount = bonusAmount !== undefined ? parseFloat(bonusAmount) : staff.bonusAmount;
+        staff.advanceAmount = advanceAmount !== undefined ? parseFloat(advanceAmount) : staff.advanceAmount;
+        staff.deductionAmount = deductionAmount !== undefined ? parseFloat(deductionAmount) : staff.deductionAmount;
 
         const updatedStaff = await staff.save();
         res.json(updatedStaff);

@@ -7,7 +7,11 @@ const {
     markAsRead,
     markAllAsRead,
     getProjectTimeline,
-    getDashboardStats
+    getDashboardStats,
+    subscribeToPush,
+    getVapidPublicKey,
+    acknowledgeNotification,
+    resolveNotification
 } = require('../controllers/projectStatusController');
 
 // Project status updates and timeline (Staff & Admin)
@@ -21,5 +25,13 @@ router.get('/projects/dashboard/stats', protect, admin, getDashboardStats);
 router.get('/notifications', protect, admin, getAdminNotifications);
 router.put('/notifications/read-all', protect, admin, markAllAsRead);
 router.put('/notifications/:id/read', protect, admin, markAsRead);
+
+// Web Push VAPID and subscriptions
+router.get('/notifications/vapid', getVapidPublicKey);
+router.post('/notifications/subscribe', protect, admin, subscribeToPush);
+
+// Warning/emergency alert controls
+router.put('/notifications/:id/acknowledge', protect, admin, acknowledgeNotification);
+router.put('/notifications/:id/resolve', protect, admin, resolveNotification);
 
 module.exports = router;

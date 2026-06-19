@@ -1,21 +1,88 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../../services/api';
-import { TrendingUp, TrendingDown, DollarSign, Plus, Trash2, Loader2, AlertCircle, PieChart, Activity, Download } from 'lucide-react';
+import { 
+  TrendingUp, TrendingDown, DollarSign, Plus, Trash2, Loader2, 
+  AlertCircle, PieChart, Activity, Download, Banknote, Edit, Check, X,
+  Briefcase, Landmark, CreditCard, Wallet, Calendar, UserCheck
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import ReportHeader from '../../components/ReportHeader';
+import { generateGeneralReportPDF, generateSalaryPDF } from '../../services/pdfService';
 
 const AdminFinance = () => {
+    const [activeTab, setActiveTab] = useState('expenses'); // 'expenses', 'payroll', 'overtime'
+    const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
+    
+    // Expenses State
     const [summary, setSummary] = useState(null);
     const [expenses, setExpenses] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [adding, setAdding] = useState(false);
+    const [addingExpense, setAddingExpense] = useState(false);
     const [newExpense, setNewExpense] = useState({ title: '', amount: '', category: 'others', description: '' });
 
-    useEffect(() => {
-        fetchFinance();
-    }, []);
+    // Roster / Global Data State
+    const [staffList, setStaffList] = useState([]);
+    const [attendanceList, setAttendanceList] = useState([]);
+    const [payrollRecords, setPayrollRecords] = useState([]);
+    const [otRecords, setOtRecords] = useState([]);
 
-    const fetchFinance = async () => {
-        setLoading(true);
+    // Month Selector for Payroll & Overtime
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`; // YYYY-MM
+    });
+
+    // Payroll Drafts Calculation State
+    const [payrollDrafts, setPayrollDrafts] = useState({});
+    const [generatingDrafts, setGeneratingDrafts] = useState(false);
+
+    // Modals
+    const [showEditStaffModal, setShowEditStaffModal] = useState(false);
+    const [selectedStaffForEdit, setSelectedStaffForEdit] = useState(null);
+    const [editStaffFinanceForm, setEditStaffFinanceForm] = useState({
+        base_salary: '',
+        salaryType: 'Monthly',
+        overtimeRate: '',
+        bonusAmount: '',
+        advanceAmount: '',
+        deductionAmount: '',
+        upi_id: '',
+        bank_name: '',
+        account_number: '',
+        ifsc_code: ''
+    });
+
+    const [showOtModal, setShowOtModal] = useState(false);
+    const [editingOt, setEditingOt] = useState(null);
+    const [otForm, setOtForm] = useState({
+        staffId: '',
+        date: '',
+        hours: '',
+        remarks: ''
+    });
+
+    // Fetch Global Roster, Attendance, Payroll, and Overtime
+    const fetchGlobalData = useCallback(async () => {
+        try {
+            const [staffRes, attendanceRes, payrollRes, otRes] = await Promise.all([
+                api.get('/staff'),
+                api.get(`/daily-attendance?month=${selectedMonth}`),
+                api.get(`/payroll?month=${selectedMonth}`),
+                api.get(`/overtime?month=${selectedMonth}`)
+            ]);
+            setStaffList(Array.isArray(staffRes.data) ? staffRes.data : []);
+            setAttendanceList(Array.isArray(attendanceRes.data) ? attendanceRes.data : []);
+            setPayrollRecords(Array.isArray(payrollRes.data) ? payrollRes.data : []);
+            setOtRecords(Array.isArray(otRes.data) ? otRes.data : []);
+        } catch (err) {
+            console.error("Failed to fetch finance context", err);
+        }
+    }, [selectedMonth]);
+
+    // Fetch Expenses Ledger
+    const fetchExpenses = async () => {
         try {
             const [summaryRes, expensesRes] = await Promise.all([
                 api.get('/finance/admin-overview'),
@@ -24,24 +91,209 @@ const AdminFinance = () => {
             setSummary(summaryRes.data);
             setExpenses(expensesRes.data);
         } catch (err) {
-            console.error('Finance sync failure:', err);
-        } finally {
-            setLoading(false);
+            console.error('Expenses ledger sync failure:', err);
         }
     };
 
+    const fetchAllData = useCallback(async () => {
+        setLoading(true);
+        await Promise.all([
+            fetchExpenses(),
+            fetchGlobalData()
+        ]);
+        setLoading(false);
+    }, [fetchGlobalData]);
+
+    useEffect(() => {
+        fetchAllData();
+    }, [selectedMonth, fetchAllData]);
+
+    // Add Expense Action
     const handleAddExpense = async (e) => {
         e.preventDefault();
-        setAdding(true);
+        setAddingExpense(true);
         try {
             await api.post('/finance/expenses', newExpense);
             setNewExpense({ title: '', amount: '', category: 'others', description: '' });
-            fetchFinance();
+            await fetchExpenses();
         } catch (err) {
             console.error(err);
             alert("Administrative Error: Budget synchronization refused.");
         } finally {
-            setAdding(false);
+            setAddingExpense(false);
+        }
+    };
+
+    // Calculate Drafts for Roster
+    const handleGenerateDrafts = async () => {
+        setGeneratingDrafts(true);
+        const drafts = {};
+        try {
+            // Fetch drafts sequentially or parallelly
+            await Promise.all(staffList.map(async (staff) => {
+                try {
+                    const res = await api.get(`/payroll/draft?staffId=${staff._id}&month=${selectedMonth}`);
+                    drafts[staff._id] = res.data;
+                } catch (e) {
+                    console.warn(`Failed to generate draft for ${staff.name}`, e);
+                }
+            }));
+            setPayrollDrafts(drafts);
+            alert("Payroll drafts loaded successfully for the roster.");
+        } catch (err) {
+            console.error(err);
+            alert("Failed to compile payroll drafts.");
+        } finally {
+            setGeneratingDrafts(false);
+        }
+    };
+
+    // Save/Lock payroll draft
+    const handleSavePayroll = async (draft) => {
+        setActionLoading(true);
+        try {
+            await api.post('/payroll', {
+                staffId: draft.staffId,
+                month: draft.month,
+                baseSalary: draft.baseSalary,
+                salaryType: draft.salaryType,
+                totalWorkingDays: draft.totalWorkingDays,
+                presentDays: draft.presentDays,
+                absentDays: draft.absentDays,
+                halfDays: draft.halfDays,
+                leaveDays: draft.leaveDays,
+                holidays: draft.holidays,
+                overtimeHours: draft.overtimeHours,
+                overtimeEarnings: draft.overtimeEarnings,
+                bonus: draft.bonus,
+                deductions: draft.deductions,
+                advanceRecovery: draft.advanceRecovery,
+                netSalary: draft.netSalary
+            });
+            alert("Payroll successfully locked and recorded.");
+            // Refresh payroll records
+            const payrollRes = await api.get(`/payroll?month=${selectedMonth}`);
+            setPayrollRecords(Array.isArray(payrollRes.data) ? payrollRes.data : []);
+        } catch (err) {
+            console.error(err);
+            alert("Failed to lock payroll record.");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // Disburse payroll (toggle status)
+    const handleTogglePaymentStatus = async (recordId, currentStatus, netSalary, staffName, staffIdNum) => {
+        const nextStatus = currentStatus === 'paid' ? 'unpaid' : 'paid';
+        if (!window.confirm(`Mark salary of ${staffName} as ${nextStatus.toUpperCase()}?`)) return;
+        
+        setActionLoading(true);
+        try {
+            await api.put(`/payroll/${recordId}/payment`, { status: nextStatus });
+            
+            // If marking paid, inject into Expense Ledger automatically
+            if (nextStatus === 'paid') {
+                await api.post('/finance/expenses', {
+                    title: `Salary Disburse: ${staffName} (${staffIdNum})`,
+                    amount: netSalary,
+                    category: 'staff',
+                    description: `Salary disbursement for ${staffName} for cycle ${selectedMonth}`
+                });
+            }
+            
+            alert(`Payment marked as ${nextStatus.toUpperCase()}. Ledger updated.`);
+            // Refresh all data
+            await fetchAllData();
+        } catch (err) {
+            console.error(err);
+            alert("Failed to update payment status.");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // Submit modifier/financial profile update
+    const handleUpdateStaffFinance = async (e) => {
+        e.preventDefault();
+        setActionLoading(true);
+        try {
+            await api.put(`/staff/${selectedStaffForEdit._id}`, editStaffFinanceForm);
+            alert("Staff financial profile updated successfully.");
+            setShowEditStaffModal(false);
+            setSelectedStaffForEdit(null);
+            // Refresh everything and drafts
+            await fetchGlobalData();
+            if (Object.keys(payrollDrafts).length > 0) {
+                handleGenerateDrafts();
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Failed to update staff financials.");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // Submit Log Overtime Entry
+    const handleOtSubmit = async (e) => {
+        e.preventDefault();
+        
+        // Validation: Verify if staff is marked "Present" or "Half Day" on the selected date.
+        const attendanceOnDate = attendanceList.find(a => {
+            const aStaffId = a.staffId?._id || a.staffId;
+            return aStaffId === otForm.staffId && a.date === otForm.date;
+        });
+
+        if (!attendanceOnDate || !['Present', 'Half Day'].includes(attendanceOnDate.status)) {
+            alert("Overtime Rule Violation: Overtime hours can only be logged on dates when the employee is marked as PRESENT or HALF DAY.");
+            return;
+        }
+
+        setActionLoading(true);
+        try {
+            if (editingOt) {
+                await api.put(`/overtime/${editingOt._id}`, {
+                    hours: parseFloat(otForm.hours),
+                    remarks: otForm.remarks
+                });
+                alert("Overtime entry updated successfully.");
+            } else {
+                await api.post('/overtime', otForm);
+                alert("Overtime entry logged successfully.");
+            }
+            
+            setShowOtModal(false);
+            setEditingOt(null);
+            setOtForm({ staffId: '', date: '', hours: '', remarks: '' });
+            await fetchGlobalData();
+            // Recalculate drafts if loaded
+            if (Object.keys(payrollDrafts).length > 0) {
+                handleGenerateDrafts();
+            }
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || "Failed to save overtime entry.");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // Delete Overtime
+    const handleOtDelete = async (id) => {
+        if (!window.confirm("Remove this Overtime log?")) return;
+        setActionLoading(true);
+        try {
+            await api.delete(`/overtime/${id}`);
+            alert("Overtime entry removed.");
+            await fetchGlobalData();
+            if (Object.keys(payrollDrafts).length > 0) {
+                handleGenerateDrafts();
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Failed to delete overtime entry.");
+        } finally {
+            setActionLoading(false);
         }
     };
 
@@ -55,144 +307,668 @@ const AdminFinance = () => {
     }
 
     return (
-        <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-12 font-sans bg-slate-50 min-h-screen">
+        <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-8 font-sans bg-slate-50 min-h-screen">
             
-            <ReportHeader 
-                title="Financial Intelligence"
-                subtitle="Command-level oversight of institutional liquid assets."
-                data={expenses.map(exp => [
-                    new Date(exp.date).toLocaleDateString(),
-                    exp.title.toUpperCase(),
-                    exp.category,
-                    `₹ ${exp.amount.toLocaleString()}`
-                ])}
-                columns={['Date', 'Title', 'Category', 'Amount']}
-            />
-
-            {/* FINANCIAL OVERVIEW GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="bg-slate-900 border-b-8 border-indigo-500 p-8 text-white rounded-[2rem] shadow-2xl relative overflow-hidden">
-                    <TrendingUp className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-2">Authenticated Income</p>
-                    <h2 className="text-4xl font-black italic">₹ {summary.totalIncome?.toLocaleString()}</h2>
-                    <p className="text-[9px] font-bold text-slate-500 mt-4 uppercase tracking-widest leading-none">Net Revenue from Paid Units</p>
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter italic">Financial Intelligence & Payroll</h1>
+                    <p className="text-slate-500 font-medium">Log expenditures, process monthly staff rosters, lock salary disbursements, and administer overtime registries.</p>
                 </div>
-                <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-xl relative overflow-hidden group">
-                    <TrendingDown className="absolute -right-4 -bottom-4 w-32 h-32 opacity-5 text-rose-500 group-hover:scale-110 transition-transform" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-2">Total Expenditure</p>
-                    <h2 className="text-4xl font-black italic text-slate-900">₹ {summary.totalExpense?.toLocaleString()}</h2>
-                    <div className="mt-4 flex gap-4">
-                        <span className="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded italic uppercase">Salaries: {summary.expenseBreakdown?.staff?.toLocaleString()}</span>
-                        <span className="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded italic uppercase">Ops: {summary.expenseBreakdown?.others?.toLocaleString()}</span>
-                    </div>
-                </div>
-                <div className="bg-indigo-600 border-b-8 border-white p-8 text-white rounded-[2rem] shadow-2xl relative overflow-hidden">
-                    <Activity className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-200 mb-2">Liquid Profit</p>
-                    <h2 className="text-4xl font-black italic">₹ {summary.netProfit?.toLocaleString()}</h2>
-                    <p className="text-[9px] font-bold text-indigo-300 mt-4 uppercase tracking-widest leading-none">Net Yield AFTER Ops Deductions</p>
+                <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block">Disbursement Cycle</label>
+                    <input 
+                        type="month" 
+                        value={selectedMonth}
+                        onChange={(e) => setSelectedMonth(e.target.value)}
+                        className="bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl outline-none font-bold text-slate-700 focus:border-indigo-500"
+                    />
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                {/* EXPENSE INJECTION PORT */}
-                <div className="bg-white border border-slate-200 p-6 md:p-10 rounded-[3rem] shadow-2xl">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 md:mb-10">
-                        <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter italic flex items-center gap-4">
-                            <Plus className="text-indigo-600" /> Operational Expense Injection
-                        </h3>
-                        <div className="w-10 h-1 h-indigo-600"></div>
-                    </div>
-                    
-                    <form onSubmit={handleAddExpense} className="space-y-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Transaction Title</label>
-                                <input 
-                                    required
-                                    value={newExpense.title}
-                                    onChange={(e) => setNewExpense({...newExpense, title: e.target.value})}
-                                    placeholder="e.g. Structural Steel Order #44"
-                                    className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Budget Value (₹)</label>
-                                <input 
-                                    required
-                                    type="number"
-                                    value={newExpense.amount}
-                                    onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
-                                    placeholder="0.00"
-                                    className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none"
-                                />
+            {/* Tab Navigation */}
+            <div className="flex bg-slate-200/50 p-1.5 rounded-2xl w-fit border border-slate-200">
+                <button 
+                    onClick={() => setActiveTab('expenses')}
+                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'expenses' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                >
+                    📈 Expense Ledger
+                </button>
+                <button 
+                    onClick={() => setActiveTab('payroll')}
+                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'payroll' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                >
+                    💰 Salary & Payroll Manager
+                </button>
+                <button 
+                    onClick={() => setActiveTab('overtime')}
+                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'overtime' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                >
+                    ⏱️ Overtime Registry
+                </button>
+            </div>
+
+            {/* TAB 1: EXPENSES LEDGER */}
+            {activeTab === 'expenses' && (
+                <div className="space-y-8">
+                    {/* FINANCIAL OVERVIEW GRID */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="bg-slate-900 border-b-8 border-indigo-500 p-8 text-white rounded-[2rem] shadow-2xl relative overflow-hidden">
+                            <TrendingUp className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-2">Authenticated Income</p>
+                            <h2 className="text-4xl font-black italic">₹ {summary?.totalIncome?.toLocaleString() || 0}</h2>
+                            <p className="text-[9px] font-bold text-slate-500 mt-4 uppercase tracking-widest leading-none">Net Revenue from Paid Units</p>
+                        </div>
+                        <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-xl relative overflow-hidden group">
+                            <TrendingDown className="absolute -right-4 -bottom-4 w-32 h-32 opacity-5 text-rose-500 group-hover:scale-110 transition-transform" />
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-2">Total Expenditure</p>
+                            <h2 className="text-4xl font-black italic text-slate-900">₹ {summary?.totalExpense?.toLocaleString() || 0}</h2>
+                            <div className="mt-4 flex gap-4">
+                                <span className="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded italic uppercase">Salaries: {summary?.expenseBreakdown?.staff?.toLocaleString() || 0}</span>
+                                <span className="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded italic uppercase">Ops: {summary?.expenseBreakdown?.others?.toLocaleString() || 0}</span>
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Category Identifier</label>
-                            <select 
-                                value={newExpense.category}
-                                onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
-                                className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none uppercase"
-                            >
-                                <option value="material">Material Procurement</option>
-                                <option value="fuel">Fuel / Logistics</option>
-                                <option value="machinery">Machinery Maint.</option>
-                                <option value="utilities">Utilities & R&D</option>
-                                <option value="others">Other Direct Costs</option>
-                            </select>
+                        <div className="bg-indigo-600 border-b-8 border-white p-8 text-white rounded-[2rem] shadow-2xl relative overflow-hidden">
+                            <Activity className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-200 mb-2">Liquid Profit</p>
+                            <h2 className="text-4xl font-black italic">₹ {summary?.netProfit?.toLocaleString() || 0}</h2>
+                            <p className="text-[9px] font-bold text-indigo-300 mt-4 uppercase tracking-widest leading-none">Net Yield AFTER Ops Deductions</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        {/* EXPENSE INJECTION PORT */}
+                        <div className="lg:col-span-5 bg-white border border-slate-200 p-8 rounded-[3rem] shadow-2xl h-fit">
+                            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic flex items-center gap-3 mb-6">
+                                <Plus className="text-indigo-600" /> Log Operational Expense
+                            </h3>
+                            
+                            <form onSubmit={handleAddExpense} className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Transaction Title</label>
+                                    <input 
+                                        required
+                                        value={newExpense.title}
+                                        onChange={(e) => setNewExpense({...newExpense, title: e.target.value})}
+                                        placeholder="e.g. Structural Steel Order"
+                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none text-sm"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Budget Value (₹)</label>
+                                    <input 
+                                        required
+                                        type="number"
+                                        value={newExpense.amount}
+                                        onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
+                                        placeholder="0.00"
+                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none text-sm"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Category Identifier</label>
+                                    <select 
+                                        value={newExpense.category}
+                                        onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
+                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none uppercase text-xs tracking-wider"
+                                    >
+                                        <option value="material">Material Procurement</option>
+                                        <option value="fuel">Fuel / Logistics</option>
+                                        <option value="machinery">Machinery Maint.</option>
+                                        <option value="utilities">Utilities & R&D</option>
+                                        <option value="others">Other Direct Costs</option>
+                                    </select>
+                                </div>
+                                <button 
+                                    disabled={addingExpense}
+                                    className="w-full bg-slate-900 text-white font-black uppercase tracking-widest text-xs py-5 rounded-2xl shadow-xl hover:bg-indigo-600 transition-colors flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                                >
+                                    {addingExpense ? <Loader2 className="animate-spin w-5 h-5" /> : <DollarSign className="w-5 h-5" />}
+                                    Commit Expense entry →
+                                </button>
+                            </form>
+                        </div>
+
+                        {/* EXPENSE LOGS */}
+                        <div className="lg:col-span-7 bg-white border border-slate-200 p-8 rounded-[3rem] shadow-2xl flex flex-col">
+                            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic flex items-center gap-3 mb-6">
+                                <PieChart className="text-indigo-600" /> Expenditure Audit Log
+                            </h3>
+                            
+                            <div className="space-y-3 overflow-y-auto max-h-[500px] pr-2">
+                                {expenses.length === 0 ? (
+                                    <p className="text-center text-slate-400 py-10 font-bold">No expenditures logged yet.</p>
+                                ) : expenses.map((exp, i) => (
+                                    <div key={exp._id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-indigo-50/50 transition flex items-center justify-between group">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center font-black text-indigo-600 shadow-sm uppercase text-[9px]">
+                                                {exp.category.slice(0, 3)}
+                                            </div>
+                                            <div>
+                                                <p className="font-extrabold text-slate-950 text-sm uppercase">{exp.title}</p>
+                                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{new Date(exp.date).toLocaleDateString()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-black text-rose-500 italic text-sm">₹ {exp.amount.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TAB 2: SALARY & PAYROLL MANAGER */}
+            {activeTab === 'payroll' && (
+                <div className="space-y-6">
+                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center justify-between">
+                        <div>
+                            <h3 className="text-xl font-black uppercase tracking-tight text-slate-950">Staff Payroll Registry</h3>
+                            <p className="text-xs text-slate-400 font-medium">Verify draft sheets, configure modifer fields, lock salaries, and download professional salary slips.</p>
                         </div>
                         <button 
-                            disabled={adding}
-                            className="w-full bg-slate-900 text-white font-black uppercase tracking-widest text-xs py-6 rounded-3xl shadow-xl hover:bg-indigo-600 transition-colors flex items-center justify-center gap-3 active:scale-95"
+                            onClick={handleGenerateDrafts}
+                            disabled={generatingDrafts}
+                            className="bg-indigo-600 text-white px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-2 hover:bg-indigo-700 shadow-lg shadow-indigo-600/25 active:scale-95 transition disabled:opacity-50"
                         >
-                            {adding ? <Loader2 className="animate-spin w-5 h-5" /> : <DollarSign className="w-5 h-5" />}
-                            Commit Financial Override →
+                            {generatingDrafts ? <Loader2 className="animate-spin w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
+                            Generate / Refresh Monthly Drafts
                         </button>
-                    </form>
-                </div>
+                    </div>
 
-                {/* EXPENSE LOGS */}
-                <div className="bg-white border border-slate-200 p-10 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col">
-                    <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter italic flex items-center gap-4 mb-10">
-                        <PieChart className="text-indigo-600" /> Expenditure Audit Log
-                    </h3>
-                    
-                    <div className="space-y-4 overflow-y-auto max-h-[500px] pr-4">
-                        {expenses.map((exp, i) => (
-                            <motion.div 
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: i * 0.05 }}
-                                key={exp._id} 
-                                className="p-6 bg-slate-50 border border-slate-100 rounded-3xl hover:bg-indigo-50/50 transition flex items-center justify-between group"
-                            >
-                                <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 bg-white border border-slate-200 rounded-2xl flex items-center justify-center font-black text-indigo-600 shadow-sm uppercase text-[10px]">
-                                        {exp.category.slice(0, 3)}
-                                    </div>
-                                    <div>
-                                        <p className="font-black text-slate-900 text-sm uppercase">{exp.title}</p>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{new Date(exp.date).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className="font-black text-rose-500 italic">₹ {exp.amount.toLocaleString()}</p>
-                                </div>
-                            </motion.div>
-                        ))}
+                    <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse text-left text-xs min-w-[1200px]">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200">
+                                        <th className="px-6 py-5 font-bold text-slate-600">Employee Details</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Type / Base</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Attendance Summary</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Overtime Details</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Deductions & Advances</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Bonus</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Net Calculated</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Status</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {staffList.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={9} className="py-12 text-center text-slate-400 font-bold">No active staff roster loaded.</td>
+                                        </tr>
+                                    ) : staffList.map(staff => {
+                                        const draft = payrollDrafts[staff._id];
+                                        const locked = payrollRecords.find(p => p.staffId?._id === staff._id || p.staffId === staff._id);
+                                        const record = locked || draft;
+                                        
+                                        return (
+                                            <tr key={staff._id} className="hover:bg-slate-50/50 transition">
+                                                <td className="px-6 py-5">
+                                                    <div>
+                                                        <p className="font-extrabold text-slate-900 text-sm leading-tight">{staff.name}</p>
+                                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{staff.staff_id} • {staff.designation}</p>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    <div>
+                                                        <span className="font-bold text-slate-700">{staff.salaryType || 'Monthly'}</span>
+                                                        <p className="font-bold text-indigo-600 mt-0.5">₹ {staff.base_salary?.toLocaleString()}</p>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    {record ? (
+                                                        <div className="font-semibold text-slate-600 space-y-0.5">
+                                                            <p><span className="text-emerald-600 font-extrabold">P:</span> {record.presentDays} | <span className="text-amber-500 font-extrabold">H:</span> {record.halfDays}</p>
+                                                            <p><span className="text-rose-600 font-extrabold">A:</span> {record.absentDays} | <span className="text-purple-600 font-extrabold">L:</span> {record.leaveDays}</p>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-400 italic">Generate Draft</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    {record ? (
+                                                        <div>
+                                                            <p className="font-semibold text-slate-700">{record.overtimeHours} hrs</p>
+                                                            <p className="font-bold text-emerald-600">₹ {record.overtimeEarnings?.toLocaleString()}</p>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-400 italic">-</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    {record ? (
+                                                        <div className="font-semibold text-slate-600 space-y-0.5">
+                                                            <p>Ded: <span className="text-rose-500 font-bold">₹{record.deductions}</span></p>
+                                                            <p>Adv: <span className="text-rose-500 font-bold">₹{record.advanceRecovery}</span></p>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-400 italic">-</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    {record ? (
+                                                        <span className="font-bold text-emerald-600">₹ {record.bonus?.toLocaleString() || record.bonusAmount?.toLocaleString() || 0}</span>
+                                                    ) : (
+                                                        <span className="text-slate-400 italic">-</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    {record ? (
+                                                        <span className="font-black text-slate-900 text-sm">₹ {record.netSalary?.toLocaleString()}</span>
+                                                    ) : (
+                                                        <span className="text-slate-400 italic">-</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    {locked ? (
+                                                        <span className={`inline-flex px-2.5 py-1 rounded-lg font-black uppercase tracking-wider text-[9px] ${
+                                                            locked.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                                                        }`}>
+                                                            {locked.paymentStatus}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-slate-400 uppercase font-black text-[9px] tracking-wider bg-slate-100 px-2.5 py-1 rounded-lg">DRAFT</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-5 text-right">
+                                                    <div className="flex items-center justify-end gap-1.5">
+                                                        {/* Edit Parameters */}
+                                                        <button 
+                                                            title="Edit Modifiers / Salary Details"
+                                                            onClick={() => {
+                                                                setSelectedStaffForEdit(staff);
+                                                                setEditStaffFinanceForm({
+                                                                    base_salary: staff.base_salary || 0,
+                                                                    salaryType: staff.salaryType || 'Monthly',
+                                                                    overtimeRate: staff.overtimeRate || 0,
+                                                                    bonusAmount: staff.bonusAmount || 0,
+                                                                    advanceAmount: staff.advanceAmount || 0,
+                                                                    deductionAmount: staff.deductionAmount || 0,
+                                                                    upi_id: staff.upi_id || '',
+                                                                    bank_name: staff.bank_name || '',
+                                                                    account_number: staff.account_number || '',
+                                                                    ifsc_code: staff.ifsc_code || ''
+                                                                });
+                                                                setShowEditStaffModal(true);
+                                                            }}
+                                                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition"
+                                                        >
+                                                            <Edit className="w-4 h-4" />
+                                                        </button>
+
+                                                        {/* Lock Sheet (for drafts) */}
+                                                        {draft && !locked && (
+                                                            <button 
+                                                                title="Lock Payroll Record"
+                                                                disabled={actionLoading}
+                                                                onClick={() => handleSavePayroll(draft)}
+                                                                className="px-3 py-2 bg-slate-900 text-white font-bold hover:bg-black rounded-lg transition"
+                                                            >
+                                                                Lock
+                                                            </button>
+                                                        )}
+
+                                                        {/* Mark Paid / Mark Unpaid */}
+                                                        {locked && (
+                                                            <>
+                                                                <button 
+                                                                    title={locked.paymentStatus === 'paid' ? 'Mark Unpaid' : 'Disburse Payout'}
+                                                                    disabled={actionLoading}
+                                                                    onClick={() => handleTogglePaymentStatus(locked._id, locked.paymentStatus, locked.netSalary, staff.name, staff.staff_id)}
+                                                                    className={`px-3 py-2 rounded-lg font-bold transition ${
+                                                                        locked.paymentStatus === 'paid' ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                                                    }`}
+                                                                >
+                                                                    {locked.paymentStatus === 'paid' ? 'Unpay' : 'Pay'}
+                                                                </button>
+                                                                
+                                                                {/* Download slip */}
+                                                                <button 
+                                                                    title="Download salary slip"
+                                                                    onClick={() => generateSalaryPDF(locked, staff)}
+                                                                    className="p-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-lg transition"
+                                                                >
+                                                                    <Download className="w-4 h-4" />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* POLICY OVERVIEW */}
-            <div className="p-8 bg-black text-white rounded-[2rem] border-l-[12px] border-indigo-500 relative overflow-hidden">
-                <AlertCircle className="absolute top-0 right-0 w-32 h-32 opacity-5" />
-                <h4 className="text-xl font-black uppercase tracking-tighter italic mb-2 leading-none">Institutional Revenue Directive</h4>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight max-w-2xl leading-relaxed">
-                    Financial reports are accessible only to authorized administrative personnel. Revenue accuracy is maintained through unyielding operational tracking and expert validation in accordance with the Krishna Engineering security workflow.
-                </p>
-            </div>
+            {/* TAB 3: OVERTIME REGISTRY */}
+            {activeTab === 'overtime' && (
+                <div className="space-y-6">
+                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center justify-between">
+                        <div>
+                            <h3 className="text-xl font-black uppercase tracking-tight text-slate-950">Overtime Logbook</h3>
+                            <p className="text-xs text-slate-400 font-medium">Log staff overtime hours, edit remarks, and verify historical work cycles.</p>
+                        </div>
+                        <button 
+                            onClick={() => {
+                                setEditingOt(null);
+                                setOtForm({ staffId: '', date: '', hours: '', remarks: '' });
+                                setShowOtModal(true);
+                            }}
+                            className="bg-indigo-600 text-white px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-2 hover:bg-indigo-700 shadow-lg shadow-indigo-600/25 active:scale-95 transition"
+                        >
+                            <Plus className="w-4 h-4" /> Add OT Entry
+                        </button>
+                    </div>
+
+                    <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse text-left text-xs">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200">
+                                        <th className="px-6 py-5 font-bold text-slate-600">Employee Details</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Log Date</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Hours Logged</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Rate / Hour</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Total Yield</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Remarks</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {otRecords.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="py-12 text-center text-slate-400 font-bold">No overtime records found for this cycle.</td>
+                                        </tr>
+                                    ) : otRecords.map(ot => {
+                                        const staff = ot.staffId || {};
+                                        return (
+                                            <tr key={ot._id} className="hover:bg-slate-50/50 transition">
+                                                <td className="px-6 py-5">
+                                                    <div>
+                                                        <p className="font-extrabold text-slate-900 text-sm leading-tight">{staff.name || 'Unknown'}</p>
+                                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{staff.staff_id || 'N/A'} • {staff.designation || 'Staff'}</p>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-5 font-bold text-slate-600">{ot.date}</td>
+                                                <td className="px-6 py-5 font-bold text-slate-700">{ot.hours} hrs</td>
+                                                <td className="px-6 py-5 font-semibold text-slate-500">₹ {ot.ratePerHour || staff.overtimeRate || 0}</td>
+                                                <td className="px-6 py-5 font-black text-slate-900 text-sm">₹ {ot.totalAmount?.toLocaleString()}</td>
+                                                <td className="px-6 py-5 font-medium text-slate-500 max-w-xs truncate" title={ot.remarks}>{ot.remarks || 'Regular overtime'}</td>
+                                                <td className="px-6 py-5 text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button 
+                                                            onClick={() => {
+                                                                setEditingOt(ot);
+                                                                setOtForm({
+                                                                    staffId: staff._id || ot.staffId,
+                                                                    date: ot.date,
+                                                                    hours: ot.hours.toString(),
+                                                                    remarks: ot.remarks || ''
+                                                                });
+                                                                setShowOtModal(true);
+                                                            }}
+                                                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition"
+                                                        >
+                                                            <Edit className="w-4 h-4" />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleOtDelete(ot._id)}
+                                                            className="p-2 bg-red-50 hover:bg-red-500 hover:text-white text-red-500 rounded-lg transition"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: EDIT STAFF FINANCIAL PARAMETERS */}
+            <AnimatePresence>
+                {showEditStaffModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 uppercase">Edit Financial Parameters</h3>
+                                    <p className="text-xs text-slate-500 font-medium">Configure payroll base rates and recurring modifier parameters for {selectedStaffForEdit?.name}.</p>
+                                </div>
+                                <button onClick={() => setShowEditStaffModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
+                                    <X className="w-5 h-5 text-slate-400" />
+                                </button>
+                            </div>
+                            
+                            <form onSubmit={handleUpdateStaffFinance} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Salary Protocol</label>
+                                        <select 
+                                            value={editStaffFinanceForm.salaryType}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, salaryType: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        >
+                                            <option value="Monthly">Monthly</option>
+                                            <option value="Daily Wage">Daily Wage</option>
+                                            <option value="Contract">Contract</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Base Salary Value (INR)</label>
+                                        <input 
+                                            type="number"
+                                            value={editStaffFinanceForm.base_salary}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, base_salary: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Overtime Rate / Hour (INR)</label>
+                                        <input 
+                                            type="number"
+                                            value={editStaffFinanceForm.overtimeRate}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, overtimeRate: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Recurring Bonus (INR)</label>
+                                        <input 
+                                            type="number"
+                                            value={editStaffFinanceForm.bonusAmount}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, bonusAmount: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Advance Recovery (INR)</label>
+                                        <input 
+                                            type="number"
+                                            value={editStaffFinanceForm.advanceAmount}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, advanceAmount: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Recurring Deductions (INR)</label>
+                                        <input 
+                                            type="number"
+                                            value={editStaffFinanceForm.deductionAmount}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, deductionAmount: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2 pt-4 border-t border-slate-100">
+                                        <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-3">Bank Details for Payout Transfer</h4>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Bank UPI ID</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="name@upi"
+                                            value={editStaffFinanceForm.upi_id}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, upi_id: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Bank Institution Name</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="SBI / Federal"
+                                            value={editStaffFinanceForm.bank_name}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, bank_name: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Account Number</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="00000000"
+                                            value={editStaffFinanceForm.account_number}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, account_number: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Bank IFSC Code</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="SBIN0000000"
+                                            value={editStaffFinanceForm.ifsc_code}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, ifsc_code: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <button 
+                                    type="submit" 
+                                    disabled={actionLoading}
+                                    className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black uppercase tracking-wider text-xs py-4 rounded-xl transition active:scale-95 flex items-center justify-center disabled:opacity-50"
+                                >
+                                    {actionLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                                    Apply Financial Override
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* MODAL: ADD / EDIT OVERTIME ENTRY */}
+            <AnimatePresence>
+                {showOtModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                                <h3 className="text-lg font-black text-slate-900 uppercase">{editingOt ? 'Edit' : 'Log'} Overtime Hours</h3>
+                                <button onClick={() => setShowOtModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
+                                    <X className="w-5 h-5 text-slate-400" />
+                                </button>
+                            </div>
+                            
+                            <form onSubmit={handleOtSubmit} className="p-6 space-y-6">
+                                <div className="space-y-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Staff Employee</label>
+                                        {editingOt ? (
+                                            <div className="bg-slate-100 p-3.5 border border-slate-200 text-slate-800 font-bold rounded-xl text-xs">
+                                                {editingOt.staffId?.name}
+                                            </div>
+                                        ) : (
+                                            <select
+                                                required
+                                                value={otForm.staffId}
+                                                onChange={e => setOtForm({...otForm, staffId: e.target.value})}
+                                                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            >
+                                                <option value="">Select Employee...</option>
+                                                {staffList.map(s => (
+                                                    <option key={s._id} value={s._id}>{s.name} ({s.staff_id})</option>
+                                                ))}
+                                            </select>
+                                        )}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Service Date</label>
+                                        {editingOt ? (
+                                            <div className="bg-slate-100 p-3.5 border border-slate-200 text-slate-800 font-bold rounded-xl text-xs">
+                                                {editingOt.date}
+                                            </div>
+                                        ) : (
+                                            <input 
+                                                required
+                                                type="date"
+                                                value={otForm.date}
+                                                onChange={e => setOtForm({...otForm, date: e.target.value})}
+                                                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                            />
+                                        )}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Hours Worked</label>
+                                        <input 
+                                            required
+                                            type="number"
+                                            step="0.5"
+                                            placeholder="e.g. 2.5"
+                                            value={otForm.hours}
+                                            onChange={e => setOtForm({...otForm, hours: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Remarks / Project Context</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="e.g. Welding support on project #2"
+                                            value={otForm.remarks}
+                                            onChange={e => setOtForm({...otForm, remarks: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <button 
+                                    type="submit" 
+                                    disabled={actionLoading}
+                                    className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black uppercase tracking-wider text-xs py-4 rounded-xl transition active:scale-95 flex items-center justify-center disabled:opacity-50"
+                                >
+                                    {actionLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                                    Commit Entry
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
         </div>
     );
 };

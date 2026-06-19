@@ -1,140 +1,312 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../../services/api';
 import { generateGeneralReportPDF } from '../../services/pdfService';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Download, Filter, TrendingUp, Calendar, Users, FileBarChart } from 'lucide-react';
+import { FileText, Download, Filter, Calendar, Users, FileBarChart, Loader2, Database } from 'lucide-react';
 
 const AdminReports = () => {
-    const [reports, setReports] = useState([]);
+    const [reportType, setReportType] = useState('attendance'); // 'attendance', 'payroll', 'overtime', 'project-delay', 'salary-payment', 'performance'
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`; // YYYY-MM
+    });
+    const [paymentStatusFilter, setPaymentStatusFilter] = useState(''); // for salary-payment report: '', 'paid', 'unpaid'
+    const [reportData, setReportData] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchReports();
-    }, []);
-
-    const fetchReports = async () => {
+    const fetchReportData = useCallback(async () => {
+        setLoading(true);
         try {
-            const res = await api.get('/reports');
-            setReports(res.data);
+            let url = '';
+            if (reportType === 'attendance') {
+                url = `/analytics/reports/attendance?month=${selectedMonth}`;
+            } else if (reportType === 'payroll') {
+                url = `/analytics/reports/payroll?month=${selectedMonth}`;
+            } else if (reportType === 'overtime') {
+                url = `/analytics/reports/overtime?month=${selectedMonth}`;
+            } else if (reportType === 'project-delay') {
+                url = '/analytics/reports/project-delay';
+            } else if (reportType === 'salary-payment') {
+                url = `/analytics/reports/salary-payment?status=${paymentStatusFilter}`;
+            } else if (reportType === 'performance') {
+                url = '/analytics/reports/performance';
+            }
+
+            const res = await api.get(url);
+            setReportData(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
-            console.error(err);
+            console.error("Failed to load report logs", err);
+            setReportData([]);
         } finally {
             setLoading(false);
         }
+    }, [reportType, selectedMonth, paymentStatusFilter]);
+
+    useEffect(() => {
+        fetchReportData();
+    }, [fetchReportData]);
+
+    // Define table headers and accessors depending on report type
+    const reportSchema = useMemo(() => {
+        switch (reportType) {
+            case 'attendance':
+                return {
+                    title: 'Workforce Daily Attendance',
+                    columns: ['Staff Name', 'Staff ID', 'Department', 'Date', 'Status'],
+                    rowMapper: (r) => [
+                        r.staffId?.name || 'N/A',
+                        r.staffId?.staff_id || 'N/A',
+                        r.staffId?.department || 'N/A',
+                        r.date || 'N/A',
+                        r.status || 'N/A'
+                    ]
+                };
+            case 'payroll':
+                return {
+                    title: 'Monthly Consolidated Payroll Roster',
+                    columns: ['Staff Name', 'Salary Type', 'Base Salary', 'Attendance (P/H)', 'OT Hours/Earnings', 'Bonus', 'Deductions', 'Net Salary', 'Status'],
+                    rowMapper: (r) => [
+                        r.staffId?.name || 'N/A',
+                        r.salaryType || 'Monthly',
+                        `₹${r.baseSalary || 0}`,
+                        `P:${r.presentDays || 0} / H:${r.halfDays || 0}`,
+                        `${r.overtimeHours || 0}h / ₹${r.overtimeEarnings || 0}`,
+                        `₹${r.bonus || 0}`,
+                        `₹${(r.deductions || 0) + (r.advanceRecovery || 0)}`,
+                        `₹${r.netSalary || 0}`,
+                        (r.paymentStatus || 'unpaid').toUpperCase()
+                    ]
+                };
+            case 'overtime':
+                return {
+                    title: 'Overtime Logging & Rate Ledger',
+                    columns: ['Staff Name', 'Staff ID', 'Date', 'Hours Worked', 'Rate / Hour', 'Total Yield', 'Remarks'],
+                    rowMapper: (r) => [
+                        r.staffId?.name || 'N/A',
+                        r.staffId?.staff_id || 'N/A',
+                        r.date || 'N/A',
+                        `${r.hours || 0} hrs`,
+                        `₹${r.ratePerHour || 0}`,
+                        `₹${r.totalAmount || 0}`,
+                        r.remarks || '-'
+                    ]
+                };
+            case 'project-delay':
+                return {
+                    title: 'Project Delay & Work Resumed Incidents',
+                    columns: ['Project Name', 'Operational Status', 'Reported By', 'Incident Reason', 'Date & Time', 'Remarks'],
+                    rowMapper: (r) => [
+                        r.projectName || 'N/A',
+                        r.status || 'N/A',
+                        r.reportedBy?.name || 'N/A',
+                        r.reason || 'N/A',
+                        r.reportedAt ? new Date(r.reportedAt).toLocaleString() : 'N/A',
+                        r.remarks || '-'
+                    ]
+                };
+            case 'salary-payment':
+                return {
+                    title: 'Treasury Salary Disbursement Log',
+                    columns: ['Employee Name', 'Temporal Month', 'Disbursed Amount', 'Bank Name', 'Account Number', 'Payment Status'],
+                    rowMapper: (r) => [
+                        r.staffId?.name || 'N/A',
+                        r.month || 'N/A',
+                        `₹${r.netSalary || 0}`,
+                        r.staffId?.bank_name || 'N/A',
+                        r.staffId?.account_number || 'N/A',
+                        (r.paymentStatus || 'unpaid').toUpperCase()
+                    ]
+                };
+            case 'performance':
+                return {
+                    title: 'Staff Operational Performance Indexes',
+                    columns: ['Employee Name', 'Staff ID', 'Department', 'Attendance %', 'Tasks Assigned', 'Tasks Completed', 'Total OT Logged'],
+                    rowMapper: (r) => [
+                        r.name || 'N/A',
+                        r.staffId || 'N/A',
+                        r.department || 'N/A',
+                        `${r.attendancePercentage || 0}%`,
+                        r.totalTasks?.toString() || '0',
+                        r.completedTasks?.toString() || '0',
+                        `${r.totalOTHours || 0} hrs`
+                    ]
+                };
+            default:
+                return { title: 'Report', columns: [], rowMapper: () => [] };
+        }
+    }, [reportType]);
+
+    // Download PDF Report
+    const handleDownloadPDF = () => {
+        if (reportData.length === 0) return alert("No data available to export.");
+        const mappedData = reportData.map(reportSchema.rowMapper);
+        generateGeneralReportPDF(mappedData, reportSchema.title, reportSchema.columns);
     };
 
-    const handleDownload = (rpt) => {
-        const columns = ['Field', 'Details'];
-        const data = [
-            ['Report ID', rpt._id?.slice(-8).toUpperCase()],
-            ['Submission Date', new Date(rpt.date).toLocaleDateString()],
-            ['Author', rpt.staffId?.name || 'Unknown'],
-            ['Department', rpt.staffId?.department || 'Operations'],
-            ['Title', rpt.title],
-            ['Description', rpt.description || 'Verified operational log.'],
-            ['Status', 'VERIFIED / ARCHIVED']
-        ];
-        generateGeneralReportPDF(data, 'Operational Incident Report', columns);
-    };
-
-    const handleExportAll = () => {
-        if (reports.length === 0) return alert("No data available to export.");
+    // Download CSV/Excel Report
+    const handleDownloadCSV = () => {
+        if (reportData.length === 0) return alert("No data available to export.");
         
-        const columns = ['Date', 'Author', 'Title', 'Dept'];
-        const data = reports.map(r => [
-            new Date(r.date).toLocaleDateString(),
-            r.staffId?.name || 'N/A',
-            r.title,
-            r.staffId?.department || 'N/A'
-        ]);
-        generateGeneralReportPDF(data, 'Consolidated Operational Archive', columns);
+        const headerRow = reportSchema.columns.join(',');
+        const bodyRows = reportData.map(r => 
+            reportSchema.rowMapper(r).map(val => {
+                // escape double quotes and wrap in quotes to prevent csv delimiter issues
+                const str = (val || '').toString().replace(/"/g, '""');
+                return `"${str}"`;
+            }).join(',')
+        );
+
+        const csvContent = [headerRow, ...bodyRows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${reportSchema.title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     return (
-        <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
-            <div className="flex justify-between items-center bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
-                <div>
-                    <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">Analytical Reports</h1>
-                    <p className="text-slate-500 font-medium">Business intelligence and operational logs.</p>
+        <div className="p-4 md:p-8 space-y-8 bg-slate-50 min-h-screen font-sans">
+            
+            {/* Header / Config Panel */}
+            <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter italic">Enterprise Business Intelligence</h1>
+                        <p className="text-slate-500 font-medium">Generate custom reports, audit workforce operations, track project constraints, and export CSV/PDF datasets.</p>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                        <button 
+                            onClick={handleDownloadCSV}
+                            className="bg-white border-2 border-slate-200 text-slate-700 px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition flex items-center gap-2 active:scale-95"
+                        >
+                            Export Excel / CSV
+                        </button>
+                        <button 
+                            onClick={handleDownloadPDF}
+                            className="bg-indigo-600 text-white px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-2 hover:bg-indigo-700 transition shadow-lg shadow-indigo-600/20 active:scale-95"
+                        >
+                            <Download className="w-5 h-5" /> Download PDF Report
+                        </button>
+                    </div>
                 </div>
-                <div className="flex gap-4">
-                    <button 
-                        onClick={handleExportAll}
-                        className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition"
-                    >
-                        <Download className="w-5 h-5" /> Export All
-                    </button>
+
+                {/* Filters */}
+                <div className="pt-6 border-t border-slate-100 flex flex-wrap gap-4 items-center">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Analytical Registry</label>
+                        <select 
+                            value={reportType}
+                            onChange={(e) => setReportType(e.target.value)}
+                            className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase tracking-wider text-slate-700 focus:border-indigo-500"
+                        >
+                            <option value="attendance">Staff Attendance Log</option>
+                            <option value="payroll">Monthly Payroll Sheet</option>
+                            <option value="overtime">Overtime Rate Summary</option>
+                            <option value="project-delay">Project Delay Incidents</option>
+                            <option value="salary-payment">Salary Payment Log</option>
+                            <option value="performance">Staff Performance index</option>
+                        </select>
+                    </div>
+
+                    {['attendance', 'payroll', 'overtime'].includes(reportType) && (
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Temporal Cycle</label>
+                            <input 
+                                type="month"
+                                value={selectedMonth}
+                                onChange={(e) => setSelectedMonth(e.target.value)}
+                                className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 focus:border-indigo-500"
+                            />
+                        </div>
+                    )}
+
+                    {reportType === 'salary-payment' && (
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Disbursement Status</label>
+                            <select 
+                                value={paymentStatusFilter}
+                                onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                                className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 focus:border-indigo-500"
+                            >
+                                <option value="">All Transactions</option>
+                                <option value="paid">PAID ONLY</option>
+                                <option value="unpaid">UNPAID / OUTSTANDING</option>
+                            </select>
+                        </div>
+                    )}
                 </div>
             </div>
 
+            {/* Quick Metrics (Dynamic based on Selection) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                    { label: 'Total Reports', value: reports.length, icon: FileText, color: 'indigo' },
-                    { label: 'Active Projects', value: 12, icon: TrendingUp, color: 'emerald' },
-                    { label: 'Staff Contribution', value: '88%', icon: Users, color: 'purple' }
+                    { label: 'Dataset Size', value: `${reportData.length} records`, icon: Database, color: 'indigo' },
+                    { label: 'Analytical Domain', value: reportSchema.title, icon: FileText, color: 'blue' },
+                    { label: 'Roster Integrity', value: 'Verified', icon: FileBarChart, color: 'emerald' }
                 ].map((stat, i) => (
-                    <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-6">
-                        <div className={`w-14 h-14 bg-${stat.color}-50 rounded-2xl flex items-center justify-center`}>
-                            <stat.icon className={`w-7 h-7 text-${stat.color}-600`} />
+                    <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-5">
+                        <div className={`w-12 h-12 bg-${stat.color}-50 rounded-xl flex items-center justify-center`}>
+                            <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
                         </div>
                         <div>
-                            <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">{stat.label}</p>
-                            <p className="text-3xl font-black text-slate-900">{stat.value}</p>
+                            <p className="text-slate-400 font-bold uppercase text-[9px] tracking-widest">{stat.label}</p>
+                            <p className="text-xl font-extrabold text-slate-900 leading-tight mt-0.5">{stat.value}</p>
                         </div>
                     </div>
                 ))}
             </div>
 
+            {/* Data Grid view */}
             <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
                 <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h3 className="font-black text-slate-900 uppercase">Work Report Registry</h3>
-                    <div className="flex gap-2">
-                        <button className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50"><Filter className="w-4 h-4" /></button>
-                        <button className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50"><Calendar className="w-4 h-4" /></button>
-                    </div>
+                    <h3 className="font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                        📋 Dynamic Data Grid
+                    </h3>
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr className="bg-slate-100/50 text-[10px] font-black uppercase text-slate-500 tracking-widest">
-                                <th className="p-6">Submission Date</th>
-                                <th className="p-6">Author / Dept</th>
-                                <th className="p-6">Report Title</th>
-                                <th className="p-6">Status</th>
-                                <th className="p-6 text-right">Action</th>
+                                {reportSchema.columns.map((col, idx) => (
+                                    <th key={idx} className="p-5">{col}</th>
+                                ))}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 font-medium">
                             {loading ? (
-                                <tr><td colSpan="5" className="p-20 text-center font-bold text-slate-400">LOADING ANALYTICS...</td></tr>
-                            ) : reports.length === 0 ? (
-                                <tr><td colSpan="5" className="p-20 text-center font-bold text-slate-400">NO REPORTS SUBMITTED YET</td></tr>
-                            ) : reports.map((rpt, i) => (
-                                <tr key={i} className="hover:bg-indigo-50/30 transition-colors group">
-                                    <td className="p-6 font-bold text-slate-600">{new Date(rpt.date).toLocaleDateString()}</td>
-                                    <td className="p-6">
-                                        <div className="font-extrabold text-slate-900">{rpt.staffId?.name}</div>
-                                        <div className="text-xs text-slate-500 font-bold">{rpt.staffId?.department}</div>
-                                    </td>
-                                    <td className="p-6 font-black text-indigo-600">{rpt.title}</td>
-                                    <td className="p-6">
-                                        <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border border-emerald-200">VERIFIED</span>
-                                    </td>
-                                    <td className="p-6 text-right">
-                                        <button 
-                                            onClick={() => handleDownload(rpt)}
-                                            className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-indigo-600 hover:text-white transition shadow-sm"
-                                        >
-                                            <Download className="w-4 h-4" />
-                                        </button>
+                                <tr>
+                                    <td colSpan={reportSchema.columns.length || 1} className="p-20 text-center text-slate-400">
+                                        <Loader2 className="animate-spin w-8 h-8 text-indigo-600 mx-auto mb-4" />
+                                        Computing analytical summary...
                                     </td>
                                 </tr>
-                            ))}
+                            ) : reportData.length === 0 ? (
+                                <tr>
+                                    <td colSpan={reportSchema.columns.length || 1} className="p-20 text-center text-slate-400 font-bold">
+                                        No datasets found matching your parameters.
+                                    </td>
+                                </tr>
+                            ) : reportData.map((row, rowIdx) => {
+                                const mapped = reportSchema.rowMapper(row);
+                                return (
+                                    <tr key={rowIdx} className="hover:bg-indigo-50/30 transition-colors">
+                                        {mapped.map((val, colIdx) => (
+                                            <td key={colIdx} className="p-5 text-slate-700 font-semibold">{val}</td>
+                                        ))}
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
             </div>
+
         </div>
     );
 };

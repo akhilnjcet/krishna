@@ -16,6 +16,9 @@ const userSchema = new mongoose.Schema({
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
     faceDescriptor: { type: [Number], default: [] },
     profilePhoto: { type: String },
+    joiningDate: { type: Date, default: Date.now },
+    address: { type: String },
+    emergencyContact: { type: String },
 
     createdAt: { type: Date, default: Date.now },
     last_login: { type: Date },
@@ -26,6 +29,11 @@ const userSchema = new mongoose.Schema({
     account_number: { type: String },
     ifsc_code: { type: String },
     base_salary: { type: Number, default: 0 },
+    salaryType: { type: String, enum: ['Monthly', 'Daily Wage', 'Contract'], default: 'Monthly' },
+    overtimeRate: { type: Number, default: 0 },
+    bonusAmount: { type: Number, default: 0 },
+    advanceAmount: { type: Number, default: 0 },
+    deductionAmount: { type: Number, default: 0 },
 
     // Email OTP Auth Fields
     resetOTP: { type: String },

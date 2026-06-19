@@ -81,6 +81,10 @@ app.use('/api/availability', require('./routes/availabilityRoutes'));
 app.use('/api/complaints', require('./routes/complaintRoutes'));
 app.use('/api/visits', require('./routes/visitRoutes'));
 app.use('/api/lodge-extras', require('./routes/lodgeExtraRoutes'));
+app.use('/api/daily-attendance', require('./routes/dailyAttendanceRoutes'));
+app.use('/api/overtime', require('./routes/overtimeRoutes'));
+app.use('/api/payroll', require('./routes/payrollRoutes'));
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
 });
