@@ -20,6 +20,41 @@ export default function LodgeAdminManager() {
   const [bookings, setBookings] = useState([]);
   const [stats, setStats] = useState({ totalBookings: 0, totalRevenue: 0, totalUsers: 0, occupancyRate: 0, activeBookings: 0 });
 
+  // Google Drive Link State
+  const [dbDriveDoc, setDbDriveDoc] = useState(null);
+  const [driveLinkInput, setDriveLinkInput] = useState('');
+
+  const fetchDriveLink = async () => {
+    try {
+      const res = await api.get('/drive-link');
+      // 10. Verify MongoDB document exists before rendering
+      if (res.data && res.data._id) {
+        setDbDriveDoc(res.data);
+        setDriveLinkInput(res.data.link);
+        console.log('Link fetched successfully:', res.data.link);
+      } else {
+        setDbDriveDoc(null);
+        setDriveLinkInput('');
+        console.log('Link fetched successfully: (No document exists yet)');
+      }
+    } catch (err) {
+      console.error('Error fetching drive link:', err);
+    }
+  };
+
+  const handleSaveDriveLink = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.post('/drive-link/save', { link: driveLinkInput });
+      alert('Google Drive Link Saved Successfully!');
+      console.log('Link saved successfully:', driveLinkInput);
+      fetchDriveLink();
+    } catch (err) {
+      console.error('Error saving Drive link:', err);
+      alert('Failed to save Google Drive Link');
+    }
+  };
+
   // Forms & Modals
   const [showRoomForm, setShowRoomForm] = useState(false);
   const [roomForm, setRoomForm] = useState({ 
@@ -61,6 +96,7 @@ export default function LodgeAdminManager() {
 
   useEffect(() => {
     fetchBaseLodge();
+    fetchDriveLink();
   }, []);
 
   useEffect(() => {
@@ -496,7 +532,45 @@ export default function LodgeAdminManager() {
 
       {/* ROOMS TAB */}
       {activeTab === 'rooms' && (
-         <div className="bg-white rounded-[2rem] shadow-sm border p-8 animate-in fade-in transition-all">
+         <div className="space-y-6">
+             {/* Google Drive Assets Directory Card */}
+             <div className="bg-white rounded-[2rem] shadow-sm border p-8 animate-in fade-in transition-all">
+                 <h2 className="text-xl font-bold flex items-center mb-4"><Link className="w-6 h-6 mr-2 text-indigo-500"/> Google Drive Assets Directory</h2>
+                 <p className="text-sm text-slate-500 mb-6 font-medium">Configure a Google Drive folder or file link to dynamically sync room assets with your database.</p>
+                 <form onSubmit={handleSaveDriveLink} className="flex gap-4">
+                     <input 
+                         placeholder="Enter Google Drive Folder or File Link..." 
+                         className="flex-grow border-2 border-slate-100 p-4 rounded-2xl font-bold font-poppins text-indigo-600 placeholder-slate-300"
+                         value={driveLinkInput}
+                         onChange={e => setDriveLinkInput(e.target.value)}
+                     />
+                     <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-lg shadow-indigo-600/20 active:scale-95 transition-all">
+                         Save Link
+                     </button>
+                 </form>
+
+                 {/* Google Drive Gallery Preview */}
+                 {dbDriveDoc && dbDriveDoc._id && (
+                     <div className="mt-8 pt-8 border-t">
+                         <h3 className="text-md font-bold mb-4">Drive Preview Assets ({dbDriveDoc.files?.length || 0} found)</h3>
+                         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                             {(dbDriveDoc.files || []).map((fileUrl, idx) => (
+                                 <DriveImage 
+                                     key={idx} 
+                                     src={fileUrl} 
+                                     alt={`Drive image ${idx + 1}`} 
+                                     className="aspect-square" 
+                                 />
+                             ))}
+                             {(!dbDriveDoc.files || dbDriveDoc.files.length === 0) && (
+                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-widest italic col-span-full">No assets found in the link.</p>
+                             )}
+                         </div>
+                     </div>
+                 )}
+             </div>
+
+             <div className="bg-white rounded-[2rem] shadow-sm border p-8 animate-in fade-in transition-all">
              <div className="flex justify-between items-center mb-8">
                 <h2 className="text-xl font-bold flex items-center"><DoorOpen className="w-6 h-6 mr-2 text-indigo-500"/> Managing Rooms</h2>
                 <button onClick={() => { setEditingRoom(null); setRoomForm({ type: 'Standard', price: '', rentCycle: 'monthly', maxGuests: '', description: '', interiorFiles: [], exteriorFiles: [] }); setShowRoomForm(!showRoomForm); }} className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/20 hover:scale-105 transition-transform flex items-center">
@@ -556,7 +630,7 @@ export default function LodgeAdminManager() {
                             <div className="flex flex-wrap gap-3">
                                 {[...(editingRoom.interiorPhotos || []), ...(editingRoom.exteriorPhotos || [])].map((img, idx) => (
                                     <div key={idx} className="relative w-20 h-20 border rounded-xl overflow-hidden bg-white shadow-sm group">
-                                        <img src={getDirectImageUrl(img.url)} className="w-full h-full object-cover" alt="Current room asset" />
+                                        <DriveImage src={img.url} alt="Current room asset" className="w-full h-full" />
                                         <button
                                             type="button"
                                             onClick={async () => {
@@ -606,7 +680,7 @@ export default function LodgeAdminManager() {
                                   <div className="mt-4 flex flex-wrap items-center gap-3">
                                       {allPhotos.slice(0, 3).map((img, idx) => (
                                           <div key={idx} className="w-14 h-14 border rounded-xl overflow-hidden bg-slate-50 shadow-sm">
-                                              <img src={getDirectImageUrl(img.url)} className="w-full h-full object-cover animate-in fade-in" alt="Room thumbnail" />
+                                              <DriveImage src={img.url} alt="Room thumbnail" className="w-full h-full" />
                                           </div>
                                       ))}
                                       {allPhotos.length > 3 && (
@@ -657,6 +731,7 @@ export default function LodgeAdminManager() {
                     </div>
                  ))}
              </div>
+         </div>
          </div>
       )}
 
@@ -848,7 +923,7 @@ export default function LodgeAdminManager() {
                               <div className="flex flex-wrap gap-2">
                                   {selectedLodge.images.map((img, idx) => (
                                       <div key={idx} className="relative w-16 h-16 border rounded-xl overflow-hidden bg-slate-50 group">
-                                          <img src={getDirectImageUrl(typeof img === 'string' ? img : img.url)} className="w-full h-full object-cover" alt="Lodge asset" />
+                                          <DriveImage src={typeof img === 'string' ? img : img.url} alt="Lodge asset" className="w-full h-full" />
                                           <button
                                               type="button"
                                               onClick={() => {
@@ -975,7 +1050,7 @@ export default function LodgeAdminManager() {
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                               {[...(activeGalleryRoom.interiorPhotos || []), ...(activeGalleryRoom.exteriorPhotos || [])].map((img, idx) => (
                                   <div key={idx} className="relative aspect-square border rounded-2xl overflow-hidden bg-slate-50 group">
-                                      <img src={getDirectImageUrl(img.url)} className="w-full h-full object-cover" alt="Gallery asset" />
+                                      <DriveImage src={img.url} alt="Gallery asset" className="w-full h-full" />
                                       <button 
                                           onClick={async () => {
                                               if (confirm('Delete this photo?')) {
@@ -1073,5 +1148,45 @@ const renderVideoPlayer = (url) => {
             controls 
             className="w-full rounded-2xl border shadow-sm animate-in fade-in"
         />
+    );
+};
+
+// 7. Add image error handling and loading state
+// 8. If image fails, show 'Image Not Available'
+// 11. Add console logs for debugging: Image loaded, Image load failed
+const DriveImage = ({ src, alt, className }) => {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+
+    const directSrc = getDirectImageUrl(src);
+
+    return (
+        <div className={`relative ${className} bg-slate-100 flex items-center justify-center border rounded-xl overflow-hidden`}>
+            {loading && !error && (
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
+                    <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            )}
+            {error ? (
+                <div className="text-center p-2 text-slate-400 text-[10px] font-black uppercase tracking-wider leading-tight">
+                    Image Not Available
+                </div>
+            ) : (
+                <img 
+                    src={directSrc} 
+                    alt={alt || "Drive asset"} 
+                    className={`w-full h-full object-cover transition-all duration-300 ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+                    onLoad={() => {
+                        setLoading(false);
+                        console.log('Image loaded:', directSrc);
+                    }}
+                    onError={() => {
+                        setLoading(false);
+                        setError(true);
+                        console.log('Image load failed:', directSrc);
+                    }}
+                />
+            )}
+        </div>
     );
 };

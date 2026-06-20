@@ -77,6 +77,7 @@ app.use('/api/applications', require('./routes/applicationRoutes'));
 app.use('/api/lodge', require('./routes/lodgeRoutes'));
 app.use('/api/rooms', require('./routes/roomRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
+app.use('/api/drive-link', require('./routes/driveLinkRoutes'));
 app.use('/api/availability', require('./routes/availabilityRoutes'));
 app.use('/api/complaints', require('./routes/complaintRoutes'));
 app.use('/api/visits', require('./routes/visitRoutes'));

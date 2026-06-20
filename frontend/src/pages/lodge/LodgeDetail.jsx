@@ -96,7 +96,7 @@ export default function LodgeDetail() {
                                <div className="flex-1 flex flex-col sm:flex-row gap-6">
                                   {allPhotos.length > 0 && (
                                      <div className="w-full sm:w-48 h-32 bg-slate-50 border rounded-xl overflow-hidden relative flex-shrink-0 group cursor-pointer" onClick={() => setActiveGalleryRoom(room)}>
-                                        <img src={getDirectImageUrl(allPhotos[0].url)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Room preview" />
+                                         <DriveImage src={allPhotos[0].url} alt="Room preview" className="w-full h-full group-hover:scale-105 transition-transform duration-300" />
                                         {allPhotos.length > 1 && (
                                            <span className="absolute bottom-2 right-2 bg-slate-900/70 text-white text-xs px-2 py-1 rounded font-bold">
                                               +{allPhotos.length - 1} photos
@@ -174,7 +174,7 @@ export default function LodgeDetail() {
                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                              {[...(activeGalleryRoom.interiorPhotos || []), ...(activeGalleryRoom.exteriorPhotos || [])].map((img, idx) => (
                                  <div key={idx} className="relative aspect-square border rounded-2xl overflow-hidden bg-slate-50">
-                                     <img src={getDirectImageUrl(img.url)} className="w-full h-full object-cover" alt="Gallery asset" />
+                                     <DriveImage src={img.url} alt="Gallery asset" className="w-full h-full" />
                                  </div>
                              ))}
                              {[...(activeGalleryRoom.interiorPhotos || []), ...(activeGalleryRoom.exteriorPhotos || [])].length === 0 && (
@@ -248,5 +248,43 @@ const renderVideoPlayer = (url) => {
             controls 
             className="w-full rounded-2xl border shadow-sm animate-in fade-in"
         />
+    );
+};
+
+// Error-handling image wrapper
+const DriveImage = ({ src, alt, className }) => {
+    const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState(false);
+
+    const directSrc = getDirectImageUrl(src);
+
+    return (
+        <div className={`relative ${className} bg-slate-100 flex items-center justify-center border rounded-xl overflow-hidden`}>
+            {loading && !error && (
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
+                    <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            )}
+            {error ? (
+                <div className="text-center p-2 text-slate-400 text-[10px] font-black uppercase tracking-wider leading-tight">
+                    Image Not Available
+                </div>
+            ) : (
+                <img 
+                    src={directSrc} 
+                    alt={alt || "Drive asset"} 
+                    className={`w-full h-full object-cover transition-all duration-300 ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+                    onLoad={() => {
+                        setLoading(false);
+                        console.log('Image loaded:', directSrc);
+                    }}
+                    onError={() => {
+                        setLoading(false);
+                        setError(true);
+                        console.log('Image load failed:', directSrc);
+                    }}
+                />
+            )}
+        </div>
     );
 };

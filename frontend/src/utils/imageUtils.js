@@ -41,8 +41,8 @@ export const getDirectImageUrl = (url) => {
         }
 
         if (fileId) {
-            // High-quality direct link via lh3.googleusercontent.com (Works for public files without rate limits / cookie blocks)
-            return `https://lh3.googleusercontent.com/d/${fileId}=w1600`;
+            // Direct export view link as requested by requirement 6
+            return `https://drive.google.com/uc?export=view&id=${fileId}`;
         }
     }
 
