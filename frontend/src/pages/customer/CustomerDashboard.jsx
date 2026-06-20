@@ -23,7 +23,7 @@ const CustomerDashboard = () => {
     
     // Modal States
     const [issueModal, setIssueModal] = useState({ show: false, bookingId: null, lodgeId: null, roomId: null, title: '', desc: '' });
-    const [payModal, setPayModal] = useState({ show: false, bookingId: null, amount: 0, file: null });
+    const [payModal, setPayModal] = useState({ show: false, bookingId: null, amount: 0, name: '', notes: '' });
 
     useEffect(() => {
         fetchDashboardData();
@@ -81,19 +81,23 @@ const CustomerDashboard = () => {
 
     const submitPayment = async (e) => {
         e.preventDefault();
-        if(!payModal.file) return alert('Please attach a screenshot of the transaction');
-        const formData = new FormData();
-        formData.append('image', payModal.file);
-        formData.append('amount', payModal.amount);
-        formData.append('type', 'booking_fee');
-        formData.append('method', 'UPI/Bank');
-        formData.append('roomNumber', payModal.roomId || 'N/A');
+        if (!payModal.name) return alert("Please enter payment name.");
+        if (!payModal.notes) return alert("Please enter payment details.");
         
         try {
-            await api.post('/payments/submit', formData, { headers: { 'Content-Type': 'multipart/form-data' }});
-            alert('Payment submitted for validation.');
-            setPayModal({ show: false, bookingId: null, amount: 0, file: null });
-        } catch(err) { alert('Failed to submit payment'); }
+            await api.post('/payments/submit', {
+                amount: parseFloat(payModal.amount),
+                method: 'upi',
+                name: payModal.name,
+                notes: payModal.notes
+            });
+            alert('Payment acknowledgement submitted successfully.');
+            setPayModal({ show: false, bookingId: null, amount: 0, name: '', notes: '' });
+            fetchDashboardData();
+        } catch(err) { 
+            console.error('Lodge payment error:', err);
+            alert('Failed to submit payment: ' + (err.response?.data?.message || err.message)); 
+        }
     };
 
     const handleProjectSelect = async (projectId, existingProjects) => {
@@ -198,7 +202,14 @@ const CustomerDashboard = () => {
                                                 Raise Issue
                                             </button>
                                             <button 
-                                                onClick={() => setPayModal({ show: true, bookingId: b._id, roomId: b.roomId?._id, amount: b.totalAmount, file: null })}
+                                                onClick={() => setPayModal({ 
+                                                    show: true, 
+                                                    bookingId: b._id, 
+                                                    roomId: b.roomId?._id, 
+                                                    amount: b.totalAmount, 
+                                                    name: `Lodge Booking - ${b.lodgeId?.name || 'Suite'}`, 
+                                                    notes: `Settlement for Room: ${b.roomId?.roomNumber || 'N/A'}, Booking ID: ${b._id}` 
+                                                })}
                                                 className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-lg text-xs"
                                             >
                                                 Settle Dues
@@ -240,12 +251,40 @@ const CustomerDashboard = () => {
 
             {payModal.show && (
                 <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-                    <form onSubmit={submitPayment} className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
-                       <h3 className="text-xl font-bold mb-4">Settle Booking Amount</h3>
-                       <button type="button" onClick={() => setPayModal({...payModal, show: false})} className="absolute top-4 right-4 text-gray-500 hover:text-red-500">Close</button>
-                       <p className="mb-4 text-sm text-gray-600">Please attach a screenshot of your transaction for <b>${payModal.amount}</b>.</p>
-                       <input type="file" required accept="image/*" onChange={e => setPayModal({...payModal, file: e.target.files[0]})} className="w-full mb-4 border p-2 rounded-lg text-sm" />
-                       <button type="submit" className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg">Upload Receipt</button>
+                    <form onSubmit={submitPayment} className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative space-y-4 text-left">
+                       <h3 className="text-xl font-black uppercase text-slate-900 tracking-tight">Settle Booking Amount</h3>
+                       <button type="button" onClick={() => setPayModal({...payModal, show: false})} className="absolute top-4 right-4 text-slate-400 hover:text-red-500">
+                           <X className="w-5 h-5" />
+                       </button>
+                       
+                       <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl border border-emerald-100 text-sm font-bold">
+                           Amount to Settle: ₹ {payModal.amount?.toLocaleString()}
+                       </div>
+
+                       <div className="space-y-2">
+                           <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Name</label>
+                           <input 
+                               required
+                               value={payModal.name}
+                               onChange={(e) => setPayModal({...payModal, name: e.target.value})}
+                               className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 transition-all"
+                               placeholder="e.g. Settle Room Booking"
+                           />
+                       </div>
+
+                       <div className="space-y-2">
+                           <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Details</label>
+                           <textarea 
+                               required
+                               value={payModal.notes}
+                               onChange={(e) => setPayModal({...payModal, notes: e.target.value})}
+                               className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 transition-all"
+                               placeholder="Enter details of payment..."
+                               rows="3"
+                           />
+                       </div>
+
+                       <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all">Settle Payment</button>
                     </form>
                 </div>
             )}

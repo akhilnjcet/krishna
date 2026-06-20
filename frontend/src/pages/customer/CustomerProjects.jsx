@@ -4,16 +4,81 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Briefcase, Calendar, DollarSign, User, Mail, Phone, Clock, 
     CheckCircle2, AlertCircle, RefreshCw, FileText, ChevronRight,
-    MapPin, Users
+    MapPin, Users, IndianRupee, Wallet, CheckCircle, XCircle, Plus, X, Wrench, Send
 } from 'lucide-react';
+import { getSocket } from '../../utils/socket';
 
 const CustomerProjects = () => {
     const [projects, setProjects] = useState([]);
+    const [allPayments, setAllPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedProject, setSelectedProject] = useState(null);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentForm, setPaymentForm] = useState({
+        amount: '',
+        method: 'upi',
+        referenceId: '',
+        paymentDate: new Date().toISOString().split('T')[0],
+        name: '',
+        notes: ''
+    });
+    const [showAdditionalWorkForm, setShowAdditionalWorkForm] = useState(false);
+    const [additionalWorkForm, setAdditionalWorkForm] = useState({ title: '', description: '' });
+    const [submittingWork, setSubmittingWork] = useState(false);
 
     useEffect(() => {
         fetchProjects();
+        fetchPayments();
+
+        const socket = getSocket();
+        socket.connect();
+
+        socket.on('project-updated', (data) => {
+            setProjects(prev => prev.map(proj => {
+                if (proj._id === data.projectId) {
+                    return {
+                        ...proj,
+                        paymentStatus: data.paymentStatus,
+                        paidCash: data.paidCash,
+                        paidOnline: data.paidOnline,
+                        discount: data.discount,
+                        advancePaid: data.advancePaid,
+                        budget: data.budget,
+                        totalCost: data.totalCost,
+                        approvedAdditionalWorkTotal: data.approvedAdditionalWorkTotal
+                    };
+                }
+                return proj;
+            }));
+
+            setSelectedProject(prev => {
+                if (prev && prev._id === data.projectId) {
+                    return {
+                        ...prev,
+                        paymentStatus: data.paymentStatus,
+                        paidCash: data.paidCash,
+                        paidOnline: data.paidOnline,
+                        discount: data.discount,
+                        advancePaid: data.advancePaid,
+                        budget: data.budget,
+                        totalCost: data.totalCost,
+                        approvedAdditionalWorkTotal: data.approvedAdditionalWorkTotal
+                    };
+                }
+                return prev;
+            });
+        });
+
+        socket.on('payment-status-changed', () => {
+            fetchPayments();
+            fetchProjects();
+        });
+
+        return () => {
+            socket.off('project-updated');
+            socket.off('payment-status-changed');
+            socket.disconnect();
+        };
     }, []);
 
     const fetchProjects = async () => {
@@ -29,6 +94,45 @@ const CustomerProjects = () => {
             console.error("Error fetching projects:", err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchPayments = async () => {
+        try {
+            const res = await api.get('/payments/my-payments');
+            setAllPayments(res.data || []);
+        } catch (err) {
+            console.error("Error fetching payments:", err);
+        }
+    };
+
+    const handleProjectPaymentSubmit = async (e) => {
+        e.preventDefault();
+        if (!paymentForm.amount || parseFloat(paymentForm.amount) <= 0) return alert("Please enter a valid amount.");
+        if (!paymentForm.referenceId) return alert("Please enter Transaction ID/UTR Number.");
+        if (!paymentForm.paymentDate) return alert("Please select a Payment Date.");
+        
+        try {
+            await api.post('/payments/submit', {
+                ...paymentForm,
+                amount: parseFloat(paymentForm.amount),
+                projectId: selectedProject._id,
+                name: paymentForm.name || `Payment for ${selectedProject.title}`
+            });
+            alert("Payment Acknowledgement Submitted successfully! Awaiting Admin Verification.");
+            setShowPaymentModal(false);
+            setPaymentForm({
+                amount: '',
+                method: 'upi',
+                referenceId: '',
+                paymentDate: new Date().toISOString().split('T')[0],
+                name: '',
+                notes: ''
+            });
+            fetchPayments();
+            fetchProjects();
+        } catch (err) {
+            alert("Failed to submit payment: " + (err.response?.data?.message || err.message));
         }
     };
 
@@ -207,6 +311,168 @@ const CustomerProjects = () => {
                                     </div>
                                 </div>
 
+                                {/* Project Financial Ledger */}
+                                <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm space-y-6">
+                                    <div className="flex items-center justify-between border-b pb-4 border-slate-100 flex-wrap gap-4">
+                                        <h3 className="text-lg font-black text-slate-850 uppercase tracking-tight flex items-center gap-2">
+                                            <Wallet className="w-5 h-5 text-indigo-500" /> Project Financial Ledger
+                                        </h3>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
+                                                selectedProject.paymentStatus === 'fully-paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                                selectedProject.paymentStatus === 'partially-paid' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                                                'bg-rose-50 text-rose-600 border border-rose-200'
+                                            }`}>
+                                                {selectedProject.paymentStatus === 'fully-paid' ? 'Fully Paid ✓' :
+                                                 selectedProject.paymentStatus === 'partially-paid' ? 'Partially Paid' : 'Unpaid'}
+                                            </span>
+                                            <button 
+                                                onClick={() => {
+                                                    setPaymentForm({
+                                                        amount: '',
+                                                        method: 'upi',
+                                                        referenceId: '',
+                                                        paymentDate: new Date().toISOString().split('T')[0],
+                                                        name: 'Project Payment',
+                                                        notes: `Remittance for project: ${selectedProject.title}`
+                                                    });
+                                                    setShowPaymentModal(true);
+                                                }}
+                                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-xl flex items-center gap-1.5 border-none cursor-pointer"
+                                            >
+                                                <Plus className="w-3.5 h-3.5" /> Report Payment
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Financial Breakdown Grid */}
+                                    {(() => {
+                                        const budget = selectedProject.budget || 0;
+                                        const approvedAdditional = selectedProject.approvedAdditionalWorkTotal ||
+                                            (selectedProject.additionalWork || []).filter(w => w.status === 'Approved').reduce((s, w) => s + (w.amount || 0), 0);
+                                        const totalCost = selectedProject.totalCost || (budget + approvedAdditional);
+                                        const totalPaid = (selectedProject.paidCash || 0) + (selectedProject.paidOnline || 0) + (selectedProject.advancePaid || 0);
+                                        const discount = selectedProject.discount || 0;
+                                        const duesRemaining = Math.max(0, totalCost - discount - totalPaid);
+                                        return (
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Base Budget</p>
+                                            <p className="text-sm font-black text-slate-900">₹ {budget.toLocaleString()}</p>
+                                        </div>
+                                        <div className="bg-violet-50 p-4 rounded-2xl border border-violet-100">
+                                            <p className="text-[8px] font-black text-violet-500 uppercase tracking-widest mb-1">Additional Work</p>
+                                            <p className="text-sm font-black text-violet-700">₹ {approvedAdditional.toLocaleString()}</p>
+                                        </div>
+                                        <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
+                                            <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Total Contract</p>
+                                            <p className="text-sm font-black text-emerald-700">₹ {totalCost.toLocaleString()}</p>
+                                        </div>
+                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Discount Allowed</p>
+                                            <p className="text-sm font-black text-emerald-600">₹ {discount.toLocaleString()}</p>
+                                        </div>
+                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Advance Deposited</p>
+                                            <p className="text-sm font-black text-indigo-650">₹ {(selectedProject.advancePaid || 0).toLocaleString()}</p>
+                                        </div>
+                                        <div className="col-span-1 md:col-span-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Remaining Dues</p>
+                                            <p className={`text-sm font-black ${ duesRemaining <= 0 ? 'text-emerald-600' : 'text-rose-600' }`}>
+                                                ₹ {duesRemaining.toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                        );
+                                    })()}
+
+                                    {/* Received Payments Breakdown */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 border-slate-100">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-1.5 h-8 bg-emerald-500 rounded-full" />
+                                            <div>
+                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Received Cash</p>
+                                                <p className="text-xs font-extrabold text-slate-800">₹ {(selectedProject.paidCash || 0).toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-1.5 h-8 bg-blue-500 rounded-full" />
+                                            <div>
+                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Received Online</p>
+                                                <p className="text-xs font-extrabold text-slate-800">₹ {(selectedProject.paidOnline || 0).toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-1.5 h-8 bg-indigo-500 rounded-full" />
+                                            <div>
+                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total Receipts Tallied</p>
+                                                <p className="text-xs font-black text-indigo-650">
+                                                    ₹ {((selectedProject.paidCash || 0) + (selectedProject.paidOnline || 0) + (selectedProject.advancePaid || 0)).toLocaleString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Remittance History Sublist */}
+                                    <div className="border-t pt-6 border-slate-100">
+                                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 mb-4">Project Remittance History</h4>
+                                        <div className="overflow-x-auto max-h-40 overflow-y-auto pr-1">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="bg-slate-50 text-[8px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                                                        <th className="p-3">Reference/UTR</th>
+                                                        <th className="p-3">Date</th>
+                                                        <th className="p-3">Method</th>
+                                                        <th className="p-3">Amount</th>
+                                                        <th className="p-3 text-center">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-50">
+                                                    {allPayments.filter(p => p.projectId === selectedProject._id || p.projectId?._id === selectedProject._id).length === 0 ? (
+                                                        <tr>
+                                                            <td colSpan="5" className="p-6 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                                                                No payments reported for this project unit.
+                                                            </td>
+                                                        </tr>
+                                                    ) : (
+                                                        allPayments.filter(p => p.projectId === selectedProject._id || p.projectId?._id === selectedProject._id).map(p => (
+                                                            <tr key={p._id} className="text-xs hover:bg-slate-50/50 transition-colors">
+                                                                <td className="p-3 font-bold">
+                                                                    <div>{p.referenceId || 'N/A'}</div>
+                                                                    <div className="text-[7px] text-slate-400 mt-0.5">{p.name}</div>
+                                                                </td>
+                                                                <td className="p-3 font-semibold text-slate-500">
+                                                                    {new Date(p.paymentDate || p.createdAt).toLocaleDateString()}
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[8px] font-black uppercase">{p.method}</span>
+                                                                </td>
+                                                                <td className="p-3 font-black text-slate-800">
+                                                                    ₹ {p.amount?.toLocaleString()}
+                                                                </td>
+                                                                <td className="p-3 text-center">
+                                                                    <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider ${
+                                                                        p.status === 'Completed' || p.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                                                                        p.status === 'Failed' || p.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                                                        'bg-amber-50 text-amber-600 border border-amber-100'
+                                                                    }`}>
+                                                                        {p.status === 'verified' ? 'Completed' : (p.status === 'rejected' ? 'Failed' : p.status)}
+                                                                    </span>
+                                                                    {p.rejectionReason && (p.status === 'Failed' || p.status === 'rejected') && (
+                                                                        <div className="text-[7px] text-rose-500 font-bold mt-0.5 max-w-[120px] truncate" title={p.rejectionReason}>
+                                                                            Reason: {p.rejectionReason}
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Assigned Logistics Team */}
                                 <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm space-y-6">
                                     <h3 className="text-lg font-black text-slate-850 uppercase tracking-tight flex items-center gap-2 border-b pb-3 border-slate-100">
@@ -250,6 +516,124 @@ const CustomerProjects = () => {
                                             </div>
                                         )}
                                     </div>
+                                </div>
+
+                                {/* Additional Work Requests Section */}
+                                <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm space-y-6">
+                                    <div className="flex items-center justify-between flex-wrap gap-3 border-b pb-4 border-slate-100">
+                                        <h3 className="text-lg font-black text-slate-850 uppercase tracking-tight flex items-center gap-2">
+                                            <Wrench className="w-5 h-5 text-violet-500" /> Scope Expansion / Additional Work
+                                        </h3>
+                                        <button
+                                            onClick={() => setShowAdditionalWorkForm(prev => !prev)}
+                                            className="bg-violet-600 hover:bg-violet-700 text-white font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-xl flex items-center gap-1.5 border-none cursor-pointer"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" /> Request Additional Work
+                                        </button>
+                                    </div>
+
+                                    {/* Request Form */}
+                                    {showAdditionalWorkForm && (
+                                        <form
+                                            onSubmit={async (e) => {
+                                                e.preventDefault();
+                                                if (!additionalWorkForm.title) return alert('Title is required.');
+                                                setSubmittingWork(true);
+                                                try {
+                                                    const res = await api.post(`/projects/${selectedProject._id}/additional-work`, {
+                                                        title: additionalWorkForm.title,
+                                                        description: additionalWorkForm.description
+                                                    });
+                                                    setSelectedProject(res.data);
+                                                    setProjects(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+                                                    setAdditionalWorkForm({ title: '', description: '' });
+                                                    setShowAdditionalWorkForm(false);
+                                                    alert('Your request has been submitted and is awaiting admin review.');
+                                                } catch (err) {
+                                                    alert('Failed to submit: ' + (err.response?.data?.message || err.message));
+                                                } finally {
+                                                    setSubmittingWork(false);
+                                                }
+                                            }}
+                                            className="bg-violet-50 border border-violet-100 rounded-2xl p-6 space-y-4"
+                                        >
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-violet-500">Submit Additional Work Request</p>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Work Title *</label>
+                                                    <input
+                                                        required
+                                                        value={additionalWorkForm.title}
+                                                        onChange={e => setAdditionalWorkForm({ ...additionalWorkForm, title: e.target.value })}
+                                                        className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-violet-500/20"
+                                                        placeholder="e.g. Extra Painting Work"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Description</label>
+                                                    <input
+                                                        value={additionalWorkForm.description}
+                                                        onChange={e => setAdditionalWorkForm({ ...additionalWorkForm, description: e.target.value })}
+                                                        className="w-full p-3 bg-white border border-slate-200 rounded-xl font-semibold text-xs outline-none focus:ring-2 focus:ring-violet-500/20"
+                                                        placeholder="Brief details of what is needed..."
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <button type="button" onClick={() => setShowAdditionalWorkForm(false)} className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-[10px] uppercase rounded-xl border-none cursor-pointer transition">Cancel</button>
+                                                <button type="submit" disabled={submittingWork} className="flex-[2] py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 border-none cursor-pointer transition disabled:opacity-50">
+                                                    {submittingWork ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                                                    Submit Request
+                                                </button>
+                                            </div>
+                                        </form>
+                                    )}
+
+                                    {/* Additional Work Items Log */}
+                                    {(selectedProject.additionalWork || []).length === 0 ? (
+                                        <div className="py-10 text-center bg-slate-50 border-2 border-dashed rounded-2xl text-slate-400">
+                                            <Wrench className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                                            <p className="text-xs font-bold uppercase tracking-widest">No additional work requests for this project.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="bg-slate-50 text-[8px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                                                        <th className="p-3">Work Item</th>
+                                                        <th className="p-3">Requested On</th>
+                                                        <th className="p-3">Approved Amount</th>
+                                                        <th className="p-3 text-center">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-50">
+                                                    {(selectedProject.additionalWork || []).map(w => (
+                                                        <tr key={w._id} className="text-xs hover:bg-slate-50/50 transition-colors">
+                                                            <td className="p-3">
+                                                                <p className="font-black text-slate-800 uppercase">{w.title}</p>
+                                                                {w.description && <p className="text-[9px] text-slate-400 font-semibold mt-0.5">{w.description}</p>}
+                                                            </td>
+                                                            <td className="p-3 font-semibold text-slate-500">
+                                                                {new Date(w.requestedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                            </td>
+                                                            <td className="p-3 font-black text-slate-800">
+                                                                {w.status === 'Approved' ? `₹ ${(w.amount || 0).toLocaleString()}` : '—'}
+                                                            </td>
+                                                            <td className="p-3 text-center">
+                                                                <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider ${
+                                                                    w.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                                                                    w.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                                                    'bg-amber-50 text-amber-600 border border-amber-100'
+                                                                }`}>
+                                                                    {w.status === 'Pending' ? '⏳ Awaiting Review' : w.status}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Project Timeline */}
@@ -323,6 +707,118 @@ const CustomerProjects = () => {
                     </AnimatePresence>
                 </div>
             </div>
+
+            {/* Report Project Payment Modal */}
+            <AnimatePresence>
+                {showPaymentModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
+                        >
+                            <button 
+                                onClick={() => setShowPaymentModal(false)} 
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full border-none bg-transparent cursor-pointer"
+                            >
+                                <X className="w-6 h-6 text-slate-400" />
+                            </button>
+
+                            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-1">Report Project Payment</h2>
+                            <p className="text-[10px] font-black uppercase text-indigo-500 tracking-wider mb-8">Remittance submission for: {selectedProject?.title}</p>
+
+                            <form onSubmit={handleProjectPaymentSubmit} className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Payment Name *</label>
+                                        <input 
+                                            required 
+                                            value={paymentForm.name} 
+                                            onChange={e => setPaymentForm({...paymentForm, name: e.target.value})} 
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" 
+                                            placeholder="e.g., Progress Installment 1" 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Payment Amount (INR) *</label>
+                                        <input 
+                                            required 
+                                            type="number"
+                                            value={paymentForm.amount} 
+                                            onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})} 
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" 
+                                            placeholder="0.00" 
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Payment Method *</label>
+                                        <select 
+                                            required
+                                            value={paymentForm.method} 
+                                            onChange={e => setPaymentForm({...paymentForm, method: e.target.value})} 
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" 
+                                        >
+                                            <option value="upi">UPI Portal</option>
+                                            <option value="bank_transfer">Bank Node / UTR</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Transaction ID / UTR *</label>
+                                        <input 
+                                            required 
+                                            value={paymentForm.referenceId} 
+                                            onChange={e => setPaymentForm({...paymentForm, referenceId: e.target.value})} 
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" 
+                                            placeholder="Enter UPI Ref / UTR number" 
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Payment Date *</label>
+                                        <input 
+                                            required 
+                                            type="date"
+                                            value={paymentForm.paymentDate} 
+                                            onChange={e => setPaymentForm({...paymentForm, paymentDate: e.target.value})} 
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Notes / Details</label>
+                                        <input 
+                                            value={paymentForm.notes} 
+                                            onChange={e => setPaymentForm({...paymentForm, notes: e.target.value})} 
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" 
+                                            placeholder="Any details to share with verifier" 
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="pt-6 border-t flex gap-3">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowPaymentModal(false)}
+                                        className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        className="flex-[2] bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-indigo-700 transition flex items-center justify-center gap-2 text-xs uppercase tracking-widest border-none cursor-pointer"
+                                    >
+                                        Submit Payment
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

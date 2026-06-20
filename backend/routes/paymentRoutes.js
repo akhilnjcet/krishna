@@ -25,18 +25,34 @@ router.put('/:id/verify', protect, admin, verifyPayment);
 router.post('/manual', protect, admin, async (req, res) => {
     try {
         const Payment = require('../models/Payment');
-        const { customerId, amount, method, referenceId, notes } = req.body;
+        const { customerId, amount, method, referenceId, notes, projectId } = req.body;
         
         const payment = await Payment.create({
             customerId,
             amount: parseFloat(amount),
             method: method || 'cash',
             referenceId: referenceId || 'MANUAL',
-            status: 'verified',
+            status: 'Completed',
+            projectId: projectId || undefined,
             verifiedAt: Date.now(),
             verifiedBy: req.user.id || req.user._id,
+            verifiedByName: req.user.name || req.user.username || 'Admin',
             notes: notes || 'Admin override payment'
         });
+
+        // Recalculate project payment status
+        if (projectId) {
+            const { recalculateProjectPaymentStatus } = require('../utils/projectHelper');
+            await recalculateProjectPaymentStatus(projectId);
+        }
+
+        // Send real-time updates via Socket.IO
+        const socketUtil = require('../utils/socket');
+        const io = socketUtil.getIO();
+        if (io) {
+            io.emit('payment-status-changed', payment);
+        }
+
         res.status(201).json(payment);
     } catch(err) {
         console.error(err);

@@ -12,17 +12,16 @@ exports.getAdminOverview = async (req, res) => {
             Expense.find()
         ]);
 
-        const totalIncome = invoices
-            .filter(inv => inv.paymentStatus === 'paid')
-            .reduce((sum, inv) => sum + inv.amount, 0);
+        const Payment = require('../models/Payment');
+        const completedPayments = await Payment.find({ status: { $in: ['verified', 'Completed'] } });
+        const totalIncome = completedPayments.reduce((sum, p) => sum + p.amount, 0);
 
         const totalStaffExpense = salaries.reduce((sum, sal) => sum + (sal.netSalary || sal.salaryAmount || 0), 0);
         const totalOtherExpense = expenses.reduce((sum, exp) => sum + exp.amount, 0);
         const totalExpense = totalStaffExpense + totalOtherExpense;
 
-        const pendingDues = invoices
-            .filter(inv => inv.paymentStatus === 'unpaid')
-            .reduce((sum, inv) => sum + inv.amount, 0);
+        const totalInvoiced = invoices.reduce((sum, inv) => sum + inv.amount, 0);
+        const pendingDues = Math.max(0, totalInvoiced - totalIncome);
 
         res.json({
             totalIncome,
@@ -56,14 +55,15 @@ exports.getCustomerDues = async (req, res) => {
     try {
         const invoices = await Invoice.find({ customerId: req.user.id });
         const totalInvoiced = invoices.reduce((sum, inv) => sum + inv.amount, 0);
-        const totalPaid = invoices
-            .filter(inv => inv.paymentStatus === 'paid')
-            .reduce((sum, inv) => sum + inv.amount, 0);
+
+        const Payment = require('../models/Payment');
+        const completedPayments = await Payment.find({ customerId: req.user.id, status: { $in: ['verified', 'Completed'] } });
+        const totalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0);
 
         res.json({
             totalInvoiced,
             totalPaid,
-            remainingDues: totalInvoiced - totalPaid,
+            remainingDues: Math.max(0, totalInvoiced - totalPaid),
             invoiceCount: invoices.length,
             pendingCount: invoices.filter(inv => inv.paymentStatus === 'unpaid').length
         });

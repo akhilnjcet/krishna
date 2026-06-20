@@ -24,6 +24,22 @@ const projectSchema = new mongoose.Schema({
         enum: ['None', 'Proposed by Staff', 'Sent to Client'],
         default: 'None'
     },
+    discount: { type: Number, default: 0 },
+    advancePaid: { type: Number, default: 0 },
+    paidCash: { type: Number, default: 0 },
+    paidOnline: { type: Number, default: 0 },
+    paymentStatus: {
+        type: String,
+        enum: ['unpaid', 'partially-paid', 'fully-paid'],
+        default: 'unpaid'
+    },
+    additionalWork: [{
+        title: { type: String, required: true },
+        description: { type: String },
+        amount: { type: Number, default: 0 },
+        status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
+        requestedAt: { type: Date, default: Date.now }
+    }],
     createdAt: { type: Date, default: Date.now }
 });
 

@@ -584,6 +584,7 @@ const StaffProgress = () => {
                                     </div>
                                 </form>
                             </motion.div>
+                        )}
                         {showTimelineForm && selectedTimelineProject && (
                             <motion.div 
                                 initial={{ opacity: 0, scale: 0.95 }}

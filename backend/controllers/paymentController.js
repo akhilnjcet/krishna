@@ -3,7 +3,7 @@ const Payment = require('../models/Payment');
 
 exports.submitPayment = async (req, res) => {
     try {
-        const { amount, method, projectId, quoteId, notes, name } = req.body;
+        const { amount, method, referenceId, paymentDate, projectId, quoteId, notes, name } = req.body;
         const customerId = req.user._id || req.user.id;
         
         if (!customerId) {
@@ -14,12 +14,26 @@ exports.submitPayment = async (req, res) => {
             customerId,
             amount: parseFloat(amount),
             method: method || 'upi',
+            referenceId,
+            paymentDate: paymentDate || Date.now(),
             projectId: projectId || undefined,
             quoteId: quoteId || undefined,
             notes,
             name,
-            status: 'pending'
+            status: 'Waiting for Verification'
         });
+
+        // Broadcast status update to sockets
+        const socketUtil = require('../utils/socket');
+        const io = socketUtil.getIO();
+        if (io) {
+            io.emit('payment-status-changed', newPayment);
+        }
+
+        if (projectId) {
+            const { recalculateProjectPaymentStatus } = require('../utils/projectHelper');
+            await recalculateProjectPaymentStatus(projectId);
+        }
 
         res.status(201).json(newPayment);
     } catch (error) {
@@ -54,16 +68,61 @@ exports.getAllPayments = async (req, res) => {
 
 exports.verifyPayment = async (req, res) => {
     try {
-        const { status } = req.body; // 'verified' or 'rejected'
+        const { status, rejectionReason } = req.body;
+        const verifiedByName = req.user.name || req.user.username || 'Admin';
+
         const payment = await Payment.findByIdAndUpdate(req.params.id, {
             status,
+            rejectionReason: status === 'Failed' ? rejectionReason : undefined,
+            verifiedByName,
             verifiedAt: Date.now(),
-            verifiedBy: req.user._id
-        }, { new: true });
+            verifiedBy: req.user._id || req.user.id
+        }, { new: true }).populate('customerId');
         
         if (!payment) return res.status(404).json({ message: 'Payment record not found' });
+
+        // Update invoice paymentStatus if it's Completed and linked to a project
+        if (status === 'Completed' && payment.projectId) {
+            const Invoice = require('../models/Invoice');
+            await Invoice.findOneAndUpdate(
+                { projectId: payment.projectId, customerId: payment.customerId, paymentStatus: 'unpaid' },
+                { paymentStatus: 'paid' }
+            );
+        }
+
+        // Recalculate project payment details
+        if (payment.projectId) {
+            const { recalculateProjectPaymentStatus } = require('../utils/projectHelper');
+            await recalculateProjectPaymentStatus(payment.projectId);
+        }
+
+        // Send real-time updates via Socket.IO
+        const socketUtil = require('../utils/socket');
+        const io = socketUtil.getIO();
+        if (io) {
+            io.emit('payment-status-changed', payment);
+        }
+
+        // Dispatch WhatsApp Notification to the customer
+        const { sendWhatsAppMessage } = require('../services/whatsappService');
+        const customerPhone = payment.customerId?.phoneNumber || payment.customerId?.phone;
+        if (customerPhone) {
+            let notificationMessage = '';
+            if (status === 'Completed') {
+                notificationMessage = `Hello ${payment.customerId.name || 'Client'},\n\nYour payment of ₹${payment.amount} (Ref: ${payment.referenceId || 'N/A'}) has been verified and completed successfully.\n\nThank you,\nKrishna Engineering Works`;
+            } else if (status === 'Failed') {
+                notificationMessage = `Hello ${payment.customerId.name || 'Client'},\n\nYour payment verification for ₹${payment.amount} (Ref: ${payment.referenceId || 'N/A'}) was rejected.\nReason: ${rejectionReason || 'Verification Failed'}.\n\nPlease contact support.`;
+            }
+            if (notificationMessage) {
+                sendWhatsAppMessage(customerPhone, notificationMessage).catch(err => {
+                    console.error('WhatsApp Notification Dispatch Fail:', err);
+                });
+            }
+        }
+
         res.json(payment);
     } catch (error) {
+        console.error('Payment verification error:', error);
         res.status(500).json({ message: error.message });
     }
 };

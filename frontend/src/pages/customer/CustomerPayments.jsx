@@ -5,12 +5,13 @@ import hapticService from '../../services/hapticService';
 import { 
     Wallet, Send, History, Download, Info, 
     CreditCard, Building, QrCode, CheckCircle, 
-    Clock, AlertTriangle, Loader2, ArrowRight, ShieldCheck, Smartphone
+    Clock, AlertTriangle, Loader2, ArrowRight, ShieldCheck, Smartphone, X
 } from 'lucide-react';
 import { generatePaymentReceiptPDF } from '../../services/pdfService';
 import useAuthStore from '../../stores/authStore';
 import UPIAppPicker from '../../components/UPIAppPicker';
 import UPIFallback from '../../components/UPIFallback';
+import { getSocket } from '../../utils/socket';
 
 const CustomerPayments = () => {
     const { user } = useAuthStore();
@@ -22,6 +23,8 @@ const CustomerPayments = () => {
     const [formData, setFormData] = useState({
         amount: '',
         method: 'upi',
+        referenceId: '',
+        paymentDate: new Date().toISOString().split('T')[0],
         name: '',
         notes: ''
     });
@@ -37,7 +40,32 @@ const CustomerPayments = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+
+        const socket = getSocket();
+        socket.connect();
+        
+        const userId = user?._id || user?.id;
+        if (userId) {
+            socket.emit('join-room', userId);
+        }
+
+        socket.on('payment-status-changed', (updatedPayment) => {
+            setPayments(prev => {
+                const exists = prev.some(p => p._id === updatedPayment._id);
+                if (exists) {
+                    return prev.map(p => p._id === updatedPayment._id ? updatedPayment : p);
+                } else {
+                    return [updatedPayment, ...prev];
+                }
+            });
+            fetchData();
+        });
+
+        return () => {
+            socket.off('payment-status-changed');
+            socket.disconnect();
+        };
+    }, [user]);
 
     const fetchData = async () => {
         try {
@@ -66,6 +94,8 @@ const CustomerPayments = () => {
         e.preventDefault();
         if (!formData.name) return alert("Please enter payment name.");
         if (!formData.amount || parseFloat(formData.amount) <= 0) return alert("Please enter a valid amount.");
+        if (!formData.referenceId) return alert("Please enter Transaction ID/UTR Number.");
+        if (!formData.paymentDate) return alert("Please select a Payment Date.");
         if (!formData.notes) return alert("Please enter payment details.");
         
         setSubmitting(true);
@@ -73,11 +103,20 @@ const CustomerPayments = () => {
             const res = await api.post('/payments/submit', {
                 amount: parseFloat(formData.amount),
                 method: formData.method,
+                referenceId: formData.referenceId,
+                paymentDate: formData.paymentDate,
                 name: formData.name,
                 notes: formData.notes
             });
 
-            setFormData({ amount: '', method: 'upi', name: '', notes: '' });
+            setFormData({ 
+                amount: '', 
+                method: 'upi', 
+                referenceId: '', 
+                paymentDate: new Date().toISOString().split('T')[0], 
+                name: '', 
+                notes: '' 
+            });
             
             // Automatically generate and download receipt
             generatePaymentReceiptPDF(res.data, user);
@@ -240,6 +279,28 @@ const CustomerPayments = () => {
                                         />
                                     </div>
 
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Transaction ID / UTR Number</label>
+                                            <input 
+                                                required
+                                                value={formData.referenceId}
+                                                onChange={(e) => setFormData({...formData, referenceId: e.target.value})}
+                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                                placeholder="Enter UPI Ref / Bank UTR"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Date</label>
+                                            <input 
+                                                type="date" required
+                                                value={formData.paymentDate}
+                                                onChange={(e) => setFormData({...formData, paymentDate: e.target.value})}
+                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-2">
                                         <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Details</label>
                                         <textarea 
@@ -321,7 +382,7 @@ const CustomerPayments = () => {
                                 <tbody className="divide-y divide-slate-50">
                                     {payments.length === 0 ? (
                                         <tr>
-                                            <td colSpan="4" className="px-6 py-20 text-center">
+                                            <td colSpan="5" className="px-6 py-20 text-center">
                                                 <History className="w-12 h-12 text-slate-100 mx-auto mb-4" />
                                                 <p className="text-slate-400 font-bold uppercase tracking-widest text-xs italic">No financial history logged.</p>
                                             </td>
@@ -332,31 +393,57 @@ const CustomerPayments = () => {
                                                 <td className="px-6 py-6">
                                                     <p className="text-xs font-black text-slate-900 group-hover:text-blue-600 transition-colors">#{p._id.slice(-8).toUpperCase()}</p>
                                                     <p className="text-[9px] font-bold text-slate-400 mt-1">{new Date(p.createdAt).toLocaleDateString()}</p>
+                                                    {p.paymentDate && (
+                                                        <p className="text-[8px] font-semibold text-indigo-500 mt-0.5">Paid On: {new Date(p.paymentDate).toLocaleDateString()}</p>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-6">
                                                     <p className="text-xs font-black text-slate-800 uppercase">{p.name || 'General Payment'}</p>
-                                                    <p className="text-[10px] font-semibold text-slate-500 mt-1 truncate max-w-xs">{p.notes || 'No description provided.'}</p>
+                                                    <p className="text-[10px] font-semibold text-slate-500 mt-1 truncate max-w-xs">{p.notes || '—'}</p>
+                                                    
+                                                    {/* Payment Status Message / Reason */}
+                                                    {(p.status === 'Waiting for Verification' || p.status === 'pending') && (
+                                                        <p className="text-[9px] font-bold text-amber-600 mt-1.5 uppercase tracking-wider">
+                                                            Your payment is awaiting admin verification.
+                                                        </p>
+                                                    )}
+                                                    {(p.status === 'Failed' || p.status === 'rejected') && (
+                                                        <p className="text-[9px] font-bold text-rose-500 mt-1.5 uppercase tracking-wider">
+                                                            Your payment verification was rejected{p.rejectionReason ? `: ${p.rejectionReason}` : ''}
+                                                        </p>
+                                                    )}
+                                                    {(p.status === 'Completed' || p.status === 'verified') && (
+                                                        <p className="text-[9px] font-bold text-emerald-600 mt-1.5 uppercase tracking-wider">
+                                                            Your payment has been verified and completed successfully{p.verifiedByName ? ` by ${p.verifiedByName}` : ''}
+                                                        </p>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-6">
                                                     <p className="text-sm font-black text-slate-900 italic">₹ {p.amount?.toLocaleString()}</p>
                                                     <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mt-1">{p.method}</p>
+                                                    {p.referenceId && (
+                                                        <p className="text-[8px] font-semibold text-slate-400 mt-0.5">UTR: {p.referenceId}</p>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-6">
                                                     <div className="flex justify-center">
                                                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
-                                                            p.status === 'verified' ? 'bg-emerald-50 text-emerald-600' : 
-                                                            p.status === 'rejected' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'
+                                                            p.status === 'Completed' || p.status === 'verified' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
+                                                            p.status === 'Failed' || p.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                                            'bg-amber-50 text-amber-600 border border-amber-100'
                                                         }`}>
-                                                            {p.status === 'verified' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                                                            {p.status}
+                                                            {(p.status === 'Completed' || p.status === 'verified') ? <CheckCircle className="w-3 h-3 text-emerald-500" /> : 
+                                                             (p.status === 'Failed' || p.status === 'rejected') ? <X className="w-3 h-3 text-rose-500" /> : 
+                                                             <Clock className="w-3 h-3 text-amber-500" />}
+                                                            {p.status === 'verified' ? 'Completed' : (p.status === 'rejected' ? 'Failed' : p.status)}
                                                         </span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-6 text-right">
                                                     <button 
-                                                        disabled={p.status !== 'verified'}
+                                                        disabled={p.status !== 'Completed' && p.status !== 'verified'}
                                                         onClick={() => generatePaymentReceiptPDF(p, user)}
-                                                        className={`p-3 rounded-xl border transition-all ${p.status === 'verified' ? 'border-slate-200 hover:bg-blue-600 hover:text-white hover:border-blue-600 shadow-sm' : 'opacity-20 cursor-not-allowed'}`}
+                                                        className={`p-3 rounded-xl border transition-all ${p.status === 'Completed' || p.status === 'verified' ? 'border-slate-200 hover:bg-blue-600 hover:text-white hover:border-blue-600 shadow-sm' : 'opacity-20 cursor-not-allowed'}`}
                                                         title="Extract Official Receipt"
                                                     >
                                                         <Download className="w-4 h-4" />

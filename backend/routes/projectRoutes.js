@@ -1,6 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { createProject, getProjects, updateProject, deleteProject, proposeTimeline, sendTimeline } = require('../controllers/projectController');
+const { 
+    createProject, 
+    getProjects, 
+    updateProject, 
+    deleteProject, 
+    proposeTimeline, 
+    sendTimeline,
+    requestAdditionalWork,
+    updateAdditionalWorkStatus,
+    deleteAdditionalWork
+} = require('../controllers/projectController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.route('/')
@@ -16,6 +26,13 @@ router.route('/:id/propose-timeline')
 
 router.route('/:id/send-timeline')
     .put(protect, authorize('admin'), sendTimeline);
+
+router.route('/:id/additional-work')
+    .post(protect, authorize('admin', 'customer'), requestAdditionalWork);
+
+router.route('/:id/additional-work/:workId')
+    .put(protect, authorize('admin'), updateAdditionalWorkStatus)
+    .delete(protect, authorize('admin'), deleteAdditionalWork);
 
 
 module.exports = router;

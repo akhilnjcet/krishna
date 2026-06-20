@@ -1,7 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
-import { Briefcase, Plus, X, Loader2, AlertCircle, MessageSquare, Send, AlertTriangle, Clock, Calendar, Trash2, CheckCircle2, Wallet, CheckCircle, XCircle, History, IndianRupee } from 'lucide-react';
+import { Briefcase, Plus, X, Loader2, AlertCircle, MessageSquare, Send, AlertTriangle, Clock, Calendar, Trash2, CheckCircle2, Wallet, CheckCircle, XCircle, History, IndianRupee, Wrench, PlusCircle } from 'lucide-react';
+import { getSocket } from '../../utils/socket';
+
+// Inline sub-component: approve a pending additional-work item with a cost estimate
+const ApproveWithAmountButton = ({ workItem, onApprove, isLoading }) => {
+    const [approveAmount, setApproveAmount] = React.useState(workItem.amount || '');
+    return (
+        <div className="flex items-center gap-1">
+            <input
+                type="number"
+                value={approveAmount}
+                onChange={e => setApproveAmount(e.target.value)}
+                className="w-20 px-2 py-1.5 bg-white border border-emerald-200 rounded-lg font-bold text-[9px] outline-none focus:ring-2 focus:ring-emerald-500/20"
+                placeholder="₹ Amount"
+            />
+            <button
+                disabled={isLoading}
+                onClick={() => onApprove(approveAmount)}
+                className="px-3 py-1.5 bg-emerald-600 text-white text-[9px] font-black uppercase rounded-xl hover:bg-emerald-700 transition disabled:opacity-50 border-none cursor-pointer flex items-center gap-1"
+            >
+                {isLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <CheckCircle className="w-2.5 h-2.5" />}
+                Approve
+            </button>
+        </div>
+    );
+};
 
 const AdminProjects = () => {
     const [projects, setProjects] = useState([]);
@@ -10,10 +35,23 @@ const AdminProjects = () => {
     const [showNotifyModal, setShowNotifyModal] = useState(false);
     const [selectedProject, setSelectedProject] = useState(null);
     const [notificationText, setNotificationText] = useState({ title: '', message: '' });
-    const [activeTab, setActiveTab] = useState('projects');
+    const [activeTab, setActiveTab] = useState('payments');
     const [payments, setPayments] = useState([]);
     const [paymentsLoading, setPaymentsLoading] = useState(false);
     const [verifyingId, setVerifyingId] = useState(null);
+    const [rejectModal, setRejectModal] = useState({ show: false, paymentId: null, reason: '' });
+    const [showRemittanceModal, setShowRemittanceModal] = useState(false);
+    const [remittanceLedger, setRemittanceLedger] = useState({ discount: '', advancePaid: '' });
+    const [manualPaymentForm, setManualPaymentForm] = useState({ amount: '', method: 'cash', referenceId: '', notes: '' });
+    const [recordingPayment, setRecordingPayment] = useState(false);
+    const [updatingLedger, setUpdatingLedger] = useState(false);
+
+    // Additional Work Modal
+    const [showAdditionalWorkModal, setShowAdditionalWorkModal] = useState(false);
+    const [additionalWorkProject, setAdditionalWorkProject] = useState(null);
+    const [newAdditionalWork, setNewAdditionalWork] = useState({ title: '', description: '', amount: '' });
+    const [addingAdditionalWork, setAddingAdditionalWork] = useState(false);
+    const [updatingWorkId, setUpdatingWorkId] = useState(null);
 
     const handlePostUpdate = async (e) => {
         e.preventDefault();
@@ -101,6 +139,64 @@ const AdminProjects = () => {
         fetchCustomers();
         fetchStaff();
         fetchPayments();
+
+        const socket = getSocket();
+        socket.connect();
+        socket.emit('join-room', 'admin');
+
+        socket.on('payment-status-changed', (updatedPayment) => {
+            setPayments(prev => {
+                const exists = prev.some(p => p._id === updatedPayment._id);
+                if (exists) {
+                    return prev.map(p => p._id === updatedPayment._id ? updatedPayment : p);
+                } else {
+                    return [updatedPayment, ...prev];
+                }
+            });
+            fetchProjects();
+        });
+
+        socket.on('project-updated', (data) => {
+            setProjects(prev => prev.map(proj => {
+                if (proj._id === data.projectId) {
+                    return {
+                        ...proj,
+                        paymentStatus: data.paymentStatus,
+                        paidCash: data.paidCash,
+                        paidOnline: data.paidOnline,
+                        discount: data.discount,
+                        advancePaid: data.advancePaid,
+                        budget: data.budget,
+                        totalCost: data.totalCost,
+                        approvedAdditionalWorkTotal: data.approvedAdditionalWorkTotal
+                    };
+                }
+                return proj;
+            }));
+
+            setSelectedProject(prev => {
+                if (prev && prev._id === data.projectId) {
+                    return {
+                        ...prev,
+                        paymentStatus: data.paymentStatus,
+                        paidCash: data.paidCash,
+                        paidOnline: data.paidOnline,
+                        discount: data.discount,
+                        advancePaid: data.advancePaid,
+                        budget: data.budget,
+                        totalCost: data.totalCost,
+                        approvedAdditionalWorkTotal: data.approvedAdditionalWorkTotal
+                    };
+                }
+                return prev;
+            });
+        });
+
+        return () => {
+            socket.off('payment-status-changed');
+            socket.off('project-updated');
+            socket.disconnect();
+        };
     }, []);
 
     const fetchPayments = async () => {
@@ -124,6 +220,81 @@ const AdminProjects = () => {
             alert('Failed to update payment: ' + (err.response?.data?.message || err.message));
         } finally {
             setVerifyingId(null);
+        }
+    };
+
+    const handleRejectPaymentSubmit = async (e) => {
+        e.preventDefault();
+        if (!rejectModal.reason) return alert("Please specify a rejection reason.");
+        
+        setVerifyingId(rejectModal.paymentId);
+        try {
+            await api.put(`/payments/${rejectModal.paymentId}/verify`, { 
+                status: 'Failed', 
+                rejectionReason: rejectModal.reason 
+            });
+            setRejectModal({ show: false, paymentId: null, reason: '' });
+            fetchPayments();
+        } catch (err) {
+            alert('Failed to reject payment: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setVerifyingId(null);
+        }
+    };
+
+    const handleUpdateLedger = async (e) => {
+        e.preventDefault();
+        setUpdatingLedger(true);
+        try {
+            const res = await api.put(`/projects/${selectedProject._id}`, {
+                discount: parseFloat(remittanceLedger.discount) || 0,
+                advancePaid: parseFloat(remittanceLedger.advancePaid) || 0
+            });
+            setSelectedProject(res.data);
+            fetchProjects();
+            alert("Project Financial Ledger updated successfully!");
+        } catch (err) {
+            alert("Failed to update project ledger: " + (err.response?.data?.message || err.message));
+        } finally {
+            setUpdatingLedger(false);
+        }
+    };
+
+    const handleRecordManualPayment = async (e) => {
+        e.preventDefault();
+        if (!manualPaymentForm.amount || parseFloat(manualPaymentForm.amount) <= 0) {
+            return alert("Please enter a valid amount.");
+        }
+        setRecordingPayment(true);
+        try {
+            await api.post('/payments/manual', {
+                customerId: selectedProject.customerId?._id || selectedProject.customerId,
+                amount: parseFloat(manualPaymentForm.amount),
+                method: manualPaymentForm.method,
+                referenceId: manualPaymentForm.referenceId || undefined,
+                notes: manualPaymentForm.notes || `Manual payment recorded by Admin`,
+                projectId: selectedProject._id
+            });
+            
+            // Clear manual payment form
+            setManualPaymentForm({ amount: '', method: 'cash', referenceId: '', notes: '' });
+            
+            // Refresh payments list
+            fetchPayments();
+            
+            // Fetch updated project data to refresh ledger numbers
+            const res = await api.get('/projects');
+            setProjects(res.data);
+            const freshProj = res.data.find(p => p._id === selectedProject._id);
+            if (freshProj) {
+                setSelectedProject(freshProj);
+            }
+            
+            alert("Manual payment recorded and ledger tallied successfully!");
+        } catch (err) {
+            alert("Failed to record payment: " + (err.response?.data?.message || err.message));
+        } finally {
+            setRecordingPayment(false);
         }
     };
 
@@ -184,6 +355,63 @@ const AdminProjects = () => {
             alert("Staff assignments updated successfully!");
         } catch (err) {
             alert("Failed to update staff assignments: " + (err.response?.data?.message || err.message));
+        }
+    };
+
+    // ── Additional Work Handlers ──────────────────────────────────────────
+    const handleOpenAdditionalWork = (prj) => {
+        setAdditionalWorkProject(prj);
+        setNewAdditionalWork({ title: '', description: '', amount: '' });
+        setShowAdditionalWorkModal(true);
+    };
+
+    const handleAdminAddWork = async (e) => {
+        e.preventDefault();
+        if (!newAdditionalWork.title) return alert('Title is required.');
+        setAddingAdditionalWork(true);
+        try {
+            const res = await api.post(`/projects/${additionalWorkProject._id}/additional-work`, {
+                title: newAdditionalWork.title,
+                description: newAdditionalWork.description,
+                amount: parseFloat(newAdditionalWork.amount) || 0,
+                status: 'Approved'
+            });
+            setAdditionalWorkProject(res.data);
+            setProjects(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+            setNewAdditionalWork({ title: '', description: '', amount: '' });
+        } catch (err) {
+            alert('Failed to add work item: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setAddingAdditionalWork(false);
+        }
+    };
+
+    const handleWorkAction = async (workId, status, amount) => {
+        setUpdatingWorkId(workId);
+        try {
+            const body = { status };
+            if (amount !== undefined) body.amount = parseFloat(amount) || 0;
+            const res = await api.put(`/projects/${additionalWorkProject._id}/additional-work/${workId}`, body);
+            setAdditionalWorkProject(res.data);
+            setProjects(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+        } catch (err) {
+            alert('Failed to update work item: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setUpdatingWorkId(null);
+        }
+    };
+
+    const handleDeleteWork = async (workId) => {
+        if (!window.confirm('Delete this additional work entry?')) return;
+        setUpdatingWorkId(workId);
+        try {
+            const res = await api.delete(`/projects/${additionalWorkProject._id}/additional-work/${workId}`);
+            setAdditionalWorkProject(res.data);
+            setProjects(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+        } catch (err) {
+            alert('Failed to delete work item: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setUpdatingWorkId(null);
         }
     };
 
@@ -323,6 +551,36 @@ const AdminProjects = () => {
                                         >
                                             <Briefcase className="w-4 h-4" />
                                         </button>
+                                        <button 
+                                            onClick={() => {
+                                                setSelectedProject(prj);
+                                                setRemittanceLedger({
+                                                    discount: prj.discount || '',
+                                                    advancePaid: prj.advancePaid || ''
+                                                });
+                                                setManualPaymentForm({
+                                                    amount: '',
+                                                    method: 'cash',
+                                                    referenceId: '',
+                                                    notes: ''
+                                                });
+                                                setShowRemittanceModal(true);
+                                            }}
+                                            className="bg-emerald-50 text-emerald-600 p-2 rounded-xl hover:bg-emerald-650 hover:text-white transition"
+                                            title="Project Financial Remittance & Ledger"
+                                        >
+                                            <Wallet className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleOpenAdditionalWork(prj)}
+                                            className="bg-violet-50 text-violet-600 p-2 rounded-xl hover:bg-violet-600 hover:text-white transition relative"
+                                            title="Manage Additional Work Requests"
+                                        >
+                                            <Wrench className="w-4 h-4" />
+                                            {prj.additionalWork?.some(w => w.status === 'Pending') && (
+                                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-white" />
+                                            )}
+                                        </button>
                                     </td>
                                 </motion.tr>
                             ))}
@@ -391,6 +649,14 @@ const AdminProjects = () => {
                                             <td className="p-6">
                                                 <div className="font-black text-slate-800 text-sm uppercase">{p.name || 'General Payment'}</div>
                                                 <div className="text-[10px] text-slate-500 font-semibold mt-0.5 max-w-xs truncate">{p.notes || '—'}</div>
+                                                {p.referenceId && (
+                                                    <div className="text-[9px] text-indigo-600 font-black mt-1 uppercase tracking-wider">UTR: {p.referenceId}</div>
+                                                )}
+                                                {p.status === 'Completed' || p.status === 'verified' ? (
+                                                    <div className="text-[9px] text-emerald-600 font-bold mt-1 uppercase">Verified by {p.verifiedByName || 'Admin'} on {p.verifiedAt ? new Date(p.verifiedAt).toLocaleDateString() : 'N/A'}</div>
+                                                ) : p.status === 'Failed' || p.status === 'rejected' ? (
+                                                    <div className="text-[9px] text-rose-500 font-bold mt-1 uppercase">Rejected by {p.verifiedByName || 'Admin'} {p.verifiedAt ? `on ${new Date(p.verifiedAt).toLocaleDateString()}` : ''} {p.rejectionReason ? `| Reason: ${p.rejectionReason}` : ''}</div>
+                                                ) : null}
                                             </td>
                                             <td className="p-6">
                                                 <div className="flex items-center gap-1 text-sm font-black text-slate-900">
@@ -400,10 +666,10 @@ const AdminProjects = () => {
                                             </td>
                                             <td className="p-6">
                                                 <div className="text-xs font-bold text-slate-700">
-                                                    {new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    {new Date(p.paymentDate || p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                 </div>
                                                 <div className="text-[10px] text-slate-400 mt-0.5">
-                                                    {new Date(p.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                                                    {new Date(p.paymentDate || p.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
                                             </td>
                                             <td className="p-6">
@@ -412,43 +678,43 @@ const AdminProjects = () => {
                                             <td className="p-6">
                                                 <div className="flex justify-center">
                                                     <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
-                                                        p.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                                                        p.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-200' :
+                                                        p.status === 'Completed' || p.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                                        p.status === 'Failed' || p.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-200' :
                                                         'bg-amber-50 text-amber-700 border border-amber-200'
                                                     }`}>
-                                                        {p.status === 'verified' ? <CheckCircle className="w-3 h-3" /> :
-                                                         p.status === 'rejected' ? <XCircle className="w-3 h-3" /> :
-                                                         <Clock className="w-3 h-3" />}
-                                                        {p.status}
+                                                        {p.status === 'Completed' || p.status === 'verified' ? <CheckCircle className="w-3 h-3 text-emerald-500" /> :
+                                                         p.status === 'Failed' || p.status === 'rejected' ? <XCircle className="w-3 h-3 text-rose-500" /> :
+                                                         <Clock className="w-3 h-3 text-amber-500" />}
+                                                        {p.status === 'verified' ? 'Completed' : (p.status === 'rejected' ? 'Failed' : p.status)}
                                                     </span>
                                                 </div>
                                             </td>
                                             <td className="p-6">
-                                                {p.status === 'pending' && (
+                                                {(p.status === 'Waiting for Verification' || p.status === 'pending') && (
                                                     <div className="flex justify-end gap-2">
                                                         <button
                                                             disabled={verifyingId === p._id}
-                                                            onClick={() => handleVerifyPayment(p._id, 'verified')}
+                                                            onClick={() => handleVerifyPayment(p._id, 'Completed')}
                                                             className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-emerald-700 transition disabled:opacity-50"
                                                         >
                                                             {verifyingId === p._id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-                                                            Verify
+                                                            Approve
                                                         </button>
                                                         <button
                                                             disabled={verifyingId === p._id}
-                                                            onClick={() => handleVerifyPayment(p._id, 'rejected')}
+                                                            onClick={() => setRejectModal({ show: true, paymentId: p._id, reason: '' })}
                                                             className="flex items-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 border border-rose-200 text-[10px] font-black uppercase rounded-xl hover:bg-rose-100 transition disabled:opacity-50"
                                                         >
                                                             <XCircle className="w-3 h-3" /> Reject
                                                         </button>
                                                     </div>
                                                 )}
-                                                {p.status === 'verified' && (
+                                                {(p.status === 'Completed' || p.status === 'verified') && (
                                                     <div className="text-right text-[10px] text-emerald-600 font-black uppercase">
-                                                        Verified ✓
+                                                        Approved ✓
                                                     </div>
                                                 )}
-                                                {p.status === 'rejected' && (
+                                                {(p.status === 'Failed' || p.status === 'rejected') && (
                                                     <div className="text-right text-[10px] text-rose-500 font-black uppercase">
                                                         Rejected ✗
                                                     </div>
@@ -807,6 +1073,543 @@ const AdminProjects = () => {
                                     </button>
                                 </div>
                             </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Reject Payment Modal */}
+            <AnimatePresence>
+                {rejectModal.show && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-rose-600"
+                        >
+                            <button 
+                                onClick={() => setRejectModal({ show: false, paymentId: null, reason: '' })} 
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full border-none bg-transparent cursor-pointer"
+                            >
+                                <X className="w-6 h-6 text-slate-400" />
+                            </button>
+
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="bg-rose-100 p-3 rounded-2xl">
+                                    <XCircle className="w-8 h-8 text-rose-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Reject Payment</h2>
+                                    <p className="text-[10px] font-black uppercase text-rose-500 tracking-[0.2em]">Transaction Audit Action</p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleRejectPaymentSubmit} className="space-y-6">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Rejection Reason *</label>
+                                    <textarea 
+                                        required 
+                                        rows={4} 
+                                        value={rejectModal.reason} 
+                                        onChange={e => setRejectModal({...rejectModal, reason: e.target.value})} 
+                                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-rose-500/20 outline-none text-xs" 
+                                        placeholder="Please provide the specific reason for rejecting this transaction (e.g. Invalid UTR, Amount mismatch)..." 
+                                    />
+                                </div>
+                                <div className="flex items-center gap-3 p-4 bg-rose-50 rounded-2xl border border-rose-100 mb-4">
+                                    <AlertTriangle className="w-5 h-5 text-rose-500" />
+                                    <p className="text-[9px] font-black text-rose-700 uppercase tracking-tight italic">
+                                        Rejecting this transaction will mark it as failed and notify the customer instantly.
+                                    </p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setRejectModal({ show: false, paymentId: null, reason: '' })}
+                                        className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        disabled={verifyingId !== null}
+                                        className="flex-[2] bg-rose-600 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-rose-700 transition flex items-center justify-center gap-2 text-xs uppercase tracking-widest disabled:opacity-50 border-none cursor-pointer"
+                                    >
+                                        {verifyingId === rejectModal.paymentId ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                                        Reject Payment
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Project Remittance Modal */}
+            <AnimatePresence>
+                {showRemittanceModal && selectedProject && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+                        <motion.div 
+                            initial={{ scale: 0.95, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-emerald-605 border-emerald-600 my-8"
+                        >
+                            <button 
+                                onClick={() => {
+                                    setShowRemittanceModal(false);
+                                    setSelectedProject(null);
+                                }} 
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full border-none bg-transparent cursor-pointer"
+                            >
+                                <X className="w-6 h-6 text-slate-400" />
+                            </button>
+
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="bg-emerald-100 p-3 rounded-2xl">
+                                    <Wallet className="w-8 h-8 text-emerald-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Project Remittance Manager</h2>
+                                    <p className="text-[10px] font-black uppercase text-emerald-500 tracking-[0.2em]">{selectedProject.title}</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+                                {/* Left Side: Ledger Settings */}
+                                <div className="lg:col-span-6 space-y-6">
+                                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200/60 space-y-4">
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Project Ledger Settings</h3>
+                                        
+                                        <form onSubmit={handleUpdateLedger} className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Discount Allowed</label>
+                                                    <input 
+                                                        type="number"
+                                                        value={remittanceLedger.discount}
+                                                        onChange={e => setRemittanceLedger({...remittanceLedger, discount: e.target.value})}
+                                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Advance Paid</label>
+                                                    <input 
+                                                        type="number"
+                                                        value={remittanceLedger.advancePaid}
+                                                        onChange={e => setRemittanceLedger({...remittanceLedger, advancePaid: e.target.value})}
+                                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <button 
+                                                type="submit" 
+                                                disabled={updatingLedger}
+                                                className="w-full py-3 bg-slate-900 hover:bg-black text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-1.5 border-none cursor-pointer"
+                                            >
+                                                {updatingLedger ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                                                Update Project Ledger
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                    {/* Ledger Metrics */}
+                                    {(() => {
+                                        const budget = selectedProject.budget || 0;
+                                        const approvedAdditional = selectedProject.approvedAdditionalWorkTotal ||
+                                            (selectedProject.additionalWork || []).filter(w => w.status === 'Approved').reduce((s, w) => s + (w.amount || 0), 0);
+                                        const totalCost = selectedProject.totalCost || (budget + approvedAdditional);
+                                        const totalPaid = (selectedProject.paidCash || 0) + (selectedProject.paidOnline || 0) + (selectedProject.advancePaid || 0);
+                                        const discount = selectedProject.discount || 0;
+                                        const duesRemaining = Math.max(0, totalCost - discount - totalPaid);
+                                        return (
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100 grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Base Budget</p>
+                                            <p className="text-base font-black text-slate-800">₹ {budget.toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[8px] font-black text-violet-500 uppercase tracking-widest">Additional Work</p>
+                                            <p className="text-base font-black text-violet-700">₹ {approvedAdditional.toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Total Contract</p>
+                                            <p className="text-base font-black text-emerald-700">₹ {totalCost.toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Ledger Discount</p>
+                                            <p className="text-base font-black text-emerald-700">₹ {discount.toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total Receipts</p>
+                                            <p className="text-base font-black text-indigo-600">
+                                                ₹ {totalPaid.toLocaleString()}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Dues Remaining</p>
+                                            <p className={`text-base font-black ${ duesRemaining <= 0 ? 'text-emerald-600' : 'text-rose-600' }`}>
+                                                ₹ {duesRemaining.toLocaleString()}
+                                            </p>
+                                        </div>
+                                        <div className="col-span-2 flex items-center justify-between border-t border-emerald-100/70 pt-3 mt-1">
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Remittance Status</span>
+                                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                                selectedProject.paymentStatus === 'fully-paid' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                                                selectedProject.paymentStatus === 'partially-paid' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                                                'bg-rose-50 text-rose-600 border border-rose-100'
+                                            }`}>
+                                                {selectedProject.paymentStatus === 'fully-paid' ? 'Fully Paid ✓' :
+                                                 selectedProject.paymentStatus === 'partially-paid' ? 'Partially Paid' : 'Unpaid'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                        );
+                                    })()}
+                                </div>
+
+                                {/* Right Side: Record Manual Payment */}
+                                <div className="lg:col-span-6 space-y-6">
+                                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200/60 space-y-4">
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Record Manual / Cash Payment</h3>
+                                        
+                                        <form onSubmit={handleRecordManualPayment} className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Payment Amount (INR) *</label>
+                                                    <input 
+                                                        required
+                                                        type="number"
+                                                        value={manualPaymentForm.amount}
+                                                        onChange={e => setManualPaymentForm({...manualPaymentForm, amount: e.target.value})}
+                                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Payment Method *</label>
+                                                    <select 
+                                                        value={manualPaymentForm.method}
+                                                        onChange={e => setManualPaymentForm({...manualPaymentForm, method: e.target.value})}
+                                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                                    >
+                                                        <option value="cash">Cash Override</option>
+                                                        <option value="upi">UPI Portal</option>
+                                                        <option value="bank_transfer">Bank Transfer / UTR</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Reference ID / UTR</label>
+                                                    <input 
+                                                        type="text"
+                                                        value={manualPaymentForm.referenceId}
+                                                        onChange={e => setManualPaymentForm({...manualPaymentForm, referenceId: e.target.value})}
+                                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                                        placeholder="e.g. CASH, UTR9988..."
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Payment Notes</label>
+                                                    <input 
+                                                        type="text"
+                                                        value={manualPaymentForm.notes}
+                                                        onChange={e => setManualPaymentForm({...manualPaymentForm, notes: e.target.value})}
+                                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                                        placeholder="Cash received on site..."
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <button 
+                                                type="submit" 
+                                                disabled={recordingPayment}
+                                                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-1.5 border-none cursor-pointer animate-none"
+                                            >
+                                                {recordingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                                                Record Payment Received
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Project-Specific Transactions History Table */}
+                            <div className="border-t border-slate-100 pt-6">
+                                <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 mb-4">Project Transactions Audit History</h3>
+                                
+                                <div className="bg-slate-50/50 rounded-2xl border border-slate-200 overflow-hidden">
+                                    <div className="overflow-x-auto max-h-60 overflow-y-auto pr-1">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-100 text-[8px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-200">
+                                                    <th className="p-4">Payment Info</th>
+                                                    <th className="p-4">Amount</th>
+                                                    <th className="p-4">Method / UTR</th>
+                                                    <th className="p-4 text-center">Status</th>
+                                                    <th className="p-4 text-right">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {payments.filter(p => p.projectId === selectedProject._id || p.projectId?._id === selectedProject._id).length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan="5" className="p-8 text-center text-slate-400 font-bold uppercase text-xs tracking-widest">
+                                                            No remittance history recorded for this project unit.
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    payments.filter(p => p.projectId === selectedProject._id || p.projectId?._id === selectedProject._id).map(p => (
+                                                        <tr key={p._id} className="hover:bg-slate-50 transition-colors text-xs">
+                                                            <td className="p-4">
+                                                                <div className="font-black text-slate-800 uppercase">{p.name || 'General Remittance'}</div>
+                                                                <div className="text-[8px] text-slate-400 mt-1">Paid on: {new Date(p.paymentDate || p.createdAt).toLocaleDateString()}</div>
+                                                                {(p.status === 'Completed' || p.status === 'verified') && (
+                                                                    <div className="text-[7px] text-emerald-600 font-bold mt-0.5 uppercase">Verified by {p.verifiedByName || 'Admin'}</div>
+                                                                )}
+                                                                {(p.status === 'Failed' || p.status === 'rejected') && p.rejectionReason && (
+                                                                    <div className="text-[7px] text-rose-500 font-bold mt-0.5 uppercase">Rejected Reason: {p.rejectionReason}</div>
+                                                                )}
+                                                            </td>
+                                                            <td className="p-4 font-black text-slate-900">
+                                                                ₹ {p.amount?.toLocaleString()}
+                                                            </td>
+                                                            <td className="p-4">
+                                                                <span className="px-2 py-0.5 bg-slate-200 text-slate-700 text-[8px] font-black uppercase rounded">{p.method}</span>
+                                                                {p.referenceId && (
+                                                                    <div className="text-[8px] text-indigo-650 font-bold mt-1 uppercase">UTR: {p.referenceId}</div>
+                                                                )}
+                                                            </td>
+                                                            <td className="p-4 text-center">
+                                                                <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider ${
+                                                                    p.status === 'Completed' || p.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                                                                    p.status === 'Failed' || p.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                                                    'bg-amber-50 text-amber-600 border border-amber-100'
+                                                                }`}>
+                                                                    {p.status === 'verified' ? 'Completed' : (p.status === 'rejected' ? 'Failed' : p.status)}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-4 text-right">
+                                                                {(p.status === 'Waiting for Verification' || p.status === 'pending') ? (
+                                                                    <div className="flex justify-end gap-1.5">
+                                                                        <button
+                                                                            disabled={verifyingId === p._id}
+                                                                            onClick={() => handleVerifyPayment(p._id, 'Completed')}
+                                                                            className="px-2.5 py-1.5 bg-emerald-600 text-white text-[8px] font-black uppercase rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 border-none cursor-pointer flex items-center gap-1"
+                                                                        >
+                                                                            {verifyingId === p._id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <CheckCircle className="w-2.5 h-2.5" />}
+                                                                            Approve
+                                                                        </button>
+                                                                        <button
+                                                                            disabled={verifyingId === p._id}
+                                                                            onClick={() => setRejectModal({ show: true, paymentId: p._id, reason: '' })}
+                                                                            className="px-2.5 py-1.5 bg-rose-50 text-rose-600 border border-rose-250 text-[8px] font-black uppercase rounded-lg hover:bg-rose-100 transition disabled:opacity-50 cursor-pointer flex items-center gap-1"
+                                                                        >
+                                                                            <XCircle className="w-2.5 h-2.5" /> Reject
+                                                                        </button>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="text-[8px] font-black uppercase text-slate-400">Resolved</span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* ── Additional Work Scope Modal ───────────────────────────────── */}
+            <AnimatePresence>
+                {showAdditionalWorkModal && additionalWorkProject && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-violet-600 my-8"
+                        >
+                            <button
+                                onClick={() => { setShowAdditionalWorkModal(false); setAdditionalWorkProject(null); }}
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full border-none bg-transparent cursor-pointer"
+                            >
+                                <X className="w-6 h-6 text-slate-400" />
+                            </button>
+
+                            {/* Header */}
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="bg-violet-100 p-3 rounded-2xl">
+                                    <Wrench className="w-8 h-8 text-violet-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Additional Work Scope</h2>
+                                    <p className="text-[10px] font-black uppercase text-violet-500 tracking-[0.2em]">{additionalWorkProject.title}</p>
+                                </div>
+                            </div>
+
+                            {/* Budget Summary */}
+                            {(() => {
+                                const approvedTotal = (additionalWorkProject.additionalWork || [])
+                                    .filter(w => w.status === 'Approved')
+                                    .reduce((s, w) => s + (w.amount || 0), 0);
+                                const totalCost = (additionalWorkProject.budget || 0) + approvedTotal;
+                                return (
+                                    <div className="grid grid-cols-3 gap-4 mb-8 bg-violet-50/50 p-5 rounded-2xl border border-violet-100">
+                                        <div>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Base Budget</p>
+                                            <p className="text-lg font-black text-slate-800">₹ {(additionalWorkProject.budget || 0).toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Approved Additional</p>
+                                            <p className="text-lg font-black text-violet-600">₹ {approvedTotal.toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Contract Value</p>
+                                            <p className="text-lg font-black text-emerald-600">₹ {totalCost.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                {/* Left: Existing Work Items */}
+                                <div className="lg:col-span-7 space-y-3">
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 border-b pb-2">
+                                        Scope Items ({(additionalWorkProject.additionalWork || []).length})
+                                    </h3>
+
+                                    {(additionalWorkProject.additionalWork || []).length === 0 ? (
+                                        <div className="py-12 text-center bg-slate-50 border-2 border-dashed rounded-2xl text-slate-400">
+                                            <PlusCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                                            <p className="text-xs font-bold uppercase tracking-widest">No additional work items yet.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                                            {(additionalWorkProject.additionalWork || []).map((w) => {
+                                                const isPending = w.status === 'Pending';
+                                                const isApproved = w.status === 'Approved';
+                                                const isRejected = w.status === 'Rejected';
+                                                return (
+                                                    <div
+                                                        key={w._id}
+                                                        className={`p-4 rounded-2xl border ${
+                                                            isPending ? 'bg-amber-50 border-amber-200' :
+                                                            isApproved ? 'bg-emerald-50 border-emerald-200' :
+                                                            'bg-rose-50 border-rose-200'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <p className="text-sm font-black text-slate-800 uppercase">{w.title}</p>
+                                                                    <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
+                                                                        isPending ? 'bg-amber-200 text-amber-800' :
+                                                                        isApproved ? 'bg-emerald-200 text-emerald-800' :
+                                                                        'bg-rose-200 text-rose-700'
+                                                                    }`}>{w.status}</span>
+                                                                </div>
+                                                                {w.description && (
+                                                                    <p className="text-xs text-slate-500 font-semibold mt-1">{w.description}</p>
+                                                                )}
+                                                                <p className="text-xs font-black text-slate-700 mt-1">
+                                                                    ₹ {(w.amount || 0).toLocaleString()}
+                                                                    {isApproved && <span className="text-emerald-600 ml-1">✓ Approved</span>}
+                                                                </p>
+                                                                <p className="text-[9px] text-slate-400 mt-0.5">
+                                                                    {new Date(w.requestedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex flex-col gap-1.5 flex-shrink-0">
+                                                                {isPending && (
+                                                                    <>
+                                                                        <ApproveWithAmountButton
+                                                                            workItem={w}
+                                                                            onApprove={(amount) => handleWorkAction(w._id, 'Approved', amount)}
+                                                                            isLoading={updatingWorkId === w._id}
+                                                                        />
+                                                                        <button
+                                                                            disabled={updatingWorkId === w._id}
+                                                                            onClick={() => handleWorkAction(w._id, 'Rejected')}
+                                                                            className="px-3 py-1.5 bg-rose-100 text-rose-600 text-[9px] font-black uppercase rounded-xl hover:bg-rose-200 transition disabled:opacity-50 border-none cursor-pointer flex items-center gap-1"
+                                                                        >
+                                                                            {updatingWorkId === w._id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <XCircle className="w-2.5 h-2.5" />}
+                                                                            Reject
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                                <button
+                                                                    disabled={updatingWorkId === w._id}
+                                                                    onClick={() => handleDeleteWork(w._id)}
+                                                                    className="px-3 py-1.5 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-xl hover:bg-rose-50 hover:text-rose-600 transition disabled:opacity-50 border-none cursor-pointer flex items-center gap-1"
+                                                                >
+                                                                    {updatingWorkId === w._id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Trash2 className="w-2.5 h-2.5" />}
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Right: Add New Item */}
+                                <div className="lg:col-span-5">
+                                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4">
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Log New Approved Work</h3>
+                                        <form onSubmit={handleAdminAddWork} className="space-y-4">
+                                            <div>
+                                                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Work Title *</label>
+                                                <input
+                                                    required
+                                                    value={newAdditionalWork.title}
+                                                    onChange={e => setNewAdditionalWork({ ...newAdditionalWork, title: e.target.value })}
+                                                    className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-violet-500/20"
+                                                    placeholder="e.g. Extra Flooring Work"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Description</label>
+                                                <textarea
+                                                    rows={2}
+                                                    value={newAdditionalWork.description}
+                                                    onChange={e => setNewAdditionalWork({ ...newAdditionalWork, description: e.target.value })}
+                                                    className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-semibold text-xs outline-none focus:ring-2 focus:ring-violet-500/20 resize-none"
+                                                    placeholder="Brief description of the scope..."
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Approved Amount (₹)</label>
+                                                <input
+                                                    type="number"
+                                                    value={newAdditionalWork.amount}
+                                                    onChange={e => setNewAdditionalWork({ ...newAdditionalWork, amount: e.target.value })}
+                                                    className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-violet-500/20"
+                                                    placeholder="0.00"
+                                                />
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                disabled={addingAdditionalWork}
+                                                className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-1.5 border-none cursor-pointer disabled:opacity-50"
+                                            >
+                                                {addingAdditionalWork ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlusCircle className="w-3.5 h-3.5" />}
+                                                Add Approved Entry
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                         </motion.div>
                     </div>
                 )}
