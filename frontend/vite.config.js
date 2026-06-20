@@ -11,5 +11,26 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  build: {
+    // Minify with esbuild (faster) for release
+    minify: 'esbuild',
+    // Enable CSS code splitting
+    cssCodeSplit: true,
+    // Increase chunk warning limit (face-api models are large)
+    chunkSizeWarningLimit: 2000,
+    // Inline small assets as base64 to reduce HTTP requests
+    assetsInlineLimit: 4096,
+    rollupOptions: {
+      output: {
+        // Manual chunking: split vendor libs for better caching
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'motion': ['framer-motion'],
+          'icons': ['lucide-react'],
+          'face-api': ['face-api.js'],
+        }
+      }
+    }
   }
 })
