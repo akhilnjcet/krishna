@@ -137,11 +137,11 @@ export default function LodgeBookingCheckout() {
                  <p className="text-gray-500">{room.type} Suite</p>
               </div>
               <div className="p-6 space-y-4">
-                 <div className="flex justify-between text-gray-600"><span>Price per night</span><span className="font-medium text-gray-900">${room.price}</span></div>
+                 <div className="flex justify-between text-gray-600"><span>Price per month</span><span className="font-medium text-gray-900">₹{room.price.toLocaleString()}</span></div>
                  {dateRange?.from && dateRange?.to && (
                      <>
                         <div className="flex justify-between text-gray-600"><span>{format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d')}</span><span className="font-medium text-gray-900">{nights} N</span></div>
-                        <div className="border-t pt-4 mt-4 flex justify-between font-bold text-lg"><span>Total</span><span className="text-blue-600">${total}</span></div>
+                        <div className="border-t pt-4 mt-4 flex justify-between font-bold text-lg"><span>Total</span><span className="text-blue-600">₹{total.toLocaleString()}</span></div>
                      </>
                  )}
 
