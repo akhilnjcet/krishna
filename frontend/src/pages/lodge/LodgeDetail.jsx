@@ -137,17 +137,25 @@ export default function LodgeDetail() {
 
          <div className="lg:col-span-1">
             <div className="sticky top-24">
-               <div className="bg-white border rounded-2xl shadow-sm p-6">
-                  <h3 className="font-bold text-lg mb-4 flex items-center"><Navigation className="w-5 h-5 mr-2 text-blue-600" /> Location</h3>
-                  {mapsApiKey ? (
-                     <div className="w-full h-64 rounded-xl overflow-hidden mb-4"><iframe width="100%" height="100%" frameBorder="0" src={mapUrl}></iframe></div>
-                  ) : (
-                     <div className="w-full h-64 rounded-xl overflow-hidden bg-blue-50 grid place-items-center mb-4 border border-dashed border-blue-200">
-                         <div className="text-center"><MapPin className="text-blue-300 w-10 h-10 mx-auto" /><span className="text-blue-500 text-sm">Map rendering disabled</span></div>
-                     </div>
-                  )}
-                  <p className="text-gray-600 text-sm">{lodge.location.address}</p>
-               </div>
+                <div className="bg-white border rounded-2xl shadow-sm p-6">
+                   <h3 className="font-bold text-lg mb-4 flex items-center"><Navigation className="w-5 h-5 mr-2 text-blue-600" /> Location</h3>
+                   {lodge.location.mapUrl || mapsApiKey ? (
+                      <div className="w-full h-64 rounded-xl overflow-hidden mb-4">
+                         <iframe 
+                            width="100%" 
+                            height="100%" 
+                            frameBorder="0" 
+                            src={getMapEmbedUrl(lodge.location.mapUrl || mapUrl)}
+                            allowFullScreen
+                         ></iframe>
+                      </div>
+                   ) : (
+                      <div className="w-full h-64 rounded-xl overflow-hidden bg-blue-50 grid place-items-center mb-4 border border-dashed border-blue-200">
+                          <div className="text-center"><MapPin className="text-blue-300 w-10 h-10 mx-auto" /><span className="text-blue-500 text-sm">Map rendering disabled</span></div>
+                      </div>
+                   )}
+                   <p className="text-gray-600 text-sm">{lodge.location.address}</p>
+                </div>
             </div>
          </div>
       </div>
@@ -306,4 +314,13 @@ const DriveImage = ({ src, alt, className }) => {
             )}
         </div>
     );
+};
+
+const getMapEmbedUrl = (inputUrl) => {
+    if (!inputUrl) return '';
+    if (inputUrl.includes('<iframe')) {
+        const srcMatch = inputUrl.match(/src="([^"]+)"/);
+        if (srcMatch && srcMatch[1]) return srcMatch[1];
+    }
+    return inputUrl;
 };

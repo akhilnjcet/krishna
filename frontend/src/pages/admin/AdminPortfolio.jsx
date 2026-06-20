@@ -189,7 +189,7 @@ const AdminPortfolio = () => {
                             <div className="md:w-1/2 bg-slate-100 relative group min-h-[300px]">
                                 {project.images && project.images.length > 0 ? (
                                     <div className="absolute inset-0">
-                                        <img src={getDirectImageUrl(project.images[0].url)} className="w-full h-full object-cover" alt={project.title} />
+                                        <DriveImage src={project.images[0].url} className="w-full h-full" alt={project.title} />
                                         <div className="absolute inset-0 bg-indigo-600/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                                             <span className="bg-white text-slate-900 px-4 py-2 font-black uppercase text-xs tracking-widest border-2 border-slate-900 shadow-custom">
                                                 {project.images.length} Photos
@@ -271,7 +271,7 @@ const AdminPortfolio = () => {
                                     <div className="mt-6 flex flex-wrap gap-2 pt-4 border-t-2 border-slate-50">
                                         {project.images.map((img) => (
                                             <div key={img._id} className="relative group/thumb w-12 h-12 border-2 border-slate-200 rounded-lg overflow-hidden">
-                                                <img src={getDirectImageUrl(img.url)} className="w-full h-full object-cover" alt="" />
+                                                <DriveImage src={img.url} className="w-full h-full" />
                                                 <button 
                                                     onClick={() => handleDeleteImage(project._id, img._id)}
                                                     className="absolute inset-0 bg-red-600/80 text-white opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity"
@@ -428,6 +428,63 @@ const AdminPortfolio = () => {
                     box-shadow: 12px 12px 0px 0px rgba(0,0,0,1);
                 }
             `}</style>
+        </div>
+    );
+};
+
+// Error-handling image wrapper
+const DriveImage = ({ src, alt, className }) => {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [currentSrc, setCurrentSrc] = useState('');
+
+    useEffect(() => {
+        const directSrc = getDirectImageUrl(src);
+        setCurrentSrc(directSrc);
+        setLoading(true);
+        setError(false);
+    }, [src]);
+
+    const handleImageError = () => {
+        if (currentSrc.includes('drive.google.com/uc')) {
+            const idMatch = currentSrc.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (idMatch && idMatch[1]) {
+                const fallbackUrl = `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
+                console.log('Image load failed for uc. Trying fallback:', fallbackUrl);
+                setCurrentSrc(fallbackUrl);
+                return;
+            }
+        }
+        setLoading(false);
+        setError(true);
+        console.log('Image load failed:', currentSrc);
+    };
+
+    return (
+        <div className={`relative ${className} bg-slate-100 flex items-center justify-center border rounded-xl overflow-hidden`}>
+            {loading && !error && (
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
+                    <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            )}
+            {error ? (
+                <div className="text-center p-2 text-slate-400 text-[10px] font-black uppercase tracking-wider leading-tight">
+                    Image Not Available
+                </div>
+            ) : (
+                currentSrc && (
+                    <img 
+                        src={currentSrc} 
+                        alt={alt || "Drive asset"} 
+                        className={`w-full h-full object-cover transition-all duration-300 ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+                        onLoad={() => {
+                            setLoading(false);
+                            console.log('Image loaded:', currentSrc);
+                        }}
+                        onError={handleImageError}
+                    />
+                )
+            )}
         </div>
     );
 };

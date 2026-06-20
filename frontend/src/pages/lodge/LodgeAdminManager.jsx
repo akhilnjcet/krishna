@@ -41,6 +41,7 @@ export default function LodgeAdminManager() {
     address: '', 
     lat: '', 
     lng: '', 
+    mapUrl: '',
     images: [],
     driveUrls: ''
   });
@@ -61,6 +62,21 @@ export default function LodgeAdminManager() {
   useEffect(() => {
     fetchBaseLodge();
   }, []);
+
+  useEffect(() => {
+    if (selectedLodge && selectedLodge._id !== 'error_state') {
+      setLodgeForm({
+        name: selectedLodge.name || '',
+        description: selectedLodge.description || '',
+        address: selectedLodge.location?.address || '',
+        lat: selectedLodge.location?.lat || '',
+        lng: selectedLodge.location?.lng || '',
+        mapUrl: selectedLodge.location?.mapUrl || '',
+        images: [],
+        driveUrls: ''
+      });
+    }
+  }, [selectedLodge]);
 
   useEffect(() => {
     if(!selectedLodge) return;
@@ -222,7 +238,12 @@ export default function LodgeAdminManager() {
           const formData = new FormData();
           formData.append('name', lodgeForm.name);
           formData.append('description', lodgeForm.description);
-          formData.append('location', JSON.stringify({ address: lodgeForm.address, lat: lodgeForm.lat, lng: lodgeForm.lng }));
+          formData.append('location', JSON.stringify({ 
+              address: lodgeForm.address, 
+              lat: parseFloat(lodgeForm.lat), 
+              lng: parseFloat(lodgeForm.lng),
+              mapUrl: lodgeForm.mapUrl 
+          }));
           Array.from(lodgeForm.images || []).forEach(f => formData.append('newImages', f));
           
           if (lodgeForm.driveUrls) {
@@ -414,6 +435,7 @@ export default function LodgeAdminManager() {
                      address: selectedLodge.location?.address || '',
                      lat: selectedLodge.location?.lat || '',
                      lng: selectedLodge.location?.lng || '',
+                     mapUrl: selectedLodge.location?.mapUrl || '',
                      images: []
                  });
                  setShowLodgeEdit(true);
@@ -488,6 +510,92 @@ export default function LodgeAdminManager() {
                               </div>
                           </div>
                       </div>
+                  </div>
+              </div>
+
+              {/* Prominent Building Profile & Location Setup Form Card */}
+              <div className="bg-white rounded-[2.5rem] border p-10 shadow-sm mt-8 relative overflow-hidden animate-in fade-in duration-500">
+                  <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50 rounded-full blur-3xl -mr-40 -mt-40 opacity-30"></div>
+                  <div className="relative z-10">
+                      <h3 className="text-2xl font-black text-slate-900 mb-2 flex items-center gap-2">
+                          <Settings className="w-6 h-6 text-indigo-600"/> 
+                          Building Profile & Location Setup
+                      </h3>
+                      <p className="text-slate-500 mb-8 font-medium">Configure building preview photos, address, map links, and coordinates directly.</p>
+                      
+                      <form onSubmit={handleLodgeSubmit} className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div>
+                                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Building Name</label>
+                                  <input placeholder="Name" required className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold" value={lodgeForm.name} onChange={e => setLodgeForm({...lodgeForm, name: e.target.value})} />
+                              </div>
+                              <div>
+                                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Address</label>
+                                  <input placeholder="Full Address" required className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold" value={lodgeForm.address} onChange={e => setLodgeForm({...lodgeForm, address: e.target.value})} />
+                              </div>
+                              <div>
+                                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Latitude</label>
+                                  <input placeholder="Lat" type="number" step="any" required className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold" value={lodgeForm.lat} onChange={e => setLodgeForm({...lodgeForm, lat: e.target.value})} />
+                              </div>
+                              <div>
+                                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Longitude</label>
+                                  <input placeholder="Lng" type="number" step="any" required className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold" value={lodgeForm.lng} onChange={e => setLodgeForm({...lodgeForm, lng: e.target.value})} />
+                              </div>
+                              <div className="md:col-span-2">
+                                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Google Maps Embed Link / URL</label>
+                                  <input placeholder="https://www.google.com/maps/embed?pb=..." className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold font-poppins text-indigo-600 placeholder-slate-300" value={lodgeForm.mapUrl || ''} onChange={e => setLodgeForm({...lodgeForm, mapUrl: e.target.value})} />
+                                  <p className="text-[10px] text-slate-400 mt-1.5 ml-2">Paste map embed iframe code or direct link to render it in the customer view.</p>
+                              </div>
+                              <div className="md:col-span-2">
+                                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Public Description</label>
+                                  <textarea placeholder="Description" required rows="3" className="w-full border-2 border-slate-100 p-4 rounded-2xl font-medium" value={lodgeForm.description} onChange={e => setLodgeForm({...lodgeForm, description: e.target.value})} />
+                              </div>
+
+                              {selectedLodge.images && selectedLodge.images.length > 0 && (
+                                  <div className="md:col-span-2 border-t pt-6">
+                                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 ml-2 block">Current Preview Photos (Hover & Click to Delete)</label>
+                                      <div className="flex flex-wrap gap-3">
+                                          {selectedLodge.images.map((img, idx) => (
+                                              <div key={idx} className="relative w-20 h-20 border rounded-2xl overflow-hidden bg-slate-50 group shadow-sm">
+                                                  <DriveImage src={typeof img === 'string' ? img : img.url} alt="Lodge preview" className="w-full h-full" />
+                                                  <button
+                                                      type="button"
+                                                      onClick={() => {
+                                                          if (confirm('Delete this photo from building? (Takes effect after saving)')) {
+                                                              setSelectedLodge({
+                                                                  ...selectedLodge,
+                                                                  images: selectedLodge.images.filter(i => (typeof i === 'string' ? i : i.url) !== (typeof img === 'string' ? img : img.url))
+                                                              });
+                                                          }
+                                                      }}
+                                                      className="absolute inset-0 bg-red-600/80 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[10px] font-black uppercase tracking-wider"
+                                                  >
+                                                      Delete
+                                                  </button>
+                                              </div>
+                                          ))}
+                                      </div>
+                                  </div>
+                              )}
+
+                              <div className="md:col-span-2 border-t pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div>
+                                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Upload New photos</label>
+                                      <input type="file" multiple accept="image/*" className="w-full border-2 border-slate-100 p-3 rounded-2xl bg-slate-50 font-bold text-xs" onChange={e => setLodgeForm({...lodgeForm, images: e.target.files})} />
+                                  </div>
+                                  <div>
+                                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Add Google Drive Link(s) (Comma Separated)</label>
+                                      <input placeholder="https://drive.google.com/..." className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold font-poppins text-indigo-600 placeholder-slate-300" value={lodgeForm.driveUrls || ''} onChange={e => setLodgeForm({...lodgeForm, driveUrls: e.target.value})} />
+                                  </div>
+                              </div>
+                          </div>
+
+                          <div className="flex justify-end pt-4">
+                              <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-4.5 rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">
+                                  Save Building Profile
+                              </button>
+                          </div>
+                      </form>
                   </div>
               </div>
           </div>
@@ -838,6 +946,10 @@ export default function LodgeAdminManager() {
                      <div>
                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Longitude</label>
                          <input placeholder="Lng" type="number" step="any" required className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold" value={lodgeForm.lng} onChange={e => setLodgeForm({...lodgeForm, lng: e.target.value})} />
+                     </div>
+                     <div className="col-span-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Google Maps Embed Link / URL</label>
+                         <input placeholder="https://www.google.com/maps/embed?pb=..." className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold font-poppins text-indigo-600 placeholder-slate-300" value={lodgeForm.mapUrl || ''} onChange={e => setLodgeForm({...lodgeForm, mapUrl: e.target.value})} />
                      </div>
                      <div className="col-span-2">
                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Public Description</label>

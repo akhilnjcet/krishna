@@ -208,10 +208,10 @@ const Projects = () => {
                                             <div className="absolute inset-0 z-10 pointer-events-none border-[12px] border-white/0 group-hover:border-white/5 transition-all duration-500"></div>
                                             
                                             {project.images && project.images.length > 0 ? (
-                                                <img
-                                                    src={getDirectImageUrl(project.images[0].url)}
+                                                <DriveImage
+                                                    src={project.images[0].url}
                                                     alt={project.title}
-                                                    className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110 grayscale-[20%] group-hover:grayscale-0 contrast-[1.05]"
+                                                    className="w-full h-full transition-all duration-1000 group-hover:scale-110 grayscale-[20%] group-hover:grayscale-0 contrast-[1.05]"
                                                 />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-slate-200">
@@ -275,10 +275,10 @@ const Projects = () => {
                                     {selectedProject.images && selectedProject.images.length > 0 ? (
                                         selectedProject.images.map((img, idx) => (
                                             <div key={idx} className="min-w-full h-full snap-center relative">
-                                                <img 
-                                                    src={getDirectImageUrl(img.url)} 
+                                                <DriveImage 
+                                                    src={img.url} 
                                                     alt={`Shot ${idx + 1}`} 
-                                                    className="w-full h-full object-cover grayscale-[20%] hover:grayscale-0 transition-all duration-700"
+                                                    className="w-full h-full grayscale-[20%] hover:grayscale-0 transition-all duration-700"
                                                 />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60"></div>
                                                 <div className="absolute top-6 left-6 text-[9px] font-black text-white/80 uppercase tracking-[0.5em] bg-slate-950/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
@@ -391,6 +391,63 @@ const Projects = () => {
                     color: black;
                 }
             `}</style>
+        </div>
+    );
+};
+
+// Error-handling image wrapper
+const DriveImage = ({ src, alt, className }) => {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [currentSrc, setCurrentSrc] = useState('');
+
+    useEffect(() => {
+        const directSrc = getDirectImageUrl(src);
+        setCurrentSrc(directSrc);
+        setLoading(true);
+        setError(false);
+    }, [src]);
+
+    const handleImageError = () => {
+        if (currentSrc.includes('drive.google.com/uc')) {
+            const idMatch = currentSrc.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (idMatch && idMatch[1]) {
+                const fallbackUrl = `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
+                console.log('Image load failed for uc. Trying fallback:', fallbackUrl);
+                setCurrentSrc(fallbackUrl);
+                return;
+            }
+        }
+        setLoading(false);
+        setError(true);
+        console.log('Image load failed:', currentSrc);
+    };
+
+    return (
+        <div className={`relative ${className} bg-slate-100 flex items-center justify-center border rounded-xl overflow-hidden`}>
+            {loading && !error && (
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
+                    <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            )}
+            {error ? (
+                <div className="text-center p-2 text-slate-400 text-[10px] font-black uppercase tracking-wider leading-tight">
+                    Image Not Available
+                </div>
+            ) : (
+                currentSrc && (
+                    <img 
+                        src={currentSrc} 
+                        alt={alt || "Drive asset"} 
+                        className={`w-full h-full object-cover transition-all duration-300 ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+                        onLoad={() => {
+                            setLoading(false);
+                            console.log('Image loaded:', currentSrc);
+                        }}
+                        onError={handleImageError}
+                    />
+                )
+            )}
         </div>
     );
 };
