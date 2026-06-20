@@ -1,9 +1,34 @@
 const express = require('express');
 const router = express.Router();
 const Lodge = require('../models/Lodge');
+const DriveLink = require('../models/DriveLink');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { listarArquivosDaPasta, extrairFolderId } = require('../utils/driveHelper');
 const lodgeController = require('../controllers/lodgeController');
+
+const getFallbackImages = async () => {
+    try {
+        const driveLink = await DriveLink.findOne();
+        if (!driveLink || !driveLink.link) return [];
+        
+        let files = [];
+        const folderId = extrairFolderId(driveLink.link);
+        if (folderId) {
+            try {
+                files = await listarArquivosDaPasta(folderId);
+            } catch (err) {
+                console.error('Failed to list folder files for lodge fallback:', err);
+                files = [driveLink.link];
+            }
+        } else {
+            files = [driveLink.link];
+        }
+        return files.map(f => ({ url: f, publicId: 'drive_link' }));
+    } catch (err) {
+        console.error('Error fetching lodge fallback images:', err);
+        return [];
+    }
+};
 
 router.get('/sync', protect, lodgeController.getLodgeData);
 router.post('/sync', protect, lodgeController.syncLodgeData);
@@ -36,8 +61,17 @@ router.get('/', async (req, res) => {
             await lodge.save();
         }
     }
+
+    const fallbackImages = await getFallbackImages();
+    const lodgesJSON = lodges.map(l => {
+        const obj = l.toJSON();
+        if (!obj.images || obj.images.length === 0) {
+            obj.images = fallbackImages;
+        }
+        return obj;
+    });
     
-    res.json(lodges);
+    res.json(lodgesJSON);
   } catch (err) {
     res.status(500).json({ message: 'Server Error', error: err.message });
   }
@@ -70,7 +104,12 @@ router.get('/:id', async (req, res) => {
         await lodge.save();
     }
     
-    res.json(lodge);
+    const lodgeObj = lodge.toJSON();
+    if (!lodgeObj.images || lodgeObj.images.length === 0) {
+        lodgeObj.images = await getFallbackImages();
+    }
+    
+    res.json(lodgeObj);
   } catch (err) {
     res.status(500).json({ message: 'Server Error' });
   }

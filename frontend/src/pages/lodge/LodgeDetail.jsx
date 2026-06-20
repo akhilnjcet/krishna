@@ -58,12 +58,12 @@ export default function LodgeDetail() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10 h-[250px] sm:h-[350px] md:h-[400px] rounded-2xl overflow-hidden shadow-lg border border-gray-100">
          <div className="md:col-span-3 bg-gray-200 h-full">
-            {lodge.images?.[0] ? <img src={getDirectImageUrl(typeof lodge.images[0] === 'string' ? lodge.images[0] : (lodge.images[0].url || ''))} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-blue-50 grid place-items-center text-blue-300 font-bold">No Image</div>}
+            {lodge.images?.[0] ? <DriveImage src={typeof lodge.images[0] === 'string' ? lodge.images[0] : (lodge.images[0].url || '')} className="w-full h-full" /> : <div className="w-full h-full bg-blue-50 grid place-items-center text-blue-300 font-bold">No Image</div>}
          </div>
          <div className="hidden md:flex flex-col gap-4 h-full">
              {[1,2].map(i => (
                 <div key={i} className="flex-1 bg-gray-200">
-                   {lodge.images?.[i] ? <img src={getDirectImageUrl(typeof lodge.images[i] === 'string' ? lodge.images[i] : (lodge.images[i].url || ''))} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-blue-100/50" />}
+                   {lodge.images?.[i] ? <DriveImage src={typeof lodge.images[i] === 'string' ? lodge.images[i] : (lodge.images[i].url || '')} className="w-full h-full" /> : <div className="w-full h-full bg-blue-100/50" />}
                 </div>
              ))}
          </div>

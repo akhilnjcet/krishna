@@ -315,4 +315,21 @@ router.delete('/:id/photo', protect, admin, async (req, res) => {
     }
 });
 
+// @route   DELETE /api/rooms/:id
+// @desc    Soft delete a room by deactivating it
+// @access  Private/Admin
+router.delete('/:id', protect, admin, async (req, res) => {
+    try {
+        const room = await Room.findById(req.params.id);
+        if (!room) return res.status(404).json({ message: 'Room not found' });
+
+        room.isActive = false;
+        await room.save();
+        res.json({ message: 'Room deactivated successfully', room });
+    } catch (err) {
+        console.error('Error deactivating room:', err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 module.exports = router;

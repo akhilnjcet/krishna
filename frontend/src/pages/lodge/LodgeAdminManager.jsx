@@ -19,42 +19,6 @@ export default function LodgeAdminManager() {
   const [complaints, setComplaints] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [stats, setStats] = useState({ totalBookings: 0, totalRevenue: 0, totalUsers: 0, occupancyRate: 0, activeBookings: 0 });
-
-  // Google Drive Link State
-  const [dbDriveDoc, setDbDriveDoc] = useState(null);
-  const [driveLinkInput, setDriveLinkInput] = useState('');
-
-  const fetchDriveLink = async () => {
-    try {
-      const res = await api.get('/drive-link');
-      // 10. Verify MongoDB document exists before rendering
-      if (res.data && res.data._id) {
-        setDbDriveDoc(res.data);
-        setDriveLinkInput(res.data.link);
-        console.log('Link fetched successfully:', res.data.link);
-      } else {
-        setDbDriveDoc(null);
-        setDriveLinkInput('');
-        console.log('Link fetched successfully: (No document exists yet)');
-      }
-    } catch (err) {
-      console.error('Error fetching drive link:', err);
-    }
-  };
-
-  const handleSaveDriveLink = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await api.post('/drive-link/save', { link: driveLinkInput });
-      alert('Google Drive Link Saved Successfully!');
-      console.log('Link saved successfully:', driveLinkInput);
-      fetchDriveLink();
-    } catch (err) {
-      console.error('Error saving Drive link:', err);
-      alert('Failed to save Google Drive Link');
-    }
-  };
-
   // Forms & Modals
   const [showRoomForm, setShowRoomForm] = useState(false);
   const [roomForm, setRoomForm] = useState({ 
@@ -96,7 +60,6 @@ export default function LodgeAdminManager() {
 
   useEffect(() => {
     fetchBaseLodge();
-    fetchDriveLink();
   }, []);
 
   useEffect(() => {
@@ -533,43 +496,6 @@ export default function LodgeAdminManager() {
       {/* ROOMS TAB */}
       {activeTab === 'rooms' && (
          <div className="space-y-6">
-             {/* Google Drive Assets Directory Card */}
-             <div className="bg-white rounded-[2rem] shadow-sm border p-8 animate-in fade-in transition-all">
-                 <h2 className="text-xl font-bold flex items-center mb-4"><Link className="w-6 h-6 mr-2 text-indigo-500"/> Google Drive Assets Directory</h2>
-                 <p className="text-sm text-slate-500 mb-6 font-medium">Configure a Google Drive folder or file link to dynamically sync room assets with your database.</p>
-                 <form onSubmit={handleSaveDriveLink} className="flex gap-4">
-                     <input 
-                         placeholder="Enter Google Drive Folder or File Link..." 
-                         className="flex-grow border-2 border-slate-100 p-4 rounded-2xl font-bold font-poppins text-indigo-600 placeholder-slate-300"
-                         value={driveLinkInput}
-                         onChange={e => setDriveLinkInput(e.target.value)}
-                     />
-                     <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-lg shadow-indigo-600/20 active:scale-95 transition-all">
-                         Save Link
-                     </button>
-                 </form>
-
-                 {/* Google Drive Gallery Preview */}
-                 {dbDriveDoc && dbDriveDoc._id && (
-                     <div className="mt-8 pt-8 border-t">
-                         <h3 className="text-md font-bold mb-4">Drive Preview Assets ({dbDriveDoc.files?.length || 0} found)</h3>
-                         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                             {(dbDriveDoc.files || []).map((fileUrl, idx) => (
-                                 <DriveImage 
-                                     key={idx} 
-                                     src={fileUrl} 
-                                     alt={`Drive image ${idx + 1}`} 
-                                     className="aspect-square" 
-                                 />
-                             ))}
-                             {(!dbDriveDoc.files || dbDriveDoc.files.length === 0) && (
-                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-widest italic col-span-full">No assets found in the link.</p>
-                             )}
-                         </div>
-                     </div>
-                 )}
-             </div>
-
              <div className="bg-white rounded-[2rem] shadow-sm border p-8 animate-in fade-in transition-all">
              <div className="flex justify-between items-center mb-8">
                 <h2 className="text-xl font-bold flex items-center"><DoorOpen className="w-6 h-6 mr-2 text-indigo-500"/> Managing Rooms</h2>
