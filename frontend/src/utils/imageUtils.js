@@ -48,3 +48,67 @@ export const getDirectImageUrl = (url) => {
 
     return url;
 };
+
+/**
+ * Extracts folder ID from a Google Drive URL
+ */
+export const extrairFolderId = (url) => {
+    if (!url) return null;
+    // Match /folders/ID
+    const folderMatch = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+    if (folderMatch && folderMatch[1]) return folderMatch[1];
+    
+    // Match folders?id=ID or ?id=ID
+    const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (idMatch && idMatch[1]) return idMatch[1];
+    
+    return null;
+};
+
+/**
+ * Expands any Google Drive folder URLs in an array of images to individual file links client-side.
+ */
+export const expandGoogleDriveFolders = async (images) => {
+    if (!images || images.length === 0) return [];
+    
+    const expanded = [];
+    const apiKey = 'AIzaSyBI74NjzwHDCvxT08KExFV1p8ISO61M_nI';
+
+    for (const img of images) {
+        const url = typeof img === 'string' ? img : img?.url;
+        if (!url) continue;
+
+        const folderId = extrairFolderId(url);
+        if (folderId && (url.includes('/folders/') || url.includes('/drive/folders/'))) {
+            try {
+                const response = await fetch(
+                    `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'&key=${apiKey}&fields=files(id)&pageSize=100`
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.files && data.files.length > 0) {
+                        data.files.forEach(file => {
+                            if (typeof img === 'string') {
+                                expanded.push(`https://drive.google.com/file/d/${file.id}/view`);
+                            } else {
+                                expanded.push({
+                                    ...img,
+                                    url: `https://drive.google.com/file/d/${file.id}/view`,
+                                    _id: file.id
+                                });
+                            }
+                        });
+                        continue;
+                    }
+                } else {
+                    console.warn('Google Drive API directory list error response status:', response.status);
+                }
+            } catch (err) {
+                console.error('Client-side Google Drive folder expansion failed for:', url, err);
+            }
+        }
+        expanded.push(img);
+    }
+    return expanded;
+};
+
