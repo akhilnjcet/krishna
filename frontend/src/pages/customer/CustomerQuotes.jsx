@@ -110,11 +110,6 @@ const CustomerQuotes = () => {
                                                     label: quote.status === 'rejected' ? 'Application Declined' : 'Admin Approved', 
                                                     desc: quote.status === 'rejected' ? 'We cannot proceed with this request.' : 'Quote verified and finalized by Admin.',
                                                     active: quote.status === 'accepted' || quote.status === 'rejected'
-                                                },
-                                                { 
-                                                    label: 'Work Initialized', 
-                                                    desc: 'Project sent to shop floor for execution.',
-                                                    active: quote.status === 'accepted' && quote.progress // Need actual progress link, assume true if accepted
                                                 }
                                             ].map((step, idx) => (
                                                 <div key={idx} className="flex gap-6 relative z-10 pb-8 last:pb-0">

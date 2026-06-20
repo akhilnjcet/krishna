@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
-import { Briefcase, Plus, X, Loader2, AlertCircle, MessageSquare, Send, AlertTriangle } from 'lucide-react';
+import { Briefcase, Plus, X, Loader2, AlertCircle, MessageSquare, Send, AlertTriangle, Clock, Calendar, Trash2, CheckCircle2 } from 'lucide-react';
 
 const AdminProjects = () => {
     const [projects, setProjects] = useState([]);
@@ -40,6 +40,57 @@ const AdminProjects = () => {
     const [staffList, setStaffList] = useState([]);
     const [showStaffModal, setShowStaffModal] = useState(false);
     const [editAssignedStaff, setEditAssignedStaff] = useState([]);
+
+    const [showTimelineModal, setShowTimelineModal] = useState(false);
+    const [timelineDraft, setTimelineDraft] = useState([]);
+
+    const handleOpenTimelineModal = (project) => {
+        setSelectedProject(project);
+        const initialTimeline = project.timeline ? project.timeline.map(m => ({
+            title: m.title || '',
+            description: m.description || '',
+            date: m.date ? new Date(m.date).toISOString().split('T')[0] : '',
+            status: m.status || 'Pending'
+        })) : [];
+        setTimelineDraft(initialTimeline);
+        setShowTimelineModal(true);
+    };
+
+    const handleAddMilestone = () => {
+        setTimelineDraft([...timelineDraft, { title: '', description: '', date: '', status: 'Pending' }]);
+    };
+
+    const handleRemoveMilestone = (idx) => {
+        setTimelineDraft(timelineDraft.filter((_, i) => i !== idx));
+    };
+
+    const handleMilestoneChange = (idx, field, value) => {
+        const updated = [...timelineDraft];
+        updated[idx][field] = value;
+        setTimelineDraft(updated);
+    };
+
+    const handleSubmitTimeline = async (e) => {
+        e.preventDefault();
+        if (timelineDraft.length === 0) return alert("Please add at least one milestone to the timeline.");
+        
+        const isValid = timelineDraft.every(m => m.title.trim() !== '' && m.date !== '');
+        if (!isValid) return alert("All milestones must have a title and a date.");
+
+        try {
+            await api.put(`/projects/${selectedProject._id}/send-timeline`, {
+                timeline: timelineDraft
+            });
+            alert("Timeline published successfully to client portal!");
+            setShowTimelineModal(false);
+            setSelectedProject(null);
+            fetchProjects();
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || "Failed to publish timeline.");
+        }
+    };
+
 
     useEffect(() => {
         fetchProjects();
@@ -196,6 +247,13 @@ const AdminProjects = () => {
                                             title="Transmit sudden info to customer"
                                         >
                                             <MessageSquare className="w-4 h-4" />
+                                        </button>
+                                        <button 
+                                            onClick={() => handleOpenTimelineModal(prj)}
+                                            className="bg-indigo-50 text-indigo-650 p-2 rounded-xl hover:bg-indigo-600 hover:text-white transition"
+                                            title="Manage & Publish Project Timeline"
+                                        >
+                                            <Clock className="w-4 h-4" />
                                         </button>
                                         <button 
                                             onClick={() => {
@@ -402,6 +460,164 @@ const AdminProjects = () => {
                                     </div>
                                 </div>
                                 <button type="submit" className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition">Update Assignments</button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Timeline Management Modal */}
+            <AnimatePresence>
+                {showTimelineModal && selectedProject && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
+                        >
+                            <button 
+                                onClick={() => {
+                                    setShowTimelineModal(false);
+                                    setSelectedProject(null);
+                                }} 
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full"
+                            >
+                                <X className="w-6 h-6 text-slate-400" />
+                            </button>
+
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="bg-indigo-100 p-3 rounded-2xl">
+                                    <Clock className="w-8 h-8 text-indigo-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Timeline Management</h2>
+                                    <p className="text-slate-500 font-medium font-sans">Manage milestone delivery for: <span className="font-black text-indigo-600 uppercase">{selectedProject.title}</span></p>
+                                </div>
+                            </div>
+
+                            {selectedProject.timelineStatus === 'Proposed by Staff' && (
+                                <div className="bg-amber-50 text-amber-800 border border-amber-200 p-4 rounded-2xl mb-6 flex items-start gap-3">
+                                    <AlertTriangle className="w-5 h-5 text-amber-650 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-wider">Timeline Proposed by Staff</p>
+                                        <p className="text-xs opacity-90 mt-0.5">Assigned staff proposed a timeline. Review, edit, and send it to the client below.</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectedProject.timelineStatus === 'Sent to Client' && (
+                                <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 p-4 rounded-2xl mb-6 flex items-start gap-3">
+                                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-wider">Timeline Published to Client</p>
+                                        <p className="text-xs opacity-90 mt-0.5">This timeline is currently active and visible on the customer's portal.</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <form onSubmit={handleSubmitTimeline} className="space-y-6">
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center border-b pb-2">
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Project Milestones</label>
+                                        <button 
+                                            type="button" 
+                                            onClick={handleAddMilestone}
+                                            className="bg-indigo-605 text-white px-3 py-1.5 font-bold rounded-xl text-xs flex items-center gap-1 hover:bg-indigo-700 border-none bg-indigo-600 cursor-pointer"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" /> Add Milestone
+                                        </button>
+                                    </div>
+
+                                    {timelineDraft.length === 0 ? (
+                                        <div className="text-center py-10 bg-slate-50 rounded-2xl border-2 border-dashed text-slate-400 font-bold uppercase text-xs">
+                                            No milestones drafted. Add at least one milestone.
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4 max-h-60 overflow-y-auto pr-1">
+                                            {timelineDraft.map((milestone, idx) => (
+                                                <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 relative">
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => handleRemoveMilestone(idx)}
+                                                        className="absolute top-4 right-4 text-slate-400 hover:text-red-650 transition border-none bg-transparent cursor-pointer"
+                                                        title="Remove Milestone"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                        <div className="sm:col-span-2">
+                                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Title *</label>
+                                                            <input 
+                                                                required
+                                                                type="text"
+                                                                placeholder="e.g. Excavation Completion"
+                                                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
+                                                                value={milestone.title}
+                                                                onChange={e => handleMilestoneChange(idx, 'title', e.target.value)}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Target Date *</label>
+                                                            <input 
+                                                                required
+                                                                type="date"
+                                                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
+                                                                value={milestone.date}
+                                                                onChange={e => handleMilestoneChange(idx, 'date', e.target.value)}
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                        <div className="sm:col-span-2">
+                                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Description</label>
+                                                            <input 
+                                                                type="text"
+                                                                placeholder="Details of the phase..."
+                                                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-medium text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
+                                                                value={milestone.description}
+                                                                onChange={e => handleMilestoneChange(idx, 'description', e.target.value)}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Status</label>
+                                                            <select
+                                                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
+                                                                value={milestone.status}
+                                                                onChange={e => handleMilestoneChange(idx, 'status', e.target.value)}
+                                                            >
+                                                                <option value="Pending">Pending</option>
+                                                                <option value="Completed">Completed</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="pt-6 border-t flex gap-3">
+                                    <button 
+                                        type="button"
+                                        onClick={() => {
+                                            setShowTimelineModal(false);
+                                            setSelectedProject(null);
+                                        }}
+                                        className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        type="submit"
+                                        disabled={timelineDraft.length === 0}
+                                        className="flex-[2] bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-indigo-700 transition flex items-center justify-center gap-2 text-xs uppercase tracking-widest disabled:opacity-50 border-none cursor-pointer"
+                                    >
+                                        <Send className="w-4 h-4" /> Edit & Send to Client
+                                    </button>
+                                </div>
                             </form>
                         </motion.div>
                     </div>

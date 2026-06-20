@@ -14,7 +14,7 @@ router.get('/projects', protect, async (req, res) => {
         }
 
         const projects = await Project.find({ customerId: req.user._id })
-            .populate('assignedStaff', 'name email designation')
+            .populate('assignedStaff', 'name email designation phone phoneNumber profilePhoto')
             .sort({ createdAt: -1 });
 
         res.json(projects);

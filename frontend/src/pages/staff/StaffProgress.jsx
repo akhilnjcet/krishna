@@ -5,7 +5,8 @@ import api from '../../services/api';
 import { 
     Layout, ArrowLeft, Upload, Loader2, CheckCircle, 
     AlertCircle, Image as ImageIcon, Plus, Trash2, X,
-    ChevronRight, ClipboardList, PenTool, BarChart3, MapPin
+    ChevronRight, ClipboardList, PenTool, BarChart3, MapPin,
+    Calendar, Clock, Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -42,6 +43,60 @@ const StaffProgress = () => {
         remarks: '',
         expectedResumeDate: ''
     });
+
+    const [showTimelineForm, setShowTimelineForm] = useState(false);
+    const [selectedTimelineProject, setSelectedTimelineProject] = useState(null);
+    const [timelineDraft, setTimelineDraft] = useState([]);
+
+    const handleOpenTimelineModal = (project) => {
+        setSelectedTimelineProject(project);
+        const initialTimeline = project.timeline ? project.timeline.map(m => ({
+            title: m.title || '',
+            description: m.description || '',
+            date: m.date ? new Date(m.date).toISOString().split('T')[0] : '',
+            status: m.status || 'Pending'
+        })) : [];
+        setTimelineDraft(initialTimeline);
+        setShowTimelineForm(true);
+    };
+
+    const handleAddMilestone = () => {
+        setTimelineDraft([...timelineDraft, { title: '', description: '', date: '', status: 'Pending' }]);
+    };
+
+    const handleRemoveMilestone = (idx) => {
+        setTimelineDraft(timelineDraft.filter((_, i) => i !== idx));
+    };
+
+    const handleMilestoneChange = (idx, field, value) => {
+        const updated = [...timelineDraft];
+        updated[idx][field] = value;
+        setTimelineDraft(updated);
+    };
+
+    const handleSubmitTimeline = async (e) => {
+        e.preventDefault();
+        if (timelineDraft.length === 0) return alert("Please add at least one milestone to the timeline.");
+        
+        const isValid = timelineDraft.every(m => m.title.trim() !== '' && m.date !== '');
+        if (!isValid) return alert("All milestones must have a title and a date.");
+
+        setSubmitting(true);
+        try {
+            await api.put(`/projects/${selectedTimelineProject._id}/propose-timeline`, {
+                timeline: timelineDraft
+            });
+            alert("Timeline proposed successfully! Submitted to Admin for review.");
+            setShowTimelineForm(false);
+            setSelectedTimelineProject(null);
+            fetchData();
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || "Failed to submit timeline proposal.");
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     const handleRestartProject = async (projectId) => {
         if (!window.confirm("Are you sure you want to restart work on this project?")) return;
@@ -529,6 +584,120 @@ const StaffProgress = () => {
                                     </div>
                                 </form>
                             </motion.div>
+                        {showTimelineForm && selectedTimelineProject && (
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="bg-white border-8 border-brand-950 shadow-solid p-8"
+                            >
+                                <div className="flex justify-between items-center mb-10 border-b-4 border-brand-50 pb-6">
+                                    <h2 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3 text-brand-accent">
+                                        <Calendar className="w-6 h-6" /> PROPOSE PROJECT TIMELINE
+                                    </h2>
+                                    <button 
+                                        onClick={() => {
+                                            setShowTimelineForm(false);
+                                            setSelectedTimelineProject(null);
+                                        }} 
+                                        className="bg-brand-50 p-2 hover:bg-brand-950 hover:text-white transition-colors"
+                                    >
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                </div>
+
+                                <div className="bg-brand-950 text-white p-5 mb-8 border-l-8 border-brand-accent">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-brand-400">Target Project</div>
+                                    <div className="text-lg font-black uppercase font-poppins">{selectedTimelineProject.title}</div>
+                                </div>
+
+                                <form onSubmit={handleSubmitTimeline} className="space-y-6">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center border-b-2 border-brand-50 pb-2">
+                                            <h3 className="text-xs font-black uppercase tracking-wider text-brand-650">Milestones list</h3>
+                                            <button 
+                                                type="button" 
+                                                onClick={handleAddMilestone}
+                                                className="bg-brand-accent text-brand-950 px-3 py-1.5 font-black uppercase tracking-widest text-[9px] hover:bg-brand-950 hover:text-white transition-all shadow-custom"
+                                            >
+                                                + Add Milestone
+                                            </button>
+                                        </div>
+
+                                        {timelineDraft.length === 0 ? (
+                                            <div className="text-center py-8 bg-brand-50 border-4 border-brand-200/50 text-brand-400 font-bold uppercase text-[10px]">
+                                                No milestones added yet. Add at least one milestone.
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-6 max-h-[350px] overflow-y-auto pr-1">
+                                                {timelineDraft.map((milestone, idx) => (
+                                                    <div key={idx} className="bg-brand-50 border-4 border-brand-200 p-5 space-y-4 relative">
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => handleRemoveMilestone(idx)}
+                                                            className="absolute top-4 right-4 text-red-600 hover:text-red-800"
+                                                            title="Remove milestone"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+
+                                                        <div className="text-[10px] font-black text-brand-500 uppercase tracking-widest">Milestone #{idx + 1}</div>
+                                                        
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <div className="space-y-1">
+                                                                <label className="text-[9px] font-black text-brand-600 uppercase tracking-widest">Title *</label>
+                                                                <input 
+                                                                    required
+                                                                    type="text"
+                                                                    placeholder="e.g. Excavation Completion"
+                                                                    className="w-full px-4 py-2 border-2 border-brand-200 outline-none focus:border-brand-950 font-bold text-xs"
+                                                                    value={milestone.title}
+                                                                    onChange={e => handleMilestoneChange(idx, 'title', e.target.value)}
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <label className="text-[9px] font-black text-brand-600 uppercase tracking-widest">Target Date *</label>
+                                                                <input 
+                                                                    required
+                                                                    type="date"
+                                                                    className="w-full px-4 py-2 border-2 border-brand-200 outline-none focus:border-brand-950 font-bold text-xs"
+                                                                    value={milestone.date}
+                                                                    onChange={e => handleMilestoneChange(idx, 'date', e.target.value)}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="space-y-1">
+                                                            <label className="text-[9px] font-black text-brand-600 uppercase tracking-widest">Description</label>
+                                                            <textarea 
+                                                                rows="2"
+                                                                placeholder="Scope of work details..."
+                                                                className="w-full px-4 py-2 border-2 border-brand-200 outline-none focus:border-brand-950 font-medium text-xs"
+                                                                value={milestone.description}
+                                                                onChange={e => handleMilestoneChange(idx, 'description', e.target.value)}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="pt-6 border-t-4 border-brand-50">
+                                        <button 
+                                            type="submit"
+                                            disabled={submitting || timelineDraft.length === 0}
+                                            className="w-full bg-brand-950 text-white py-4 font-black uppercase tracking-[0.3em] text-sm shadow-solid active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                        >
+                                            {submitting ? (
+                                                <><Loader2 className="w-5 h-5 animate-spin" /> TRANSMITTING PLAN...</>
+                                            ) : (
+                                                <><Send className="w-4 h-4" /> SUBMIT TIMELINE TO ADMIN</>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
                         )}
                         </AnimatePresence>
  
@@ -589,6 +758,12 @@ const StaffProgress = () => {
                                                         RESTART WORK
                                                     </button>
                                                 )}
+                                                <button 
+                                                    onClick={() => handleOpenTimelineModal(project)}
+                                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 font-black uppercase tracking-widest text-[9px] transition-all active:scale-95 shadow-custom"
+                                                >
+                                                    TIMELINE
+                                                </button>
                                                 <button 
                                                     onClick={() => {
                                                         setSelectedStatusProject(project);

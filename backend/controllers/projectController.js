@@ -69,3 +69,49 @@ exports.deleteProject = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.proposeTimeline = async (req, res) => {
+    try {
+        const { timeline } = req.body;
+        if (!timeline || !Array.isArray(timeline)) {
+            return res.status(400).json({ message: "Timeline array is required." });
+        }
+
+        const project = await Project.findById(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        if (req.user.role === 'staff') {
+            const isAssigned = project.assignedStaff.some(s => s.toString() === req.user.id);
+            if (!isAssigned) {
+                return res.status(403).json({ message: 'You are not assigned to this project.' });
+            }
+        }
+
+        project.timeline = timeline;
+        project.timelineStatus = 'Proposed by Staff';
+        const savedProject = await project.save();
+        res.json(savedProject);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.sendTimeline = async (req, res) => {
+    try {
+        const { timeline } = req.body;
+        if (!timeline || !Array.isArray(timeline)) {
+            return res.status(400).json({ message: "Timeline array is required." });
+        }
+
+        const project = await Project.findById(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        project.timeline = timeline;
+        project.timelineStatus = 'Sent to Client';
+        const savedProject = await project.save();
+        res.json(savedProject);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+

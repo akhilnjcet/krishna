@@ -66,6 +66,7 @@ import CustomerDashboard from './pages/customer/CustomerDashboard';
 import CustomerQuotes from './pages/customer/CustomerQuotes';
 import InvoiceView from './pages/customer/InvoiceView';
 import CustomerPayments from './pages/customer/CustomerPayments';
+import CustomerProjects from './pages/customer/CustomerProjects';
 
 // Components
 import AIChatWidget from './components/AIChatWidget';
@@ -418,6 +419,7 @@ const App = () => {
               {/* Customer Routes */}
             <Route path="/customer" element={<CustomerLayout />}>
               <Route index element={<CustomerDashboard />} />
+              <Route path="projects" element={<CustomerProjects />} />
               <Route path="quotes" element={<CustomerQuotes />} />
               <Route path="invoice/:id" element={<InvoiceView />} />
               <Route path="payments" element={<CustomerPayments />} />

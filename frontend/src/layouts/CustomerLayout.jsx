@@ -3,7 +3,7 @@ import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-d
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Layers, BookOpen, FileText,
-    MessageSquare, HelpCircle, User, LogOut, Bell, Menu, X, ChevronLeft, Wallet, Home
+    MessageSquare, HelpCircle, User, LogOut, Bell, Menu, X, ChevronLeft, Wallet, Home, Briefcase
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 
@@ -11,6 +11,7 @@ const SIDEBAR_W = 'w-[280px]';
 
 const navItems = [
     { name: 'My Dashboard', path: '/customer', icon: LayoutDashboard },
+    { name: 'My Projects', path: '/customer/projects', icon: Briefcase },
     { name: 'My Applications', path: '/customer/quotes', icon: Layers },
     { name: 'My Payments', path: '/customer/payments', icon: Wallet },
     { name: 'Intelligence Feed', path: '/blog', icon: BookOpen },

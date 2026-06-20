@@ -13,6 +13,17 @@ const projectSchema = new mongoose.Schema({
     location: { type: String },
     updateNotes: { type: String },
     nextNotes: { type: String },
+    timeline: [{
+        title: { type: String, required: true },
+        description: { type: String },
+        date: { type: Date, required: true },
+        status: { type: String, enum: ['Pending', 'Completed'], default: 'Pending' }
+    }],
+    timelineStatus: {
+        type: String,
+        enum: ['None', 'Proposed by Staff', 'Sent to Client'],
+        default: 'None'
+    },
     createdAt: { type: Date, default: Date.now }
 });
 
