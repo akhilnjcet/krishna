@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Lodge = require('../models/Lodge');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { listarArquivosDaPasta, extrairFolderId } = require('../utils/driveHelper');
 const lodgeController = require('../controllers/lodgeController');
 
 router.get('/sync', protect, lodgeController.getLodgeData);
@@ -10,6 +11,32 @@ router.post('/sync', protect, lodgeController.syncLodgeData);
 router.get('/', async (req, res) => {
   try {
     const lodges = await Lodge.find({});
+    
+    // Auto-expand folder links for lodges
+    for (let lodge of lodges) {
+        let lodgeUpdated = false;
+        const newImages = [];
+        for (const img of lodge.images || []) {
+            const folderId = extrairFolderId(img.url);
+            if (folderId && img.url.includes('/folders/')) {
+                try {
+                    const files = await listarArquivosDaPasta(folderId);
+                    files.forEach(f => newImages.push({ url: f, publicId: 'drive_link' }));
+                    lodgeUpdated = true;
+                } catch (err) {
+                    console.error('Failed to auto-expand folder:', folderId, err);
+                    newImages.push(img);
+                }
+            } else {
+                newImages.push(img);
+            }
+        }
+        if (lodgeUpdated) {
+            lodge.images = newImages;
+            await lodge.save();
+        }
+    }
+    
     res.json(lodges);
   } catch (err) {
     res.status(500).json({ message: 'Server Error', error: err.message });
@@ -20,6 +47,29 @@ router.get('/:id', async (req, res) => {
   try {
     const lodge = await Lodge.findById(req.params.id);
     if (!lodge) return res.status(404).json({ message: 'Lodge not found' });
+    
+    let lodgeUpdated = false;
+    const newImages = [];
+    for (const img of lodge.images || []) {
+        const folderId = extrairFolderId(img.url);
+        if (folderId && img.url.includes('/folders/')) {
+            try {
+                const files = await listarArquivosDaPasta(folderId);
+                files.forEach(f => newImages.push({ url: f, publicId: 'drive_link' }));
+                lodgeUpdated = true;
+            } catch (err) {
+                console.error('Failed to auto-expand folder:', folderId, err);
+                newImages.push(img);
+            }
+        } else {
+            newImages.push(img);
+        }
+    }
+    if (lodgeUpdated) {
+        lodge.images = newImages;
+        await lodge.save();
+    }
+    
     res.json(lodge);
   } catch (err) {
     res.status(500).json({ message: 'Server Error' });
@@ -81,11 +131,22 @@ router.put('/:id', protect, admin, upload.array('newImages', 5), async (req, res
     // Handle Google Drive links
     if (req.body.driveUrls) {
         const driveUrls = Array.isArray(req.body.driveUrls) ? req.body.driveUrls : [req.body.driveUrls];
-        driveUrls.forEach(url => {
+        for (const url of driveUrls) {
             if (url && url.trim()) {
-                images.push({ url: url.trim(), publicId: 'drive_link' });
+                const folderId = extrairFolderId(url.trim());
+                if (folderId) {
+                    try {
+                        const files = await listarArquivosDaPasta(folderId);
+                        files.forEach(f => images.push({ url: f, publicId: 'drive_link' }));
+                    } catch (err) {
+                        console.error('Failed to list files for folder:', folderId, err);
+                        images.push({ url: url.trim(), publicId: 'drive_link' });
+                    }
+                } else {
+                    images.push({ url: url.trim(), publicId: 'drive_link' });
+                }
             }
-        });
+        }
     }
     
     updateData.images = images;
