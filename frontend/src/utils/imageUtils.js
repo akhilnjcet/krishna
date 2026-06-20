@@ -16,7 +16,7 @@ export const getDirectImageUrl = (url) => {
             relativePath = `/${url}`;
         }
         
-        const apiUrl = useSignalStore.getState().getApiUrl();
+        const apiUrl = import.meta.env.VITE_API_URL || useSignalStore.getState().getApiUrl();
         const origin = apiUrl.includes('/api') ? apiUrl.split('/api')[0] : apiUrl;
         return `${origin}${relativePath}`;
     }
