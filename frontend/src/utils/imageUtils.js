@@ -41,8 +41,8 @@ export const getDirectImageUrl = (url) => {
         }
 
         if (fileId) {
-            // High-quality thumbnail/preview link (Works for almost all public files without rate limits)
-            return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+            // High-quality direct link via lh3.googleusercontent.com (Works for public files without rate limits / cookie blocks)
+            return `https://lh3.googleusercontent.com/d/${fileId}=w1600`;
         }
     }
 
