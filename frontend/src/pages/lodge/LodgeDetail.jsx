@@ -142,7 +142,7 @@ export default function LodgeDetail() {
                                   </div>
                                </div>
                                <div className="mt-4 md:mt-0 md:text-right flex flex-col justify-between items-end flex-shrink-0">
-                                  <div className="mb-3"><span className="text-2xl font-extrabold text-blue-600">₹{room.price.toLocaleString()}</span><span className="text-gray-500"> / night</span></div>
+                                   <div className="mb-3"><span className="text-2xl font-extrabold text-blue-600">₹{room.price.toLocaleString()}</span><span className="text-gray-500"> / month</span></div>
                                   <button onClick={() => navigate(`/lodge/book/${room._id}`)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg">Reserve Dates</button>
                                </div>
                             </div>

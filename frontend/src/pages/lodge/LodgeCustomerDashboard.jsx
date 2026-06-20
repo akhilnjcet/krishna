@@ -335,7 +335,7 @@ export default function LodgeCustomerDashboard() {
                                         <h3 className="text-2xl font-black text-slate-900 mb-2 truncate">{w.lodgeId?.name || 'Krishna Residency'}</h3>
                                         <p className="text-slate-500 font-medium mb-8 flex items-center"><MapPin className="w-4 h-4 mr-1 text-slate-400" /> {w.lodgeId?.location?.address}</p>
                                         <div className="flex items-center justify-between">
-                                            <p className="font-poppins text-2xl font-black text-indigo-600">₹{w.lodgeId?.priceRange || '3,500'}<span className="text-xs text-slate-400 font-bold uppercase ml-1">/ Night avg</span></p>
+                                            <p className="font-poppins text-2xl font-black text-indigo-600">₹{w.lodgeId?.priceRange || '3,500'}<span className="text-xs text-slate-400 font-bold uppercase ml-1">/ Month</span></p>
                                             <button onClick={() => window.location.href = `/lodge/book/${w.lodgeId?._id}`} className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/20 hover:scale-105 transition-transform active:scale-95">
                                                 Book Now
                                             </button>
