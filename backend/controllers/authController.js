@@ -155,12 +155,12 @@ exports.verifyFace = async (req, res) => {
                 );
             }
 
-            // Send Notifications for Face Auth (Awaited for stability)
+            // Send Notifications for Face Auth (Non-blocking — fire and forget)
             if (bestMatch.email) {
-                await sendLoginNotification(bestMatch.email, bestMatch.name || bestMatch.username).catch(err => console.error('Face Login Notify Error:', err));
+                sendLoginNotification(bestMatch.email, bestMatch.name || bestMatch.username).catch(err => console.error('Face Login Notify Error:', err));
             }
             if (bestMatch.phoneNumber || bestMatch.phone) {
-                await sendWhatsAppLoginAlert(bestMatch).catch(err => console.error('Face WhatsApp Notify Error:', err));
+                sendWhatsAppLoginAlert(bestMatch).catch(err => console.error('Face WhatsApp Notify Error:', err));
             }
 
             res.json({ success: true, logType, user: bestMatch, attendance });

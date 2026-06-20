@@ -50,7 +50,7 @@ const FaceCapture = ({ onCapture }) => {
         setMessage('Establishing optical link...');
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { width: { ideal: 1280 }, height: { ideal: 720 } } 
+                video: { width: { ideal: 640 }, height: { ideal: 480 } } 
             });
             streamRef.current = stream;
             if (videoRef.current) {
@@ -75,26 +75,25 @@ const FaceCapture = ({ onCapture }) => {
                     const isBlinking = await detectBlink(result.landmarks);
                     
                     if (isBlinking) {
-                        setMessage(`CAPTURING FRAME BINARY... [${currentFrames.length + 1}/3]`);
+                        setMessage(`CAPTURING FRAME BINARY... [${currentFrames.length + 1}/1]`);
                         currentFrames.push(Array.from(result.descriptor));
                         setCapturedFrames([...currentFrames]);
                         
-                        await new Promise(resolve => setTimeout(resolve, 800));
+                        await new Promise(resolve => setTimeout(resolve, 300));
                     } else {
                         setMessage('PERFORM ONE CLEAR BLINK TO START CAPTURE');
                     }
 
-                    if (currentFrames.length >= 3) {
+                    if (currentFrames.length >= 1) {
                         scanActiveRef.current = false;
                         
-                        const averagedDescriptor = currentFrames[0].map((_, i) => 
-                            currentFrames.reduce((acc, frame) => acc + frame[i], 0) / currentFrames.length
-                        );
+                        // Use the single best descriptor directly
+                        const finalDesc = currentFrames[0];
 
                         setStatus('success');
                         setMessage('BIOMETRIC PROFILE GENERATED SUCCESSFULLY');
                         stopVideo();
-                        setFinalDescriptor(averagedDescriptor);
+                        setFinalDescriptor(finalDesc);
                         return;
                     }
                 } else {
@@ -136,7 +135,7 @@ const FaceCapture = ({ onCapture }) => {
 
                 {/* Progress Indicators */}
                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
-                    {[0, 1, 2].map((i) => (
+                    {[0].map((i) => (
                         <div key={i} className={`w-12 h-1 rounded-full transition-all duration-500 ${i < capturedFrames.length ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-slate-800'}`}></div>
                     ))}
                 </div>

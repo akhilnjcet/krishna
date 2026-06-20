@@ -14,9 +14,9 @@ export const loadFaceModels = async () => {
         const tryLoad = async (url) => {
             console.log(`Attempting Biometric Handshake: ${url}`);
             try {
-                // Set a 12-second timeout per attempt to keep the app responsive
+                // Set an 8-second timeout per attempt to keep the app responsive
                 const timeout = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout')), 12000)
+                    setTimeout(() => reject(new Error('Timeout')), 8000)
                 );
 
                 await Promise.race([
@@ -35,9 +35,16 @@ export const loadFaceModels = async () => {
         };
 
         try {
-            // Stage 1: Safe Engine Initialization
-            await faceapi.tf.setBackend('cpu');
-            await faceapi.tf.ready();
+            // Stage 1: Try WebGL (GPU) first for speed, fallback to CPU
+            try {
+                await faceapi.tf.setBackend('webgl');
+                await faceapi.tf.ready();
+                console.log('Operational: AI Hardware Acceleration Active.');
+            } catch {
+                await faceapi.tf.setBackend('cpu');
+                await faceapi.tf.ready();
+                console.warn('Stability: Running in CPU compatibility mode.');
+            }
 
             // Stage 2: Strategy Sequence (Local First -> CDN Fallback)
             const isNative = typeof window !== 'undefined' && !!window.Capacitor;
@@ -51,12 +58,6 @@ export const loadFaceModels = async () => {
             for (const path of strategies) {
                 const success = await tryLoad(path);
                 if (success) {
-                    try {
-                        await faceapi.tf.setBackend('webgl');
-                        console.log('Operational: AI Hardware Acceleration Active.');
-                    } catch {
-                        console.warn('Stability: Running in CPU compatibility mode.');
-                    }
                     modelsLoaded = true;
                     return true;
                 }

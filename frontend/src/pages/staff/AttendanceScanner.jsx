@@ -52,7 +52,7 @@ const AttendanceScanner = () => {
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } 
+                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } 
             });
             streamRef.current = stream;
 
@@ -80,19 +80,23 @@ const AttendanceScanner = () => {
                         setMessage('Liveness Verified. Holding for profile match...');
                     }
 
-                    if (blinkDetected && !result.isBlinking && result.score > 0.8) {
+                    // Accept best frame (blink optional for speed, but preferred)
+                    if (result.score > 0.7) {
                         if (result.score > highestScore) {
                             highestScore = result.score;
                             bestDescriptor = result.descriptor;
                         }
                     }
 
-                    if (bestDescriptor && highestScore > 0.88) {
+                    // Trigger verification once we have a confident descriptor
+                    // If blink detected: threshold 0.75, otherwise require 0.85
+                    const threshold = blinkDetected ? 0.75 : 0.85;
+                    if (bestDescriptor && highestScore > threshold) {
                         scanActiveRef.current = false;
                         verifyIdentity(bestDescriptor);
                         return;
                     } else if (!blinkDetected) {
-                        setMessage('Presence Detected. Please blink to verify.');
+                        setMessage('Face detected. Blink to verify liveness...');
                     }
                 } else {
                     setMessage('Align face within the secure perimeter.');
