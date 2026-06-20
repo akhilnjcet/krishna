@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Building2, Plus, DoorOpen, List, Trash2, Edit3, UserPlus, 
     Calendar, IndianRupee, AlertTriangle, Users, CheckCircle, 
-    Settings, LogOut, Clock, Link, Check, X, Building, BarChart3, ShieldAlert, ArrowLeft
+    Settings, LogOut, Clock, Link, Check, X, Building, BarChart3, ShieldAlert, ArrowLeft, Folder
 } from 'lucide-react';
 import api from '../../services/api';
 import { getDirectImageUrl } from '../../utils/imageUtils';
@@ -584,8 +584,9 @@ export default function LodgeAdminManager() {
                                       <input type="file" multiple accept="image/*" className="w-full border-2 border-slate-100 p-3 rounded-2xl bg-slate-50 font-bold text-xs" onChange={e => setLodgeForm({...lodgeForm, images: e.target.files})} />
                                   </div>
                                   <div>
-                                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Add Google Drive Link(s) (Comma Separated)</label>
+                                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 block">Connect Drive Link(s) (Comma Separated)</label>
                                       <input placeholder="https://drive.google.com/..." className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold font-poppins text-indigo-600 placeholder-slate-300" value={lodgeForm.driveUrls || ''} onChange={e => setLodgeForm({...lodgeForm, driveUrls: e.target.value})} />
+                                      <p className="text-xs text-slate-400 mt-2 font-medium italic ml-2">Note: Ensure your Google Drive links (files or folders) are shared publicly as "Anyone with the link can view" so they load correctly.</p>
                                   </div>
                               </div>
                           </div>
@@ -1191,18 +1192,21 @@ const renderVideoPlayer = (url) => {
 
 // 7. Add image error handling and loading state
 // 8. If image fails, show 'Image Not Available'
-// 11. Add console logs for debugging: Image loaded, Image load failed
 const DriveImage = ({ src, alt, className }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [currentSrc, setCurrentSrc] = useState('');
 
+    const isFolder = src && (src.includes('/folders/') || src.includes('/drive/folders/'));
+
     useEffect(() => {
-        const directSrc = getDirectImageUrl(src);
-        setCurrentSrc(directSrc);
-        setLoading(true);
-        setError(false);
-    }, [src]);
+        if (!isFolder) {
+            const directSrc = getDirectImageUrl(src);
+            setCurrentSrc(directSrc);
+            setLoading(true);
+            setError(false);
+        }
+    }, [src, isFolder]);
 
     const handleImageError = () => {
         if (currentSrc.includes('drive.google.com/uc')) {
@@ -1219,6 +1223,24 @@ const DriveImage = ({ src, alt, className }) => {
         console.log('Image load failed:', currentSrc);
     };
 
+    if (isFolder) {
+        return (
+            <div className={`relative ${className} bg-indigo-50 border-2 border-dashed border-indigo-200 flex flex-col items-center justify-center text-center p-2 rounded-xl`}>
+                <Folder className="w-6 h-6 text-indigo-500 mb-1" />
+                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest leading-none">Drive Folder</span>
+                <a 
+                    href={src} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="mt-2 text-[8px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded hover:bg-slate-900 transition-colors uppercase tracking-widest"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    Open Folder
+                </a>
+            </div>
+        );
+    }
+
     return (
         <div className={`relative ${className} bg-slate-100 flex items-center justify-center border rounded-xl overflow-hidden`}>
             {loading && !error && (
@@ -1227,8 +1249,10 @@ const DriveImage = ({ src, alt, className }) => {
                 </div>
             )}
             {error ? (
-                <div className="text-center p-2 text-slate-400 text-[10px] font-black uppercase tracking-wider leading-tight">
-                    Image Not Available
+                <div className="text-center p-2 text-slate-400 flex flex-col items-center justify-center gap-1">
+                    <ShieldAlert className="w-4.5 h-4.5 text-slate-400" />
+                    <span className="text-[9px] font-black uppercase tracking-wider leading-tight">Access Restricted</span>
+                    <span className="text-[7px] text-slate-400 lowercase font-medium">make link public</span>
                 </div>
             ) : (
                 currentSrc && (
@@ -1247,3 +1271,4 @@ const DriveImage = ({ src, alt, className }) => {
         </div>
     );
 };
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Users, CheckCircle, Navigation, X, Play, ArrowLeft } from 'lucide-react';
+import { MapPin, Users, CheckCircle, Navigation, X, Play, ArrowLeft, Folder, ShieldAlert } from 'lucide-react';
 import api from '../../services/api';
 import { getDirectImageUrl } from '../../utils/imageUtils';
 
@@ -265,12 +265,16 @@ const DriveImage = ({ src, alt, className }) => {
     const [error, setError] = React.useState(false);
     const [currentSrc, setCurrentSrc] = React.useState('');
 
+    const isFolder = src && (src.includes('/folders/') || src.includes('/drive/folders/'));
+
     React.useEffect(() => {
-        const directSrc = getDirectImageUrl(src);
-        setCurrentSrc(directSrc);
-        setLoading(true);
-        setError(false);
-    }, [src]);
+        if (!isFolder) {
+            const directSrc = getDirectImageUrl(src);
+            setCurrentSrc(directSrc);
+            setLoading(true);
+            setError(false);
+        }
+    }, [src, isFolder]);
 
     const handleImageError = () => {
         if (currentSrc.includes('drive.google.com/uc')) {
@@ -287,6 +291,24 @@ const DriveImage = ({ src, alt, className }) => {
         console.log('Image load failed:', currentSrc);
     };
 
+    if (isFolder) {
+        return (
+            <div className={`relative ${className} bg-indigo-50 border-2 border-dashed border-indigo-200 flex flex-col items-center justify-center text-center p-2 rounded-xl`}>
+                <Folder className="w-6 h-6 text-indigo-500 mb-1" />
+                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest leading-none">Drive Folder</span>
+                <a 
+                    href={src} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="mt-2 text-[8px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded hover:bg-slate-900 transition-colors uppercase tracking-widest"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    Open Folder
+                </a>
+            </div>
+        );
+    }
+
     return (
         <div className={`relative ${className} bg-slate-100 flex items-center justify-center border rounded-xl overflow-hidden`}>
             {loading && !error && (
@@ -295,8 +317,10 @@ const DriveImage = ({ src, alt, className }) => {
                 </div>
             )}
             {error ? (
-                <div className="text-center p-2 text-slate-400 text-[10px] font-black uppercase tracking-wider leading-tight">
-                    Image Not Available
+                <div className="text-center p-2 text-slate-400 flex flex-col items-center justify-center gap-1">
+                    <ShieldAlert className="w-4.5 h-4.5 text-slate-400" />
+                    <span className="text-[9px] font-black uppercase tracking-wider leading-tight">Access Restricted</span>
+                    <span className="text-[7px] text-slate-400 lowercase font-medium">make link public</span>
                 </div>
             ) : (
                 currentSrc && (
