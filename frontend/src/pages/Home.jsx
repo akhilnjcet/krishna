@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
     Phone, MessageCircle, MapPin, CheckCircle,
     ArrowRight, Wrench, Shield, Zap, Settings, Award, Layers, Users,
-    ChevronLeft, ChevronRight, Quote, Star, Clock
+    ChevronLeft, ChevronRight, Quote, Star, Clock, Folder, ShieldAlert
 } from 'lucide-react';
 import FloatingContact from '../components/FloatingContact';
 import api from '../services/api';
@@ -484,8 +484,8 @@ const Home = () => {
                                         transition={{ duration: 0.6 }}
                                         className="absolute inset-0 w-full h-full"
                                     >
-                                        <img
-                                            src={displayedProjects[activeProjectIdx]?.images?.[0]?.url ? getDirectImageUrl(displayedProjects[activeProjectIdx].images[0].url) : (displayedProjects[activeProjectIdx]?.images?.[0]?.url || displayedProjects[activeProjectIdx]?.url)}
+                                        <DriveImage
+                                            src={displayedProjects[activeProjectIdx]?.images?.[0]?.url || displayedProjects[activeProjectIdx]?.url}
                                             alt={displayedProjects[activeProjectIdx]?.title}
                                             className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700"
                                         />
@@ -705,6 +705,87 @@ const Home = () => {
                 </section>
             </div>
         </>
+    );
+};
+
+// Error-handling image wrapper
+const DriveImage = ({ src, alt, className }) => {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [currentSrc, setCurrentSrc] = useState('');
+
+    const isFolder = src && (src.includes('/folders/') || src.includes('/drive/folders/'));
+
+    useEffect(() => {
+        if (!isFolder) {
+            const directSrc = getDirectImageUrl(src);
+            setCurrentSrc(directSrc);
+            setLoading(true);
+            setError(false);
+        }
+    }, [src, isFolder]);
+
+    const handleImageError = () => {
+        if (currentSrc.includes('drive.google.com/uc')) {
+            const idMatch = currentSrc.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (idMatch && idMatch[1]) {
+                const fallbackUrl = `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
+                console.log('Image load failed for uc. Trying fallback:', fallbackUrl);
+                setCurrentSrc(fallbackUrl);
+                return;
+            }
+        }
+        setLoading(false);
+        setError(true);
+        console.log('Image load failed:', currentSrc);
+    };
+
+    if (isFolder) {
+        return (
+            <div className={`relative ${className} bg-indigo-50 border-2 border-dashed border-indigo-200 flex flex-col items-center justify-center text-center p-2 rounded-xl`}>
+                <Folder className="w-6 h-6 text-indigo-500 mb-1" />
+                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest leading-none">Drive Folder</span>
+                <a 
+                    href={src} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="mt-2 text-[8px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded hover:bg-slate-900 transition-colors uppercase tracking-widest"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    Open Folder
+                </a>
+            </div>
+        );
+    }
+
+    return (
+        <div className={`relative ${className} bg-slate-100 flex items-center justify-center border rounded-xl overflow-hidden`}>
+            {loading && !error && (
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
+                    <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            )}
+            {error ? (
+                <div className="text-center p-2 text-slate-400 flex flex-col items-center justify-center gap-1">
+                    <ShieldAlert className="w-4.5 h-4.5 text-slate-400" />
+                    <span className="text-[9px] font-black uppercase tracking-wider leading-tight">Access Restricted</span>
+                    <span className="text-[7px] text-slate-400 lowercase font-medium">make link public</span>
+                </div>
+            ) : (
+                currentSrc && (
+                    <img 
+                        src={currentSrc} 
+                        alt={alt || "Drive asset"} 
+                        className={`w-full h-full object-cover transition-all duration-300 ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+                        onLoad={() => {
+                            setLoading(false);
+                            console.log('Image loaded:', currentSrc);
+                        }}
+                        onError={handleImageError}
+                    />
+                )
+            )}
+        </div>
     );
 };
 
