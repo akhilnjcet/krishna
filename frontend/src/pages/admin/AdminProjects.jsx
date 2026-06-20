@@ -1152,7 +1152,7 @@ const AdminProjects = () => {
                         <motion.div 
                             initial={{ scale: 0.95, y: 20, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
-                            className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-emerald-605 border-emerald-600 my-8"
+                            className="bg-white w-full max-w-5xl rounded-[2rem] shadow-2xl p-6 relative border-t-[8px] border-emerald-600 my-4 max-h-[92vh] overflow-y-auto"
                         >
                             <button 
                                 onClick={() => {
@@ -1164,21 +1164,21 @@ const AdminProjects = () => {
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
 
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="bg-emerald-100 p-3 rounded-2xl">
-                                    <Wallet className="w-8 h-8 text-emerald-600" />
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="bg-emerald-100 p-2 rounded-xl">
+                                    <Wallet className="w-6 h-6 text-emerald-600" />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Project Remittance Manager</h2>
+                                    <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Project Remittance Manager</h2>
                                     <p className="text-[10px] font-black uppercase text-emerald-500 tracking-[0.2em]">{selectedProject.title}</p>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-5">
                                 {/* Left Side: Ledger Settings */}
-                                <div className="lg:col-span-6 space-y-6">
-                                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200/60 space-y-4">
-                                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Project Ledger Settings</h3>
+                                <div className="lg:col-span-6 space-y-4">
+                                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 space-y-3">
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Project Ledger Settings</h3>
                                         
                                         <form onSubmit={handleUpdateLedger} className="space-y-4">
                                             <div className="grid grid-cols-2 gap-4">
@@ -1215,7 +1215,7 @@ const AdminProjects = () => {
                                         </form>
                                     </div>
 
-                                    {/* Ledger Metrics */}
+                                    {/* Ledger Metrics - 3 col compact */}
                                     {(() => {
                                         const budget = selectedProject.budget || 0;
                                         const approvedAdditional = selectedProject.approvedAdditionalWorkTotal ||
@@ -1225,36 +1225,36 @@ const AdminProjects = () => {
                                         const discount = selectedProject.discount || 0;
                                         const duesRemaining = Math.max(0, totalCost - discount - totalPaid);
                                         return (
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100 grid grid-cols-2 gap-4">
+                                    <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 grid grid-cols-3 gap-3">
                                         <div>
                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Base Budget</p>
-                                            <p className="text-base font-black text-slate-800">₹ {budget.toLocaleString()}</p>
+                                            <p className="text-sm font-black text-slate-800">₹ {budget.toLocaleString()}</p>
                                         </div>
                                         <div>
                                             <p className="text-[8px] font-black text-violet-500 uppercase tracking-widest">Additional Work</p>
-                                            <p className="text-base font-black text-violet-700">₹ {approvedAdditional.toLocaleString()}</p>
+                                            <p className="text-sm font-black text-violet-700">₹ {approvedAdditional.toLocaleString()}</p>
                                         </div>
                                         <div>
                                             <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Total Contract</p>
-                                            <p className="text-base font-black text-emerald-700">₹ {totalCost.toLocaleString()}</p>
+                                            <p className="text-sm font-black text-emerald-700">₹ {totalCost.toLocaleString()}</p>
                                         </div>
                                         <div>
                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Ledger Discount</p>
-                                            <p className="text-base font-black text-emerald-700">₹ {discount.toLocaleString()}</p>
+                                            <p className="text-sm font-black text-emerald-700">₹ {discount.toLocaleString()}</p>
                                         </div>
                                         <div>
                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total Receipts</p>
-                                            <p className="text-base font-black text-indigo-600">
+                                            <p className="text-sm font-black text-indigo-600">
                                                 ₹ {totalPaid.toLocaleString()}
                                             </p>
                                         </div>
                                         <div>
                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Dues Remaining</p>
-                                            <p className={`text-base font-black ${ duesRemaining <= 0 ? 'text-emerald-600' : 'text-rose-600' }`}>
+                                            <p className={`text-sm font-black ${ duesRemaining <= 0 ? 'text-emerald-600' : 'text-rose-600' }`}>
                                                 ₹ {duesRemaining.toLocaleString()}
                                             </p>
                                         </div>
-                                        <div className="col-span-2 flex items-center justify-between border-t border-emerald-100/70 pt-3 mt-1">
+                                        <div className="col-span-3 flex items-center justify-between border-t border-emerald-100/70 pt-2 mt-1">
                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Remittance Status</span>
                                             <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
                                                 selectedProject.paymentStatus === 'fully-paid' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
@@ -1271,9 +1271,9 @@ const AdminProjects = () => {
                                 </div>
 
                                 {/* Right Side: Record Manual Payment */}
-                                <div className="lg:col-span-6 space-y-6">
-                                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200/60 space-y-4">
-                                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Record Manual / Cash Payment</h3>
+                                <div className="lg:col-span-6 space-y-4">
+                                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 space-y-3">
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Record Manual / Cash Payment</h3>
                                         
                                         <form onSubmit={handleRecordManualPayment} className="space-y-4">
                                             <div className="grid grid-cols-2 gap-4">
@@ -1339,11 +1339,11 @@ const AdminProjects = () => {
                             </div>
 
                             {/* Project-Specific Transactions History Table */}
-                            <div className="border-t border-slate-100 pt-6">
-                                <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 mb-4">Project Transactions Audit History</h3>
+                            <div className="border-t border-slate-100 pt-4">
+                                <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-700 mb-3">Project Transactions Audit History</h3>
                                 
-                                <div className="bg-slate-50/50 rounded-2xl border border-slate-200 overflow-hidden">
-                                    <div className="overflow-x-auto max-h-60 overflow-y-auto pr-1">
+                                <div className="bg-slate-50/50 rounded-xl border border-slate-200 overflow-hidden">
+                                    <div className="overflow-x-auto max-h-48 overflow-y-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr className="bg-slate-100 text-[8px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-200">
