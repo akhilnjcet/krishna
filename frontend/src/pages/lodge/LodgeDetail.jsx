@@ -255,8 +255,29 @@ const renderVideoPlayer = (url) => {
 const DriveImage = ({ src, alt, className }) => {
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState(false);
+    const [currentSrc, setCurrentSrc] = React.useState('');
 
-    const directSrc = getDirectImageUrl(src);
+    React.useEffect(() => {
+        const directSrc = getDirectImageUrl(src);
+        setCurrentSrc(directSrc);
+        setLoading(true);
+        setError(false);
+    }, [src]);
+
+    const handleImageError = () => {
+        if (currentSrc.includes('drive.google.com/uc')) {
+            const idMatch = currentSrc.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (idMatch && idMatch[1]) {
+                const fallbackUrl = `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
+                console.log('Image load failed for uc. Trying fallback:', fallbackUrl);
+                setCurrentSrc(fallbackUrl);
+                return;
+            }
+        }
+        setLoading(false);
+        setError(true);
+        console.log('Image load failed:', currentSrc);
+    };
 
     return (
         <div className={`relative ${className} bg-slate-100 flex items-center justify-center border rounded-xl overflow-hidden`}>
@@ -270,20 +291,18 @@ const DriveImage = ({ src, alt, className }) => {
                     Image Not Available
                 </div>
             ) : (
-                <img 
-                    src={directSrc} 
-                    alt={alt || "Drive asset"} 
-                    className={`w-full h-full object-cover transition-all duration-300 ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
-                    onLoad={() => {
-                        setLoading(false);
-                        console.log('Image loaded:', directSrc);
-                    }}
-                    onError={() => {
-                        setLoading(false);
-                        setError(true);
-                        console.log('Image load failed:', directSrc);
-                    }}
-                />
+                currentSrc && (
+                    <img 
+                        src={currentSrc} 
+                        alt={alt || "Drive asset"} 
+                        className={`w-full h-full object-cover transition-all duration-300 ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+                        onLoad={() => {
+                            setLoading(false);
+                            console.log('Image loaded:', currentSrc);
+                        }}
+                        onError={handleImageError}
+                    />
+                )
             )}
         </div>
     );
