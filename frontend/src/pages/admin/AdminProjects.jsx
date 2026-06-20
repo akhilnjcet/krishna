@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
-import { Briefcase, Plus, X, Loader2, AlertCircle, MessageSquare, Send, AlertTriangle, Clock, Calendar, Trash2, CheckCircle2 } from 'lucide-react';
+import { Briefcase, Plus, X, Loader2, AlertCircle, MessageSquare, Send, AlertTriangle, Clock, Calendar, Trash2, CheckCircle2, Wallet, CheckCircle, XCircle, History, IndianRupee } from 'lucide-react';
 
 const AdminProjects = () => {
     const [projects, setProjects] = useState([]);
@@ -10,6 +10,10 @@ const AdminProjects = () => {
     const [showNotifyModal, setShowNotifyModal] = useState(false);
     const [selectedProject, setSelectedProject] = useState(null);
     const [notificationText, setNotificationText] = useState({ title: '', message: '' });
+    const [activeTab, setActiveTab] = useState('projects');
+    const [payments, setPayments] = useState([]);
+    const [paymentsLoading, setPaymentsLoading] = useState(false);
+    const [verifyingId, setVerifyingId] = useState(null);
 
     const handlePostUpdate = async (e) => {
         e.preventDefault();
@@ -96,7 +100,32 @@ const AdminProjects = () => {
         fetchProjects();
         fetchCustomers();
         fetchStaff();
+        fetchPayments();
     }, []);
+
+    const fetchPayments = async () => {
+        setPaymentsLoading(true);
+        try {
+            const res = await api.get('/payments');
+            setPayments(res.data);
+        } catch (err) {
+            console.error('Fetch Payments Error:', err);
+        } finally {
+            setPaymentsLoading(false);
+        }
+    };
+
+    const handleVerifyPayment = async (id, status) => {
+        setVerifyingId(id);
+        try {
+            await api.put(`/payments/${id}/verify`, { status });
+            fetchPayments();
+        } catch (err) {
+            alert('Failed to update payment: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setVerifyingId(null);
+        }
+    };
 
     const fetchProjects = async () => {
         setLoading(true);
@@ -163,16 +192,44 @@ const AdminProjects = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-xl">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Director View</div>
-                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900">Active Projects Registry</h2>
+                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900">Projects & Payments</h2>
                 </div>
-                <button 
-                    onClick={() => setShowModal(true)}
-                    className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-xs py-4 px-8 rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95"
+                {activeTab === 'projects' && (
+                    <button 
+                        onClick={() => setShowModal(true)}
+                        className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-xs py-4 px-8 rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95"
+                    >
+                        <Plus className="w-5 h-5" /> Commission New Project
+                    </button>
+                )}
+            </div>
+
+            {/* Tab Switcher */}
+            <div className="flex gap-2 mb-8 bg-white p-2 rounded-2xl border border-slate-200 shadow-md w-fit">
+                <button
+                    onClick={() => setActiveTab('projects')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${
+                        activeTab === 'projects' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
+                    }`}
                 >
-                    <Plus className="w-5 h-5" /> Commission New Project
+                    <Briefcase className="w-4 h-4" /> Projects Registry
+                </button>
+                <button
+                    onClick={() => setActiveTab('payments')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${
+                        activeTab === 'payments' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
+                    }`}
+                >
+                    <Wallet className="w-4 h-4" /> Payment History
+                    {payments.filter(p => p.status === 'pending').length > 0 && (
+                        <span className="bg-amber-500 text-white text-[9px] font-black rounded-full px-1.5 py-0.5">
+                            {payments.filter(p => p.status === 'pending').length}
+                        </span>
+                    )}
                 </button>
             </div>
 
+            {activeTab === 'projects' && (
             <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[800px]">
@@ -273,7 +330,138 @@ const AdminProjects = () => {
                     </table>
                 </div>
             </div>
+            )}
 
+            {/* ── Payment History Tab ── */}
+            {activeTab === 'payments' && (
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between mb-2">
+                        <div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Client Financials</div>
+                            <h3 className="text-xl font-black uppercase tracking-tighter text-slate-900 flex items-center gap-2">
+                                <History className="w-5 h-5 text-indigo-600" /> Transaction History
+                            </h3>
+                        </div>
+                        <span className="px-4 py-2 bg-indigo-50 text-indigo-600 text-xs font-black rounded-full">
+                            {payments.length} Total Records
+                        </span>
+                    </div>
+
+                    <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse min-w-[700px]">
+                                <thead>
+                                    <tr className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
+                                        <th className="p-6">Client Name</th>
+                                        <th className="p-6">Payment / Details</th>
+                                        <th className="p-6">Amount</th>
+                                        <th className="p-6">Date</th>
+                                        <th className="p-6">Method</th>
+                                        <th className="p-6 text-center">Status</th>
+                                        <th className="p-6 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {paymentsLoading ? (
+                                        <tr>
+                                            <td colSpan="7" className="p-20 text-center">
+                                                <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mx-auto mb-4" />
+                                                <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Loading Payment Records...</p>
+                                            </td>
+                                        </tr>
+                                    ) : payments.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="7" className="p-20 text-center">
+                                                <Wallet className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                                                <p className="text-slate-400 font-bold">No payment records found.</p>
+                                            </td>
+                                        </tr>
+                                    ) : payments.map((p, i) => (
+                                        <motion.tr
+                                            key={p._id}
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: i * 0.04 }}
+                                            className="hover:bg-indigo-50/30 transition-colors group"
+                                        >
+                                            <td className="p-6">
+                                                <div className="font-black text-slate-900 text-sm">{p.customerId?.name || 'Unknown'}</div>
+                                                <div className="text-[10px] text-slate-400 font-bold mt-0.5">{p.customerId?.email || ''}</div>
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="font-black text-slate-800 text-sm uppercase">{p.name || 'General Payment'}</div>
+                                                <div className="text-[10px] text-slate-500 font-semibold mt-0.5 max-w-xs truncate">{p.notes || '—'}</div>
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="flex items-center gap-1 text-sm font-black text-slate-900">
+                                                    <IndianRupee className="w-3.5 h-3.5 text-emerald-600" />
+                                                    {p.amount?.toLocaleString('en-IN')}
+                                                </div>
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="text-xs font-bold text-slate-700">
+                                                    {new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                </div>
+                                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                                    {new Date(p.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                            </td>
+                                            <td className="p-6">
+                                                <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase rounded-lg">{p.method}</span>
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="flex justify-center">
+                                                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
+                                                        p.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                                        p.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-200' :
+                                                        'bg-amber-50 text-amber-700 border border-amber-200'
+                                                    }`}>
+                                                        {p.status === 'verified' ? <CheckCircle className="w-3 h-3" /> :
+                                                         p.status === 'rejected' ? <XCircle className="w-3 h-3" /> :
+                                                         <Clock className="w-3 h-3" />}
+                                                        {p.status}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="p-6">
+                                                {p.status === 'pending' && (
+                                                    <div className="flex justify-end gap-2">
+                                                        <button
+                                                            disabled={verifyingId === p._id}
+                                                            onClick={() => handleVerifyPayment(p._id, 'verified')}
+                                                            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-emerald-700 transition disabled:opacity-50"
+                                                        >
+                                                            {verifyingId === p._id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                                                            Verify
+                                                        </button>
+                                                        <button
+                                                            disabled={verifyingId === p._id}
+                                                            onClick={() => handleVerifyPayment(p._id, 'rejected')}
+                                                            className="flex items-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 border border-rose-200 text-[10px] font-black uppercase rounded-xl hover:bg-rose-100 transition disabled:opacity-50"
+                                                        >
+                                                            <XCircle className="w-3 h-3" /> Reject
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                {p.status === 'verified' && (
+                                                    <div className="text-right text-[10px] text-emerald-600 font-black uppercase">
+                                                        Verified ✓
+                                                    </div>
+                                                )}
+                                                {p.status === 'rejected' && (
+                                                    <div className="text-right text-[10px] text-rose-500 font-black uppercase">
+                                                        Rejected ✗
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </motion.tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Broadcast Terminal Modal */}
             <AnimatePresence>
                 {showNotifyModal && (

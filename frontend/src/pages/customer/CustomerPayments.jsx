@@ -22,11 +22,10 @@ const CustomerPayments = () => {
     const [formData, setFormData] = useState({
         amount: '',
         method: 'upi',
-        referenceId: '',
+        name: '',
         notes: ''
     });
 
-    const [proofFile, setProofFile] = useState(null);
     const [showPicker, setShowPicker] = useState(false);
     const [showFallback, setShowFallback] = useState(false);
     const [debugLogs, setDebugLogs] = useState([]);
@@ -60,28 +59,25 @@ const CustomerPayments = () => {
     };
 
     const handleFileChange = (e) => {
-        setProofFile(e.target.files[0]);
+        // Removed proof screenshot handling
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!proofFile) return alert("Please upload a screenshot of your payment proof.");
+        if (!formData.name) return alert("Please enter payment name.");
+        if (!formData.amount || parseFloat(formData.amount) <= 0) return alert("Please enter a valid amount.");
+        if (!formData.notes) return alert("Please enter payment details.");
         
         setSubmitting(true);
         try {
-            const formDataToSend = new FormData();
-            formDataToSend.append('amount', formData.amount);
-            formDataToSend.append('method', formData.method);
-            formDataToSend.append('referenceId', formData.referenceId);
-            formDataToSend.append('notes', formData.notes);
-            formDataToSend.append('image', proofFile);
-
-            const res = await api.post('/payments/submit', formDataToSend, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+            const res = await api.post('/payments/submit', {
+                amount: parseFloat(formData.amount),
+                method: formData.method,
+                name: formData.name,
+                notes: formData.notes
             });
 
-            setFormData({ amount: '', method: 'upi', referenceId: '', notes: '' });
-            setProofFile(null);
+            setFormData({ amount: '', method: 'upi', name: '', notes: '' });
             
             // Automatically generate and download receipt
             generatePaymentReceiptPDF(res.data, user);
@@ -234,39 +230,26 @@ const CustomerPayments = () => {
 
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Reference ID / UTR Number</label>
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Name</label>
                                         <input 
                                             required
-                                            value={formData.referenceId}
-                                            onChange={(e) => setFormData({...formData, referenceId: e.target.value})}
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({...formData, name: e.target.value})}
                                             className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
-                                            placeholder="Enter UPI Ref / Bank UTR"
+                                            placeholder="e.g. Initial Deposit, Weld Phase 2"
                                         />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Screenshot (Proof)</label>
-                                        <div className="relative group/file">
-                                            <input 
-                                                type="file" 
-                                                accept="image/*"
-                                                onChange={handleFileChange}
-                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                            />
-                                            <div className={`w-full p-4 border-2 border-dashed rounded-2xl flex flex-col items-center gap-2 transition-all ${proofFile ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/10 bg-white/5 group-hover/file:border-blue-500'}`}>
-                                                {proofFile ? (
-                                                    <>
-                                                        <CheckCircle className="w-5 h-5 text-emerald-400" />
-                                                        <span className="text-[9px] font-black text-emerald-400 uppercase truncate max-w-full px-4">{proofFile.name}</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Download className="w-5 h-5 text-blue-400 rotate-180" />
-                                                        <span className="text-[9px] font-black text-slate-400 uppercase">Drop Screenshot or Click</span>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Details</label>
+                                        <textarea 
+                                            required
+                                            value={formData.notes}
+                                            onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                            placeholder="Enter reference details or description..."
+                                            rows="3"
+                                        />
                                     </div>
                                 </div>
 
@@ -329,6 +312,7 @@ const CustomerPayments = () => {
                                 <thead>
                                     <tr className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
                                         <th className="px-6 py-5">Verified ID</th>
+                                        <th className="px-6 py-5">Payment / Details</th>
                                         <th className="px-6 py-5">Amt / Method</th>
                                         <th className="px-6 py-5 text-center">Status</th>
                                         <th className="px-6 py-5 text-right">Action</th>
@@ -348,6 +332,10 @@ const CustomerPayments = () => {
                                                 <td className="px-6 py-6">
                                                     <p className="text-xs font-black text-slate-900 group-hover:text-blue-600 transition-colors">#{p._id.slice(-8).toUpperCase()}</p>
                                                     <p className="text-[9px] font-bold text-slate-400 mt-1">{new Date(p.createdAt).toLocaleDateString()}</p>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <p className="text-xs font-black text-slate-800 uppercase">{p.name || 'General Payment'}</p>
+                                                    <p className="text-[10px] font-semibold text-slate-500 mt-1 truncate max-w-xs">{p.notes || 'No description provided.'}</p>
                                                 </td>
                                                 <td className="px-6 py-6">
                                                     <p className="text-sm font-black text-slate-900 italic">₹ {p.amount?.toLocaleString()}</p>

@@ -3,23 +3,27 @@ const Payment = require('../models/Payment');
 
 exports.submitPayment = async (req, res) => {
     try {
-        const { amount, method, referenceId, projectId, quoteId, notes } = req.body;
-        const receiptUrl = req.file ? req.file.path : null;
+        const { amount, method, projectId, quoteId, notes, name } = req.body;
+        const customerId = req.user._id || req.user.id;
         
+        if (!customerId) {
+            return res.status(400).json({ message: 'Authentication error: user ID not found.' });
+        }
+
         const newPayment = await Payment.create({
-            customerId: req.user._id,
-            amount,
-            method,
-            referenceId,
-            projectId,
-            quoteId,
+            customerId,
+            amount: parseFloat(amount),
+            method: method || 'upi',
+            projectId: projectId || undefined,
+            quoteId: quoteId || undefined,
             notes,
-            receiptUrl,
-            status: 'pending' // Manual verification needed
+            name,
+            status: 'pending'
         });
 
         res.status(201).json(newPayment);
     } catch (error) {
+        console.error('Payment submission error:', error);
         res.status(500).json({ message: error.message });
     }
 };

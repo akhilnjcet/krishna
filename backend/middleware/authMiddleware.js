@@ -11,6 +11,9 @@ const protect = (req, res, next) => {
             token = req.headers.authorization.split(' ')[1];
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
             req.user = decoded;
+            if (req.user && req.user.id) {
+                req.user._id = req.user.id;
+            }
             next();
         } catch (error) {
             console.error(error);

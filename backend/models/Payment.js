@@ -9,6 +9,7 @@ const paymentSchema = new mongoose.Schema({
     projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
     quoteId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quote' },
     notes: { type: String },
+    name: { type: String },
     receiptUrl: { type: String }, // In case they upload something
     createdAt: { type: Date, default: Date.now },
     verifiedAt: { type: Date },
