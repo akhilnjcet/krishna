@@ -46,7 +46,7 @@ const AdminProgress = () => {
     });
 
     return (
-        <div className="p-8 space-y-8 bg-slate-50 min-h-screen font-sans">
+        <div className="p-4 md:p-8 space-y-8 bg-slate-50/50 min-h-screen font-sans">
             {/* Header section with Stats */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>

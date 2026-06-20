@@ -16,6 +16,7 @@ const SIDEBAR_W = 'w-[280px]';
 
 const SIDEBAR_ITEMS = [
     { name: 'Core Dashboard',  path: '/admin',              icon: LayoutDashboard },
+    { name: 'User Management',  path: '/admin/users',        icon: User },
     { name: 'Staff Management', path: '/admin/staff',        icon: Users },
     { name: 'Attendance Hub',  path: '/admin/logs',         icon: Clock },
     { name: 'Leave Requests',  path: '/admin/leave',        icon: ClipboardList },

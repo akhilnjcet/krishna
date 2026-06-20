@@ -433,14 +433,14 @@ export default function LodgeAdminManager() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen">
-      <div className="mb-8 flex justify-between items-center">
-         <div className="flex items-center gap-4">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
+      <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+         <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
              <button onClick={() => window.history.back()} className="p-3 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors shadow-sm" title="Go Back">
                  <ArrowLeft className="w-5 h-5"/>
              </button>
-             <h1 className="text-3xl font-bold flex items-center text-gray-800 tracking-tight">
-                 <Building2 className="w-8 h-8 mr-3 text-indigo-600"/> 
+             <h1 className="text-xl sm:text-3xl font-bold flex items-center text-gray-800 tracking-tight">
+                 <Building2 className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-indigo-600"/> 
                  {selectedLodge.name} Command
              </h1>
              <button onClick={() => {
@@ -458,7 +458,7 @@ export default function LodgeAdminManager() {
                  <Edit3 className="w-5 h-5"/>
              </button>
          </div>
-         <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 px-4 py-2 rounded-xl">System Status: Optimal</div>
+         <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 px-4 py-2 rounded-xl self-start sm:self-auto">System Status: Optimal</div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto mb-8 border-b border-gray-200 pb-2 custom-scrollbar">
@@ -621,7 +621,7 @@ export default function LodgeAdminManager() {
       {activeTab === 'rooms' && (
          <div className="space-y-6">
              <div className="bg-white rounded-[2rem] shadow-sm border p-8 animate-in fade-in transition-all">
-             <div className="flex justify-between items-center mb-8">
+             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <h2 className="text-xl font-bold flex items-center"><DoorOpen className="w-6 h-6 mr-2 text-indigo-500"/> Managing Rooms</h2>
                 <button onClick={() => { setEditingRoom(null); setRoomForm({ type: 'Standard', price: '', rentCycle: 'monthly', maxGuests: '', description: '', interiorFiles: [], exteriorFiles: [] }); setShowRoomForm(!showRoomForm); }} className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/20 hover:scale-105 transition-transform flex items-center">
                     <Plus className="w-4 h-4 mr-2"/> Add New Unit
@@ -762,18 +762,18 @@ export default function LodgeAdminManager() {
                               );
                           })()}
 
-                          <div className="mt-6 flex items-center gap-4">
+                          <div className="mt-6 flex flex-wrap items-center gap-3 sm:gap-4">
                              <p className="font-black text-indigo-600 text-2xl font-poppins tracking-tighter">₹{r.price.toLocaleString()}<span className="text-xs text-slate-400 font-bold uppercase ml-1 tracking-widest">/ {r.rentCycle}</span></p>
-                             <div className="h-4 w-[1px] bg-slate-200 mx-2"></div>
-                             <div className="flex gap-2">
-                                <button onClick={() => setAssignModal({ show:true, roomId: r._id, userId: '' })} className="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-emerald-50 hover:text-emerald-600 transition-colors shadow-sm" title="Manually Assign Tenant">
-                                    <UserPlus className="w-5 h-5"/>
+                             <div className="h-4 w-[1px] bg-slate-200 mx-1 sm:mx-2"></div>
+                             <div className="flex gap-2 flex-wrap">
+                                <button onClick={() => setAssignModal({ show:true, roomId: r._id, userId: '' })} className="p-2 sm:p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-emerald-50 hover:text-emerald-600 transition-colors shadow-sm" title="Manually Assign Tenant">
+                                    <UserPlus className="w-4 h-4 sm:w-5 sm:h-5"/>
                                 </button>
-                                <button onClick={() => { setEditingRoom(r); setRoomForm({ type: r.type, price: r.price, rentCycle: r.rentCycle || 'monthly', maxGuests: r.maxGuests, description: r.description, interiorFiles: [], exteriorFiles: [], interiorDriveUrls: '', exteriorDriveUrls: '', videoUrl: r.videoUrl || '' }); setShowRoomForm(true); }} className="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-amber-50 hover:text-amber-600 transition-colors shadow-sm">
-                                    <Edit3 className="w-5 h-5"/>
+                                <button onClick={() => { setEditingRoom(r); setRoomForm({ type: r.type, price: r.price, rentCycle: r.rentCycle || 'monthly', maxGuests: r.maxGuests, description: r.description, interiorFiles: [], exteriorFiles: [], interiorDriveUrls: '', exteriorDriveUrls: '', videoUrl: r.videoUrl || '' }); setShowRoomForm(true); }} className="p-2 sm:p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-amber-50 hover:text-amber-600 transition-colors shadow-sm">
+                                    <Edit3 className="w-4 h-4 sm:w-5 sm:h-5"/>
                                 </button>
-                                <button onClick={() => deleteRoom(r._id)} className="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-colors shadow-sm">
-                                    <Trash2 className="w-5 h-5"/>
+                                <button onClick={() => deleteRoom(r._id)} className="p-2 sm:p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-colors shadow-sm">
+                                    <Trash2 className="w-4 h-4 sm:w-5 sm:h-5"/>
                                 </button>
                              </div>
                           </div>
@@ -853,19 +853,19 @@ export default function LodgeAdminManager() {
             <h2 className="text-xl font-bold mb-8 flex items-center"><Users className="w-6 h-6 mr-2 text-indigo-500"/> Advanced Tenant CRM</h2>
             <div className="grid md:grid-cols-2 gap-6">
                {clients.map(c => (
-                  <div key={c._id} className={`p-6 border rounded-[1.5rem] flex justify-between items-center transition-all ${c.status === 'inactive' ? 'bg-rose-50 border-rose-100 opacity-60' : 'bg-slate-50 opacity-90 hover:bg-white hover:shadow-xl hover:scale-[1.02]'}`}>
-                      <div className="flex items-center gap-4">
+                  <div key={c._id} className={`p-4 sm:p-6 border rounded-[1.5rem] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all ${c.status === 'inactive' ? 'bg-rose-50 border-rose-100 opacity-60' : 'bg-slate-50 opacity-90 hover:bg-white hover:shadow-xl hover:scale-[1.02]'}`}>
+                      <div className="flex items-center gap-3 sm:gap-4">
                           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg shadow-sm border ${c.status === 'inactive' ? 'bg-white text-rose-600 border-rose-200' : 'bg-white text-indigo-600 border-indigo-100'}`}>{c.name.charAt(0)}</div>
                           <div>
                               <p className="font-black text-slate-900 flex items-center gap-2">
                                 {c.name}
                                 {c.status === 'inactive' && <ShieldAlert className="w-4 h-4 text-rose-500" />}
                               </p>
-                              <p className="text-[10px] font-black uppercase text-slate-400 mt-1 tracking-widest">{c.email}</p>
+                              <p className="text-[10px] font-black uppercase text-slate-400 mt-1 tracking-widest break-all">{c.email}</p>
                               <p className="text-[10px] font-bold text-indigo-500">{c.phone || c.phoneNumber || 'Contact Not Verified'}</p>
                           </div>
                       </div>
-                      <button onClick={() => { setEditClient(c); setClientForm({ name: c.name, phone: c.phone || '', password: '', status: c.status || 'active' }); }} className="p-3 bg-white text-slate-600 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 shadow-sm border transition-all">
+                      <button onClick={() => { setEditClient(c); setClientForm({ name: c.name, phone: c.phone || '', password: '', status: c.status || 'active' }); }} className="p-3 bg-white text-slate-600 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 shadow-sm border transition-all self-end sm:self-auto">
                           <Edit3 className="w-5 h-5"/>
                       </button>
                   </div>
@@ -877,7 +877,7 @@ export default function LodgeAdminManager() {
       {/* FINANCE TAB */}
       {activeTab === 'finance' && (
          <div className="bg-white rounded-[2rem] shadow-sm border p-8 animate-in fade-in transition-all">
-            <div className="flex justify-between items-center mb-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
                  <h2 className="text-xl font-bold flex items-center"><IndianRupee className="w-6 h-6 mr-2 text-indigo-500"/> Financial Settlement Matrix</h2>
                  <button onClick={() => setPaymentModal({ show: true, customerId: '', amount: '', notes: '' })} className="bg-emerald-600 text-white px-8 py-3 rounded-2xl font-black text-xs shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">Inject Cash Settlement</button>
             </div>
@@ -915,7 +915,7 @@ export default function LodgeAdminManager() {
             <h2 className="text-xl font-bold mb-10 flex items-center"><AlertTriangle className="w-6 h-6 mr-2 text-indigo-500"/> Operational Tickets</h2>
             <div className="grid md:grid-cols-2 gap-6">
                {complaints.map(c => (
-                  <div key={c._id} className={`p-8 border rounded-[2.5rem] relative transition-all ${c.status==='resolved' ? 'border-indigo-100 bg-white opacity-80' : 'border-amber-200 bg-amber-50 shadow-xl shadow-amber-500/5'}`}>
+                  <div key={c._id} className={`p-4 sm:p-8 border rounded-[2.5rem] relative transition-all ${c.status==='resolved' ? 'border-indigo-100 bg-white opacity-80' : 'border-amber-200 bg-amber-50 shadow-xl shadow-amber-500/5'}`}>
                       <div className="flex justify-between items-start mb-6">
                           <div>
                               <h4 className="font-black text-slate-900 text-xl tracking-tight leading-none mb-1">{c.title}</h4>
@@ -941,7 +941,7 @@ export default function LodgeAdminManager() {
       {/* ALL MODALS */}
       {showLodgeEdit && (
           <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex flex-col justify-center items-center p-4">
-             <form onSubmit={handleLodgeSubmit} className="bg-white p-10 rounded-[3rem] w-full max-w-2xl relative shadow-2xl animate-in zoom-in duration-300">
+             <form onSubmit={handleLodgeSubmit} className="bg-white p-5 sm:p-10 rounded-[2rem] sm:rounded-[3rem] w-full max-w-2xl relative shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
                  <h3 className="text-3xl font-black mb-2 tracking-tight">Edit Building Profile</h3>
                  <p className="text-slate-500 font-medium mb-8 italic">Update public registry details and core location coordinates.</p>
                  <button type="button" onClick={() => setShowLodgeEdit(false)} className="absolute top-10 right-10 text-slate-400 bg-slate-50 p-3 rounded-full hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm border border-slate-100"><X className="w-5 h-5"/></button>
@@ -1015,7 +1015,7 @@ export default function LodgeAdminManager() {
 
       {assignModal.show && (
           <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex flex-col justify-center items-center p-4">
-             <form onSubmit={assignRoomManual} className="bg-white p-10 rounded-[3rem] w-full max-w-lg relative shadow-2xl animate-in zoom-in duration-300">
+             <form onSubmit={assignRoomManual} className="bg-white p-5 sm:p-10 rounded-[2rem] sm:rounded-[3rem] w-full max-w-lg relative shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
                  <h3 className="text-3xl font-black mb-2 tracking-tight">Manual Override</h3>
                  <p className="text-slate-500 font-medium mb-10 italic">Injecting tenant into residency matrix #BypassEnforced</p>
                  <button type="button" onClick={() => setAssignModal({show:false, roomId: null, userId: ''})} className="absolute top-10 right-10 text-slate-400 bg-slate-50 p-3 rounded-full hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm border border-slate-100"><X className="w-5 h-5"/></button>
@@ -1033,7 +1033,7 @@ export default function LodgeAdminManager() {
 
       {editClient && (
           <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex flex-col justify-center items-center p-4">
-             <form onSubmit={handleClientEdit} className="bg-white p-10 rounded-[3rem] w-full max-w-lg relative shadow-2xl animate-in zoom-in duration-300">
+             <form onSubmit={handleClientEdit} className="bg-white p-5 sm:p-10 rounded-[2rem] sm:rounded-[3rem] w-full max-w-lg relative shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
                  <div className="text-center mb-10">
                      <div className="w-20 h-20 bg-indigo-600 text-white rounded-[2rem] flex items-center justify-center text-4xl font-black mx-auto mb-6 shadow-2xl shadow-indigo-600/30">{clientForm.name.charAt(0)}</div>
                      <h3 className="text-3xl font-black tracking-tight mb-2">Refine Identity</h3>
@@ -1063,7 +1063,7 @@ export default function LodgeAdminManager() {
 
       {paymentModal.show && (
           <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex flex-col justify-center items-center p-4">
-             <form onSubmit={submitManualPayment} className="bg-white p-10 rounded-[3rem] w-full max-w-lg relative shadow-2xl animate-in zoom-in duration-300">
+             <form onSubmit={submitManualPayment} className="bg-white p-5 sm:p-10 rounded-[2rem] sm:rounded-[3rem] w-full max-w-lg relative shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
                  <h3 className="text-3xl font-black mb-2 tracking-tight">Manual Ledger Entry</h3>
                  <p className="text-slate-500 font-medium mb-10 italic">Strict audit logging enabled for direct cash settlements.</p>
                  <button type="button" onClick={() => setPaymentModal({show:false, customerId: '', amount: '', notes: ''})} className="absolute top-10 right-10 text-slate-400 bg-slate-50 p-3 rounded-full hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm border border-slate-100"><X className="w-5 h-5"/></button>

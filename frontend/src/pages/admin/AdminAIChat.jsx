@@ -86,7 +86,7 @@ const AdminAIChat = () => {
     if (loading) return <div className="p-10">Loading...</div>;
 
     return (
-        <div className="p-8 space-y-10 font-sans min-h-screen">
+        <div className="p-4 md:p-8 space-y-10 font-sans min-h-screen">
             
             <div className="flex items-center gap-4 border-b-4 border-slate-900 pb-6">
                 <div className="w-16 h-16 bg-slate-900 text-white rounded-3xl flex items-center justify-center transform rotate-3 shadow-[8px_8px_0px_0px_#4f46e5]">

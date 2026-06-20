@@ -351,3 +351,185 @@ exports.loginWithOTP = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.adminGetAllUsers = async (req, res) => {
+    try {
+        const { search, role, status } = req.query;
+        let query = {};
+
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } },
+                { username: { $regex: search, $options: 'i' } },
+                { staff_id: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        if (role) query.role = role;
+        if (status) query.status = status;
+
+        const users = await User.find(query).select('-password').sort({ createdAt: -1 });
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.adminCreateUser = async (req, res) => {
+    try {
+        const { 
+            name, email, username, password, role, phone, 
+            staff_id, department, designation, status, base_salary 
+        } = req.body;
+
+        if (!name || !email || !password || !role) {
+            return res.status(400).json({ message: 'Name, email, password, and role are required' });
+        }
+
+        // Build query to check duplicate
+        const duplicateCheck = [{ email }];
+        if (username) duplicateCheck.push({ username });
+        if (staff_id) duplicateCheck.push({ staff_id });
+
+        const userExists = await User.findOne({ $or: duplicateCheck });
+        if (userExists) {
+            return res.status(400).json({ message: 'User with this email, username, or Staff ID already exists' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const newUser = await User.create({
+            name,
+            email,
+            username: username || email,
+            password: hashedPassword,
+            role,
+            phone,
+            phoneNumber: phone,
+            staff_id,
+            department,
+            designation,
+            status: status || 'active',
+            base_salary: parseFloat(base_salary) || 0
+        });
+
+        // Try sending welcome email
+        if (email) {
+            sendWelcomeEmail(email, name).catch(err => console.error('Welcome email error:', err));
+        }
+
+        // Send WhatsApp welcome if phone is staff
+        if (role === 'staff' && phone) {
+            try {
+                const { sendWhatsAppMessage } = require('../services/whatsappService');
+                const welcomeMsg = `*Welcome to Krishna Engineering*\n\nHello *${name}*,\nYour staff account has been created.\n\n*ID:* ${staff_id || 'N/A'}\n*Role:* ${designation || 'Staff'}\n\nPlease register your biometrics on your first day.`;
+                sendWhatsAppMessage(phone, welcomeMsg).catch(err => console.error('WhatsApp Welcome Error:', err));
+            } catch (waErr) {
+                console.error("WhatsApp welcome skipped / failed:", waErr.message);
+            }
+        }
+
+        // Return new user without password
+        const userObj = newUser.toObject();
+        delete userObj.password;
+        res.status(201).json(userObj);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.adminUpdateUser = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const { 
+            name, email, username, password, role, phone, 
+            staff_id, department, designation, status, base_salary 
+        } = req.body;
+
+        // Validation for uniqueness if changing email/username/staff_id
+        if (email && email !== user.email) {
+            const emailDup = await User.findOne({ email });
+            if (emailDup) return res.status(400).json({ message: 'Email already registered' });
+            user.email = email;
+        }
+
+        if (username && username !== user.username) {
+            const usernameDup = await User.findOne({ username });
+            if (usernameDup) return res.status(400).json({ message: 'Username already in use' });
+            user.username = username;
+        }
+
+        if (staff_id && staff_id !== user.staff_id) {
+            const staffIdDup = await User.findOne({ staff_id });
+            if (staffIdDup) return res.status(400).json({ message: 'Staff ID already in use' });
+            user.staff_id = staff_id;
+        }
+
+        if (name) user.name = name;
+        if (role) user.role = role;
+        if (status) user.status = status;
+        
+        if (phone !== undefined) {
+            user.phone = phone;
+            user.phoneNumber = phone;
+        }
+
+        if (password) {
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(password, salt);
+        }
+
+        // Handle role specific parameters
+        if (role === 'staff') {
+            if (department !== undefined) user.department = department;
+            if (designation !== undefined) user.designation = designation;
+            if (base_salary !== undefined) user.base_salary = parseFloat(base_salary) || 0;
+            // Retain staff_id or allocate if new
+            if (staff_id) user.staff_id = staff_id;
+        } else {
+            // Clear staff properties if role changed
+            user.department = undefined;
+            user.designation = undefined;
+            user.staff_id = undefined;
+        }
+
+        await user.save();
+
+        const userObj = user.toObject();
+        delete userObj.password;
+        res.json({ message: 'User updated successfully', user: userObj });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.adminDeleteUser = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        if (userId === "00000000000000000000ad14") {
+            return res.status(400).json({ message: 'Cannot delete the master system administrator account' });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Clean up face biometrics if it exists
+        const FaceData = require('../models/FaceData');
+        await FaceData.deleteOne({ userId });
+
+        await user.deleteOne();
+        res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
