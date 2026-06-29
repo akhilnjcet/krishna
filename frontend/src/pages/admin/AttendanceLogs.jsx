@@ -9,6 +9,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ReportHeader from '../../components/ReportHeader';
 import { generateGeneralReportPDF } from '../../services/pdfService';
 
+const formatDateLocal = (d) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${date}`;
+};
+
 const AttendanceLogs = () => {
     const [activeTab, setActiveTab] = useState('hub'); // 'hub', 'logs'
     const [staffList, setStaffList] = useState([]);
@@ -176,7 +183,7 @@ const AttendanceLogs = () => {
             const staffGrid = calendarGrid[s._id] || {};
             
             daysInMonth.forEach(day => {
-                const dateStr = day.toISOString().split('T')[0];
+                const dateStr = formatDateLocal(day);
                 const status = staffGrid[dateStr];
                 if (status === 'Present') present++;
                 else if (status === 'Absent') absent++;
@@ -371,9 +378,9 @@ const AttendanceLogs = () => {
                                         <th className="px-6 py-4 font-bold text-slate-600 bg-white sticky left-0 z-30 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] min-w-[200px]">Staff Details</th>
                                         <th className="px-6 py-4 font-bold text-slate-600 text-center">Score %</th>
                                         {activeDays.map(day => {
-                                            const dateStr = day.toISOString().split('T')[0];
+                                            const dateStr = formatDateLocal(day);
                                             const dayNum = day.getDate();
-                                            const isToday = dateStr === new Date().toISOString().split('T')[0];
+                                            const isToday = dateStr === formatDateLocal(new Date());
                                             return (
                                                 <th 
                                                     key={dateStr} 
@@ -425,7 +432,7 @@ const AttendanceLogs = () => {
                                                 </td>
                                                 
                                                 {activeDays.map(day => {
-                                                    const dateStr = day.toISOString().split('T')[0];
+                                                    const dateStr = formatDateLocal(day);
                                                     const status = staffGrid[dateStr];
                                                     
                                                     return (
