@@ -31,14 +31,34 @@ exports.calculateDraftPayroll = async (req, res) => {
         let halfDays = 0;
         let leaveDays = 0;
         let holidays = 0;
+        let workedSundays = 0;
+        let workedSundayHalfDays = 0;
+        let weekdayAbsentDays = 0;
+        let weekdayHalfDays = 0;
         const totalWorkingDays = attendance.length;
 
         attendance.forEach(a => {
-            if (a.status === 'Present') presentDays++;
-            else if (a.status === 'Absent') absentDays++;
-            else if (a.status === 'Half Day') halfDays++;
-            else if (a.status === 'Leave') leaveDays++;
-            else if (a.status === 'Holiday') holidays++;
+            const dateObj = new Date(a.date);
+            const isSunday = dateObj.getDay() === 0;
+
+            if (a.status === 'Present') {
+                presentDays++;
+                if (isSunday) workedSundays++;
+            } else if (a.status === 'Absent') {
+                absentDays++;
+                if (!isSunday) weekdayAbsentDays++;
+            } else if (a.status === 'Half Day') {
+                halfDays++;
+                if (isSunday) {
+                    workedSundayHalfDays++;
+                } else {
+                    weekdayHalfDays++;
+                }
+            } else if (a.status === 'Leave') {
+                leaveDays++;
+            } else if (a.status === 'Holiday') {
+                holidays++;
+            }
         });
 
         // 2. Calculate Base Salary based on Salary Type
@@ -49,12 +69,17 @@ exports.calculateDraftPayroll = async (req, res) => {
         if (salaryType === 'Daily Wage') {
             calculatedBase = baseSalary * (presentDays + (halfDays * 0.5));
         } else {
-            // 'Monthly' or 'Contract' - full base salary minus absent days and half-days deductions based on calendar days in month
+            // 'Monthly' or 'Contract' - full base salary minus weekday absent/half-day deductions, plus worked Sundays additions
             const [yearStr, monthStr] = month.split('-');
             const calendarDays = new Date(Number(yearStr), Number(monthStr), 0).getDate() || 30;
-            const absentDeduction = absentDays * (baseSalary / calendarDays);
-            const halfDayDeduction = halfDays * 0.5 * (baseSalary / calendarDays);
-            calculatedBase = Math.max(0, Math.round(baseSalary - absentDeduction - halfDayDeduction));
+            const dailyRate = baseSalary / calendarDays;
+            
+            const absentDeduction = weekdayAbsentDays * dailyRate;
+            const halfDayDeduction = weekdayHalfDays * 0.5 * dailyRate;
+            const regularCalculatedBase = baseSalary - absentDeduction - halfDayDeduction;
+
+            const sundayAddition = (workedSundays * dailyRate) + (workedSundayHalfDays * 0.5 * dailyRate);
+            calculatedBase = Math.max(0, Math.round(regularCalculatedBase + sundayAddition));
         }
 
         // 3. Fetch Overtime records for the month
