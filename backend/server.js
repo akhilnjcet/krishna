@@ -95,6 +95,26 @@ app.get('/api/debug/error', (req, res) => {
     res.json({ status: 'Operational', msg: 'System monitoring active.' });
 });
 
+// Temporary Route to clean Sunday absent logs
+app.get('/api/debug/cleanup-sundays', async (req, res) => {
+    try {
+        const DailyAttendance = require('./models/DailyAttendance');
+        const records = await DailyAttendance.find({ status: 'Absent' });
+        
+        let deletedCount = 0;
+        for (const r of records) {
+            const dateObj = new Date(r.date);
+            if (dateObj.getDay() === 0) { // Sunday
+                await DailyAttendance.deleteOne({ _id: r._id });
+                deletedCount++;
+            }
+        }
+        res.json({ success: true, checked: records.length, deleted: deletedCount });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Public WhatsApp Health Check
 app.get('/api/health/whatsapp', async (req, res) => {
     try {
