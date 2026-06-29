@@ -20,15 +20,21 @@ const AttendanceScanner = () => {
     const streamRef = useRef(null);
     const scanActiveRef = useRef(false);
     const [stats, setStats] = useState({ blinkCount: 0, quality: 0 });
-
     const stopCamera = () => {
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
         }
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
+        }
     };
 
+    const isInitializingRef = useRef(false);
+
     useEffect(() => {
+        startScan();
+
         return () => {
             scanActiveRef.current = false;
             stopCamera();
@@ -36,20 +42,18 @@ const AttendanceScanner = () => {
     }, []);
 
     const startScan = async () => {
+        if (isInitializingRef.current) return;
+        isInitializingRef.current = true;
+
         hapticService.light();
         setStatus('loading_models');
         setMessage('Synchronizing AI Biometrics...');
 
-        const modelsReady = await loadFaceModels();
-        if (!modelsReady) {
-            setStatus('error');
-            setMessage('Biometric Engine initialization failed.');
-            return;
-        }
+        // Step 1: Preload models in the background
+        const modelPromise = loadFaceModels();
 
-        setStatus('scanning');
-        setMessage('Activating Optical Sensor...');
-
+        // Step 2: Initialize camera immediately in parallel
+        const camStart = performance.now();
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } 
@@ -60,57 +64,100 @@ const AttendanceScanner = () => {
                 videoRef.current.srcObject = stream;
                 await videoRef.current.play();
             }
+            const camDuration = performance.now() - camStart;
+            console.log(`[PERF] Camera initialization: ${camDuration.toFixed(2)}ms`);
 
-            scanActiveRef.current = true;
-            let blinkDetected = false;
-            let highestScore = 0;
-            let bestDescriptor = null;
-
-            const scanLoop = async () => {
-                if (!scanActiveRef.current) return;
-
-                const result = await detectFaceAndLiveness(videoRef, canvasRef);
-
-                if (result) {
-                    setStats(prev => ({ ...prev, quality: Math.round(result.score * 100) }));
-
-                    if (!blinkDetected && result.isBlinking) {
-                        blinkDetected = true;
-                        setStats(prev => ({ ...prev, blinkCount: 1 }));
-                        setMessage('Liveness Verified. Holding for profile match...');
-                    }
-
-                    // Accept best frame (blink optional for speed, but preferred)
-                    if (result.score > 0.7) {
-                        if (result.score > highestScore) {
-                            highestScore = result.score;
-                            bestDescriptor = result.descriptor;
-                        }
-                    }
-
-                    // Trigger verification once we have a confident descriptor
-                    // If blink detected: threshold 0.75, otherwise require 0.85
-                    const threshold = blinkDetected ? 0.75 : 0.85;
-                    if (bestDescriptor && highestScore > threshold) {
-                        scanActiveRef.current = false;
-                        verifyIdentity(bestDescriptor);
-                        return;
-                    } else if (!blinkDetected) {
-                        setMessage('Face detected. Blink to verify liveness...');
-                    }
-                } else {
-                    setMessage('Align face within the secure perimeter.');
-                    setStats(prev => ({ ...prev, quality: 0 }));
-                }
-
-                if (scanActiveRef.current) requestAnimationFrame(scanLoop);
-            };
-
-            scanLoop();
-        } catch (_err) {
+            // Immediately display camera preview while models finish loading in the background
+            setStatus('scanning');
+            setMessage('Optical link active. Synchronizing AI...');
+        } catch (camErr) {
+            console.error('Camera initialization failed:', camErr);
             setStatus('error');
             setMessage('Optical Hardware Access Denied.');
+            isInitializingRef.current = false;
+            return;
         }
+
+        // Step 3: Wait for face models to finish loading
+        const modelStart = performance.now();
+        const modelsReady = await modelPromise;
+        const modelDuration = performance.now() - modelStart;
+        console.log(`[PERF] Model loading: ${modelDuration.toFixed(2)}ms`);
+
+        if (!modelsReady) {
+            setStatus('error');
+            setMessage('AI Biometrics initialization failed.');
+            stopCamera();
+            isInitializingRef.current = false;
+            return;
+        }
+
+        isInitializingRef.current = false;
+        runDetectionLoop();
+    };
+
+    const runDetectionLoop = () => {
+        scanActiveRef.current = true;
+        let blinkDetected = false;
+        let highestScore = 0;
+        let bestDescriptor = null;
+        let lastAnalysisTime = 0;
+        const ANALYSIS_INTERVAL = 150; // Throttled frequency (run at most once every 150ms)
+
+        const scanLoop = async () => {
+            if (!scanActiveRef.current) return;
+
+            const nowTime = performance.now();
+            if (nowTime - lastAnalysisTime >= ANALYSIS_INTERVAL) {
+                lastAnalysisTime = nowTime;
+
+                try {
+                    const detectStart = performance.now();
+                    const result = await detectFaceAndLiveness(videoRef, canvasRef);
+                    const detectDuration = performance.now() - detectStart;
+                    console.log(`[PERF] Throttled face detection & liveness check: ${detectDuration.toFixed(2)}ms`);
+
+                    if (result) {
+                        setStats(prev => ({ ...prev, quality: Math.round(result.score * 100) }));
+
+                        if (!blinkDetected && result.isBlinking) {
+                            blinkDetected = true;
+                            setStats(prev => ({ ...prev, blinkCount: 1 }));
+                            setMessage('Liveness Verified. Holding for profile match...');
+                        }
+
+                        if (result.score > 0.7) {
+                            if (result.score > highestScore) {
+                                highestScore = result.score;
+                                bestDescriptor = result.descriptor;
+                            }
+                        }
+
+                        const threshold = blinkDetected ? 0.75 : 0.85;
+                        if (bestDescriptor && highestScore > threshold) {
+                            scanActiveRef.current = false;
+                            verifyIdentity(bestDescriptor);
+                            return;
+                        } else if (!blinkDetected) {
+                            setMessage('Face detected. Blink to verify liveness...');
+                        }
+                    } else {
+                        setMessage('Align face within the secure perimeter.');
+                        setStats(prev => ({ ...prev, quality: 0 }));
+                    }
+                } catch (err) {
+                    console.error('Face detection failure:', err);
+                    scanActiveRef.current = false;
+                    setStatus('error');
+                    setMessage('Face recognition model error. Please retry.');
+                    return;
+                }
+            }
+
+            if (scanActiveRef.current) requestAnimationFrame(scanLoop);
+        };
+
+        scanLoop();
     };
 
     const verifyIdentity = async (descriptor) => {
@@ -118,7 +165,8 @@ const AttendanceScanner = () => {
         setMessage('Matching high-fidelity descriptor...');
 
         try {
-            const res = await api.post('/auth/verify-face', { descriptor });
+            const device = navigator.userAgent;
+            const res = await api.post('/auth/verify-face', { descriptor, device });
 
             if (res.data.success) {
                 const matchedUser = res.data.user;
@@ -130,12 +178,21 @@ const AttendanceScanner = () => {
                 setMessage(`${res.data.logType === 'IN' ? 'SHIFT IN' : 'SHIFT OUT'} REGISTERED: ${matchedUser.name}`);
             }
         } catch (error) {
-            stopCamera();
             hapticService.error();
             setStatus('error');
             setMessage(error.response?.data?.message === 'Face Not Recognized' 
-                ? 'Identity Mismatch. Please retry with better lighting.' 
+                ? 'Face verification failed. Unauthorized person detected. Please try again with the registered staff member.' 
                 : 'Cryptographic handshake failed.');
+            
+            // Re-use active camera stream: automatically resume detection loop after 3 seconds on verification failure
+            setTimeout(() => {
+                if (streamRef.current) {
+                    setStatus('scanning');
+                    setMessage('Resuming biometric scan...');
+                    setStats({ blinkCount: 0, quality: 0 });
+                    runDetectionLoop();
+                }
+            }, 3000);
         }
     };
 

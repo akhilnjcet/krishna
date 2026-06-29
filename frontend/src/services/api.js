@@ -19,13 +19,28 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // Only redirect to login if the error is 401 AND we are not currently trying to log in
-        if (error.response?.status === 401 && !error.config.url.includes('/auth/login')) {
+        // Only redirect to login if the error is 401 AND we are not currently trying to log in or verify face
+        if (error.response?.status === 401 && !error.config.url.includes('/auth/login') && !error.config.url.includes('/auth/verify-face')) {
             useAuthStore.getState().logout();
             window.location.href = '/login';
         }
         return Promise.reject(error);
     }
 );
+
+const cache = {};
+const originalGet = api.get;
+api.get = function (url, config) {
+    if (url === '/settings/public') {
+        if (cache[url]) {
+            return Promise.resolve(cache[url]);
+        }
+        return originalGet.call(this, url, config).then(res => {
+            cache[url] = res;
+            return res;
+        });
+    }
+    return originalGet.call(this, url, config);
+};
 
 export default api;

@@ -3,7 +3,7 @@ import api from '../../services/api';
 import { 
   TrendingUp, TrendingDown, DollarSign, Plus, Trash2, Loader2, 
   AlertCircle, PieChart, Activity, Download, Banknote, Edit, Check, X,
-  Briefcase, Landmark, CreditCard, Wallet, Calendar, UserCheck
+  Briefcase, Landmark, CreditCard, Wallet, Calendar, UserCheck, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReportHeader from '../../components/ReportHeader';
@@ -62,6 +62,108 @@ const AdminFinance = () => {
         hours: '',
         remarks: ''
     });
+
+    // Payment Transaction States
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentForm, setPaymentForm] = useState({
+        staffId: '',
+        staffName: '',
+        month: '',
+        totalEarnedSalary: 0,
+        salaryAlreadyPaid: 0,
+        salaryAdvance: 0,
+        remainingBalance: 0,
+        amount: '',
+        type: 'Partial',
+        paymentMethod: 'Cash',
+        notes: ''
+    });
+
+    const [showOverpaymentWarning, setShowOverpaymentWarning] = useState(false);
+    const [overpaymentForm, setOverpaymentForm] = useState({
+        approvedBy: '',
+        reason: ''
+    });
+
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [historyStaffName, setHistoryStaffName] = useState('');
+    const [historyList, setHistoryList] = useState([]);
+
+    const handleOpenPaymentModal = (staff, record) => {
+        const totalEarned = record ? (record.totalEarnedSalary || record.netSalary || 0) : (staff.base_salary || 0);
+        const alreadyPaid = record ? (record.salaryAlreadyPaid || 0) : 0;
+        const advancePaid = record ? (record.salaryAdvance || 0) : 0;
+        const remBalance = totalEarned - alreadyPaid - advancePaid;
+
+        setPaymentForm({
+            staffId: staff._id,
+            staffName: staff.name,
+            month: selectedMonth,
+            totalEarnedSalary: totalEarned,
+            salaryAlreadyPaid: alreadyPaid,
+            salaryAdvance: advancePaid,
+            remainingBalance: remBalance,
+            amount: remBalance > 0 ? remBalance.toString() : '0',
+            type: 'Partial',
+            paymentMethod: 'Cash',
+            notes: ''
+        });
+        setShowPaymentModal(true);
+    };
+
+    const handleOpenHistoryModal = (staff, record) => {
+        setHistoryStaffName(staff.name);
+        setHistoryList(record && record.payments ? record.payments : []);
+        setShowHistoryModal(true);
+    };
+
+    const handleDisbursePayment = async (e) => {
+        if (e) e.preventDefault();
+        
+        const enteredAmt = parseFloat(paymentForm.amount);
+        if (isNaN(enteredAmt) || enteredAmt <= 0) {
+            alert("Please enter a valid payment amount.");
+            return;
+        }
+
+        // Check for overpayment
+        if (enteredAmt > paymentForm.remainingBalance) {
+            setShowOverpaymentWarning(true);
+            return;
+        }
+
+        await submitPaymentTransaction(false);
+    };
+
+    const submitPaymentTransaction = async (isOverpayment) => {
+        setActionLoading(true);
+        try {
+            const payload = {
+                staffId: paymentForm.staffId,
+                month: paymentForm.month,
+                amount: parseFloat(paymentForm.amount),
+                type: isOverpayment ? 'Overpayment' : paymentForm.type,
+                paymentMethod: paymentForm.paymentMethod,
+                notes: paymentForm.notes,
+                exceededAllowed: isOverpayment,
+                approvedBy: isOverpayment ? overpaymentForm.approvedBy : undefined,
+                reason: isOverpayment ? overpaymentForm.reason : undefined
+            };
+
+            await api.post('/payroll/payment-transaction', payload);
+            alert("Payment transaction recorded successfully.");
+            
+            setShowPaymentModal(false);
+            setShowOverpaymentWarning(false);
+            setOverpaymentForm({ approvedBy: '', reason: '' });
+            await fetchAllData();
+        } catch (err) {
+            console.error("Payment failed", err);
+            alert(err.response?.data?.message || "Failed to disburse payment.");
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
     // Fetch Global Roster, Attendance, Payroll, and Overtime
     const fetchGlobalData = useCallback(async () => {
@@ -485,11 +587,11 @@ const AdminFinance = () => {
                                     <tr className="bg-slate-50 border-b border-slate-200">
                                         <th className="px-6 py-5 font-bold text-slate-600">Employee Details</th>
                                         <th className="px-6 py-5 font-bold text-slate-600">Type / Base</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Attendance Summary</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Overtime Details</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Deductions & Advances</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Bonus</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Net Calculated</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Total Earned</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Already Paid</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Salary Advance</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Remaining Balance</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Outstanding</th>
                                         <th className="px-6 py-5 font-bold text-slate-600">Status</th>
                                         <th className="px-6 py-5 font-bold text-slate-600 text-right">Actions</th>
                                     </tr>
@@ -518,60 +620,28 @@ const AdminFinance = () => {
                                                         <p className="font-bold text-indigo-600 mt-0.5">₹ {staff.base_salary?.toLocaleString()}</p>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-5">
-                                                    {record ? (
-                                                        <div className="font-semibold text-slate-600 space-y-0.5">
-                                                            <p><span className="text-emerald-600 font-extrabold">P:</span> {record.presentDays} | <span className="text-amber-500 font-extrabold">H:</span> {record.halfDays}</p>
-                                                            <p><span className="text-rose-600 font-extrabold">A:</span> {record.absentDays} | <span className="text-purple-600 font-extrabold">L:</span> {record.leaveDays}</p>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-slate-400 italic">Generate Draft</span>
-                                                    )}
+                                                <td className="px-6 py-5 font-bold text-slate-900">
+                                                    ₹ {(record?.totalEarnedSalary ?? record?.netSalary ?? 0).toLocaleString()}
+                                                </td>
+                                                <td className="px-6 py-5 font-semibold text-slate-755">
+                                                    ₹ {(record?.salaryAlreadyPaid ?? 0).toLocaleString()}
+                                                </td>
+                                                <td className="px-6 py-5 font-semibold text-slate-755">
+                                                    ₹ {(record?.salaryAdvance ?? 0).toLocaleString()}
+                                                </td>
+                                                <td className="px-6 py-5 font-black text-indigo-600">
+                                                    ₹ {(record?.remainingBalance ?? record?.netSalary ?? 0).toLocaleString()}
+                                                </td>
+                                                <td className="px-6 py-5 font-bold text-rose-600">
+                                                    ₹ {(record?.outstandingAmount ?? 0).toLocaleString()}
                                                 </td>
                                                 <td className="px-6 py-5">
-                                                    {record ? (
-                                                        <div>
-                                                            <p className="font-semibold text-slate-700">{record.overtimeHours} hrs</p>
-                                                            <p className="font-bold text-emerald-600">₹ {record.overtimeEarnings?.toLocaleString()}</p>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-slate-400 italic">-</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    {record ? (
-                                                        <div className="font-semibold text-slate-600 space-y-0.5">
-                                                            <p>Ded: <span className="text-rose-500 font-bold">₹{record.deductions}</span></p>
-                                                            <p>Adv: <span className="text-rose-500 font-bold">₹{record.advanceRecovery}</span></p>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-slate-400 italic">-</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    {record ? (
-                                                        <span className="font-bold text-emerald-600">₹ {record.bonus?.toLocaleString() || record.bonusAmount?.toLocaleString() || 0}</span>
-                                                    ) : (
-                                                        <span className="text-slate-400 italic">-</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    {record ? (
-                                                        <span className="font-black text-slate-900 text-sm">₹ {record.netSalary?.toLocaleString()}</span>
-                                                    ) : (
-                                                        <span className="text-slate-400 italic">-</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    {locked ? (
-                                                        <span className={`inline-flex px-2.5 py-1 rounded-lg font-black uppercase tracking-wider text-[9px] ${
-                                                            locked.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                                                        }`}>
-                                                            {locked.paymentStatus}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-slate-400 uppercase font-black text-[9px] tracking-wider bg-slate-100 px-2.5 py-1 rounded-lg">DRAFT</span>
-                                                    )}
+                                                    <span className={`inline-flex px-2.5 py-1 rounded-lg font-black uppercase tracking-wider text-[9px] ${
+                                                        record?.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-700' : 
+                                                        record?.paymentStatus === 'partially_paid' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-700'
+                                                    }`}>
+                                                        {record?.paymentStatus ?? 'DRAFT'}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-5 text-right">
                                                     <div className="flex items-center justify-end gap-1.5">
@@ -611,29 +681,33 @@ const AdminFinance = () => {
                                                             </button>
                                                         )}
 
-                                                        {/* Mark Paid / Mark Unpaid */}
+                                                        {/* Disburse Payment / Advance */}
+                                                        <button 
+                                                            title="Disburse Payment or Advance"
+                                                            onClick={() => handleOpenPaymentModal(staff, record)}
+                                                            className="px-3 py-2 bg-indigo-600 hover:bg-indigo-755 hover:bg-indigo-700 text-white rounded-lg font-bold transition"
+                                                        >
+                                                            Disburse
+                                                        </button>
+
+                                                        {/* View History */}
+                                                        <button 
+                                                            title="View Payment History"
+                                                            onClick={() => handleOpenHistoryModal(staff, record)}
+                                                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition"
+                                                        >
+                                                            <Activity className="w-4 h-4" />
+                                                        </button>
+
+                                                        {/* Download slip */}
                                                         {locked && (
-                                                            <>
-                                                                <button 
-                                                                    title={locked.paymentStatus === 'paid' ? 'Mark Unpaid' : 'Disburse Payout'}
-                                                                    disabled={actionLoading}
-                                                                    onClick={() => handleTogglePaymentStatus(locked._id, locked.paymentStatus, locked.netSalary, staff.name, staff.staff_id)}
-                                                                    className={`px-3 py-2 rounded-lg font-bold transition ${
-                                                                        locked.paymentStatus === 'paid' ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                                                    }`}
-                                                                >
-                                                                    {locked.paymentStatus === 'paid' ? 'Unpay' : 'Pay'}
-                                                                </button>
-                                                                
-                                                                {/* Download slip */}
-                                                                <button 
-                                                                    title="Download salary slip"
-                                                                    onClick={() => generateSalaryPDF(locked, staff)}
-                                                                    className="p-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-lg transition"
-                                                                >
-                                                                    <Download className="w-4 h-4" />
-                                                                </button>
-                                                            </>
+                                                            <button 
+                                                                title="Download salary slip"
+                                                                onClick={() => generateSalaryPDF(locked, staff)}
+                                                                className="p-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-lg transition"
+                                                            >
+                                                                <Download className="w-4 h-4" />
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </td>
@@ -964,6 +1038,251 @@ const AdminFinance = () => {
                                     Commit Entry
                                 </button>
                             </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* MODAL: DISBURSE SALARY PAYMENT / ADVANCE */}
+            <AnimatePresence>
+                {showPaymentModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                                <h3 className="text-lg font-black text-slate-900 uppercase">Disburse Payment</h3>
+                                <button onClick={() => setShowPaymentModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
+                                    <X className="w-5 h-5 text-slate-400" />
+                                </button>
+                            </div>
+                            
+                            <form onSubmit={handleDisbursePayment} className="p-6 space-y-4">
+                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 space-y-2 text-xs">
+                                    <p className="font-bold text-slate-500">Employee: <span className="text-slate-900 font-extrabold">{paymentForm.staffName}</span></p>
+                                    <p className="font-bold text-slate-500">Cycle: <span className="text-slate-900 font-extrabold">{paymentForm.month}</span></p>
+                                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60">
+                                        <p className="text-slate-500">Total Earned: <span className="font-extrabold text-slate-900">₹{paymentForm.totalEarnedSalary.toLocaleString()}</span></p>
+                                        <p className="text-slate-500">Already Paid: <span className="font-extrabold text-slate-900">₹{paymentForm.salaryAlreadyPaid.toLocaleString()}</span></p>
+                                        <p className="text-slate-500">Advance Paid: <span className="font-extrabold text-slate-900">₹{paymentForm.salaryAdvance.toLocaleString()}</span></p>
+                                        <p className="text-indigo-600 font-extrabold">Remaining: <span>₹{paymentForm.remainingBalance.toLocaleString()}</span></p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Payment Type</label>
+                                        <select
+                                            required
+                                            value={paymentForm.type}
+                                            onChange={e => setPaymentForm({...paymentForm, type: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        >
+                                            <option value="Partial">Partial Salary</option>
+                                            <option value="Advance">Salary Advance</option>
+                                            <option value="Final Settlement">Final Settlement</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Payment Amount (₹)</label>
+                                        <input 
+                                            required
+                                            type="number"
+                                            value={paymentForm.amount}
+                                            onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Payment Method</label>
+                                        <select
+                                            required
+                                            value={paymentForm.paymentMethod}
+                                            onChange={e => setPaymentForm({...paymentForm, paymentMethod: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        >
+                                            <option value="Cash">Cash</option>
+                                            <option value="UPI">UPI</option>
+                                            <option value="Bank Transfer">Bank Transfer</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Notes / Remarks</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="e.g. Paid mid-month advance"
+                                            value={paymentForm.notes}
+                                            onChange={e => setPaymentForm({...paymentForm, notes: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <button 
+                                    type="submit" 
+                                    disabled={actionLoading}
+                                    className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black uppercase tracking-wider text-xs py-4 rounded-xl transition active:scale-95 flex items-center justify-center disabled:opacity-50"
+                                >
+                                    {actionLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                                    Disburse Payment
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* MODAL: PREVENT ACCIDENTAL OVERPAYMENT WARNING */}
+            <AnimatePresence>
+                {showOverpaymentWarning && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white w-full max-w-md rounded-3xl shadow-2xl border-4 border-rose-500 overflow-hidden"
+                        >
+                            <div className="p-6 bg-rose-50 border-b border-rose-100 flex items-center gap-3">
+                                <AlertCircle className="w-8 h-8 text-rose-600 shrink-0" />
+                                <div>
+                                    <h3 className="text-xl font-black text-rose-900 leading-none">Warning!</h3>
+                                    <p className="text-rose-700 text-[10px] font-bold uppercase tracking-wider mt-1">Accidental Overpayment Detected</p>
+                                </div>
+                            </div>
+                            
+                            <div className="p-6 space-y-4">
+                                <p className="text-xs text-slate-600 font-bold leading-relaxed">
+                                    The entered payment amount is greater than the employee's remaining payable salary based on working hours.
+                                </p>
+                                
+                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
+                                    <p className="text-slate-600 font-bold">Remaining Balance: <span className="text-slate-900 font-black">₹{parseFloat(paymentForm.remainingBalance).toLocaleString()}</span></p>
+                                    <p className="text-slate-600 font-bold">Entered Amount: <span className="text-rose-600 font-black">₹{parseFloat(paymentForm.amount).toLocaleString()}</span></p>
+                                </div>
+
+                                <div className="space-y-3 pt-2">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Approved By (Your Name)</label>
+                                        <input 
+                                            required
+                                            type="text"
+                                            placeholder="Enter admin name"
+                                            value={overpaymentForm.approvedBy}
+                                            onChange={e => setOverpaymentForm({...overpaymentForm, approvedBy: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Reason for Overpayment</label>
+                                        <input 
+                                            required
+                                            type="text"
+                                            placeholder="Specify approval reason"
+                                            value={overpaymentForm.reason}
+                                            onChange={e => setOverpaymentForm({...overpaymentForm, reason: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 pt-2">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowOverpaymentWarning(false)}
+                                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black uppercase tracking-wider text-xs py-4 rounded-xl transition active:scale-95 text-center"
+                                    >
+                                        No, Edit Amount
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        disabled={!overpaymentForm.approvedBy || !overpaymentForm.reason || actionLoading}
+                                        onClick={() => submitPaymentTransaction(true)}
+                                        className="bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-black uppercase tracking-wider text-xs py-4 rounded-xl transition active:scale-95 text-center flex items-center justify-center"
+                                    >
+                                        {actionLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                                        Yes, Continue
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* MODAL: VIEW PAYMENT HISTORY */}
+            <AnimatePresence>
+                {showHistoryModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900 uppercase">Payment Ledger History</h3>
+                                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{historyStaffName} • Cycle: {selectedMonth}</p>
+                                </div>
+                                <button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
+                                    <X className="w-5 h-5 text-slate-400" />
+                                </button>
+                            </div>
+                            
+                            <div className="p-6 space-y-4 max-h-[500px] overflow-y-auto">
+                                {historyList.length === 0 ? (
+                                    <div className="text-center py-12 text-slate-400 font-bold">
+                                        No transaction logs recorded for this payroll cycle.
+                                    </div>
+                                ) : (
+                                    <table className="w-full border-collapse text-left text-xs">
+                                        <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-200">
+                                                <th className="px-4 py-3 font-bold text-slate-600">Date & Time</th>
+                                                <th className="px-4 py-3 font-bold text-slate-600">Type</th>
+                                                <th className="px-4 py-3 font-bold text-slate-600">Method</th>
+                                                <th className="px-4 py-3 font-bold text-slate-600">Amount</th>
+                                                <th className="px-4 py-3 font-bold text-slate-600">Remarks</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {historyList.map((tx, idx) => (
+                                                <tr key={tx._id || idx} className="hover:bg-slate-50/50 transition">
+                                                    <td className="px-4 py-3 font-medium text-slate-500">
+                                                        {new Date(tx.createdAt).toLocaleString()}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <span className={`inline-flex px-2 py-0.5 rounded font-black text-[9px] uppercase tracking-wider ${
+                                                            tx.type === 'Advance' ? 'bg-amber-50 text-amber-700' :
+                                                            tx.type === 'Overpayment' ? 'bg-rose-50 text-rose-700' : 'bg-indigo-50 text-indigo-700'
+                                                        }`}>
+                                                            {tx.type}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 font-bold text-slate-600">{tx.paymentMethod}</td>
+                                                    <td className="px-4 py-3 font-extrabold text-slate-900">₹{tx.amount.toLocaleString()}</td>
+                                                    <td className="px-4 py-3 text-slate-500">
+                                                        <p>{tx.notes || '-'}</p>
+                                                        {tx.exceededAllowed && (
+                                                            <div className="mt-1 bg-rose-50 text-rose-700 p-1.5 rounded border border-rose-100 text-[9px] font-semibold">
+                                                                Overpayment Approved By: {tx.approvedBy}<br/>
+                                                                Reason: {tx.reason}
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
                         </motion.div>
                     </div>
                 )}

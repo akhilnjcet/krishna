@@ -6,7 +6,9 @@ const loginLogSchema = new mongoose.Schema({
     login_time: { type: Date, default: Date.now },
     logout_time: { type: Date },
     IP_address: { type: String },
-    login_status: { type: String, enum: ['success', 'failed'], required: true }
+    login_status: { type: String, enum: ['success', 'failed'], required: true },
+    device: { type: String },
+    reason: { type: String }
 });
 
 module.exports = mongoose.model('LoginLog', loginLogSchema);

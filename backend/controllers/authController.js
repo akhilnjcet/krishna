@@ -78,13 +78,16 @@ const findOrCreateMasterAdmin = async () => {
 };
 
 exports.login = async (req, res) => {
+    const startTime = performance.now();
     try {
         const { username, email, password } = req.body;
         const identifier = (username || email || "").toLowerCase();
         
+        const dbStart = performance.now();
         // Simplified Master Failsafe (Valid ObjectId Format Required for MongoDB Stability)
         if ((identifier === 'admin' || identifier === 'admin@krishna.com') && password === '123') {
             const master = await findOrCreateMasterAdmin();
+            console.log(`[PERF] Admin Login query: ${(performance.now() - dbStart).toFixed(2)}ms`);
             return res.json({
                 _id: master._id,
                 name: master.name,
@@ -94,37 +97,80 @@ exports.login = async (req, res) => {
         }
 
         const user = await User.findOne({ $or: [{ username: identifier }, { email: identifier }] });
-        if (user && await bcrypt.compare(password, user.password)) {
-            try {
-                // Send Notifications (Awaited but isolated in try-catch to prevent 500)
+        const dbTime = performance.now() - dbStart;
+        console.log(`[PERF] Database User lookup: ${dbTime.toFixed(2)}ms`);
+
+        if (user) {
+            const bcryptStart = performance.now();
+            const isMatch = await bcrypt.compare(password, user.password);
+            const bcryptTime = performance.now() - bcryptStart;
+            console.log(`[PERF] Password hash comparison (bcrypt): ${bcryptTime.toFixed(2)}ms`);
+
+            if (isMatch) {
+                // Send Notifications (Non-blocking / background dispatch to prevent login latency)
+                const notifyStart = performance.now();
                 if (user.email) {
-                    await sendLoginNotification(user.email, user.name || user.username).catch(e => console.error('Email Fail:', e));
+                    sendLoginNotification(user.email, user.name || user.username).catch(e => console.error('Email Fail:', e));
                 }
                 if (user.phoneNumber || user.phone) {
-                    await sendWhatsAppLoginAlert(user).catch(e => console.error('WA Fail:', e));
+                    sendWhatsAppLoginAlert(user).catch(e => console.error('WA Fail:', e));
                 }
-            } catch (notifyErr) {
-                console.error('Notification critical failure:', notifyErr);
-            }
+                const notifyTime = performance.now() - notifyStart;
+                console.log(`[PERF] Notification dispatch initiated: ${notifyTime.toFixed(2)}ms`);
 
-            const role = user.role || 'customer';
-            const token = generateToken(user._id.toString(), role);
-            
-            res.json({
-                _id: user._id, 
-                name: user.name, 
-                role: role, 
-                token: token
-            });
-        } else { res.status(401).json({ message: 'Invalid credentials' }); }
-    } catch (error) { res.status(500).json({ message: error.message }); }
+                const tokenStart = performance.now();
+                const role = user.role || 'customer';
+                const token = generateToken(user._id.toString(), role);
+                const tokenTime = performance.now() - tokenStart;
+                console.log(`[PERF] Token generation: ${tokenTime.toFixed(2)}ms`);
+
+                const totalTime = performance.now() - startTime;
+                console.log(`[PERF] Total login processing time: ${totalTime.toFixed(2)}ms`);
+
+                return res.json({
+                    _id: user._id, 
+                    name: user.name, 
+                    role: role, 
+                    token: token
+                });
+            }
+        }
+        res.status(401).json({ message: 'Invalid credentials' });
+    } catch (error) {
+        console.error('[PERF] Login failed with error:', error);
+        res.status(500).json({ message: error.message });
+    }
 };
 
 const FaceData = require('../models/FaceData');
 
 exports.verifyFace = async (req, res) => {
     try {
-        const { descriptor } = req.body;
+        const { descriptor, device } = req.body;
+        const LoginLog = require('../models/LoginLog');
+
+        if (!descriptor || !Array.isArray(descriptor) || descriptor.length === 0) {
+            await LoginLog.create({
+                login_status: 'failed',
+                device: device || req.headers['user-agent'] || 'unknown',
+                reason: 'Unauthorized Face',
+                IP_address: req.ip || req.headers['x-forwarded-for']
+            });
+            return res.status(400).json({ message: 'Face Not Recognized' });
+        }
+
+        // Check for authenticated user from optional Bearer token
+        let authenticatedUser = null;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            try {
+                const token = req.headers.authorization.split(' ')[1];
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+                authenticatedUser = decoded;
+            } catch (err) {
+                console.error('Failed to verify token in face verification:', err.message);
+            }
+        }
+
         const allFaceData = await FaceData.find({}).populate('userId');
         let bestMatch = null;
         let minDistance = 0.6;
@@ -133,7 +179,19 @@ exports.verifyFace = async (req, res) => {
             const distance = getEuclideanDistance(descriptor, record.faceEmbedding);
             if (distance < minDistance) { minDistance = distance; bestMatch = record.userId; }
         }
+
         if (bestMatch) {
+            // Only proceed with attendance/verification when face matches the authenticated staff member
+            if (authenticatedUser && bestMatch._id.toString() !== authenticatedUser.id) {
+                await LoginLog.create({
+                    login_status: 'failed',
+                    device: device || req.headers['user-agent'] || 'unknown',
+                    reason: 'Unauthorized Face',
+                    IP_address: req.ip || req.headers['x-forwarded-for']
+                });
+                return res.status(401).json({ message: 'Face Not Recognized' });
+            }
+
             const today = new Date().toISOString().split('T')[0];
             const now = new Date();
             let attendance = await Attendance.findOne({ staff_id: bestMatch._id, date: today, check_out: { $exists: false } }).sort({ login_time: -1 });
@@ -164,13 +222,35 @@ exports.verifyFace = async (req, res) => {
             }
 
             res.json({ success: true, logType, user: bestMatch, attendance });
-        } else { res.status(401).json({ message: 'Face Not Recognized' }); }
-    } catch (error) { res.status(500).json({ message: error.message }); }
+        } else {
+            await LoginLog.create({
+                login_status: 'failed',
+                device: device || req.headers['user-agent'] || 'unknown',
+                reason: 'Unauthorized Face',
+                IP_address: req.ip || req.headers['x-forwarded-for']
+            });
+            res.status(401).json({ message: 'Face Not Recognized' });
+        }
+    } catch (error) {
+        console.error('Gracefully caught face verification error:', error.message);
+        try {
+            const LoginLog = require('../models/LoginLog');
+            await LoginLog.create({
+                login_status: 'failed',
+                device: req.body.device || req.headers['user-agent'] || 'unknown',
+                reason: 'Unauthorized Face',
+                IP_address: req.ip || req.headers['x-forwarded-for']
+            });
+        } catch (logErr) {
+            console.error('Failed to log biometric error to db:', logErr.message);
+        }
+        res.status(401).json({ message: 'Face Not Recognized' });
+    }
 };
 
 exports.getMe = async (req, res) => {
     try {
-        let user = await User.findById(req.user.id).select('-password');
+        let user = await User.findById(req.user.id).select('-password -faceDescriptor');
         if (!user && (req.user.id === '00000000000000000000ad14' || req.user.role === 'admin')) {
             user = await findOrCreateMasterAdmin();
             if (user) {

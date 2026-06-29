@@ -327,36 +327,33 @@ exports.getProjectTimeline = async (req, res) => {
 // 6. Get Admin Dashboard project counters & notification badge
 exports.getDashboardStats = async (req, res) => {
     try {
-        // Active: 'in-progress' or 'In Progress' or 'Restarted'
-        // Delayed: 'Delayed'
-        // Stopped: 'Stopped'
-        // Completed: 'completed' or 'Completed'
-        const projects = await Project.find({});
-        
-        let activeCount = 0;
-        let delayedCount = 0;
-        let stoppedCount = 0;
-        let completedCount = 0;
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
 
-        projects.forEach(p => {
-            const statusLower = (p.status || '').toLowerCase();
-            if (statusLower === 'in-progress' || statusLower === 'in progress' || statusLower === 'restarted') {
-                activeCount++;
-            } else if (statusLower === 'delayed') {
-                delayedCount++;
-            } else if (statusLower === 'stopped') {
-                stoppedCount++;
-            } else if (statusLower === 'completed') {
-                completedCount++;
-            }
-        });
+        // Fetch counts using countDocuments for optimal performance
+        const activeCount = await Project.countDocuments({ status: { $in: ['In Progress', 'Restarted', 'in-progress'] } });
+        const delayedCount = await Project.countDocuments({ status: 'Delayed' });
+        const stoppedCount = await Project.countDocuments({ status: 'Stopped' });
+        const completedCount = await Project.countDocuments({ status: { $in: ['Completed', 'completed'] } });
+
+        const totalStaff = await User.countDocuments({ role: 'staff' });
+        const activeStaff = await User.countDocuments({ role: 'staff', status: 'active' });
+        
+        const Attendance = require('../models/Attendance');
+        const today = new Date().toISOString().split('T')[0];
+        const todayLogs = await Attendance.countDocuments({ date: today });
+
+        const FaceData = require('../models/FaceData');
+        const registeredFaces = await FaceData.countDocuments({});
+
+        const Leave = require('../models/Leave');
+        const pendingLeaves = await Leave.countDocuments({ status: 'pending' });
+
+        const Quote = require('../models/Quote');
+        const pendingQuotes = await Quote.countDocuments({ status: 'pending' });
 
         // Unread Notification Count
         const unreadCount = await AdminNotification.countDocuments({ isRead: false });
-
-        // Calculate specific alert counters
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
 
         const activeAlertsCount = await AdminNotification.countDocuments({ status: 'Active', priority: { $in: ['Critical', 'High', 'Medium'] } });
         const acknowledgedAlertsCount = await AdminNotification.countDocuments({ status: 'Acknowledged' });
@@ -375,6 +372,11 @@ exports.getDashboardStats = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(10);
 
+        // Recent logs
+        const recentLogs = await Attendance.find({})
+            .sort({ login_time: -1 })
+            .limit(6);
+
         res.status(200).json({
             activeCount,
             delayedCount,
@@ -386,9 +388,18 @@ exports.getDashboardStats = async (req, res) => {
             resolvedAlertsCount,
             criticalAlertsCount,
             todaysIncidentsCount,
-            recentNotifications
+            recentNotifications,
+            recentLogs,
+            totalStaff,
+            activeStaff,
+            todayLogs,
+            registeredFaces,
+            pendingLeaves,
+            activeProjects: activeCount + delayedCount + stoppedCount + completedCount,
+            pendingQuotes
         });
     } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
         res.status(500).json({ message: error.message });
     }
 };

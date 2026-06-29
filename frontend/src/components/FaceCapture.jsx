@@ -9,7 +9,7 @@ import {
 import { loadFaceModels } from '../utils/faceApiLoader';
 import { detectBlink } from '../utils/faceApiUtils';
 
-const FaceCapture = ({ onCapture }) => {
+const FaceCapture = ({ onCapture, loading }) => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [status, setStatus] = useState('initializing'); // initializing, idle, scanning, success, error
@@ -25,20 +25,15 @@ const FaceCapture = ({ onCapture }) => {
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
         }
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
+        }
     };
 
+    const isInitializingRef = useRef(false);
+
     useEffect(() => {
-        const init = async () => {
-            const loaded = await loadFaceModels();
-            if (loaded) {
-                setStatus('idle');
-                setMessage('Biometric system ready for enrollment.');
-            } else {
-                setStatus('error');
-                setMessage("Biometric Engine failed to initialize.");
-            }
-        };
-        init();
+        startVideo();
 
         return () => {
             stopVideo();
@@ -46,8 +41,17 @@ const FaceCapture = ({ onCapture }) => {
     }, []);
 
     const startVideo = async () => {
-        setStatus('scanning');
-        setMessage('Establishing optical link...');
+        if (isInitializingRef.current) return;
+        isInitializingRef.current = true;
+
+        setStatus('initializing');
+        setMessage('Initializing Biometric Engine...');
+
+        // Step 1: Preload models in background
+        const modelPromise = loadFaceModels();
+
+        // Step 2: Initialize camera immediately in parallel
+        const camStart = performance.now();
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { width: { ideal: 640 }, height: { ideal: 480 } } 
@@ -57,57 +61,101 @@ const FaceCapture = ({ onCapture }) => {
                 videoRef.current.srcObject = stream;
                 await videoRef.current.play();
             }
-            
-            scanActiveRef.current = true;
-            let currentFrames = [];
-            
-            const scanLoop = async () => {
-                if (!scanActiveRef.current) return;
-                
-                const detections = await faceapi.detectAllFaces(videoRef.current)
-                    .withFaceLandmarks()
-                    .withFaceDescriptors();
+            const camDuration = performance.now() - camStart;
+            console.log(`[PERF] Enrollment Camera initialization: ${camDuration.toFixed(2)}ms`);
 
-                if (detections.length > 1) {
-                    setMessage('CRITICAL: MULTIPLE FACES DETECTED. ENROLL ONLY ONE.');
-                } else if (detections.length === 1) {
-                    const result = detections[0];
-                    const isBlinking = await detectBlink(result.landmarks);
-                    
-                    if (isBlinking) {
-                        setMessage(`CAPTURING FRAME BINARY... [${currentFrames.length + 1}/1]`);
-                        currentFrames.push(Array.from(result.descriptor));
-                        setCapturedFrames([...currentFrames]);
-                        
-                        await new Promise(resolve => setTimeout(resolve, 300));
-                    } else {
-                        setMessage('PERFORM ONE CLEAR BLINK TO START CAPTURE');
-                    }
-
-                    if (currentFrames.length >= 1) {
-                        scanActiveRef.current = false;
-                        
-                        // Use the single best descriptor directly
-                        const finalDesc = currentFrames[0];
-
-                        setStatus('success');
-                        setMessage('BIOMETRIC PROFILE GENERATED SUCCESSFULLY');
-                        stopVideo();
-                        setFinalDescriptor(finalDesc);
-                        return;
-                    }
-                } else {
-                    setMessage('ALIGN EYES WITHIN SCENE ANALYZER');
-                }
-
-                if (scanActiveRef.current) requestAnimationFrame(scanLoop);
-            };
-            scanLoop();
-
-        } catch {
+            setStatus('scanning');
+            setMessage('Optical link active. Synchronizing AI...');
+        } catch (camErr) {
+            console.error('Camera initialization failed:', camErr);
             setStatus('error');
             setMessage("OPTICAL HARDWARE ACCESS DENIED.");
+            isInitializingRef.current = false;
+            return;
         }
+
+        // Step 3: Wait for models
+        const modelStart = performance.now();
+        const loaded = await modelPromise;
+        const modelDuration = performance.now() - modelStart;
+        console.log(`[PERF] Enrollment Model loading: ${modelDuration.toFixed(2)}ms`);
+
+        if (!loaded) {
+            setStatus('error');
+            setMessage("Biometric Engine failed to initialize.");
+            stopVideo();
+            isInitializingRef.current = false;
+            return;
+        }
+
+        isInitializingRef.current = false;
+        
+        // Start throttled scan loop
+        scanActiveRef.current = true;
+        let currentFrames = [];
+        let lastAnalysisTime = 0;
+        const ANALYSIS_INTERVAL = 150; // Throttled frequency
+
+        const scanLoop = async () => {
+            if (!scanActiveRef.current) return;
+
+            const nowTime = performance.now();
+            if (nowTime - lastAnalysisTime >= ANALYSIS_INTERVAL) {
+                lastAnalysisTime = nowTime;
+
+                try {
+                    const detectStart = performance.now();
+                    const detections = await faceapi.detectAllFaces(videoRef.current)
+                        .withFaceLandmarks()
+                        .withFaceDescriptors();
+                    const detectDuration = performance.now() - detectStart;
+                    console.log(`[PERF] Enrollment Throttled face detection: ${detectDuration.toFixed(2)}ms`);
+
+                    if (detections.length > 1) {
+                        setMessage('CRITICAL: MULTIPLE FACES DETECTED. ENROLL ONLY ONE.');
+                    } else if (detections.length === 1) {
+                        const result = detections[0];
+                        const isBlinking = await detectBlink(result.landmarks);
+                        
+                        if (isBlinking) {
+                            setMessage(`CAPTURING FRAME BINARY... [${currentFrames.length + 1}/1]`);
+                            currentFrames.push(Array.from(result.descriptor));
+                            setCapturedFrames([...currentFrames]);
+                            
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                        } else {
+                            setMessage('PERFORM ONE CLEAR BLINK TO START CAPTURE');
+                        }
+
+                        if (currentFrames.length >= 1) {
+                            scanActiveRef.current = false;
+                            
+                            // Use the single best descriptor directly
+                            const finalDesc = currentFrames[0];
+
+                            setStatus('success');
+                            setMessage('BIOMETRIC PROFILE GENERATED SUCCESSFULLY');
+                            stopVideo();
+                            setFinalDescriptor(finalDesc);
+                            return;
+                        }
+                    } else {
+                        setMessage('ALIGN EYES WITHIN SCENE ANALYZER');
+                    }
+                } catch (err) {
+                    console.error('Face capture failure:', err);
+                    scanActiveRef.current = false;
+                    stopVideo();
+                    setStatus('error');
+                    setMessage('Face capture error. Please retry.');
+                    return;
+                }
+            }
+
+            if (scanActiveRef.current) requestAnimationFrame(scanLoop);
+        };
+
+        scanLoop();
     };
 
 
@@ -215,9 +263,14 @@ const FaceCapture = ({ onCapture }) => {
                                     onCapture(finalDescriptor);
                                 }
                             }}
-                            className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-emerald-600/20 transition-all active:scale-95 flex items-center gap-2"
+                            disabled={loading}
+                            className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-emerald-600/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <ShieldCheck className="w-4 h-4" /> OK
+                            {loading ? (
+                                <><Loader2 className="w-4 h-4 animate-spin" /> Verifying...</>
+                            ) : (
+                                <><ShieldCheck className="w-4 h-4" /> OK</>
+                            )}
                         </button>
                     </div>
                 )}

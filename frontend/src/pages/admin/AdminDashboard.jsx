@@ -51,44 +51,26 @@ const AdminDashboard = () => {
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            const [staffRes, logsRes, leaveRes, projectRes, quoteRes, statsRes] = await Promise.all([
-                api.get('/staff'),
-                api.get('/attendance'),
-                api.get('/leave'),
-                api.get('/projects'),
-                api.get('/quotes'),
-                api.get('/projects/dashboard/stats').catch(e => {
-                    console.warn("Stats API failed, using fallback:", e);
-                    return { data: { activeCount: 0, delayedCount: 0, stoppedCount: 0, completedCount: 0, unreadCount: 0, recentNotifications: [] } };
-                })
-            ]);
-            
-            const staffList = Array.isArray(staffRes.data) ? staffRes.data : [];
-            const logsList = Array.isArray(logsRes.data) ? logsRes.data : [];
-            const leaveList = Array.isArray(leaveRes.data) ? leaveRes.data : [];
-            const projectList = Array.isArray(projectRes.data) ? projectRes.data : [];
-            const quoteList = Array.isArray(quoteRes.data) ? quoteRes.data : [];
-            const projectStats = statsRes.data || {};
-
-            const today = new Date().toISOString().split('T')[0];
+            const statsRes = await api.get('/projects/dashboard/stats');
+            const data = statsRes.data || {};
 
             setStats({
-                totalStaff: staffList.length,
-                activeStaff: staffList.filter(s => s.status === 'active').length,
-                todayLogs: logsList.filter(l => l.date === today && l.status === 'success').length,
-                registeredFaces: staffList.filter(s => s.faceDescriptor?.length > 0).length,
-                pendingLeaves: leaveList.filter(l => l.status === 'pending').length,
-                activeProjects: projectList.length,
-                pendingQuotes: quoteList.filter(q => q.status === 'pending').length,
-                activeProjectsCount: projectStats.activeCount || 0,
-                delayedProjectsCount: projectStats.delayedCount || 0,
-                stoppedProjectsCount: projectStats.stoppedCount || 0,
-                completedProjectsCount: projectStats.completedCount || 0,
-                unreadCount: projectStats.unreadCount || 0
+                totalStaff: data.totalStaff || 0,
+                activeStaff: data.activeStaff || 0,
+                todayLogs: data.todayLogs || 0,
+                registeredFaces: data.registeredFaces || 0,
+                pendingLeaves: data.pendingLeaves || 0,
+                activeProjects: data.activeProjects || 0,
+                pendingQuotes: data.pendingQuotes || 0,
+                activeProjectsCount: data.activeCount || 0,
+                delayedProjectsCount: data.delayedCount || 0,
+                stoppedProjectsCount: data.stoppedCount || 0,
+                completedProjectsCount: data.completedCount || 0,
+                unreadCount: data.unreadCount || 0
             });
 
-            setRecentLogs(logsList.slice(0, 6));
-            setRecentNotifications(projectStats.recentNotifications || []);
+            setRecentLogs(data.recentLogs || []);
+            setRecentNotifications(data.recentNotifications || []);
         } catch (err) {
             console.error("Dashboard fetch error:", err);
         } finally {
