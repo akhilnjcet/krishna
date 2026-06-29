@@ -2,6 +2,7 @@ const Salary = require('../models/Salary');
 const DailyAttendance = require('../models/DailyAttendance');
 const Overtime = require('../models/Overtime');
 const User = require('../models/User');
+const { autoGenerateAbsentLogs } = require('../utils/attendanceHelper');
 
 // Calculate draft payroll for a month
 exports.calculateDraftPayroll = async (req, res) => {
@@ -15,6 +16,9 @@ exports.calculateDraftPayroll = async (req, res) => {
         if (!staff) {
             return res.status(404).json({ message: "Staff member not found." });
         }
+
+        // Auto-generate absent logs for past working days
+        await autoGenerateAbsentLogs(month);
 
         // 1. Fetch monthly attendance records
         const attendance = await DailyAttendance.find({

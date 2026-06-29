@@ -1,5 +1,6 @@
 const DailyAttendance = require('../models/DailyAttendance');
 const User = require('../models/User');
+const { autoGenerateAbsentLogs } = require('../utils/attendanceHelper');
 
 // Mark/Update Daily Attendance status
 exports.markDailyAttendance = async (req, res) => {
@@ -35,6 +36,10 @@ exports.getDailyAttendance = async (req, res) => {
         const { date, month, staffId } = req.query;
         let query = {};
 
+        if (month) {
+            await autoGenerateAbsentLogs(month);
+        }
+
         if (staffId) {
             query.staffId = staffId;
         }
@@ -65,6 +70,8 @@ exports.getStaffDailyAttendanceSummary = async (req, res) => {
         if (!month) {
             return res.status(400).json({ message: "Month (Format: YYYY-MM) is required." });
         }
+
+        await autoGenerateAbsentLogs(month);
 
         const records = await DailyAttendance.find({
             staffId: targetStaffId,
