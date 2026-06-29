@@ -45,8 +45,13 @@ exports.calculateDraftPayroll = async (req, res) => {
         if (salaryType === 'Daily Wage') {
             calculatedBase = baseSalary * (presentDays + (halfDays * 0.5));
         } else {
-            // 'Monthly' or 'Contract' - fixed pay
-            calculatedBase = baseSalary;
+            // 'Monthly' or 'Contract' - pro-rated by attendance if totalWorkingDays > 0
+            if (totalWorkingDays > 0) {
+                const paidDays = presentDays + (halfDays * 0.5) + leaveDays + holidays;
+                calculatedBase = Math.round((baseSalary / totalWorkingDays) * paidDays);
+            } else {
+                calculatedBase = baseSalary;
+            }
         }
 
         // 3. Fetch Overtime records for the month
