@@ -34,8 +34,8 @@ const autoGenerateAbsentLogs = async (monthStr) => {
             const dateStr = `${monthStr}-${String(d).padStart(2, '0')}`;
             const dateObj = new Date(yearNum, monthNum - 1, d);
             
-            // Skip Mondays (getDay() === 1)
-            if (dateObj.getDay() === 1) continue;
+            // Skip Sundays (getDay() === 0)
+            if (dateObj.getDay() === 0) continue;
 
             for (const staff of staffUsers) {
                 // Check if a record already exists
