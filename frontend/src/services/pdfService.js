@@ -89,10 +89,21 @@ const savePDF = async (doc, filename) => {
 let cachedBranding = null;
 let brandingFetchPromise = null;
 
+const getApiBase = () => {
+    // Reads the same base URL that axios api.js uses
+    try {
+        const envUrl = import.meta.env.VITE_API_URL;
+        if (envUrl) return envUrl.replace(/\/$/, ''); // strip trailing slash
+    } catch (_) {}
+    // Fallback: try to derive from current page origin
+    return window.location.origin + '/api';
+};
+
 const getBrandingSettings = async () => {
     if (cachedBranding) return cachedBranding;
     if (!brandingFetchPromise) {
-        brandingFetchPromise = fetch('/api/settings/public')
+        const base = getApiBase();
+        brandingFetchPromise = fetch(`${base}/settings/public`)
             .then(res => res.ok ? res.json() : [])
             .then(data => {
                 const map = {};
@@ -106,6 +117,7 @@ const getBrandingSettings = async () => {
             })
             .catch(err => {
                 console.warn("Could not fetch branding settings for PDF:", err);
+                brandingFetchPromise = null; // allow retry on next call
                 return {};
             });
     }
@@ -376,133 +388,134 @@ export const generateQuotePDF = async (quote) => {
  * 2. MONTHLY SALARY SLIP PDF
  */
 export const generateSalaryPDF = async (salary, user) => {
-    if (!salary) return;
-    await getBrandingSettings();
-    const doc = new jsPDF();
-    const headerHeight = addHeader(doc, 'Pay Slip / Monthly Salary Statement');
+    if (!salary) { alert('No salary data available for this slip.'); return; }
+    try {
+        await getBrandingSettings();
+        const doc = new jsPDF();
+        const headerHeight = addHeader(doc, 'Pay Slip / Monthly Salary Statement');
 
-    const emp = salary.staffId || user || {};
-    const empId = emp.staff_id || emp.id || emp._id || 'N/A';
-    const empName = emp.name || 'Employee';
-    const dept = emp.department || 'Operations';
-    const desig = emp.designation || 'Staff';
-    const joining = emp.joiningDate ? new Date(emp.joiningDate).toLocaleDateString() : 'N/A';
-    const phoneNum = emp.phone || emp.phoneNumber || 'N/A';
+        const emp = salary.staffId || user || {};
+        const empId = emp.staff_id || emp.id || emp._id || 'N/A';
+        const empName = emp.name || user?.name || 'Employee';
+        const dept = emp.department || user?.department || 'Operations';
+        const desig = emp.designation || user?.designation || 'Staff';
+        const joining = emp.joiningDate ? new Date(emp.joiningDate).toLocaleDateString() : 'N/A';
+        const phoneNum = emp.phone || emp.phoneNumber || user?.phone || 'N/A';
 
-    const bankName = emp.bank_name || 'State Bank of India';
-    const accNum = emp.account_number || 'N/A';
-    const ifsc = emp.ifsc_code || 'N/A';
-    const txnRef = salary.payments?.[0]?._id ? `TXN-${String(salary.payments[0]._id).slice(-8).toUpperCase()}` : (salary._id ? `TXN-${String(salary._id).slice(-8).toUpperCase()}` : 'TXN-GEN-2026');
-    const payMethod = salary.payments?.[0]?.paymentMethod || 'Bank Transfer';
-    const payDate = salary.paidAt ? new Date(salary.paidAt).toLocaleDateString() : (salary.payments?.[0]?.createdAt ? new Date(salary.payments[0].createdAt).toLocaleDateString() : 'N/A');
+        const bankName = emp.bank_name || user?.bank_name || 'State Bank of India';
+        const accNum = emp.account_number || user?.account_number || 'N/A';
+        const ifsc = emp.ifsc_code || user?.ifsc_code || 'N/A';
+        const txnRef = salary.payments?.[0]?._id ? `TXN-${String(salary.payments[0]._id).slice(-8).toUpperCase()}` : (salary._id ? `TXN-${String(salary._id).slice(-8).toUpperCase()}` : 'TXN-GEN-2026');
+        const payMethod = salary.payments?.[0]?.paymentMethod || 'Bank Transfer';
+        const payDate = salary.paidAt ? new Date(salary.paidAt).toLocaleDateString() : (salary.payments?.[0]?.createdAt ? new Date(salary.payments[0].createdAt).toLocaleDateString() : 'N/A');
 
-    const startY = headerHeight + 10;
+        const startY = headerHeight + 10;
 
-    // Renders employee & bank details side-by-side using table
-    autoTable(doc, {
-        startY,
-        margin: { left: 15, right: 15, bottom: 20 },
-        head: [['EMPLOYEE INFORMATION', 'TRANSACTION & BANK DETAILS']],
-        body: [
-            [`Employee ID: ${empId}\nName: ${empName.toUpperCase()}\nDepartment: ${dept}\nDesignation: ${desig}\nJoining Date: ${joining}\nPhone: ${phoneNum}`,
-             `Month / Cycle: ${salary.month}\nPayment Date: ${payDate}\nPayment Method: ${payMethod}\nTxn Ref No: ${txnRef}\nBank: ${bankName}\nAccount / IFSC: ${accNum} / ${ifsc}`]
-        ],
-        theme: 'grid',
-        showHead: 'everyPage',
-        headStyles: { fillColor: THEME.primary, textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 8.5, cellPadding: 4, overflow: 'linebreak' },
-        columnStyles: {
-            0: { halign: 'left' },
-            1: { halign: 'left' }
-        }
-    });
+        autoTable(doc, {
+            startY,
+            margin: { left: 15, right: 15, bottom: 20 },
+            head: [['EMPLOYEE INFORMATION', 'TRANSACTION & BANK DETAILS']],
+            body: [
+                [`Employee ID: ${empId}\nName: ${empName.toUpperCase()}\nDepartment: ${dept}\nDesignation: ${desig}\nJoining Date: ${joining}\nPhone: ${phoneNum}`,
+                 `Month / Cycle: ${salary.month}\nPayment Date: ${payDate}\nPayment Method: ${payMethod}\nTxn Ref No: ${txnRef}\nBank: ${bankName}\nAccount / IFSC: ${accNum} / ${ifsc}`]
+            ],
+            theme: 'grid',
+            showHead: 'everyPage',
+            headStyles: { fillColor: THEME.primary, textColor: 255, fontStyle: 'bold' },
+            styles: { fontSize: 8.5, cellPadding: 4, overflow: 'linebreak' },
+            columnStyles: {
+                0: { halign: 'left' },
+                1: { halign: 'left' }
+            }
+        });
 
-    const attendanceY = doc.lastAutoTable.finalY + 6;
+        const attendanceY = doc.lastAutoTable.finalY + 6;
 
-    // Attendance & Overtime summaries
-    autoTable(doc, {
-        startY: attendanceY,
-        margin: { left: 15, right: 15, bottom: 20 },
-        head: [['ATTENDANCE SUMMARY', 'OVERTIME SUMMARY']],
-        body: [
-            [`Working Days: ${salary.totalWorkingDays || 26}\nPresent Days: ${salary.presentDays || 0}\nHalf Days: ${salary.halfDays || 0}\nLeave Days: ${salary.leaveDays || 0}\nHolidays: ${salary.holidays || 0}`,
-             `Overtime Hours: ${salary.overtimeHours || 0} hrs\nOT Rate/Hr: ₹${salary.overtimeRate || emp.overtimeRate || 0}\nOvertime Earnings: ₹${(salary.overtimeEarnings || 0).toLocaleString('en-IN')}`]
-        ],
-        theme: 'grid',
-        showHead: 'everyPage',
-        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 8.5, cellPadding: 4 },
-        columnStyles: {
-            0: { halign: 'left' },
-            1: { halign: 'left' }
-        }
-    });
+        autoTable(doc, {
+            startY: attendanceY,
+            margin: { left: 15, right: 15, bottom: 20 },
+            head: [['ATTENDANCE SUMMARY', 'OVERTIME SUMMARY']],
+            body: [
+                [`Working Days: ${salary.totalWorkingDays || 26}\nPresent Days: ${salary.presentDays || 0}\nHalf Days: ${salary.halfDays || 0}\nLeave Days: ${salary.leaveDays || 0}\nHolidays: ${salary.holidays || 0}`,
+                 `Overtime Hours: ${salary.overtimeHours || 0} hrs\nOT Rate/Hr: \u20b9${salary.overtimeRate || emp.overtimeRate || user?.overtimeRate || 0}\nOvertime Earnings: \u20b9${(salary.overtimeEarnings || 0).toLocaleString('en-IN')}`]
+            ],
+            theme: 'grid',
+            showHead: 'everyPage',
+            headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold' },
+            styles: { fontSize: 8.5, cellPadding: 4 },
+            columnStyles: {
+                0: { halign: 'left' },
+                1: { halign: 'left' }
+            }
+        });
 
-    const ledgerY = doc.lastAutoTable.finalY + 6;
+        const ledgerY = doc.lastAutoTable.finalY + 6;
 
-    // Financial breakdown ledger
-    const baseVal = salary.baseSalary || salary.base_salary || 0;
-    const calcBase = salary.totalEarnedSalary !== undefined ? salary.totalEarnedSalary : (salary.calculatedBase !== undefined ? salary.calculatedBase : (salary.salaryType === 'Daily Wage' ? (baseVal * ((salary.presentDays || 0) + ((salary.halfDays || 0) * 0.5))) : baseVal));
-    const otEarn = salary.overtimeEarnings || 0;
-    const bonusVal = salary.bonus !== undefined ? salary.bonus : (salary.bonusAmount || 0);
-    const incentivesVal = salary.incentives || 0;
-    const allowancesVal = salary.allowances || 0;
-    const dedVal = salary.deductions !== undefined ? salary.deductions : (salary.deductionAmount || 0);
-    const advVal = salary.advanceRecovery !== undefined ? salary.advanceRecovery : (salary.advanceAmount || 0);
-    const netVal = salary.netSalary || salary.salaryAmount || 0;
+        const baseVal  = salary.baseSalary || salary.base_salary || 0;
+        const calcBase = salary.totalEarnedSalary !== undefined ? salary.totalEarnedSalary : (salary.calculatedBase !== undefined ? salary.calculatedBase : (salary.salaryType === 'Daily Wage' ? (baseVal * ((salary.presentDays || 0) + ((salary.halfDays || 0) * 0.5))) : baseVal));
+        const otEarn   = salary.overtimeEarnings || 0;
+        const bonusVal = salary.bonus !== undefined ? salary.bonus : (salary.bonusAmount || 0);
+        const incentivesVal = salary.incentives || 0;
+        const allowancesVal = salary.allowances || 0;
+        const dedVal   = salary.deductions !== undefined ? salary.deductions : (salary.deductionAmount || 0);
+        const advVal   = salary.advanceRecovery !== undefined ? salary.advanceRecovery : (salary.advanceAmount || 0);
+        const netVal   = salary.netSalary || salary.salaryAmount || 0;
 
-    autoTable(doc, {
-        startY: ledgerY,
-        margin: { left: 15, right: 15, bottom: 20 },
-        head: [['EARNINGS & ALLOWANCES', 'AMOUNT (INR)', 'DEDUCTIONS & RECOVERIES', 'AMOUNT (INR)']],
-        body: [
-            ['Base Pay', `₹ ${baseVal.toLocaleString('en-IN')}`, 'Advance Recovery', `₹ ${advVal.toLocaleString('en-IN')}`],
-            ['Earned Salary (Wages/Sal)', `₹ ${calcBase.toLocaleString('en-IN')}`, 'Other Deductions', `₹ ${dedVal.toLocaleString('en-IN')}`],
-            ['Overtime Pay', `₹ ${otEarn.toLocaleString('en-IN')}`, '', ''],
-            ['Bonus & Incentives', `₹ ${(bonusVal + incentivesVal).toLocaleString('en-IN')}`, '', ''],
-            ['Allowances', `₹ ${allowancesVal.toLocaleString('en-IN')}`, '', ''],
-            ['Gross Earnings', `₹ ${(calcBase + otEarn + bonusVal + incentivesVal + allowancesVal).toLocaleString('en-IN')}`, 'Total Deductions', `₹ ${(advVal + dedVal).toLocaleString('en-IN')}`],
-        ],
-        theme: 'striped',
-        showHead: 'everyPage',
-        headStyles: { fillColor: THEME.primary, textColor: 255 },
-        styles: { fontSize: 8.5, cellPadding: 4 },
-        columnStyles: { 
-            0: { fontStyle: 'bold', halign: 'left' },
-            1: { halign: 'right' },
-            2: { fontStyle: 'bold', halign: 'left' },
-            3: { halign: 'right' }
-        }
-    });
+        autoTable(doc, {
+            startY: ledgerY,
+            margin: { left: 15, right: 15, bottom: 20 },
+            head: [['EARNINGS & ALLOWANCES', 'AMOUNT (INR)', 'DEDUCTIONS & RECOVERIES', 'AMOUNT (INR)']],
+            body: [
+                ['Base Pay', `\u20b9 ${baseVal.toLocaleString('en-IN')}`, 'Advance Recovery', `\u20b9 ${advVal.toLocaleString('en-IN')}`],
+                ['Earned Salary (Wages/Sal)', `\u20b9 ${calcBase.toLocaleString('en-IN')}`, 'Other Deductions', `\u20b9 ${dedVal.toLocaleString('en-IN')}`],
+                ['Overtime Pay', `\u20b9 ${otEarn.toLocaleString('en-IN')}`, '', ''],
+                ['Bonus & Incentives', `\u20b9 ${(bonusVal + incentivesVal).toLocaleString('en-IN')}`, '', ''],
+                ['Allowances', `\u20b9 ${allowancesVal.toLocaleString('en-IN')}`, '', ''],
+                ['Gross Earnings', `\u20b9 ${(calcBase + otEarn + bonusVal + incentivesVal + allowancesVal).toLocaleString('en-IN')}`, 'Total Deductions', `\u20b9 ${(advVal + dedVal).toLocaleString('en-IN')}`],
+            ],
+            theme: 'striped',
+            showHead: 'everyPage',
+            headStyles: { fillColor: THEME.primary, textColor: 255 },
+            styles: { fontSize: 8.5, cellPadding: 4 },
+            columnStyles: {
+                0: { fontStyle: 'bold', halign: 'left' },
+                1: { halign: 'right' },
+                2: { fontStyle: 'bold', halign: 'left' },
+                3: { halign: 'right' }
+            }
+        });
 
-    const finalY = doc.lastAutoTable.finalY + 8;
+        const finalY = doc.lastAutoTable.finalY + 8;
 
-    doc.setFillColor(...THEME.bgLight);
-    doc.rect(15, finalY, 180, 18, 'F');
-    doc.setFontSize(10);
-    doc.setTextColor(...THEME.textDark);
-    doc.setFont('helvetica', 'bold');
-    doc.text('NET DISBURSED SALARY:', 20, finalY + 11);
-    doc.setFontSize(14);
-    doc.setTextColor(...THEME.accent);
-    doc.text(`₹ ${netVal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 190, finalY + 11, { align: 'right' });
+        doc.setFillColor(...THEME.bgLight);
+        doc.rect(15, finalY, 180, 18, 'F');
+        doc.setFontSize(10);
+        doc.setTextColor(...THEME.textDark);
+        doc.setFont('helvetica', 'bold');
+        doc.text('NET DISBURSED SALARY:', 20, finalY + 11);
+        doc.setFontSize(14);
+        doc.setTextColor(...THEME.accent);
+        doc.text(`\u20b9 ${netVal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 190, finalY + 11, { align: 'right' });
 
-    // Status Indicator & Signature block
-    doc.setFontSize(8.5);
-    const statusText = (salary.paymentStatus || 'Pending').toUpperCase();
-    const isPaid = ['PAID', 'COMPLETED'].includes(statusText);
-    doc.setTextColor(isPaid ? [0, 140, 0] : [180, 90, 0]);
-    doc.text(`PAYMENT STATUS: ${statusText}`, 15, finalY + 26);
+        doc.setFontSize(8.5);
+        const statusText = (salary.paymentStatus || 'Pending').toUpperCase();
+        const isPaid = ['PAID', 'COMPLETED'].includes(statusText);
+        doc.setTextColor(isPaid ? 0 : 180, isPaid ? 140 : 90, isPaid ? 0 : 0);
+        doc.text(`PAYMENT STATUS: ${statusText}`, 15, finalY + 26);
 
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'italic');
-    doc.setTextColor(...THEME.textMuted);
-    doc.text('This is a Computer / System Generated Monthly Salary Slip.', 15, finalY + 32);
-    doc.text(`Generated Date: ${new Date().toLocaleDateString()}`, 15, finalY + 37);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(...THEME.textMuted);
+        doc.text('This is a Computer / System Generated Monthly Salary Slip.', 15, finalY + 32);
+        doc.text(`Generated Date: ${new Date().toLocaleDateString()}`, 15, finalY + 37);
 
-    addSignatureAndSeal(doc, finalY + 20);
-    addFooter(doc);
-    savePDF(doc, `SalarySlip_${salary.month}_${empName.replace(/\s+/g, '_')}.pdf`);
+        addSignatureAndSeal(doc, finalY + 20);
+        addFooter(doc);
+        await savePDF(doc, `SalarySlip_${salary.month}_${empName.replace(/\s+/g, '_')}.pdf`);
+    } catch (err) {
+        console.error('Salary PDF generation error:', err);
+        alert(`Failed to generate salary slip PDF: ${err.message}\n\nPlease try again or contact support.`);
+    }
 };
 
 /**

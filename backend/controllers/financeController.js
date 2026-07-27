@@ -46,11 +46,24 @@ exports.getAdminOverview = async (req, res) => {
     }
 };
 
-// @desc    Get staff salary history
+// @desc    Get staff salary history (always recalculates current month for freshness)
 // @route   GET /api/finance/staff-salary
 exports.getStaffSalary = async (req, res) => {
     try {
-        const history = await Salary.find({ staffId: req.user.id })
+        const staffId = req.user.id;
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+        // Always recalculate the current month so the payout hub reflects the latest attendance
+        try {
+            const { recalculateSalary } = require('../utils/salaryCalculator');
+            await recalculateSalary(staffId, currentMonth);
+        } catch (calcErr) {
+            // Non-fatal — still return whatever is stored
+            console.warn(`Salary recalculation skipped for staff ${staffId}:`, calcErr.message);
+        }
+
+        const history = await Salary.find({ staffId })
             .populate('staffId', 'name email staff_id department designation upi_id bank_name account_number ifsc_code joiningDate phone')
             .sort({ month: -1 });
         res.json(history);

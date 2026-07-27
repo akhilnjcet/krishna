@@ -261,9 +261,11 @@ const StaffFinance = () => {
                                     <tr className="bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400">
                                         <th className="px-6 py-4">Month / Cycle</th>
                                         <th className="px-6 py-4">Base Salary</th>
-                                        <th className="px-6 py-4">Overtime Pay</th>
+                                        <th className="px-6 py-4">OT Pay</th>
                                         <th className="px-6 py-4">Deductions</th>
-                                        <th className="px-6 py-4">Net Disbursed</th>
+                                        <th className="px-6 py-4">Net Payable</th>
+                                        <th className="px-6 py-4">Disbursed</th>
+                                        <th className="px-6 py-4">Remaining</th>
                                         <th className="px-6 py-4">Status</th>
                                         <th className="px-6 py-4 text-center">Action</th>
                                     </tr>
@@ -271,43 +273,58 @@ const StaffFinance = () => {
                                 <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-600">
                                     {Array.isArray(history) && history.length > 0 ? history.map((sal) => {
                                         if (!sal) return null;
+                                        const netPayable   = sal.netSalary || sal.salaryAmount || 0;
+                                        const disbursed    = sal.salaryAlreadyPaid ?? 0;
+                                        const remaining    = sal.remainingBalance ?? (netPayable - disbursed);
+                                        const deductions   = (sal.deductions || 0) + (sal.advanceRecovery || 0);
+                                        const isCurrentMonth = sal.month === (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })();
                                         return (
-                                            <tr key={sal._id} className="hover:bg-slate-50/50 transition group">
+                                            <tr key={sal._id} className={`hover:bg-slate-50/50 transition group ${isCurrentMonth ? 'bg-indigo-50/30' : ''}`}>
                                                 <td className="px-6 py-5">
-                                                    <span className="text-sm font-bold text-slate-700">{sal.month}</span>
+                                                    <div>
+                                                        <span className="text-sm font-bold text-slate-700">{sal.month}</span>
+                                                        {isCurrentMonth && (
+                                                            <span className="ml-2 text-[9px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full">Current</span>
+                                                        )}
+                                                        {sal.updatedAt && (
+                                                            <p className="text-[9px] text-slate-400 mt-0.5">Updated: {new Date(sal.updatedAt).toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</p>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-5 italic">₹ {(sal.baseSalary || sal.salaryAmount || 0).toLocaleString('en-IN')}</td>
                                                 <td className="px-6 py-5 text-emerald-600 font-bold">₹ {(sal.overtimeEarnings || 0).toLocaleString('en-IN')}</td>
-                                                <td className="px-6 py-5 text-rose-500 font-bold">₹ {((sal.deductions || 0) + (sal.advanceRecovery || 0)).toLocaleString('en-IN')}</td>
-                                                <td className="px-6 py-5 text-sm font-black text-slate-900">₹ {(sal.netSalary || sal.salaryAmount || 0).toLocaleString('en-IN')}</td>
+                                                <td className="px-6 py-5 text-rose-500 font-bold">₹ {deductions.toLocaleString('en-IN')}</td>
+                                                <td className="px-6 py-5 text-sm font-black text-slate-900">₹ {netPayable.toLocaleString('en-IN')}</td>
+                                                <td className="px-6 py-5 text-sm font-bold text-emerald-700">₹ {disbursed.toLocaleString('en-IN')}</td>
+                                                <td className={`px-6 py-5 text-sm font-bold ${remaining > 0 ? 'text-amber-600' : 'text-slate-400'}`}>₹ {Math.max(0, remaining).toLocaleString('en-IN')}</td>
                                                 <td className="px-6 py-5">
                                                     <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full border ${getStatusStyle(sal.paymentStatus)}`}>
                                                         {sal.paymentStatus}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-5 text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <button 
-                                                        onClick={() => setSelectedSlipForView(sal)}
-                                                        className="p-2 rounded-xl border border-slate-200 text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
-                                                        title="View Salary Slip Details"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleDownloadSlip(sal)}
-                                                        className="p-2 rounded-xl border border-indigo-200 bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-md"
-                                                        title="Download PDF Salary Slip"
-                                                    >
-                                                        <Download className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <button 
+                                                            onClick={() => setSelectedSlipForView(sal)}
+                                                            className="p-2 rounded-xl border border-slate-200 text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
+                                                            title="View Salary Slip Details"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDownloadSlip(sal)}
+                                                            className="p-2 rounded-xl border border-indigo-200 bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-md"
+                                                            title="Download PDF Salary Slip"
+                                                        >
+                                                            <Download className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
                                         );
                                     }) : (
                                         <tr>
-                                            <td colSpan="7" className="p-12 text-center text-slate-400 font-bold italic">No payment statements logged yet.</td>
+                                            <td colSpan="9" className="p-12 text-center text-slate-400 font-bold italic">No payment statements logged yet.</td>
                                         </tr>
                                     )}
                                 </tbody>
