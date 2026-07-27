@@ -11,7 +11,10 @@ exports.getSettings = async (req, res) => {
 
 exports.updateSettings = async (req, res) => {
     try {
-        const { settings } = req.body; // Expecting an object { key: value, ... }
+        const { settings } = req.body;
+        if (!settings || typeof settings !== 'object') {
+            return res.status(400).json({ message: "Invalid settings payload." });
+        }
         
         const updatePromises = Object.entries(settings).map(([key, value]) => {
             return SystemSetting.findOneAndUpdate(
@@ -24,7 +27,8 @@ exports.updateSettings = async (req, res) => {
         await Promise.all(updatePromises);
         res.json({ message: "Settings updated successfully" });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        console.error("Failed to update settings:", err);
+        res.status(500).json({ message: err.message || "Failed to sync configuration." });
     }
 };
 

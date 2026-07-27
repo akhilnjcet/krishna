@@ -77,7 +77,8 @@ const AdminSettings = () => {
             setTimeout(() => setSuccess(false), 3000);
         } catch (err) {
             console.error("Save failure:", err);
-            alert("Protocol failure: Unable to sync configuration.");
+            const msg = err.response?.data?.message || err.message || "Unable to sync configuration.";
+            alert(`Protocol failure: ${msg}`);
         } finally {
             setSaving(false);
         }
@@ -85,6 +86,38 @@ const AdminSettings = () => {
 
     const updateField = (key, val) => {
         setSettings(prev => ({ ...prev, [key]: val }));
+    };
+
+    const compressImage = (dataUrl, maxWidth = 800, maxHeight = 800, quality = 0.85) => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = dataUrl;
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth || height > maxHeight) {
+                    if (width / height > maxWidth / maxHeight) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    } else {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const isPng = dataUrl.startsWith('data:image/png') || dataUrl.startsWith('data:image/svg');
+                const format = isPng ? 'image/png' : 'image/jpeg';
+                resolve(canvas.toDataURL(format, quality));
+            };
+            img.onerror = () => resolve(dataUrl);
+        });
     };
 
     const handleFileUpload = (e, fieldKey, allowedTypes, maxSizeMB = 5) => {
@@ -102,10 +135,11 @@ const AdminSettings = () => {
         }
 
         const reader = new FileReader();
-        reader.onload = () => {
+        reader.onload = async () => {
+            const compressed = await compressImage(reader.result);
             setSettings(prev => ({
                 ...prev,
-                [fieldKey]: reader.result
+                [fieldKey]: compressed
             }));
         };
         reader.readAsDataURL(file);
