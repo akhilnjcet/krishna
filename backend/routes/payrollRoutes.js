@@ -5,7 +5,8 @@ const {
     createPayroll, 
     getPayrollRecords, 
     updatePaymentStatus,
-    addSalaryPayment
+    addSalaryPayment,
+    deletePayroll
 } = require('../controllers/payrollController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -16,6 +17,7 @@ router.route('/')
     .get(protect, authorize('admin', 'manager', 'staff'), getPayrollRecords);
 
 router.put('/:id/payment', protect, authorize('admin'), updatePaymentStatus);
+router.delete('/:id', protect, authorize('admin'), deletePayroll);
 router.post('/payment-transaction', protect, authorize('admin'), addSalaryPayment);
 
 module.exports = router;

@@ -7,11 +7,14 @@ import {
 } from 'lucide-react';
 import { generateQuotePDF } from '../../services/pdfService';
 
+import Quotations from './Quotations';
+
 const AdminQuotes = () => {
     const [quotes, setQuotes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingQuote, setEditingQuote] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [activeSubTab, setActiveSubTab] = useState('log'); // 'log', 'studio'
 
     useEffect(() => {
         fetchQuotes();
@@ -67,7 +70,31 @@ const AdminQuotes = () => {
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200 shadow-xl">
+            {/* Sub-tab Navigation */}
+            <div className="no-print flex items-center gap-3 mb-6 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-sm w-fit">
+                <button
+                    onClick={() => setActiveSubTab('log')}
+                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
+                        activeSubTab === 'log' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                >
+                    Inbound Quotes Log
+                </button>
+                <button
+                    onClick={() => setActiveSubTab('studio')}
+                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
+                        activeSubTab === 'studio' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                >
+                    Interactive Quotation Studio
+                </button>
+            </div>
+
+            {activeSubTab === 'studio' ? (
+                <Quotations />
+            ) : (
+                <>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200 shadow-xl">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Sales & Quotes</div>
                     <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900">Inbound Quotes Log</h2>
@@ -313,6 +340,8 @@ const AdminQuotes = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+            </>
+            )}
         </div>
     );
 };

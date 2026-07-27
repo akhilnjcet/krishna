@@ -37,7 +37,7 @@ const salarySchema = new mongoose.Schema({
     outstandingAmount: { type: Number, default: 0 },
     
     netSalary: { type: Number, required: true, default: 0 },
-    paymentStatus: { type: String, enum: ['unpaid', 'paid', 'partially_paid'], default: 'unpaid' },
+    paymentStatus: { type: String, enum: ['unpaid', 'paid', 'partially_paid', 'Pending', 'Processing', 'Paid', 'Failed', 'Cancelled', 'pending', 'processing', 'failed', 'cancelled'], default: 'Pending' },
     paidAt: { type: Date },
     payments: [paymentTransactionSchema],
     createdAt: { type: Date, default: Date.now }

@@ -2,18 +2,20 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../../services/api';
 import { 
     Calendar, CheckCircle2, AlertCircle, Loader2, FileText, Download,
-    Wallet, TrendingUp, History, Send, Info, CreditCard, Clock, UserCheck
+    Wallet, TrendingUp, History, Send, Info, CreditCard, Clock, UserCheck, Eye, X, ShieldCheck
 } from 'lucide-react';
 import { generateSalaryPDF } from '../../services/pdfService';
 import useAuthStore from '../../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReportHeader from '../../components/ReportHeader';
+import { getSocket } from '../../utils/socket';
 
 const StaffFinance = () => {
     const [activeTab, setActiveTab] = useState('slips'); // 'slips', 'attendance', 'overtime'
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isAdvanceModalOpen, setAdvanceModalOpen] = useState(false);
+    const [selectedSlipForView, setSelectedSlipForView] = useState(null);
     const [advanceForm, setAdvanceForm] = useState({ amount: '', reason: '' });
     const { user } = useAuthStore();
 
@@ -32,7 +34,7 @@ const StaffFinance = () => {
     const [loadingTabContent, setLoadingTabContent] = useState(false);
 
     // Fetch primary salary payout history
-    const fetchSalary = async () => {
+    const fetchSalary = useCallback(async () => {
         try {
             const res = await api.get('/finance/staff-salary');
             setHistory(res.data);
@@ -41,7 +43,27 @@ const StaffFinance = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    // Real-time synchronization via Socket.IO
+    useEffect(() => {
+        fetchSalary();
+        const socket = getSocket();
+        if (socket) {
+            const handleSocketUpdate = (data) => {
+                fetchSalary();
+            };
+            socket.on('payroll_updated', handleSocketUpdate);
+            socket.on('payment_status_changed', handleSocketUpdate);
+            socket.on('salary_updated', handleSocketUpdate);
+
+            return () => {
+                socket.off('payroll_updated', handleSocketUpdate);
+                socket.off('payment_status_changed', handleSocketUpdate);
+                socket.off('salary_updated', handleSocketUpdate);
+            };
+        }
+    }, [fetchSalary]);
 
     // Fetch own attendance summary & overtime logs for month
     const fetchMonthlyLogs = useCallback(async () => {
@@ -64,17 +86,12 @@ const StaffFinance = () => {
     }, [selectedMonth, user]);
 
     useEffect(() => {
-        fetchSalary();
-    }, []);
-
-    useEffect(() => {
         if (activeTab !== 'slips') {
             fetchMonthlyLogs();
         }
     }, [activeTab, fetchMonthlyLogs]);
 
     const handleDownloadSlip = (sal) => {
-        if (sal.paymentStatus !== 'paid') return;
         generateSalaryPDF(sal, user);
     };
 
@@ -96,15 +113,32 @@ const StaffFinance = () => {
         }
     };
 
-    // Calculate payouts
-    const totalPaid = history.filter(s => s.paymentStatus === 'paid').reduce((acc, s) => acc + (s.netSalary || s.salaryAmount || 0), 0);
-    const pendingAmount = history.filter(s => s.paymentStatus !== 'paid').reduce((acc, s) => acc + (s.netSalary || s.salaryAmount || 0), 0);
+    // Calculate payouts with precision
+    const totalCleared = history
+        .filter(s => ['paid', 'Paid', 'Completed'].includes(s.paymentStatus))
+        .reduce((acc, s) => acc + (s.salaryAlreadyPaid || s.netSalary || s.salaryAmount || 0), 0);
+
+    const pendingAmount = history
+        .filter(s => !['paid', 'Paid', 'Completed'].includes(s.paymentStatus))
+        .reduce((acc, s) => acc + (s.remainingBalance !== undefined ? s.remainingBalance : (s.netSalary || s.salaryAmount || 0)), 0);
+
+    const totalEarned = totalCleared + pendingAmount;
 
     const stats = [
-        { label: 'Total Earned', value: `₹ ${(totalPaid + pendingAmount).toLocaleString()}`, icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-        { label: 'Cleared Amount', value: `₹ ${totalPaid.toLocaleString()}`, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-        { label: 'Pending Payout', value: `₹ ${pendingAmount.toLocaleString()}`, icon: History, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { label: 'Total Earned', value: `₹ ${totalEarned.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+        { label: 'Cleared Amount', value: `₹ ${totalCleared.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        { label: 'Pending Payout', value: `₹ ${pendingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: History, color: 'text-amber-600', bg: 'bg-amber-50' },
     ];
+
+    const getStatusStyle = (status) => {
+        const s = String(status || '').toLowerCase();
+        if (s === 'paid') return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+        if (s === 'processing') return 'bg-blue-100 text-blue-800 border-blue-300';
+        if (s === 'pending' || s === 'unpaid' || s === 'partially_paid') return 'bg-amber-100 text-amber-800 border-amber-300';
+        if (s === 'failed') return 'bg-rose-100 text-rose-800 border-rose-300';
+        if (s === 'cancelled') return 'bg-slate-200 text-slate-800 border-slate-300';
+        return 'bg-slate-100 text-slate-700 border-slate-200';
+    };
 
     // Calendar Calculations
     const daysInMonth = useMemo(() => {
@@ -231,31 +265,32 @@ const StaffFinance = () => {
                                             <td className="px-6 py-5">
                                                 <span className="text-sm font-bold text-slate-700">{sal.month}</span>
                                             </td>
-                                            <td className="px-6 py-5 italic">₹ {(sal.baseSalary || sal.salaryAmount || 0).toLocaleString()}</td>
-                                            <td className="px-6 py-5 text-emerald-600">₹ {(sal.overtimeEarnings || 0).toLocaleString()}</td>
-                                            <td className="px-6 py-5 text-rose-500">₹ {((sal.deductions || 0) + (sal.advanceRecovery || 0)).toLocaleString()}</td>
-                                            <td className="px-6 py-5 text-sm font-black text-slate-800">₹ {(sal.netSalary || sal.salaryAmount || 0).toLocaleString()}</td>
+                                            <td className="px-6 py-5 italic">₹ {(sal.baseSalary || sal.salaryAmount || 0).toLocaleString('en-IN')}</td>
+                                            <td className="px-6 py-5 text-emerald-600 font-bold">₹ {(sal.overtimeEarnings || 0).toLocaleString('en-IN')}</td>
+                                            <td className="px-6 py-5 text-rose-500 font-bold">₹ {((sal.deductions || 0) + (sal.advanceRecovery || 0)).toLocaleString('en-IN')}</td>
+                                            <td className="px-6 py-5 text-sm font-black text-slate-900">₹ {(sal.netSalary || sal.salaryAmount || 0).toLocaleString('en-IN')}</td>
                                             <td className="px-6 py-5">
-                                                <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg ${
-                                                    sal.paymentStatus === 'paid' 
-                                                    ? 'bg-emerald-50 text-emerald-700' 
-                                                    : 'bg-amber-50 text-amber-700'
-                                                }`}>
+                                                <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full border ${getStatusStyle(sal.paymentStatus)}`}>
                                                     {sal.paymentStatus}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-5 text-center">
-                                                <button 
-                                                    onClick={() => handleDownloadSlip(sal)}
-                                                    disabled={sal.paymentStatus !== 'paid'}
-                                                    className={`p-2 rounded-lg border transition-all ${
-                                                        sal.paymentStatus === 'paid' 
-                                                        ? 'border-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white shadow-sm' 
-                                                        : 'border-slate-100 text-slate-300 cursor-not-allowed grayscale'
-                                                    }`}
-                                                >
-                                                    <Download className="w-4 h-4" />
-                                                </button>
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button 
+                                                        onClick={() => setSelectedSlipForView(sal)}
+                                                        className="p-2 rounded-xl border border-slate-200 text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
+                                                        title="View Salary Slip Details"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDownloadSlip(sal)}
+                                                        className="p-2 rounded-xl border border-indigo-200 bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-md"
+                                                        title="Download PDF Salary Slip"
+                                                    >
+                                                        <Download className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     )) : (
@@ -269,6 +304,133 @@ const StaffFinance = () => {
                     </div>
                 </div>
             )}
+
+            {/* VIEW SALARY SLIP MODAL */}
+            <AnimatePresence>
+                {selectedSlipForView && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-slate-200 space-y-6 max-h-[90vh] overflow-y-auto font-sans"
+                        >
+                            {/* Modal Header */}
+                            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white font-black text-xl flex items-center justify-center shadow">
+                                        K
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-black uppercase text-slate-900 tracking-tight">KRISHNA ENGINEERING WORKS</h2>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Official Monthly Salary Slip ({selectedSlipForView.month})</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setSelectedSlipForView(null)}
+                                    className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Employee Info Grid */}
+                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 grid grid-cols-2 gap-4 text-xs">
+                                <div>
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-0.5">EMPLOYEE INFORMATION</span>
+                                    <p className="font-black text-slate-900">{selectedSlipForView.staffId?.name || user?.name || 'Employee'}</p>
+                                    <p className="text-slate-600 font-medium">ID: {selectedSlipForView.staffId?.staff_id || user?.staff_id || 'N/A'}</p>
+                                    <p className="text-slate-600 font-medium">Dept: {selectedSlipForView.staffId?.department || user?.department || 'Operations'}</p>
+                                    <p className="text-slate-600 font-medium">Designation: {selectedSlipForView.staffId?.designation || user?.designation || 'Staff'}</p>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-0.5">TRANSACTION DETAILS</span>
+                                    <p className="font-black text-indigo-600">TXN-{String(selectedSlipForView._id).slice(-8).toUpperCase()}</p>
+                                    <p className="text-slate-600 font-medium">Month: {selectedSlipForView.month}</p>
+                                    <p className="text-slate-600 font-medium">Status: <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${getStatusStyle(selectedSlipForView.paymentStatus)}`}>{selectedSlipForView.paymentStatus}</span></p>
+                                    <p className="text-slate-600 font-medium">Method: {selectedSlipForView.payments?.[0]?.paymentMethod || 'Bank Transfer'}</p>
+                                </div>
+                            </div>
+
+                            {/* Attendance Summary */}
+                            <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs">
+                                <div className="bg-slate-900 text-white px-4 py-2 font-black uppercase tracking-wider text-[10px]">
+                                    Attendance Summary
+                                </div>
+                                <div className="p-4 grid grid-cols-3 sm:grid-cols-6 gap-2 text-center bg-slate-50">
+                                    <div><span className="text-[9px] text-slate-400 font-bold block">WORKING</span><span className="font-black text-slate-800">{selectedSlipForView.totalWorkingDays || 26}</span></div>
+                                    <div><span className="text-[9px] text-slate-400 font-bold block">PRESENT</span><span className="font-black text-emerald-600">{selectedSlipForView.presentDays || 0}</span></div>
+                                    <div><span className="text-[9px] text-slate-400 font-bold block">HALF DAYS</span><span className="font-black text-amber-600">{selectedSlipForView.halfDays || 0}</span></div>
+                                    <div><span className="text-[9px] text-slate-400 font-bold block">LEAVES</span><span className="font-black text-purple-600">{selectedSlipForView.leaveDays || 0}</span></div>
+                                    <div><span className="text-[9px] text-slate-400 font-bold block">HOLIDAYS</span><span className="font-black text-blue-600">{selectedSlipForView.holidays || 0}</span></div>
+                                    <div><span className="text-[9px] text-slate-400 font-bold block">OVERTIME</span><span className="font-black text-indigo-600">{selectedSlipForView.overtimeHours || 0} hrs</span></div>
+                                </div>
+                            </div>
+
+                            {/* Financial Breakdown Table */}
+                            <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-indigo-600 text-white font-black uppercase text-[10px]">
+                                            <th className="p-3">Earnings & Allowances</th>
+                                            <th className="p-3 text-right">Amount (₹)</th>
+                                            <th className="p-3">Deductions</th>
+                                            <th className="p-3 text-right">Amount (₹)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 font-medium">
+                                        <tr>
+                                            <td className="p-3 font-bold">Base Salary</td>
+                                            <td className="p-3 text-right">₹ {(selectedSlipForView.baseSalary || 0).toLocaleString('en-IN')}</td>
+                                            <td className="p-3 font-bold text-rose-600">Advance Recovery</td>
+                                            <td className="p-3 text-right text-rose-600">₹ {(selectedSlipForView.advanceRecovery || 0).toLocaleString('en-IN')}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="p-3 font-bold">Overtime Earnings</td>
+                                            <td className="p-3 text-right">₹ {(selectedSlipForView.overtimeEarnings || 0).toLocaleString('en-IN')}</td>
+                                            <td className="p-3 font-bold text-rose-600">Other Deductions</td>
+                                            <td className="p-3 text-right text-rose-600">₹ {(selectedSlipForView.deductions || 0).toLocaleString('en-IN')}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="p-3 font-bold">Bonus & Incentives</td>
+                                            <td className="p-3 text-right">₹ {(selectedSlipForView.bonus || 0).toLocaleString('en-IN')}</td>
+                                            <td className="p-3"></td>
+                                            <td className="p-3"></td>
+                                        </tr>
+                                        <tr className="bg-slate-50 font-black">
+                                            <td className="p-3">Net Disbursed Salary</td>
+                                            <td className="p-3 text-right text-indigo-600 text-sm" colSpan="3">
+                                                ₹ {(selectedSlipForView.netSalary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Footer & Signature */}
+                            <div className="flex justify-between items-end border-t border-slate-100 pt-4 text-[10px] text-slate-400">
+                                <div>
+                                    <p className="font-bold text-slate-500">Krishna Engineering Works [SEAL]</p>
+                                    <p>System Generated Monthly Salary Slip</p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        handleDownloadSlip(selectedSlipForView);
+                                    }}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg transition"
+                                >
+                                    <Download className="w-4 h-4" /> Download PDF Slip
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* ATTENDANCE CALENDAR VIEW */}
             {activeTab === 'attendance' && (

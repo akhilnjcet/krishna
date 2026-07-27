@@ -49,6 +49,9 @@ import AdminWhatsApp from './pages/admin/AdminWhatsApp';
 import AdminNotifications from './pages/admin/AdminNotifications';
 import AdminTasks from './pages/admin/AdminTasks';
 import AdminUsers from './pages/admin/AdminUsers';
+import Invoices from './pages/admin/Invoices';
+import Quotations from './pages/admin/Quotations';
+import LabourBillsTab from './pages/admin/LabourBillsTab';
 
 // Staff Pages
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -399,6 +402,9 @@ const App = () => {
               <Route path="profile" element={<Profile />} />
               <Route path="lodge-manager" element={<LodgeAdminManager />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="invoices-studio" element={<Invoices />} />
+              <Route path="quotations-studio" element={<Quotations />} />
+              <Route path="labour-bills" element={<LabourBillsTab />} />
             </Route>
 
             {/* Staff Routes */}

@@ -4,9 +4,13 @@ import api from '../../services/api';
 import { generateInvoicePDF, generateGeneralReportPDF } from '../../services/pdfService';
 import { CreditCard, Send, CheckCircle, Clock, Loader2, IndianRupee, Download, RotateCcw } from 'lucide-react';
 
+import Invoices from './Invoices';
+import LabourBillsTab from './LabourBillsTab';
+
 const AdminInvoices = () => {
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [activeSubTab, setActiveSubTab] = useState('ledger'); // 'ledger', 'builder', 'labour-transport'
 
     useEffect(() => {
         fetchInvoices();
@@ -58,8 +62,42 @@ const AdminInvoices = () => {
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl gap-6">
+            {/* Tab Navigation */}
+            <div className="no-print flex items-center gap-3 mb-6 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-sm w-fit">
+                <button
+                    onClick={() => setActiveSubTab('ledger')}
+                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
+                        activeSubTab === 'ledger' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                >
+                    Accounts Receivable Ledger
+                </button>
+                <button
+                    onClick={() => setActiveSubTab('builder')}
+                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
+                        activeSubTab === 'builder' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                >
+                    Interactive Invoice Studio
+                </button>
+                <button
+                    onClick={() => setActiveSubTab('labour-transport')}
+                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
+                        activeSubTab === 'labour-transport' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                >
+                    Labour & Goods Transport Bills
+                </button>
+            </div>
+
+            {activeSubTab === 'builder' ? (
+                <Invoices />
+            ) : activeSubTab === 'labour-transport' ? (
+                <LabourBillsTab />
+            ) : (
+                <>
+                    {/* Header Section */}
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl gap-6">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Financial Oversight</div>
                     <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Accounts Receivable</h2>
@@ -172,6 +210,8 @@ const AdminInvoices = () => {
                     </table>
                 </div>
             </div>
+            </>
+            )}
         </div>
     );
 };

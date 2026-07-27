@@ -1,8 +1,19 @@
-const Salary = require('../models/Salary');
-const DailyAttendance = require('../models/DailyAttendance');
-const Overtime = require('../models/Overtime');
-const User = require('../models/User');
-const { recalculateSalary } = require('../utils/salaryCalculator');
+const socketUtil = require('../utils/socket');
+
+const notifyPayrollUpdate = (staffId, month, status) => {
+    try {
+        const io = socketUtil.getIO();
+        if (io) {
+            io.emit('payroll_updated', { staffId: String(staffId), month, status });
+            io.emit('salary_updated', { staffId: String(staffId), month, status });
+            if (status) {
+                io.emit('payment_status_changed', { staffId: String(staffId), month, status });
+            }
+        }
+    } catch (err) {
+        console.warn("Socket broadcast warning:", err.message);
+    }
+};
 
 // Calculate draft payroll for a month
 exports.calculateDraftPayroll = async (req, res) => {
@@ -58,6 +69,7 @@ exports.createPayroll = async (req, res) => {
         }
 
         const result = await recalculateSalary(staffId, month);
+        notifyPayrollUpdate(staffId, month, result.salaryRecord.paymentStatus);
 
         res.status(201).json({ message: "Payroll recorded successfully.", payroll: result.salaryRecord });
     } catch (error) {
@@ -87,10 +99,11 @@ exports.getPayrollRecords = async (req, res) => {
 // Update salary payment status
 exports.updatePaymentStatus = async (req, res) => {
     try {
-        const { status } = req.body; // status: 'paid' or 'unpaid'
+        const { status } = req.body; // status: 'Pending', 'Processing', 'Paid', 'Failed', 'Cancelled', 'paid', 'unpaid'
         
-        if (!['paid', 'unpaid'].includes(status)) {
-            return res.status(400).json({ message: "Invalid payment status. Must be 'paid' or 'unpaid'." });
+        const validStatuses = ['Pending', 'Processing', 'Paid', 'Failed', 'Cancelled', 'paid', 'unpaid', 'partially_paid', 'pending', 'processing', 'failed', 'cancelled'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ message: `Invalid payment status. Allowed: ${validStatuses.join(', ')}` });
         }
 
         const payroll = await Salary.findById(req.params.id);
@@ -99,8 +112,14 @@ exports.updatePaymentStatus = async (req, res) => {
         }
 
         payroll.paymentStatus = status;
-        payroll.paidAt = status === 'paid' ? Date.now() : undefined;
+        if (['Paid', 'paid'].includes(status)) {
+            payroll.paidAt = payroll.paidAt || Date.now();
+        } else if (['Pending', 'unpaid', 'pending'].includes(status)) {
+            payroll.paidAt = undefined;
+        }
         await payroll.save();
+
+        notifyPayrollUpdate(payroll.staffId, payroll.month, status);
 
         res.json({ message: `Payment status updated to ${status}.`, payroll });
     } catch (error) {
@@ -164,8 +183,25 @@ exports.addSalaryPayment = async (req, res) => {
             date: new Date()
         });
 
+        notifyPayrollUpdate(staffId, month, result.salaryRecord.paymentStatus);
+
         res.status(201).json({ message: "Transaction added successfully.", salary: result.salaryRecord });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
+
+// Delete a payroll record and sync
+exports.deletePayroll = async (req, res) => {
+    try {
+        const salary = await Salary.findByIdAndDelete(req.params.id);
+        if (!salary) {
+            return res.status(404).json({ message: "Payroll record not found." });
+        }
+        notifyPayrollUpdate(salary.staffId, salary.month, 'deleted');
+        res.json({ message: "Payroll record deleted successfully." });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+

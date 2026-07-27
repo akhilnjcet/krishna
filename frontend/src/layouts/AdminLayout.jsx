@@ -5,7 +5,7 @@ import {
     BarChart3, Users, ClipboardList, BadgeIndianRupee, MessageSquare,
     Calculator, Receipt, TrendingUp, Settings, LogOut, Menu, X, Bell,
     Search, HelpCircle, ChevronRight, User, Filter, LayoutGrid, Activity,
-    Clock, AlertCircle, Radio, MessageCircle, ChevronLeft, CheckSquare
+    Clock, AlertCircle, Radio, MessageCircle, ChevronLeft, CheckSquare, Truck
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,7 +25,10 @@ const SIDEBAR_ITEMS = [
     { name: 'Notification Center', path: '/admin/notifications', icon: Bell },
     { name: 'Visual Portfolio', path: '/admin/portfolio',    icon: ImageIcon },
     { name: 'Formal Quotes',   path: '/admin/quotes',       icon: Receipt },
+    { name: 'Quotation Studio', path: '/admin/quotations-studio', icon: FileText },
     { name: 'Financial Hub',   path: '/admin/finance',      icon: BadgeIndianRupee },
+    { name: 'Invoice Studio',  path: '/admin/invoices-studio', icon: Receipt },
+    { name: 'Labour & Freight Bills', path: '/admin/labour-bills', icon: Truck },
     { name: 'Project Timeline', path: '/admin/progress',     icon: Activity },
     { name: 'Intelligence Feed', path: '/admin/blog',        icon: BookOpen },
     { name: 'Technical Chat',  path: '/admin/live-chat',    icon: MessageSquare },

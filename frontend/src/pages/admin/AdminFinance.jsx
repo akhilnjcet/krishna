@@ -8,9 +8,10 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import ReportHeader from '../../components/ReportHeader';
 import { generateGeneralReportPDF, generateSalaryPDF } from '../../services/pdfService';
+import LabourBillsTab from './LabourBillsTab';
 
 const AdminFinance = () => {
-    const [activeTab, setActiveTab] = useState('expenses'); // 'expenses', 'payroll', 'overtime'
+    const [activeTab, setActiveTab] = useState('expenses'); // 'expenses', 'payroll', 'overtime', 'labour-bills'
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     
@@ -489,7 +490,18 @@ const AdminFinance = () => {
                 >
                     ⏱️ Overtime Registry
                 </button>
+                <button 
+                    onClick={() => setActiveTab('labour-bills')}
+                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'labour-bills' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                >
+                    🚚 Labour & Transport Bills
+                </button>
             </div>
+
+            {/* TAB: LABOUR & TRANSPORT BILLS */}
+            {activeTab === 'labour-bills' && (
+                <LabourBillsTab />
+            )}
 
             {/* TAB 1: EXPENSES LEDGER */}
             {activeTab === 'expenses' && (

@@ -42,7 +42,9 @@ exports.getAdminOverview = async (req, res) => {
 // @route   GET /api/finance/staff-salary
 exports.getStaffSalary = async (req, res) => {
     try {
-        const history = await Salary.find({ staffId: req.user.id }).sort({ month: -1 });
+        const history = await Salary.find({ staffId: req.user.id })
+            .populate('staffId', 'name email staff_id department designation upi_id bank_name account_number ifsc_code joiningDate phone')
+            .sort({ month: -1 });
         res.json(history);
     } catch (err) {
         res.status(500).json({ message: err.message });

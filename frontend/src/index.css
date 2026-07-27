@@ -92,3 +92,47 @@
     .text-xs-mobile { font-size: 0.75rem !important; }
   }
 }
+
+/* Dedicated Browser & PDF Print Optimization */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Hide navigation, sidebars, controls, forms, footers */
+  nav, header, footer, sidebar, .no-print, button, input[type="file"], select, textarea {
+    display: none !important;
+  }
+
+  /* Ensure only the printable document container is rendered */
+  .print-document-container {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+  }
+
+  /* Page Break Safety */
+  .print-document-container tr,
+  .print-document-container table,
+  .print-document-container .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
