@@ -63,6 +63,7 @@ import AttendanceScanner from './pages/staff/AttendanceScanner';
 import StaffTimesheets from './pages/staff/StaffTimesheets';
 import StaffContacts from './pages/staff/StaffContacts';
 import StaffApplications from './pages/staff/StaffApplications';
+import StaffAttendanceHub from './pages/staff/StaffAttendanceHub';
 
 // Customer Pages
 import CustomerDashboard from './pages/customer/CustomerDashboard';
@@ -411,6 +412,7 @@ const App = () => {
             <Route path="/staff" element={<StaffLayout />}>
               <Route index element={<StaffDashboard />} />
               <Route path="attendance" element={<AttendanceScanner />} />
+              <Route path="attendance-hub" element={<StaffAttendanceHub />} />
               <Route path="timesheets" element={<StaffTimesheets />} />
               <Route path="tasks" element={<StaffTasks />} />
               <Route path="leave" element={<StaffLeave />} />

@@ -95,9 +95,18 @@ exports.markDailyAttendance = async (req, res) => {
         }
 
         // Recalculate salary for this month in real time
-        const monthStr = date.substring(0, 7); // "YYYY-MM"
-        const { recalculateSalary } = require('../utils/salaryCalculator');
-        await recalculateSalary(staffId, monthStr);
+        // Emit real-time Socket.IO notifications
+        try {
+            const socketUtil = require('../utils/socket');
+            const io = socketUtil.getIO();
+            if (io) {
+                io.emit('attendance_updated', { staffId: String(staffId), date, status });
+                io.emit('attendance_recorded', { staffId: String(staffId), date, status });
+                io.emit('daily_attendance_changed', { staffId: String(staffId), date, status });
+            }
+        } catch (sErr) {
+            console.warn("Socket notification warning:", sErr.message);
+        }
 
         console.log(`✅ Daily Attendance & Salary updated for ${staff.name} on ${date}: ${status}`);
         res.json({ message: "Attendance and salary updated successfully.", attendance });

@@ -87,6 +87,30 @@ const AdminSettings = () => {
         setSettings(prev => ({ ...prev, [key]: val }));
     };
 
+    const handleFileUpload = (e, fieldKey, allowedTypes, maxSizeMB = 5) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!allowedTypes.includes(file.type)) {
+            alert(`Invalid file format. Allowed formats: ${allowedTypes.map(t => t.replace('image/', '').replace('+xml', '').toUpperCase()).join(', ')}`);
+            return;
+        }
+
+        if (file.size > maxSizeMB * 1024 * 1024) {
+            alert(`File size exceeds limit (${maxSizeMB} MB max).`);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            setSettings(prev => ({
+                ...prev,
+                [fieldKey]: reader.result
+            }));
+        };
+        reader.readAsDataURL(file);
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center">
@@ -140,7 +164,7 @@ const AdminSettings = () => {
 
             <div className="max-w-7xl mx-auto relative z-10">
                 
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-20">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-12">
                     <div>
                         <div className="flex items-center gap-3 text-brand-accent font-black text-[10px] uppercase tracking-[0.4em] mb-4">
                             <Terminal className="w-4 h-4" /> Root Config Interface v5.1
@@ -160,7 +184,153 @@ const AdminSettings = () => {
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 mb-20">
+                {/* ── COMPANY BRANDING & DIGITAL SIGNATURE SECTION ── */}
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 mb-12">
+                    <section className="xl:col-span-12 p-8 md:p-10 bg-white/[0.02] border border-white/5 rounded-[2.5rem] backdrop-blur-3xl relative overflow-hidden group hover:border-amber-500/20 transition-all">
+                        <ModuleHeader icon={ImageIcon} title="Company Branding & Digital Signature Management" status="PDF & Web" />
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                            {/* COMPANY LOGO CARD */}
+                            <div className="lg:col-span-6 bg-black/40 border border-white/10 p-6 rounded-3xl space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h4 className="text-sm font-black uppercase text-white tracking-wider flex items-center gap-2">
+                                            <ImageIcon className="w-4 h-4 text-amber-500" /> Company Logo
+                                        </h4>
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Formats: PNG, JPG, JPEG, SVG, WEBP (Max 5MB)</p>
+                                    </div>
+                                    {/* Print Toggle */}
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input 
+                                            type="checkbox"
+                                            checked={settings.show_logo !== false && settings.show_logo !== 'false'}
+                                            onChange={(e) => updateField('show_logo', e.target.checked)}
+                                            className="sr-only"
+                                        />
+                                        <div className={`w-10 h-6 rounded-full transition-colors p-1 ${settings.show_logo !== false && settings.show_logo !== 'false' ? 'bg-amber-500' : 'bg-gray-800'}`}>
+                                            <div className={`w-4 h-4 rounded-full bg-white transition-transform ${settings.show_logo !== false && settings.show_logo !== 'false' ? 'translate-x-4' : ''}`} />
+                                        </div>
+                                        <span className="text-[9px] font-black uppercase text-gray-400">PDF Logo</span>
+                                    </label>
+                                </div>
+
+                                {/* Logo Preview Box */}
+                                <div className="h-40 bg-[#0a0a0c] border border-white/10 rounded-2xl flex items-center justify-center p-4 relative overflow-hidden group">
+                                    {settings.company_logo ? (
+                                        <img 
+                                            src={settings.company_logo} 
+                                            alt="Company Logo Preview" 
+                                            className="max-h-32 max-w-full object-contain drop-shadow-md"
+                                        />
+                                    ) : (
+                                        <div className="text-center text-gray-600 space-y-2">
+                                            <ImageIcon className="w-10 h-10 mx-auto opacity-30" />
+                                            <p className="text-[10px] font-black uppercase tracking-widest">No Custom Logo Uploaded</p>
+                                            <p className="text-[9px] text-gray-500">Default brand badge will be rendered on PDFs</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Upload / Replace / Delete Controls */}
+                                <div className="flex items-center gap-3">
+                                    <label className="flex-1 bg-amber-500 hover:bg-amber-400 text-black px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer text-center transition flex items-center justify-center gap-2 shadow-lg">
+                                        <ImageIcon className="w-4 h-4" />
+                                        {settings.company_logo ? 'Replace Logo' : 'Upload Logo'}
+                                        <input 
+                                            type="file"
+                                            accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                                            onChange={(e) => handleFileUpload(e, 'company_logo', ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp'])}
+                                            className="hidden"
+                                        />
+                                    </label>
+
+                                    {settings.company_logo && (
+                                        <button
+                                            onClick={() => updateField('company_logo', '')}
+                                            className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition"
+                                            title="Remove Logo"
+                                        >
+                                            Remove
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* DIGITAL SIGNATURE CARD */}
+                            <div className="lg:col-span-6 bg-black/40 border border-white/10 p-6 rounded-3xl space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h4 className="text-sm font-black uppercase text-white tracking-wider flex items-center gap-2">
+                                            <FileText className="w-4 h-4 text-blue-500" /> Digital Signature & Seal
+                                        </h4>
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Formats: PNG (Transparent preferred), JPG, WEBP (Max 5MB)</p>
+                                    </div>
+                                    {/* Print Toggle */}
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input 
+                                            type="checkbox"
+                                            checked={settings.show_signature !== false && settings.show_signature !== 'false'}
+                                            onChange={(e) => updateField('show_signature', e.target.checked)}
+                                            className="sr-only"
+                                        />
+                                        <div className={`w-10 h-6 rounded-full transition-colors p-1 ${settings.show_signature !== false && settings.show_signature !== 'false' ? 'bg-blue-500' : 'bg-gray-800'}`}>
+                                            <div className={`w-4 h-4 rounded-full bg-white transition-transform ${settings.show_signature !== false && settings.show_signature !== 'false' ? 'translate-x-4' : ''}`} />
+                                        </div>
+                                        <span className="text-[9px] font-black uppercase text-gray-400">PDF Signature</span>
+                                    </label>
+                                </div>
+
+                                {/* Signature Preview Box */}
+                                <div className="h-40 bg-[#0a0a0c] border border-white/10 rounded-2xl flex items-center justify-center p-4 relative overflow-hidden group">
+                                    {settings.company_signature ? (
+                                        <div className="text-center space-y-1">
+                                            <img 
+                                                src={settings.company_signature} 
+                                                alt="Digital Signature Preview" 
+                                                className="max-h-24 max-w-full object-contain mx-auto invert brightness-200"
+                                            />
+                                            <div className="border-t border-gray-700 pt-1 text-[9px] text-gray-400 font-mono uppercase tracking-widest">
+                                                AUTHORIZED SIGNATURE [DIGITAL VERIFIED]
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center text-gray-600 space-y-2">
+                                            <FileText className="w-10 h-10 mx-auto opacity-30" />
+                                            <p className="text-[10px] font-black uppercase tracking-widest">No Digital Signature Uploaded</p>
+                                            <p className="text-[9px] text-gray-500">Standard text seal line will be printed on PDFs</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Upload / Replace / Delete Controls */}
+                                <div className="flex items-center gap-3">
+                                    <label className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer text-center transition flex items-center justify-center gap-2 shadow-lg">
+                                        <FileText className="w-4 h-4" />
+                                        {settings.company_signature ? 'Replace Signature' : 'Upload Signature'}
+                                        <input 
+                                            type="file"
+                                            accept="image/png,image/jpeg,image/jpg,image/webp"
+                                            onChange={(e) => handleFileUpload(e, 'company_signature', ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'])}
+                                            className="hidden"
+                                        />
+                                    </label>
+
+                                    {settings.company_signature && (
+                                        <button
+                                            onClick={() => updateField('company_signature', '')}
+                                            className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition"
+                                            title="Remove Signature"
+                                        >
+                                            Remove
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 mb-12">
                     <section className="xl:col-span-12 p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-blue-500/20 transition-all">
                         <ModuleHeader icon={Building} title="Commercial Gateway Configuration" status="Official" />
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">

@@ -22,30 +22,67 @@ const THEME = {
 };
 
 const savePDF = async (doc, filename) => {
-    if (Capacitor.isNativePlatform()) {
-        try {
-            const pdfOutput = doc.output('datauristring');
-            const base64Data = pdfOutput.split(',')[1];
-            
-            const savedFile = await Filesystem.writeFile({
-                path: filename,
-                data: base64Data,
-                directory: Directory.Cache,
-                recursive: true
-            });
-            
-            await Share.share({
-                title: filename,
-                text: 'Here is your generated PDF document.',
-                url: savedFile.uri,
-                dialogTitle: 'Save or Share PDF'
-            });
-        } catch (err) {
-            console.error('Mobile PDF Share Error:', err);
-            alert('Failed to process PDF on device.');
+    try {
+        // Sanitize filename to ensure safe, cross-browser downloading without forbidden chars or spaces
+        const safeFilename = String(filename || 'Document.pdf')
+            .trim()
+            .replace(/[/\\?%*:|"<>]/g, '_')
+            .replace(/\s+/g, '_');
+
+        if (Capacitor.isNativePlatform()) {
+            try {
+                const pdfOutput = doc.output('datauristring');
+                const base64Data = pdfOutput.split(',')[1];
+                
+                const savedFile = await Filesystem.writeFile({
+                    path: safeFilename,
+                    data: base64Data,
+                    directory: Directory.Cache,
+                    recursive: true
+                });
+                
+                await Share.share({
+                    title: safeFilename,
+                    text: 'Here is your generated PDF document.',
+                    url: savedFile.uri,
+                    dialogTitle: 'Save or Share PDF'
+                });
+                return;
+            } catch (err) {
+                console.warn('Native Capacitor Share fallback to browser download:', err);
+            }
         }
-    } else {
-        doc.save(filename);
+        
+        // Multi-stage cross-browser download engine
+        try {
+            // Stage 1: Explicit Blob + Dynamic Anchor Tag Download
+            const blob = doc.output('blob');
+            const blobUrl = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = safeFilename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            
+            setTimeout(() => {
+                if (document.body.contains(link)) {
+                    document.body.removeChild(link);
+                }
+                URL.revokeObjectURL(blobUrl);
+            }, 1000);
+        } catch (blobErr) {
+            console.warn('Blob URL download failed, using doc.save fallback:', blobErr);
+            doc.save(safeFilename);
+        }
+    } catch (err) {
+        console.error('All PDF download mechanisms failed:', err);
+        try {
+            doc.save('document.pdf');
+        } catch (e) {
+            alert('Unable to trigger PDF download. Please check your browser popup/download permissions.');
+        }
     }
 };
 
@@ -98,24 +135,35 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
     // Render Left Column
     let leftY = 16;
 
-    // Brand Badge / Logo Icon
-    doc.setFillColor(...THEME.accent);
-    doc.roundedRect(margin, leftY - 4, 10, 10, 2, 2, 'F');
-    doc.setTextColor(...THEME.textLight);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('K', margin + 3.5, leftY + 3);
+    // Company Logo / Brand Badge Rendering
+    const logoUrl = companyInfoOverride.logo || companyInfoOverride.company_logo || COMPANY_DETAILS.logo;
+    const showLogo = companyInfoOverride.show_logo !== false && companyInfoOverride.showLogo !== false;
+
+    let logoRendered = false;
+    if (logoUrl && showLogo) {
+        try {
+            doc.addImage(logoUrl, 'PNG', margin, leftY - 4, 12, 12);
+            logoRendered = true;
+        } catch (imgErr) {
+            console.warn("Logo image render fallback:", imgErr.message);
+        }
+    }
+
+    if (!logoRendered) {
+        // Fallback Badge
+        doc.setFillColor(...THEME.accent);
+        doc.roundedRect(margin, leftY - 4, 10, 10, 2, 2, 'F');
+        doc.setTextColor(...THEME.textLight);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('K', margin + 3.5, leftY + 3);
+    }
 
     // Company Name
     const textStartX = margin + 14;
     doc.setFontSize(14);
     doc.setTextColor(...THEME.textLight);
     doc.setFont('helvetica', 'bold');
-    companyLines.forEach((line) => {
-        doc.text(line, textStartX, leftY + 2);
-        leftY += 6;
-    });
-
     // Tagline
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'normal');
@@ -157,6 +205,34 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
     });
 
     return headerHeight;
+};
+
+const addSignatureAndSeal = (doc, finalY, companyInfoOverride = {}) => {
+    const pageW = doc.internal.pageSize.width;
+    const signatureUrl = companyInfoOverride.signature || companyInfoOverride.company_signature || COMPANY_DETAILS.signature;
+    const showSignature = companyInfoOverride.show_signature !== false && companyInfoOverride.showSignature !== false;
+
+    if (signatureUrl && showSignature) {
+        try {
+            // High resolution digital signature placement
+            doc.addImage(signatureUrl, 'PNG', pageW - 75, finalY + 22, 40, 15);
+        } catch (e) {
+            console.warn("Digital signature image fallback:", e.message);
+        }
+    }
+
+    // Signature Line & Corporate Seal
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(pageW - 80, finalY + 38, pageW - 15, finalY + 38);
+    doc.setFontSize(8.5);
+    doc.setTextColor(...THEME.textDark);
+    doc.setFont('helvetica', 'bold');
+    doc.text('AUTHORIZED SIGNATURE', pageW - 47.5, finalY + 43, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...THEME.textMuted);
+    doc.text('KRISHNA ENGINEERING WORKS [SEAL]', pageW - 47.5, finalY + 47, { align: 'center' });
 };
 
 /**

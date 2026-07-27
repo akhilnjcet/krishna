@@ -92,7 +92,16 @@ const StaffFinance = () => {
     }, [activeTab, fetchMonthlyLogs]);
 
     const handleDownloadSlip = (sal) => {
-        generateSalaryPDF(sal, user);
+        try {
+            if (!sal) {
+                alert("No salary slip record selected for download.");
+                return;
+            }
+            generateSalaryPDF(sal, user);
+        } catch (err) {
+            console.error("Failed to generate salary PDF:", err);
+            alert("An error occurred while generating the PDF. Please try again.");
+        }
     };
 
     const handleAdvanceRequest = async (e) => {

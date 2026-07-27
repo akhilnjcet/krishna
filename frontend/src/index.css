@@ -69,11 +69,21 @@
   @apply bg-[#2563EB]/20 rounded-full hover:bg-[#2563EB]/40 transition-all;
 }
 
-/* --- Mobile Visibility Fixes --- */
+/* --- Mobile Visibility & Touch Optimization Fixes --- */
 @layer utilities {
+  /* Touch target optimization (minimum 44px for easy tapping) */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   /* Prevent table content from getting cut off */
   .mobile-table-scroll {
-    @apply overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
+    @apply overflow-x-auto w-full -mx-4 px-4 sm:mx-0 sm:px-0;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Responsive card adjustments */
@@ -86,6 +96,20 @@
     @apply w-full max-w-[100vw] overflow-hidden;
   }
   
+  /* Safe Area Insets for notched displays & mobile browsers */
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+  }
+
+  .safe-area-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top, 0.5rem));
+  }
+  
+  /* Responsive card grids */
+  .responsive-card-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6;
+  }
+
   /* Hide specific elements on very small screens to save space */
   @media (max-width: 640px) {
     .hide-xs { display: none !important; }

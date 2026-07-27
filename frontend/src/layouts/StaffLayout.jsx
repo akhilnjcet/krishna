@@ -15,6 +15,7 @@ const SIDEBAR_W = 'w-64';
 const navItems = [
     { name: 'Staff Dashboard',  path: '/staff',              icon: LayoutDashboard },
     { name: 'Scan Attendance',  path: '/staff/attendance',   icon: UserCheck },
+    { name: 'Attendance',       path: '/staff/attendance-hub', icon: CalendarDays },
     { name: 'My Timesheets',    path: '/staff/timesheets',   icon: CalendarDays },
     { name: 'Task Board',       path: '/staff/tasks',        icon: CheckSquare },
     { name: 'Project Delay / Stop', path: '/staff/progress',     icon: ClipboardList },
