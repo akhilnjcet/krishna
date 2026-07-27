@@ -187,13 +187,13 @@ const StaffFinance = () => {
             <ReportHeader 
                 title="Finance Ledger & Roster"
                 subtitle="Manage your monthly earnings, inspect attendance, check overtime records, and download locked salary slips."
-                data={history.map(sal => [
-                    sal.month || 'N/A',
-                    `₹ ${(sal.baseSalary || sal.salaryAmount || 0).toLocaleString()}`,
-                    `₹ ${(sal.deductions || 0).toLocaleString()}`,
-                    `₹ ${(sal.netSalary || sal.salaryAmount || 0).toLocaleString()}`,
-                    (sal.paymentStatus || 'Pending').toUpperCase()
-                ])}
+                data={Array.isArray(history) ? history.map(sal => [
+                    sal?.month || 'N/A',
+                    `₹ ${(sal?.baseSalary || sal?.salaryAmount || 0).toLocaleString()}`,
+                    `₹ ${(sal?.deductions || 0).toLocaleString()}`,
+                    `₹ ${(sal?.netSalary || sal?.salaryAmount || 0).toLocaleString()}`,
+                    (sal?.paymentStatus || 'Pending').toUpperCase()
+                ]) : []}
                 columns={['Period', 'Base', 'Deduction', 'Net', 'Status']}
             />
 
@@ -269,21 +269,23 @@ const StaffFinance = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-600">
-                                    {history.length > 0 ? history.map((sal) => (
-                                        <tr key={sal._id} className="hover:bg-slate-50/50 transition group">
-                                            <td className="px-6 py-5">
-                                                <span className="text-sm font-bold text-slate-700">{sal.month}</span>
-                                            </td>
-                                            <td className="px-6 py-5 italic">₹ {(sal.baseSalary || sal.salaryAmount || 0).toLocaleString('en-IN')}</td>
-                                            <td className="px-6 py-5 text-emerald-600 font-bold">₹ {(sal.overtimeEarnings || 0).toLocaleString('en-IN')}</td>
-                                            <td className="px-6 py-5 text-rose-500 font-bold">₹ {((sal.deductions || 0) + (sal.advanceRecovery || 0)).toLocaleString('en-IN')}</td>
-                                            <td className="px-6 py-5 text-sm font-black text-slate-900">₹ {(sal.netSalary || sal.salaryAmount || 0).toLocaleString('en-IN')}</td>
-                                            <td className="px-6 py-5">
-                                                <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full border ${getStatusStyle(sal.paymentStatus)}`}>
-                                                    {sal.paymentStatus}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-5 text-center">
+                                    {Array.isArray(history) && history.length > 0 ? history.map((sal) => {
+                                        if (!sal) return null;
+                                        return (
+                                            <tr key={sal._id} className="hover:bg-slate-50/50 transition group">
+                                                <td className="px-6 py-5">
+                                                    <span className="text-sm font-bold text-slate-700">{sal.month}</span>
+                                                </td>
+                                                <td className="px-6 py-5 italic">₹ {(sal.baseSalary || sal.salaryAmount || 0).toLocaleString('en-IN')}</td>
+                                                <td className="px-6 py-5 text-emerald-600 font-bold">₹ {(sal.overtimeEarnings || 0).toLocaleString('en-IN')}</td>
+                                                <td className="px-6 py-5 text-rose-500 font-bold">₹ {((sal.deductions || 0) + (sal.advanceRecovery || 0)).toLocaleString('en-IN')}</td>
+                                                <td className="px-6 py-5 text-sm font-black text-slate-900">₹ {(sal.netSalary || sal.salaryAmount || 0).toLocaleString('en-IN')}</td>
+                                                <td className="px-6 py-5">
+                                                    <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full border ${getStatusStyle(sal.paymentStatus)}`}>
+                                                        {sal.paymentStatus}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-5 text-center">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button 
                                                         onClick={() => setSelectedSlipForView(sal)}
@@ -302,7 +304,8 @@ const StaffFinance = () => {
                                                 </div>
                                             </td>
                                         </tr>
-                                    )) : (
+                                        );
+                                    }) : (
                                         <tr>
                                             <td colSpan="7" className="p-12 text-center text-slate-400 font-bold italic">No payment statements logged yet.</td>
                                         </tr>
