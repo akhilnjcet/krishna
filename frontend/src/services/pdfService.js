@@ -132,11 +132,14 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
     const maxLeftWidth = (pageWidth / 2) - 10;
     const maxRightWidth = (pageWidth / 2) - 10;
 
-    const companyName = companyInfoOverride.name || COMPANY_DETAILS.name;
-    const tagline = companyInfoOverride.tagline || COMPANY_DETAILS.tagline;
-    const address = companyInfoOverride.address || COMPANY_DETAILS.address;
-    const contact = companyInfoOverride.contact || COMPANY_DETAILS.contact;
-    const gstin = companyInfoOverride.gstin || COMPANY_DETAILS.gstin;
+    const companyName = companyInfoOverride.company_name || companyInfoOverride.name || cachedBranding?.company_name || COMPANY_DETAILS.name;
+    const tagline = companyInfoOverride.tagline || cachedBranding?.company_tagline || COMPANY_DETAILS.tagline;
+    const address = companyInfoOverride.company_address || companyInfoOverride.address || cachedBranding?.company_address || cachedBranding?.footer_address || COMPANY_DETAILS.address;
+    
+    const emailVal = companyInfoOverride.company_email || companyInfoOverride.email || cachedBranding?.company_email || cachedBranding?.footer_email || 'contact@krishnaengg.com';
+    const phoneVal = companyInfoOverride.company_phone || companyInfoOverride.phone || cachedBranding?.company_phone || cachedBranding?.footer_phone || '+91 9447940835';
+    const contact = companyInfoOverride.contact || `Phone: ${phoneVal} | Email: ${emailVal}`;
+    const gstin = companyInfoOverride.company_gstin || companyInfoOverride.gstin || cachedBranding?.company_gstin || COMPANY_DETAILS.gstin;
 
     // Calculate left column height (Logo/Badge + Company Name + Tagline)
     doc.setFont('helvetica', 'bold');

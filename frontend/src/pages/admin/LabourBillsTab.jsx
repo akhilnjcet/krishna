@@ -48,6 +48,21 @@ const LabourBillsTab = () => {
     const [theme, setTheme] = useState('Classic'); // Classic, Modern, Minimalist
     const [themeColor, setThemeColor] = useState('#4f46e5');
 
+    // Public Branding Settings
+    const [brandingSettings, setBrandingSettings] = useState({});
+    React.useEffect(() => {
+        fetch('/api/settings/public')
+            .then(res => res.ok ? res.json() : [])
+            .then(data => {
+                const map = {};
+                if (Array.isArray(data)) {
+                    data.forEach(item => { map[item.key] = item.value; });
+                }
+                setBrandingSettings(map);
+            })
+            .catch(err => console.warn('Public settings fetch failed', err));
+    }, []);
+
     // Dynamic Labour Row Handlers
     const handleAddLabourRow = () => {
         setLabourRows(prev => [
@@ -539,9 +554,11 @@ const LabourBillsTab = () => {
                                 /* Classic Theme */
                                 <div className="border-b border-slate-200 pb-6 mb-8 flex justify-between items-start">
                                     <div>
-                                        <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900">KRISHNA ENGINEERING WORKS</h1>
+                                        <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
                                         <p className="text-xs text-slate-500">Combined Labour Billing & Transport Logistics Module</p>
-                                        <p className="text-[11px] text-slate-400 font-medium mt-0.5">Phone: +91 9447940835 | Email: contact@krishnaengg.com</p>
+                                        <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                                            Phone: {brandingSettings?.company_phone || brandingSettings?.footer_phone || '+91 9447940835'} | Email: {brandingSettings?.company_email || brandingSettings?.footer_email || 'contact@krishnaengg.com'}
+                                        </p>
                                     </div>
                                     <div className="text-right">
                                         <span 

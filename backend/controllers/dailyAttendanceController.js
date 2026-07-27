@@ -95,6 +95,10 @@ exports.markDailyAttendance = async (req, res) => {
         }
 
         // Recalculate salary for this month in real time
+        const { recalculateSalary } = require('../utils/salaryCalculator');
+        const monthStr = date.substring(0, 7);
+        await recalculateSalary(staffId, monthStr);
+
         // Emit real-time Socket.IO notifications
         try {
             const socketUtil = require('../utils/socket');
@@ -103,6 +107,8 @@ exports.markDailyAttendance = async (req, res) => {
                 io.emit('attendance_updated', { staffId: String(staffId), date, status });
                 io.emit('attendance_recorded', { staffId: String(staffId), date, status });
                 io.emit('daily_attendance_changed', { staffId: String(staffId), date, status });
+                io.emit('payroll_updated', { staffId: String(staffId), month: monthStr });
+                io.emit('salary_updated', { staffId: String(staffId), month: monthStr });
             }
         } catch (sErr) {
             console.warn("Socket notification warning:", sErr.message);

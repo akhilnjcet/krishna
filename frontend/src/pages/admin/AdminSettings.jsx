@@ -12,6 +12,11 @@ const AdminSettings = () => {
     const [settings, setSettings] = useState({
         systemName: 'Krishna Engineering ERP',
         ownerEmail: 'admin@krishnaengg.com',
+        company_name: 'KRISHNA ENGINEERING WORKS',
+        company_email: 'contact@krishnaengg.com',
+        company_phone: '+91 9447940835',
+        company_address: 'Industrial Area Phase 1, Sector 123',
+        company_gstin: '32ABCDE1234F1Z5',
         maintenanceMode: false,
         faceThreshold: 0.6,
         allowRegistration: true,
@@ -19,7 +24,7 @@ const AdminSettings = () => {
         footer_description: 'Heavy structural engineering, industrial roofing, and precision fabrication.',
         footer_address: 'Industrial Area Phase 1, Sector 123',
         footer_phone: '+91 9447940835',
-        footer_email: 'HELLO@KRISHNAENGG.COM',
+        footer_email: 'contact@krishnaengg.com',
         social_in: '',
         social_fb: '',
         social_instagram: '',
@@ -358,6 +363,90 @@ const AdminSettings = () => {
                                             Remove
                                         </button>
                                     )}
+                                </div>
+                            </div>
+
+                            {/* COMPANY OFFICIAL CONTACT & PROFILE DETAILS CARD */}
+                            <div className="lg:col-span-12 bg-black/40 border border-white/10 p-6 md:p-8 rounded-3xl space-y-6">
+                                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                                    <div>
+                                        <h4 className="text-base font-black uppercase text-white tracking-wider flex items-center gap-2">
+                                            <Building className="w-5 h-5 text-amber-500" /> Official Corporate Contact Details
+                                        </h4>
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">These contact credentials print on Invoices, Quotes, Receipts, and Reports</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
+                                            <Building className="w-3 h-3 text-amber-500" /> Official Company Name
+                                        </label>
+                                        <input 
+                                            value={settings.company_name || 'KRISHNA ENGINEERING WORKS'}
+                                            onChange={(e) => updateField('company_name', e.target.value)}
+                                            placeholder="e.g. KRISHNA ENGINEERING WORKS"
+                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-white outline-none focus:border-amber-500/50"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
+                                            <Mail className="w-3 h-3 text-blue-400" /> Company Official Contact Email
+                                        </label>
+                                        <input 
+                                            type="email"
+                                            value={settings.company_email || settings.footer_email || ''}
+                                            onChange={(e) => {
+                                                updateField('company_email', e.target.value);
+                                                updateField('footer_email', e.target.value);
+                                            }}
+                                            placeholder="e.g. contact@krishnaengg.com"
+                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-blue-400 outline-none focus:border-blue-500/50"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
+                                            <Phone className="w-3 h-3 text-emerald-400" /> Company Official Phone Number
+                                        </label>
+                                        <input 
+                                            value={settings.company_phone || settings.footer_phone || ''}
+                                            onChange={(e) => {
+                                                updateField('company_phone', e.target.value);
+                                                updateField('footer_phone', e.target.value);
+                                            }}
+                                            placeholder="e.g. +91 9447940835"
+                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-emerald-400 outline-none focus:border-emerald-500/50"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2 md:col-span-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
+                                            <MapPin className="w-3 h-3 text-amber-400" /> Company Registered Address
+                                        </label>
+                                        <input 
+                                            value={settings.company_address || settings.footer_address || ''}
+                                            onChange={(e) => {
+                                                updateField('company_address', e.target.value);
+                                                updateField('footer_address', e.target.value);
+                                            }}
+                                            placeholder="e.g. Industrial Area Phase 1, Sector 123"
+                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-bold text-gray-200 outline-none focus:border-amber-500/50"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
+                                            <FileText className="w-3 h-3 text-indigo-400" /> Corporate GSTIN Number
+                                        </label>
+                                        <input 
+                                            value={settings.company_gstin || ''}
+                                            onChange={(e) => updateField('company_gstin', e.target.value)}
+                                            placeholder="e.g. 32ABCDE1234F1Z5"
+                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-indigo-400 outline-none focus:border-indigo-500/50"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>

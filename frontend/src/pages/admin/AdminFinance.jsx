@@ -136,10 +136,19 @@ const AdminFinance = () => {
         setShowPaymentModal(true);
     };
 
-    const handleOpenHistoryModal = (staff, record) => {
+    const handleOpenHistoryModal = async (staff, record) => {
         setHistoryStaffName(staff.name);
-        setHistoryList(record && record.payments ? record.payments : []);
+        // Pre-fill from current record if available
+        setHistoryList(record && Array.isArray(record.payments) ? record.payments : []);
         setShowHistoryModal(true);
+        try {
+            const res = await api.get(`/payroll/draft?staffId=${staff._id}&month=${selectedMonth}`);
+            if (res.data && Array.isArray(res.data.payments)) {
+                setHistoryList(res.data.payments);
+            }
+        } catch (err) {
+            console.warn("Real-time history sync notice:", err.message);
+        }
     };
 
     const handleDisbursePayment = async (e) => {

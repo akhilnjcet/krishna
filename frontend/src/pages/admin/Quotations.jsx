@@ -495,9 +495,11 @@ const Quotations = () => {
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white rounded-xl shadow p-1" />
                                         )}
                                         <div>
-                                            <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900">KRISHNA ENGINEERING WORKS</h1>
+                                            <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
                                             <p className="text-xs text-slate-500">Heavy Fabrication, Roofing & Structural Design</p>
-                                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">GSTIN: 32ABCDE1234F1Z5 | Phone: +91 9447940835</p>
+                                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                                                Phone: {brandingSettings?.company_phone || brandingSettings?.footer_phone || '+91 9447940835'} | Email: {brandingSettings?.company_email || brandingSettings?.footer_email || 'contact@krishnaengg.com'}
+                                            </p>
                                         </div>
                                     </div>
                                     <div className="text-right">

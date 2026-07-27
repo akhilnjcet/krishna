@@ -26,20 +26,24 @@ async function recalculateSalary(staffId, month) {
         let holidays = 0;
         let totalWorkedHours = 0;
 
+        const stdHours = staff.standardWorkingHoursPerDay || 8;
+
         attendanceRecords.forEach(a => {
-            if (a.isApproved) {
+            if (a.isApproved !== false) {
                 if (a.status === 'Present') {
                     presentDays++;
-                    totalWorkedHours += a.workedHours || 0;
+                    totalWorkedHours += a.workedHours || stdHours;
                 } else if (a.status === 'Half Day') {
                     halfDays++;
-                    totalWorkedHours += a.workedHours || 0;
+                    totalWorkedHours += a.workedHours || (stdHours / 2);
+                } else if (a.status === 'Absent') {
+                    absentDays++;
+                } else if (a.status === 'Leave') {
+                    leaveDays++;
+                } else if (a.status === 'Holiday') {
+                    holidays++;
                 }
             }
-            // Count all statuses for summary
-            if (a.status === 'Absent') absentDays++;
-            else if (a.status === 'Leave') leaveDays++;
-            else if (a.status === 'Holiday') holidays++;
         });
 
         // 2. Fetch overtime records
@@ -72,10 +76,13 @@ async function recalculateSalary(staffId, month) {
 
         let earnedSalary = 0;
         if (staff.salaryType === 'Daily Wage') {
-            if (totalWorkedHours > 0) {
+            const activeDays = presentDays + (halfDays * 0.5);
+            if (activeDays > 0) {
+                earnedSalary = parseFloat((activeDays * perDayRate).toFixed(2));
+            } else if (totalWorkedHours > 0) {
                 earnedSalary = parseFloat((totalWorkedHours * hourlyRate).toFixed(2));
             } else {
-                earnedSalary = parseFloat(((presentDays + (halfDays * 0.5)) * perDayRate).toFixed(2));
+                earnedSalary = 0;
             }
         } else {
             // Monthly Fixed Salary
@@ -83,12 +90,9 @@ async function recalculateSalary(staffId, month) {
                 // Default to full base salary when no attendance records logged yet
                 earnedSalary = baseSalary;
             } else {
-                if (totalWorkedHours > 0) {
-                    earnedSalary = Math.min(baseSalary, parseFloat((totalWorkedHours * hourlyRate).toFixed(2)));
-                } else {
-                    const unpaidDeduction = (absentDays * perDayRate) + (halfDays * 0.5 * perDayRate);
-                    earnedSalary = Math.max(0, parseFloat((baseSalary - unpaidDeduction).toFixed(2)));
-                }
+                // Attendance-based deduction calculation
+                const unpaidDeduction = parseFloat(((absentDays * perDayRate) + (halfDays * 0.5 * perDayRate)).toFixed(2));
+                earnedSalary = Math.max(0, parseFloat((baseSalary - unpaidDeduction).toFixed(2)));
             }
         }
 
@@ -98,14 +102,12 @@ async function recalculateSalary(staffId, month) {
 
         // Fetch existing salary record to retrieve payment history
         let salaryRecord = await Salary.findOne({ staffId, month });
-        const payments = salaryRecord ? salaryRecord.payments : [];
+        const payments = salaryRecord ? (salaryRecord.payments || []) : [];
 
-        // Already Paid calculation
-        const salaryAlreadyPaid = payments
-            .filter(p => ['Partial', 'Final Settlement', 'Overpayment'].includes(p.type))
-            .reduce((sum, p) => sum + p.amount, 0);
+        // Sum all recorded payment transactions
+        const salaryAlreadyPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
-        // Net Payable = Earned Salary + Approved Overtime + Bonus - Deductions - Advance Paid
+        // Net Payable = Earned Salary + Approved Overtime + Bonus - Deductions - Advance Recovery
         const netPayable = Math.max(0, parseFloat((earnedSalary + approvedOvertime + bonus - deductions - advancePaid).toFixed(2)));
         
         // Remaining Salary = Net Payable - Already Paid
@@ -116,7 +118,7 @@ async function recalculateSalary(staffId, month) {
             ? 'paid' 
             : (salaryAlreadyPaid > 0 ? 'partially_paid' : 'unpaid');
 
-        // Update or insert salary record
+        // Update or insert salary record with payments array preserved
         salaryRecord = await Salary.findOneAndUpdate(
             { staffId, month },
             {
@@ -132,7 +134,7 @@ async function recalculateSalary(staffId, month) {
                 overtimeEarnings: approvedOvertime,
                 bonus,
                 deductions,
-                advanceRecovery: advancePaid, // map to advancePaid
+                advanceRecovery: advancePaid,
                 
                 totalEarnedSalary: earnedSalary,
                 salaryAlreadyPaid,
