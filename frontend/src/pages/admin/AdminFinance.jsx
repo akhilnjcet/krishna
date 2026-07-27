@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ReportHeader from '../../components/ReportHeader';
 import { generateGeneralReportPDF, generateSalaryPDF } from '../../services/pdfService';
 import LabourBillsTab from './LabourBillsTab';
+import { getSocket } from '../../utils/socket';
 
 const AdminFinance = () => {
     const [activeTab, setActiveTab] = useState('expenses'); // 'expenses', 'payroll', 'overtime', 'labour-bills'
@@ -264,7 +265,30 @@ const AdminFinance = () => {
 
     useEffect(() => {
         fetchAllData();
-    }, [selectedMonth, fetchAllData]);
+
+        const socket = getSocket();
+        if (socket) {
+            const handleSocketUpdate = () => {
+                fetchGlobalData();
+                fetchExpenses();
+            };
+            socket.on('attendance_updated', handleSocketUpdate);
+            socket.on('attendance_recorded', handleSocketUpdate);
+            socket.on('daily_attendance_changed', handleSocketUpdate);
+            socket.on('payroll_updated', handleSocketUpdate);
+            socket.on('salary_updated', handleSocketUpdate);
+            socket.on('overtime_updated', handleSocketUpdate);
+
+            return () => {
+                socket.off('attendance_updated', handleSocketUpdate);
+                socket.off('attendance_recorded', handleSocketUpdate);
+                socket.off('daily_attendance_changed', handleSocketUpdate);
+                socket.off('payroll_updated', handleSocketUpdate);
+                socket.off('salary_updated', handleSocketUpdate);
+                socket.off('overtime_updated', handleSocketUpdate);
+            };
+        }
+    }, [selectedMonth, fetchAllData, fetchGlobalData]);
 
     // Add Expense / Income Action
     const handleAddExpense = async (e) => {
