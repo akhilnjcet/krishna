@@ -1,6 +1,7 @@
 const Overtime = require('../models/Overtime');
 const DailyAttendance = require('../models/DailyAttendance');
 const User = require('../models/User');
+const { recalculateSalary } = require('../utils/salaryCalculator');
 
 // Add/Log Overtime Entry
 exports.addOvertime = async (req, res) => {
@@ -28,6 +29,7 @@ exports.addOvertime = async (req, res) => {
         // Calculate rate and amount
         const ratePerHour = staff.overtimeRate || 0;
         const totalAmount = parseFloat(hours) * ratePerHour;
+        const otStatus = staff.otApprovalRequired ? 'Pending' : 'Approved';
 
         const overtime = await Overtime.findOneAndUpdate(
             { staffId, date },
@@ -36,10 +38,15 @@ exports.addOvertime = async (req, res) => {
                 ratePerHour, 
                 totalAmount, 
                 remarks, 
+                status: otStatus,
                 addedBy: req.user.id 
             },
             { upsert: true, new: true }
         );
+
+        // Recalculate salary for this month in real time
+        const monthStr = date.substring(0, 7);
+        await recalculateSalary(staffId, monthStr);
 
         console.log(`✅ Overtime logged for ${staff.name} on ${date}: ${hours} hrs @ ₹${ratePerHour}/hr`);
         res.status(201).json({ message: "Overtime logged successfully.", overtime });
@@ -66,6 +73,10 @@ exports.editOvertime = async (req, res) => {
         overtime.remarks = remarks || overtime.remarks;
         await overtime.save();
 
+        // Recalculate salary for this month in real time
+        const monthStr = overtime.date.substring(0, 7);
+        await recalculateSalary(overtime.staffId, monthStr);
+
         res.json({ message: "Overtime record updated successfully.", overtime });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -79,8 +90,46 @@ exports.deleteOvertime = async (req, res) => {
         if (!overtime) {
             return res.status(404).json({ message: "Overtime record not found." });
         }
+        const staffId = overtime.staffId;
+        const monthStr = overtime.date.substring(0, 7);
+
         await overtime.deleteOne();
+
+        // Recalculate salary for this month in real time
+        await recalculateSalary(staffId, monthStr);
+
         res.json({ message: "Overtime record deleted successfully." });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Approve / Reject Overtime Entry
+exports.approveRejectOvertime = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, remarks } = req.body; // status: 'Approved' or 'Rejected'
+
+        if (!['Approved', 'Rejected'].includes(status)) {
+            return res.status(400).json({ message: "Invalid status. Must be Approved or Rejected." });
+        }
+
+        const overtime = await Overtime.findById(id);
+        if (!overtime) {
+            return res.status(404).json({ message: "Overtime record not found." });
+        }
+
+        overtime.status = status;
+        overtime.remarks = remarks || overtime.remarks;
+        overtime.approvedBy = req.user.name || req.user.username || 'Admin';
+        overtime.approvalDate = new Date();
+        await overtime.save();
+
+        // Recalculate salary for this month in real time
+        const monthStr = overtime.date.substring(0, 7);
+        await recalculateSalary(overtime.staffId, monthStr);
+
+        res.json({ message: `Overtime status updated to ${status} and salary recalculated.`, overtime });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

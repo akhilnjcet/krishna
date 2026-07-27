@@ -66,18 +66,32 @@ const AdminReports = () => {
             case 'payroll':
                 return {
                     title: 'Monthly Consolidated Payroll Roster',
-                    columns: ['Staff Name', 'Salary Type', 'Base Salary', 'Attendance (P/H)', 'OT Hours/Earnings', 'Bonus', 'Deductions', 'Net Salary', 'Status'],
-                    rowMapper: (r) => [
-                        r.staffId?.name || 'N/A',
-                        r.salaryType || 'Monthly',
-                        `₹${r.baseSalary || 0}`,
-                        `P:${r.presentDays || 0} / H:${r.halfDays || 0}`,
-                        `${r.overtimeHours || 0}h / ₹${r.overtimeEarnings || 0}`,
-                        `₹${r.bonus || 0}`,
-                        `₹${(r.deductions || 0) + (r.advanceRecovery || 0)}`,
-                        `₹${r.netSalary || 0}`,
-                        (r.paymentStatus || 'unpaid').toUpperCase()
-                    ]
+                    columns: ['Staff Details', 'Monthly Salary', 'Hourly Rate', 'Present Days', 'Worked Hours', 'Total Salary Earned', 'Approved OT', 'Bonus', 'Advance Paid', 'Deductions', 'Already Paid', 'Remaining Salary', 'Net Payable', 'Status'],
+                    rowMapper: (r) => {
+                        const workingDays = r.staffId?.workingDaysPerMonth || 26;
+                        const workingHours = r.staffId?.standardWorkingHoursPerDay || 8;
+                        const hourlyRate = parseFloat(((r.baseSalary || 0) / (workingDays * workingHours)).toFixed(2));
+                        const presentDays = r.presentDays || 0;
+                        const halfDays = r.halfDays || 0;
+                        const totalWorkedHours = r.totalWorkedHours !== undefined ? r.totalWorkedHours : (presentDays * workingHours + halfDays * (workingHours / 2));
+                        
+                        return [
+                            `${r.staffId?.name || 'N/A'} (${r.staffId?.staff_id || 'N/A'})`,
+                            `₹${r.baseSalary || 0}`,
+                            `₹${hourlyRate || 0}`,
+                            `${presentDays} Days`,
+                            `${totalWorkedHours?.toFixed(1)} hrs`,
+                            `₹${r.totalEarnedSalary || r.calculatedBase || 0}`,
+                            `₹${r.overtimeEarnings || 0}`,
+                            `₹${r.bonus || 0}`,
+                            `₹${r.salaryAdvance || r.advanceRecovery || 0}`,
+                            `₹${r.deductions || 0}`,
+                            `₹${r.salaryAlreadyPaid || 0}`,
+                            `₹${r.remainingBalance || 0}`,
+                            `₹${r.netSalary || 0}`,
+                            (r.paymentStatus || 'unpaid').toUpperCase()
+                        ];
+                    }
                 };
             case 'overtime':
                 return {

@@ -46,7 +46,8 @@ exports.addStaff = async (req, res) => {
             department, designation, username, password, role, status,
             upi_id, bank_name, account_number, ifsc_code, base_salary,
             joiningDate, address, emergencyContact, salaryType, overtimeRate,
-            bonusAmount, advanceAmount, deductionAmount
+            bonusAmount, advanceAmount, deductionAmount,
+            standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired
         } = req.body;
 
         const userExists = await User.findOne({ $or: [{ email }, { username }, { staff_id }] });
@@ -81,7 +82,11 @@ exports.addStaff = async (req, res) => {
             overtimeRate: parseFloat(overtimeRate) || 0,
             bonusAmount: parseFloat(bonusAmount) || 0,
             advanceAmount: parseFloat(advanceAmount) || 0,
-            deductionAmount: parseFloat(deductionAmount) || 0
+            deductionAmount: parseFloat(deductionAmount) || 0,
+            standardWorkingHoursPerDay: standardWorkingHoursPerDay !== undefined ? Number(standardWorkingHoursPerDay) : 8,
+            workingDaysPerMonth: workingDaysPerMonth !== undefined ? Number(workingDaysPerMonth) : 26,
+            autoSalaryCalculation: autoSalaryCalculation !== undefined ? (autoSalaryCalculation === true || autoSalaryCalculation === 'true') : true,
+            otApprovalRequired: otApprovalRequired !== undefined ? (otApprovalRequired === true || otApprovalRequired === 'true') : true
         });
 
         // Send Welcome Message via WhatsApp
@@ -106,7 +111,8 @@ exports.updateStaff = async (req, res) => {
             department, designation, status, role,
             upi_id, bank_name, account_number, ifsc_code, base_salary,
             joiningDate, address, emergencyContact, salaryType, overtimeRate,
-            bonusAmount, advanceAmount, deductionAmount
+            bonusAmount, advanceAmount, deductionAmount,
+            standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired
         } = req.body;
 
         staff.name = name || full_name || staff.name;
@@ -132,7 +138,23 @@ exports.updateStaff = async (req, res) => {
         staff.advanceAmount = advanceAmount !== undefined ? parseFloat(advanceAmount) : staff.advanceAmount;
         staff.deductionAmount = deductionAmount !== undefined ? parseFloat(deductionAmount) : staff.deductionAmount;
 
+        staff.standardWorkingHoursPerDay = standardWorkingHoursPerDay !== undefined ? Number(standardWorkingHoursPerDay) : staff.standardWorkingHoursPerDay;
+        staff.workingDaysPerMonth = workingDaysPerMonth !== undefined ? Number(workingDaysPerMonth) : staff.workingDaysPerMonth;
+        staff.autoSalaryCalculation = autoSalaryCalculation !== undefined ? (autoSalaryCalculation === true || autoSalaryCalculation === 'true') : staff.autoSalaryCalculation;
+        staff.otApprovalRequired = otApprovalRequired !== undefined ? (otApprovalRequired === true || otApprovalRequired === 'true') : staff.otApprovalRequired;
+
         const updatedStaff = await staff.save();
+
+        // Recalculate salary for current month in real time
+        try {
+            const today = new Date();
+            const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+            const { recalculateSalary } = require('../utils/salaryCalculator');
+            await recalculateSalary(updatedStaff._id, currentMonthStr);
+        } catch (recalcErr) {
+            console.error("Failed to automatically recalculate salary after profile update:", recalcErr);
+        }
+
         res.json(updatedStaff);
     } catch (error) {
         res.status(500).json({ message: error.message });

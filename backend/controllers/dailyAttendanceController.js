@@ -5,7 +5,7 @@ const { autoGenerateAbsentLogs } = require('../utils/attendanceHelper');
 // Mark/Update Daily Attendance status
 exports.markDailyAttendance = async (req, res) => {
     try {
-        const { staffId, date, status } = req.body;
+        const { staffId, date, status, checkIn, checkOut, breakTime } = req.body;
 
         if (!staffId || !date || !status) {
             return res.status(400).json({ message: "Staff ID, date, and status are required." });
@@ -17,14 +17,90 @@ exports.markDailyAttendance = async (req, res) => {
             return res.status(404).json({ message: "Staff member not found." });
         }
 
+        // Calculate hours if status is Present or Half Day
+        let workedHours = 0;
+        let lateMinutes = 0;
+        let earlyExitMinutes = 0;
+
+        if (status === 'Present' || status === 'Half Day') {
+            const defaultCheckIn = "09:00";
+            const defaultCheckOut = status === 'Present' ? "17:00" : "13:00";
+            
+            const actualCheckIn = checkIn || defaultCheckIn;
+            const actualCheckOut = checkOut || defaultCheckOut;
+            const actualBreakTime = breakTime !== undefined ? Number(breakTime) : 0;
+
+            // Compute worked hours
+            const [inH, inM] = actualCheckIn.split(':').map(Number);
+            const [outH, outM] = actualCheckOut.split(':').map(Number);
+            const totalMins = (outH * 60 + outM) - (inH * 60 + inM) - actualBreakTime;
+            workedHours = Math.max(0, parseFloat((totalMins / 60).toFixed(2)));
+
+            // Compute late/early minutes relative to standard shift 9 AM to 5 PM
+            const stdInMins = 9 * 60; // 09:00
+            const stdOutMins = 17 * 60; // 17:00
+
+            const actualInMins = inH * 60 + inM;
+            const actualOutMins = outH * 60 + outM;
+
+            lateMinutes = Math.max(0, actualInMins - stdInMins);
+            earlyExitMinutes = Math.max(0, stdOutMins - actualOutMins);
+        }
+
         const attendance = await DailyAttendance.findOneAndUpdate(
             { staffId, date },
-            { status, markedBy: req.user.id, updatedAt: Date.now() },
+            { 
+                status, 
+                checkIn: (status === 'Present' || status === 'Half Day') ? checkIn || "09:00" : "",
+                checkOut: (status === 'Present' || status === 'Half Day') ? checkOut || (status === 'Present' ? "17:00" : "13:00") : "",
+                breakTime: (status === 'Present' || status === 'Half Day') ? breakTime || 0 : 0,
+                workedHours,
+                lateMinutes,
+                earlyExitMinutes,
+                isApproved: true,
+                markedBy: req.user.id, 
+                updatedAt: Date.now() 
+            },
             { upsert: true, new: true }
         );
 
-        console.log(`✅ Daily Attendance marked for ${staff.name} on ${date}: ${status}`);
-        res.json({ message: "Attendance status updated successfully.", attendance });
+        // Generate / Update Overtime record if workedHours > standard working hours per day
+        const stdHours = staff.standardWorkingHoursPerDay || 8;
+        const Overtime = require('../models/Overtime');
+
+        if (workedHours > stdHours) {
+            const otHours = parseFloat((workedHours - stdHours).toFixed(2));
+            const otRate = staff.overtimeRate || 0;
+            const otAmount = parseFloat((otHours * otRate).toFixed(2));
+            const otStatus = staff.otApprovalRequired ? 'Pending' : 'Approved';
+
+            await Overtime.findOneAndUpdate(
+                { staffId, date },
+                {
+                    hours: otHours,
+                    ratePerHour: otRate,
+                    totalAmount: otAmount,
+                    regularHours: stdHours,
+                    checkIn: checkIn || "09:00",
+                    checkOut: checkOut || "17:00",
+                    status: otStatus,
+                    addedBy: req.user.id,
+                    createdAt: Date.now()
+                },
+                { upsert: true }
+            );
+        } else {
+            // Delete overtime record if worked hours are not exceeding standard hours
+            await Overtime.findOneAndDelete({ staffId, date });
+        }
+
+        // Recalculate salary for this month in real time
+        const monthStr = date.substring(0, 7); // "YYYY-MM"
+        const { recalculateSalary } = require('../utils/salaryCalculator');
+        await recalculateSalary(staffId, monthStr);
+
+        console.log(`✅ Daily Attendance & Salary updated for ${staff.name} on ${date}: ${status}`);
+        res.json({ message: "Attendance and salary updated successfully.", attendance });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

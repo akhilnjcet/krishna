@@ -4,7 +4,8 @@ const {
     addOvertime, 
     editOvertime, 
     deleteOvertime, 
-    getOvertimeLogs 
+    getOvertimeLogs,
+    approveRejectOvertime
 } = require('../controllers/overtimeController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -15,5 +16,7 @@ router.route('/')
 router.route('/:id')
     .put(protect, authorize('admin', 'manager'), editOvertime)
     .delete(protect, authorize('admin', 'manager'), deleteOvertime);
+
+router.put('/:id/approve', protect, authorize('admin', 'manager'), approveRejectOvertime);
 
 module.exports = router;

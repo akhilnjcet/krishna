@@ -208,7 +208,7 @@ export const generateSalaryPDF = (salary, user) => {
 
     // Financial breakdown ledger
     const baseVal = salary.baseSalary || salary.base_salary || 0;
-    const calcBase = salary.calculatedBase !== undefined ? salary.calculatedBase : (salary.salaryType === 'Daily Wage' ? (baseVal * ((salary.presentDays || 0) + ((salary.halfDays || 0) * 0.5))) : baseVal);
+    const calcBase = salary.totalEarnedSalary !== undefined ? salary.totalEarnedSalary : (salary.calculatedBase !== undefined ? salary.calculatedBase : (salary.salaryType === 'Daily Wage' ? (baseVal * ((salary.presentDays || 0) + ((salary.halfDays || 0) * 0.5))) : baseVal));
     const otEarn = salary.overtimeEarnings || 0;
     const bonusVal = salary.bonus !== undefined ? salary.bonus : (salary.bonusAmount || 0);
     const dedVal = salary.deductions !== undefined ? salary.deductions : (salary.deductionAmount || 0);

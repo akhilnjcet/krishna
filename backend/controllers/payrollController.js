@@ -2,7 +2,7 @@ const Salary = require('../models/Salary');
 const DailyAttendance = require('../models/DailyAttendance');
 const Overtime = require('../models/Overtime');
 const User = require('../models/User');
-const { autoGenerateAbsentLogs } = require('../utils/attendanceHelper');
+const { recalculateSalary } = require('../utils/salaryCalculator');
 
 // Calculate draft payroll for a month
 exports.calculateDraftPayroll = async (req, res) => {
@@ -12,131 +12,36 @@ exports.calculateDraftPayroll = async (req, res) => {
             return res.status(400).json({ message: "Staff ID and month are required." });
         }
 
-        const staff = await User.findOne({ _id: staffId, role: 'staff' });
-        if (!staff) {
-            return res.status(404).json({ message: "Staff member not found." });
-        }
-
-        // Auto-generate absent logs for past working days
-        await autoGenerateAbsentLogs(month);
-
-        // 1. Fetch monthly attendance records
-        const attendance = await DailyAttendance.find({
-            staffId,
-            date: { $regex: `^${month}` }
-        });
-
-        let presentDays = 0;
-        let absentDays = 0;
-        let halfDays = 0;
-        let leaveDays = 0;
-        let holidays = 0;
-        let workedSundays = 0;
-        let workedSundayHalfDays = 0;
-        let weekdayAbsentDays = 0;
-        let weekdayHalfDays = 0;
-        const totalWorkingDays = attendance.length;
-
-        attendance.forEach(a => {
-            const dateObj = new Date(a.date);
-            const isSunday = dateObj.getDay() === 0;
-
-            if (a.status === 'Present') {
-                presentDays++;
-                if (isSunday) workedSundays++;
-            } else if (a.status === 'Absent') {
-                absentDays++;
-                if (!isSunday) weekdayAbsentDays++;
-            } else if (a.status === 'Half Day') {
-                halfDays++;
-                if (isSunday) {
-                    workedSundayHalfDays++;
-                } else {
-                    weekdayHalfDays++;
-                }
-            } else if (a.status === 'Leave') {
-                leaveDays++;
-            } else if (a.status === 'Holiday') {
-                holidays++;
-            }
-        });
-
-        // 2. Calculate Base Salary based on Salary Type
-        let baseSalary = staff.base_salary || 0;
-        let calculatedBase = 0;
-        const salaryType = staff.salaryType || 'Monthly';
-
-        if (salaryType === 'Daily Wage') {
-            calculatedBase = baseSalary * (presentDays + (halfDays * 0.5));
-        } else {
-            // 'Monthly' or 'Contract' - full base salary minus weekday absent/half-day deductions, plus worked Sundays additions
-            const [yearStr, monthStr] = month.split('-');
-            const calendarDays = new Date(Number(yearStr), Number(monthStr), 0).getDate() || 30;
-            const dailyRate = baseSalary / calendarDays;
-            
-            const absentDeduction = weekdayAbsentDays * dailyRate;
-            const halfDayDeduction = weekdayHalfDays * 0.5 * dailyRate;
-            const regularCalculatedBase = baseSalary - absentDeduction - halfDayDeduction;
-
-            const sundayAddition = (workedSundays * dailyRate) + (workedSundayHalfDays * 0.5 * dailyRate);
-            calculatedBase = Math.max(0, Math.round(regularCalculatedBase + sundayAddition));
-        }
-
-        // 3. Fetch Overtime records for the month
-        const overtimeEntries = await Overtime.find({
-            staffId,
-            date: { $regex: `^${month}` }
-        });
-
-        let overtimeHours = 0;
-        let overtimeEarnings = 0;
-        overtimeEntries.forEach(o => {
-            overtimeHours += o.hours;
-            overtimeEarnings += o.totalAmount;
-        });
-
-        // 4. Default financial modifiers from staff profile
-        const bonus = staff.bonusAmount || 0;
-        const deductions = staff.deductionAmount || 0;
-        const advanceRecovery = staff.advanceAmount || 0;
-
-        // Fetch dynamic transactions from database if exist
-        const existingSalary = await Salary.findOne({ staffId, month });
-        const payments = existingSalary ? existingSalary.payments : [];
-
-        const salaryAlreadyPaid = payments.filter(p => ['Partial', 'Final Settlement', 'Overpayment'].includes(p.type)).reduce((sum, p) => sum + p.amount, 0);
-        const salaryAdvance = payments.filter(p => p.type === 'Advance').reduce((sum, p) => sum + p.amount, 0);
-
-        // Net Salary calculation
-        const totalEarnedSalary = calculatedBase + overtimeEarnings + bonus - deductions - advanceRecovery;
-        const remainingBalance = totalEarnedSalary - salaryAlreadyPaid - salaryAdvance;
-        const outstandingAmount = remainingBalance < 0 ? Math.abs(remainingBalance) : 0;
+        const result = await recalculateSalary(staffId, month);
 
         res.json({
             staffId,
-            staffName: staff.name,
+            staffName: result.salaryRecord.staffId?.name || '',
             month,
-            salaryType,
-            baseSalary,
-            calculatedBase,
-            totalWorkingDays,
-            presentDays,
-            absentDays,
-            halfDays,
-            leaveDays,
-            holidays,
-            overtimeHours,
-            overtimeEarnings,
-            bonus,
-            deductions,
-            advanceRecovery,
-            totalEarnedSalary: Math.max(0, totalEarnedSalary),
-            salaryAlreadyPaid,
-            salaryAdvance,
-            remainingBalance,
-            outstandingAmount,
-            payments,
-            netSalary: Math.max(0, totalEarnedSalary)
+            salaryType: result.salaryRecord.salaryType,
+            baseSalary: result.salaryRecord.baseSalary,
+            calculatedBase: result.earnedSalary,
+            totalWorkingDays: result.salaryRecord.totalWorkingDays,
+            presentDays: result.salaryRecord.presentDays,
+            absentDays: result.salaryRecord.absentDays,
+            halfDays: result.salaryRecord.halfDays,
+            leaveDays: result.salaryRecord.leaveDays,
+            holidays: result.salaryRecord.holidays,
+            overtimeHours: result.salaryRecord.overtimeHours,
+            overtimeEarnings: result.approvedOvertime,
+            pendingOvertime: result.pendingOvertime,
+            bonus: result.salaryRecord.bonus,
+            deductions: result.salaryRecord.deductions,
+            advanceRecovery: result.salaryRecord.advanceRecovery,
+            totalEarnedSalary: result.earnedSalary,
+            salaryAlreadyPaid: result.salaryRecord.salaryAlreadyPaid,
+            salaryAdvance: result.salaryRecord.salaryAdvance,
+            remainingBalance: result.salaryRecord.remainingBalance,
+            outstandingAmount: result.salaryRecord.outstandingAmount,
+            payments: result.salaryRecord.payments,
+            netSalary: result.netPayable,
+            hourlyRate: result.hourlyRate,
+            totalWorkedHours: result.totalWorkedHours
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -146,60 +51,15 @@ exports.calculateDraftPayroll = async (req, res) => {
 // Create and Save Monthly Payroll Record
 exports.createPayroll = async (req, res) => {
     try {
-        const { 
-            staffId, month, baseSalary, salaryType, totalWorkingDays, 
-            presentDays, absentDays, halfDays, leaveDays, holidays, 
-            overtimeHours, overtimeEarnings, bonus, deductions, 
-            advanceRecovery, netSalary 
-        } = req.body;
+        const { staffId, month } = req.body;
 
-        if (!staffId || !month || netSalary === undefined) {
-            return res.status(400).json({ message: "Staff ID, month, and net salary are required." });
+        if (!staffId || !month) {
+            return res.status(400).json({ message: "Staff ID and month are required." });
         }
 
-        // Let's find existing record if any to preserve payments history
-        const existing = await Salary.findOne({ staffId, month });
-        const payments = existing ? existing.payments : [];
-        
-        const salaryAlreadyPaid = payments.filter(p => ['Partial', 'Final Settlement', 'Overpayment'].includes(p.type)).reduce((sum, p) => sum + p.amount, 0);
-        const salaryAdvance = payments.filter(p => p.type === 'Advance').reduce((sum, p) => sum + p.amount, 0);
-        const totalEarnedSalary = netSalary;
-        const remainingBalance = totalEarnedSalary - salaryAlreadyPaid - salaryAdvance;
-        const outstandingAmount = remainingBalance < 0 ? Math.abs(remainingBalance) : 0;
-        const paymentStatus = remainingBalance <= 0 ? 'paid' : (salaryAlreadyPaid > 0 ? 'partially_paid' : 'unpaid');
+        const result = await recalculateSalary(staffId, month);
 
-        const payroll = await Salary.findOneAndUpdate(
-            { staffId, month },
-            {
-                baseSalary,
-                salaryType,
-                totalWorkingDays,
-                presentDays,
-                absentDays,
-                halfDays,
-                leaveDays,
-                holidays,
-                overtimeHours,
-                overtimeEarnings,
-                bonus,
-                deductions,
-                advanceRecovery,
-                
-                totalEarnedSalary,
-                salaryAlreadyPaid,
-                salaryAdvance,
-                remainingBalance,
-                outstandingAmount,
-                
-                netSalary,
-                paymentStatus,
-                payments
-            },
-            { upsert: true, new: true }
-        );
-
-        console.log(`✅ Payroll record created for staff ${staffId} for month ${month}`);
-        res.status(201).json({ message: "Payroll recorded successfully.", payroll });
+        res.status(201).json({ message: "Payroll recorded successfully.", payroll: result.salaryRecord });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -259,7 +119,6 @@ exports.addSalaryPayment = async (req, res) => {
 
         let salary = await Salary.findOne({ staffId, month });
         if (!salary) {
-            // Automatically initialize a salary record for this month
             const staff = await User.findById(staffId);
             if (!staff) {
                 return res.status(404).json({ message: "Staff member not found." });
@@ -288,20 +147,10 @@ exports.addSalaryPayment = async (req, res) => {
         };
 
         salary.payments.push(newTransaction);
-
-        // Recalculate balances
-        const payments = salary.payments;
-        salary.salaryAlreadyPaid = payments.filter(p => ['Partial', 'Final Settlement', 'Overpayment'].includes(p.type)).reduce((sum, p) => sum + p.amount, 0);
-        salary.salaryAdvance = payments.filter(p => p.type === 'Advance').reduce((sum, p) => sum + p.amount, 0);
-        salary.remainingBalance = salary.totalEarnedSalary - salary.salaryAlreadyPaid - salary.salaryAdvance;
-        salary.outstandingAmount = salary.remainingBalance < 0 ? Math.abs(salary.remainingBalance) : 0;
-        
-        salary.paymentStatus = salary.remainingBalance <= 0 ? 'paid' : (salary.salaryAlreadyPaid > 0 ? 'partially_paid' : 'unpaid');
-        if (salary.paymentStatus === 'paid') {
-            salary.paidAt = new Date();
-        }
-
         await salary.save();
+
+        // Recalculate using unified helper
+        const result = await recalculateSalary(staffId, month);
 
         // Log transaction in the General Expense Ledger
         const Expense = require('../models/Expense');
@@ -315,7 +164,7 @@ exports.addSalaryPayment = async (req, res) => {
             date: new Date()
         });
 
-        res.status(201).json({ message: "Transaction added successfully.", salary });
+        res.status(201).json({ message: "Transaction added successfully.", salary: result.salaryRecord });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

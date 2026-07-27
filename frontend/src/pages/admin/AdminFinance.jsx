@@ -90,18 +90,40 @@ const AdminFinance = () => {
     const [historyList, setHistoryList] = useState([]);
 
     const handleOpenPaymentModal = (staff, record) => {
-        const totalEarned = record ? (record.totalEarnedSalary || record.netSalary || 0) : (staff.base_salary || 0);
+        const baseSalary = record ? (record.baseSalary || 0) : (staff.base_salary || 0);
+        const workingDays = staff.workingDaysPerMonth || 26;
+        const workingHours = staff.standardWorkingHoursPerDay || 8;
+        const hourlyRate = parseFloat((baseSalary / (workingDays * workingHours)).toFixed(2));
+        
+        const presentDays = record ? (record.presentDays || 0) : 0;
+        const workedHours = record ? (record.totalWorkedHours || record.workedHours || 0) : 0;
+        const earnedSalary = record ? (record.totalEarnedSalary || 0) : 0;
+        const approvedOT = record ? (record.overtimeEarnings || 0) : 0;
+        const pendingOT = record ? (record.pendingOvertime || 0) : 0;
+        const bonus = record ? (record.bonus || 0) : (staff.bonusAmount || 0);
+        const advancePaid = record ? (record.salaryAdvance || 0) : (staff.advanceAmount || 0);
+        const deductions = record ? (record.deductions || 0) : (staff.deductionAmount || 0);
+        
+        const netPayable = record ? (record.netSalary || 0) : Math.max(0, earnedSalary + approvedOT + bonus - deductions - advancePaid);
         const alreadyPaid = record ? (record.salaryAlreadyPaid || 0) : 0;
-        const advancePaid = record ? (record.salaryAdvance || 0) : 0;
-        const remBalance = totalEarned - alreadyPaid - advancePaid;
+        const remBalance = Math.max(0, netPayable - alreadyPaid);
 
         setPaymentForm({
             staffId: staff._id,
             staffName: staff.name,
             month: selectedMonth,
-            totalEarnedSalary: totalEarned,
+            baseSalary,
+            hourlyRate,
+            presentDays,
+            workedHours,
+            totalEarnedSalary: earnedSalary,
+            approvedOT,
+            pendingOT,
+            bonus,
+            advancePaid,
+            deductions,
+            netPayable,
             salaryAlreadyPaid: alreadyPaid,
-            salaryAdvance: advancePaid,
             remainingBalance: remBalance,
             amount: remBalance > 0 ? remBalance.toString() : '0',
             type: 'Partial',
@@ -399,6 +421,25 @@ const AdminFinance = () => {
         }
     };
 
+    // Approve or Reject Overtime
+    const handleOtApproveReject = async (otId, status) => {
+        if (!window.confirm(`Mark overtime record as ${status.toUpperCase()}?`)) return;
+        setActionLoading(true);
+        try {
+            await api.put(`/overtime/${otId}/approve`, { status });
+            alert(`Overtime status updated to ${status}.`);
+            await fetchGlobalData();
+            if (Object.keys(payrollDrafts).length > 0) {
+                handleGenerateDrafts();
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Failed to update overtime status.");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-40">
@@ -660,7 +701,11 @@ const AdminFinance = () => {
                                                                     upi_id: staff.upi_id || '',
                                                                     bank_name: staff.bank_name || '',
                                                                     account_number: staff.account_number || '',
-                                                                    ifsc_code: staff.ifsc_code || ''
+                                                                    ifsc_code: staff.ifsc_code || '',
+                                                                    standardWorkingHoursPerDay: staff.standardWorkingHoursPerDay || 8,
+                                                                    workingDaysPerMonth: staff.workingDaysPerMonth || 26,
+                                                                    autoSalaryCalculation: staff.autoSalaryCalculation !== false,
+                                                                    otApprovalRequired: staff.otApprovalRequired !== false
                                                                 });
                                                                 setShowEditStaffModal(true);
                                                             }}
@@ -752,13 +797,14 @@ const AdminFinance = () => {
                                         <th className="px-6 py-5 font-bold text-slate-600">Rate / Hour</th>
                                         <th className="px-6 py-5 font-bold text-slate-600">Total Yield</th>
                                         <th className="px-6 py-5 font-bold text-slate-600">Remarks</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600">Status</th>
                                         <th className="px-6 py-5 font-bold text-slate-600 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {otRecords.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="py-12 text-center text-slate-400 font-bold">No overtime records found for this cycle.</td>
+                                            <td colSpan={8} className="py-12 text-center text-slate-400 font-bold">No overtime records found for this cycle.</td>
                                         </tr>
                                     ) : otRecords.map(ot => {
                                         const staff = ot.staffId || {};
@@ -775,8 +821,34 @@ const AdminFinance = () => {
                                                 <td className="px-6 py-5 font-semibold text-slate-500">₹ {ot.ratePerHour || staff.overtimeRate || 0}</td>
                                                 <td className="px-6 py-5 font-black text-slate-900 text-sm">₹ {ot.totalAmount?.toLocaleString()}</td>
                                                 <td className="px-6 py-5 font-medium text-slate-500 max-w-xs truncate" title={ot.remarks}>{ot.remarks || 'Regular overtime'}</td>
+                                                <td className="px-6 py-5">
+                                                    <span className={`inline-flex px-2.5 py-1 rounded-lg font-black uppercase tracking-wider text-[9px] ${
+                                                        ot.status === 'Approved' ? 'bg-emerald-50 text-emerald-700' :
+                                                        ot.status === 'Rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700 animate-pulse'
+                                                    }`}>
+                                                        {ot.status || 'Pending'}
+                                                    </span>
+                                                </td>
                                                 <td className="px-6 py-5 text-right">
-                                                    <div className="flex justify-end gap-2">
+                                                    <div className="flex justify-end gap-1.5 items-center">
+                                                        {ot.status === 'Pending' && (
+                                                            <>
+                                                                <button
+                                                                    title="Approve Overtime"
+                                                                    onClick={() => handleOtApproveReject(ot._id, 'Approved')}
+                                                                    className="px-2.5 py-1 bg-emerald-600 text-white font-extrabold rounded-lg text-[9px] uppercase tracking-wider hover:bg-emerald-700 transition"
+                                                                >
+                                                                    Approve
+                                                                </button>
+                                                                <button
+                                                                    title="Reject Overtime"
+                                                                    onClick={() => handleOtApproveReject(ot._id, 'Rejected')}
+                                                                    className="px-2.5 py-1 bg-rose-600 text-white font-extrabold rounded-lg text-[9px] uppercase tracking-wider hover:bg-rose-700 transition"
+                                                                >
+                                                                    Reject
+                                                                </button>
+                                                            </>
+                                                        )}
                                                         <button 
                                                             onClick={() => {
                                                                 setEditingOt(ot);
@@ -888,6 +960,46 @@ const AdminFinance = () => {
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, deductionAmount: e.target.value})}
                                             className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Standard Working Hours Per Day</label>
+                                        <input 
+                                            type="number"
+                                            value={editStaffFinanceForm.standardWorkingHoursPerDay}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, standardWorkingHoursPerDay: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Working Days Per Month</label>
+                                        <input 
+                                            type="number"
+                                            value={editStaffFinanceForm.workingDaysPerMonth}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, workingDaysPerMonth: e.target.value})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block font-bold">Auto Salary Calculation</label>
+                                        <select 
+                                            value={editStaffFinanceForm.autoSalaryCalculation}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, autoSalaryCalculation: e.target.value === 'true'})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        >
+                                            <option value="true">Enable</option>
+                                            <option value="false">Disable</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block font-bold">Overtime Approval Required</label>
+                                        <select 
+                                            value={editStaffFinanceForm.otApprovalRequired}
+                                            onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, otApprovalRequired: e.target.value === 'true'})}
+                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                        >
+                                            <option value="true">Yes</option>
+                                            <option value="false">No</option>
+                                        </select>
                                     </div>
 
                                     <div className="md:col-span-2 pt-4 border-t border-slate-100">
@@ -1046,94 +1158,183 @@ const AdminFinance = () => {
             {/* MODAL: DISBURSE SALARY PAYMENT / ADVANCE */}
             <AnimatePresence>
                 {showPaymentModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
                         <motion.div 
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+                            className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-8"
                         >
                             <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                                <h3 className="text-lg font-black text-slate-900 uppercase">Disburse Payment</h3>
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 uppercase">Salary Payout Dashboard</h3>
+                                    <p className="text-xs text-slate-400 font-semibold mt-0.5">Roster Profile: {paymentForm.staffName} • Cycle: {paymentForm.month}</p>
+                                </div>
                                 <button onClick={() => setShowPaymentModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
                                     <X className="w-5 h-5 text-slate-400" />
                                 </button>
                             </div>
                             
-                            <form onSubmit={handleDisbursePayment} className="p-6 space-y-4">
-                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 space-y-2 text-xs">
-                                    <p className="font-bold text-slate-500">Employee: <span className="text-slate-900 font-extrabold">{paymentForm.staffName}</span></p>
-                                    <p className="font-bold text-slate-500">Cycle: <span className="text-slate-900 font-extrabold">{paymentForm.month}</span></p>
-                                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60">
-                                        <p className="text-slate-500">Total Earned: <span className="font-extrabold text-slate-900">₹{paymentForm.totalEarnedSalary.toLocaleString()}</span></p>
-                                        <p className="text-slate-500">Already Paid: <span className="font-extrabold text-slate-900">₹{paymentForm.salaryAlreadyPaid.toLocaleString()}</span></p>
-                                        <p className="text-slate-500">Advance Paid: <span className="font-extrabold text-slate-900">₹{paymentForm.salaryAdvance.toLocaleString()}</span></p>
-                                        <p className="text-indigo-600 font-extrabold">Remaining: <span>₹{paymentForm.remainingBalance.toLocaleString()}</span></p>
+                            <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+                                {/* Detailed Salary Dashboard Grid */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                    <div className="bg-white p-3 rounded-xl border border-slate-200">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Monthly Salary</p>
+                                        <p className="text-base font-black text-slate-900 mt-1">₹ {paymentForm.baseSalary?.toLocaleString()}</p>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-xl border border-slate-200">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Hourly Rate</p>
+                                        <p className="text-base font-black text-slate-900 mt-1">₹ {paymentForm.hourlyRate?.toLocaleString()}</p>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-xl border border-slate-200">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Present Days</p>
+                                        <p className="text-base font-black text-slate-900 mt-1">{paymentForm.presentDays} Days</p>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-xl border border-slate-200">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Worked Hours</p>
+                                        <p className="text-base font-black text-slate-900 mt-1">{paymentForm.workedHours?.toFixed(2)} hrs</p>
                                     </div>
                                 </div>
 
-                                <div className="space-y-3">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Payment Type</label>
-                                        <select
-                                            required
-                                            value={paymentForm.type}
-                                            onChange={e => setPaymentForm({...paymentForm, type: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
-                                        >
-                                            <option value="Partial">Partial Salary</option>
-                                            <option value="Advance">Salary Advance</option>
-                                            <option value="Final Settlement">Final Settlement</option>
-                                        </select>
+                                {/* Salary Calculation Flowchart/Ledger */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider block border-b pb-1">Earnings</h4>
+                                        <div className="flex justify-between items-center text-xs font-bold text-slate-655">
+                                            <span>Earned Salary (Hours × Rate):</span>
+                                            <span>₹ {paymentForm.totalEarnedSalary?.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs font-bold text-slate-655">
+                                            <span>Approved Overtime (OT):</span>
+                                            <span className="text-emerald-600 font-extrabold">+ ₹ {paymentForm.approvedOT?.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs font-bold text-slate-655">
+                                            <span>Pending Overtime:</span>
+                                            <span className="text-amber-500 font-extrabold">₹ {paymentForm.pendingOT?.toLocaleString()} (Excluded)</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs font-bold text-slate-655">
+                                            <span>Bonus Amount:</span>
+                                            <span className="text-emerald-600 font-extrabold">+ ₹ {paymentForm.bonus?.toLocaleString()}</span>
+                                        </div>
                                     </div>
-                                    
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Payment Amount (₹)</label>
-                                        <input 
-                                            required
-                                            type="number"
-                                            value={paymentForm.amount}
-                                            onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
-                                        />
+
+                                    <div className="space-y-2">
+                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider block border-b pb-1">Deductions & History</h4>
+                                        <div className="flex justify-between items-center text-xs font-bold text-slate-655">
+                                            <span>Advance Paid:</span>
+                                            <span className="text-rose-600 font-extrabold">- ₹ {paymentForm.advancePaid?.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs font-bold text-slate-655">
+                                            <span>Salary Deductions:</span>
+                                            <span className="text-rose-600 font-extrabold">- ₹ {paymentForm.deductions?.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs font-bold text-slate-655">
+                                            <span>Already Paid:</span>
+                                            <span className="text-indigo-600 font-extrabold">₹ {paymentForm.salaryAlreadyPaid?.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Summary */}
+                                <div className="bg-slate-900 text-white p-5 rounded-2xl grid grid-cols-3 gap-2 text-center">
+                                    <div>
+                                        <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Net Payable</p>
+                                        <p className="text-lg font-black mt-1 text-emerald-400">₹ {paymentForm.netPayable?.toLocaleString()}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Already Paid</p>
+                                        <p className="text-lg font-black mt-1 opacity-90">₹ {paymentForm.salaryAlreadyPaid?.toLocaleString()}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Remaining Salary</p>
+                                        <p className="text-lg font-black mt-1 text-amber-300">₹ {paymentForm.remainingBalance?.toLocaleString()}</p>
+                                    </div>
+                                </div>
+
+                                {/* Payout Disbursement Form */}
+                                <form onSubmit={handleDisbursePayment} className="border-t pt-4 space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Payment Type</label>
+                                            <select
+                                                required
+                                                value={paymentForm.type}
+                                                onChange={e => setPaymentForm({...paymentForm, type: e.target.value})}
+                                                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            >
+                                                <option value="Partial">Partial Salary</option>
+                                                <option value="Advance">Salary Advance</option>
+                                                <option value="Final Settlement">Final Settlement</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Payment Method</label>
+                                            <select
+                                                required
+                                                value={paymentForm.paymentMethod}
+                                                onChange={e => setPaymentForm({...paymentForm, paymentMethod: e.target.value})}
+                                                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            >
+                                                <option value="Cash">Cash</option>
+                                                <option value="UPI">UPI</option>
+                                                <option value="Bank Transfer">Bank Transfer</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Payment Method</label>
-                                        <select
-                                            required
-                                            value={paymentForm.paymentMethod}
-                                            onChange={e => setPaymentForm({...paymentForm, paymentMethod: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
-                                        >
-                                            <option value="Cash">Cash</option>
-                                            <option value="UPI">UPI</option>
-                                            <option value="Bank Transfer">Bank Transfer</option>
-                                            <option value="Other">Other</option>
-                                        </select>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Payment Amount (₹)</label>
+                                        <div className="flex gap-2">
+                                            <input 
+                                                required
+                                                type="number"
+                                                value={paymentForm.amount}
+                                                onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})}
+                                                className="flex-1 bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setPaymentForm({...paymentForm, amount: paymentForm.remainingBalance.toString()});
+                                                }}
+                                                className="bg-indigo-50 border border-indigo-200 text-indigo-700 font-black uppercase tracking-widest text-[9px] px-4 rounded-xl hover:bg-indigo-100 transition active:scale-95"
+                                            >
+                                                Pay Remaining Salary
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Notes / Remarks</label>
                                         <input 
                                             type="text"
-                                            placeholder="e.g. Paid mid-month advance"
+                                            placeholder="e.g. Paid mid-month partial salary"
                                             value={paymentForm.notes}
                                             onChange={e => setPaymentForm({...paymentForm, notes: e.target.value})}
                                             className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
                                         />
                                     </div>
-                                </div>
-                                
-                                <button 
-                                    type="submit" 
-                                    disabled={actionLoading}
-                                    className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black uppercase tracking-wider text-xs py-4 rounded-xl transition active:scale-95 flex items-center justify-center disabled:opacity-50"
-                                >
-                                    {actionLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                                    Disburse Payment
-                                </button>
-                            </form>
+
+                                    <div className="flex justify-end gap-2 pt-2">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setShowPaymentModal(false)}
+                                            className="px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold uppercase tracking-wider text-xs"
+                                        >
+                                            Close
+                                        </button>
+                                        <button 
+                                            type="submit" 
+                                            disabled={actionLoading}
+                                            className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-indigo-600/20 active:scale-95 transition"
+                                        >
+                                            {actionLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                                            Log Payment Transfer
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </motion.div>
                     </div>
                 )}

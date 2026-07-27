@@ -28,10 +28,20 @@ exports.getAttendanceReport = async (req, res) => {
 exports.getPayrollReport = async (req, res) => {
     try {
         const { month } = req.query; // YYYY-MM
-        let query = {};
-        if (month) query.month = month;
+        if (!month) {
+            return res.status(400).json({ message: "Month is required." });
+        }
 
-        const records = await Salary.find(query)
+        // Fetch all active staff users
+        const staffList = await User.find({ role: 'staff', status: 'active' });
+        const { recalculateSalary } = require('../utils/salaryCalculator');
+
+        // Recalculate salary for each active staff member to ensure real-time accuracy
+        for (const staff of staffList) {
+            await recalculateSalary(staff._id, month);
+        }
+
+        const records = await Salary.find({ month })
             .populate('staffId', 'name staff_id department designation')
             .sort({ netSalary: -1 });
 

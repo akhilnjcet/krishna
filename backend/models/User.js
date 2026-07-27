@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema({
     bonusAmount: { type: Number, default: 0 },
     advanceAmount: { type: Number, default: 0 },
     deductionAmount: { type: Number, default: 0 },
+    standardWorkingHoursPerDay: { type: Number, default: 8 },
+    workingDaysPerMonth: { type: Number, default: 26 },
+    autoSalaryCalculation: { type: Boolean, default: true },
+    otApprovalRequired: { type: Boolean, default: true },
 
     // Email OTP Auth Fields
     resetOTP: { type: String },

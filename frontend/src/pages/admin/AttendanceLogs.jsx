@@ -41,6 +41,21 @@ const AttendanceLogs = () => {
     // Attendance edit cell state
     const [editingCell, setEditingCell] = useState(null); // { staffId, date, currentStatus }
 
+    // Modal local inputs
+    const [localStatus, setLocalStatus] = useState('');
+    const [localCheckIn, setLocalCheckIn] = useState('');
+    const [localCheckOut, setLocalCheckOut] = useState('');
+    const [localBreakTime, setLocalBreakTime] = useState(0);
+
+    useEffect(() => {
+        if (editingCell) {
+            setLocalStatus(editingCell.currentStatus || 'Present');
+            setLocalCheckIn(editingCell.checkIn || '09:00');
+            setLocalCheckOut(editingCell.checkOut || (editingCell.currentStatus === 'Half Day' ? '13:00' : '17:00'));
+            setLocalBreakTime(editingCell.breakTime || 0);
+        }
+    }, [editingCell]);
+
     // Fetch staff list
     const fetchStaff = async () => {
         try {
@@ -100,9 +115,9 @@ const AttendanceLogs = () => {
         }
     };
 
-    const handleUpdateAttendance = async (staffId, date, status) => {
+    const handleUpdateAttendance = async (staffId, date, status, checkIn, checkOut, breakTime) => {
         try {
-            await api.post('/daily-attendance', { staffId, date, status });
+            await api.post('/daily-attendance', { staffId, date, status, checkIn, checkOut, breakTime });
             // Refresh hub data instantly
             fetchAttendanceHub();
             setEditingCell(null);
@@ -169,7 +184,7 @@ const AttendanceLogs = () => {
             const dateStr = rec.date; // format YYYY-MM-DD
             if (staffId && dateStr) {
                 if (!grid[staffId]) grid[staffId] = {};
-                grid[staffId][dateStr] = rec.status;
+                grid[staffId][dateStr] = rec;
             }
         });
         return grid;
@@ -184,7 +199,8 @@ const AttendanceLogs = () => {
             
             daysInMonth.forEach(day => {
                 const dateStr = formatDateLocal(day);
-                const status = staffGrid[dateStr];
+                const rec = staffGrid[dateStr];
+                const status = rec ? rec.status : undefined;
                 if (status === 'Present') present++;
                 else if (status === 'Absent') absent++;
                 else if (status === 'Half Day') half++;
@@ -433,12 +449,20 @@ const AttendanceLogs = () => {
                                                 
                                                 {activeDays.map(day => {
                                                     const dateStr = formatDateLocal(day);
-                                                    const status = staffGrid[dateStr];
+                                                    const rec = staffGrid[dateStr];
+                                                    const status = rec ? rec.status : '';
                                                     
                                                     return (
                                                         <td 
                                                             key={dateStr}
-                                                            onClick={() => setEditingCell({ staffId: staff._id, date: dateStr, currentStatus: status || '' })}
+                                                            onClick={() => setEditingCell({ 
+                                                                staffId: staff._id, 
+                                                                date: dateStr, 
+                                                                currentStatus: status || '',
+                                                                checkIn: rec?.checkIn || '09:00',
+                                                                checkOut: rec?.checkOut || (status === 'Half Day' ? '13:00' : '17:00'),
+                                                                breakTime: rec?.breakTime || 0
+                                                            })}
                                                             className="px-2 py-4 text-center border-r border-slate-100 hover:bg-indigo-50/40 cursor-pointer transition-colors relative"
                                                         >
                                                             {getStatusIcon(status)}
@@ -561,7 +585,7 @@ const AttendanceLogs = () => {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white rounded-[2rem] border border-slate-200 shadow-2xl p-8 max-w-sm w-full space-y-6"
+                            className="bg-white rounded-[2rem] border border-slate-200 shadow-2xl p-8 max-w-md w-full space-y-6"
                         >
                             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
                                 <div>
@@ -576,24 +600,100 @@ const AttendanceLogs = () => {
                                 </button>
                             </div>
                             
-                            <div className="grid grid-cols-1 gap-2">
-                                {[
-                                    { label: 'Present', val: 'Present', color: 'hover:bg-emerald-50 text-emerald-700 border-emerald-100' },
-                                    { label: 'Absent', val: 'Absent', color: 'hover:bg-rose-50 text-rose-700 border-rose-100' },
-                                    { label: 'Half Day', val: 'Half Day', color: 'hover:bg-amber-50 text-amber-700 border-amber-100' },
-                                    { label: 'Leave', val: 'Leave', color: 'hover:bg-purple-50 text-purple-700 border-purple-100' },
-                                    { label: 'Holiday', val: 'Holiday', color: 'hover:bg-blue-50 text-blue-700 border-blue-100' }
-                                ].map((item) => (
-                                    <button
-                                        key={item.val}
-                                        onClick={() => handleUpdateAttendance(editingCell.staffId, editingCell.date, item.val)}
-                                        className={`w-full py-3.5 px-4 text-xs font-black uppercase tracking-wider border rounded-xl transition text-left flex items-center justify-between ${item.color} ${editingCell.currentStatus === item.val ? 'bg-slate-100 font-extrabold border-slate-300' : 'bg-slate-50/50'}`}
-                                    >
-                                        <span>{item.label}</span>
-                                        {editingCell.currentStatus === item.val && <Check className="w-4 h-4 text-slate-700" />}
-                                    </button>
-                                ))}
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block mb-1">Status</label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[
+                                            { label: 'Present', val: 'Present' },
+                                            { label: 'Absent', val: 'Absent' },
+                                            { label: 'Half Day', val: 'Half Day' },
+                                            { label: 'Leave', val: 'Leave' },
+                                            { label: 'Holiday', val: 'Holiday' }
+                                        ].map((item) => (
+                                            <button
+                                                type="button"
+                                                key={item.val}
+                                                onClick={() => {
+                                                    setLocalStatus(item.val);
+                                                    if (item.val === 'Half Day') {
+                                                        setLocalCheckOut('13:00');
+                                                    } else if (item.val === 'Present') {
+                                                        setLocalCheckOut('17:00');
+                                                    }
+                                                }}
+                                                className={`py-2 px-3 text-xs font-black uppercase tracking-wider border rounded-xl transition text-center ${localStatus === item.val ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
+                                            >
+                                                {item.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {(localStatus === 'Present' || localStatus === 'Half Day') && (
+                                    <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block mb-1">Check In</label>
+                                                <input 
+                                                    type="time" 
+                                                    value={localCheckIn}
+                                                    onChange={(e) => setLocalCheckIn(e.target.value)}
+                                                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block mb-1">Check Out</label>
+                                                <input 
+                                                    type="time" 
+                                                    value={localCheckOut}
+                                                    onChange={(e) => setLocalCheckOut(e.target.value)}
+                                                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block mb-1">Break Time (mins)</label>
+                                            <input 
+                                                type="number" 
+                                                min="0"
+                                                value={localBreakTime}
+                                                onChange={(e) => setLocalBreakTime(Number(e.target.value))}
+                                                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500"
+                                            />
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-xs font-bold text-slate-600">
+                                            <span>Calculated Worked Hours:</span>
+                                            <span className="font-mono text-indigo-600">
+                                                {(() => {
+                                                    if (!localCheckIn || !localCheckOut) return '0.00';
+                                                    const [inH, inM] = localCheckIn.split(':').map(Number);
+                                                    const [outH, outM] = localCheckOut.split(':').map(Number);
+                                                    const totalMins = (outH * 60 + outM) - (inH * 60 + inM) - (Number(localBreakTime) || 0);
+                                                    return Math.max(0, parseFloat((totalMins / 60).toFixed(2))).toFixed(2);
+                                                })()} hrs
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
+
+                            <button
+                                type="button"
+                                onClick={() => handleUpdateAttendance(
+                                    editingCell.staffId, 
+                                    editingCell.date, 
+                                    localStatus, 
+                                    localCheckIn, 
+                                    localCheckOut, 
+                                    localBreakTime
+                                )}
+                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-indigo-600/20 active:scale-95 transition"
+                            >
+                                Save Attendance Override
+                            </button>
                         </motion.div>
                     </div>
                 )}
