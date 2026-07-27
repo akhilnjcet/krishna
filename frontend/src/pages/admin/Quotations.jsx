@@ -42,10 +42,28 @@ const Quotations = () => {
     const [showTax, setShowTax] = useState(true);
     const [showSignature, setShowSignature] = useState(true);
     const [taxPercentage, setTaxPercentage] = useState(18);
+    const [brandingSettings, setBrandingSettings] = useState({ company_logo: '', company_signature: '' });
 
     useEffect(() => {
         fetchCustomers();
+        fetchBranding();
     }, []);
+
+    const fetchBranding = async () => {
+        try {
+            const res = await api.get('/settings/public');
+            if (Array.isArray(res.data)) {
+                const map = {};
+                res.data.forEach(item => {
+                    map[item.key] = item.value;
+                });
+                setBrandingSettings(map);
+                if (map.show_signature !== undefined) setShowSignature(map.show_signature !== false && map.show_signature !== 'false');
+            }
+        } catch (err) {
+            console.warn("Branding fetch error:", err);
+        }
+    };
 
     const fetchCustomers = async () => {
         setLoadingCustomers(true);
@@ -434,9 +452,14 @@ const Quotations = () => {
                                     style={{ backgroundColor: themeColor }}
                                 >
                                     <div className="flex justify-between items-start">
-                                        <div>
-                                            <h1 className="text-2xl font-black uppercase tracking-wider">KRISHNA ENGINEERING WORKS</h1>
-                                            <p className="text-xs opacity-90 font-medium">Formal Engineering Estimation & Proposal</p>
+                                        <div className="flex items-center gap-4">
+                                            {brandingSettings.company_logo && (
+                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white/90 p-1 rounded-xl shadow-md" />
+                                            )}
+                                            <div>
+                                                <h1 className="text-2xl font-black uppercase tracking-wider">KRISHNA ENGINEERING WORKS</h1>
+                                                <p className="text-xs opacity-90 font-medium">Formal Engineering Estimation & Proposal</p>
+                                            </div>
                                         </div>
                                         <div className="text-right">
                                             <span className="bg-white/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
@@ -449,9 +472,14 @@ const Quotations = () => {
                                 </div>
                             ) : theme === 'Minimalist' ? (
                                 <div className="border-b-2 border-slate-900 pb-6 mb-8 flex justify-between items-end">
-                                    <div>
-                                        <h1 className="text-xl font-black uppercase tracking-tight text-slate-900">KRISHNA ENGINEERING WORKS</h1>
-                                        <p className="text-xs text-slate-500 font-medium">Industrial Area Phase 1 | Engineering & Structural Division</p>
+                                    <div className="flex items-center gap-3">
+                                        {brandingSettings.company_logo && (
+                                            <img src={brandingSettings.company_logo} alt="Company Logo" className="h-10 w-auto object-contain" />
+                                        )}
+                                        <div>
+                                            <h1 className="text-xl font-black uppercase tracking-tight text-slate-900">KRISHNA ENGINEERING WORKS</h1>
+                                            <p className="text-xs text-slate-500 font-medium">Industrial Area Phase 1 | Engineering & Structural Division</p>
+                                        </div>
                                     </div>
                                     <div className="text-right">
                                         <h2 className="text-2xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>PROPOSAL</h2>
@@ -462,10 +490,15 @@ const Quotations = () => {
                             ) : (
                                 /* Classic Theme */
                                 <div className="border-b border-slate-200 pb-6 mb-8 flex justify-between items-start">
-                                    <div>
-                                        <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900">KRISHNA ENGINEERING WORKS</h1>
-                                        <p className="text-xs text-slate-500">Heavy Fabrication, Roofing & Structural Design</p>
-                                        <p className="text-[11px] text-slate-400 font-medium mt-0.5">GSTIN: 32ABCDE1234F1Z5 | Phone: +91 9447940835</p>
+                                    <div className="flex items-center gap-4">
+                                        {brandingSettings.company_logo && (
+                                            <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white rounded-xl shadow p-1" />
+                                        )}
+                                        <div>
+                                            <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900">KRISHNA ENGINEERING WORKS</h1>
+                                            <p className="text-xs text-slate-500">Heavy Fabrication, Roofing & Structural Design</p>
+                                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">GSTIN: 32ABCDE1234F1Z5 | Phone: +91 9447940835</p>
+                                        </div>
                                     </div>
                                     <div className="text-right">
                                         <span 
@@ -596,6 +629,9 @@ const Quotations = () => {
                                         <p>Subject to Final Technical Audit</p>
                                     </div>
                                     <div className="text-right border-t border-slate-300 pt-3 w-48">
+                                        {brandingSettings.company_signature && (
+                                            <img src={brandingSettings.company_signature} alt="Digital Signature" className="h-10 w-auto object-contain ml-auto mb-1" />
+                                        )}
                                         <div className="flex items-center justify-end gap-1 text-emerald-600 mb-1">
                                             <ShieldCheck className="w-3.5 h-3.5" />
                                             <span className="text-[9px] font-black uppercase">Verified Estimate</span>

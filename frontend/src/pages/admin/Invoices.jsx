@@ -53,10 +53,29 @@ const Invoices = () => {
     const [themeColor, setThemeColor] = useState('#4f46e5');
     const [showLogo, setShowLogo] = useState(true);
     const [termsText, setTermsText] = useState('1. Payment is due within 15 days of invoice date.\n2. Goods once sold will not be taken back.\n3. Interest @ 18% p.a. will be charged on overdue payments.');
+    const [brandingSettings, setBrandingSettings] = useState({ company_logo: '', company_signature: '' });
 
     useEffect(() => {
         fetchCustomers();
+        fetchBranding();
     }, []);
+
+    const fetchBranding = async () => {
+        try {
+            const res = await api.get('/settings/public');
+            if (Array.isArray(res.data)) {
+                const map = {};
+                res.data.forEach(item => {
+                    map[item.key] = item.value;
+                });
+                setBrandingSettings(map);
+                if (map.show_logo !== undefined) setShowLogo(map.show_logo !== false && map.show_logo !== 'false');
+                if (map.show_signature !== undefined) setShowSignature(map.show_signature !== false && map.show_signature !== 'false');
+            }
+        } catch (err) {
+            console.warn("Branding fetch error:", err);
+        }
+    };
 
     const fetchCustomers = async () => {
         setLoadingCustomers(true);
@@ -498,9 +517,13 @@ const Invoices = () => {
                                     <div className="flex justify-between items-start relative z-10">
                                         <div>
                                             {showLogo && (
-                                                <div className="w-12 h-12 bg-white text-slate-900 rounded-xl font-black text-2xl flex items-center justify-center mb-3 shadow-md">
-                                                    K
-                                                </div>
+                                                brandingSettings.company_logo ? (
+                                                    <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white/90 p-1 rounded-xl mb-3 shadow-md" />
+                                                ) : (
+                                                    <div className="w-12 h-12 bg-white text-slate-900 rounded-xl font-black text-2xl flex items-center justify-center mb-3 shadow-md">
+                                                        K
+                                                    </div>
+                                                )
                                             )}
                                             <h1 className="text-2xl font-black uppercase tracking-wider">KRISHNA ENGINEERING WORKS</h1>
                                             <p className="text-xs opacity-90 font-medium">Heavy Structural & Industrial Fabrication</p>
@@ -518,7 +541,11 @@ const Invoices = () => {
                                 <div className="border-b-2 border-slate-900 pb-6 mb-8 flex justify-between items-end">
                                     <div>
                                         {showLogo && (
-                                            <p className="text-indigo-600 font-black text-3xl mb-1" style={{ color: themeColor }}>K</p>
+                                            brandingSettings.company_logo ? (
+                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-10 w-auto object-contain mb-2" />
+                                            ) : (
+                                                <p className="text-indigo-600 font-black text-3xl mb-1" style={{ color: themeColor }}>K</p>
+                                            )
                                         )}
                                         <h1 className="text-xl font-black uppercase tracking-tight text-slate-900">KRISHNA ENGINEERING WORKS</h1>
                                         <p className="text-xs text-slate-500 font-medium">Industrial Area Phase 1, Sector 123 | GSTIN: 32ABCDE1234F1Z5</p>
@@ -534,12 +561,16 @@ const Invoices = () => {
                                 <div className="border-b border-slate-200 pb-6 mb-8 flex justify-between items-start">
                                     <div className="flex items-center gap-4">
                                         {showLogo && (
-                                            <div 
-                                                className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow"
-                                                style={{ backgroundColor: themeColor }}
-                                            >
-                                                K
-                                            </div>
+                                            brandingSettings.company_logo ? (
+                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-14 w-auto object-contain rounded-2xl shadow p-1 bg-white" />
+                                            ) : (
+                                                <div 
+                                                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow"
+                                                    style={{ backgroundColor: themeColor }}
+                                                >
+                                                    K
+                                                </div>
+                                            )
                                         )}
                                         <div>
                                             <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900">KRISHNA ENGINEERING WORKS</h1>
@@ -696,6 +727,9 @@ const Invoices = () => {
 
                                 {showSignature && (
                                     <div className="text-right border-t border-slate-300 pt-3 w-48">
+                                        {brandingSettings.company_signature && (
+                                            <img src={brandingSettings.company_signature} alt="Digital Signature" className="h-10 w-auto object-contain ml-auto mb-1" />
+                                        )}
                                         <p className="text-xs font-black uppercase text-slate-900">Authorized Signature</p>
                                         <p className="text-[10px] text-slate-400 font-medium mt-0.5">Krishna Engineering Works</p>
                                     </div>

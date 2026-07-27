@@ -86,6 +86,41 @@ const savePDF = async (doc, filename) => {
     }
 };
 
+let cachedBranding = null;
+let brandingFetchPromise = null;
+
+const getBrandingSettings = async () => {
+    if (cachedBranding) return cachedBranding;
+    if (!brandingFetchPromise) {
+        brandingFetchPromise = fetch('/api/settings/public')
+            .then(res => res.ok ? res.json() : [])
+            .then(data => {
+                const map = {};
+                if (Array.isArray(data)) {
+                    data.forEach(item => {
+                        map[item.key] = item.value;
+                    });
+                }
+                cachedBranding = map;
+                return map;
+            })
+            .catch(err => {
+                console.warn("Could not fetch branding settings for PDF:", err);
+                return {};
+            });
+    }
+    return brandingFetchPromise;
+};
+
+const getImageFormat = (url) => {
+    if (!url || typeof url !== 'string') return 'PNG';
+    if (url.includes('data:image/jpeg') || url.includes('data:image/jpg')) return 'JPEG';
+    if (url.includes('data:image/webp')) return 'WEBP';
+    if (url.includes('data:image/png')) return 'PNG';
+    if (url.includes('data:image/svg')) return 'SVG';
+    return 'PNG';
+};
+
 /**
  * Dynamic Header Engine with safe text measurement, auto wrapping, and flexible Y calculation.
  * Prevents text overlapping between logo/company name/tagline and right-aligned title/address/GSTIN.
@@ -136,13 +171,15 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
     let leftY = 16;
 
     // Company Logo / Brand Badge Rendering
-    const logoUrl = companyInfoOverride.logo || companyInfoOverride.company_logo || COMPANY_DETAILS.logo;
-    const showLogo = companyInfoOverride.show_logo !== false && companyInfoOverride.showLogo !== false;
+    const logoUrl = companyInfoOverride.logo || companyInfoOverride.company_logo || (cachedBranding?.company_logo) || COMPANY_DETAILS.logo;
+    const showLogoVal = companyInfoOverride.show_logo ?? companyInfoOverride.showLogo ?? cachedBranding?.show_logo;
+    const showLogo = showLogoVal !== false && showLogoVal !== 'false';
 
     let logoRendered = false;
     if (logoUrl && showLogo) {
         try {
-            doc.addImage(logoUrl, 'PNG', margin, leftY - 4, 12, 12);
+            const fmt = getImageFormat(logoUrl);
+            doc.addImage(logoUrl, fmt, margin, leftY - 4, 14, 14);
             logoRendered = true;
         } catch (imgErr) {
             console.warn("Logo image render fallback:", imgErr.message);
@@ -160,10 +197,15 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
     }
 
     // Company Name
-    const textStartX = margin + 14;
+    const textStartX = margin + 18;
     doc.setFontSize(14);
     doc.setTextColor(...THEME.textLight);
     doc.setFont('helvetica', 'bold');
+    companyLines.forEach((line) => {
+        doc.text(line, textStartX, leftY + 2);
+        leftY += 6;
+    });
+
     // Tagline
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'normal');
@@ -209,13 +251,14 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
 
 const addSignatureAndSeal = (doc, finalY, companyInfoOverride = {}) => {
     const pageW = doc.internal.pageSize.width;
-    const signatureUrl = companyInfoOverride.signature || companyInfoOverride.company_signature || COMPANY_DETAILS.signature;
-    const showSignature = companyInfoOverride.show_signature !== false && companyInfoOverride.showSignature !== false;
+    const signatureUrl = companyInfoOverride.signature || companyInfoOverride.company_signature || (cachedBranding?.company_signature) || COMPANY_DETAILS.signature;
+    const showSigVal = companyInfoOverride.show_signature ?? companyInfoOverride.showSignature ?? cachedBranding?.show_signature;
+    const showSignature = showSigVal !== false && showSigVal !== 'false';
 
     if (signatureUrl && showSignature) {
         try {
-            // High resolution digital signature placement
-            doc.addImage(signatureUrl, 'PNG', pageW - 75, finalY + 22, 40, 15);
+            const fmt = getImageFormat(signatureUrl);
+            doc.addImage(signatureUrl, fmt, pageW - 75, finalY + 18, 40, 18);
         } catch (e) {
             console.warn("Digital signature image fallback:", e.message);
         }
@@ -264,8 +307,9 @@ const addFooter = (doc) => {
 /**
  * 1. FORMAL QUOTE / ESTIMATION PDF
  */
-export const generateQuotePDF = (quote) => {
+export const generateQuotePDF = async (quote) => {
     if (!quote) return;
+    await getBrandingSettings();
     const doc = new jsPDF();
     const headerHeight = addHeader(doc, 'Formal Quote / Estimation');
 
@@ -320,6 +364,7 @@ export const generateQuotePDF = (quote) => {
     const cost = quote.estimatedCost ? parseFloat(quote.estimatedCost).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00';
     doc.text(`₹ ${cost}`, 185, finalY + 13, { align: 'right' });
 
+    addSignatureAndSeal(doc, finalY + 25);
     addFooter(doc);
     savePDF(doc, `Quote_${quoteId}.pdf`);
 };
@@ -327,8 +372,9 @@ export const generateQuotePDF = (quote) => {
 /**
  * 2. MONTHLY SALARY SLIP PDF
  */
-export const generateSalaryPDF = (salary, user) => {
+export const generateSalaryPDF = async (salary, user) => {
     if (!salary) return;
+    await getBrandingSettings();
     const doc = new jsPDF();
     const headerHeight = addHeader(doc, 'Pay Slip / Monthly Salary Statement');
 
@@ -445,27 +491,13 @@ export const generateSalaryPDF = (salary, user) => {
     doc.setTextColor(isPaid ? [0, 140, 0] : [180, 90, 0]);
     doc.text(`PAYMENT STATUS: ${statusText}`, 15, finalY + 26);
 
-    const pageW = doc.internal.pageSize.width;
-
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(...THEME.textMuted);
     doc.text('This is a Computer / System Generated Monthly Salary Slip.', 15, finalY + 32);
     doc.text(`Generated Date: ${new Date().toLocaleDateString()}`, 15, finalY + 37);
 
-    // Signature Area
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.5);
-    doc.line(pageW - 80, finalY + 38, pageW - 15, finalY + 38);
-    doc.setFontSize(8.5);
-    doc.setTextColor(...THEME.textDark);
-    doc.setFont('helvetica', 'bold');
-    doc.text('AUTHORIZED SIGNATURE', pageW - 47.5, finalY + 43, { align: 'center' });
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...THEME.textMuted);
-    doc.text('KRISHNA ENGINEERING WORKS [SEAL]', pageW - 47.5, finalY + 47, { align: 'center' });
-
+    addSignatureAndSeal(doc, finalY + 20);
     addFooter(doc);
     savePDF(doc, `SalarySlip_${salary.month}_${empName.replace(/\s+/g, '_')}.pdf`);
 };
@@ -473,8 +505,9 @@ export const generateSalaryPDF = (salary, user) => {
 /**
  * 3. TAX INVOICE PDF
  */
-export const generateInvoicePDF = (invoice) => {
+export const generateInvoicePDF = async (invoice) => {
     if (!invoice) return;
+    await getBrandingSettings();
     const doc = new jsPDF();
     const headerHeight = addHeader(doc, 'Tax Invoice');
 
@@ -531,6 +564,7 @@ export const generateInvoicePDF = (invoice) => {
     doc.setTextColor(...THEME.accent);
     doc.text(`₹ ${parseFloat(invoice.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - 18, finalY + 12, { align: 'right' });
 
+    addSignatureAndSeal(doc, finalY + 25);
     addFooter(doc);
     savePDF(doc, `Invoice_${invNumber}.pdf`);
 };
@@ -538,7 +572,8 @@ export const generateInvoicePDF = (invoice) => {
 /**
  * 4. ATTENDANCE REPORT PDF
  */
-export const generateAttendanceReportPDF = (logs, user, type = 'Staff') => {
+export const generateAttendanceReportPDF = async (logs, user, type = 'Staff') => {
+    await getBrandingSettings();
     const doc = new jsPDF();
     const headerHeight = addHeader(doc, `${type} Attendance Report`);
 
@@ -574,6 +609,8 @@ export const generateAttendanceReportPDF = (logs, user, type = 'Staff') => {
         }
     });
 
+    const finalY = doc.lastAutoTable.finalY + 10;
+    addSignatureAndSeal(doc, finalY);
     addFooter(doc);
     savePDF(doc, `${type}_Attendance_Report.pdf`);
 };
@@ -581,7 +618,8 @@ export const generateAttendanceReportPDF = (logs, user, type = 'Staff') => {
 /**
  * 5. GENERAL REPORT & LEDGER PDF
  */
-export const generateGeneralReportPDF = (data, title, columns) => {
+export const generateGeneralReportPDF = async (data, title, columns) => {
+    await getBrandingSettings();
     const doc = new jsPDF();
     const headerHeight = addHeader(doc, title);
 
@@ -600,6 +638,8 @@ export const generateGeneralReportPDF = (data, title, columns) => {
         }
     });
 
+    const finalY = doc.lastAutoTable.finalY + 10;
+    addSignatureAndSeal(doc, finalY);
     addFooter(doc);
     savePDF(doc, `${title.replace(/\s+/g, '_')}.pdf`);
 };
@@ -607,8 +647,9 @@ export const generateGeneralReportPDF = (data, title, columns) => {
 /**
  * 6. PAYMENT RECEIPT PDF
  */
-export const generatePaymentReceiptPDF = (payment, user) => {
+export const generatePaymentReceiptPDF = async (payment, user) => {
     if (!payment) return;
+    await getBrandingSettings();
     const doc = new jsPDF();
     const headerHeight = addHeader(doc, 'Payment Receipt / Acknowledgment');
 
@@ -665,6 +706,7 @@ export const generatePaymentReceiptPDF = (payment, user) => {
     const disclaimer = "This is an official system-generated receipt. Subject to final bank clearance.";
     doc.text(disclaimer, 15, finalY + 38);
 
+    addSignatureAndSeal(doc, finalY + 25);
     addFooter(doc);
     savePDF(doc, `Receipt_${rcptId}.pdf`);
 };

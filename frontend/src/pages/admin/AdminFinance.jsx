@@ -191,16 +191,38 @@ const AdminFinance = () => {
     // Fetch Global Roster, Attendance, Payroll, and Overtime
     const fetchGlobalData = useCallback(async () => {
         try {
-            const [staffRes, attendanceRes, payrollRes, otRes] = await Promise.all([
-                api.get('/staff'),
+            // Fetch staff list first independently so staff roster is ALWAYS loaded
+            const staffRes = await api.get('/staff').catch(err => {
+                console.error("Failed to fetch staff list:", err);
+                return { data: [] };
+            });
+            const staffData = Array.isArray(staffRes.data) ? staffRes.data : [];
+            setStaffList(staffData);
+
+            // Fetch attendance, payroll, and overtime with Promise.allSettled so no single endpoint failure blocks the UI
+            const [attendanceRes, payrollRes, otRes] = await Promise.allSettled([
                 api.get(`/daily-attendance?month=${selectedMonth}`),
                 api.get(`/payroll?month=${selectedMonth}`),
                 api.get(`/overtime?month=${selectedMonth}`)
             ]);
-            setStaffList(Array.isArray(staffRes.data) ? staffRes.data : []);
-            setAttendanceList(Array.isArray(attendanceRes.data) ? attendanceRes.data : []);
-            setPayrollRecords(Array.isArray(payrollRes.data) ? payrollRes.data : []);
-            setOtRecords(Array.isArray(otRes.data) ? otRes.data : []);
+
+            setAttendanceList(attendanceRes.status === 'fulfilled' && Array.isArray(attendanceRes.value.data) ? attendanceRes.value.data : []);
+            setPayrollRecords(payrollRes.status === 'fulfilled' && Array.isArray(payrollRes.value.data) ? payrollRes.value.data : []);
+            setOtRecords(otRes.status === 'fulfilled' && Array.isArray(otRes.value.data) ? otRes.value.data : []);
+
+            // Automatically pre-fetch real-time draft calculations for all active staff members
+            if (staffData.length > 0) {
+                const drafts = {};
+                await Promise.allSettled(staffData.map(async (staff) => {
+                    try {
+                        const res = await api.get(`/payroll/draft?staffId=${staff._id}&month=${selectedMonth}`);
+                        drafts[staff._id] = res.data;
+                    } catch (e) {
+                        console.warn(`Draft pre-fetch warning for ${staff.name}:`, e.message);
+                    }
+                }));
+                setPayrollDrafts(drafts);
+            }
         } catch (err) {
             console.error("Failed to fetch finance context", err);
         }

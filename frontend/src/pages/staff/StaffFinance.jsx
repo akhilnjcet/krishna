@@ -188,11 +188,11 @@ const StaffFinance = () => {
                 title="Finance Ledger & Roster"
                 subtitle="Manage your monthly earnings, inspect attendance, check overtime records, and download locked salary slips."
                 data={history.map(sal => [
-                    sal.month,
+                    sal.month || 'N/A',
                     `₹ ${(sal.baseSalary || sal.salaryAmount || 0).toLocaleString()}`,
                     `₹ ${(sal.deductions || 0).toLocaleString()}`,
                     `₹ ${(sal.netSalary || sal.salaryAmount || 0).toLocaleString()}`,
-                    sal.paymentStatus.toUpperCase()
+                    (sal.paymentStatus || 'Pending').toUpperCase()
                 ])}
                 columns={['Period', 'Base', 'Deduction', 'Net', 'Status']}
             />

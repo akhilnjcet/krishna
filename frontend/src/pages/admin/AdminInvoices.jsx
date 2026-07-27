@@ -40,8 +40,8 @@ const AdminInvoices = () => {
             `INV-${inv._id.slice(-6).toUpperCase()}`,
             inv.customerId?.name || 'N/A',
             inv.projectId?.title || 'N/A',
-            `₹ ${inv.amount.toLocaleString()}`,
-            inv.paymentStatus.toUpperCase()
+            `₹ ${(inv.amount || 0).toLocaleString()}`,
+            (inv.paymentStatus || 'Pending').toUpperCase()
         ]);
         generateGeneralReportPDF(data, 'Accounts Receivable Ledger', columns);
     };
