@@ -14,10 +14,16 @@ exports.getAdminOverview = async (req, res) => {
 
         const Payment = require('../models/Payment');
         const completedPayments = await Payment.find({ status: { $in: ['verified', 'Completed'] } });
-        const totalIncome = completedPayments.reduce((sum, p) => sum + p.amount, 0);
+        const totalVerifiedPayments = completedPayments.reduce((sum, p) => sum + p.amount, 0);
+
+        const incomeEntries = expenses.filter(e => e.type === 'income');
+        const expenseEntries = expenses.filter(e => e.type !== 'income');
+
+        const totalLoggedIncome = incomeEntries.reduce((sum, exp) => sum + exp.amount, 0);
+        const totalIncome = totalVerifiedPayments + totalLoggedIncome;
 
         const totalStaffExpense = salaries.reduce((sum, sal) => sum + (sal.netSalary || sal.salaryAmount || 0), 0);
-        const totalOtherExpense = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const totalOtherExpense = expenseEntries.reduce((sum, exp) => sum + exp.amount, 0);
         const totalExpense = totalStaffExpense + totalOtherExpense;
 
         const totalInvoiced = invoices.reduce((sum, inv) => sum + inv.amount, 0);
@@ -30,7 +36,9 @@ exports.getAdminOverview = async (req, res) => {
             pendingDues,
             expenseBreakdown: {
                 staff: totalStaffExpense,
-                others: totalOtherExpense
+                others: totalOtherExpense,
+                loggedIncome: totalLoggedIncome,
+                verifiedPayments: totalVerifiedPayments
             }
         });
     } catch (err) {

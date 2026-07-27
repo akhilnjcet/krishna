@@ -15,11 +15,13 @@ const AdminFinance = () => {
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     
-    // Expenses State
+    // Expenses & Income State
     const [summary, setSummary] = useState(null);
     const [expenses, setExpenses] = useState([]);
     const [addingExpense, setAddingExpense] = useState(false);
     const [newExpense, setNewExpense] = useState({ title: '', amount: '', category: 'others', description: '' });
+    const [transactionType, setTransactionType] = useState('expense'); // 'expense', 'income'
+    const [ledgerFilter, setLedgerFilter] = useState('all'); // 'all', 'expense', 'income'
 
     // Roster / Global Data State
     const [staffList, setStaffList] = useState([]);
@@ -255,13 +257,16 @@ const AdminFinance = () => {
         fetchAllData();
     }, [selectedMonth, fetchAllData]);
 
-    // Add Expense Action
+    // Add Expense / Income Action
     const handleAddExpense = async (e) => {
         e.preventDefault();
         setAddingExpense(true);
         try {
-            await api.post('/finance/expenses', newExpense);
-            setNewExpense({ title: '', amount: '', category: 'others', description: '' });
+            await api.post('/finance/expenses', {
+                ...newExpense,
+                type: transactionType
+            });
+            setNewExpense({ title: '', amount: '', category: transactionType === 'expense' ? 'others' : 'client_payment', description: '' });
             await fetchExpenses();
         } catch (err) {
             console.error(err);
@@ -554,10 +559,46 @@ const AdminFinance = () => {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                        {/* EXPENSE INJECTION PORT */}
+                        {/* TRANSACTION INJECTION PORT (EXPENSE / INCOME) */}
                         <div className="lg:col-span-5 bg-white border border-slate-200 p-8 rounded-[3rem] shadow-2xl h-fit">
+                            {/* Toggle Switch */}
+                            <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-6 border border-slate-200">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setTransactionType('expense');
+                                        setNewExpense(prev => ({ ...prev, category: 'others' }));
+                                    }}
+                                    className={`flex-1 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
+                                        transactionType === 'expense' 
+                                            ? 'bg-rose-600 text-white shadow-md' 
+                                            : 'text-slate-500 hover:text-slate-900'
+                                    }`}
+                                >
+                                    🔴 Log Expense
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setTransactionType('income');
+                                        setNewExpense(prev => ({ ...prev, category: 'client_payment' }));
+                                    }}
+                                    className={`flex-1 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
+                                        transactionType === 'income' 
+                                            ? 'bg-emerald-600 text-white shadow-md' 
+                                            : 'text-slate-500 hover:text-slate-900'
+                                    }`}
+                                >
+                                    🟢 Log Income
+                                </button>
+                            </div>
+
                             <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic flex items-center gap-3 mb-6">
-                                <Plus className="text-indigo-600" /> Log Operational Expense
+                                {transactionType === 'expense' ? (
+                                    <><Plus className="text-rose-600" /> Log Operational Expense</>
+                                ) : (
+                                    <><TrendingUp className="text-emerald-600" /> Log Revenue / Income</>
+                                )}
                             </h3>
                             
                             <form onSubmit={handleAddExpense} className="space-y-6">
@@ -567,12 +608,12 @@ const AdminFinance = () => {
                                         required
                                         value={newExpense.title}
                                         onChange={(e) => setNewExpense({...newExpense, title: e.target.value})}
-                                        placeholder="e.g. Structural Steel Order"
+                                        placeholder={transactionType === 'expense' ? "e.g. Structural Steel Order" : "e.g. Scrap Steel Material Sale"}
                                         className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none text-sm"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Budget Value (₹)</label>
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Amount (₹)</label>
                                     <input 
                                         required
                                         type="number"
@@ -589,48 +630,116 @@ const AdminFinance = () => {
                                         onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
                                         className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none uppercase text-xs tracking-wider"
                                     >
-                                        <option value="material">Material Procurement</option>
-                                        <option value="fuel">Fuel / Logistics</option>
-                                        <option value="machinery">Machinery Maint.</option>
-                                        <option value="utilities">Utilities & R&D</option>
-                                        <option value="others">Other Direct Costs</option>
+                                        {transactionType === 'expense' ? (
+                                            <>
+                                                <option value="material">Material Procurement</option>
+                                                <option value="fuel">Fuel / Logistics</option>
+                                                <option value="machinery">Machinery Maint.</option>
+                                                <option value="utilities">Utilities & R&D</option>
+                                                <option value="others">Other Direct Costs</option>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <option value="client_payment">Direct Client Payment</option>
+                                                <option value="scrap_sale">Scrap / Material Sale</option>
+                                                <option value="capital_injection">Capital Injection</option>
+                                                <option value="advance">Project Advance</option>
+                                                <option value="others">Other Misc Income</option>
+                                            </>
+                                        )}
                                     </select>
                                 </div>
                                 <button 
                                     disabled={addingExpense}
-                                    className="w-full bg-slate-900 text-white font-black uppercase tracking-widest text-xs py-5 rounded-2xl shadow-xl hover:bg-indigo-600 transition-colors flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                                    className={`w-full text-white font-black uppercase tracking-widest text-xs py-5 rounded-2xl shadow-xl transition-colors flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 ${
+                                        transactionType === 'expense' 
+                                            ? 'bg-slate-900 hover:bg-rose-600' 
+                                            : 'bg-emerald-600 hover:bg-emerald-700'
+                                    }`}
                                 >
                                     {addingExpense ? <Loader2 className="animate-spin w-5 h-5" /> : <DollarSign className="w-5 h-5" />}
-                                    Commit Expense entry →
+                                    {transactionType === 'expense' ? 'Commit Expense entry →' : 'Commit Income entry →'}
                                 </button>
                             </form>
                         </div>
 
-                        {/* EXPENSE LOGS */}
+                        {/* FINANCIAL AUDIT LOG */}
                         <div className="lg:col-span-7 bg-white border border-slate-200 p-8 rounded-[3rem] shadow-2xl flex flex-col">
-                            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic flex items-center gap-3 mb-6">
-                                <PieChart className="text-indigo-600" /> Expenditure Audit Log
-                            </h3>
+                            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic flex items-center gap-3">
+                                    <PieChart className="text-indigo-600" /> Financial Audit Log
+                                </h3>
+                                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                                    <button
+                                        onClick={() => setLedgerFilter('all')}
+                                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${
+                                            ledgerFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                                        }`}
+                                    >
+                                        All
+                                    </button>
+                                    <button
+                                        onClick={() => setLedgerFilter('expense')}
+                                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${
+                                            ledgerFilter === 'expense' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                                        }`}
+                                    >
+                                        Expenses
+                                    </button>
+                                    <button
+                                        onClick={() => setLedgerFilter('income')}
+                                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${
+                                            ledgerFilter === 'income' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                                        }`}
+                                    >
+                                        Income
+                                    </button>
+                                </div>
+                            </div>
                             
                             <div className="space-y-3 overflow-y-auto max-h-[500px] pr-2">
-                                {expenses.length === 0 ? (
-                                    <p className="text-center text-slate-400 py-10 font-bold">No expenditures logged yet.</p>
-                                ) : expenses.map((exp, i) => (
-                                    <div key={exp._id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-indigo-50/50 transition flex items-center justify-between group">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center font-black text-indigo-600 shadow-sm uppercase text-[9px]">
-                                                {exp.category.slice(0, 3)}
+                                {expenses.filter(exp => {
+                                    if (ledgerFilter === 'expense') return exp.type !== 'income';
+                                    if (ledgerFilter === 'income') return exp.type === 'income';
+                                    return true;
+                                }).length === 0 ? (
+                                    <p className="text-center text-slate-400 py-10 font-bold">No financial transactions found for this view.</p>
+                                ) : expenses.filter(exp => {
+                                    if (ledgerFilter === 'expense') return exp.type !== 'income';
+                                    if (ledgerFilter === 'income') return exp.type === 'income';
+                                    return true;
+                                }).map((exp) => {
+                                    const isIncome = exp.type === 'income';
+                                    return (
+                                        <div key={exp._id} className={`p-4 rounded-2xl border transition flex items-center justify-between group ${
+                                            isIncome ? 'bg-emerald-50/40 border-emerald-100 hover:bg-emerald-50' : 'bg-slate-50 border-slate-100 hover:bg-indigo-50/50'
+                                        }`}>
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black shadow-sm uppercase text-[9px] ${
+                                                    isIncome ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-indigo-600'
+                                                }`}>
+                                                    {exp.category?.slice(0, 3) || (isIncome ? 'INC' : 'EXP')}
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${
+                                                            isIncome ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                                                        }`}>
+                                                            {isIncome ? 'INCOME' : 'EXPENSE'}
+                                                        </span>
+                                                        <p className="font-extrabold text-slate-950 text-sm uppercase">{exp.title}</p>
+                                                    </div>
+                                                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{new Date(exp.date).toLocaleDateString()}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-extrabold text-slate-950 text-sm uppercase">{exp.title}</p>
-                                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{new Date(exp.date).toLocaleDateString()}</p>
+                                            <div className="text-right">
+                                                <p className={`font-black italic text-sm ${isIncome ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                                    {isIncome ? '+' : '-'} ₹ {exp.amount.toLocaleString()}
+                                                </p>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="font-black text-rose-500 italic text-sm">₹ {exp.amount.toLocaleString()}</p>
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
@@ -681,6 +790,14 @@ const AdminFinance = () => {
                                         const locked = payrollRecords.find(p => p.staffId?._id === staff._id || p.staffId === staff._id);
                                         const record = locked || draft;
                                         
+                                        const baseSal = staff.base_salary || 0;
+                                        const totalEarned = record ? (record.totalEarnedSalary ?? record.netSalary ?? baseSal) : baseSal;
+                                        const alreadyPaid = record ? (record.salaryAlreadyPaid ?? 0) : 0;
+                                        const advancePaid = record ? (record.salaryAdvance ?? staff.advanceAmount ?? 0) : (staff.advanceAmount ?? 0);
+                                        const remainingBalance = record ? (record.remainingBalance ?? (totalEarned - alreadyPaid)) : (totalEarned - alreadyPaid);
+                                        const outstandingAmount = record ? (record.outstandingAmount ?? 0) : 0;
+                                        const statusText = record ? (record.paymentStatus ?? 'DRAFT') : 'DRAFT';
+
                                         return (
                                             <tr key={staff._id} className="hover:bg-slate-50/50 transition">
                                                 <td className="px-6 py-5">
@@ -692,30 +809,30 @@ const AdminFinance = () => {
                                                 <td className="px-6 py-5">
                                                     <div>
                                                         <span className="font-bold text-slate-700">{staff.salaryType || 'Monthly'}</span>
-                                                        <p className="font-bold text-indigo-600 mt-0.5">₹ {staff.base_salary?.toLocaleString()}</p>
+                                                        <p className="font-bold text-indigo-600 mt-0.5">₹ {baseSal.toLocaleString()}</p>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-5 font-bold text-slate-900">
-                                                    ₹ {(record?.totalEarnedSalary ?? record?.netSalary ?? 0).toLocaleString()}
+                                                    ₹ {totalEarned.toLocaleString()}
                                                 </td>
-                                                <td className="px-6 py-5 font-semibold text-slate-755">
-                                                    ₹ {(record?.salaryAlreadyPaid ?? 0).toLocaleString()}
+                                                <td className="px-6 py-5 font-semibold text-slate-700">
+                                                    ₹ {alreadyPaid.toLocaleString()}
                                                 </td>
-                                                <td className="px-6 py-5 font-semibold text-slate-755">
-                                                    ₹ {(record?.salaryAdvance ?? 0).toLocaleString()}
+                                                <td className="px-6 py-5 font-semibold text-slate-700">
+                                                    ₹ {advancePaid.toLocaleString()}
                                                 </td>
                                                 <td className="px-6 py-5 font-black text-indigo-600">
-                                                    ₹ {(record?.remainingBalance ?? record?.netSalary ?? 0).toLocaleString()}
+                                                    ₹ {remainingBalance.toLocaleString()}
                                                 </td>
                                                 <td className="px-6 py-5 font-bold text-rose-600">
-                                                    ₹ {(record?.outstandingAmount ?? 0).toLocaleString()}
+                                                    ₹ {outstandingAmount.toLocaleString()}
                                                 </td>
                                                 <td className="px-6 py-5">
                                                     <span className={`inline-flex px-2.5 py-1 rounded-lg font-black uppercase tracking-wider text-[9px] ${
-                                                        record?.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-700' : 
-                                                        record?.paymentStatus === 'partially_paid' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-700'
+                                                        statusText === 'paid' ? 'bg-emerald-50 text-emerald-700' : 
+                                                        statusText === 'partially_paid' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-700'
                                                     }`}>
-                                                        {record?.paymentStatus ?? 'DRAFT'}
+                                                        {statusText}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-5 text-right">

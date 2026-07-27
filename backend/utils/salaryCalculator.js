@@ -66,13 +66,30 @@ async function recalculateSalary(staffId, month) {
         const workingDays = staff.workingDaysPerMonth || 26;
         const workingHoursPerDay = staff.standardWorkingHoursPerDay || 8;
         
-        // Hourly rate
+        // Rates
         const hourlyRate = parseFloat((baseSalary / (workingDays * workingHoursPerDay)).toFixed(2));
+        const perDayRate = parseFloat((baseSalary / workingDays).toFixed(2));
 
-        // Earned salary = Approved worked hours * Hourly rate (capped at monthly base salary)
-        let earnedSalary = parseFloat((totalWorkedHours * hourlyRate).toFixed(2));
-        if (earnedSalary > baseSalary) {
-            earnedSalary = baseSalary;
+        let earnedSalary = 0;
+        if (staff.salaryType === 'Daily Wage') {
+            if (totalWorkedHours > 0) {
+                earnedSalary = parseFloat((totalWorkedHours * hourlyRate).toFixed(2));
+            } else {
+                earnedSalary = parseFloat(((presentDays + (halfDays * 0.5)) * perDayRate).toFixed(2));
+            }
+        } else {
+            // Monthly Fixed Salary
+            if (attendanceRecords.length === 0) {
+                // Default to full base salary when no attendance records logged yet
+                earnedSalary = baseSalary;
+            } else {
+                if (totalWorkedHours > 0) {
+                    earnedSalary = Math.min(baseSalary, parseFloat((totalWorkedHours * hourlyRate).toFixed(2)));
+                } else {
+                    const unpaidDeduction = (absentDays * perDayRate) + (halfDays * 0.5 * perDayRate);
+                    earnedSalary = Math.max(0, parseFloat((baseSalary - unpaidDeduction).toFixed(2)));
+                }
+            }
         }
 
         const bonus = staff.bonusAmount || 0;
@@ -95,7 +112,7 @@ async function recalculateSalary(staffId, month) {
         const remainingBalance = parseFloat((netPayable - salaryAlreadyPaid).toFixed(2));
         const outstandingAmount = remainingBalance < 0 ? Math.abs(remainingBalance) : 0;
 
-        const paymentStatus = remainingBalance <= 0 
+        const paymentStatus = (salaryAlreadyPaid >= netPayable && netPayable > 0) 
             ? 'paid' 
             : (salaryAlreadyPaid > 0 ? 'partially_paid' : 'unpaid');
 
