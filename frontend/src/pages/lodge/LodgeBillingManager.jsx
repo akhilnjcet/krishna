@@ -55,6 +55,14 @@ const LodgeBillingManager = () => {
     });
     const [savingSettings, setSavingSettings] = useState(false);
 
+    // Verification Queue State
+    const [verifications, setVerifications] = useState([]);
+    const [loadingVerifications, setLoadingVerifications] = useState(false);
+    const [activeVerificationPhoto, setActiveVerificationPhoto] = useState(null);
+    const [verificationSearch, setVerificationSearch] = useState('');
+    const [verificationStatusFilter, setVerificationStatusFilter] = useState('WAITING_FOR_VERIFICATION');
+    const [verificationDateFilter, setVerificationDateFilter] = useState('all');
+
     // Dashboard Stats State
     const [stats, setStats] = useState({
         totalRooms: 0,
@@ -283,9 +291,22 @@ const LodgeBillingManager = () => {
         return () => clearInterval(interval);
     }, []);
 
+    const fetchVerifications = async () => {
+        setLoadingVerifications(true);
+        try {
+            const res = await api.get('/payments');
+            setVerifications(res.data || []);
+        } catch (err) {
+            console.error('Failed to load verifications:', err);
+        } finally {
+            setLoadingVerifications(false);
+        }
+    };
+
     // Set Active Tab triggers refetch
     useEffect(() => {
         if (activeTab === 'settings') fetchSettings();
+        else if (activeTab === 'verifications') fetchVerifications();
         else loadDashboardData();
     }, [activeTab]);
 
@@ -661,6 +682,14 @@ const LodgeBillingManager = () => {
                 </button>
                 {isAdmin && (
                     <button
+                        onClick={() => setActiveTab('verifications')}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'verifications' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                    >
+                        <ShieldCheck className="w-4 h-4 inline-block mr-1.5 -mt-0.5" /> Payment Verifications
+                    </button>
+                )}
+                {isAdmin && (
+                    <button
                         onClick={() => setActiveTab('settings')}
                         className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'settings' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
                     >
@@ -935,6 +964,216 @@ const LodgeBillingManager = () => {
                     </button>
                 </form>
             )}
+
+            {/* Tab: Verifications */}
+            {activeTab === 'verifications' && (() => {
+                const handleApproveVerification = async (pId) => {
+                    if (!confirm('Are you sure you want to approve this payment proof?')) return;
+                    try {
+                        await api.put(`/payments/${pId}/verify`, { status: 'APPROVED' });
+                        alert('Payment approved successfully!');
+                        fetchVerifications();
+                        loadDashboardData();
+                    } catch (err) {
+                        alert('Failed to approve payment.');
+                    }
+                };
+
+                const handleRejectVerification = async (pId) => {
+                    const reason = prompt('Please enter the reason for rejection:');
+                    if (!reason) {
+                        alert('Rejection reason is required.');
+                        return;
+                    }
+                    try {
+                        await api.put(`/payments/${pId}/verify`, { status: 'REJECTED', rejectionReason: reason });
+                        alert('Payment rejected successfully!');
+                        fetchVerifications();
+                        loadDashboardData();
+                    } catch (err) {
+                        alert('Failed to reject payment.');
+                    }
+                };
+
+                const filteredVerifications = verifications.filter(v => {
+                    const matchSearch = !verificationSearch || 
+                        (v.tenantName || '').toLowerCase().includes(verificationSearch.toLowerCase()) ||
+                        (v.name || '').toLowerCase().includes(verificationSearch.toLowerCase()) ||
+                        (v.roomId?.number || '').toLowerCase().includes(verificationSearch.toLowerCase()) ||
+                        (v.bookingId?._id || '').toLowerCase().includes(verificationSearch.toLowerCase()) ||
+                        (v.referenceId || '').toLowerCase().includes(verificationSearch.toLowerCase()) ||
+                        (v.transactionReference || '').toLowerCase().includes(verificationSearch.toLowerCase());
+
+                    const matchStatus = verificationStatusFilter === 'all' || v.status === verificationStatusFilter;
+
+                    let matchDate = true;
+                    if (verificationDateFilter !== 'all') {
+                        const today = new Date();
+                        today.setHours(0,0,0,0);
+                        const itemDate = new Date(v.createdAt);
+                        if (verificationDateFilter === 'Today') {
+                            const tomorrow = new Date(today);
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            matchDate = itemDate >= today && itemDate < tomorrow;
+                        } else if (verificationDateFilter === 'This Week') {
+                            const startOfWeek = new Date(today);
+                            startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+                            matchDate = itemDate >= startOfWeek;
+                        } else if (verificationDateFilter === 'This Month') {
+                            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                            matchDate = itemDate >= startOfMonth;
+                        }
+                    }
+
+                    return matchSearch && matchStatus && matchDate;
+                });
+
+                return (
+                    <div className="space-y-6 print:hidden">
+                        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex-grow flex flex-col md:flex-row gap-4">
+                                <input
+                                    type="text"
+                                    placeholder="Search by name, room, booking or transaction ID..."
+                                    value={verificationSearch}
+                                    onChange={(e) => setVerificationSearch(e.target.value)}
+                                    className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-medium text-xs flex-grow"
+                                />
+                                <select
+                                    value={verificationStatusFilter}
+                                    onChange={(e) => setVerificationStatusFilter(e.target.value)}
+                                    className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 w-full md:w-56"
+                                >
+                                    <option value="WAITING_FOR_VERIFICATION">Waiting for Verification</option>
+                                    <option value="APPROVED">Approved</option>
+                                    <option value="REJECTED">Rejected</option>
+                                    <option value="all">All Statuses</option>
+                                </select>
+                                <select
+                                    value={verificationDateFilter}
+                                    onChange={(e) => setVerificationDateFilter(e.target.value)}
+                                    className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 w-full md:w-44"
+                                >
+                                    <option value="all">All Dates</option>
+                                    <option value="Today">Today</option>
+                                    <option value="This Week">This Week</option>
+                                    <option value="This Month">This Month</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-xl">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-xs border-collapse">
+                                    <thead className="bg-slate-50 border-b border-slate-100 font-bold uppercase tracking-wider text-slate-400">
+                                        <tr>
+                                            <th className="px-6 py-4">Tenant / Room / Booking</th>
+                                            <th className="px-6 py-4">Amount</th>
+                                            <th className="px-6 py-4">Payment Method</th>
+                                            <th className="px-6 py-4">Transaction ID</th>
+                                            <th className="px-6 py-4">Date & Time</th>
+                                            <th className="px-6 py-4">Receipt / Proof</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                                        {filteredVerifications.map((v) => (
+                                            <tr key={v._id} className="hover:bg-slate-50/50 transition">
+                                                <td className="px-6 py-4">
+                                                    <p className="font-black text-slate-900">{v.tenantName || v.name || v.customerId?.name || 'Unknown Guest'}</p>
+                                                    <p className="text-[10px] text-slate-400">Room ID: {v.roomId?._id || v.roomId || 'N/A'}</p>
+                                                    <p className="text-[9px] text-indigo-500 uppercase font-bold tracking-tight">Booking: {v.bookingId?._id || v.bookingId || 'Direct Settlement'}</p>
+                                                </td>
+                                                <td className="px-6 py-4 font-black text-slate-900">₹{v.amount}</td>
+                                                <td className="px-6 py-4 uppercase text-slate-500 font-bold">{v.method}</td>
+                                                <td className="px-6 py-4 font-mono font-bold text-slate-500">{v.referenceId || v.transactionReference || 'N/A'}</td>
+                                                <td className="px-6 py-4 text-slate-400">{new Date(v.createdAt).toLocaleString()}</td>
+                                                <td className="px-6 py-4">
+                                                    {v.uploadedProof ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <img 
+                                                                src={v.uploadedProof} 
+                                                                alt="Proof" 
+                                                                onClick={() => setActiveVerificationPhoto(v.uploadedProof)}
+                                                                className="w-10 h-10 object-cover rounded-lg border border-slate-200 cursor-zoom-in hover:opacity-85 transition" 
+                                                            />
+                                                            <a 
+                                                                href={v.uploadedProof} 
+                                                                download={`proof_${v._id}.png`} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer"
+                                                                className="text-indigo-600 hover:text-indigo-800 text-[10px] font-black uppercase tracking-wider block"
+                                                            >
+                                                                Download
+                                                            </a>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-300 italic">No proof uploaded</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                                        v.status === 'APPROVED' || v.status === 'Completed' || v.status === 'verified' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                                                        v.status === 'REJECTED' || v.status === 'Failed' || v.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                                        'bg-amber-50 text-amber-600 border border-amber-100'
+                                                    }`}>
+                                                        {v.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    {v.status === 'WAITING_FOR_VERIFICATION' && (
+                                                        <div className="flex justify-end gap-2">
+                                                            <button 
+                                                                onClick={() => handleApproveVerification(v._id)}
+                                                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-bold uppercase tracking-wider text-[9px]"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleRejectVerification(v._id)}
+                                                                className="bg-rose-50 text-rose-600 hover:bg-rose-100 px-3 py-1.5 rounded-xl font-bold uppercase tracking-wider text-[9px]"
+                                                            >
+                                                                Reject
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {filteredVerifications.length === 0 && (
+                                <div className="text-center py-20 text-slate-400 font-bold uppercase text-xs tracking-widest italic bg-slate-50/50">
+                                    {loadingVerifications ? 'Fetching latest verification telemetry...' : 'No verifications pending match.'}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* Verification Lightbox Modal */}
+            <AnimatePresence>
+                {activeVerificationPhoto && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+                        <div className="relative max-w-3xl max-h-[85vh] w-full flex flex-col items-center">
+                            <button 
+                                onClick={() => setActiveVerificationPhoto(null)}
+                                className="absolute -top-12 right-0 text-white font-black hover:text-indigo-400 text-sm flex items-center gap-1.5"
+                            >
+                                <X className="w-5 h-5" /> Close View
+                            </button>
+                            <img 
+                                src={activeVerificationPhoto} 
+                                alt="Payment Proof Full Size" 
+                                className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border-4 border-white/10" 
+                            />
+                        </div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Interactive Generate Bill Dialog (Modal Overlay) */}
             <AnimatePresence>

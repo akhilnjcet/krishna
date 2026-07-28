@@ -3,7 +3,7 @@ const Payment = require('../models/Payment');
 
 exports.submitPayment = async (req, res) => {
     try {
-        const { amount, method, referenceId, paymentDate, projectId, quoteId, notes, name } = req.body;
+        const { amount, method, referenceId, paymentDate, projectId, quoteId, notes, name, bookingId, roomId, uploadedProof, status } = req.body;
         const customerId = req.user._id || req.user.id;
         
         if (!customerId) {
@@ -15,12 +15,17 @@ exports.submitPayment = async (req, res) => {
             amount: parseFloat(amount),
             method: method || 'upi',
             referenceId,
+            transactionReference: referenceId,
             paymentDate: paymentDate || Date.now(),
             projectId: projectId || undefined,
             quoteId: quoteId || undefined,
+            bookingId: bookingId || undefined,
+            roomId: roomId || undefined,
+            uploadedProof: uploadedProof || undefined,
+            tenantName: name || req.user.name,
             notes,
             name,
-            status: 'Waiting for Verification'
+            status: status || 'WAITING_FOR_VERIFICATION'
         });
 
         // Broadcast status update to sockets
@@ -73,7 +78,7 @@ exports.verifyPayment = async (req, res) => {
 
         const payment = await Payment.findByIdAndUpdate(req.params.id, {
             status,
-            rejectionReason: status === 'Failed' ? rejectionReason : undefined,
+            rejectionReason: (status === 'Failed' || status === 'REJECTED') ? rejectionReason : undefined,
             verifiedByName,
             verifiedAt: Date.now(),
             verifiedBy: req.user._id || req.user.id
@@ -87,6 +92,15 @@ exports.verifyPayment = async (req, res) => {
             await Invoice.findOneAndUpdate(
                 { projectId: payment.projectId, customerId: payment.customerId, paymentStatus: 'unpaid' },
                 { paymentStatus: 'paid' }
+            );
+        }
+
+        // Settle LodgeRentBill if approved
+        if ((status === 'Completed' || status === 'APPROVED') && payment.roomId) {
+            const LodgeRentBill = require('../models/LodgeRentBill');
+            await LodgeRentBill.findOneAndUpdate(
+                { roomId: payment.roomId, userId: payment.customerId, status: 'Due' },
+                { status: 'Paid', paymentDate: Date.now(), paymentMethod: payment.method, transactionId: payment.referenceId, outstandingAmount: 0 }
             );
         }
 
@@ -108,9 +122,9 @@ exports.verifyPayment = async (req, res) => {
         const customerPhone = payment.customerId?.phoneNumber || payment.customerId?.phone;
         if (customerPhone) {
             let notificationMessage = '';
-            if (status === 'Completed') {
+            if (status === 'Completed' || status === 'APPROVED') {
                 notificationMessage = `Hello ${payment.customerId.name || 'Client'},\n\nYour payment of ₹${payment.amount} (Ref: ${payment.referenceId || 'N/A'}) has been verified and completed successfully.\n\nThank you,\nKrishna Engineering Works`;
-            } else if (status === 'Failed') {
+            } else if (status === 'Failed' || status === 'REJECTED') {
                 notificationMessage = `Hello ${payment.customerId.name || 'Client'},\n\nYour payment verification for ₹${payment.amount} (Ref: ${payment.referenceId || 'N/A'}) was rejected.\nReason: ${rejectionReason || 'Verification Failed'}.\n\nPlease contact support.`;
             }
             if (notificationMessage) {

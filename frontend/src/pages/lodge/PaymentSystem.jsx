@@ -6,6 +6,7 @@ import {
     ShieldCheck, IndianRupee, Zap, Droplets, Info, Wifi, Wrench
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
+import api from '../../services/api';
 
 const PaymentSystem = () => {
     const { roomNumber, type } = useParams();
@@ -71,11 +72,24 @@ const PaymentSystem = () => {
         submitPayment(method);
     };
 
-    const submitPayment = (method) => {
+    const submitPayment = async (method) => {
         setProcessing(true);
-        // Simulate gateway
-        setTimeout(() => {
+        try {
             const isWaiting = method === 'UPI';
+            // Post transaction directly to the backend database
+            const res = await api.post('/payments/submit', {
+                amount: parseFloat(amount),
+                method: method.toLowerCase() === 'upi' ? 'upi' : 'other',
+                referenceId: `TXN-${Date.now().toString().slice(-6)}`,
+                notes: `${type.toUpperCase()} payment for Room ${roomNumber}`,
+                name: room?.tenant || 'Guest Tenant',
+                bookingId: room?.id || undefined,
+                roomId: room?.id || undefined,
+                uploadedProof: screenshotPreview || undefined,
+                status: isWaiting ? 'WAITING_FOR_VERIFICATION' : 'Completed'
+            });
+
+            // Also update local store
             addPayment({
                 roomNumber,
                 type,
@@ -91,10 +105,14 @@ const PaymentSystem = () => {
                 }
             }
 
-            setProcessing(false);
             setSuccess(isWaiting ? 'approval' : 'completed');
             setTimeout(() => navigate(`/lodge/room/${roomNumber}`), 3000);
-        }, 1500);
+        } catch (err) {
+            console.error('Payment submission failed:', err);
+            alert('Failed to register payment proof.');
+        } finally {
+            setProcessing(false);
+        }
     };
 
     if (success) {
