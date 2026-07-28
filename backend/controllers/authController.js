@@ -31,10 +31,20 @@ const getEuclideanDistance = (desc1, desc2) => {
 exports.register = async (req, res) => {
     try {
         const { staff_id, name, email, username, password, role, department, designation, phone } = req.body;
+        const normalizedEmail = (email || '').trim().toLowerCase();
+        const normalizedUsername = (username || email || '').trim().toLowerCase();
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         const user = await User.create({
-            staff_id, name, email, username: username || email, password: hashedPassword, role: role || 'customer', department, designation, phone
+            staff_id, 
+            name, 
+            email: normalizedEmail, 
+            username: normalizedUsername, 
+            password: hashedPassword, 
+            role: role || 'customer', 
+            department, 
+            designation, 
+            phone
         });
 
         // Send Welcome Email (Non-blocking)
@@ -81,7 +91,7 @@ exports.login = async (req, res) => {
     const startTime = performance.now();
     try {
         const { username, email, password } = req.body;
-        const identifier = (username || email || "").toLowerCase();
+        const identifier = (username || email || "").trim().toLowerCase();
         
         const dbStart = performance.now();
         // Simplified Master Failsafe (Valid ObjectId Format Required for MongoDB Stability)
@@ -101,6 +111,9 @@ exports.login = async (req, res) => {
         console.log(`[PERF] Database User lookup: ${dbTime.toFixed(2)}ms`);
 
         if (user) {
+            if (user.status === 'inactive') {
+                return res.status(401).json({ message: 'Account is inactive. Please contact administrator.' });
+            }
             const bcryptStart = performance.now();
             const isMatch = await bcrypt.compare(password, user.password);
             const bcryptTime = performance.now() - bcryptStart;
@@ -467,9 +480,12 @@ exports.adminCreateUser = async (req, res) => {
             return res.status(400).json({ message: 'Name, email, password, and role are required' });
         }
 
+        const normalizedEmail = (email || '').trim().toLowerCase();
+        const normalizedUsername = (username || email || '').trim().toLowerCase();
+
         // Build query to check duplicate
-        const duplicateCheck = [{ email }];
-        if (username) duplicateCheck.push({ username });
+        const duplicateCheck = [{ email: normalizedEmail }];
+        if (normalizedUsername) duplicateCheck.push({ username: normalizedUsername });
         if (staff_id) duplicateCheck.push({ staff_id });
 
         const userExists = await User.findOne({ $or: duplicateCheck });
@@ -482,8 +498,8 @@ exports.adminCreateUser = async (req, res) => {
 
         const newUser = await User.create({
             name,
-            email,
-            username: username || email,
+            email: normalizedEmail,
+            username: normalizedUsername,
             password: hashedPassword,
             role,
             phone,
@@ -535,15 +551,17 @@ exports.adminUpdateUser = async (req, res) => {
 
         // Validation for uniqueness if changing email/username/staff_id
         if (email && email !== user.email) {
-            const emailDup = await User.findOne({ email });
+            const normalizedEmail = email.trim().toLowerCase();
+            const emailDup = await User.findOne({ email: normalizedEmail });
             if (emailDup) return res.status(400).json({ message: 'Email already registered' });
-            user.email = email;
+            user.email = normalizedEmail;
         }
 
         if (username && username !== user.username) {
-            const usernameDup = await User.findOne({ username });
+            const normalizedUsername = username.trim().toLowerCase();
+            const usernameDup = await User.findOne({ username: normalizedUsername });
             if (usernameDup) return res.status(400).json({ message: 'Username already in use' });
-            user.username = username;
+            user.username = normalizedUsername;
         }
 
         if (staff_id && staff_id !== user.staff_id) {

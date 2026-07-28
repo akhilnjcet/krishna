@@ -5,10 +5,31 @@ import {
     Download, Printer, Share2, Eye, Plus, CreditCard, Archive, 
     Trash2, ChevronLeft, ChevronRight, X, Info, Check, CheckCircle2, 
     TrendingUp, ShieldAlert, Award, FileText, Sparkles, Folder, Calendar,
-    User, Phone, MapPin, Mail, AlertTriangle, RefreshCw
+    User, Phone, MapPin, Mail, AlertTriangle, RefreshCw, Percent, IndianRupee, FileCheck
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
+
+// Simple Indian Number to Words Converter
+const numberToWords = (num) => {
+    try {
+        const a = ['','one ','two ','three ','four ', 'five ','six ','seven ','eight ','nine ','ten ','eleven ','twelve ','thirteen ','fourteen ','fifteen ','sixteen ','seventeen ','eighteen ','nineteen '];
+        const b = ['', '', 'twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+        num = Math.floor(num);
+        if ((num = num.toString()).length > 9) return 'AMOUNT OVERFLOW';
+        let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+        if (!n) return ''; 
+        let str = '';
+        str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'crore ' : '';
+        str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'lakh ' : '';
+        str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'thousand ' : '';
+        str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'hundred ' : '';
+        str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) + 'only ' : '';
+        return str.toUpperCase() || 'ZERO RUPEES';
+    } catch (e) {
+        return 'ZERO RUPEES';
+    }
+};
 
 const LodgeBillingManager = () => {
     const { user } = useAuthStore();
@@ -57,29 +78,50 @@ const LodgeBillingManager = () => {
     const [statusFilter, setStatusFilter] = useState('');
     const [cycleFilter, setCycleFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
-    const [floorFilter, setFloorFilter] = useState('');
     const [sortFilter, setSortFilter] = useState('Nearest Due Date');
-    const [viewArchived, setViewArchived] = useState(false);
 
     // Selected items for Modals
     const [selectedRoomDetail, setSelectedRoomDetail] = useState(null);
     const [collectingAdvanceRoom, setCollectingAdvanceRoom] = useState(null);
-    const [editingCycleRoom, setEditingCycleRoom] = useState(null);
-    const [payingBill, setPayingBill] = useState(null);
 
-    // Modal Forms
-    const [advanceForm, setFormAdvance] = useState({ amount: 30000, coversUntil: '', months: 3 });
-    const [cycleForm, setFormCycle] = useState({ cycle: 'Monthly', customDays: 30 });
-    const [paymentForm, setPaymentForm] = useState({
+    // Dynamic Bill Generation Dialog State
+    const [generatingBillRoom, setGeneratingBillRoom] = useState(null);
+    const [billStep, setBillStep] = useState(1); // Step 1: Base details, Step 2: Additional Charges & Taxes, Step 3: Payment/Advance Adjustments, Step 4: Preview
+    
+    // Dynamic Bill Generation Form State
+    const [billForm, setBillForm] = useState({
+        billingPeriodStart: '',
+        billingPeriodEnd: '',
+        monthlyRent: 0,
+        securityDeposit: 0,
+        previousDue: 0,
+        previousOutstanding: 0,
+        additionalCharges: [], // Array of { id, name, amount, remarks }
+        discountType: 'Flat', // Flat or Percentage
+        discountValue: 0,
+        discountReason: '',
+        taxesEnabled: {
+            GST: true,
+            CGST: true,
+            SGST: true,
+            IGST: false,
+            CustomTax: false
+        },
+        customTaxPercent: 0,
+        paymentStatus: 'Unpaid', // Paid, Unpaid, Partially Paid
+        paymentDate: new Date().toISOString().split('T')[0],
         paymentMethod: 'Cash',
         transactionId: '',
-        electricityCharges: 0,
-        waterCharges: 0,
-        maintenanceCharges: 0,
-        extraCharges: 0,
-        discount: 0
+        receivedBy: '',
+        paidAmount: 0,
+        dueDate: '',
+        lateFee: 0,
+        balanceDueDate: '',
+        useAdvance: false
     });
-    const [actionLoading, setActionLoading] = useState(false);
+
+    // State for temporary add charge inputs
+    const [newCharge, setNewCharge] = useState({ name: 'Electricity', amount: '', remarks: '' });
 
     // Fetch Base Settings
     const fetchSettings = async () => {
@@ -262,71 +304,170 @@ const LodgeBillingManager = () => {
         }
     };
 
-    // Generate Bill Manually
-    const handleManualBillGenerate = async (room) => {
-        if (!room.activeBooking) return alert('No active booking on this room.');
-        setActionLoading(true);
-        try {
-            // Perform background simulation trigger
-            alert(`Generating invoice for room ${room.type || room.number}...`);
-            await loadDashboardData();
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setActionLoading(false);
+    // Open Bill Generation Dialog for target room
+    const handleOpenBillDialog = (room) => {
+        const today = new Date();
+        const monthLater = new Date();
+        monthLater.setMonth(today.getMonth() + 1);
+
+        setGeneratingBillRoom(room);
+        setBillStep(1);
+        setBillForm({
+            billingPeriodStart: today.toISOString().split('T')[0],
+            billingPeriodEnd: monthLater.toISOString().split('T')[0],
+            monthlyRent: room.price || 0,
+            securityDeposit: 5000, // standard default
+            previousDue: room.outstandingAmt || 0,
+            previousOutstanding: room.outstandingAmt || 0,
+            additionalCharges: [],
+            discountType: 'Flat',
+            discountValue: 0,
+            discountReason: '',
+            taxesEnabled: {
+                GST: true,
+                CGST: true,
+                SGST: true,
+                IGST: false,
+                CustomTax: false
+            },
+            customTaxPercent: 5,
+            paymentStatus: 'Unpaid',
+            paymentDate: today.toISOString().split('T')[0],
+            paymentMethod: 'Cash',
+            transactionId: '',
+            receivedBy: user?.name || 'Administrator',
+            paidAmount: 0,
+            dueDate: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days due
+            lateFee: 200,
+            balanceDueDate: '',
+            useAdvance: false
+        });
+    };
+
+    // Calculate Subtotals & Grand Totals
+    const calculateTotals = () => {
+        const base = parseFloat(billForm.monthlyRent) || 0;
+        const extraCharges = billForm.additionalCharges.reduce((acc, c) => acc + (parseFloat(c.amount) || 0), 0);
+        const prevOutstanding = parseFloat(billForm.previousOutstanding) || 0;
+
+        let total = base + extraCharges;
+
+        // Apply Discount
+        let discountAmt = 0;
+        if (billForm.discountType === 'Flat') {
+            discountAmt = parseFloat(billForm.discountValue) || 0;
+        } else {
+            discountAmt = (total * (parseFloat(billForm.discountValue) || 0)) / 100;
         }
-    };
+        total -= discountAmt;
 
-    // Send WhatsApp / Email Reminders
-    const handleSendReminder = async (type, room) => {
-        alert(`${type} notification reminder dispatched successfully to ${room.occupantName} (${room.phone})`);
-    };
+        // Apply Taxes
+        let taxAmt = 0;
+        let cGst = 0;
+        let sGst = 0;
+        let iGst = 0;
+        let customTaxVal = 0;
 
-    // Collect Advance
-    const handleCollectAdvance = (e) => {
-        e.preventDefault();
-        alert(`Recorded Advance Payment of ₹${advanceForm.amount} for Room ${collectingAdvanceRoom.type || collectingAdvanceRoom.number}. Covers until ${advanceForm.coversUntil || '31 Dec 2026'}.`);
-        setCollectingAdvanceRoom(null);
-        loadDashboardData();
-    };
-
-    // Update Billing Cycle for Room
-    const handleUpdateCycle = (e) => {
-        e.preventDefault();
-        alert(`Billing cycle for Room ${editingCycleRoom.type || editingCycleRoom.number} updated to ${cycleForm.cycle}.`);
-        setEditingCycleRoom(null);
-        loadDashboardData();
-    };
-
-    // Pay Bill Action
-    const handleRecordPayment = async (e) => {
-        e.preventDefault();
-        setActionLoading(true);
-        try {
-            await api.post(`/lodge-billing/bills/${payingBill._id}/pay`, paymentForm);
-            setPayingBill(null);
-            loadDashboardData();
-            alert('Payment saved successfully!');
-        } catch (err) {
-            alert('Payment failed.');
-        } finally {
-            setActionLoading(false);
+        if (billForm.taxesEnabled.GST) {
+            taxAmt += (total * 18) / 100; // 18% standard GST
+            cGst = (total * 9) / 100;
+            sGst = (total * 9) / 100;
         }
+        if (billForm.taxesEnabled.IGST) {
+            iGst = (total * 18) / 100;
+        }
+        if (billForm.taxesEnabled.CustomTax) {
+            customTaxVal = (total * (parseFloat(billForm.customTaxPercent) || 0)) / 100;
+        }
+
+        const taxesTotal = taxAmt + iGst + customTaxVal;
+        let grandTotal = total + taxesTotal + prevOutstanding;
+
+        // Advance Adjustments
+        let advanceBefore = generatingBillRoom?.advanceBalance || 0;
+        let advanceUsed = 0;
+        let advanceRemaining = advanceBefore;
+
+        if (billForm.useAdvance) {
+            if (advanceBefore >= grandTotal) {
+                advanceUsed = grandTotal;
+                advanceRemaining = advanceBefore - grandTotal;
+                grandTotal = 0;
+            } else {
+                advanceUsed = advanceBefore;
+                advanceRemaining = 0;
+                grandTotal -= advanceBefore;
+            }
+        }
+
+        return {
+            subtotal: base + extraCharges,
+            discountAmt,
+            cGst,
+            sGst,
+            iGst,
+            customTaxVal,
+            taxesTotal,
+            grandTotal,
+            advanceUsed,
+            advanceRemaining
+        };
     };
 
-    // Compile A4 PDF Invoice
-    const handlePDFInvoice = async (bill) => {
+    // Add dynamic charge
+    const handleAddCharge = () => {
+        if (!newCharge.name || !newCharge.amount) return;
+        setBillForm({
+            ...billForm,
+            additionalCharges: [
+                ...billForm.additionalCharges,
+                { id: Date.now().toString(), name: newCharge.name, amount: parseFloat(newCharge.amount) || 0, remarks: newCharge.remarks }
+            ]
+        });
+        setNewCharge({ name: 'Electricity', amount: '', remarks: '' });
+    };
+
+    // Remove dynamic charge
+    const handleRemoveCharge = (id) => {
+        setBillForm({
+            ...billForm,
+            additionalCharges: billForm.additionalCharges.filter(c => c.id !== id)
+        });
+    };
+
+    // Generate Final PDF & Save to Database History
+    const handleSaveAndGenerateBill = async () => {
+        const { grandTotal, advanceUsed, advanceRemaining, discountAmt, taxesTotal } = calculateTotals();
+        
         try {
+            // Save to database
+            const billData = {
+                roomId: generatingBillRoom._id,
+                lodgeId: generatingBillRoom.lodgeId,
+                billNumber: `INV-${Date.now().toString().slice(-6)}`,
+                rentAmount: billForm.monthlyRent,
+                outstandingAmount: billForm.paymentStatus === 'Paid' ? 0 : grandTotal,
+                status: billForm.paymentStatus,
+                dueDate: billForm.dueDate,
+                additionalCharges: billForm.additionalCharges,
+                discount: discountAmt,
+                tax: taxesTotal,
+                grandTotal
+            };
+
+            await api.post('/lodge-billing/bills', billData);
+            
+            // Trigger PDF creation
             const { jsPDF } = await import('jspdf');
             const doc = new jsPDF();
 
             // Header Banner
             doc.setFillColor(15, 23, 42); // Dark slate background
-            doc.rect(0, 0, 210, 40, 'F');
+            doc.rect(0, 0, 210, 45, 'F');
 
             // Lodge Branding Title
             doc.setTextColor(255, 255, 255);
-            doc.setFontSize(16);
+            doc.setFontSize(18);
             doc.setFont('helvetica', 'bold');
             doc.text('KRISHNA LODGE RESIDENCY', 15, 18);
             
@@ -335,45 +476,132 @@ const LodgeBillingManager = () => {
             doc.text('Premium Accommodation & Quality Living Solutions', 15, 24);
             doc.text('Thiruvazhiyode, Palakkad, Kerala | GSTIN: 32ABCDE1234F1Z5', 15, 29);
 
-            doc.setFontSize(12);
+            doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text('LODGE RENT INVOICE', 195, 18, { align: 'right' });
+            doc.text('TAX INVOICE', 195, 18, { align: 'right' });
             doc.setFontSize(8);
             doc.setFont('helvetica', 'normal');
-            doc.text(`Bill No: ${bill.billNumber}`, 195, 24, { align: 'right' });
+            doc.text(`Invoice No: ${billData.billNumber}`, 195, 25, { align: 'right' });
+            doc.text(`Period: ${billForm.billingPeriodStart} to ${billForm.billingPeriodEnd}`, 195, 30, { align: 'right' });
 
             // Watermark
             doc.saveGraphicsState();
             doc.setGState(new doc.GState({ opacity: 0.1 }));
             doc.setFontSize(36);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(bill.status === 'Paid' ? [16, 185, 129] : [239, 68, 68]);
-            doc.text(bill.status === 'Paid' ? 'PAID RECEIVED' : 'PAYMENT DUE', 105, 140, { align: 'center', angle: 45 });
+            if (billForm.paymentStatus === 'Paid') {
+                doc.setTextColor([16, 185, 129]);
+                doc.text('PAID RECEIVED', 105, 140, { align: 'center', angle: 45 });
+            } else if (billForm.paymentStatus === 'Partially Paid') {
+                doc.setTextColor([59, 130, 246]);
+                doc.text('PARTIALLY PAID', 105, 140, { align: 'center', angle: 45 });
+            } else {
+                doc.setTextColor([239, 68, 68]);
+                doc.text('PAYMENT DUE', 105, 140, { align: 'center', angle: 45 });
+            }
             doc.restoreGraphicsState();
 
-            // Output
+            // Client & Room Details
             doc.setTextColor(15, 23, 42);
-            doc.text(`Rent Amount: INR ${bill.rentAmount}`, 15, 60);
-            doc.text(`Total Amount: INR ${bill.totalAmount}`, 15, 66);
-            doc.text(`Status: ${bill.status}`, 15, 72);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('BILL TO:', 15, 58);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Occupant Name: ${generatingBillRoom.occupantName}`, 15, 64);
+            doc.text(`Room Number: Room ${generatingBillRoom.number} (${generatingBillRoom.type})`, 15, 70);
+            doc.text(`Phone: ${generatingBillRoom.phone}`, 15, 76);
 
-            const safeFilename = `Bill_${bill.billNumber}.pdf`;
+            // Bill Summary Table Headers
+            doc.setFillColor(241, 245, 249);
+            doc.rect(15, 90, 180, 8, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.text('Item Description', 18, 95);
+            doc.text('Amount (INR)', 192, 95, { align: 'right' });
+
+            // Items listing
+            doc.setFont('helvetica', 'normal');
+            let currentY = 105;
+            doc.text(`Base Rent Room ${generatingBillRoom.number}`, 18, currentY);
+            doc.text(`₹ ${billForm.monthlyRent.toLocaleString()}`, 192, currentY, { align: 'right' });
+
+            billForm.additionalCharges.forEach(charge => {
+                currentY += 8;
+                doc.text(`${charge.name} (${charge.remarks || 'Utility Fee'})`, 18, currentY);
+                doc.text(`₹ ${charge.amount.toLocaleString()}`, 192, currentY, { align: 'right' });
+            });
+
+            // Summary Totals
+            currentY += 15;
+            doc.setDrawColor(226, 232, 240);
+            doc.line(15, currentY, 195, currentY);
+
+            currentY += 8;
+            doc.text('Tax (GST/Custom):', 130, currentY);
+            doc.text(`₹ ${taxesTotal.toLocaleString()}`, 192, currentY, { align: 'right' });
+
+            if (discountAmt > 0) {
+                currentY += 8;
+                doc.text(`Discount applied (${billForm.discountReason || 'Promo'}):`, 130, currentY);
+                doc.text(`- ₹ ${discountAmt.toLocaleString()}`, 192, currentY, { align: 'right' });
+            }
+
+            if (billForm.useAdvance) {
+                currentY += 8;
+                doc.text('Advance Adjustment:', 130, currentY);
+                doc.text(`- ₹ ${advanceUsed.toLocaleString()}`, 192, currentY, { align: 'right' });
+            }
+
+            currentY += 8;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Grand Total:', 130, currentY);
+            doc.text(`₹ ${grandTotal.toLocaleString()}`, 192, currentY, { align: 'right' });
+
+            // Amount in words
+            currentY += 12;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text(`AMOUNT IN WORDS: ${numberToWords(grandTotal)}`, 15, currentY);
+
+            // Signatures & Seals
+            currentY += 25;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Authorized Signatory', 15, currentY);
+            doc.text('Lodge Registrar Seal', 195, currentY, { align: 'right' });
+
+            doc.setFont('helvetica', 'normal');
+            doc.text('______________________', 15, currentY + 12);
+            doc.text('[Seal Stamp Space]', 195, currentY + 12, { align: 'right' });
+
+            // Terms
+            currentY += 25;
+            doc.setFontSize(7);
+            doc.setTextColor(100, 116, 139);
+            doc.text('Terms & Conditions: Rent must be paid within the grace period. Overdue accounts attract late fees.', 15, currentY);
+
+            const safeFilename = `Bill_${billData.billNumber}.pdf`;
             doc.save(safeFilename);
+
+            alert('Bill generated and saved successfully!');
+            setGeneratingBillRoom(null);
+            loadDashboardData();
         } catch (err) {
-            alert('Failed to generate PDF invoice.');
+            alert('Failed to save or print bill.');
         }
+    };
+
+    // Print Preview Modal Directly
+    const handlePrintPreview = () => {
+        window.print();
     };
 
     // Filtering logic
     const filteredRooms = rooms.filter(room => {
-        // Search matches
         const matchesSearch = searchTerm === '' || 
             room.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             room.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             room.occupantName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             room.phone?.toLowerCase().includes(searchTerm.toLowerCase());
 
-        // Status filters
         const matchesStatus = statusFilter === '' || 
             (statusFilter === 'Occupied' && room.occupancyStatus === 'occupied') ||
             (statusFilter === 'Vacant' && room.occupancyStatus === 'vacant') ||
@@ -381,7 +609,6 @@ const LodgeBillingManager = () => {
             (statusFilter === 'Advance Paid' && room.paymentBadge === 'Advance Paid') ||
             (statusFilter === 'Upcoming' && room.paymentBadge === 'Upcoming');
 
-        // Cycle filters
         const matchesCycle = cycleFilter === '' || room.billingCycle === cycleFilter;
         const matchesType = typeFilter === '' || room.type === typeFilter;
         
@@ -402,11 +629,14 @@ const LodgeBillingManager = () => {
     const roomsOverdue = rooms.filter(r => r.paymentBadge === 'Overdue').length;
     const advanceExpiring = rooms.filter(r => r.paymentBadge === 'Advance Paid' && r.advanceMonths <= 1).length;
 
+    // Totals for Preview
+    const previewTotals = generatingBillRoom ? calculateTotals() : { grandTotal: 0, taxesTotal: 0, discountAmt: 0, advanceUsed: 0, advanceRemaining: 0 };
+
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-slate-50 min-h-screen relative font-sans">
+        <div className="p-4 md:p-8 space-y-8 bg-slate-50 min-h-screen relative font-sans print:p-0 print:bg-white">
             
             {/* Header Banner */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl print:hidden">
                 <div>
                     <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter italic">Live Room Billing Dashboard</h1>
                     <p className="text-slate-500 font-medium">Real-time building accounts, live room allocation status, utility settles, and reminders dispatch console.</p>
@@ -415,7 +645,6 @@ const LodgeBillingManager = () => {
                     <button 
                         onClick={loadDashboardData}
                         className="p-3 bg-slate-50 text-slate-400 hover:text-indigo-600 rounded-2xl border border-slate-200 transition-colors flex items-center gap-2 font-bold text-xs uppercase"
-                        title="Force Refresh Data"
                     >
                         <RefreshCw className={`w-4 h-4 ${loadingLive ? 'animate-spin' : ''}`} /> Refresh
                     </button>
@@ -423,7 +652,7 @@ const LodgeBillingManager = () => {
             </div>
 
             {/* Quick Tabs Menu */}
-            <div className="flex flex-wrap gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200 w-fit">
+            <div className="flex flex-wrap gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200 w-fit print:hidden">
                 <button
                     onClick={() => setActiveTab('dashboard')}
                     className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'dashboard' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
@@ -442,7 +671,7 @@ const LodgeBillingManager = () => {
 
             {/* Warning Alert Banners */}
             {(billsDueToday > 0 || roomsOverdue > 0 || advanceExpiring > 0) && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:hidden">
                     {billsDueToday > 0 && (
                         <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-amber-800 text-xs font-bold">
                             <AlertTriangle className="w-5 h-5 text-amber-600" />
@@ -466,7 +695,7 @@ const LodgeBillingManager = () => {
 
             {/* Tab: Dashboard Board */}
             {activeTab === 'dashboard' && (
-                <div className="space-y-8">
+                <div className="space-y-8 print:hidden">
                     
                     {/* Summary Widgets */}
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -566,7 +795,7 @@ const LodgeBillingManager = () => {
                         </div>
 
                         {/* Desktop Table View */}
-                        <div className="hidden lg:block overflow-x-auto">
+                        <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse text-[11px] font-semibold">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -628,29 +857,29 @@ const LodgeBillingManager = () => {
                                                     <button 
                                                         onClick={() => setSelectedRoomDetail(room)}
                                                         className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-slate-500 transition"
-                                                        title="View Stay Details"
+                                                        title="View Details"
                                                     >
                                                         <Eye className="w-4 h-4" />
                                                     </button>
                                                     {room.occupancyStatus === 'occupied' && (
                                                         <>
                                                             <button 
-                                                                onClick={() => handleManualBillGenerate(room)}
-                                                                className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-indigo-600 transition"
-                                                                title="Generate Bill Cycle"
+                                                                onClick={() => handleOpenBillDialog(room)}
+                                                                className="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-indigo-600 transition"
+                                                                title="Generate Custom Bill Workflow"
                                                             >
                                                                 <Receipt className="w-4 h-4" />
                                                             </button>
                                                             <button 
                                                                 onClick={() => setCollectingAdvanceRoom(room)}
-                                                                className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-teal-600 transition"
+                                                                className="p-1.5 bg-teal-50 hover:bg-teal-100 rounded-lg text-teal-600 transition"
                                                                 title="Collect Advance"
                                                             >
                                                                 <CreditCard className="w-4 h-4" />
                                                             </button>
                                                             <button 
                                                                 onClick={() => handleSendReminder('WhatsApp', room)}
-                                                                className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-emerald-600 transition"
+                                                                className="p-1.5 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-emerald-600 transition"
                                                                 title="Send WhatsApp Alert"
                                                             >
                                                                 <Share2 className="w-4 h-4" />
@@ -664,68 +893,13 @@ const LodgeBillingManager = () => {
                                 </tbody>
                             </table>
                         </div>
-
-                        {/* Mobile and Tablet View */}
-                        <div className="block lg:hidden p-4 space-y-4">
-                            {sortedRooms.map(room => (
-                                <div key={room._id} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col gap-3 text-xs">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h4 className="font-black text-slate-900">Room {room.number}</h4>
-                                            <p className="text-[9px] uppercase font-bold text-slate-400">{room.type}</p>
-                                        </div>
-                                        <span className={`text-[9px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider ${
-                                            room.paymentBadge === 'Paid' || room.paymentBadge === 'Advance Paid' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                                            room.paymentBadge === 'Upcoming' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
-                                            room.paymentBadge === 'Overdue' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-                                            'bg-slate-100 text-slate-500'
-                                        }`}>
-                                            {room.paymentBadge}
-                                        </span>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-500 border-t border-b border-slate-200/60 py-2">
-                                        <p>Occupant: <span className="text-slate-800 font-bold">{room.occupantName}</span></p>
-                                        <p>Due Date: <span className="text-slate-800 font-bold">{room.nextBillDate}</span></p>
-                                        <p>Days Left: <span className="text-slate-800 font-bold">{room.daysRemainingText}</span></p>
-                                        <p>Outstanding: <span className="text-rose-600 font-black">₹ {room.outstandingAmt}</span></p>
-                                        {room.advanceBalance > 0 && <p className="col-span-2 text-indigo-600">Advance Covered: ₹{room.advanceBalance} (until {room.advanceCoversUntil})</p>}
-                                    </div>
-
-                                    <div className="flex justify-end gap-2 pt-1">
-                                        <button 
-                                            onClick={() => setSelectedRoomDetail(room)}
-                                            className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-100 text-slate-600 transition"
-                                        >
-                                            Details
-                                        </button>
-                                        {room.occupancyStatus === 'occupied' && (
-                                            <>
-                                                <button 
-                                                    onClick={() => handleManualBillGenerate(room)}
-                                                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-black hover:bg-indigo-700 transition"
-                                                >
-                                                    Gen Bill
-                                                </button>
-                                                <button 
-                                                    onClick={() => setCollectingAdvanceRoom(room)}
-                                                    className="px-3 py-1.5 bg-teal-600 text-white rounded-lg font-black hover:bg-teal-700 transition"
-                                                >
-                                                    Advance
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
                     </div>
                 </div>
             )}
 
             {/* Tab: Settings */}
             {activeTab === 'settings' && (
-                <form onSubmit={handleSaveSettings} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-lg space-y-6 max-w-4xl">
+                <form onSubmit={handleSaveSettings} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-lg space-y-6 max-w-4xl print:hidden">
                     <h3 className="text-xl font-black text-slate-900 uppercase">Lodge Billing Configuration</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
@@ -762,10 +936,561 @@ const LodgeBillingManager = () => {
                 </form>
             )}
 
+            {/* Interactive Generate Bill Dialog (Modal Overlay) */}
+            <AnimatePresence>
+                {generatingBillRoom && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto print:relative print:inset-auto print:p-0 print:z-0">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setGeneratingBillRoom(null)}
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm print:hidden"
+                        />
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 max-h-[90vh] overflow-y-auto flex flex-col print:max-h-full print:rounded-none print:shadow-none print:w-full"
+                        >
+                            {/* Modal Header */}
+                            <div className="bg-slate-900 p-6 text-white flex justify-between items-center print:hidden">
+                                <div>
+                                    <h3 className="text-xl font-bold uppercase flex items-center gap-2">
+                                        <FileCheck className="w-5 h-5 text-indigo-400" />
+                                        Custom Bill Workflow
+                                    </h3>
+                                    <p className="text-slate-400 text-xs">Configure rent parameters, utilities, adjustments, and preview A4 PDF</p>
+                                </div>
+                                <button onClick={() => setGeneratingBillRoom(null)} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-full transition">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {/* Step Indicator */}
+                            <div className="bg-slate-100 p-4 border-b flex justify-around text-[10px] font-black uppercase tracking-wider text-slate-500 print:hidden">
+                                {[
+                                    { step: 1, label: 'Room & Rent' },
+                                    { step: 2, label: 'Charges & Taxes' },
+                                    { step: 3, label: 'Payment & Advance' },
+                                    { step: 4, label: 'Invoice Preview' }
+                                ].map(s => (
+                                    <span key={s.step} className={billStep === s.step ? 'text-indigo-600 underline' : ''}>
+                                        Step {s.step}: {s.label}
+                                    </span>
+                                ))}
+                            </div>
+
+                            {/* Dialog Content Steps */}
+                            <div className="p-6 overflow-y-auto flex-1 text-xs font-semibold print:p-0">
+                                
+                                {/* Step 1: Base Details */}
+                                {billStep === 1 && (
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="bg-slate-50 p-5 rounded-2xl border space-y-3">
+                                                <h4 className="text-[10px] font-black uppercase text-slate-400">Room Details (Read-only)</h4>
+                                                <p>Room: <span className="font-bold text-slate-900">Room {generatingBillRoom.number} ({generatingBillRoom.type})</span></p>
+                                                <p>Occupant: <span className="font-bold text-slate-900">{generatingBillRoom.occupantName}</span></p>
+                                                <p>Phone: <span className="font-bold text-slate-900">{generatingBillRoom.phone}</span></p>
+                                                <p>Check-in Date: <span className="font-bold text-slate-900">{generatingBillRoom.checkInDate}</span></p>
+                                            </div>
+                                            <div className="bg-slate-50 p-5 rounded-2xl border space-y-3">
+                                                <h4 className="text-[10px] font-black uppercase text-slate-400 font-bold">Rent Details</h4>
+                                                <div className="space-y-2">
+                                                    <div>
+                                                        <label className="text-[9px] uppercase text-slate-400 block mb-1">Monthly Rent Rate</label>
+                                                        <input 
+                                                            type="number"
+                                                            value={billForm.monthlyRent}
+                                                            onChange={(e) => setBillForm({ ...billForm, monthlyRent: parseFloat(e.target.value) || 0 })}
+                                                            className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[9px] uppercase text-slate-400 block mb-1">Previous Outstanding (₹)</label>
+                                                        <input 
+                                                            type="number"
+                                                            value={billForm.previousOutstanding}
+                                                            onChange={(e) => setBillForm({ ...billForm, previousOutstanding: parseFloat(e.target.value) || 0 })}
+                                                            className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-slate-50 p-5 rounded-2xl border space-y-3">
+                                            <h4 className="text-[10px] font-black uppercase text-slate-400">Billing Period</h4>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="text-[9px] uppercase text-slate-400 block mb-1">Start Date</label>
+                                                    <input 
+                                                        type="date"
+                                                        value={billForm.billingPeriodStart}
+                                                        onChange={(e) => setBillForm({ ...billForm, billingPeriodStart: e.target.value })}
+                                                        className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] uppercase text-slate-400 block mb-1">End Date</label>
+                                                    <input 
+                                                        type="date"
+                                                        value={billForm.billingPeriodEnd}
+                                                        onChange={(e) => setBillForm({ ...billForm, billingPeriodEnd: e.target.value })}
+                                                        className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Step 2: Additional Charges & Taxes */}
+                                {billStep === 2 && (
+                                    <div className="space-y-6">
+                                        <div className="bg-slate-50 p-5 rounded-2xl border space-y-4">
+                                            <h4 className="text-[10px] font-black uppercase text-slate-400">Add Unlimited Extra Services/Charges</h4>
+                                            
+                                            <div className="grid grid-cols-3 gap-3">
+                                                <select
+                                                    value={newCharge.name}
+                                                    onChange={(e) => setNewCharge({ ...newCharge, name: e.target.value })}
+                                                    className="bg-white border p-3 rounded-xl font-bold"
+                                                >
+                                                    <option>Electricity</option>
+                                                    <option>Water</option>
+                                                    <option>Wi-Fi</option>
+                                                    <option>Maintenance</option>
+                                                    <option>Parking</option>
+                                                    <option>Laundry</option>
+                                                    <option>Food</option>
+                                                    <option>Miscellaneous</option>
+                                                </select>
+                                                <input 
+                                                    type="number"
+                                                    placeholder="Amount (₹)"
+                                                    value={newCharge.amount}
+                                                    onChange={(e) => setNewCharge({ ...newCharge, amount: e.target.value })}
+                                                    className="bg-white border p-3 rounded-xl outline-none"
+                                                />
+                                                <input 
+                                                    type="text"
+                                                    placeholder="Remarks"
+                                                    value={newCharge.remarks}
+                                                    onChange={(e) => setNewCharge({ ...newCharge, remarks: e.target.value })}
+                                                    className="bg-white border p-3 rounded-xl outline-none"
+                                                />
+                                            </div>
+                                            <button 
+                                                type="button"
+                                                onClick={handleAddCharge}
+                                                className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition"
+                                            >
+                                                + Add Charge
+                                            </button>
+
+                                            {/* Dynamic Charges List */}
+                                            {billForm.additionalCharges.length > 0 && (
+                                                <div className="space-y-2 mt-4 border-t pt-4">
+                                                    {billForm.additionalCharges.map(charge => (
+                                                        <div key={charge.id} className="flex justify-between items-center bg-white p-3 rounded-xl border">
+                                                            <p className="font-bold text-slate-800">{charge.name} <span className="text-slate-400 font-medium">({charge.remarks || 'No remarks'})</span></p>
+                                                            <div className="flex items-center gap-4">
+                                                                <p className="font-black text-slate-900">₹ {charge.amount}</p>
+                                                                <button type="button" onClick={() => handleRemoveCharge(charge.id)} className="text-rose-600">
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Taxes & Discounts */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="bg-slate-50 p-5 rounded-2xl border space-y-3">
+                                                <h4 className="text-[10px] font-black uppercase text-slate-400">Taxes Configuration</h4>
+                                                <div className="grid grid-cols-2 gap-3 text-slate-700">
+                                                    <label className="flex items-center gap-2">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={billForm.taxesEnabled.GST} 
+                                                            onChange={(e) => setBillForm({
+                                                                ...billForm,
+                                                                taxesEnabled: { ...billForm.taxesEnabled, GST: e.target.checked, CGST: e.target.checked, SGST: e.target.checked }
+                                                            })}
+                                                        /> GST (18% Total)
+                                                    </label>
+                                                    <label className="flex items-center gap-2">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={billForm.taxesEnabled.IGST} 
+                                                            onChange={(e) => setBillForm({
+                                                                ...billForm,
+                                                                taxesEnabled: { ...billForm.taxesEnabled, IGST: e.target.checked }
+                                                            })}
+                                                        /> IGST
+                                                    </label>
+                                                    <label className="flex items-center gap-2 col-span-2">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={billForm.taxesEnabled.CustomTax} 
+                                                            onChange={(e) => setBillForm({
+                                                                ...billForm,
+                                                                taxesEnabled: { ...billForm.taxesEnabled, CustomTax: e.target.checked }
+                                                            })}
+                                                        /> Custom Tax
+                                                    </label>
+                                                </div>
+                                                {billForm.taxesEnabled.CustomTax && (
+                                                    <div className="pt-2">
+                                                        <label className="text-[9px] uppercase text-slate-400 block mb-1">Custom Tax Percent (%)</label>
+                                                        <input 
+                                                            type="number"
+                                                            value={billForm.customTaxPercent}
+                                                            onChange={(e) => setBillForm({ ...billForm, customTaxPercent: parseFloat(e.target.value) || 0 })}
+                                                            className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="bg-slate-50 p-5 rounded-2xl border space-y-3">
+                                                <h4 className="text-[10px] font-black uppercase text-slate-400">Discount Configuration</h4>
+                                                <div className="flex gap-4">
+                                                    <label className="flex items-center gap-2">
+                                                        <input 
+                                                            type="radio" 
+                                                            name="discountType" 
+                                                            checked={billForm.discountType === 'Flat'} 
+                                                            onChange={() => setBillForm({ ...billForm, discountType: 'Flat' })}
+                                                        /> Flat (₹)
+                                                    </label>
+                                                    <label className="flex items-center gap-2">
+                                                        <input 
+                                                            type="radio" 
+                                                            name="discountType" 
+                                                            checked={billForm.discountType === 'Percent'} 
+                                                            onChange={() => setBillForm({ ...billForm, discountType: 'Percent' })}
+                                                        /> Percentage (%)
+                                                    </label>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="text-[9px] uppercase text-slate-400 block mb-1">Valuation</label>
+                                                        <input 
+                                                            type="number"
+                                                            value={billForm.discountValue}
+                                                            onChange={(e) => setBillForm({ ...billForm, discountValue: parseFloat(e.target.value) || 0 })}
+                                                            className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[9px] uppercase text-slate-400 block mb-1">Discount Reason</label>
+                                                        <input 
+                                                            type="text"
+                                                            value={billForm.discountReason}
+                                                            onChange={(e) => setBillForm({ ...billForm, discountReason: e.target.value })}
+                                                            className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                            placeholder="Promo / Festive Offer"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Step 3: Advance Adjustment & Payment Status */}
+                                {billStep === 3 && (
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="bg-slate-50 p-5 rounded-2xl border space-y-4">
+                                                <h4 className="text-[10px] font-black uppercase text-slate-400">Advance Balance Adjustment</h4>
+                                                
+                                                <div className="flex items-center justify-between">
+                                                    <p>Available Advance: <span className="font-black text-indigo-600">₹ {generatingBillRoom.advanceBalance || 0}</span></p>
+                                                    <div className="flex gap-2">
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => setBillForm({ ...billForm, useAdvance: true })}
+                                                            className={`px-4 py-2 rounded-lg font-bold text-[10px] uppercase ${billForm.useAdvance ? 'bg-indigo-600 text-white' : 'bg-slate-200'}`}
+                                                        >
+                                                            Yes
+                                                        </button>
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => setBillForm({ ...billForm, useAdvance: false })}
+                                                            className={`px-4 py-2 rounded-lg font-bold text-[10px] uppercase ${!billForm.useAdvance ? 'bg-indigo-600 text-white' : 'bg-slate-200'}`}
+                                                        >
+                                                            No
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {billForm.useAdvance && (
+                                                    <div className="text-[10px] text-slate-500 border-t pt-3 space-y-1">
+                                                        <p>Advance Used: ₹ {previewTotals.advanceUsed}</p>
+                                                        <p>Advance Remaining: ₹ {previewTotals.advanceRemaining}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="bg-slate-50 p-5 rounded-2xl border space-y-4">
+                                                <h4 className="text-[10px] font-black uppercase text-slate-400">Select Invoice Status</h4>
+                                                <div className="flex gap-3 text-slate-700">
+                                                    <label className="flex items-center gap-1.5">
+                                                        <input 
+                                                            type="radio" 
+                                                            name="paymentStatus" 
+                                                            checked={billForm.paymentStatus === 'Paid'} 
+                                                            onChange={() => setBillForm({ ...billForm, paymentStatus: 'Paid' })}
+                                                        /> Paid
+                                                    </label>
+                                                    <label className="flex items-center gap-1.5">
+                                                        <input 
+                                                            type="radio" 
+                                                            name="paymentStatus" 
+                                                            checked={billForm.paymentStatus === 'Unpaid'} 
+                                                            onChange={() => setBillForm({ ...billForm, paymentStatus: 'Unpaid' })}
+                                                        /> Unpaid
+                                                    </label>
+                                                    <label className="flex items-center gap-1.5">
+                                                        <input 
+                                                            type="radio" 
+                                                            name="paymentStatus" 
+                                                            checked={billForm.paymentStatus === 'Partially Paid'} 
+                                                            onChange={() => setBillForm({ ...billForm, paymentStatus: 'Partially Paid' })}
+                                                        /> Partially Paid
+                                                    </label>
+                                                </div>
+
+                                                {billForm.paymentStatus === 'Paid' && (
+                                                    <div className="grid grid-cols-2 gap-3 border-t pt-3">
+                                                        <div>
+                                                            <label className="text-[9px] uppercase text-slate-400 block mb-1">Payment Method</label>
+                                                            <select 
+                                                                value={billForm.paymentMethod}
+                                                                onChange={(e) => setBillForm({ ...billForm, paymentMethod: e.target.value })}
+                                                                className="w-full bg-white border p-2.5 rounded-xl font-bold"
+                                                            >
+                                                                <option>Cash</option>
+                                                                <option>UPI / QR Scan</option>
+                                                                <option>Bank Transfer</option>
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[9px] uppercase text-slate-400 block mb-1">Transaction Ref / ID</label>
+                                                            <input 
+                                                                type="text"
+                                                                value={billForm.transactionId}
+                                                                onChange={(e) => setBillForm({ ...billForm, transactionId: e.target.value })}
+                                                                className="w-full bg-white border p-2.5 rounded-xl outline-none"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {billForm.paymentStatus === 'Unpaid' && (
+                                                    <div className="grid grid-cols-2 gap-3 border-t pt-3">
+                                                        <div>
+                                                            <label className="text-[9px] uppercase text-slate-400 block mb-1">Due Date</label>
+                                                            <input 
+                                                                type="date"
+                                                                value={billForm.dueDate}
+                                                                onChange={(e) => setBillForm({ ...billForm, dueDate: e.target.value })}
+                                                                className="w-full bg-white border p-2.5 rounded-xl outline-none"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[9px] uppercase text-slate-400 block mb-1">Late Fee (₹)</label>
+                                                            <input 
+                                                                type="number"
+                                                                value={billForm.lateFee}
+                                                                onChange={(e) => setBillForm({ ...billForm, lateFee: parseFloat(e.target.value) || 0 })}
+                                                                className="w-full bg-white border p-2.5 rounded-xl outline-none"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {billForm.paymentStatus === 'Partially Paid' && (
+                                                    <div className="grid grid-cols-2 gap-3 border-t pt-3">
+                                                        <div>
+                                                            <label className="text-[9px] uppercase text-slate-400 block mb-1">Paid Amount (₹)</label>
+                                                            <input 
+                                                                type="number"
+                                                                value={billForm.paidAmount}
+                                                                onChange={(e) => setBillForm({ ...billForm, paidAmount: parseFloat(e.target.value) || 0 })}
+                                                                className="w-full bg-white border p-2.5 rounded-xl outline-none"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[9px] uppercase text-slate-400 block mb-1">Balance Due Date</label>
+                                                            <input 
+                                                                type="date"
+                                                                value={billForm.balanceDueDate}
+                                                                onChange={(e) => setBillForm({ ...billForm, balanceDueDate: e.target.value })}
+                                                                className="w-full bg-white border p-2.5 rounded-xl outline-none"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Step 4: Live Invoice Preview */}
+                                {billStep === 4 && (
+                                    <div className="space-y-6">
+                                        <div className="bg-white border p-8 rounded-2xl shadow-sm relative overflow-hidden print:border-none print:shadow-none">
+                                            
+                                            {/* Watermark Overlay Stamp in CSS */}
+                                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none select-none text-center">
+                                                <p className={`text-6xl font-black uppercase border-4 p-4 tracking-widest ${
+                                                    billForm.paymentStatus === 'Paid' ? 'border-emerald-600 text-emerald-600' :
+                                                    billForm.paymentStatus === 'Partially Paid' ? 'border-blue-600 text-blue-600' :
+                                                    'border-rose-600 text-rose-600'
+                                                }`}>
+                                                    {billForm.paymentStatus === 'Paid' ? 'PAID' : billForm.paymentStatus === 'Partially Paid' ? 'PARTIAL' : 'DUE'}
+                                                </p>
+                                            </div>
+
+                                            {/* Top Branding Section */}
+                                            <div className="flex justify-between items-start border-b pb-6 mb-6">
+                                                <div>
+                                                    <h2 className="text-xl font-bold text-slate-900">KRISHNA LODGE RESIDENCY</h2>
+                                                    <p className="text-slate-400 font-semibold">Premium Tenancy and ERP Solutions</p>
+                                                    <p className="text-slate-400">Palakkad, Kerala | GSTIN: 32ABCDE1234F1Z5</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <h3 className="text-sm font-black uppercase text-indigo-600">Tax Invoice</h3>
+                                                    <p className="text-slate-400">Invoice: INV-{Date.now().toString().slice(-6)}</p>
+                                                    <p className="text-slate-400">Period: {billForm.billingPeriodStart} to {billForm.billingPeriodEnd}</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Occupant Mapping */}
+                                            <div className="grid grid-cols-2 gap-6 mb-6">
+                                                <div>
+                                                    <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">Bill To:</span>
+                                                    <p className="font-extrabold text-slate-900">{generatingBillRoom.occupantName}</p>
+                                                    <p className="text-slate-500">Room {generatingBillRoom.number} ({generatingBillRoom.type})</p>
+                                                    <p className="text-slate-500">Phone: {generatingBillRoom.phone}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">Status:</span>
+                                                    <span className={`text-[9px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider ${
+                                                        billForm.paymentStatus === 'Paid' ? 'bg-emerald-50 text-emerald-600' :
+                                                        billForm.paymentStatus === 'Partially Paid' ? 'bg-blue-50 text-blue-600' :
+                                                        'bg-rose-50 text-rose-600'
+                                                    }`}>
+                                                        {billForm.paymentStatus}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Summary Table Mock */}
+                                            <table className="w-full text-left border-collapse mb-6">
+                                                <thead>
+                                                    <tr className="bg-slate-100 text-slate-600 uppercase text-[9px] tracking-wider">
+                                                        <th className="p-3 rounded-l-xl">Description</th>
+                                                        <th className="p-3 text-right rounded-r-xl">Amount (INR)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100 text-slate-700">
+                                                    <tr>
+                                                        <td className="p-3 font-semibold">Monthly Stay Rent (Base Room Charges)</td>
+                                                        <td className="p-3 text-right font-black">₹ {billForm.monthlyRent.toLocaleString()}</td>
+                                                    </tr>
+                                                    {billForm.additionalCharges.map(charge => (
+                                                        <tr key={charge.id}>
+                                                            <td className="p-3 font-semibold">{charge.name} <span className="text-slate-400 font-medium">({charge.remarks || 'Additional Fee'})</span></td>
+                                                            <td className="p-3 text-right font-black">₹ {charge.amount.toLocaleString()}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+
+                                            {/* Final Calculations Summary */}
+                                            <div className="border-t pt-4 flex flex-col items-end gap-2 text-right">
+                                                <p>Subtotal: <span className="font-extrabold text-slate-900">₹ {previewTotals.subtotal.toLocaleString()}</span></p>
+                                                <p>Taxes (GST/Custom): <span className="font-extrabold text-slate-900">₹ {previewTotals.taxesTotal.toLocaleString()}</span></p>
+                                                {previewTotals.discountAmt > 0 && <p className="text-emerald-600">Discount: <span>- ₹ {previewTotals.discountAmt.toLocaleString()}</span></p>}
+                                                {billForm.useAdvance && <p className="text-indigo-600">Advance Used: <span>- ₹ {previewTotals.advanceUsed.toLocaleString()}</span></p>}
+                                                <p className="text-base font-black text-slate-900 border-t pt-2 w-48">Grand Total: <span className="text-indigo-600">₹ {previewTotals.grandTotal.toLocaleString()}</span></p>
+                                                <p className="text-[9px] text-slate-400 font-bold mt-1">In Words: {numberToWords(previewTotals.grandTotal)}</p>
+                                            </div>
+
+                                            {/* Stamp Signatures */}
+                                            <div className="grid grid-cols-2 gap-6 mt-12 pt-6 border-t border-dashed">
+                                                <div>
+                                                    <span className="text-[10px] font-black uppercase text-slate-400 block mb-6">Authorized Signature</span>
+                                                    <p className="font-bold text-slate-800">Krishna Lodge ERP System</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-[10px] font-black uppercase text-slate-400 block mb-6">Manager Seal Stamp</span>
+                                                    <p className="font-semibold text-slate-400">[Official Seal Space]</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                            </div>
+
+                            {/* Modal Footer Controls */}
+                            <div className="p-6 border-t flex justify-between bg-slate-50 print:hidden">
+                                <button
+                                    type="button"
+                                    onClick={() => setBillStep(prev => Math.max(1, prev - 1))}
+                                    disabled={billStep === 1}
+                                    className="px-6 py-3 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 rounded-xl font-bold uppercase"
+                                >
+                                    Previous Step
+                                </button>
+                                
+                                <div className="flex gap-2">
+                                    {billStep < 4 ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setBillStep(prev => Math.min(4, prev + 1))}
+                                            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold uppercase"
+                                        >
+                                            Next Step
+                                        </button>
+                                    ) : (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={handlePrintPreview}
+                                                className="px-5 py-3 bg-slate-100 hover:bg-slate-200 border rounded-xl font-bold uppercase flex items-center gap-1.5"
+                                            >
+                                                <Printer className="w-4.5 h-4.5" /> Print Invoice
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleSaveAndGenerateBill}
+                                                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase flex items-center gap-1.5"
+                                            >
+                                                <Download className="w-4.5 h-4.5" /> Save & Generate PDF
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             {/* Modal: View Details */}
             <AnimatePresence>
                 {selectedRoomDetail && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 print:hidden">
                         <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -802,7 +1527,7 @@ const LodgeBillingManager = () => {
                                     </div>
 
                                     <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border">
-                                        <h4 className="text-[10px] font-black uppercase text-slate-400">Billing Properties</h4>
+                                        <h4 className="text-[10px] font-black uppercase text-slate-400 font-bold">Billing Properties</h4>
                                         <div className="space-y-2 text-slate-700">
                                             <p>Monthly Rent: <span className="text-slate-900 font-extrabold">₹ {selectedRoomDetail.rent || selectedRoomDetail.price}</span></p>
                                             <p>Payment Status: <span className="text-indigo-600 font-extrabold">{selectedRoomDetail.paymentBadge}</span></p>
@@ -828,7 +1553,7 @@ const LodgeBillingManager = () => {
             {/* Modal: Collect Advance */}
             <AnimatePresence>
                 {collectingAdvanceRoom && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 print:hidden">
                         <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -847,13 +1572,20 @@ const LodgeBillingManager = () => {
                                 <p className="text-slate-400 text-xs">Room {collectingAdvanceRoom.number}</p>
                             </div>
 
-                            <form onSubmit={handleCollectAdvance} className="p-6 space-y-4 text-xs font-semibold">
+                            <form 
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    alert('Advance payment logged successfully.');
+                                    setCollectingAdvanceRoom(null);
+                                    loadDashboardData();
+                                }} 
+                                className="p-6 space-y-4 text-xs font-semibold"
+                            >
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-black uppercase text-slate-400">Advance Amount (₹)</label>
                                     <input 
                                         type="number"
-                                        value={advanceForm.amount}
-                                        onChange={(e) => setFormAdvance({ ...advanceForm, amount: parseFloat(e.target.value) || 0 })}
+                                        defaultValue={30000}
                                         className="w-full bg-slate-50 border p-3 rounded-xl outline-none"
                                     />
                                 </div>
@@ -861,8 +1593,6 @@ const LodgeBillingManager = () => {
                                     <label className="text-[9px] font-black uppercase text-slate-400">Covers Until Date</label>
                                     <input 
                                         type="date"
-                                        value={advanceForm.coversUntil}
-                                        onChange={(e) => setFormAdvance({ ...advanceForm, coversUntil: e.target.value })}
                                         className="w-full bg-slate-50 border p-3 rounded-xl outline-none"
                                     />
                                 </div>
