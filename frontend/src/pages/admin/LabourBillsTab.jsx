@@ -521,15 +521,15 @@ const LabourBillsTab = () => {
                             {/* Header */}
                             {theme === 'Modern' ? (
                                 <div 
-                                    className="p-8 rounded-2xl mb-8 text-white relative overflow-hidden"
+                                    className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden"
                                     style={{ backgroundColor: themeColor }}
                                 >
-                                    <div className="flex justify-between items-start">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
                                         <div>
-                                            <h1 className="text-2xl font-black uppercase tracking-wider">KRISHNA ENGINEERING WORKS</h1>
+                                            <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
                                             <p className="text-xs opacity-90 font-medium">Labour Billing & Goods Transport Logistical Voucher</p>
                                         </div>
-                                        <div className="text-right">
+                                        <div className="text-left sm:text-right">
                                             <span className="bg-white/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
                                                 TRANSPORT & LABOUR BILL
                                             </span>
@@ -539,12 +539,12 @@ const LabourBillsTab = () => {
                                     </div>
                                 </div>
                             ) : theme === 'Minimalist' ? (
-                                <div className="border-b-2 border-slate-900 pb-6 mb-8 flex justify-between items-end">
+                                <div className="border-b-2 border-slate-900 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0">
                                     <div>
-                                        <h1 className="text-xl font-black uppercase tracking-tight text-slate-900">KRISHNA ENGINEERING WORKS</h1>
+                                        <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 company-name">KRISHNA ENGINEERING WORKS</h1>
                                         <p className="text-xs text-slate-500 font-medium">Logistics & Heavy Fabrication Work Force Division</p>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-left sm:text-right">
                                         <h2 className="text-2xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>LABOUR & TRANSPORT BILL</h2>
                                         <p className="text-xs font-bold text-slate-700">{billNumber}</p>
                                         <p className="text-xs text-slate-500">Date: {billDate}</p>
@@ -552,17 +552,17 @@ const LabourBillsTab = () => {
                                 </div>
                             ) : (
                                 /* Classic Theme */
-                                <div className="border-b border-slate-200 pb-6 mb-8 flex justify-between items-start">
+                                <div className="border-b border-slate-200 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
                                     <div>
-                                        <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                        <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
                                         <p className="text-xs text-slate-500">Combined Labour Billing & Transport Logistics Module</p>
-                                        <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                                        <p className="text-[11px] text-slate-400 font-medium mt-0.5 whitespace-pre-wrap break-all">
                                             Phone: {brandingSettings?.company_phone || brandingSettings?.footer_phone || '+91 9447940835'} | Email: {brandingSettings?.company_email || brandingSettings?.footer_email || 'contact@krishnaengg.com'}
                                         </p>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-left sm:text-right">
                                         <span 
-                                            className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm"
+                                            className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm cost-badge"
                                             style={{ backgroundColor: themeColor }}
                                         >
                                             LABOUR & FREIGHT BILL
@@ -574,13 +574,13 @@ const LabourBillsTab = () => {
                             )}
 
                             {/* Client & Contractor Info */}
-                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6 flex justify-between items-start">
+                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
                                 <div>
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">BILL ISSUED TO:</span>
                                     <h3 className="font-black text-slate-900 text-sm uppercase">{clientName || 'Valued Client'}</h3>
-                                    <p className="text-xs text-slate-600 mt-1">{clientAddress}</p>
+                                    <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{clientAddress}</p>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-left sm:text-right">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">BILL NUMBER:</span>
                                     <span className="text-sm font-black text-slate-900">{billNumber}</span>
                                 </div>
@@ -635,7 +635,7 @@ const LabourBillsTab = () => {
                             )}
 
                             {/* Dynamic Labour Charge Matrix Table */}
-                            <div className="mb-6 overflow-hidden rounded-xl border border-slate-200">
+                            <div className="mb-6 overflow-x-auto rounded-xl border border-slate-200">
                                 <div className="p-3 bg-slate-900 text-white text-xs font-black uppercase tracking-wider flex justify-between items-center">
                                     <span>Dynamic Labour Charge Matrix</span>
                                     <span>Subtotal: ₹ {labourTotal.toLocaleString('en-IN')}</span>

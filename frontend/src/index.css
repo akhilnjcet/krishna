@@ -117,6 +117,89 @@
   }
 }
 
+/* --- Global Responsive Requirements --- */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+table {
+  width: 100%;
+}
+
+input,
+textarea,
+select,
+button {
+  max-width: 100%;
+}
+
+/* --- Mobile Typography & Layout Controls --- */
+@media (max-width: 768px) {
+  /* Typography Scale */
+  .company-name {
+    font-size: 20px !important;
+    line-height: 1.25 !important;
+    word-break: break-word !important;
+  }
+  
+  .responsive-heading {
+    font-size: 18px !important;
+  }
+  
+  .responsive-body {
+    font-size: 14px !important;
+  }
+  
+  .responsive-label {
+    font-size: 12px !important;
+  }
+  
+  .responsive-small {
+    font-size: 11px !important;
+  }
+
+  /* Preview Container Zoom & Aspect Ratio Maintenance */
+  .print-document-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 16px !important;
+    zoom: 0.55; /* Auto-zoom layout on mobile to fit A4 layout cleanly */
+    -moz-transform: scale(0.55);
+    -moz-transform-origin: top left;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Force modals to fit screen */
+  .modal-responsive {
+    max-width: 95% !important;
+    margin: 0.5rem auto !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Input sizing on mobile */
+  input, select, textarea {
+    width: 100% !important;
+  }
+
+  /* Button height and sizing */
+  button, .btn-touch-target {
+    min-height: 44px !important;
+  }
+}
+
 /* Dedicated Browser & PDF Print Optimization */
 @media print {
   @page {

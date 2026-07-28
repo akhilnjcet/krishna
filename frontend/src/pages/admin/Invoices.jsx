@@ -511,11 +511,11 @@ const Invoices = () => {
                             {/* Header Section based on Theme */}
                             {theme === 'Modern' ? (
                                 <div 
-                                    className="p-8 rounded-2xl mb-8 text-white relative overflow-hidden"
+                                    className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden"
                                     style={{ backgroundColor: themeColor }}
                                 >
-                                    <div className="flex justify-between items-start relative z-10">
-                                        <div>
+                                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0 relative z-10">
+                                        <div className="flex items-center gap-4 flex-wrap">
                                             {showLogo && (
                                                 brandingSettings.company_logo ? (
                                                     <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white/90 p-1 rounded-xl mb-3 shadow-md" />
@@ -525,10 +525,12 @@ const Invoices = () => {
                                                     </div>
                                                 )
                                             )}
-                                            <h1 className="text-2xl font-black uppercase tracking-wider">KRISHNA ENGINEERING WORKS</h1>
-                                            <p className="text-xs opacity-90 font-medium">Heavy Structural & Industrial Fabrication</p>
+                                            <div>
+                                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
+                                                <p className="text-xs opacity-90 font-medium">Heavy Structural & Industrial Fabrication</p>
+                                            </div>
                                         </div>
-                                        <div className="text-right">
+                                        <div className="text-left sm:text-right">
                                             <span className="inline-block bg-white/20 backdrop-blur px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-2">
                                                 TAX INVOICE
                                             </span>
@@ -538,8 +540,8 @@ const Invoices = () => {
                                     </div>
                                 </div>
                             ) : theme === 'Minimalist' ? (
-                                <div className="border-b-2 border-slate-900 pb-6 mb-8 flex justify-between items-end">
-                                    <div>
+                                <div className="border-b-2 border-slate-900 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0">
+                                    <div className="flex items-center gap-3 flex-wrap">
                                         {showLogo && (
                                             brandingSettings.company_logo ? (
                                                 <img src={brandingSettings.company_logo} alt="Company Logo" className="h-10 w-auto object-contain mb-2" />
@@ -547,10 +549,12 @@ const Invoices = () => {
                                                 <p className="text-indigo-600 font-black text-3xl mb-1" style={{ color: themeColor }}>K</p>
                                             )
                                         )}
-                                        <h1 className="text-xl font-black uppercase tracking-tight text-slate-900">KRISHNA ENGINEERING WORKS</h1>
-                                        <p className="text-xs text-slate-500 font-medium">Industrial Area Phase 1, Sector 123 | GSTIN: 32ABCDE1234F1Z5</p>
+                                        <div>
+                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 company-name">KRISHNA ENGINEERING WORKS</h1>
+                                            <p className="text-xs text-slate-500 font-medium">Industrial Area Phase 1, Sector 123 | GSTIN: 32ABCDE1234F1Z5</p>
+                                        </div>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-left sm:text-right">
                                         <h2 className="text-2xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>INVOICE</h2>
                                         <p className="text-xs font-bold text-slate-700">{invoiceNumber}</p>
                                         <p className="text-xs text-slate-500">Date: {invoiceDate}</p>
@@ -558,8 +562,8 @@ const Invoices = () => {
                                 </div>
                             ) : (
                                 /* Classic Theme */
-                                <div className="border-b border-slate-200 pb-6 mb-8 flex justify-between items-start">
-                                    <div className="flex items-center gap-4">
+                                <div className="border-b border-slate-200 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
+                                    <div className="flex items-center gap-4 flex-wrap">
                                         {showLogo && (
                                             brandingSettings.company_logo ? (
                                                 <img src={brandingSettings.company_logo} alt="Company Logo" className="h-14 w-auto object-contain rounded-2xl shadow p-1 bg-white" />
@@ -573,16 +577,16 @@ const Invoices = () => {
                                             )
                                         )}
                                         <div>
-                                            <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
                                             <p className="text-xs text-slate-500">Heavy Structural Engineering & Roofing Solutions</p>
-                                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                                            <p className="text-[11px] text-slate-400 font-medium mt-0.5 whitespace-pre-wrap break-all">
                                                 Phone: {brandingSettings?.company_phone || brandingSettings?.footer_phone || '+91 9447940835'} | Email: {brandingSettings?.company_email || brandingSettings?.footer_email || 'contact@krishnaengg.com'}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-left sm:text-right">
                                         <span 
-                                            className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm"
+                                            className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm cost-badge"
                                             style={{ backgroundColor: themeColor }}
                                         >
                                             TAX INVOICE
@@ -595,7 +599,7 @@ const Invoices = () => {
                             )}
 
                             {/* Client & Status Section */}
-                            <div className="grid grid-cols-2 gap-6 mb-8 bg-slate-50/80 p-6 rounded-2xl border border-slate-100">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 bg-slate-50/80 p-6 rounded-2xl border border-slate-100">
                                 <div>
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">BILLED TO CUSTOMER:</span>
                                     <h3 className="font-black text-slate-900 text-sm uppercase">{customerName || 'Valued Customer / Client'}</h3>
@@ -604,7 +608,7 @@ const Invoices = () => {
                                     {gstin && <p className="text-xs font-mono font-bold text-slate-700 mt-1">GSTIN: {gstin}</p>}
                                 </div>
 
-                                <div className="text-right flex flex-col justify-between">
+                                <div className="text-left sm:text-right flex flex-col justify-between gap-4 sm:gap-0">
                                     <div>
                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">INVOICE STATUS:</span>
                                         <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
@@ -625,7 +629,7 @@ const Invoices = () => {
                             </div>
 
                             {/* Line Items Table */}
-                            <div className="mb-8 overflow-hidden rounded-xl border border-slate-200">
+                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr 

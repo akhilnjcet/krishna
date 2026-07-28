@@ -448,20 +448,20 @@ const Quotations = () => {
                             {/* Header */}
                             {theme === 'Modern' ? (
                                 <div 
-                                    className="p-8 rounded-2xl mb-8 text-white relative overflow-hidden"
+                                    className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden"
                                     style={{ backgroundColor: themeColor }}
                                 >
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex items-center gap-4">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
+                                        <div className="flex items-center gap-4 flex-wrap">
                                             {brandingSettings.company_logo && (
                                                 <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white/90 p-1 rounded-xl shadow-md" />
                                             )}
                                             <div>
-                                                <h1 className="text-2xl font-black uppercase tracking-wider">KRISHNA ENGINEERING WORKS</h1>
+                                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
                                                 <p className="text-xs opacity-90 font-medium">Formal Engineering Estimation & Proposal</p>
                                             </div>
                                         </div>
-                                        <div className="text-right">
+                                        <div className="text-left sm:text-right">
                                             <span className="bg-white/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
                                                 QUOTATION
                                             </span>
@@ -471,17 +471,17 @@ const Quotations = () => {
                                     </div>
                                 </div>
                             ) : theme === 'Minimalist' ? (
-                                <div className="border-b-2 border-slate-900 pb-6 mb-8 flex justify-between items-end">
-                                    <div className="flex items-center gap-3">
+                                <div className="border-b-2 border-slate-900 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0">
+                                    <div className="flex items-center gap-3 flex-wrap">
                                         {brandingSettings.company_logo && (
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-10 w-auto object-contain" />
                                         )}
                                         <div>
-                                            <h1 className="text-xl font-black uppercase tracking-tight text-slate-900">KRISHNA ENGINEERING WORKS</h1>
+                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 company-name">KRISHNA ENGINEERING WORKS</h1>
                                             <p className="text-xs text-slate-500 font-medium">Industrial Area Phase 1 | Engineering & Structural Division</p>
                                         </div>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-left sm:text-right">
                                         <h2 className="text-2xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>PROPOSAL</h2>
                                         <p className="text-xs font-bold text-slate-700">{quotationNumber}</p>
                                         <p className="text-xs text-slate-500">Date: {quotationDate}</p>
@@ -489,22 +489,22 @@ const Quotations = () => {
                                 </div>
                             ) : (
                                 /* Classic Theme */
-                                <div className="border-b border-slate-200 pb-6 mb-8 flex justify-between items-start">
-                                    <div className="flex items-center gap-4">
+                                <div className="border-b border-slate-200 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
+                                    <div className="flex items-center gap-4 flex-wrap">
                                         {brandingSettings.company_logo && (
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white rounded-xl shadow p-1" />
                                         )}
                                         <div>
-                                            <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
                                             <p className="text-xs text-slate-500">Heavy Fabrication, Roofing & Structural Design</p>
-                                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                                            <p className="text-[11px] text-slate-400 font-medium mt-0.5 whitespace-pre-wrap break-all">
                                                 Phone: {brandingSettings?.company_phone || brandingSettings?.footer_phone || '+91 9447940835'} | Email: {brandingSettings?.company_email || brandingSettings?.footer_email || 'contact@krishnaengg.com'}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-left sm:text-right">
                                         <span 
-                                            className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm"
+                                            className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm cost-badge"
                                             style={{ backgroundColor: themeColor }}
                                         >
                                             COST ESTIMATE
@@ -517,7 +517,7 @@ const Quotations = () => {
                             )}
 
                             {/* Client Block */}
-                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8 flex justify-between items-start">
+                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
                                 <div>
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">PROPOSAL PREPARED FOR:</span>
                                     <h3 className="font-black text-slate-900 text-sm uppercase">{clientName || 'Valued Client'}</h3>
@@ -525,7 +525,7 @@ const Quotations = () => {
                                     {clientPhone && <p className="text-xs text-slate-600 mt-1">Ph: {clientPhone}</p>}
                                     {clientGstin && <p className="text-xs font-mono font-bold text-slate-700 mt-1">GSTIN: {clientGstin}</p>}
                                 </div>
-                                <div className="text-right">
+                                <div className="text-left sm:text-right">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">VALIDITY DATE:</span>
                                     <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-lg inline-block">
                                         {proposalValidityDate}
@@ -534,7 +534,7 @@ const Quotations = () => {
                             </div>
 
                             {/* Quotation Table */}
-                            <div className="mb-8 overflow-hidden rounded-xl border border-slate-200">
+                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr 
