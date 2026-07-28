@@ -5,7 +5,8 @@ import {
     Download, Printer, Share2, Eye, Plus, CreditCard, Archive, 
     Trash2, ChevronLeft, ChevronRight, X, Info, Check, CheckCircle2, 
     TrendingUp, ShieldAlert, Award, FileText, Sparkles, Folder, Calendar,
-    User, Phone, MapPin, Mail, AlertTriangle, RefreshCw, Percent, IndianRupee, FileCheck
+    User, Phone, MapPin, Mail, AlertTriangle, RefreshCw, Percent, IndianRupee, FileCheck,
+    ShieldCheck
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
