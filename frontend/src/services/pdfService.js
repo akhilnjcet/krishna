@@ -21,7 +21,7 @@ const THEME = {
     bgLight: [248, 250, 252]   // Slate 50
 };
 
-const savePDF = async (doc, filename) => {
+const savePDF = async (doc, filename, historyMetadata = null) => {
     try {
         // Sanitize filename to ensure safe, cross-browser downloading without forbidden chars or spaces
         const safeFilename = String(filename || 'Document.pdf')
@@ -29,10 +29,43 @@ const savePDF = async (doc, filename) => {
             .replace(/[/\\?%*:|"<>]/g, '_')
             .replace(/\s+/g, '_');
 
+        const pdfOutput = doc.output('datauristring');
+        const base64Data = pdfOutput.split(',')[1];
+
+        // Intercept for Native Android WebView Download Helper
+        if (window.Android && typeof window.Android.downloadBase64File === 'function') {
+            try {
+                window.Android.downloadBase64File(base64Data, safeFilename, 'application/pdf');
+                return;
+            } catch (err) {
+                console.error("Native Android download listener failed:", err);
+            }
+        }
+
+        if (historyMetadata) {
+            try {
+                const apiBase = getApiBase();
+                const tokenObj = localStorage.getItem('auth_token') || localStorage.getItem('token') || '';
+                const cleanToken = tokenObj.replace(/^"|"$/g, '');
+
+                fetch(`${apiBase}/document-history/save`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': cleanToken ? `Bearer ${cleanToken}` : ''
+                    },
+                    body: JSON.stringify({
+                        ...historyMetadata,
+                        pdfData: base64Data
+                    })
+                }).catch(err => console.warn('Document History save fetch error:', err));
+            } catch (saveErr) {
+                console.warn('Document History save exception:', saveErr);
+            }
+        }
+
         if (Capacitor.isNativePlatform()) {
             try {
-                const pdfOutput = doc.output('datauristring');
-                const base64Data = pdfOutput.split(',')[1];
                 
                 const savedFile = await Filesystem.writeFile({
                     path: safeFilename,
@@ -381,7 +414,17 @@ export const generateQuotePDF = async (quote) => {
 
     addSignatureAndSeal(doc, finalY + 25);
     addFooter(doc);
-    savePDF(doc, `Quote_${quoteId}.pdf`);
+
+    const historyMetadata = {
+        documentType: 'Quotation',
+        documentNumber: `Q-${quoteId}`,
+        customerId: quote.userId?._id || quote.userId || null,
+        projectId: quote.projectId?._id || quote.projectId || null,
+        totalAmount: quote.estimatedCost || 0,
+        status: quote.status || 'new',
+        data: quote
+    };
+    savePDF(doc, `Quote_${quoteId}.pdf`, historyMetadata);
 };
 
 /**
@@ -511,7 +554,16 @@ export const generateSalaryPDF = async (salary, user) => {
 
         addSignatureAndSeal(doc, finalY + 20);
         addFooter(doc);
-        await savePDF(doc, `SalarySlip_${salary.month}_${empName.replace(/\s+/g, '_')}.pdf`);
+
+        const historyMetadata = {
+            documentType: 'Salary Slip',
+            documentNumber: salary._id ? `SLIP-${String(salary._id).slice(-8).toUpperCase()}` : `SLIP-${salary.month}`,
+            customerId: emp._id || emp.id || null,
+            totalAmount: salary.netSalary || salary.amount || 0,
+            status: salary.paymentStatus || 'Pending',
+            data: salary
+        };
+        await savePDF(doc, `SalarySlip_${salary.month}_${empName.replace(/\s+/g, '_')}.pdf`, historyMetadata);
     } catch (err) {
         console.error('Salary PDF generation error:', err);
         alert(`Failed to generate salary slip PDF: ${err.message}\n\nPlease try again or contact support.`);
@@ -582,7 +634,17 @@ export const generateInvoicePDF = async (invoice) => {
 
     addSignatureAndSeal(doc, finalY + 25);
     addFooter(doc);
-    savePDF(doc, `Invoice_${invNumber}.pdf`);
+
+    const historyMetadata = {
+        documentType: 'Invoice',
+        documentNumber: invNumber,
+        customerId: invoice.customerId?._id || invoice.customerId || null,
+        projectId: invoice.projectId?._id || invoice.projectId || null,
+        totalAmount: invoice.amount || 0,
+        status: invoice.paymentStatus || 'unpaid',
+        data: invoice
+    };
+    savePDF(doc, `Invoice_${invNumber}.pdf`, historyMetadata);
 };
 
 /**
@@ -628,7 +690,16 @@ export const generateAttendanceReportPDF = async (logs, user, type = 'Staff') =>
     const finalY = doc.lastAutoTable.finalY + 10;
     addSignatureAndSeal(doc, finalY);
     addFooter(doc);
-    savePDF(doc, `${type}_Attendance_Report.pdf`);
+
+    const historyMetadata = {
+        documentType: 'Attendance Report',
+        documentNumber: `ATT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        customerId: user?._id || user?.id || null,
+        totalAmount: 0,
+        status: 'Generated',
+        data: { logs, type }
+    };
+    savePDF(doc, `${type}_Attendance_Report.pdf`, historyMetadata);
 };
 
 /**
@@ -657,7 +728,15 @@ export const generateGeneralReportPDF = async (data, title, columns) => {
     const finalY = doc.lastAutoTable.finalY + 10;
     addSignatureAndSeal(doc, finalY);
     addFooter(doc);
-    savePDF(doc, `${title.replace(/\s+/g, '_')}.pdf`);
+
+    const historyMetadata = {
+        documentType: 'General Report',
+        documentNumber: `REP-${title.trim().replace(/\s+/g, '_').toUpperCase()}`,
+        totalAmount: 0,
+        status: 'Generated',
+        data: { data, title, columns }
+    };
+    savePDF(doc, `${title.replace(/\s+/g, '_')}.pdf`, historyMetadata);
 };
 
 /**
@@ -724,5 +803,15 @@ export const generatePaymentReceiptPDF = async (payment, user) => {
 
     addSignatureAndSeal(doc, finalY + 25);
     addFooter(doc);
-    savePDF(doc, `Receipt_${rcptId}.pdf`);
+
+    const historyMetadata = {
+        documentType: 'Payment Receipt',
+        documentNumber: `RCPT-${rcptId}`,
+        customerId: payment.customerId?._id || payment.customerId || null,
+        projectId: payment.projectId?._id || payment.projectId || null,
+        totalAmount: payment.amount || 0,
+        status: payment.status || 'Verified',
+        data: payment
+    };
+    savePDF(doc, `Receipt_${rcptId}.pdf`, historyMetadata);
 };

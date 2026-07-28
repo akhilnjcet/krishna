@@ -52,6 +52,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 import Invoices from './pages/admin/Invoices';
 import Quotations from './pages/admin/Quotations';
 import LabourBillsTab from './pages/admin/LabourBillsTab';
+import DocumentHistory from './pages/admin/DocumentHistory';
 
 // Staff Pages
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -99,6 +100,7 @@ import LodgeSearch from './pages/lodge/LodgeSearch';
 import LodgeDetail from './pages/lodge/LodgeDetail';
 import LodgeCustomerDashboard from './pages/lodge/LodgeCustomerDashboard';
 import PrivacyPolicyPage from './pages/lodge/PrivacyPolicyPage';
+import LodgeBillingManager from './pages/lodge/LodgeBillingManager';
 
 import useLodgeStore from './stores/lodgeStore';
 import { notificationService } from './services/notificationService';
@@ -406,6 +408,7 @@ const App = () => {
               <Route path="invoices-studio" element={<Invoices />} />
               <Route path="quotations-studio" element={<Quotations />} />
               <Route path="labour-bills" element={<LabourBillsTab />} />
+              <Route path="document-history" element={<DocumentHistory />} />
             </Route>
 
             {/* Staff Routes */}
@@ -439,6 +442,8 @@ const App = () => {
             <Route path="/lodge">
               <Route index element={<LodgeHome />} />
               <Route path="search" element={<LodgeSearch />} />
+              <Route path="manager" element={<LodgeSearch />} />
+              <Route path="manager/booking" element={<LodgeSearch />} />
               <Route path="detail/:id" element={<LodgeDetail />} />
               <Route path="book/:roomId" element={<LodgeBooking />} />
               <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
@@ -451,6 +456,7 @@ const App = () => {
               <Route path="payment/:roomNumber/:type" element={<PaymentSystem />} />
               <Route path="complaint/:roomNumber" element={<ComplaintSystem />} />
               <Route path="history/:roomNumber" element={<PaymentHistory />} />
+              <Route path="billing" element={<LodgeBillingManager />} />
             </Route>
 
             {/* Fallback */}

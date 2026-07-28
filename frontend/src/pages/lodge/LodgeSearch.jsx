@@ -61,10 +61,10 @@ export default function LodgeSearch() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
       <div className="mb-6">
          <button 
-             onClick={() => navigate('/lodge')}
+             onClick={() => navigate('/lodge/dashboard')}
              className="flex items-center gap-2 px-4 py-2 border rounded-xl hover:bg-slate-50 transition-colors font-bold text-sm text-slate-600 shadow-sm bg-white"
          >
-             <ArrowLeft className="w-4.5 h-4.5" /> Back to Lodge Home
+             <ArrowLeft className="w-4.5 h-4.5" /> Back to Dashboard
          </button>
       </div>
       <div className="flex flex-col md:flex-row gap-8">

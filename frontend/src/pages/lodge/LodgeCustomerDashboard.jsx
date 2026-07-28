@@ -223,7 +223,7 @@ export default function LodgeCustomerDashboard() {
                                 <h1 className="text-4xl font-black text-slate-900 tracking-tight">Stay Management</h1>
                                 <p className="text-slate-500 font-medium mt-2">Oversee your active and historical residency records.</p>
                             </div>
-                            <button onClick={() => window.location.href = '/lodge'} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/20 flex items-center transition-all">
+                            <button onClick={() => navigate('/lodge/manager/booking')} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/20 flex items-center transition-all">
                                 <Plus className="w-5 h-5 mr-2" /> Book New Residence
                             </button>
                         </div>

@@ -87,6 +87,8 @@ app.use('/api/daily-attendance', require('./routes/dailyAttendanceRoutes'));
 app.use('/api/overtime', require('./routes/overtimeRoutes'));
 app.use('/api/payroll', require('./routes/payrollRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/document-history', require('./routes/documentHistoryRoutes'));
+app.use('/api/lodge-billing', require('./routes/lodgeBillingRoutes'));
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
 });
@@ -203,6 +205,13 @@ if (!isVercel) {
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     server.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
+        try {
+            const { startBillingScheduler } = require('./services/lodgeBillingEngine');
+            startBillingScheduler();
+            console.log('Automated Lodge Rent Billing scheduler active.');
+        } catch (schedulerErr) {
+            console.error('Failed to start Lodge Billing scheduler:', schedulerErr);
+        }
     });
 }
 

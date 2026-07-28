@@ -29,6 +29,7 @@ const SIDEBAR_ITEMS = [
     { name: 'Financial Hub',   path: '/admin/finance',      icon: BadgeIndianRupee },
     { name: 'Invoice Studio',  path: '/admin/invoices-studio', icon: Receipt },
     { name: 'Labour & Freight Bills', path: '/admin/labour-bills', icon: Truck },
+    { name: 'Document History', path: '/admin/document-history', icon: FileText },
     { name: 'Project Timeline', path: '/admin/progress',     icon: Activity },
     { name: 'Intelligence Feed', path: '/admin/blog',        icon: BookOpen },
     { name: 'Technical Chat',  path: '/admin/live-chat',    icon: MessageSquare },

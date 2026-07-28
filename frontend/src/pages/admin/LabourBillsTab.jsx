@@ -113,7 +113,35 @@ const LabourBillsTab = () => {
         goodsDescription?.trim()
     );
 
-    const handlePrint = () => {
+    const handlePrint = async () => {
+        try {
+            const tokenObj = localStorage.getItem('auth_token') || localStorage.getItem('token') || '';
+            const cleanToken = tokenObj.replace(/^"|"$/g, '');
+            const base = window.location.origin + '/api';
+
+            fetch(`${base}/document-history/save`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': cleanToken ? `Bearer ${cleanToken}` : ''
+                },
+                body: JSON.stringify({
+                    documentType: 'Labour Bill',
+                    documentNumber: billNumber,
+                    totalAmount: grandTotal,
+                    status: 'Printed',
+                    data: {
+                        vehicleNumber, lrGrNumber, origin, destination, goodsDescription,
+                        loadingDate, unloadingDate, billNumber, billDate, clientName, clientAddress,
+                        labourRows, loadingCharges, unloadingCharges, handlingCharges, packingCharges,
+                        overtimeCharges, additionalFreightCharges, taxPercentage, taxDetails, footerText,
+                        paymentOptions, theme, themeColor
+                    }
+                })
+            }).catch(err => console.warn('Delayed labour bill save background log error:', err));
+        } catch (err) {
+            console.error('Failed to save labour bill history:', err);
+        }
         window.print();
     };
 

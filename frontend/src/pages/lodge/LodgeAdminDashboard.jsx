@@ -355,6 +355,13 @@ const LodgeAdminDashboard = () => {
                     </div>
                     <div className="flex gap-2">
                         <button 
+                            onClick={() => navigate('/lodge/billing')}
+                            className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-md"
+                            title="Rent Billing System"
+                        >
+                            Rent Billing
+                        </button>
+                        <button 
                             onClick={() => navigate('/lodge')}
                             className="px-4 py-3 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
                             title="Lodge Home"

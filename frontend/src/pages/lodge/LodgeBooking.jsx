@@ -65,7 +65,7 @@ export default function LodgeBookingCheckout() {
     // Dynamic Validation Check
     const overlaps = unavailableRanges.some(range => {
        return dateRange.from < range.to && dateRange.to > range.from;
-    });
+     });
 
     if (overlaps) {
         setError('Overlapping dates detected. Please modify selection.');
@@ -88,7 +88,7 @@ export default function LodgeBookingCheckout() {
         });
         
         // Push user to their Customer Module dashboard where bookings render
-        navigate('/customer?booked=true');
+        navigate('/lodge/dashboard');
     } catch (err) {
         setError(err.response?.data?.message || 'Failed booking sequence.');
     } finally {
@@ -106,7 +106,7 @@ export default function LodgeBookingCheckout() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
       <div className="mb-6">
          <button 
-             onClick={() => navigate(-1)}
+             onClick={() => navigate('/lodge/dashboard')}
              className="flex items-center gap-2 px-4 py-2 border rounded-xl hover:bg-slate-50 transition-colors font-bold text-sm text-slate-600 shadow-sm bg-white"
          >
              <ArrowLeft className="w-4.5 h-4.5" /> Go Back
