@@ -7,6 +7,7 @@ import {
 import api from '../../services/api';
 import { getDirectImageUrl, expandGoogleDriveFolders } from '../../utils/imageUtils';
 import DriveImage from '../../components/DriveImage';
+import LodgeBillingManager from './LodgeBillingManager';
 
 export default function LodgeAdminManager() {
   const [selectedLodge, setSelectedLodge] = useState(null);
@@ -379,7 +380,8 @@ export default function LodgeAdminManager() {
       { id: 'occupancy', icon: Calendar, label: 'Occupancy' },
       { id: 'registry', icon: Users, label: 'Registry' },
       { id: 'finance', icon: IndianRupee, label: 'Finance' },
-      { id: 'maintenance', icon: AlertTriangle, label: 'Maintenance' }
+      { id: 'maintenance', icon: AlertTriangle, label: 'Maintenance' },
+      { id: 'billing', icon: Folder, label: 'Rent Billing' }
   ];
 
   if(!selectedLodge) return (
@@ -1137,6 +1139,12 @@ export default function LodgeAdminManager() {
                       </div>
                   </div>
               </div>
+          </div>
+      )}
+
+        {activeTab === 'billing' && (
+          <div className="animate-in fade-in duration-300 bg-white rounded-[2rem] p-8 border">
+              <LodgeBillingManager />
           </div>
       )}
 
