@@ -137,6 +137,9 @@ const Login = () => {
                                             <input
                                                 type="text"
                                                 required
+                                                name="username"
+                                                id="username"
+                                                autocomplete="username"
                                                 value={identifier}
                                                 onChange={(e) => setIdentifier(e.target.value)}
                                                 className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 placeholder:text-slate-300"
@@ -148,6 +151,9 @@ const Login = () => {
                                             <input
                                                 type="password"
                                                 required
+                                                name="password"
+                                                id="password"
+                                                autocomplete="current-password"
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 placeholder:text-slate-300"

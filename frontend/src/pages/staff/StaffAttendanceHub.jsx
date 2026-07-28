@@ -515,7 +515,7 @@ const StaffAttendanceHub = () => {
 
                             {/* Modal Actions */}
                             <div className="flex justify-between items-center border-t border-slate-100 pt-4 text-xs">
-                                <span className="text-slate-400 font-bold">Krishna Engineering Works [Official Roster]</span>
+                                <span className="text-slate-400 font-bold">Krishna Engineering Works [Official Registry]</span>
                                 <button
                                     onClick={handleDownloadPDF}
                                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg transition"

@@ -27,7 +27,7 @@ const ReportHeader = ({ title, subtitle, data, columns, specializedReport }) => 
 
     return (
         <div className="mb-10 group">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-8 bg-white border-l-[12px] border-slate-900 rounded-r-[2rem] shadow-xl relative overflow-hidden transition-all hover:shadow-2xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4 py-6 md:p-8 bg-white border-l-[6px] md:border-l-[12px] border-slate-900 rounded-r-2xl md:rounded-r-[2rem] shadow-xl relative overflow-hidden transition-all hover:shadow-2xl">
                 {/* Decorative Elements */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
                 
@@ -36,10 +36,10 @@ const ReportHeader = ({ title, subtitle, data, columns, specializedReport }) => 
                         <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
                         <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 italic">SECURE DATA TERMINAL</span>
                     </div>
-                    <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-slate-900 leading-none mb-3">
+                    <h1 className="text-2xl md:text-5xl font-black uppercase tracking-tighter text-slate-900 leading-tight mb-3 hero-title">
                         {title} <span className="text-slate-300 font-light italic">Report</span>
                     </h1>
-                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[11px] flex items-center gap-2">
+                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[11px] flex items-center gap-2 flex-wrap">
                         <Info className="w-3 h-3" /> {subtitle || 'Operational Analytics and Performance Metrics'}
                     </p>
                 </div>

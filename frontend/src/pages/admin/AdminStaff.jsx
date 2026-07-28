@@ -39,7 +39,7 @@ const AdminStaff = () => {
             s.designation,
             s.phone
         ]);
-        generateGeneralReportPDF(data, 'Enterprise Resource Roster', columns);
+        generateGeneralReportPDF(data, 'Enterprise Resource Report', columns);
     };
 
     const [formData, setFormData] = useState({
@@ -271,7 +271,7 @@ const AdminStaff = () => {
                         onClick={handleDownloadRoster}
                         className="bg-white border-2 border-slate-200 text-slate-600 px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition active:scale-95 flex items-center gap-2"
                     >
-                        <Download className="w-5 h-5" /> Export Roster
+                        <Download className="w-5 h-5" /> Export Staff List
                     </button>
                     <button 
                         onClick={() => { resetForm(); setShowAddModal(true); }}

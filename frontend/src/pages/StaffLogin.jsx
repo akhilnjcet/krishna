@@ -117,6 +117,9 @@ const StaffLogin = () => {
                                         <input
                                             type="text"
                                             required
+                                            name="username"
+                                            id="username"
+                                            autoComplete="username"
                                             value={username}
                                             onChange={(e) => setUsername(e.target.value)}
                                             className="block w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
@@ -134,6 +137,9 @@ const StaffLogin = () => {
                                         <input
                                             type="password"
                                             required
+                                            name="password"
+                                            id="password"
+                                            autoComplete="current-password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             className="block w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"

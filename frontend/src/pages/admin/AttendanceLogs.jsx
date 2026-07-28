@@ -251,7 +251,7 @@ const AttendanceLogs = () => {
                 `${sum.percentage}%`
             ];
         });
-        generateGeneralReportPDF(data, `Attendance_Roster_${selectedMonth}`, columns);
+        generateGeneralReportPDF(data, `Attendance_Report_${selectedMonth}`, columns);
     };
 
     return (
@@ -268,7 +268,7 @@ const AttendanceLogs = () => {
                         onClick={handleDownloadReport}
                         className="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-2 hover:bg-indigo-700 transition shadow-lg shadow-indigo-600/20 active:scale-95"
                     >
-                        <Download className="w-5 h-5" /> Export Roster
+                        <Download className="w-5 h-5" /> Export Attendance
                     </button>
                 </div>
             </div>
@@ -351,7 +351,7 @@ const AttendanceLogs = () => {
                             
                             <div className="flex flex-wrap gap-3 items-center">
                                 <div className="space-y-1 w-48 md:w-60">
-                                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block">Roster Query</label>
+                                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block">Search Query</label>
                                     <input 
                                         type="text"
                                         placeholder="Search name or ID..."
@@ -361,7 +361,7 @@ const AttendanceLogs = () => {
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block">Department Roster</label>
+                                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block">Department List</label>
                                     <select 
                                         value={filterDept}
                                         onChange={(e) => setFilterDept(e.target.value)}

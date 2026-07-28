@@ -517,7 +517,7 @@ const AdminFinance = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
                 <div>
                     <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter italic">Financial Intelligence & Payroll</h1>
-                    <p className="text-slate-500 font-medium">Log expenditures, process monthly staff rosters, lock salary disbursements, and administer overtime registries.</p>
+                    <p className="text-slate-500 font-medium">Log expenditures, process monthly staff payrolls, lock salary disbursements, and administer overtime registries.</p>
                 </div>
                 <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block">Disbursement Cycle</label>
@@ -816,7 +816,7 @@ const AdminFinance = () => {
                                 <tbody className="divide-y divide-slate-100">
                                     {staffList.length === 0 ? (
                                         <tr>
-                                            <td colSpan={9} className="py-12 text-center text-slate-400 font-bold">No active staff roster loaded.</td>
+                                            <td colSpan={9} className="py-12 text-center text-slate-400 font-bold">No active staff list loaded.</td>
                                         </tr>
                                     ) : staffList.map(staff => {
                                         const draft = payrollDrafts[staff._id];
@@ -1352,7 +1352,7 @@ const AdminFinance = () => {
                             <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                                 <div>
                                     <h3 className="text-xl font-black text-slate-900 uppercase">Salary Payout Dashboard</h3>
-                                    <p className="text-xs text-slate-400 font-semibold mt-0.5">Roster Profile: {paymentForm.staffName} • Cycle: {paymentForm.month}</p>
+                                    <p className="text-xs text-slate-400 font-semibold mt-0.5">Staff Profile: {paymentForm.staffName} • Cycle: {paymentForm.month}</p>
                                 </div>
                                 <button onClick={() => setShowPaymentModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
                                     <X className="w-5 h-5 text-slate-400" />

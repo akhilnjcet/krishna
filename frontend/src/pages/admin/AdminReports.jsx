@@ -65,7 +65,7 @@ const AdminReports = () => {
                 };
             case 'payroll':
                 return {
-                    title: 'Monthly Consolidated Payroll Roster',
+                    title: 'Monthly Consolidated Payroll Report',
                     columns: ['Staff Details', 'Monthly Salary', 'Hourly Rate', 'Present Days', 'Worked Hours', 'Total Salary Earned', 'Approved OT', 'Bonus', 'Advance Paid', 'Deductions', 'Already Paid', 'Remaining Salary', 'Net Payable', 'Status'],
                     rowMapper: (r) => {
                         const workingDays = r.staffId?.workingDaysPerMonth || 26;
@@ -261,7 +261,7 @@ const AdminReports = () => {
                 {[
                     { label: 'Dataset Size', value: `${reportData.length} records`, icon: Database, color: 'indigo' },
                     { label: 'Analytical Domain', value: reportSchema.title, icon: FileText, color: 'blue' },
-                    { label: 'Roster Integrity', value: 'Verified', icon: FileBarChart, color: 'emerald' }
+                    { label: 'Report Integrity', value: 'Verified', icon: FileBarChart, color: 'emerald' }
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-5">
                         <div className={`w-12 h-12 bg-${stat.color}-50 rounded-xl flex items-center justify-center`}>

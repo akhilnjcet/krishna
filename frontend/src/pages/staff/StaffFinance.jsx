@@ -185,7 +185,7 @@ const StaffFinance = () => {
         <div className="space-y-8 animate-in fade-in duration-500 font-sans">
             
             <ReportHeader 
-                title="Finance Ledger & Roster"
+                title="Finance Ledger"
                 subtitle="Manage your monthly earnings, inspect attendance, check overtime records, and download locked salary slips."
                 data={Array.isArray(history) ? history.map(sal => [
                     sal?.month || 'N/A',
@@ -198,32 +198,32 @@ const StaffFinance = () => {
             />
 
             {/* Request Advance Action */}
-            <div className="flex justify-between items-center -mt-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 -mt-4">
                 {/* Tab Navigation */}
-                <div className="flex bg-slate-200/50 p-1 rounded-2xl w-fit border border-slate-200">
+                <div className="flex flex-wrap bg-slate-200/50 p-1 rounded-2xl w-full md:w-fit border border-slate-200 gap-1">
                     <button 
                         onClick={() => setActiveTab('slips')}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'slips' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                        className={`flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'slips' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
                     >
-                        💰 Payouts & Salary Slips
+                        💰 Payouts & Slips
                     </button>
                     <button 
                         onClick={() => setActiveTab('attendance')}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'attendance' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                        className={`flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'attendance' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
                     >
-                        📅 Attendance Calendar
+                        📅 Calendar
                     </button>
                     <button 
                         onClick={() => setActiveTab('overtime')}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'overtime' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                        className={`flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'overtime' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
                     >
-                        ⏱️ Overtime logs
+                        ⏱️ Overtime
                     </button>
                 </div>
 
                 <button 
                     onClick={() => setAdvanceModalOpen(true)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-indigo-600/25 active:scale-95 transition-all"
+                    className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 active:scale-95 transition-all"
                 >
                     Request Salary Advance
                 </button>
@@ -233,15 +233,15 @@ const StaffFinance = () => {
             {activeTab === 'slips' && (
                 <div className="space-y-8">
                     {/* Quick Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {stats.map((stat) => (
-                            <div key={stat.label} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-                                <div className={`${stat.bg} ${stat.color} p-4 rounded-2xl`}>
-                                    <stat.icon className="w-6 h-6" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                        {stats.map((stat, idx) => (
+                            <div key={stat.label} className={`bg-white p-4 sm:p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center text-center sm:text-left gap-3 sm:gap-4 w-full ${idx === 2 ? 'col-span-2 md:col-span-1' : ''}`}>
+                                <div className={`${stat.bg} ${stat.color} p-3 sm:p-4 rounded-2xl flex-shrink-0`}>
+                                    <stat.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </div>
-                                <div>
-                                    <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-0.5">{stat.label}</p>
-                                    <h3 className="text-2xl font-bold text-slate-800 tracking-tight">{stat.value}</h3>
+                                <div className="min-w-0">
+                                    <p className="text-[9px] sm:text-[10px] uppercase font-black tracking-widest text-slate-400 mb-0.5 truncate">{stat.label}</p>
+                                    <h3 className="text-base sm:text-2xl font-bold text-slate-800 tracking-tight truncate">{stat.value}</h3>
                                 </div>
                             </div>
                         ))}
@@ -402,7 +402,7 @@ const StaffFinance = () => {
                             </div>
 
                             {/* Financial Breakdown Table */}
-                            <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs">
+                            <div className="border border-slate-200 rounded-2xl overflow-x-auto text-xs">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="bg-indigo-600 text-white font-black uppercase text-[10px]">
@@ -489,10 +489,10 @@ const StaffFinance = () => {
                     </div>
 
                     {/* 35-Day Grid Calendar */}
-                    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                        <div className="grid grid-cols-7 gap-3 text-center mb-4">
+                    <div className="bg-white p-4 sm:p-8 rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="grid grid-cols-7 gap-1 sm:gap-3 text-center mb-4">
                             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
-                                <div key={d} className="text-[10px] font-black text-slate-400 tracking-widest">{d}</div>
+                                <div key={d} className="text-[8px] sm:text-[10px] font-black text-slate-400 tracking-widest">{d}</div>
                             ))}
                         </div>
 
@@ -501,7 +501,7 @@ const StaffFinance = () => {
                                 <Loader2 className="animate-spin w-8 h-8 text-indigo-600 mx-auto" />
                             </div>
                         ) : (
-                            <div className="grid grid-cols-7 gap-3">
+                            <div className="grid grid-cols-7 gap-1 sm:gap-3">
                                 {(() => {
                                     // Align calendar starting offset (blank boxes)
                                     const firstDay = daysInMonth[0];
@@ -510,7 +510,7 @@ const StaffFinance = () => {
                                     const boxes = [];
                                     
                                     for (let i = 0; i < offset; i++) {
-                                        boxes.push(<div key={`blank-${i}`} className="aspect-square bg-slate-50 border border-slate-100 rounded-2xl opacity-40"></div>);
+                                        boxes.push(<div key={`blank-${i}`} className="aspect-square bg-slate-50 border border-slate-100 rounded-lg sm:rounded-2xl opacity-40"></div>);
                                     }
 
                                     daysInMonth.forEach(day => {
@@ -522,10 +522,10 @@ const StaffFinance = () => {
                                         boxes.push(
                                             <div 
                                                 key={dateStr}
-                                                className={`aspect-square p-3 border rounded-2xl flex flex-col justify-between items-center transition hover:shadow-md ${ui.color}`}
+                                                className={`aspect-square p-1.5 sm:p-3 border rounded-xl sm:rounded-2xl flex flex-col justify-between items-center transition hover:shadow-md ${ui.color}`}
                                             >
-                                                <span className="text-xs font-black self-start">{day.getDate()}</span>
-                                                <span className="text-lg">{ui.symbol}</span>
+                                                <span className="text-[9px] sm:text-xs font-black self-start">{day.getDate()}</span>
+                                                <span className="text-xs sm:text-lg">{ui.symbol}</span>
                                             </div>
                                         );
                                     });
