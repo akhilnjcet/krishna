@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Printer, Plus, Trash2, User, Calendar, Hash, FileText, 
-    Palette, Clock, CheckCircle, ShieldCheck, DollarSign, Layers
+    Palette, Clock, CheckCircle, ShieldCheck, DollarSign, Layers,
+    Save, History, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import api from '../../services/api';
+import useAuthStore from '../../stores/authStore';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
 
 const Quotations = () => {
+    const { user } = useAuthStore();
     const [customers, setCustomers] = useState([]);
     const [loadingCustomers, setLoadingCustomers] = useState(false);
 
@@ -43,6 +46,11 @@ const Quotations = () => {
     const [showSignature, setShowSignature] = useState(true);
     const [taxPercentage, setTaxPercentage] = useState(18);
     const [brandingSettings, setBrandingSettings] = useState({ company_logo: '', company_signature: '' });
+
+    // Save to History State
+    const [saveState, setSaveState] = useState('idle'); // idle | saving | saved | error
+    const [toastMsg, setToastMsg] = useState('');
+    const toastTimerRef = useRef(null);
 
     useEffect(() => {
         fetchCustomers();
@@ -119,12 +127,111 @@ const Quotations = () => {
     const grandTotal = subtotal + taxAmount;
     const amountInWords = numberToIndianRupees(grandTotal);
 
-    const handlePrint = () => {
+    // Show toast helper
+    const showToast = (msg, type = 'saved') => {
+        setToastMsg(msg);
+        setSaveState(type === 'error' ? 'error' : 'saved');
+        clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = setTimeout(() => {
+            setSaveState('idle');
+            setToastMsg('');
+        }, 3500);
+    };
+
+    // Save to History
+    const handleSaveToHistory = async (triggeredBy = 'manual') => {
+        // Validate required fields
+        if (!quotationNumber.trim()) {
+            showToast('Please enter a Quotation Number before saving.', 'error');
+            return false;
+        }
+        if (!clientName.trim()) {
+            showToast('Please enter a Client Name before saving.', 'error');
+            return false;
+        }
+        if (items.length === 0 || items.every(i => !i.name.trim())) {
+            showToast('Add at least one line item before saving.', 'error');
+            return false;
+        }
+
+        setSaveState('saving');
+        try {
+            const payload = {
+                documentType: 'Quotation',
+                documentNumber: quotationNumber.trim(),
+                customerId: selectedCustomerId || undefined,
+                status: 'Draft',
+                totalAmount: grandTotal,
+                preparedBy: user?.name || '',
+                data: {
+                    quotationNumber,
+                    quotationDate,
+                    proposalValidityDate,
+                    clientName,
+                    clientAddress,
+                    clientPhone,
+                    clientGstin,
+                    selectedCustomerId,
+                    items,
+                    disclaimers,
+                    projectNotes,
+                    timelines,
+                    theme,
+                    themeColor,
+                    showTax,
+                    showSignature,
+                    taxPercentage,
+                    subtotal,
+                    taxAmount,
+                    grandTotal,
+                    amountInWords,
+                    savedAt: new Date().toISOString(),
+                    savedBy: triggeredBy
+                }
+            };
+
+            await api.post('/document-history/save', payload);
+            showToast(
+                triggeredBy === 'print'
+                    ? '✓ Quotation auto-saved before printing.'
+                    : `✓ Quotation ${quotationNumber} saved to Document History.`
+            );
+            return true;
+        } catch (err) {
+            console.error('Save to history failed:', err);
+            showToast('Failed to save quotation. Please try again.', 'error');
+            return false;
+        }
+    };
+
+    const handlePrint = async () => {
+        await handleSaveToHistory('print');
         window.print();
     };
 
     return (
         <div className="min-h-screen bg-slate-100 p-4 md:p-8 font-sans">
+            {/* Toast Notification */}
+            <AnimatePresence>
+                {(saveState === 'saved' || saveState === 'error') && toastMsg && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className={`fixed top-6 right-6 z-[200] flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border text-sm font-bold max-w-sm ${
+                            saveState === 'error'
+                                ? 'bg-rose-50 border-rose-200 text-rose-700'
+                                : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                        }`}
+                    >
+                        {saveState === 'error' 
+                            ? <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                            : <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                        }
+                        {toastMsg}
+                    </motion.div>
+                )}
+            </AnimatePresence>
             {/* Header Toolbar */}
             <div className="no-print bg-white p-6 rounded-3xl border border-slate-200 shadow-xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -135,7 +242,44 @@ const Quotations = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {/* Save to History Button */}
                     <button
+                        id="save-quotation-history-btn"
+                        onClick={() => handleSaveToHistory('manual')}
+                        disabled={saveState === 'saving'}
+                        className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg transition border ${
+                            saveState === 'saving'
+                                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                : saveState === 'saved'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                : saveState === 'error'
+                                ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
+                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                        }`}
+                    >
+                        {saveState === 'saving' ? (
+                            <><div className="w-3.5 h-3.5 border-2 border-slate-400/30 border-t-slate-500 rounded-full animate-spin" /> Saving...</>
+                        ) : saveState === 'saved' ? (
+                            <><CheckCircle2 className="w-4 h-4" /> Saved!</>
+                        ) : saveState === 'error' ? (
+                            <><AlertCircle className="w-4 h-4" /> Error</>  
+                        ) : (
+                            <><Save className="w-4 h-4" /> 💾 Save to History</>
+                        )}
+                    </button>
+
+                    {/* View History shortcut */}
+                    <button
+                        id="view-quotation-history-btn"
+                        onClick={() => window.location.hash = '/admin/document-history'}
+                        className="bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 text-indigo-700 px-4 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 transition"
+                        title="Open Document History"
+                    >
+                        <History className="w-4 h-4" /> History
+                    </button>
+
+                    <button
+                        id="print-quotation-btn"
                         onClick={handlePrint}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg transition"
                     >

@@ -12,7 +12,12 @@ const documentHistorySchema = new mongoose.Schema({
     documentType: { 
         type: String, 
         required: true, 
-        enum: ['Quotation', 'Estimate', 'Invoice', 'Labour Bill', 'Salary Slip', 'Attendance Report', 'Purchase Bill', 'Expense Report', 'Payment Receipt', 'Project Report', 'General Report'] 
+        enum: [
+            'Quotation', 'Estimate', 'Invoice', 'Labour Bill', 'Salary Slip',
+            'Attendance Report', 'Purchase Bill', 'Expense Report', 'Payment Receipt',
+            'Project Report', 'General Report',
+            'Lodge Rent Bill', 'Booking Confirmation', 'Advance Payment'
+        ]
     },
     documentNumber: { type: String, required: true },
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -21,6 +26,8 @@ const documentHistorySchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
     status: { type: String, default: 'Draft' },
+    approvalStatus: { type: String, default: 'Pending', enum: ['Pending', 'Approved', 'Rejected', 'Sent', 'Converted'] },
+    preparedBy: { type: String, default: '' },
     totalAmount: { type: Number, default: 0 },
     version: { type: Number, default: 1 },
     archived: { type: Boolean, default: false },

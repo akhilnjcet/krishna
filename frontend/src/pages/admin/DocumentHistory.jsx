@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Search, Filter, ArrowUpDown, Download, Printer, Share2, Eye, 
     Copy, Archive, Trash2, RotateCcw, AlertTriangle, FileText, 
-    ChevronLeft, ChevronRight, X, Calendar, User, Layers, Info
+    ChevronLeft, ChevronRight, X, Calendar, User, Layers, Info,
+    FileCheck2, TrendingUp, CheckCircle2
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
@@ -193,6 +194,18 @@ const DocumentHistory = () => {
             }
         } catch (err) {
             console.error('Failed to duplicate document:', err);
+        }
+    };
+
+    // Convert Quotation to Invoice
+    const handleConvertToInvoice = (doc) => {
+        if (!doc?.data) return alert('Document data unavailable for conversion.');
+        try {
+            localStorage.setItem('duplicated_doc_type', 'Invoice');
+            localStorage.setItem('duplicated_doc_data', JSON.stringify(doc.data));
+            window.location.hash = '/admin/invoices-studio';
+        } catch (err) {
+            console.error('Failed to convert quotation to invoice:', err);
         }
     };
 
@@ -394,7 +407,12 @@ const DocumentHistory = () => {
                                     <td className="px-6 py-5">
                                         <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider ${
                                             doc.status === 'Paid' || doc.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                                            doc.status === 'Sent' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                                            doc.status === 'Converted' ? 'bg-violet-50 text-violet-600 border border-violet-100' :
+                                            doc.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                            doc.status === 'Expired' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
                                             doc.status === 'Pending' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                                            doc.status === 'Printed' ? 'bg-teal-50 text-teal-600 border border-teal-100' :
                                             'bg-slate-100 text-slate-600 border border-slate-200'
                                         }`}>
                                             {doc.status}
@@ -416,6 +434,16 @@ const DocumentHistory = () => {
                                                     title="Download PDF"
                                                 >
                                                     <Download className="w-4.5 h-4.5" />
+                                                </button>
+                                            )}
+                                            {/* Convert to Invoice — visible for Quotation type only */}
+                                            {doc.documentType === 'Quotation' && (
+                                                <button 
+                                                    onClick={() => handleConvertToInvoice(doc)}
+                                                    className="p-2 hover:bg-violet-50 text-violet-600 rounded-xl transition"
+                                                    title="Convert to Invoice"
+                                                >
+                                                    <FileCheck2 className="w-4.5 h-4.5" />
                                                 </button>
                                             )}
                                             <button 
@@ -502,6 +530,21 @@ const DocumentHistory = () => {
                                                 <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Document Summary</h4>
                                                 <div className="space-y-2 text-xs font-bold text-slate-600">
                                                     <p className="flex justify-between"><span>Status:</span> <span className="text-slate-900 font-extrabold">{selectedDocDetail.status}</span></p>
+                                                    {selectedDocDetail.approvalStatus && (
+                                                        <p className="flex justify-between">
+                                                            <span>Approval:</span>
+                                                            <span className={`font-extrabold px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider ${
+                                                                selectedDocDetail.approvalStatus === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                                                                selectedDocDetail.approvalStatus === 'Rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                                                selectedDocDetail.approvalStatus === 'Sent' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                                                                selectedDocDetail.approvalStatus === 'Converted' ? 'bg-violet-50 text-violet-600 border border-violet-100' :
+                                                                'bg-amber-50 text-amber-600 border border-amber-100'
+                                                            }`}>{selectedDocDetail.approvalStatus}</span>
+                                                        </p>
+                                                    )}
+                                                    {selectedDocDetail.preparedBy && (
+                                                        <p className="flex justify-between"><span>Prepared By:</span> <span className="text-slate-900 truncate max-w-[120px]">{selectedDocDetail.preparedBy}</span></p>
+                                                    )}
                                                     <p className="flex justify-between"><span>Amount:</span> <span className="text-slate-900 font-extrabold">₹ {selectedDocDetail.totalAmount?.toLocaleString('en-IN')}</span></p>
                                                     <p className="flex justify-between"><span>Version:</span> <span className="text-indigo-600 font-extrabold">v{selectedDocDetail.version}</span></p>
                                                     <p className="flex justify-between"><span>Created By:</span> <span className="text-slate-900 truncate max-w-[120px]">{selectedDocDetail.createdBy?.name}</span></p>
@@ -549,6 +592,15 @@ const DocumentHistory = () => {
                                                         className="w-full flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-600 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition"
                                                     >
                                                         <Trash2 className="w-4 h-4" /> Permanently Delete
+                                                    </button>
+                                                )}
+                                                {/* Convert to Invoice — Quotation only */}
+                                                {selectedDocDetail.documentType === 'Quotation' && (
+                                                    <button 
+                                                        onClick={() => handleConvertToInvoice(selectedDocDetail)}
+                                                        className="w-full flex items-center justify-center gap-2 bg-violet-50 hover:bg-violet-100 border border-violet-100 text-violet-700 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition"
+                                                    >
+                                                        <FileCheck2 className="w-4 h-4" /> Convert to Invoice
                                                     </button>
                                                 )}
                                             </div>

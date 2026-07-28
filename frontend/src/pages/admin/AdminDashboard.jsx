@@ -8,7 +8,7 @@ import {
   TrendingUp, Activity, UserCheck, ShieldCheck, 
   ArrowRight, ChevronRight, Search, Filter,
   Layers, Package, AlertCircle, Download, DoorOpen,
-  Bell
+  Bell, FileText, History
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -29,6 +29,7 @@ const AdminDashboard = () => {
     });
     const [recentLogs, setRecentLogs] = useState([]);
     const [recentNotifications, setRecentNotifications] = useState([]);
+    const [recentQuotations, setRecentQuotations] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const handleQuickReport = () => {
@@ -71,6 +72,16 @@ const AdminDashboard = () => {
 
             setRecentLogs(data.recentLogs || []);
             setRecentNotifications(data.recentNotifications || []);
+
+            // Fetch recent quotations from document history
+            try {
+                const qRes = await api.get('/document-history', {
+                    params: { category: 'Quotations', limit: 5, sort: 'Newest First', archived: 'false' }
+                });
+                setRecentQuotations(qRes.data.documents || []);
+            } catch (_) {
+                // Non-blocking — dashboard works without it
+            }
         } catch (err) {
             console.error("Dashboard fetch error:", err);
         } finally {
@@ -297,6 +308,49 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Recent Quotations Widget */}
+                    {recentQuotations.length > 0 && (
+                        <div className="bg-white dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border p-8 shadow-sm">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-lg font-bold text-[#111827] dark:text-dark-text flex items-center gap-2">
+                                    <History className="w-4 h-4 text-indigo-500" />
+                                    Recent Quotations
+                                </h3>
+                                <button
+                                    onClick={() => navigate('/admin/document-history')}
+                                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 uppercase tracking-wider"
+                                >
+                                    View All <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                            <div className="space-y-3">
+                                {recentQuotations.map((q) => (
+                                    <div key={q._id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-dark-bg border border-slate-100 dark:border-dark-border hover:bg-indigo-50/30 transition">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-indigo-50 rounded-lg">
+                                                <FileText className="w-4 h-4 text-indigo-500" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-900 dark:text-dark-text">{q.documentNumber}</p>
+                                                <p className="text-[10px] text-slate-400 font-medium">{q.customerId?.name || 'General'} • {new Date(q.createdAt).toLocaleDateString('en-IN')}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            {q.totalAmount > 0 && (
+                                                <span className="text-xs font-black text-slate-700">₹{q.totalAmount.toLocaleString('en-IN')}</span>
+                                            )}
+                                            <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
+                                                q.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                                                q.status === 'Pending' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                                                'bg-slate-100 text-slate-500 border border-slate-200'
+                                            }`}>{q.status}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Operational Shortcuts */}
                     <div className="bg-white dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border p-8 shadow-sm">
