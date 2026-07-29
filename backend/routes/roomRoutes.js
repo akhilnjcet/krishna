@@ -191,6 +191,7 @@ router.put('/:id', protect, admin, upload.fields(roomUploadFields), async (req, 
         updateData.exteriorPhotos = exteriorPhotos;
 
         const room = await Room.findByIdAndUpdate(req.params.id, updateData, { new: true });
+        req.app.get('io')?.emit('room_updated', room);
         res.json(room);
     } catch (err) {
         console.error(err);
@@ -203,14 +204,12 @@ router.post('/', protect, admin, upload.fields(roomUploadFields), async (req, re
   try {
     const { lodgeId, type, price, rentCycle, maxGuests, description, amenities, videoUrl } = req.body;
 
-    // 1. Validate required fields
     if (!lodgeId || !type || !price || !maxGuests) {
       return res.status(400).json({ 
         message: 'Missing required fields: lodgeId, type, price, and maxGuests are mandatory.' 
       });
     }
 
-    // 2. Validate lodgeId format
     const mongoose = require('mongoose');
     if (!mongoose.Types.ObjectId.isValid(lodgeId)) {
       return res.status(400).json({ message: 'Invalid lodgeId format (must be a valid MongoDB ObjectId).' });
@@ -234,7 +233,6 @@ router.post('/', protect, admin, upload.fields(roomUploadFields), async (req, re
         }
     }
 
-    // Parse Google Drive Links
     if (req.body.interiorDriveUrls) {
         const urls = Array.isArray(req.body.interiorDriveUrls) ? req.body.interiorDriveUrls : [req.body.interiorDriveUrls];
         for (const url of urls) {
@@ -274,7 +272,6 @@ router.post('/', protect, admin, upload.fields(roomUploadFields), async (req, re
         }
     }
 
-    // 3. Create room
     const room = await Room.create({
       lodgeId, 
       type, 
@@ -288,6 +285,7 @@ router.post('/', protect, admin, upload.fields(roomUploadFields), async (req, re
       videoUrl: videoUrl || ''
     });
 
+    req.app.get('io')?.emit('room_updated', room);
     console.log('[SUCCESS] Room Saved:', room._id);
     res.status(201).json(room);
   } catch (err) {
@@ -308,6 +306,7 @@ router.delete('/:id/photo', protect, admin, async (req, res) => {
         room.exteriorPhotos = room.exteriorPhotos.filter(p => p.url !== photoUrl);
 
         await room.save();
+        req.app.get('io')?.emit('room_updated', room);
         res.json(room);
     } catch(err) {
         console.error(err);
@@ -315,9 +314,6 @@ router.delete('/:id/photo', protect, admin, async (req, res) => {
     }
 });
 
-// @route   DELETE /api/rooms/:id
-// @desc    Soft delete a room by deactivating it
-// @access  Private/Admin
 router.delete('/:id', protect, admin, async (req, res) => {
     try {
         const room = await Room.findById(req.params.id);
@@ -325,6 +321,7 @@ router.delete('/:id', protect, admin, async (req, res) => {
 
         room.isActive = false;
         await room.save();
+        req.app.get('io')?.emit('room_updated', room);
         res.json({ message: 'Room deactivated successfully', room });
     } catch (err) {
         console.error('Error deactivating room:', err);

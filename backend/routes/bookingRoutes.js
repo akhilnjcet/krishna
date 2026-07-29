@@ -38,6 +38,9 @@ router.post('/', protect, async (req, res) => {
       totalAmount
     });
 
+    req.app.get('io')?.emit('booking_updated', booking);
+    req.app.get('io')?.emit('room_updated', { roomId: booking.roomId });
+
     res.status(201).json(booking);
   } catch (err) {
     console.error(err);
@@ -110,6 +113,9 @@ router.put('/:id/cancel', protect, async (req, res) => {
     booking.refundPercentage = refundPct;
     await booking.save();
 
+    req.app.get('io')?.emit('booking_updated', booking);
+    req.app.get('io')?.emit('room_updated', { roomId: booking.roomId });
+
     res.json(booking);
   } catch (err) {
     res.status(500).json({ message: 'Server Error' });
@@ -125,7 +131,6 @@ router.post('/admin-assign', protect, async (req, res) => {
   try {
     const { lodgeId, roomId, userId, checkIn, checkOut, totalAmount } = req.body;
     
-    // Purge or cancel conflicting active bookings automatically (Force assign)
     await BookingLodge.updateMany(
        { roomId, status: 'active', checkIn: { $lt: new Date(checkOut) }, checkOut: { $gt: new Date(checkIn) } },
        { $set: { status: 'cancelled', refundPercentage: 100 } }
@@ -139,6 +144,9 @@ router.post('/admin-assign', protect, async (req, res) => {
       checkOut: new Date(checkOut),
       totalAmount
     });
+
+    req.app.get('io')?.emit('booking_updated', booking);
+    req.app.get('io')?.emit('room_updated', { roomId: booking.roomId });
 
     res.status(201).json(booking);
   } catch (err) {

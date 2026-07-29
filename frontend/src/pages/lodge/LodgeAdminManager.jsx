@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { 
     Building2, Plus, DoorOpen, List, Trash2, Edit3, UserPlus, 
     Calendar, IndianRupee, AlertTriangle, Users, CheckCircle, 
-    Settings, LogOut, Clock, Link, Check, X, Building, BarChart3, ShieldAlert, ArrowLeft, Folder
+    Settings, LogOut, Clock, Link, Check, X, Building, BarChart3, ShieldAlert, ArrowLeft, Folder,
+    Eye, Search, Filter
 } from 'lucide-react';
 import api from '../../services/api';
 import { getDirectImageUrl, expandGoogleDriveFolders } from '../../utils/imageUtils';
 import DriveImage from '../../components/DriveImage';
 import LodgeBillingManager from './LodgeBillingManager';
+import { getSocket } from '../../utils/socket';
 
 export default function LodgeAdminManager() {
   const [selectedLodge, setSelectedLodge] = useState(null);
@@ -21,6 +23,13 @@ export default function LodgeAdminManager() {
   const [complaints, setComplaints] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [stats, setStats] = useState({ totalBookings: 0, totalRevenue: 0, totalUsers: 0, occupancyRate: 0, activeBookings: 0 });
+  
+  // Search, Filtering & Detail States
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [selectedRoomDetail, setSelectedRoomDetail] = useState(null);
+  const [roomDetailTab, setRoomDetailTab] = useState('overview');
+
   // Forms & Modals
   const [showRoomForm, setShowRoomForm] = useState(false);
   const [roomForm, setRoomForm] = useState({ 
@@ -80,15 +89,40 @@ export default function LodgeAdminManager() {
     }
   }, [selectedLodge]);
 
+  const refreshActiveTabData = () => {
+    if (!selectedLodge || selectedLodge._id === 'error_state') return;
+    fetchRooms(selectedLodge._id);
+    fetchClients();
+    fetchBookings();
+    fetchPayments();
+    fetchComplaints();
+    fetchStats();
+  };
+
   useEffect(() => {
     if(!selectedLodge) return;
-    if(activeTab === 'dashboard') fetchStats();
-    if(activeTab === 'rooms') { fetchRooms(selectedLodge._id); fetchClients(); }
-    if(activeTab === 'registry') fetchClients();
-    if(activeTab === 'finance') { fetchPayments(); fetchClients(); }
-    if(activeTab === 'maintenance') fetchComplaints();
-    if(activeTab === 'occupancy') fetchBookings();
+    refreshActiveTabData();
   }, [activeTab, selectedLodge]);
+
+  // Real-Time Socket.IO Synchronization
+  useEffect(() => {
+    const socket = getSocket();
+    if (socket) {
+      const handleSync = () => {
+        refreshActiveTabData();
+      };
+      socket.on('room_updated', handleSync);
+      socket.on('booking_updated', handleSync);
+      socket.on('payment_updated', handleSync);
+      socket.on('maintenance_updated', handleSync);
+      return () => {
+        socket.off('room_updated', handleSync);
+        socket.off('booking_updated', handleSync);
+        socket.off('payment_updated', handleSync);
+        socket.off('maintenance_updated', handleSync);
+      };
+    }
+  }, [selectedLodge]);
 
   const fetchBaseLodge = async () => {
     try {
@@ -434,6 +468,75 @@ export default function LodgeAdminManager() {
       );
   }
 
+  // Live Database Room Cards Enrichment
+  const activeBookingsList = bookings.filter(b => b.status === 'active');
+  const activeBookingUserIds = new Set(activeBookingsList.map(b => b.userId?._id || b.userId));
+
+  const unassignedClients = clients.filter(c => !activeBookingUserIds.has(c._id));
+
+  const enrichedRooms = rooms.map(room => {
+    const activeBooking = activeBookingsList.find(b => {
+      const bRoomId = b.roomId?._id || b.roomId;
+      return String(bRoomId) === String(room._id);
+    });
+
+    const occupantName = activeBooking?.userId?.name || 'Vacant';
+    const phone = activeBooking?.userId?.phone || activeBooking?.userId?.phoneNumber || 'N/A';
+    const email = activeBooking?.userId?.email || 'N/A';
+    const bookingId = activeBooking?._id ? activeBooking._id.substring(activeBooking._id.length - 8).toUpperCase() : 'N/A';
+    const checkIn = activeBooking?.checkIn ? new Date(activeBooking.checkIn).toLocaleDateString() : 'N/A';
+    const checkOut = activeBooking?.checkOut ? new Date(activeBooking.checkOut).toLocaleDateString() : 'N/A';
+    
+    let daysRemaining = 0;
+    if (activeBooking?.checkOut) {
+      const diff = new Date(activeBooking.checkOut) - new Date();
+      daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+    }
+
+    const currentStatus = activeBooking ? 'Occupied' : (room.isActive === false ? 'Maintenance' : 'Available');
+
+    return {
+      ...room,
+      roomNumber: room.roomNumber || room._id.substring(room._id.length - 3),
+      building: room.building || selectedLodge?.name || 'Main Block',
+      floor: room.floor || 'Floor 1',
+      securityDeposit: room.securityDeposit || room.price * 2,
+      occupantName,
+      phone,
+      email,
+      bookingId,
+      checkIn,
+      checkOut,
+      daysRemaining,
+      currentStatus,
+      activeBooking,
+      photos: [...(room.interiorPhotos || []), ...(room.exteriorPhotos || [])]
+    };
+  });
+
+  const filteredRooms = enrichedRooms.filter(r => {
+    const q = searchTerm.toLowerCase();
+    const matchesSearch = 
+      !searchTerm ||
+      r.roomNumber.toString().toLowerCase().includes(q) ||
+      r.type.toLowerCase().includes(q) ||
+      r.occupantName.toLowerCase().includes(q) ||
+      r.phone.toLowerCase().includes(q) ||
+      r.bookingId.toLowerCase().includes(q);
+
+    const matchesStatus = 
+      statusFilter === 'All' ||
+      (statusFilter === 'Available' && r.occupantName === 'Vacant' && r.currentStatus === 'Available') ||
+      (statusFilter === 'Occupied' && (r.occupantName !== 'Vacant' || r.currentStatus === 'Occupied')) ||
+      (statusFilter === 'Reserved' && r.currentStatus === 'Reserved') ||
+      (statusFilter === 'Maintenance' && r.currentStatus === 'Maintenance') ||
+      (statusFilter === 'Vacant' && r.occupantName === 'Vacant') ||
+      (statusFilter === 'Overdue Payment' && r.daysRemaining === 0 && r.occupantName !== 'Vacant') ||
+      (statusFilter === 'Advance Paid' && r.activeBooking);
+
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -718,83 +821,194 @@ export default function LodgeAdminManager() {
                  </form>
              )}
 
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 {rooms.map(r => (
-                    <div key={r._id} className="p-6 border rounded-[1.5rem] bg-white hover:border-indigo-200 transition-all shadow-sm flex flex-col md:flex-row justify-between items-center group relative overflow-hidden">
-                       <div className="relative z-10 w-full">
-                          <h4 className="font-black text-slate-900 text-xl tracking-tight uppercase">{r.type} <span className="text-[10px] text-slate-400 border border-slate-200 px-3 py-1 rounded-full font-bold ml-3 bg-slate-50 uppercase tracking-widest">Cap: {r.maxGuests}</span></h4>
-                          <p className="text-sm text-slate-500 mt-2 line-clamp-1 font-medium">{r.description}</p>
-                          
-                          {/* Photos & Videos Display */}
-                          {(() => {
-                              const allPhotos = [...(r.interiorPhotos || []), ...(r.exteriorPhotos || [])];
-                              return (
-                                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                                      {allPhotos.slice(0, 3).map((img, idx) => (
-                                          <div key={idx} className="w-14 h-14 border rounded-xl overflow-hidden bg-slate-50 shadow-sm">
-                                              <DriveImage src={img.url} alt="Room thumbnail" className="w-full h-full" />
-                                          </div>
-                                      ))}
-                                      {allPhotos.length > 3 && (
-                                          <button 
-                                              type="button"
-                                              onClick={() => setActiveGalleryRoom(r)}
-                                              className="w-14 h-14 border bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl flex flex-col items-center justify-center font-black active:scale-95 transition-all shadow-sm text-[10px] tracking-tighter uppercase"
-                                          >
-                                              <span>+{allPhotos.length - 3}</span>
-                                              <span>More</span>
-                                          </button>
-                                      )}
-                                      {allPhotos.length <= 3 && allPhotos.length > 0 && (
-                                          <button 
-                                              type="button"
-                                              onClick={() => setActiveGalleryRoom(r)}
-                                              className="w-14 h-14 border bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center font-black active:scale-95 transition-all shadow-sm text-[9px] uppercase tracking-widest"
-                                          >
-                                              View
-                                          </button>
-                                      )}
-                                      {r.videoUrl && (
-                                          <div className="w-8 h-8 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-red-500 shadow-sm relative ml-2" title="Room Tour Video Loaded">
-                                              <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping absolute"></span>
-                                              <span className="w-2 h-2 bg-red-600 rounded-full relative"></span>
-                                          </div>
-                                      )}
-                                  </div>
-                              );
-                          })()}
+              {/* Search & Status Filters Bar */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/60 mb-6">
+                 <div className="relative flex-grow">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                    <input 
+                       type="text" 
+                       placeholder="Search Room Number, Tenant Name, Phone, or Booking ID..." 
+                       className="w-full bg-white border border-slate-200 pl-11 pr-4 py-3 rounded-xl font-bold text-xs text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+                       value={searchTerm}
+                       onChange={e => setSearchTerm(e.target.value)}
+                    />
+                 </div>
+                 
+                 <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1">
+                       <Filter className="w-3.5 h-3.5" /> Filter:
+                    </span>
+                    {['All', 'Available', 'Occupied', 'Reserved', 'Maintenance', 'Vacant', 'Overdue Payment', 'Advance Paid'].map(st => (
+                       <button
+                          key={st}
+                          type="button"
+                          onClick={() => setStatusFilter(st)}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+                             statusFilter === st 
+                             ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' 
+                             : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                          }`}
+                       >
+                          {st}
+                      </button>
+                    ))}
+                 </div>
+              </div>
 
-                          <div className="mt-6 flex flex-wrap items-center gap-3 sm:gap-4">
-                             <p className="font-black text-indigo-600 text-2xl font-poppins tracking-tighter">₹{r.price.toLocaleString()}<span className="text-xs text-slate-400 font-bold uppercase ml-1 tracking-widest">/ {r.rentCycle}</span></p>
-                             <div className="h-4 w-[1px] bg-slate-200 mx-1 sm:mx-2"></div>
-                             <div className="flex gap-2 flex-wrap">
-                                <button onClick={() => setAssignModal({ show:true, roomId: r._id, userId: '' })} className="p-2 sm:p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-emerald-50 hover:text-emerald-600 transition-colors shadow-sm" title="Manually Assign Tenant">
-                                    <UserPlus className="w-4 h-4 sm:w-5 sm:h-5"/>
-                                </button>
-                                <button onClick={() => { setEditingRoom(r); setRoomForm({ type: r.type, price: r.price, rentCycle: r.rentCycle || 'monthly', maxGuests: r.maxGuests, description: r.description, interiorFiles: [], exteriorFiles: [], interiorDriveUrls: '', exteriorDriveUrls: '', videoUrl: r.videoUrl || '' }); setShowRoomForm(true); }} className="p-2 sm:p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-amber-50 hover:text-amber-600 transition-colors shadow-sm">
-                                    <Edit3 className="w-4 h-4 sm:w-5 sm:h-5"/>
-                                </button>
-                                <button onClick={() => deleteRoom(r._id)} className="p-2 sm:p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-colors shadow-sm">
-                                    <Trash2 className="w-4 h-4 sm:w-5 sm:h-5"/>
-                                </button>
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-                 ))}
-             </div>
-         </div>
-         </div>
-      )}
+              {/* Room Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {filteredRooms.map(r => (
+                     <div key={r._id} className="p-6 border rounded-[1.5rem] bg-white hover:border-indigo-300 transition-all shadow-sm flex flex-col justify-between group relative overflow-hidden">
+                        <div className="relative z-10 w-full space-y-4">
+                           <div className="flex justify-between items-start gap-2">
+                              <div>
+                                 <h4 className="font-black text-slate-900 text-xl tracking-tight flex items-center gap-2">
+                                    <span>Room {r.roomNumber}</span>
+                                    <span className="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full font-extrabold uppercase">
+                                        {r.type}
+                                    </span>
+                                 </h4>
+                                 <p className="text-[11px] font-bold text-slate-400 mt-0.5 flex items-center gap-2">
+                                    <span>{r.building}</span> • <span>{r.floor}</span>
+                                 </p>
+                              </div>
+                              <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider shadow-sm border ${
+                                 r.currentStatus === 'Occupied' || r.occupantName !== 'Vacant' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                 r.currentStatus === 'Maintenance' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                 r.currentStatus === 'Reserved' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                 'bg-blue-50 text-blue-700 border-blue-200'
+                              }`}>
+                                 {r.currentStatus === 'Occupied' || r.occupantName !== 'Vacant' ? 'Occupied' : r.currentStatus}
+                              </span>
+                           </div>
 
+                           <p className="text-xs text-slate-500 line-clamp-2 font-medium">{r.description || 'Premium Accommodation Unit with 24/7 Power Backup & Security.'}</p>
 
+                           {/* Live Occupancy & Tenant Card Metadata */}
+                           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2 text-xs">
+                              <div className="flex justify-between items-center">
+                                 <span className="text-slate-400 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1">
+                                    <Users className="w-3.5 h-3.5 text-indigo-500" /> Current Tenant:
+                                 </span>
+                                 <strong className={`font-black ${r.occupantName !== 'Vacant' ? 'text-slate-900' : 'text-slate-400 italic'}`}>
+                                    {r.occupantName}
+                                 </strong>
+                              </div>
+                              {r.occupantName !== 'Vacant' && (
+                                 <>
+                                    <div className="flex justify-between items-center text-[11px]">
+                                       <span className="text-slate-500 font-medium">Contact Signal:</span>
+                                       <span className="font-bold text-slate-800">{r.phone}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[11px]">
+                                       <span className="text-slate-500 font-medium">Active Booking:</span>
+                                       <span className="font-extrabold text-indigo-600 font-mono">{r.bookingId}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[11px]">
+                                       <span className="text-slate-500 font-medium">Lease Period:</span>
+                                       <span className="font-bold text-slate-700">{r.checkIn} - {r.checkOut}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[11px]">
+                                       <span className="text-slate-500 font-medium">Stay Days Remaining:</span>
+                                       <span className={`font-extrabold px-2 py-0.5 rounded ${r.daysRemaining <= 5 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                          {r.daysRemaining} Days
+                                       </span>
+                                    </div>
+                                 </>
+                              )}
+                           </div>
+
+                           {/* Photos & Videos Display */}
+                           {(() => {
+                               const allPhotos = r.photos || [];
+                               return (
+                                   <div className="mt-3 flex flex-wrap items-center gap-3">
+                                       {allPhotos.slice(0, 3).map((img, idx) => (
+                                           <div key={idx} className="w-12 h-12 border rounded-xl overflow-hidden bg-slate-50 shadow-sm">
+                                               <DriveImage src={img.url} alt="Room thumbnail" className="w-full h-full" />
+                                           </div>
+                                       ))}
+                                       {allPhotos.length > 3 && (
+                                           <button 
+                                               type="button"
+                                               onClick={() => setActiveGalleryRoom(r)}
+                                               className="w-12 h-12 border bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl flex flex-col items-center justify-center font-black active:scale-95 transition-all shadow-sm text-[10px] tracking-tighter uppercase"
+                                           >
+                                               <span>+{allPhotos.length - 3}</span>
+                                               <span>More</span>
+                                           </button>
+                                       )}
+                                       {allPhotos.length <= 3 && allPhotos.length > 0 && (
+                                           <button 
+                                               type="button"
+                                               onClick={() => setActiveGalleryRoom(r)}
+                                               className="w-12 h-12 border bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center font-black active:scale-95 transition-all shadow-sm text-[9px] uppercase tracking-widest"
+                                           >
+                                               View
+                                           </button>
+                                       )}
+                                       {r.videoUrl && (
+                                           <div className="w-8 h-8 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-red-500 shadow-sm relative ml-1" title="Room Tour Video Loaded">
+                                               <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping absolute"></span>
+                                               <span className="w-2 h-2 bg-red-600 rounded-full relative"></span>
+                                           </div>
+                                       )}
+                                   </div>
+                               );
+                           })()}
+
+                           {/* Pricing & Action Toolbar */}
+                           <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                              <div>
+                                 <p className="font-black text-indigo-600 text-2xl font-poppins tracking-tight">₹{r.price.toLocaleString()}<span className="text-xs text-slate-400 font-bold uppercase ml-1 tracking-widest">/ {r.rentCycle}</span></p>
+                                 <p className="text-[10px] font-bold text-slate-400 uppercase">Deposit: ₹{r.securityDeposit.toLocaleString()}</p>
+                              </div>
+                              
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                 <button 
+                                     onClick={() => setSelectedRoomDetail(r)} 
+                                     className="px-3 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl text-xs font-black transition-colors shadow-sm flex items-center gap-1"
+                                     title="View Full Room Profile & History"
+                                 >
+                                     <Eye className="w-4 h-4" /> Detail
+                                 </button>
+                                 <button 
+                                     onClick={() => setAssignModal({ show: true, roomId: r._id, userId: '' })} 
+                                     className="p-2 sm:p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-colors shadow-sm" 
+                                     title="Assign Tenant to Room"
+                                 >
+                                     <UserPlus className="w-4 h-4"/>
+                                 </button>
+                                 <button 
+                                     onClick={() => { setEditingRoom(r); setRoomForm({ type: r.type, price: r.price, rentCycle: r.rentCycle || 'monthly', maxGuests: r.maxGuests, description: r.description, interiorFiles: [], exteriorFiles: [], interiorDriveUrls: '', exteriorDriveUrls: '', videoUrl: r.videoUrl || '' }); setShowRoomForm(true); }} 
+                                     className="p-2 sm:p-2.5 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-100 transition-colors shadow-sm"
+                                     title="Edit Room Specifications"
+                                 >
+                                     <Edit3 className="w-4 h-4"/>
+                                 </button>
+                                 <button 
+                                     onClick={() => deleteRoom(r._id)} 
+                                     className="p-2 sm:p-2.5 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors shadow-sm"
+                                     title="Deactivate Room"
+                                 >
+                                     <Trash2 className="w-4 h-4"/>
+                                 </button>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  ))}
+              </div>
+          </div>
+          </div>
+       )}
 
       {/* OCCUPANCY TAB */}
       {activeTab === 'occupancy' && (
          <div className="bg-white rounded-[2rem] shadow-sm border p-8 animate-in fade-in transition-all">
             <h2 className="text-xl font-bold mb-8 flex items-center"><Calendar className="w-6 h-6 mr-2 text-indigo-500"/> Live Occupancy Directory</h2>
             <div className="grid gap-4">
-               {bookings.map(b => (
+                {bookings.map(b => (
                   <div key={b._id} className={`p-6 border rounded-[1.5rem] flex flex-col md:flex-row justify-between items-start md:items-center ${b.status === 'cancelled' ? 'bg-slate-50 border-slate-100 opacity-60 grayscale' : 'bg-white hover:border-indigo-200 transition-all shadow-sm'}`}>
                       <div className="mb-4 md:mb-0">
                           <p className="font-black text-slate-900 text-lg flex items-center gap-3">

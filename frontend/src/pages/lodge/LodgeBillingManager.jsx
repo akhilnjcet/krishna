@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
+import { getSocket } from '../../utils/socket';
 
 import { formatCurrencyINR, fitTextIntoBox } from '../../utils/pdfHelpers';
 
@@ -287,9 +288,24 @@ const LodgeBillingManager = () => {
         }
     };
 
-    // Auto-refresh hook (60 seconds)
+    // Auto-refresh hook & Real-Time Socket.IO Synchronization
     useEffect(() => {
         loadDashboardData();
+        const socket = getSocket();
+        if (socket) {
+            const handleSync = () => {
+                loadDashboardData();
+                fetchVerifications();
+            };
+            socket.on('room_updated', handleSync);
+            socket.on('booking_updated', handleSync);
+            socket.on('payment_updated', handleSync);
+            return () => {
+                socket.off('room_updated', handleSync);
+                socket.off('booking_updated', handleSync);
+                socket.off('payment_updated', handleSync);
+            };
+        }
         const interval = setInterval(loadDashboardData, 60000);
         return () => clearInterval(interval);
     }, []);
