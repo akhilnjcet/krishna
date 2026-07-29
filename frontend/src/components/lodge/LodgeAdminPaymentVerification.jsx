@@ -427,8 +427,8 @@ export default function LodgeAdminPaymentVerification() {
       {activeTab === 'settings' && (
         <form onSubmit={handleSaveSettings} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm max-w-3xl space-y-6">
           <div>
-            <h3 className="text-xl font-black text-slate-900">Admin Payment & Bank Configuration</h3>
-            <p className="text-xs text-slate-500 mt-1">Configure UPI ID, Bank Accounts, and allowed additional charge categories.</p>
+            <h3 className="text-xl font-black text-slate-900">💳 Rent Payment Config (UPI & Bank Details)</h3>
+            <p className="text-xs text-slate-500 mt-1">Configure Merchant UPI ID, Dynamic QR Display Name, Bank Accounts, and allowed additional charge categories.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">

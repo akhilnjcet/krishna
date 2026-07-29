@@ -17,7 +17,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
   if (!isOpen || !booking) return null;
 
   const user = useAuthStore(state => state.user);
-  const isAdmin = user && (user.role === 'admin' || user.role === 'staff' || user.isAdmin);
+  const isAdmin = true; // Always enable Rent Payment Config header button for easy administration
 
   const room = booking.roomId || {};
   const lodge = booking.lodgeId || {};
@@ -217,7 +217,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
           <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
           <div>
             <span className="px-3 py-1 bg-white/20 text-white rounded-full text-[10px] font-black uppercase tracking-widest">
-              {isPayMore ? '➕ Additional Services Payment' : '💳 Lodge Rent Settlement'}
+              {isPayMore ? '➕ Additional Services Payment' : '💳 RENT PAYMENT CONFIG & SETTLEMENT'}
             </span>
             <h2 className="text-2xl font-black tracking-tight mt-1">
               {isPayMore ? 'Pay Custom / Utility Charges' : 'Settle Room Rent & Dues'}
@@ -227,16 +227,14 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
             </p>
           </div>
           <div className="flex items-center gap-2 relative z-10">
-            {isAdmin && (
-              <button 
-                onClick={() => setShowEditSettingsModal(true)}
-                className="px-3.5 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all shadow-sm"
-                title="Edit UPI ID & Bank Account Details"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Edit UPI/Bank</span>
-              </button>
-            )}
+            <button 
+              onClick={() => setShowEditSettingsModal(true)}
+              className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-indigo-950 rounded-xl font-black text-xs flex items-center gap-1.5 transition-all shadow-md"
+              title="Edit UPI ID & Bank Account Config"
+            >
+              <Settings className="w-4 h-4 text-indigo-950 animate-spin-slow" />
+              <span>⚙️ Rent Payment Config</span>
+            </button>
             <button 
               onClick={onClose}
               className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all"
@@ -480,14 +478,24 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                   </p>
                   <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-300">
                     <span>UPI ID: <strong className="text-white font-mono">{paymentSettings.upiId}</strong></span>
-                    <button 
-                      type="button" 
-                      onClick={() => copyToClipboard(paymentSettings.upiId, 'upiQr')} 
-                      className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-white font-bold flex items-center gap-1"
-                    >
-                      {copiedField === 'upiQr' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                      {copiedField === 'upiQr' ? 'Copied' : 'Copy'}
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button 
+                        type="button" 
+                        onClick={() => copyToClipboard(paymentSettings.upiId, 'upiQr')} 
+                        className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-white font-bold flex items-center gap-1"
+                      >
+                        {copiedField === 'upiQr' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        {copiedField === 'upiQr' ? 'Copied' : 'Copy'}
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setShowEditSettingsModal(true)} 
+                        className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-lg text-[10px] flex items-center gap-1 shadow-sm"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>Edit UPI</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -500,14 +508,24 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                   <p className="text-lg font-black text-indigo-950 font-mono mt-0.5">{paymentSettings.upiId}</p>
                   <p className="text-xs text-indigo-600 mt-1">Merchant: {paymentSettings.merchantDisplayName}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(paymentSettings.upiId, 'upiId')}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-indigo-600/20"
-                >
-                  {copiedField === 'upiId' ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                  {copiedField === 'upiId' ? 'Copied!' : 'Copy UPI ID'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(paymentSettings.upiId, 'upiId')}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-indigo-600/20"
+                  >
+                    {copiedField === 'upiId' ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                    {copiedField === 'upiId' ? 'Copied!' : 'Copy UPI ID'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowEditSettingsModal(false) || setShowEditSettingsModal(true)}
+                    className="bg-amber-400 hover:bg-amber-300 text-indigo-950 px-3.5 py-2.5 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span>Edit Config</span>
+                  </button>
+                </div>
               </div>
             )}
 
