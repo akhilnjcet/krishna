@@ -101,6 +101,7 @@ import LodgeDetail from './pages/lodge/LodgeDetail';
 import LodgeCustomerDashboard from './pages/lodge/LodgeCustomerDashboard';
 import PrivacyPolicyPage from './pages/lodge/PrivacyPolicyPage';
 import LodgeBillingManager from './pages/lodge/LodgeBillingManager';
+import BookingVerify from './pages/lodge/BookingVerify';
 
 import useLodgeStore from './stores/lodgeStore';
 import { notificationService } from './services/notificationService';
@@ -457,6 +458,7 @@ const App = () => {
               <Route path="complaint/:roomNumber" element={<ComplaintSystem />} />
               <Route path="history/:roomNumber" element={<PaymentHistory />} />
               <Route path="billing" element={<LodgeBillingManager />} />
+              <Route path="verify-booking/:id" element={<BookingVerify />} />
             </Route>
 
             {/* Fallback */}

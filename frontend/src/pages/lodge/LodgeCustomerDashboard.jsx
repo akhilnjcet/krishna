@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import ResidencyAcknowledgementModal from '../../components/ResidencyAcknowledgementModal';
 import { useNavigate } from 'react-router-dom';
 import { 
     LayoutDashboard, Calendar, Heart, User, CreditCard, 
     LogOut, Star, MessageSquare, MapPin, Download, 
     Trash2, Search, ArrowRight, Shield, CheckCircle, 
-    Clock, AlertCircle, RefreshCcw, Camera, Map, Plus, X, ArrowLeft
+    Clock, AlertCircle, RefreshCcw, Camera, Map, Plus, X, ArrowLeft, FileText
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
@@ -156,10 +157,7 @@ export default function LodgeCustomerDashboard() {
         } catch (err) { alert('Failed to raise ticket'); }
     };
 
-    const downloadInvoice = (bookingId) => {
-        alert(`Generating PDF Invoice for #${bookingId.slice(-6).toUpperCase()}...`);
-        // Simulated download
-    };
+    const [ackModal, setAckModal] = useState(null); // bookingId string or null
 
     if (loading) return (
         <div className="flex items-center justify-center min-h-screen bg-slate-50">
@@ -325,8 +323,8 @@ export default function LodgeCustomerDashboard() {
                                                 </>
                                             )}
 
-                                            <button onClick={() => downloadInvoice(b._id)} className="w-full bg-slate-100 text-slate-700 py-3.5 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all flex items-center justify-center border border-slate-200">
-                                                <Download className="w-4 h-4 mr-2" /> Get Invoice
+                                            <button onClick={() => setAckModal(b._id)} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-2xl font-black text-sm shadow-lg shadow-indigo-600/20 flex items-center justify-center transition-all hover:-translate-y-0.5">
+                                                <FileText className="w-4 h-4 mr-2" /> 📄 Residency Acknowledgement
                                             </button>
                                             <button onClick={() => { if(b.lodgeId?._id) window.location.href=`/lodge/details/${b.lodgeId._id}`; }} className="w-full text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:text-indigo-600 transition-all mt-2">
                                                 View Location Details
@@ -569,6 +567,14 @@ export default function LodgeCustomerDashboard() {
                 isPayMore={payModalState.isPayMore}
                 onSuccess={() => fetchData()}
             />
+
+            {/* Residency Acknowledgement Modal */}
+            {ackModal && (
+                <ResidencyAcknowledgementModal
+                    bookingId={ackModal}
+                    onClose={() => setAckModal(null)}
+                />
+            )}
         </div>
     );
 }

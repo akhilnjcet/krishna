@@ -13,11 +13,23 @@ const bookingSchema = new mongoose.Schema({
       requestedCheckOut: Date,
       additionalAmount: Number,
       status: { type: String, enum: ['pending', 'approved', 'rejected'] }
-  }
+  agreementNumber: { type: String },
+  acknowledgementVersion: { type: Number, default: 1 },
+  versionHistory: [{
+      version: { type: Number, required: true },
+      generatedAt: { type: Date, default: Date.now },
+      reason: { type: String, default: 'Booking Initialized' },
+      snapshot: { type: Object }
+  }]
 }, { timestamps: true });
 
-// Ensure checkOut is after checkIn
+// Auto generate agreementNumber if missing
 bookingSchema.pre('save', function() {
+  if (!this.agreementNumber) {
+      const year = new Date().getFullYear();
+      const randomId = Math.floor(1000 + Math.random() * 9000);
+      this.agreementNumber = `AGR-${year}-${randomId}`;
+  }
   if (this.checkOut <= this.checkIn) {
     throw new Error('checkOut date must be after checkIn date');
   }
