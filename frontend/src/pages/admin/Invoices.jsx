@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
+import { formatCurrencyINR } from '../../utils/pdfHelpers';
 
 const PRECONFIGURED_CATALOG = [
     { id: 'cat-1', name: 'Steel Structural I-Beam 150x75', price: 4500, unit: 'Kg', description: 'Heavy duty ISMB 150 structural steel beam', taxRate: 18 },
@@ -695,8 +696,8 @@ const Invoices = () => {
                                     </div>
                                     <div>
                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">TOTAL DUE AMOUNT:</span>
-                                        <span className="text-2xl font-black text-slate-900" style={{ color: themeColor }}>
-                                            ₹ {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                        <span className="text-2xl font-black text-slate-900 tracking-normal" style={{ color: themeColor, letterSpacing: 'normal' }}>
+                                            {formatCurrencyINR(grandTotal)}
                                         </span>
                                     </div>
                                 </div>
@@ -704,7 +705,7 @@ const Invoices = () => {
 
                             {/* Line Items Table */}
                             <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200">
-                                <table className="w-full text-left border-collapse">
+                                <table className="w-full text-left border-collapse" style={{ letterSpacing: 'normal' }}>
                                     <thead>
                                         <tr 
                                             className="text-[10px] font-black uppercase tracking-wider text-white"
@@ -726,12 +727,12 @@ const Invoices = () => {
                                                 <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}>
                                                     <td className="p-3 font-bold text-slate-400">{index + 1}</td>
                                                     <td className="p-3 font-bold text-slate-900">{item.description || 'Custom Line Item'}</td>
-                                                    <td className="p-3 text-right">₹ {parseFloat(item.price || 0).toLocaleString('en-IN')}</td>
+                                                    <td className="p-3 text-right font-bold" style={{ letterSpacing: 'normal' }}>{formatCurrencyINR(item.price || 0)}</td>
                                                     <td className="p-3 text-center font-bold">{item.quantity}</td>
                                                     <td className="p-3 text-center text-slate-500">{item.unit}</td>
                                                     {showTax && <td className="p-3 text-right text-slate-500">{item.taxRate}%</td>}
-                                                    <td className="p-3 text-right font-black text-slate-900">
-                                                        ₹ {lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    <td className="p-3 text-right font-black text-slate-900" style={{ letterSpacing: 'normal' }}>
+                                                        {formatCurrencyINR(lineTotal)}
                                                     </td>
                                                 </tr>
                                             );

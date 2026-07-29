@@ -8,6 +8,7 @@ import {
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
+import { formatCurrencyINR } from '../../utils/pdfHelpers';
 
 const Quotations = () => {
     const { user } = useAuthStore();
@@ -705,11 +706,11 @@ const Quotations = () => {
                                                             <p className="text-[11px] text-slate-500 mt-0.5 whitespace-pre-line">{item.description}</p>
                                                         )}
                                                     </td>
-                                                    <td className="p-3 text-right">₹ {parseFloat(item.rate || 0).toLocaleString('en-IN')}</td>
+                                                    <td className="p-3 text-right font-bold" style={{ letterSpacing: 'normal' }}>{formatCurrencyINR(item.rate || 0)}</td>
                                                     <td className="p-3 text-center font-bold">{item.quantity}</td>
                                                     <td className="p-3 text-center text-slate-500">{item.unit}</td>
-                                                    <td className="p-3 text-right font-black text-slate-900">
-                                                        ₹ {lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    <td className="p-3 text-right font-black text-slate-900" style={{ letterSpacing: 'normal' }}>
+                                                        {formatCurrencyINR(lineTotal)}
                                                     </td>
                                                 </tr>
                                             );
@@ -747,22 +748,22 @@ const Quotations = () => {
                                     </div>
                                 </div>
 
-                                <div className="w-full sm:w-64 space-y-2 text-xs">
+                                <div className="w-full sm:w-64 space-y-2 text-xs" style={{ letterSpacing: 'normal' }}>
                                     <div className="flex justify-between py-1 border-b border-slate-100">
                                         <span className="font-bold text-slate-500">Subtotal:</span>
-                                        <span className="font-bold text-slate-900">₹ {subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                        <span className="font-bold text-slate-900">{formatCurrencyINR(subtotal)}</span>
                                     </div>
 
                                     {showTax && (
                                         <div className="flex justify-between py-1 border-b border-slate-100 text-slate-600">
                                             <span>Estimated Tax ({taxPercentage}%):</span>
-                                            <span>₹ {taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                            <span>{formatCurrencyINR(taxAmount)}</span>
                                         </div>
                                     )}
 
                                     <div className="flex justify-between py-2 text-base font-black text-slate-900 border-t-2 border-slate-900 pt-2">
                                         <span>Estimated Total:</span>
-                                        <span style={{ color: themeColor }}>₹ {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                        <span style={{ color: themeColor, letterSpacing: 'normal' }}>{formatCurrencyINR(grandTotal)}</span>
                                     </div>
                                 </div>
                             </div>

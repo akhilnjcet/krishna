@@ -3,6 +3,9 @@ import autoTable from 'jspdf-autotable';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
+import { formatCurrencyINR, cleanTextString, fitTextIntoBox, drawRightAlignedAmount } from '../utils/pdfHelpers';
+
+export { formatCurrencyINR };
 
 const COMPANY_DETAILS = {
     name: 'KRISHNA ENGINEERING WORKS',
@@ -21,14 +24,6 @@ const THEME = {
     bgLight: [248, 250, 252]    // Slate 50
 };
 
-/**
- * Standard Indian Currency Formatter (₹1,50,000.00)
- */
-export const formatIndianCurrency = (amount) => {
-    const val = parseFloat(amount || 0);
-    return `₹${val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
-
 const savePDF = async (doc, filename, historyMetadata = null) => {
     try {
         const safeFilename = String(filename || 'Document.pdf')
@@ -39,7 +34,6 @@ const savePDF = async (doc, filename, historyMetadata = null) => {
         const pdfOutput = doc.output('datauristring');
         const base64Data = pdfOutput.split(',')[1];
 
-        // Intercept for Native Android WebView Download Helper
         if (window.Android && typeof window.Android.downloadBase64File === 'function') {
             try {
                 window.Android.downloadBase64File(base64Data, safeFilename, 'application/pdf');
@@ -170,9 +164,9 @@ const getImageFormat = (url) => {
 
 /**
  * Standardized Header Component
- * Font Hierarchy: Company Name 18pt, Document Title 14pt, Details 9pt
  */
 const addHeader = (doc, title, companyInfoOverride = {}) => {
+    doc.setCharSpace(0);
     const pageWidth = doc.internal.pageSize.width;
     const margin = 15;
     const rightMargin = pageWidth - margin;
@@ -190,18 +184,18 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
-    const companyLines = doc.splitTextToSize(companyName, maxLeftWidth);
+    const companyLines = doc.splitTextToSize(cleanTextString(companyName), maxLeftWidth);
     const companyNameHeight = companyLines.length * 7;
     const leftHeight = 12 + companyNameHeight + 6 + 6;
 
     doc.setFontSize(14);
-    const titleLines = doc.splitTextToSize(title.toUpperCase(), maxRightWidth);
+    const titleLines = doc.splitTextToSize(cleanTextString(title.toUpperCase()), maxRightWidth);
     const titleHeight = titleLines.length * 6;
 
     doc.setFontSize(9);
-    const addressLines = doc.splitTextToSize(address, maxRightWidth);
-    const contactLines = doc.splitTextToSize(contact, maxRightWidth);
-    const gstinLines = doc.splitTextToSize(gstin, maxRightWidth);
+    const addressLines = doc.splitTextToSize(cleanTextString(address), maxRightWidth);
+    const contactLines = doc.splitTextToSize(cleanTextString(contact), maxRightWidth);
+    const gstinLines = doc.splitTextToSize(cleanTextString(gstin), maxRightWidth);
 
     const rightHeight = 12 + titleHeight + 4 + (addressLines.length * 4) + (contactLines.length * 4) + (gstinLines.length * 4);
     const headerHeight = Math.max(52, leftHeight, rightHeight) + 8;
@@ -234,7 +228,7 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
         doc.setTextColor(...THEME.textLight);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
-        doc.text('K', margin + 3.5, leftY + 3);
+        doc.text('K', margin + 3.5, leftY + 3, { charSpace: 0 });
     }
 
     const textStartX = margin + 18;
@@ -242,21 +236,21 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
     doc.setTextColor(...THEME.textLight);
     doc.setFont('helvetica', 'bold');
     companyLines.forEach((line) => {
-        doc.text(line, textStartX, leftY + 3);
+        doc.text(line, textStartX, leftY + 3, { charSpace: 0 });
         leftY += 7;
     });
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...THEME.accent);
-    doc.text(tagline, textStartX, leftY + 2);
+    doc.text(cleanTextString(tagline), textStartX, leftY + 2, { charSpace: 0 });
 
     let rightY = 14;
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...THEME.textLight);
     titleLines.forEach((line) => {
-        doc.text(line, rightMargin, rightY, { align: 'right' });
+        doc.text(line, rightMargin, rightY, { align: 'right', charSpace: 0 });
         rightY += 6;
     });
 
@@ -266,27 +260,25 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
     doc.setTextColor(200, 210, 225);
 
     addressLines.forEach((line) => {
-        doc.text(line, rightMargin, rightY, { align: 'right' });
+        doc.text(line, rightMargin, rightY, { align: 'right', charSpace: 0 });
         rightY += 4;
     });
 
     contactLines.forEach((line) => {
-        doc.text(line, rightMargin, rightY, { align: 'right' });
+        doc.text(line, rightMargin, rightY, { align: 'right', charSpace: 0 });
         rightY += 4;
     });
 
     gstinLines.forEach((line) => {
-        doc.text(line, rightMargin, rightY, { align: 'right' });
+        doc.text(line, rightMargin, rightY, { align: 'right', charSpace: 0 });
         rightY += 4;
     });
 
     return headerHeight;
 };
 
-/**
- * Standard Signature & Seal Component
- */
 const addSignatureAndSeal = (doc, finalY, companyInfoOverride = {}) => {
+    doc.setCharSpace(0);
     const pageW = doc.internal.pageSize.width;
     const signatureUrl = companyInfoOverride.signature || companyInfoOverride.company_signature || (cachedBranding?.company_signature) || COMPANY_DETAILS.signature;
     const showSigVal = companyInfoOverride.show_signature ?? companyInfoOverride.showSignature ?? cachedBranding?.show_signature;
@@ -307,17 +299,13 @@ const addSignatureAndSeal = (doc, finalY, companyInfoOverride = {}) => {
     doc.setFontSize(9);
     doc.setTextColor(...THEME.textDark);
     doc.setFont('helvetica', 'bold');
-    doc.text('AUTHORIZED SIGNATURE', pageW - 47.5, finalY + 43, { align: 'center' });
+    doc.text('AUTHORIZED SIGNATURE', pageW - 47.5, finalY + 43, { align: 'center', charSpace: 0 });
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...THEME.textMuted);
-    doc.text('KRISHNA ENGINEERING WORKS [SEAL]', pageW - 47.5, finalY + 47, { align: 'center' });
+    doc.text('KRISHNA ENGINEERING WORKS [SEAL]', pageW - 47.5, finalY + 47, { align: 'center', charSpace: 0 });
 };
 
-/**
- * Standardized Footer Engine
- * Font size: 8pt
- */
 const addFooter = (doc, generatedBy = 'Official System') => {
     const pageCount = doc.internal.getNumberOfPages();
     const pageWidth = doc.internal.pageSize.width;
@@ -326,6 +314,7 @@ const addFooter = (doc, generatedBy = 'Official System') => {
 
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
+        doc.setCharSpace(0);
         doc.setDrawColor(...THEME.accent);
         doc.setLineWidth(0.5);
         doc.line(margin, pageHeight - 16, pageWidth - margin, pageHeight - 16);
@@ -333,38 +322,9 @@ const addFooter = (doc, generatedBy = 'Official System') => {
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...THEME.textMuted);
-        doc.text(`Generated: ${new Date().toLocaleString()} | By: ${generatedBy} | www.krishnaengg.com`, margin, pageHeight - 9);
-        doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 9, { align: 'right' });
+        doc.text(`Generated: ${new Date().toLocaleString()} | By: ${generatedBy} | www.krishnaengg.com`, margin, pageHeight - 9, { charSpace: 0 });
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 9, { align: 'right', charSpace: 0 });
     }
-};
-
-/**
- * Helper to render responsive amount box with auto font scaling
- */
-const renderAmountBox = (doc, x, y, width, height, label, amountText) => {
-    doc.setFillColor(...THEME.bgLight);
-    doc.roundedRect(x, y, width, height, 2, 2, 'F');
-    doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(x, y, width, height, 2, 2, 'S');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(...THEME.textMuted);
-    doc.text(label.toUpperCase(), x + 6, y + 12);
-
-    let fontSize = 14;
-    doc.setFontSize(fontSize);
-    let textWidth = doc.getTextWidth(amountText);
-    const maxAllowedWidth = width - 12;
-
-    while (textWidth > maxAllowedWidth && fontSize > 9) {
-        fontSize -= 1;
-        doc.setFontSize(fontSize);
-        textWidth = doc.getTextWidth(amountText);
-    }
-
-    doc.setTextColor(...THEME.accent);
-    doc.text(amountText, x + width - 6, y + 12, { align: 'right' });
 };
 
 /**
@@ -374,6 +334,7 @@ export const generateQuotePDF = async (quote) => {
     if (!quote) return;
     await getBrandingSettings();
     const doc = new jsPDF();
+    doc.setCharSpace(0);
     const headerHeight = addHeader(doc, 'Formal Quote / Estimation');
 
     const quoteId = quote._id ? quote._id.slice(-8).toUpperCase() : 'N/A';
@@ -384,9 +345,9 @@ export const generateQuotePDF = async (quote) => {
     doc.setTextColor(...THEME.textDark);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Reference ID: #${quoteId}`, 15, startY);
-    doc.text(`Quote Date: ${createdAt}`, 15, startY + 6);
-    doc.text(`Status: ${(quote.status || 'New').toUpperCase()}`, 130, startY);
+    doc.text(`Reference ID: #${quoteId}`, 15, startY, { charSpace: 0 });
+    doc.text(`Quote Date: ${createdAt}`, 15, startY + 6, { charSpace: 0 });
+    doc.text(`Status: ${(quote.status || 'New').toUpperCase()}`, 130, startY, { charSpace: 0 });
 
     startY += 14;
 
@@ -412,9 +373,7 @@ export const generateQuotePDF = async (quote) => {
     });
 
     const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : startY + 60) + 12;
-    const formattedCost = formatIndianCurrency(quote.estimatedCost || 0);
-
-    renderAmountBox(doc, 15, finalY, 180, 22, 'Total Estimated Project Cost (INR):', formattedCost);
+    fitTextIntoBox(doc, 'Total Estimated Project Cost (INR):', quote.estimatedCost || 0, 15, finalY, 180, 22);
 
     addSignatureAndSeal(doc, finalY + 25);
     addFooter(doc);
@@ -439,6 +398,7 @@ export const generateSalaryPDF = async (salary, user) => {
     try {
         await getBrandingSettings();
         const doc = new jsPDF();
+        doc.setCharSpace(0);
         const headerHeight = addHeader(doc, 'Pay Slip / Monthly Salary Statement');
 
         const emp = salary.staffId || user || {};
@@ -481,7 +441,7 @@ export const generateSalaryPDF = async (salary, user) => {
             head: [['ATTENDANCE SUMMARY', 'OVERTIME SUMMARY']],
             body: [
                 [`Working Days: ${salary.totalWorkingDays || 26}\nPresent Days: ${salary.presentDays || 0}\nHalf Days: ${salary.halfDays || 0}\nLeave Days: ${salary.leaveDays || 0}\nHolidays: ${salary.holidays || 0}`,
-                 `Overtime Hours: ${salary.overtimeHours || 0} hrs\nOT Rate/Hr: ${formatIndianCurrency(salary.overtimeRate || emp.overtimeRate || user?.overtimeRate || 0)}\nOvertime Earnings: ${formatIndianCurrency(salary.overtimeEarnings || 0)}`]
+                 `Overtime Hours: ${salary.overtimeHours || 0} hrs\nOT Rate/Hr: ${formatCurrencyINR(salary.overtimeRate || emp.overtimeRate || user?.overtimeRate || 0)}\nOvertime Earnings: ${formatCurrencyINR(salary.overtimeEarnings || 0)}`]
             ],
             theme: 'grid',
             showHead: 'everyPage',
@@ -507,12 +467,12 @@ export const generateSalaryPDF = async (salary, user) => {
             margin: { left: 15, right: 15, bottom: 20 },
             head: [['EARNINGS & ALLOWANCES', 'AMOUNT (INR)', 'DEDUCTIONS & RECOVERIES', 'AMOUNT (INR)']],
             body: [
-                ['Base Pay', formatIndianCurrency(baseVal), 'Advance Recovery', formatIndianCurrency(advVal)],
-                ['Earned Salary (Wages/Sal)', formatIndianCurrency(calcBase), 'Other Deductions', formatIndianCurrency(dedVal)],
-                ['Overtime Pay', formatIndianCurrency(otEarn), '', ''],
-                ['Bonus & Incentives', formatIndianCurrency(bonusVal + incentivesVal), '', ''],
-                ['Allowances', formatIndianCurrency(allowancesVal), '', ''],
-                ['Gross Earnings', formatIndianCurrency(calcBase + otEarn + bonusVal + incentivesVal + allowancesVal), 'Total Deductions', formatIndianCurrency(advVal + dedVal)],
+                ['Base Pay', formatCurrencyINR(baseVal), 'Advance Recovery', formatCurrencyINR(advVal)],
+                ['Earned Salary (Wages/Sal)', formatCurrencyINR(calcBase), 'Other Deductions', formatCurrencyINR(dedVal)],
+                ['Overtime Pay', formatCurrencyINR(otEarn), '', ''],
+                ['Bonus & Incentives', formatCurrencyINR(bonusVal + incentivesVal), '', ''],
+                ['Allowances', formatCurrencyINR(allowancesVal), '', ''],
+                ['Gross Earnings', formatCurrencyINR(calcBase + otEarn + bonusVal + incentivesVal + allowancesVal), 'Total Deductions', formatCurrencyINR(advVal + dedVal)],
             ],
             theme: 'striped',
             showHead: 'everyPage',
@@ -527,21 +487,19 @@ export const generateSalaryPDF = async (salary, user) => {
         });
 
         const finalY = doc.lastAutoTable.finalY + 8;
-        const formattedNet = formatIndianCurrency(netVal);
-
-        renderAmountBox(doc, 15, finalY, 180, 20, 'Net Disbursed Salary:', formattedNet);
+        fitTextIntoBox(doc, 'Net Disbursed Salary:', netVal, 15, finalY, 180, 20);
 
         doc.setFontSize(9);
         const statusText = (salary.paymentStatus || 'Pending').toUpperCase();
         const isPaid = ['PAID', 'COMPLETED'].includes(statusText);
         doc.setTextColor(isPaid ? 0 : 180, isPaid ? 140 : 90, isPaid ? 0 : 0);
         doc.setFont('helvetica', 'bold');
-        doc.text(`PAYMENT STATUS: ${statusText}`, 15, finalY + 28);
+        doc.text(`PAYMENT STATUS: ${statusText}`, 15, finalY + 28, { charSpace: 0 });
 
         doc.setFontSize(8);
         doc.setFont('helvetica', 'italic');
         doc.setTextColor(...THEME.textMuted);
-        doc.text('This is a Computer / System Generated Monthly Salary Slip.', 15, finalY + 34);
+        doc.text('This is a Computer / System Generated Monthly Salary Slip.', 15, finalY + 34, { charSpace: 0 });
 
         addSignatureAndSeal(doc, finalY + 20);
         addFooter(doc);
@@ -568,6 +526,7 @@ export const generateInvoicePDF = async (invoice) => {
     if (!invoice) return;
     await getBrandingSettings();
     const doc = new jsPDF();
+    doc.setCharSpace(0);
     const headerHeight = addHeader(doc, 'Tax Invoice');
 
     const startY = headerHeight + 10;
@@ -576,13 +535,13 @@ export const generateInvoicePDF = async (invoice) => {
     doc.setTextColor(...THEME.textDark);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Invoice ID: ${invNumber}`, 15, startY);
-    doc.text(`Invoice Date: ${new Date(invoice.createdAt || Date.now()).toLocaleDateString()}`, 15, startY + 6);
+    doc.text(`Invoice ID: ${invNumber}`, 15, startY, { charSpace: 0 });
+    doc.text(`Invoice Date: ${new Date(invoice.createdAt || Date.now()).toLocaleDateString()}`, 15, startY + 6, { charSpace: 0 });
     
-    doc.text(`Billed To:`, 130, startY);
+    doc.text(`Billed To:`, 130, startY, { charSpace: 0 });
     doc.setFont('helvetica', 'normal');
-    doc.text(`${invoice.customerId?.name || 'Valued Customer'}`, 130, startY + 6);
-    doc.text(`Project: ${invoice.projectId?.title || 'General Structural Work'}`, 130, startY + 11);
+    doc.text(`${invoice.customerId?.name || 'Valued Customer'}`, 130, startY + 6, { charSpace: 0 });
+    doc.text(`Project: ${invoice.projectId?.title || 'General Structural Work'}`, 130, startY + 11, { charSpace: 0 });
 
     const amountVal = parseFloat(invoice.amount || 0);
 
@@ -596,7 +555,7 @@ export const generateInvoicePDF = async (invoice) => {
                 invoice.projectId?.description?.substring(0, 70) || 'Heavy Industrial Fabrication & Services',
                 invoice.projectId?._id?.slice(-8).toUpperCase() || 'N/A',
                 (invoice.paymentStatus || 'unpaid').toUpperCase(),
-                formatIndianCurrency(amountVal)
+                formatCurrencyINR(amountVal)
             ]
         ],
         theme: 'grid',
@@ -613,7 +572,7 @@ export const generateInvoicePDF = async (invoice) => {
     });
 
     const finalY = doc.lastAutoTable.finalY + 12;
-    renderAmountBox(doc, 110, finalY, 85, 20, 'Total Amount Payable:', formatIndianCurrency(amountVal));
+    fitTextIntoBox(doc, 'Total Amount Payable:', amountVal, 110, finalY, 85, 20);
 
     addSignatureAndSeal(doc, finalY + 25);
     addFooter(doc);
@@ -636,6 +595,7 @@ export const generateInvoicePDF = async (invoice) => {
 export const generateAttendanceReportPDF = async (logs, user, type = 'Staff') => {
     await getBrandingSettings();
     const doc = new jsPDF();
+    doc.setCharSpace(0);
     const headerHeight = addHeader(doc, `${type} Attendance Report`);
 
     const startY = headerHeight + 10;
@@ -643,8 +603,8 @@ export const generateAttendanceReportPDF = async (logs, user, type = 'Staff') =>
     doc.setTextColor(...THEME.textDark);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Entity Name: ${(user?.name || 'Staff Member').toUpperCase()}`, 15, startY);
-    doc.text(`Report Period: Generated on ${new Date().toLocaleDateString()}`, 15, startY + 6);
+    doc.text(`Entity Name: ${(user?.name || 'Staff Member').toUpperCase()}`, 15, startY, { charSpace: 0 });
+    doc.text(`Report Period: Generated on ${new Date().toLocaleDateString()}`, 15, startY + 6, { charSpace: 0 });
 
     autoTable(doc, {
         startY: startY + 14,
@@ -691,6 +651,7 @@ export const generateAttendanceReportPDF = async (logs, user, type = 'Staff') =>
 export const generateGeneralReportPDF = async (data, title, columns) => {
     await getBrandingSettings();
     const doc = new jsPDF();
+    doc.setCharSpace(0);
     const headerHeight = addHeader(doc, title);
 
     autoTable(doc, {
@@ -729,6 +690,7 @@ export const generatePaymentReceiptPDF = async (payment, user) => {
     if (!payment) return;
     await getBrandingSettings();
     const doc = new jsPDF();
+    doc.setCharSpace(0);
     const headerHeight = addHeader(doc, 'Payment Receipt / Acknowledgment');
 
     const startY = headerHeight + 10;
@@ -737,13 +699,13 @@ export const generatePaymentReceiptPDF = async (payment, user) => {
     doc.setTextColor(...THEME.textDark);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Receipt ID: RCPT-${rcptId}`, 15, startY);
-    doc.text(`Transaction Date: ${new Date(payment.createdAt || Date.now()).toLocaleDateString()}`, 15, startY + 6);
+    doc.text(`Receipt ID: RCPT-${rcptId}`, 15, startY, { charSpace: 0 });
+    doc.text(`Transaction Date: ${new Date(payment.createdAt || Date.now()).toLocaleDateString()}`, 15, startY + 6, { charSpace: 0 });
     
-    doc.text(`Payor Details:`, 130, startY);
+    doc.text(`Payor Details:`, 130, startY, { charSpace: 0 });
     doc.setFont('helvetica', 'normal');
-    doc.text(`${user?.name?.toUpperCase() || 'VALUED CUSTOMER'}`, 130, startY + 6);
-    doc.text(`${user?.email || 'N/A'}`, 130, startY + 11);
+    doc.text(`${user?.name?.toUpperCase() || 'VALUED CUSTOMER'}`, 130, startY + 6, { charSpace: 0 });
+    doc.text(`${user?.email || 'N/A'}`, 130, startY + 11, { charSpace: 0 });
 
     autoTable(doc, {
         startY: startY + 18,
@@ -767,15 +729,13 @@ export const generatePaymentReceiptPDF = async (payment, user) => {
     });
 
     const finalY = doc.lastAutoTable.finalY + 12;
-    const formattedAmount = formatIndianCurrency(payment.amount || 0);
-
-    renderAmountBox(doc, 110, finalY, 85, 20, 'Total Amount Paid:', formattedAmount);
+    fitTextIntoBox(doc, 'Total Amount Paid:', payment.amount || 0, 110, finalY, 85, 20);
 
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...THEME.textMuted);
     const disclaimer = "This is an official system-generated receipt. Subject to final bank clearance.";
-    doc.text(disclaimer, 15, finalY + 38);
+    doc.text(disclaimer, 15, finalY + 38, { charSpace: 0 });
 
     addSignatureAndSeal(doc, finalY + 25);
     addFooter(doc);

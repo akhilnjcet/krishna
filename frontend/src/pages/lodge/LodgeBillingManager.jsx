@@ -11,6 +11,8 @@ import {
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
 
+import { formatCurrencyINR, fitTextIntoBox } from '../../utils/pdfHelpers';
+
 // Simple Indian Number to Words Converter
 const numberToWords = (num) => {
     try {
@@ -482,8 +484,7 @@ const LodgeBillingManager = () => {
             // Trigger PDF creation
             const { jsPDF } = await import('jspdf');
             const doc = new jsPDF();
-
-            const formatINR = (amt) => `₹${parseFloat(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            doc.setCharSpace(0);
 
             // Header Banner
             doc.setFillColor(15, 23, 42);
@@ -496,22 +497,22 @@ const LodgeBillingManager = () => {
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(18);
             doc.setFont('helvetica', 'bold');
-            doc.text('KRISHNA LODGE RESIDENCY', 15, 18);
+            doc.text('KRISHNA LODGE RESIDENCY', 15, 18, { charSpace: 0 });
             
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text('Premium Accommodation & Quality Living Solutions', 15, 25);
-            doc.text('Thiruvazhiyode, Sreekrishnapuram, Palakkad, Kerala 679514', 15, 31);
-            doc.text('Phone: +91 94479 40835 | Email: contact@krishnaengg.com', 15, 37);
+            doc.text('Premium Accommodation & Quality Living Solutions', 15, 25, { charSpace: 0 });
+            doc.text('Thiruvazhiyode, Sreekrishnapuram, Palakkad, Kerala 679514', 15, 31, { charSpace: 0 });
+            doc.text('Phone: +91 94479 40835 | Email: contact@krishnaengg.com', 15, 37, { charSpace: 0 });
 
             // Document Title (14pt)
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text('TAX INVOICE', 195, 18, { align: 'right' });
+            doc.text('TAX INVOICE', 195, 18, { align: 'right', charSpace: 0 });
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text(`Invoice No: ${billData.billNumber}`, 195, 25, { align: 'right' });
-            doc.text(`Period: ${billForm.billingPeriodStart} to ${billForm.billingPeriodEnd}`, 195, 31, { align: 'right' });
+            doc.text(`Invoice No: ${billData.billNumber}`, 195, 25, { align: 'right', charSpace: 0 });
+            doc.text(`Period: ${billForm.billingPeriodStart} to ${billForm.billingPeriodEnd}`, 195, 31, { align: 'right', charSpace: 0 });
 
             // Watermark
             doc.saveGraphicsState();
@@ -520,13 +521,13 @@ const LodgeBillingManager = () => {
             doc.setFont('helvetica', 'bold');
             if (billForm.paymentStatus === 'Paid') {
                 doc.setTextColor(16, 185, 129);
-                doc.text('PAID RECEIVED', 105, 140, { align: 'center', angle: 45 });
+                doc.text('PAID RECEIVED', 105, 140, { align: 'center', angle: 45, charSpace: 0 });
             } else if (billForm.paymentStatus === 'Partially Paid') {
                 doc.setTextColor(59, 130, 246);
-                doc.text('PARTIALLY PAID', 105, 140, { align: 'center', angle: 45 });
+                doc.text('PARTIALLY PAID', 105, 140, { align: 'center', angle: 45, charSpace: 0 });
             } else {
                 doc.setTextColor(239, 68, 68);
-                doc.text('PAYMENT DUE', 105, 140, { align: 'center', angle: 45 });
+                doc.text('PAYMENT DUE', 105, 140, { align: 'center', angle: 45, charSpace: 0 });
             }
             doc.restoreGraphicsState();
 
@@ -534,31 +535,31 @@ const LodgeBillingManager = () => {
             doc.setTextColor(15, 23, 42);
             doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
-            doc.text('BILL TO:', 15, 60);
+            doc.text('BILL TO:', 15, 60, { charSpace: 0 });
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text(`Occupant Name: ${generatingBillRoom.occupantName}`, 15, 67);
-            doc.text(`Room Number: Room ${generatingBillRoom.number} (${generatingBillRoom.type})`, 15, 73);
-            doc.text(`Phone: ${generatingBillRoom.phone}`, 15, 79);
+            doc.text(`Occupant Name: ${generatingBillRoom.occupantName}`, 15, 67, { charSpace: 0 });
+            doc.text(`Room Number: Room ${generatingBillRoom.number} (${generatingBillRoom.type})`, 15, 73, { charSpace: 0 });
+            doc.text(`Phone: ${generatingBillRoom.phone}`, 15, 79, { charSpace: 0 });
 
             // Bill Summary Table Headers (9pt)
             doc.setFillColor(241, 245, 249);
             doc.rect(15, 90, 180, 8, 'F');
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(9);
-            doc.text('Item Description', 18, 95);
-            doc.text('Amount (INR)', 192, 95, { align: 'right' });
+            doc.text('Item Description', 18, 95, { charSpace: 0 });
+            doc.text('Amount (INR)', 192, 95, { align: 'right', charSpace: 0 });
 
             // Items listing
             doc.setFont('helvetica', 'normal');
             let currentY = 105;
-            doc.text(`Base Rent Room ${generatingBillRoom.number}`, 18, currentY);
-            doc.text(formatINR(billForm.monthlyRent), 192, currentY, { align: 'right' });
+            doc.text(`Base Rent Room ${generatingBillRoom.number}`, 18, currentY, { charSpace: 0 });
+            doc.text(formatCurrencyINR(billForm.monthlyRent), 192, currentY, { align: 'right', charSpace: 0 });
 
             billForm.additionalCharges.forEach(charge => {
                 currentY += 8;
-                doc.text(`${charge.name} (${charge.remarks || 'Utility Fee'})`, 18, currentY);
-                doc.text(formatINR(charge.amount), 192, currentY, { align: 'right' });
+                doc.text(`${charge.name} (${charge.remarks || 'Utility Fee'})`, 18, currentY, { charSpace: 0 });
+                doc.text(formatCurrencyINR(charge.amount), 192, currentY, { align: 'right', charSpace: 0 });
             });
 
             // Summary Totals
@@ -567,26 +568,23 @@ const LodgeBillingManager = () => {
             doc.line(15, currentY, 195, currentY);
 
             currentY += 8;
-            doc.text('Tax (GST/Custom):', 130, currentY);
-            doc.text(formatINR(taxesTotal), 192, currentY, { align: 'right' });
+            doc.text('Tax (GST/Custom):', 130, currentY, { charSpace: 0 });
+            doc.text(formatCurrencyINR(taxesTotal), 192, currentY, { align: 'right', charSpace: 0 });
 
             if (discountAmt > 0) {
                 currentY += 8;
-                doc.text(`Discount applied (${billForm.discountReason || 'Promo'}):`, 130, currentY);
-                doc.text(`- ${formatINR(discountAmt)}`, 192, currentY, { align: 'right' });
+                doc.text(`Discount applied (${billForm.discountReason || 'Promo'}):`, 130, currentY, { charSpace: 0 });
+                doc.text(`- ${formatCurrencyINR(discountAmt)}`, 192, currentY, { align: 'right', charSpace: 0 });
             }
 
             if (billForm.useAdvance) {
                 currentY += 8;
-                doc.text('Advance Adjustment:', 130, currentY);
-                doc.text(`- ${formatINR(advanceUsed)}`, 192, currentY, { align: 'right' });
+                doc.text('Advance Adjustment:', 130, currentY, { charSpace: 0 });
+                doc.text(`- ${formatCurrencyINR(advanceUsed)}`, 192, currentY, { align: 'right', charSpace: 0 });
             }
 
-            currentY += 8;
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            doc.text('Grand Total:', 130, currentY);
-            doc.text(formatINR(grandTotal), 192, currentY, { align: 'right' });
+            currentY += 12;
+            fitTextIntoBox(doc, 'Grand Total:', grandTotal, 110, currentY, 85, 20);
 
             // Amount in words
             currentY += 12;

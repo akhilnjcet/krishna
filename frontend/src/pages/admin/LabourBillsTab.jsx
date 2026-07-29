@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
+import { formatCurrencyINR } from '../../utils/pdfHelpers';
 
 const LabourBillsTab = () => {
     // Logistics & Transit Tracking
@@ -712,9 +713,9 @@ const LabourBillsTab = () => {
                                                     <td className="p-3 font-bold text-slate-900">{row.workDescription || 'Labour Work'}</td>
                                                     <td className="p-3 text-center font-bold">{row.labourersCount}</td>
                                                     <td className="p-3 text-center text-slate-600">{row.workingDays}</td>
-                                                    <td className="p-3 text-right">₹ {parseFloat(row.dailyRate || 0).toLocaleString('en-IN')}</td>
-                                                    <td className="p-3 text-right font-black text-slate-900">
-                                                        ₹ {lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    <td className="p-3 text-right font-bold" style={{ letterSpacing: 'normal' }}>{formatCurrencyINR(row.dailyRate || 0)}</td>
+                                                    <td className="p-3 text-right font-black text-slate-900" style={{ letterSpacing: 'normal' }}>
+                                                        {formatCurrencyINR(lineTotal)}
                                                     </td>
                                                 </tr>
                                             );
@@ -725,46 +726,46 @@ const LabourBillsTab = () => {
 
                             {/* Extra Charges Table */}
                             {extraChargesTotal > 0 && (
-                                <div className="mb-8 overflow-hidden rounded-xl border border-slate-200">
+                                <div className="mb-8 overflow-hidden rounded-xl border border-slate-200" style={{ letterSpacing: 'normal' }}>
                                     <div className="p-3 bg-slate-800 text-white text-xs font-black uppercase tracking-wider flex justify-between items-center">
                                         <span>Extra Logistics & Handling Charges</span>
-                                        <span>Total: ₹ {extraChargesTotal.toLocaleString('en-IN')}</span>
+                                        <span>Total: {formatCurrencyINR(extraChargesTotal)}</span>
                                     </div>
                                     <div className="p-4 bg-slate-50 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                                         {loadingCharges > 0 && (
                                             <div className="flex justify-between border-b border-slate-200/60 pb-1">
                                                 <span className="text-slate-500 font-medium">Loading:</span>
-                                                <span className="font-bold text-slate-900">₹ {parseFloat(loadingCharges).toLocaleString('en-IN')}</span>
+                                                <span className="font-bold text-slate-900">{formatCurrencyINR(loadingCharges)}</span>
                                             </div>
                                         )}
                                         {unloadingCharges > 0 && (
                                             <div className="flex justify-between border-b border-slate-200/60 pb-1">
                                                 <span className="text-slate-500 font-medium">Unloading:</span>
-                                                <span className="font-bold text-slate-900">₹ {parseFloat(unloadingCharges).toLocaleString('en-IN')}</span>
+                                                <span className="font-bold text-slate-900">{formatCurrencyINR(unloadingCharges)}</span>
                                             </div>
                                         )}
                                         {handlingCharges > 0 && (
                                             <div className="flex justify-between border-b border-slate-200/60 pb-1">
                                                 <span className="text-slate-500 font-medium">Handling:</span>
-                                                <span className="font-bold text-slate-900">₹ {parseFloat(handlingCharges).toLocaleString('en-IN')}</span>
+                                                <span className="font-bold text-slate-900">{formatCurrencyINR(handlingCharges)}</span>
                                             </div>
                                         )}
                                         {packingCharges > 0 && (
                                             <div className="flex justify-between border-b border-slate-200/60 pb-1">
                                                 <span className="text-slate-500 font-medium">Packing:</span>
-                                                <span className="font-bold text-slate-900">₹ {parseFloat(packingCharges).toLocaleString('en-IN')}</span>
+                                                <span className="font-bold text-slate-900">{formatCurrencyINR(packingCharges)}</span>
                                             </div>
                                         )}
                                         {overtimeCharges > 0 && (
                                             <div className="flex justify-between border-b border-slate-200/60 pb-1">
                                                 <span className="text-slate-500 font-medium">Overtime:</span>
-                                                <span className="font-bold text-slate-900">₹ {parseFloat(overtimeCharges).toLocaleString('en-IN')}</span>
+                                                <span className="font-bold text-slate-900">{formatCurrencyINR(overtimeCharges)}</span>
                                             </div>
                                         )}
                                         {additionalFreightCharges > 0 && (
                                             <div className="flex justify-between border-b border-slate-200/60 pb-1">
                                                 <span className="text-slate-500 font-medium">Addl. Freight:</span>
-                                                <span className="font-bold text-slate-900">₹ {parseFloat(additionalFreightCharges).toLocaleString('en-IN')}</span>
+                                                <span className="font-bold text-slate-900">{formatCurrencyINR(additionalFreightCharges)}</span>
                                             </div>
                                         )}
                                     </div>
@@ -791,26 +792,28 @@ const LabourBillsTab = () => {
                                     )}
                                 </div>
 
-                                <div className="w-full sm:w-64 space-y-2 text-xs">
+                                <div className="w-full sm:w-64 space-y-2 text-xs" style={{ letterSpacing: 'normal' }}>
                                     <div className="flex justify-between py-1 border-b border-slate-100">
                                         <span className="font-bold text-slate-500">Labour Matrix Total:</span>
-                                        <span className="font-bold text-slate-900">₹ {labourTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                        <span className="font-bold text-slate-900">{formatCurrencyINR(labourTotal)}</span>
                                     </div>
                                     <div className="flex justify-between py-1 border-b border-slate-100">
                                         <span className="font-bold text-slate-500">Extra Charges Total:</span>
-                                        <span className="font-bold text-slate-900">₹ {extraChargesTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                        <span className="font-bold text-slate-900">{formatCurrencyINR(extraChargesTotal)}</span>
                                     </div>
                                     <div className="flex justify-between py-1 border-b border-slate-100">
                                         <span className="font-bold text-slate-500">Subtotal:</span>
-                                        <span className="font-bold text-slate-900">₹ {subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                        <span className="font-bold text-slate-900">{formatCurrencyINR(subtotal)}</span>
                                     </div>
-                                    <div className="flex justify-between py-1 border-b border-slate-100 text-slate-600">
-                                        <span>Tax ({taxPercentage}% - {taxDetails}):</span>
-                                        <span>₹ {taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                                    </div>
+                                    {showTax && (
+                                        <div className="flex justify-between py-1 border-b border-slate-100 text-slate-600">
+                                            <span>Estimated Tax ({taxPercentage}%):</span>
+                                            <span>{formatCurrencyINR(taxAmount)}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between py-2 text-base font-black text-slate-900 border-t-2 border-slate-900 pt-2">
                                         <span>Grand Total:</span>
-                                        <span style={{ color: themeColor }}>₹ {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                        <span style={{ color: themeColor, letterSpacing: 'normal' }}>{formatCurrencyINR(grandTotal)}</span>
                                     </div>
                                 </div>
                             </div>
