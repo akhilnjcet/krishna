@@ -15,6 +15,7 @@ import { customerService } from '../../services/customerService';
 import api from '../../services/api';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import LodgeAdminPaymentVerification from '../../components/lodge/LodgeAdminPaymentVerification';
 
 const LodgeAdminDashboard = () => {
     const navigate = useNavigate();
@@ -317,6 +318,7 @@ const LodgeAdminDashboard = () => {
         { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'rooms', label: 'Rooms', icon: DoorOpen },
         { id: 'bookings', label: 'Bookings', icon: Calendar },
+        { id: 'payments', label: 'Payments', icon: ShieldCheck },
         { id: 'bills', label: 'Accounts', icon: IndianRupee },
         { id: 'complaints', label: 'Issues', icon: AlertTriangle },
         { id: 'customers', label: 'Registry', icon: History },
@@ -397,8 +399,18 @@ const LodgeAdminDashboard = () => {
                 </div>
             </div>
 
-            <div className="relative z-20 px-6 -mt-12 pb-12 max-w-lg mx-auto min-h-[60vh]">
+            <div className={`relative z-20 px-4 sm:px-6 -mt-12 pb-12 mx-auto min-h-[60vh] ${activeTab === 'payments' || activeTab === 'rooms' || activeTab === 'bills' ? 'max-w-7xl' : 'max-w-5xl'}`}>
                 <AnimatePresence mode="wait">
+                    {activeTab === 'payments' && (
+                        <motion.div 
+                            key="payments"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                        >
+                            <LodgeAdminPaymentVerification />
+                        </motion.div>
+                    )}
                     {activeTab === 'overview' && (
                         <motion.div 
                             key="overview"

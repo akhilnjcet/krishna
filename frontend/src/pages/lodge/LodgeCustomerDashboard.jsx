@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
+import LodgeTenantPaymentModal from '../../components/lodge/LodgeTenantPaymentModal';
+import LodgePaymentHistory from '../../components/lodge/LodgePaymentHistory';
 
 export default function LodgeCustomerDashboard() {
     const navigate = useNavigate();
@@ -22,6 +24,7 @@ export default function LodgeCustomerDashboard() {
     // Modals
     const [extendModal, setExtendModal] = useState({ show: false, booking: null, newDate: '', extraAmount: 0 });
     const [complaintModal, setComplaintModal] = useState({ show: false, bookingId: '', title: '', description: '' });
+    const [payModalState, setPayModalState] = useState({ show: false, booking: null, isPayMore: false });
 
     useEffect(() => {
         fetchData();
@@ -30,16 +33,21 @@ export default function LodgeCustomerDashboard() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [bookRes, wishRes, payRes, userRes, compRes] = await Promise.all([
+            const [bookRes, wishRes, payRes, lodgePayRes, userRes, compRes] = await Promise.all([
                 api.get('/bookings/my-bookings'),
                 api.get('/lodge-extras/wishlist').catch(() => ({ data: [] })),
                 api.get('/payments/my-payments').catch(() => ({ data: [] })),
+                api.get('/lodge-payments/my-payments').catch(() => ({ data: { payments: [] } })),
                 api.get('/auth/me'),
                 api.get('/complaints/my-complaints').catch(() => ({ data: [] }))
             ]);
             setBookings(bookRes.data);
             setWishlist(wishRes.data || []);
-            setPayments(payRes.data || []);
+            const allPayments = [
+                ...(lodgePayRes.data?.payments || []),
+                ...(payRes.data || [])
+            ];
+            setPayments(allPayments);
             setMyComplaints(compRes.data || []);
             setProfile({ ...userRes.data, password: '' });
         } catch (err) {
@@ -280,6 +288,13 @@ export default function LodgeCustomerDashboard() {
                                         <div className="flex flex-col justify-center gap-3 lg:w-56 shrink-0">
                                             {b.status === 'active' && (
                                                 <>
+                                                    <button 
+                                                        onClick={() => setPayModalState({ show: true, booking: b, isPayMore: b.isPaid || b.rentStatus === 'Paid' })} 
+                                                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-2xl font-black text-sm shadow-lg shadow-emerald-600/20 flex items-center justify-center hover:-translate-y-0.5 transition-all"
+                                                    >
+                                                        <CreditCard className="w-4 h-4 mr-2" />
+                                                        {(b.isPaid || b.rentStatus === 'Paid') ? '➕ Pay More' : '💳 Pay Rent'}
+                                                    </button>
                                                     {b.extensionRequest?.status === 'pending' ? (
                                                         <div className="w-full bg-amber-50 text-amber-600 py-3.5 rounded-2xl font-black text-sm border border-amber-100 flex items-center justify-center">
                                                             <Clock className="w-4 h-4 mr-2" /> Extension Pending
@@ -357,51 +372,9 @@ export default function LodgeCustomerDashboard() {
                 {/* Payments View */}
                 {activeTab === 'payments' && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">Financial Ledger</h1>
-                        <p className="text-slate-500 font-medium mb-10">Cross-verified transaction logs for all residency settlements.</p>
-
-                        <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead className="bg-slate-50 border-b border-slate-100">
-                                        <tr>
-                                            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Reference ID</th>
-                                            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Date / Time</th>
-                                            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Channel</th>
-                                            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Amount</th>
-                                            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Status Verification</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50 font-poppins">
-                                        {payments.map(p => (
-                                            <tr key={p._id} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="px-8 py-6 font-black text-slate-900">#{p._id.slice(-8).toUpperCase()}</td>
-                                                <td className="px-8 py-6 text-slate-500 font-medium">{new Date(p.createdAt).toLocaleString()}</td>
-                                                <td className="px-8 py-6">
-                                                    <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">{p.method}</span>
-                                                </td>
-                                                <td className="px-8 py-6 font-black text-indigo-600">₹{p.amount.toLocaleString()}</td>
-                                                <td className="px-8 py-6 text-right">
-                                                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2 ${
-                                                        p.status === 'verified' ? 'bg-emerald-50 text-emerald-600' : 
-                                                        p.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
-                                                    }`}>
-                                                        {p.status === 'verified' && <CheckCircle className="w-3 h-3" />}
-                                                        {p.status === 'pending' && <Clock className="w-3 h-3" />}
-                                                        {p.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {payments.length === 0 && (
-                                <div className="text-center py-24 text-slate-400 font-bold uppercase text-xs tracking-widest opacity-40 italic">
-                                    No transaction telemetry found.
-                                </div>
-                            )}
-                        </div>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2 font-poppins">Financial Ledger & Payment History</h1>
+                        <p className="text-slate-500 font-medium mb-8">Settle room rent, track payment requests, and download official receipts.</p>
+                        <LodgePaymentHistory payments={payments} onRefresh={fetchData} />
                     </div>
                 )}
 
@@ -572,6 +545,15 @@ export default function LodgeCustomerDashboard() {
                     </form>
                 </div>
             )}
+
+            {/* Tenant Payment Modal */}
+            <LodgeTenantPaymentModal
+                isOpen={payModalState.show}
+                onClose={() => setPayModalState({ show: false, booking: null, isPayMore: false })}
+                booking={payModalState.booking}
+                isPayMore={payModalState.isPayMore}
+                onSuccess={() => fetchData()}
+            />
         </div>
     );
 }
