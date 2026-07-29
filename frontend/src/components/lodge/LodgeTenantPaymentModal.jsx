@@ -593,9 +593,10 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 text-slate-500 font-bold text-xs hover:bg-slate-100 rounded-xl transition-all"
+              className="px-5 py-2.5 bg-white border-2 border-slate-200 hover:bg-slate-100 text-slate-700 hover:border-slate-300 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
             >
-              Cancel
+              <X className="w-4 h-4 text-slate-500" />
+              <span>Back / Close</span>
             </button>
             <button
               type="button"

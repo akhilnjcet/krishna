@@ -524,11 +524,11 @@ export default function LodgeAdminPaymentVerification() {
               className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800"
               required
             />
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setRejectModal({ show: false, payment: null, reason: '' })} className="px-4 py-2 text-xs font-bold text-slate-500">
-                Cancel
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={() => setRejectModal({ show: false, payment: null, reason: '' })} className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 rounded-xl">
+                Back / Close
               </button>
-              <button type="submit" className="bg-rose-600 text-white px-5 py-2 rounded-xl text-xs font-bold">
+              <button type="submit" className="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2 rounded-xl text-xs font-bold">
                 Confirm Rejection
               </button>
             </div>
@@ -539,14 +539,19 @@ export default function LodgeAdminPaymentVerification() {
       {/* Proof Modal */}
       {proofModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4">
-            <div className="flex justify-between items-center border-b pb-2">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-3">
               <h3 className="font-black text-sm text-slate-900">Uploaded Screenshot Proof</h3>
-              <button onClick={() => setProofModal(null)} className="text-slate-400 hover:text-slate-600">
-                <XCircle className="w-6 h-6" />
+              <button onClick={() => setProofModal(null)} className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition">
+                <XCircle className="w-5 h-5" />
               </button>
             </div>
-            <img src={proofModal} alt="Proof" className="max-w-full rounded-2xl mx-auto" />
+            <img src={proofModal} alt="Proof" className="max-w-full max-h-[70vh] rounded-2xl mx-auto object-contain" />
+            <div className="flex justify-end pt-2">
+              <button onClick={() => setProofModal(null)} className="px-5 py-2 bg-slate-900 text-white hover:bg-slate-800 rounded-xl text-xs font-bold transition">
+                Close Preview
+              </button>
+            </div>
           </div>
         </div>
       )}
