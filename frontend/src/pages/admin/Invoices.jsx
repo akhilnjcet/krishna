@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-    Printer, Plus, Trash2, User, Building, Phone, Calendar, Hash, 
+    Printer, Save, Plus, Trash2, User, Building, Phone, Calendar, Hash, 
     FileText, CheckCircle2, Clock, AlertTriangle, Eye, Palette, Check, Sparkles, RefreshCw
 } from 'lucide-react';
 import api from '../../services/api';
@@ -159,7 +159,69 @@ const Invoices = () => {
     const grandTotal = subtotal + (showTax ? totalTax : 0);
     const amountInWords = numberToIndianRupees(grandTotal);
 
+    const [savingHistory, setSavingHistory] = useState(false);
+    const [saveMessage, setSaveMessage] = useState('');
+
+    const handleSaveToHistory = async (autoSilent = false) => {
+        if (!invoiceNumber) {
+            if (!autoSilent) alert("Invoice number is required.");
+            return;
+        }
+        setSavingHistory(true);
+        try {
+            const fullInvoiceData = {
+                invoiceNumber,
+                invoiceDate,
+                dueDate,
+                selectedCustomerId,
+                customerName,
+                billingAddress,
+                phone,
+                gstin,
+                items,
+                status,
+                taxType,
+                showTerms,
+                showTax,
+                showSignature,
+                showFooter,
+                theme,
+                themeColor,
+                showLogo,
+                termsText,
+                subtotal,
+                totalTax,
+                grandTotal,
+                amountInWords,
+                brandingSettings
+            };
+
+            const payload = {
+                documentType: 'Invoice',
+                documentNumber: invoiceNumber,
+                customerId: selectedCustomerId || undefined,
+                status: status || 'Unpaid',
+                totalAmount: grandTotal,
+                data: fullInvoiceData
+            };
+
+            const res = await api.post('/document-history/save', payload);
+            if (!autoSilent) {
+                setSaveMessage(`✅ Invoice #${invoiceNumber} saved to Document History successfully (Version ${res.data.document?.version || 1}).`);
+                setTimeout(() => setSaveMessage(''), 4000);
+            }
+        } catch (err) {
+            console.error("Save to history error:", err);
+            if (!autoSilent) {
+                alert(err.response?.data?.message || "Failed to save invoice to Document History.");
+            }
+        } finally {
+            setSavingHistory(false);
+        }
+    };
+
     const handlePrint = () => {
+        handleSaveToHistory(true);
         window.print();
     };
 
@@ -172,9 +234,21 @@ const Invoices = () => {
                         <FileText className="w-4 h-4" /> Admin Financial Suite
                     </div>
                     <h1 className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter">Interactive Invoice Studio</h1>
+                    {saveMessage && (
+                        <div className="mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 animate-in fade-in">
+                            {saveMessage}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                        onClick={() => handleSaveToHistory(false)}
+                        disabled={savingHistory}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition disabled:opacity-50"
+                    >
+                        <Save className="w-4 h-4" /> {savingHistory ? 'Saving...' : 'Save to History'}
+                    </button>
                     <button
                         onClick={handlePrint}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg transition"

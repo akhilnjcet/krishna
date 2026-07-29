@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-    Printer, Plus, Trash2, Truck, Users, Calendar, Hash, FileText, 
+    Printer, Save, Plus, Trash2, Truck, Users, Calendar, Hash, FileText, 
     Palette, CheckCircle, ShieldCheck, DollarSign, MapPin, Package, Clock
 } from 'lucide-react';
+import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
 
 const LabourBillsTab = () => {
@@ -113,35 +114,46 @@ const LabourBillsTab = () => {
         goodsDescription?.trim()
     );
 
-    const handlePrint = async () => {
-        try {
-            const tokenObj = localStorage.getItem('auth_token') || localStorage.getItem('token') || '';
-            const cleanToken = tokenObj.replace(/^"|"$/g, '');
-            const base = window.location.origin + '/api';
+    const [savingHistory, setSavingHistory] = useState(false);
+    const [saveMessage, setSaveMessage] = useState('');
 
-            fetch(`${base}/document-history/save`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': cleanToken ? `Bearer ${cleanToken}` : ''
-                },
-                body: JSON.stringify({
-                    documentType: 'Labour Bill',
-                    documentNumber: billNumber,
-                    totalAmount: grandTotal,
-                    status: 'Printed',
-                    data: {
-                        vehicleNumber, lrGrNumber, origin, destination, goodsDescription,
-                        loadingDate, unloadingDate, billNumber, billDate, clientName, clientAddress,
-                        labourRows, loadingCharges, unloadingCharges, handlingCharges, packingCharges,
-                        overtimeCharges, additionalFreightCharges, taxPercentage, taxDetails, footerText,
-                        paymentOptions, theme, themeColor
-                    }
-                })
-            }).catch(err => console.warn('Delayed labour bill save background log error:', err));
+    const handleSaveToHistory = async (autoSilent = false) => {
+        if (!billNumber) {
+            if (!autoSilent) alert("Bill number is required.");
+            return;
+        }
+        setSavingHistory(true);
+        try {
+            const payload = {
+                documentType: 'Labour Bill',
+                documentNumber: billNumber,
+                totalAmount: grandTotal,
+                status: 'Saved',
+                data: {
+                    vehicleNumber, lrGrNumber, origin, destination, goodsDescription,
+                    loadingDate, unloadingDate, billNumber, billDate, clientName, clientAddress,
+                    labourRows, loadingCharges, unloadingCharges, handlingCharges, packingCharges,
+                    overtimeCharges, additionalFreightCharges, taxPercentage, taxDetails, footerText,
+                    paymentOptions, theme, themeColor, grandTotal
+                }
+            };
+            const res = await api.post('/document-history/save', payload);
+            if (!autoSilent) {
+                setSaveMessage(`✅ Labour Bill #${billNumber} saved to Document History successfully (Version ${res.data.document?.version || 1}).`);
+                setTimeout(() => setSaveMessage(''), 4000);
+            }
         } catch (err) {
             console.error('Failed to save labour bill history:', err);
+            if (!autoSilent) {
+                alert(err.response?.data?.message || 'Failed to save bill to Document History.');
+            }
+        } finally {
+            setSavingHistory(false);
         }
+    };
+
+    const handlePrint = () => {
+        handleSaveToHistory(true);
         window.print();
     };
 
@@ -154,9 +166,21 @@ const LabourBillsTab = () => {
                         <Truck className="w-4 h-4" /> Operations & Freight Suite
                     </div>
                     <h1 className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter">Labour & Goods Transport Bills</h1>
+                    {saveMessage && (
+                        <div className="mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 animate-in fade-in">
+                            {saveMessage}
+                        </div>
+                    )}
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                        onClick={() => handleSaveToHistory(false)}
+                        disabled={savingHistory}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition disabled:opacity-50"
+                    >
+                        <Save className="w-4 h-4" /> {savingHistory ? 'Saving...' : 'Save to History'}
+                    </button>
                     <button
                         onClick={handlePrint}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg transition"
