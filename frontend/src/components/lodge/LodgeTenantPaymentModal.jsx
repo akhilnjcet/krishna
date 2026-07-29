@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import useAuthStore from '../../stores/authStore';
 import { 
   X, CreditCard, QrCode, Building2, Check, Copy, Upload, Camera, 
-  Plus, Trash2, ArrowRight, ShieldCheck, AlertCircle, Sparkles, CheckCircle2 
+  Plus, Trash2, ArrowRight, ShieldCheck, AlertCircle, Sparkles, CheckCircle2, Settings, Edit3 
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -14,6 +15,9 @@ const DEFAULT_CATEGORIES = [
 
 export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPayMore = false, onSuccess }) {
   if (!isOpen || !booking) return null;
+
+  const user = useAuthStore(state => state.user);
+  const isAdmin = user && (user.role === 'admin' || user.role === 'staff' || user.isAdmin);
 
   const room = booking.roomId || {};
   const lodge = booking.lodgeId || {};
@@ -44,7 +48,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
   const [proofPreview, setProofPreview] = useState('');
   const [skipProof, setSkipProof] = useState(false);
 
-  // Admin Settings
+  // Admin Settings & Edit Modal
   const [paymentSettings, setPaymentSettings] = useState({
     upiId: 'krishnaengineering@upi',
     merchantName: 'Krishna Engineering Works',
@@ -58,6 +62,10 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
     allowedAdditionalCharges: DEFAULT_CATEGORIES
   });
 
+  const [showEditSettingsModal, setShowEditSettingsModal] = useState(false);
+  const [editSettingsForm, setEditSettingsForm] = useState({ ...paymentSettings });
+  const [savingSettings, setSavingSettings] = useState(false);
+
   const [copiedField, setCopiedField] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
@@ -66,10 +74,32 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
   useEffect(() => {
     api.get('/lodge-payments/settings')
       .then(res => {
-        if (res.data) setPaymentSettings(prev => ({ ...prev, ...res.data }));
+        if (res.data) {
+          setPaymentSettings(prev => ({ ...prev, ...res.data }));
+          setEditSettingsForm(prev => ({ ...prev, ...res.data }));
+        }
       })
       .catch(err => console.error('Failed to load payment settings', err));
   }, []);
+
+  const handleSavePaymentSettings = async (e) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const res = await api.post('/lodge-payments/settings', editSettingsForm);
+      if (res.data?.settings) {
+        setPaymentSettings(res.data.settings);
+        setEditSettingsForm(res.data.settings);
+      }
+      alert('✅ Payment Settings (UPI ID & Bank details) updated successfully!');
+      setShowEditSettingsModal(false);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to save payment settings');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   // Recalculate Live Balances & Status
   const extraTotal = additionalCharges.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
@@ -196,12 +226,24 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
               Room #{room.roomNumber || 'Suite'} • {lodge.name || 'Krishna Building'}
             </p>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-2 relative z-10">
+            {isAdmin && (
+              <button 
+                onClick={() => setShowEditSettingsModal(true)}
+                className="px-3.5 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all shadow-sm"
+                title="Edit UPI ID & Bank Account Details"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Edit UPI/Bank</span>
+              </button>
+            )}
+            <button 
+              onClick={onClose}
+              className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Content Body */}
@@ -617,6 +659,148 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
         )}
 
       </div>
+
+      {/* Admin Edit Payment Settings (UPI & Bank Details) Overlay */}
+      {showEditSettingsModal && (
+        <div className="fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b pb-3">
+              <div>
+                <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-wider">
+                  ⚙️ Admin Configuration
+                </span>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight mt-1">Edit UPI ID & Bank Account Details</h3>
+              </div>
+              <button 
+                onClick={() => setShowEditSettingsModal(false)}
+                className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePaymentSettings} className="space-y-4 text-xs">
+              <div className="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-100 space-y-3">
+                <h4 className="font-black text-indigo-900 uppercase text-[11px] tracking-wider flex items-center gap-1.5">
+                  <QrCode className="w-4 h-4 text-indigo-600" /> UPI & Dynamic QR Configuration
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Official UPI ID (VPA)</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. krishnaengineering@upi"
+                      value={editSettingsForm.upiId || ''}
+                      onChange={(e) => setEditSettingsForm({ ...editSettingsForm, upiId: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800 outline-none focus:border-indigo-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Merchant Display Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Krishna Lodge & Complex"
+                      value={editSettingsForm.merchantDisplayName || ''}
+                      onChange={(e) => setEditSettingsForm({ ...editSettingsForm, merchantDisplayName: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800 outline-none focus:border-indigo-600"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h4 className="font-black text-slate-900 uppercase text-[11px] tracking-wider flex items-center gap-1.5">
+                  <Building2 className="w-4 h-4 text-indigo-600" /> Bank Account Transfer Details
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Bank Name</label>
+                    <input
+                      type="text"
+                      placeholder="State Bank of India"
+                      value={editSettingsForm.bankName || ''}
+                      onChange={(e) => setEditSettingsForm({ ...editSettingsForm, bankName: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-semibold text-slate-800 outline-none focus:border-indigo-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Account Holder Name</label>
+                    <input
+                      type="text"
+                      placeholder="Krishna Engineering Works"
+                      value={editSettingsForm.accountHolder || ''}
+                      onChange={(e) => setEditSettingsForm({ ...editSettingsForm, accountHolder: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-semibold text-slate-800 outline-none focus:border-indigo-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Account Number</label>
+                    <input
+                      type="text"
+                      placeholder="39485720194"
+                      value={editSettingsForm.accountNumber || ''}
+                      onChange={(e) => setEditSettingsForm({ ...editSettingsForm, accountNumber: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-mono font-bold text-slate-800 outline-none focus:border-indigo-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">IFSC Code</label>
+                    <input
+                      type="text"
+                      placeholder="SBIN0001234"
+                      value={editSettingsForm.ifsc || ''}
+                      onChange={(e) => setEditSettingsForm({ ...editSettingsForm, ifsc: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-mono font-bold text-slate-800 outline-none focus:border-indigo-600"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Branch Location</label>
+                  <input
+                    type="text"
+                    placeholder="Palakkad, Kerala"
+                    value={editSettingsForm.branch || ''}
+                    onChange={(e) => setEditSettingsForm({ ...editSettingsForm, branch: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-semibold text-slate-800 outline-none focus:border-indigo-600"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Tenant Payment Instructions</label>
+                <textarea
+                  rows={2}
+                  value={editSettingsForm.paymentInstructions || ''}
+                  onChange={(e) => setEditSettingsForm({ ...editSettingsForm, paymentInstructions: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-semibold text-slate-800 outline-none focus:border-indigo-600"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowEditSettingsModal(false)}
+                  className="px-5 py-2.5 border border-slate-200 hover:bg-slate-50 rounded-xl font-bold text-slate-700 text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingSettings}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-7 py-2.5 rounded-xl font-black text-xs shadow-lg shadow-indigo-600/30 flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>{savingSettings ? 'Saving...' : 'Save UPI & Bank Details'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
