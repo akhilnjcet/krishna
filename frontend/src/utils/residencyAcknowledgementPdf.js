@@ -1,10 +1,10 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-// ─── Indian Currency Formatter ────────────────────────────────────────────────
+// ─── jsPDF-safe Indian Currency Formatter (Rs. prefix — ₹ not in Helvetica) ──
 export const formatINR = (amount) => {
-    if (amount == null || isNaN(amount)) return '₹0.00';
-    return '₹' + Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (amount == null || isNaN(amount)) return 'Rs.0.00';
+    return 'Rs.' + Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
