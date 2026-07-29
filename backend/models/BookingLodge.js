@@ -13,6 +13,7 @@ const bookingSchema = new mongoose.Schema({
       requestedCheckOut: Date,
       additionalAmount: Number,
       status: { type: String, enum: ['pending', 'approved', 'rejected'] }
+  },
   agreementNumber: { type: String },
   acknowledgementVersion: { type: Number, default: 1 },
   versionHistory: [{
@@ -34,5 +35,6 @@ bookingSchema.pre('save', function() {
     throw new Error('checkOut date must be after checkIn date');
   }
 });
+
 
 module.exports = mongoose.model('BookingLodge', bookingSchema);
