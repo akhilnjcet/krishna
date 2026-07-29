@@ -10,6 +10,7 @@ import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
 import LodgeTenantPaymentModal from '../../components/lodge/LodgeTenantPaymentModal';
 import LodgePaymentHistory from '../../components/lodge/LodgePaymentHistory';
+import { getSocket } from '../../utils/socket';
 
 export default function LodgeCustomerDashboard() {
     const navigate = useNavigate();
@@ -28,6 +29,20 @@ export default function LodgeCustomerDashboard() {
 
     useEffect(() => {
         fetchData();
+
+        const socket = getSocket();
+        if (socket) {
+            const handleRealtimeSync = () => fetchData();
+            socket.on('lodge-payment-submitted', handleRealtimeSync);
+            socket.on('lodge-payment-updated', handleRealtimeSync);
+            socket.on('payment-status-changed', handleRealtimeSync);
+            
+            return () => {
+                socket.off('lodge-payment-submitted', handleRealtimeSync);
+                socket.off('lodge-payment-updated', handleRealtimeSync);
+                socket.off('payment-status-changed', handleRealtimeSync);
+            };
+        }
     }, []);
 
     const fetchData = async () => {

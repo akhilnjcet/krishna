@@ -7,6 +7,8 @@ import {
 import api from '../../services/api';
 import { generateLodgeReceiptPDF } from '../../services/lodgeReceiptService';
 
+import { getSocket } from '../../utils/socket';
+
 export default function LodgeAdminPaymentVerification() {
   const [activeTab, setActiveTab] = useState('queue'); // 'queue' | 'all' | 'request' | 'settings'
   const [stats, setStats] = useState({
@@ -59,6 +61,20 @@ export default function LodgeAdminPaymentVerification() {
 
   useEffect(() => {
     fetchData();
+
+    const socket = getSocket();
+    if (socket) {
+      const handleRealtimeUpdate = () => fetchData();
+      socket.on('lodge-payment-submitted', handleRealtimeUpdate);
+      socket.on('lodge-payment-updated', handleRealtimeUpdate);
+      socket.on('payment-status-changed', handleRealtimeUpdate);
+
+      return () => {
+        socket.off('lodge-payment-submitted', handleRealtimeUpdate);
+        socket.off('lodge-payment-updated', handleRealtimeUpdate);
+        socket.off('payment-status-changed', handleRealtimeUpdate);
+      };
+    }
   }, []);
 
   const fetchData = async () => {

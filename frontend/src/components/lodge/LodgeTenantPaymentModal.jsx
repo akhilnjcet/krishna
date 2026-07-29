@@ -18,9 +18,19 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
   const room = booking.roomId || {};
   const lodge = booking.lodgeId || {};
 
-  // Form State
+  // Payment Modes & Amounts
+  const totalRentDue = booking.outstandingAmount !== undefined ? booking.outstandingAmount : (booking.totalAmount || room.price || 0);
+  const isRentFullyPaid = isPayMore || (booking.isPaid || booking.rentStatus === 'Paid' || totalRentDue <= 0);
+
+  const [paymentMode, setPaymentMode] = useState('FULL'); // 'FULL' | 'CUSTOM'
   const [paymentMethod, setPaymentMethod] = useState('UPI QR'); // 'UPI QR' | 'UPI ID' | 'Bank Transfer' | 'Cash' | 'Card'
-  const [rentAmount, setRentAmount] = useState(isPayMore ? 0 : (booking.totalAmount || room.price || 0));
+  const [customRentInput, setCustomRentInput] = useState('');
+  
+  // Calculate active rent payable amount
+  const rentAmount = isRentFullyPaid 
+    ? 0 
+    : (paymentMode === 'FULL' ? totalRentDue : (parseFloat(customRentInput) || 0));
+
   const [previousDue, setPreviousDue] = useState(0);
   const [advanceBalance, setAdvanceBalance] = useState(0);
   const [additionalCharges, setAdditionalCharges] = useState([]);
@@ -30,7 +40,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
   // Payment Proof & Details
   const [referenceId, setReferenceId] = useState('');
   const [remarks, setRemarks] = useState('');
-  const [proofFile, setProofFile] = useState(null); // File or Base64 string
+  const [proofFile, setProofFile] = useState(null);
   const [proofPreview, setProofPreview] = useState('');
   const [skipProof, setSkipProof] = useState(false);
 
@@ -61,9 +71,21 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
       .catch(err => console.error('Failed to load payment settings', err));
   }, []);
 
-  // Recalculate Grand Total
+  // Recalculate Live Balances & Status
   const extraTotal = additionalCharges.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
   const grandTotal = Math.max(0, rentAmount + previousDue + extraTotal - advanceBalance);
+  
+  const remainingRentBalance = isRentFullyPaid ? 0 : Math.max(0, totalRentDue - rentAmount);
+  
+  const livePaymentStatus = isRentFullyPaid
+    ? 'ADDITIONAL_SERVICES'
+    : remainingRentBalance === 0 
+      ? 'FULLY PAID' 
+      : rentAmount > 0 
+        ? 'PARTIALLY PAID' 
+        : 'UNPAID';
+
+  const isAmountExceeded = !isRentFullyPaid && paymentMode === 'CUSTOM' && rentAmount > totalRentDue;
 
   // Dynamic UPI URL
   const txnNote = `Room ${room.roomNumber || 'Suite'} Rent/Bill ${booking._id ? booking._id.slice(-6).toUpperCase() : ''}`;
@@ -116,6 +138,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
   // Submit Payment
   const handleSubmitPayment = async (e) => {
     e.preventDefault();
+    if (isAmountExceeded) return alert(`Payment amount cannot exceed outstanding rent balance of ₹${totalRentDue.toLocaleString()}.`);
     if (grandTotal <= 0) return alert('Total payable amount must be greater than zero.');
     if (!skipProof && !referenceId) {
       if (!confirm('You have not entered a Transaction Reference ID/UTR. Do you want to continue?')) return;
@@ -195,7 +218,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
         ) : (
           <div className="p-6 overflow-y-auto space-y-6 flex-1">
 
-            {/* 1. Summary Card */}
+            {/* 1. Summary & Rent Mode Card */}
             <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80">
               <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">Billing & Residency Breakdown</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
@@ -208,14 +231,106 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                   <p className="font-bold text-slate-800">#{room.roomNumber || '101'} ({room.type || 'Suite'})</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 font-medium">Check In</p>
-                  <p className="font-bold text-slate-800">{new Date(booking.checkIn).toLocaleDateString()}</p>
+                  <p className="text-slate-400 font-medium">Outstanding Rent</p>
+                  <p className="font-black text-rose-600 font-poppins text-sm">₹{totalRentDue.toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 font-medium">Check Out</p>
-                  <p className="font-bold text-slate-800">{new Date(booking.checkOut).toLocaleDateString()}</p>
+                  <p className="text-slate-400 font-medium">Status</p>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                    livePaymentStatus === 'FULLY PAID' ? 'bg-emerald-100 text-emerald-700' :
+                    livePaymentStatus === 'PARTIALLY PAID' ? 'bg-amber-100 text-amber-700' :
+                    livePaymentStatus === 'ADDITIONAL_SERVICES' ? 'bg-indigo-100 text-indigo-700' :
+                    'bg-slate-200 text-slate-700'
+                  }`}>
+                    {livePaymentStatus}
+                  </span>
                 </div>
               </div>
+
+              {/* Payment Mode Selector (Full vs Custom Amount) */}
+              {!isRentFullyPaid ? (
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                  <label className="text-xs font-bold text-slate-700 block mb-2">Select Rent Payment Mode:</label>
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => { setPaymentMode('FULL'); setCustomRentInput(''); }}
+                      className={`p-3 rounded-xl border-2 text-xs font-bold transition-all text-left flex items-center justify-between ${
+                        paymentMode === 'FULL'
+                          ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm'
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div>
+                        <p className="font-black uppercase text-[10px] tracking-wider">① Pay Full Rent</p>
+                        <p className="text-sm font-black font-poppins">₹{totalRentDue.toLocaleString()}</p>
+                      </div>
+                      {paymentMode === 'FULL' && <CheckCircle2 className="w-5 h-5 text-indigo-600" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMode('CUSTOM')}
+                      className={`p-3 rounded-xl border-2 text-xs font-bold transition-all text-left flex items-center justify-between ${
+                        paymentMode === 'CUSTOM'
+                          ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm'
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div>
+                        <p className="font-black uppercase text-[10px] tracking-wider">② Custom Amount</p>
+                        <p className="text-[11px] font-semibold text-slate-500">Partial payment option</p>
+                      </div>
+                      {paymentMode === 'CUSTOM' && <CheckCircle2 className="w-5 h-5 text-indigo-600" />}
+                    </button>
+                  </div>
+
+                  {paymentMode === 'CUSTOM' && (
+                    <div className="mb-3">
+                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider block mb-1">
+                        Enter Custom Rent Payment Amount (₹)
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 500, 2500, 10000..."
+                        value={customRentInput}
+                        onChange={(e) => setCustomRentInput(e.target.value)}
+                        className={`w-full bg-white border-2 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 outline-none transition ${
+                          isAmountExceeded ? 'border-red-500 focus:border-red-600' : 'border-slate-200 focus:border-indigo-600'
+                        }`}
+                      />
+                      {isAmountExceeded && (
+                        <p className="text-xs font-bold text-red-600 mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5" /> Amount exceeds outstanding balance of ₹{totalRentDue.toLocaleString()}. Maximum allowed is ₹{totalRentDue.toLocaleString()}.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Live Calculation breakdown */}
+                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-xs grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <p className="text-[9px] font-black uppercase text-slate-400">Paying Now</p>
+                      <p className="font-black text-indigo-600 font-poppins">₹{rentAmount.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase text-slate-400">Remaining Balance</p>
+                      <p className="font-black text-rose-600 font-poppins">₹{remainingRentBalance.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase text-slate-400">Result Status</p>
+                      <p className="font-black text-slate-800">{livePaymentStatus}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 pt-4 border-t border-slate-200 bg-emerald-50/80 p-3 rounded-xl border-emerald-200 text-xs">
+                  <p className="font-bold text-emerald-800 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    Rent is fully settled for this billing cycle! Select additional utility/service charges below.
+                  </p>
+                </div>
+              )}
 
               {/* Additional Charges Builder */}
               <div className="mt-4 pt-4 border-t border-slate-200">
