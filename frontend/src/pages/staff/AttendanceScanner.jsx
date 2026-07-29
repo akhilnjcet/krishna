@@ -310,6 +310,7 @@ const AttendanceScanner = () => {
                         {/* Video Element */}
                         <video
                             ref={videoRef}
+                            style={{ transform: 'scaleX(-1)' }}
                             className={`w-full h-full object-cover transition-opacity duration-700 
                                 ${['scanning', 'verifying', 'success'].includes(status) ? 'opacity-100' : 'opacity-20'}`}
                             muted
@@ -317,7 +318,11 @@ const AttendanceScanner = () => {
                         />
 
                         {/* Canvas for Detections */}
-                        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none" />
+                        <canvas 
+                            ref={canvasRef} 
+                            style={{ transform: 'scaleX(-1)' }}
+                            className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none" 
+                        />
 
                         {/* Idle / Success Overlays */}
                         {status === 'idle' && (

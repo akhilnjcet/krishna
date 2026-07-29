@@ -189,8 +189,8 @@ const FaceCapture = ({ onCapture, loading }) => {
                 </div>
 
                 {/* Video / Content */}
-                <video ref={videoRef} autoPlay muted playsInline className={`w-full h-full object-cover transition-opacity duration-700 ${['scanning', 'success'].includes(status) ? 'opacity-100' : 'opacity-20'}`} />
-                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none" />
+                <video ref={videoRef} autoPlay muted playsInline style={{ transform: 'scaleX(-1)' }} className={`w-full h-full object-cover transition-opacity duration-700 ${['scanning', 'success'].includes(status) ? 'opacity-100' : 'opacity-20'}`} />
+                <canvas ref={canvasRef} style={{ transform: 'scaleX(-1)' }} className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none" />
 
                 {/* Overlays (Success, Error, Initializing, Idle) */}
                 <AnimatePresence mode="wait">

@@ -161,12 +161,13 @@ exports.verifyFace = async (req, res) => {
     try {
         const { descriptor, device } = req.body;
         const LoginLog = require('../models/LoginLog');
+        const DailyAttendance = require('../models/DailyAttendance');
 
         if (!descriptor || !Array.isArray(descriptor) || descriptor.length === 0) {
             await LoginLog.create({
                 login_status: 'failed',
                 device: device || req.headers['user-agent'] || 'unknown',
-                reason: 'Unauthorized Face',
+                reason: 'No Face Descriptor Provided',
                 IP_address: req.ip || req.headers['x-forwarded-for']
             });
             return res.status(400).json({ message: 'Face Not Recognized' });
@@ -186,20 +187,36 @@ exports.verifyFace = async (req, res) => {
 
         const allFaceData = await FaceData.find({}).populate('userId');
         let bestMatch = null;
-        let minDistance = 0.6;
+        let minDistance = 0.55; // Strict match threshold
+
         for (const record of allFaceData) {
             if (!record.userId) continue;
             const distance = getEuclideanDistance(descriptor, record.faceEmbedding);
-            if (distance < minDistance) { minDistance = distance; bestMatch = record.userId; }
+            if (distance < minDistance) { 
+                minDistance = distance; 
+                bestMatch = record.userId; 
+            }
+        }
+
+        // Fallback: Check direct faceDescriptor on User model
+        if (!bestMatch) {
+            const users = await User.find({ faceDescriptor: { $exists: true, $ne: [] } });
+            for (const u of users) {
+                const distance = getEuclideanDistance(descriptor, u.faceDescriptor);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    bestMatch = u;
+                }
+            }
         }
 
         if (bestMatch) {
-            // Only proceed with attendance/verification when face matches the authenticated staff member
-            if (authenticatedUser && bestMatch._id.toString() !== authenticatedUser.id) {
+            // Security check: Only proceed when matched face belongs to the logged-in staff member if token is provided
+            if (authenticatedUser && authenticatedUser.id && bestMatch._id.toString() !== authenticatedUser.id) {
                 await LoginLog.create({
                     login_status: 'failed',
                     device: device || req.headers['user-agent'] || 'unknown',
-                    reason: 'Unauthorized Face',
+                    reason: 'Unauthorized Face - Mismatched Staff Account',
                     IP_address: req.ip || req.headers['x-forwarded-for']
                 });
                 return res.status(401).json({ message: 'Face Not Recognized' });
@@ -207,26 +224,92 @@ exports.verifyFace = async (req, res) => {
 
             const today = new Date().toISOString().split('T')[0];
             const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const faceMatchConfidence = Math.round(Math.max(0, (1 - minDistance) * 100));
+
             let attendance = await Attendance.findOne({ staff_id: bestMatch._id, date: today, check_out: { $exists: false } }).sort({ login_time: -1 });
             let logType = 'IN';
+
             if (attendance) {
                 logType = 'OUT';
                 attendance.check_out = now;
-                attendance.duration_minutes = Math.round((now - attendance.login_time) / 60000);
+                const durationMins = Math.max(1, Math.round((now - new Date(attendance.login_time)) / 60000));
+                attendance.duration_minutes = durationMins;
+                attendance.face_match_confidence = faceMatchConfidence;
                 attendance.type = 'OUT';
                 await attendance.save();
-            } else {
-                attendance = await Attendance.create({
-                    staff_id: bestMatch._id, full_name: bestMatch.name, login_time: now, date: today, face_verified: true, type: 'IN'
-                });
+
+                // Update DailyAttendance record
+                const workedHours = parseFloat((durationMins / 60).toFixed(2));
                 await DailyAttendance.findOneAndUpdate(
                     { staffId: bestMatch._id, date: today },
-                    { status: 'Present', markedBy: bestMatch._id, updatedAt: now },
+                    { 
+                        status: 'Present',
+                        checkOut: timeStr,
+                        workedHours,
+                        updatedAt: now
+                    },
+                    { upsert: true, new: true }
+                );
+            } else {
+                attendance = await Attendance.create({
+                    staff_id: bestMatch._id,
+                    full_name: bestMatch.name || bestMatch.username,
+                    login_time: now,
+                    date: today,
+                    face_verified: true,
+                    face_match_confidence: faceMatchConfidence,
+                    device_ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+                    type: 'IN'
+                });
+
+                await DailyAttendance.findOneAndUpdate(
+                    { staffId: bestMatch._id, date: today },
+                    { 
+                        status: 'Present', 
+                        checkIn: timeStr,
+                        markedBy: bestMatch._id, 
+                        updatedAt: now 
+                    },
                     { upsert: true, new: true }
                 );
             }
 
-            // Send Notifications for Face Auth (Non-blocking — fire and forget)
+            // Recalculate salary for this month in real time
+            try {
+                const { recalculateSalary } = require('../utils/salaryCalculator');
+                const monthStr = today.substring(0, 7);
+                await recalculateSalary(bestMatch._id, monthStr);
+            } catch (salErr) {
+                console.warn('Salary recalculation warning:', salErr.message);
+            }
+
+            // Broadcast real-time Socket notifications
+            try {
+                const socketUtil = require('../utils/socket');
+                const io = socketUtil.getIO();
+                if (io) {
+                    const monthStr = today.substring(0, 7);
+                    io.emit('attendance_updated', { staffId: String(bestMatch._id), date: today, logType, status: 'Present' });
+                    io.emit('attendance_recorded', { staffId: String(bestMatch._id), date: today, logType, staffName: bestMatch.name });
+                    io.emit('daily_attendance_changed', { staffId: String(bestMatch._id), date: today, logType });
+                    io.emit(logType === 'IN' ? 'clock_in' : 'clock_out', { staffId: String(bestMatch._id), date: today, time: now });
+                    io.emit('payroll_updated', { staffId: String(bestMatch._id), month: monthStr });
+                    io.emit('salary_updated', { staffId: String(bestMatch._id), month: monthStr });
+                }
+            } catch (sErr) {
+                console.warn('Socket notification warning:', sErr.message);
+            }
+
+            // Create Audit Log
+            await LoginLog.create({
+                login_status: 'success',
+                device: device || req.headers['user-agent'] || 'unknown',
+                reason: `Face Verified (${logType}) - ${faceMatchConfidence}% confidence`,
+                IP_address: req.ip || req.headers['x-forwarded-for']
+            });
+
+            // Send Notifications (Fire and forget)
             if (bestMatch.email) {
                 sendLoginNotification(bestMatch.email, bestMatch.name || bestMatch.username).catch(err => console.error('Face Login Notify Error:', err));
             }
@@ -234,15 +317,21 @@ exports.verifyFace = async (req, res) => {
                 sendWhatsAppLoginAlert(bestMatch).catch(err => console.error('Face WhatsApp Notify Error:', err));
             }
 
-            res.json({ success: true, logType, user: bestMatch, attendance });
+            return res.json({ 
+                success: true, 
+                logType, 
+                user: bestMatch, 
+                attendance, 
+                confidence: faceMatchConfidence 
+            });
         } else {
             await LoginLog.create({
                 login_status: 'failed',
                 device: device || req.headers['user-agent'] || 'unknown',
-                reason: 'Unauthorized Face',
+                reason: 'Unauthorized Face - Face Not Recognized',
                 IP_address: req.ip || req.headers['x-forwarded-for']
             });
-            res.status(401).json({ message: 'Face Not Recognized' });
+            return res.status(401).json({ message: 'Face Not Recognized' });
         }
     } catch (error) {
         console.error('Gracefully caught face verification error:', error.message);
