@@ -24,10 +24,22 @@ const AdminAIChat = () => {
     const [savingContact, setSavingContact] = useState(false);
     const [contactSaveMsg, setContactSaveMsg] = useState('');
 
+    const [chatLogs, setChatLogs] = useState([]);
+
     useEffect(() => {
         fetchData();
         fetchContactSettings();
+        fetchChatLogs();
     }, []);
+
+    const fetchChatLogs = async () => {
+        try {
+            const res = await api.get('/chat/history');
+            if (res.data?.logs) setChatLogs(res.data.logs);
+        } catch (err) {
+            console.warn('Failed to load chat history:', err);
+        }
+    };
 
     const fetchContactSettings = async () => {
         try {
@@ -434,6 +446,58 @@ const AdminAIChat = () => {
                                     <tr>
                                         <td colSpan="5" className="p-10 text-center font-bold text-slate-400 uppercase tracking-widest">
                                             No leads captured yet
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* AI AGENT CONVERSATION HISTORY */}
+                <div className="lg:col-span-2 bg-white border-4 border-slate-900 rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <h2 className="text-xl font-black uppercase text-slate-900 mb-2 flex items-center gap-2">
+                        <Bot className="w-5 h-5 text-indigo-600" /> Real-Time AI Agent Chat History ({chatLogs.length})
+                    </h2>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-6">
+                        Live conversations, AI model providers used, and intent responses
+                    </p>
+
+                    <div className="overflow-x-auto max-h-[500px]">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="border-b-4 border-slate-900 sticky top-0 bg-white z-10">
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500">Timestamp</th>
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500">User Message</th>
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500">AI Agent Response</th>
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500 text-right">Engine Provider</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {chatLogs.map(log => (
+                                    <tr key={log._id} className="border-b border-slate-100 hover:bg-slate-50">
+                                        <td className="p-4 text-[11px] font-bold text-slate-500 whitespace-nowrap">
+                                            {new Date(log.createdAt).toLocaleString()}
+                                        </td>
+                                        <td className="p-4 text-xs font-black text-slate-900 max-w-xs">{log.userMessage}</td>
+                                        <td className="p-4 text-xs font-medium text-slate-700 whitespace-pre-line leading-relaxed max-w-md">{log.botReply}</td>
+                                        <td className="p-4 text-right">
+                                            <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                                log.providerUsed === 'gemini' 
+                                                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' 
+                                                    : log.providerUsed === 'faq_rule' 
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}>
+                                                {log.providerUsed === 'gemini' ? 'Gemini Neural AI' : log.providerUsed === 'faq_rule' ? 'FAQ Knowledge Base' : 'Intent Rule Engine'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {chatLogs.length === 0 && (
+                                    <tr>
+                                        <td colSpan="4" className="p-10 text-center font-bold text-slate-400 uppercase tracking-widest">
+                                            No chat logs recorded yet
                                         </td>
                                     </tr>
                                 )}

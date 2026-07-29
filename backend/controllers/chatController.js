@@ -1,6 +1,9 @@
 const SystemSetting = require('../models/SystemSetting');
+const ChatbotContactSetting = require('../models/ChatbotContactSetting');
 const FAQ = require('../models/FAQ');
 const Lead = require('../models/Lead');
+const ChatLog = require('../models/ChatLog');
+const { buildKnowledgePrompt } = require('../utils/aiKnowledgeEngine');
 
 /* ─── Keyword-based FAQ matcher ─────────────────────────────────── */
 const matchFaq = (userMsg, faqs) => {
@@ -22,16 +25,26 @@ const matchFaq = (userMsg, faqs) => {
 /* ─── Quick intent reply (works without AI) ─────────────────────── */
 const intentReply = (msg, phone) => {
     const m = msg.toLowerCase();
-    if (/(price|cost|rate|charge|how much|quote|quotation)/i.test(m))
-        return `We provide free quotations! Please call us at ${phone} or share your phone number and we'll call you back with a custom quote.`;
-    if (/(location|address|where|place|office|shop|workshop)/i.test(m))
-        return `We are located at Thiruvazhiyode, Sreekrishnapuram, Kerala 679514. You can also reach us at ${phone}.`;
+
+    if (/(warehouse|shed|factory|industrial building|roofing sheet|truss|gate|staircase|railing)/i.test(m)) {
+        return `We specialize in custom fabrication for structural sheds, roofing, trusses, staircases, and gates! 🛠️\n\nCould you share your approximate **dimensions (Length x Width x Height)** and **location**? You can also click **Get Quote** or call us directly at **${phone}** for a free site estimate!`;
+    }
+
+    if (/(price|cost|rate|charge|how much|quote|quotation|estimate)/i.test(m))
+        return `We provide free custom site estimations! 📋 Please click **Get Quote** or call us at **${phone}** to discuss your project specifications.`;
+    
+    if (/(location|address|where|place|office|shop|workshop|yard)/i.test(m))
+        return `Our works yard & office is located at **Industrial Area, Thiruvazhiyode, Sreekrishnapuram, Palakkad, Kerala**. Contact us at **${phone}** for location guidance!`;
+    
     if (/(working hour|open|timing|available|time)/i.test(m))
-        return `We are available Monday–Saturday, 9 AM – 6 PM. For urgent needs call ${phone}.`;
-    if (/(weld|fabricat|gate|grill|shutter|roofing|steel|contact|call|mobile|number|phone)/i.test(m))
-        return `You can call or WhatsApp us directly at ${phone}. Our experts will help you right away!`;
+        return `We are open **Monday–Saturday, 9:00 AM – 6:00 PM**. For urgent technical queries, call **${phone}**.`;
+    
+    if (/(weld|fabricat|pipe|beam|ismb|steel|contact|call|mobile|number|phone)/i.test(m))
+        return `You can call or WhatsApp our engineering team directly at **${phone}**. We'll assist you immediately!`;
+    
     if (/(hi|hello|hey|good morning|good evening|greet)/i.test(m))
-        return `Hello! 👋 Welcome to Krishna Engineering Works. How can we help you today? You can ask about our services, get a quote, or call us at ${phone}.`;
+        return `Hello! 👋 Welcome to **Krishna Engineering Works AI Assistant**. How can we assist with your fabrication, roofing, or structural steel project today? You can ask about our services, get an instant estimate, or call **${phone}**.`;
+    
     return null;
 };
 
@@ -39,103 +52,165 @@ exports.handleChat = async (req, res) => {
     try {
         const { messages } = req.body;
 
-        // 1. Fetch settings (AI flags + real phone number)
-        const settingsRaw = await SystemSetting.find({
-            key: { $in: ['isAiEnabled', 'aiWorkMode', 'aiPrompt', 'footer_phone', 'floating_whatsapp'] }
-        });
+        if (!messages || !Array.isArray(messages) || messages.length === 0) {
+            return res.status(400).json({ error: "Invalid messages array payload." });
+        }
+
+        // 1. Fetch System Settings & Admin Chatbot Contact Settings
+        const [settingsRaw, contactSettings, faqs] = await Promise.all([
+            SystemSetting.find({
+                key: { $in: ['isAiEnabled', 'aiWorkMode', 'aiPrompt', 'footer_phone', 'floating_whatsapp', 'company_name', 'company_address', 'company_email'] }
+            }),
+            ChatbotContactSetting.findOne(),
+            FAQ.find()
+        ]);
+
         const settings = {};
         settingsRaw.forEach(s => settings[s.key] = s.value);
 
-        // Use real phone from settings, with correct fallback
-        const phone = settings.footer_phone || '+91 9447940835';
-        const waNumber = settings.floating_whatsapp || '919447940835';
+        const companyInfo = {
+            company_name: contactSettings?.companyName || settings.company_name || 'Krishna Engineering Works',
+            footer_phone: contactSettings?.primaryPhone || settings.footer_phone || '+91 9447940835',
+            floating_whatsapp: contactSettings?.whatsappNumber || settings.floating_whatsapp || '919447940835',
+            footer_email: contactSettings?.email || settings.company_email || 'contact@krishnaengg.com',
+            footer_address: settings.company_address || 'Industrial Area Thiruvazhiyode, Sreekrishnapuram, Palakkad, Kerala 679514',
+            businessHours: contactSettings?.businessHours || 'Monday - Saturday: 9:00 AM - 6:00 PM'
+        };
+
+        const phone = companyInfo.footer_phone;
 
         if (settings.isAiEnabled === 'false') {
-            return res.json({ reply: `Our chat assistant is currently offline. Please call us at ${phone} or WhatsApp us for immediate assistance.` });
+            return res.json({ reply: `Our AI chat assistant is currently offline. Please call us at ${phone} or message on WhatsApp for immediate assistance.` });
         }
 
-        // 2. Load FAQs
-        const faqs = await FAQ.find();
-        let faqContext = "CRITICAL BUSINESS FAQ DATA (USE THESE ANSWERS FIRST):\n";
-        faqs.forEach((faq, i) => {
-            faqContext += `${i + 1}. Q: ${faq.question}\n   A: ${faq.answer}\n`;
-        });
+        const lastUserMsg = messages[messages.length - 1].content;
 
-        const userMsg = messages[messages.length - 1].content;
-
-        if (userMsg === 'SYSTEM_DIAGNOSTIC_PING') {
+        // Diagnostic Ping for Admin verification
+        if (lastUserMsg === 'SYSTEM_DIAGNOSTIC_PING') {
             const geminiKey = process.env.GEMINI_API_KEY;
-            if (settings.aiWorkMode === 'offline') return res.json({ reply: "SYSTEM ONLINE [OFFLINE MODE: AI disabled, routing to manual fallback]" });
-            if (!geminiKey) return res.json({ reply: "SYSTEM PARTIAL ONLINE [ONLINE MODE: Gemini API Key missing, routing to smart fallback]" });
-            return res.json({ reply: "SYSTEM FULLY OPERATIONAL [ONLINE MODE: Gemini Neural Engine connected successfully]" });
+            if (settings.aiWorkMode === 'offline') return res.json({ reply: "SYSTEM ONLINE [OFFLINE MODE: Rule-based FAQ Fallback Active]" });
+            if (!geminiKey) return res.json({ reply: "SYSTEM PARTIAL ONLINE [ONLINE MODE: Gemini API Key missing, routing to Smart FAQ Fallback]" });
+            return res.json({ reply: "SYSTEM FULLY OPERATIONAL [ONLINE MODE: AI Agent Neural Engine connected successfully]" });
         }
 
-        // 3. Offline / FAQ-only mode
+        let botReply = '';
+        let providerUsed = 'faq_rule';
+
+        // 2. Offline / Rule-only mode
         if (settings.aiWorkMode === 'offline') {
-            const matched = matchFaq(userMsg, faqs);
-            if (matched) return res.json({ reply: matched.answer });
-            const intent = intentReply(userMsg, phone);
-            if (intent) return res.json({ reply: intent });
-            return res.json({ reply: `I couldn't find a direct answer. Would you like to leave your contact number for a callback? Or call us now at ${phone}.` });
-        }
+            const matched = matchFaq(lastUserMsg, faqs);
+            if (matched) {
+                botReply = matched.answer;
+                providerUsed = 'faq_rule';
+            } else {
+                const intent = intentReply(lastUserMsg, phone);
+                if (intent) {
+                    botReply = intent;
+                    providerUsed = 'intent_rule';
+                } else {
+                    botReply = `Thank you for reaching out! For detailed project pricing or specialized fabrication advice, please call us at **${phone}** or click **Get Quote** to request an estimate.`;
+                    providerUsed = 'fallback';
+                }
+            }
+        } else {
+            // 3. Online AI Agent Mode: Build Full Domain Knowledge Prompt
+            const knowledgeBasePrompt = buildKnowledgePrompt(companyInfo, faqs);
+            const customPromptHeader = settings.aiPrompt ? `${settings.aiPrompt}\n\n` : '';
+            const fullSystemInstruction = `${customPromptHeader}${knowledgeBasePrompt}`;
 
-        // 4. System prompt
-        const defaultPrompt = `You are a friendly and professional sales assistant for Krishna Engineering Works, a leading steel fabrication and welding company in Kerala. Your direct contact number is ${phone}. Always answer based on the FAQ data. Encourage users to call ${phone} or share their phone number for a callback. Keep replies concise and helpful.`;
-        const basePrompt = settings.aiPrompt || defaultPrompt;
+            const geminiKey = process.env.GEMINI_API_KEY;
 
-        // 5. Try Gemini
-        const geminiKey = process.env.GEMINI_API_KEY;
-        if (geminiKey) {
-            try {
-                const geminiHistory = messages.map(m => ({
-                    role: m.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: m.content }]
-                }));
+            if (geminiKey) {
+                try {
+                    const geminiHistory = messages.map(m => ({
+                        role: m.role === 'assistant' ? 'model' : 'user',
+                        parts: [{ text: m.content }]
+                    }));
 
-                const geminiRes = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: geminiHistory,
-                            systemInstruction: { parts: [{ text: `${basePrompt}\n\n${faqContext}` }] },
-                            generationConfig: { maxOutputTokens: 300, temperature: 0.7 }
-                        })
+                    const geminiRes = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+                        {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: geminiHistory,
+                                systemInstruction: { parts: [{ text: fullSystemInstruction }] },
+                                generationConfig: { maxOutputTokens: 350, temperature: 0.7 }
+                            })
+                        }
+                    );
+
+                    const data = await geminiRes.json();
+
+                    if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        botReply = data.candidates[0].content.parts[0].text;
+                        providerUsed = 'gemini';
+                    } else if (data.error?.code === 429) {
+                        console.warn("⚠️ Gemini quota limit — using smart rule fallback.");
+                    } else if (data.error) {
+                        console.error("Gemini API Error:", data.error);
                     }
-                );
-
-                const data = await geminiRes.json();
-
-                if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                    return res.json({ reply: data.candidates[0].content.parts[0].text });
+                } catch (geminiErr) {
+                    console.error("Gemini Connectivity Error:", geminiErr.message);
                 }
+            }
 
-                if (data.error?.code === 429) {
-                    console.warn("⚠️  Gemini quota exhausted — using smart fallback.");
-                } else if (data.error) {
-                    console.error("Gemini API Error:", data.error);
+            // 4. Graceful Rule-Based Fallback if AI provider is not available / error occurred
+            if (!botReply) {
+                const matched = matchFaq(lastUserMsg, faqs);
+                if (matched) {
+                    botReply = matched.answer;
+                    providerUsed = 'faq_rule';
+                } else {
+                    const intent = intentReply(lastUserMsg, phone);
+                    if (intent) {
+                        botReply = intent;
+                        providerUsed = 'intent_rule';
+                    } else {
+                        botReply = `I'm here to help with all your structural steel fabrication and roofing needs! For exact project estimates or custom advice, please call or WhatsApp us at **${phone}**, or click **Get Quote** to share your project details. 😊`;
+                        providerUsed = 'fallback';
+                    }
                 }
-            } catch (geminiErr) {
-                console.error("Gemini Connectivity Error:", geminiErr.message);
             }
         }
 
-        // 6. Smart keyword fallback (always available, no API needed)
-        const matched = matchFaq(userMsg, faqs);
-        if (matched) return res.json({ reply: matched.answer });
+        // 5. Persist Chat Log asynchronously
+        ChatLog.create({
+            userId: req.user ? req.user.id : undefined,
+            visitorIp: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
+            userMessage: lastUserMsg,
+            botReply,
+            providerUsed
+        }).catch(err => console.warn('Chat log save error:', err.message));
 
-        const intent = intentReply(userMsg, phone);
-        if (intent) return res.json({ reply: intent });
-
-        // 7. Final graceful reply with CORRECT phone number from settings
-        return res.json({
-            reply: `I'm here to help! For the fastest response, please call or WhatsApp us at **${phone}**. You can also share your phone number and we'll call you back right away! 😊`
-        });
+        return res.json({ reply: botReply, providerUsed });
 
     } catch (err) {
         console.error('Chat System Critical Error:', err);
         res.status(500).json({ error: 'Failed to process chat message' });
+    }
+};
+
+// Admin: Get Chat History
+exports.getChatHistory = async (req, res) => {
+    try {
+        const { limit = 50, page = 1 } = req.query;
+        const parsedLimit = parseInt(limit);
+        const parsedPage = parseInt(page);
+        const skip = (parsedPage - 1) * parsedLimit;
+
+        const logs = await ChatLog.find()
+            .populate('userId', 'name email phone')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parsedLimit);
+
+        const total = await ChatLog.countDocuments();
+
+        res.json({ logs, total, page: parsedPage, pages: Math.ceil(total / parsedLimit) });
+    } catch (err) {
+        console.error('Error fetching chat history:', err);
+        res.status(500).json({ error: 'Failed to fetch chat history' });
     }
 };
 
