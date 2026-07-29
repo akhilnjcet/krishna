@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const BookingLodge = require('../models/BookingLodge');
+const LodgeBillingSetting = require('../models/LodgeBillingSetting');
+const Payment = require('../models/Payment');
 const { protect } = require('../middleware/authMiddleware');
 
 // @route   POST /api/bookings
@@ -237,17 +239,17 @@ router.get('/:id/acknowledgement', protect, async (req, res) => {
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
     // Only owner or admin can fetch acknowledgement
-    const uid = (req.user.id || req.user._id).toString();
-    if (uid !== booking.userId._id.toString() && req.user.role !== 'admin') {
+    const uid = (req.user.id || req.user._id || '').toString();
+    const bookingUserId = (booking.userId?._id || booking.userId || '').toString();
+    if (uid !== bookingUserId && req.user.role !== 'admin') {
       return res.status(401).json({ message: 'Not authorized' });
     }
 
-    const LodgeBillingSetting = require('../models/LodgeBillingSetting');
-    const Payment = require('../models/Payment');
-
+    // Match all payment statuses that mean "paid" — case-insensitive
+    const paidStatuses = ['verified', 'VERIFIED', 'approved', 'APPROVED', 'paid', 'PAID', 'PARTIAL', 'ADVANCE'];
     const [settings, payments] = await Promise.all([
       LodgeBillingSetting.findOne(),
-      Payment.find({ bookingId: booking._id, status: 'verified' }).sort({ createdAt: -1 })
+      Payment.find({ bookingId: booking._id, status: { $in: paidStatuses } }).sort({ createdAt: -1 })
     ]);
 
     const totalPaid = payments.reduce((s, p) => s + (p.amount || 0), 0);
