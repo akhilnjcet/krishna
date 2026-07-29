@@ -483,28 +483,35 @@ const LodgeBillingManager = () => {
             const { jsPDF } = await import('jspdf');
             const doc = new jsPDF();
 
-            // Header Banner
-            doc.setFillColor(15, 23, 42); // Dark slate background
-            doc.rect(0, 0, 210, 45, 'F');
+            const formatINR = (amt) => `₹${parseFloat(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-            // Lodge Branding Title
+            // Header Banner
+            doc.setFillColor(15, 23, 42);
+            doc.rect(0, 0, 210, 48, 'F');
+
+            doc.setFillColor(37, 99, 235);
+            doc.rect(0, 0, 5, 48, 'F');
+
+            // Lodge Branding Title (18pt)
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(18);
             doc.setFont('helvetica', 'bold');
             doc.text('KRISHNA LODGE RESIDENCY', 15, 18);
             
-            doc.setFontSize(8);
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text('Premium Accommodation & Quality Living Solutions', 15, 24);
-            doc.text('Thiruvazhiyode, Palakkad, Kerala | GSTIN: 32ABCDE1234F1Z5', 15, 29);
+            doc.text('Premium Accommodation & Quality Living Solutions', 15, 25);
+            doc.text('Thiruvazhiyode, Sreekrishnapuram, Palakkad, Kerala 679514', 15, 31);
+            doc.text('Phone: +91 94479 40835 | Email: contact@krishnaengg.com', 15, 37);
 
+            // Document Title (14pt)
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
             doc.text('TAX INVOICE', 195, 18, { align: 'right' });
-            doc.setFontSize(8);
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
             doc.text(`Invoice No: ${billData.billNumber}`, 195, 25, { align: 'right' });
-            doc.text(`Period: ${billForm.billingPeriodStart} to ${billForm.billingPeriodEnd}`, 195, 30, { align: 'right' });
+            doc.text(`Period: ${billForm.billingPeriodStart} to ${billForm.billingPeriodEnd}`, 195, 31, { align: 'right' });
 
             // Watermark
             doc.saveGraphicsState();
@@ -512,31 +519,33 @@ const LodgeBillingManager = () => {
             doc.setFontSize(36);
             doc.setFont('helvetica', 'bold');
             if (billForm.paymentStatus === 'Paid') {
-                doc.setTextColor([16, 185, 129]);
+                doc.setTextColor(16, 185, 129);
                 doc.text('PAID RECEIVED', 105, 140, { align: 'center', angle: 45 });
             } else if (billForm.paymentStatus === 'Partially Paid') {
-                doc.setTextColor([59, 130, 246]);
+                doc.setTextColor(59, 130, 246);
                 doc.text('PARTIALLY PAID', 105, 140, { align: 'center', angle: 45 });
             } else {
-                doc.setTextColor([239, 68, 68]);
+                doc.setTextColor(239, 68, 68);
                 doc.text('PAYMENT DUE', 105, 140, { align: 'center', angle: 45 });
             }
             doc.restoreGraphicsState();
 
             // Client & Room Details
             doc.setTextColor(15, 23, 42);
-            doc.setFontSize(10);
+            doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
-            doc.text('BILL TO:', 15, 58);
+            doc.text('BILL TO:', 15, 60);
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text(`Occupant Name: ${generatingBillRoom.occupantName}`, 15, 64);
-            doc.text(`Room Number: Room ${generatingBillRoom.number} (${generatingBillRoom.type})`, 15, 70);
-            doc.text(`Phone: ${generatingBillRoom.phone}`, 15, 76);
+            doc.text(`Occupant Name: ${generatingBillRoom.occupantName}`, 15, 67);
+            doc.text(`Room Number: Room ${generatingBillRoom.number} (${generatingBillRoom.type})`, 15, 73);
+            doc.text(`Phone: ${generatingBillRoom.phone}`, 15, 79);
 
-            // Bill Summary Table Headers
+            // Bill Summary Table Headers (9pt)
             doc.setFillColor(241, 245, 249);
             doc.rect(15, 90, 180, 8, 'F');
             doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
             doc.text('Item Description', 18, 95);
             doc.text('Amount (INR)', 192, 95, { align: 'right' });
 
@@ -544,12 +553,12 @@ const LodgeBillingManager = () => {
             doc.setFont('helvetica', 'normal');
             let currentY = 105;
             doc.text(`Base Rent Room ${generatingBillRoom.number}`, 18, currentY);
-            doc.text(`₹ ${billForm.monthlyRent.toLocaleString()}`, 192, currentY, { align: 'right' });
+            doc.text(formatINR(billForm.monthlyRent), 192, currentY, { align: 'right' });
 
             billForm.additionalCharges.forEach(charge => {
                 currentY += 8;
                 doc.text(`${charge.name} (${charge.remarks || 'Utility Fee'})`, 18, currentY);
-                doc.text(`₹ ${charge.amount.toLocaleString()}`, 192, currentY, { align: 'right' });
+                doc.text(formatINR(charge.amount), 192, currentY, { align: 'right' });
             });
 
             // Summary Totals
@@ -559,40 +568,47 @@ const LodgeBillingManager = () => {
 
             currentY += 8;
             doc.text('Tax (GST/Custom):', 130, currentY);
-            doc.text(`₹ ${taxesTotal.toLocaleString()}`, 192, currentY, { align: 'right' });
+            doc.text(formatINR(taxesTotal), 192, currentY, { align: 'right' });
 
             if (discountAmt > 0) {
                 currentY += 8;
                 doc.text(`Discount applied (${billForm.discountReason || 'Promo'}):`, 130, currentY);
-                doc.text(`- ₹ ${discountAmt.toLocaleString()}`, 192, currentY, { align: 'right' });
+                doc.text(`- ${formatINR(discountAmt)}`, 192, currentY, { align: 'right' });
             }
 
             if (billForm.useAdvance) {
                 currentY += 8;
                 doc.text('Advance Adjustment:', 130, currentY);
-                doc.text(`- ₹ ${advanceUsed.toLocaleString()}`, 192, currentY, { align: 'right' });
+                doc.text(`- ${formatINR(advanceUsed)}`, 192, currentY, { align: 'right' });
             }
 
             currentY += 8;
             doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
             doc.text('Grand Total:', 130, currentY);
-            doc.text(`₹ ${grandTotal.toLocaleString()}`, 192, currentY, { align: 'right' });
+            doc.text(formatINR(grandTotal), 192, currentY, { align: 'right' });
 
             // Amount in words
             currentY += 12;
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
+            doc.setFontSize(9);
             doc.text(`AMOUNT IN WORDS: ${numberToWords(grandTotal)}`, 15, currentY);
 
             // Signatures & Seals
             currentY += 25;
             doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
             doc.text('Authorized Signatory', 15, currentY);
             doc.text('Lodge Registrar Seal', 195, currentY, { align: 'right' });
 
             doc.setFont('helvetica', 'normal');
             doc.text('______________________', 15, currentY + 12);
             doc.text('[Seal Stamp Space]', 195, currentY + 12, { align: 'right' });
+
+            // Standard Footer (8pt)
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            doc.text(`Generated on: ${new Date().toLocaleString()} | Official Invoice | www.krishnaengg.com`, 105, 285, { align: 'center' });
 
             // Terms
             currentY += 25;

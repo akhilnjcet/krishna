@@ -7,23 +7,30 @@ import { Share } from '@capacitor/share';
 const COMPANY_DETAILS = {
     name: 'KRISHNA ENGINEERING WORKS',
     tagline: 'PRECISION ENGINEERING & INDUSTRIAL SOLUTIONS',
-    address: 'Thiruvazhiyode, Sreekrishnapuram, Kerala 679514',
-    contact: 'Phone: +91 94479 40835 | Email: krishnaengineeringworks0715@gmail.com',
-    gstin: 'GSTIN: 32ABCDE1234F1Z5'
+    address: 'Thiruvazhiyode, Sreekrishnapuram, Palakkad, Kerala 679514',
+    contact: 'Phone: +91 94479 40835 | Email: contact@krishnaengg.com',
+    gstin: 'GSTIN: 32AAAAA0000A1Z5'
 };
 
 const THEME = {
-    primary: [15, 23, 42],    // Slate 900
-    accent: [37, 99, 235],     // Blue 600
+    primary: [15, 23, 42],     // Slate 900
+    accent: [37, 99, 235],      // Blue 600
     textLight: [255, 255, 255],
     textDark: [15, 23, 42],
     textMuted: [100, 116, 139], // Slate 500
-    bgLight: [248, 250, 252]   // Slate 50
+    bgLight: [248, 250, 252]    // Slate 50
+};
+
+/**
+ * Standard Indian Currency Formatter (₹1,50,000.00)
+ */
+export const formatIndianCurrency = (amount) => {
+    const val = parseFloat(amount || 0);
+    return `₹${val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 const savePDF = async (doc, filename, historyMetadata = null) => {
     try {
-        // Sanitize filename to ensure safe, cross-browser downloading without forbidden chars or spaces
         const safeFilename = String(filename || 'Document.pdf')
             .trim()
             .replace(/[/\\?%*:|"<>]/g, '_')
@@ -66,7 +73,6 @@ const savePDF = async (doc, filename, historyMetadata = null) => {
 
         if (Capacitor.isNativePlatform()) {
             try {
-                
                 const savedFile = await Filesystem.writeFile({
                     path: safeFilename,
                     data: base64Data,
@@ -86,9 +92,7 @@ const savePDF = async (doc, filename, historyMetadata = null) => {
             }
         }
         
-        // Multi-stage cross-browser download engine
         try {
-            // Stage 1: Explicit Blob + Dynamic Anchor Tag Download
             const blob = doc.output('blob');
             const blobUrl = URL.createObjectURL(blob);
             
@@ -123,12 +127,10 @@ let cachedBranding = null;
 let brandingFetchPromise = null;
 
 const getApiBase = () => {
-    // Reads the same base URL that axios api.js uses
     try {
         const envUrl = import.meta.env.VITE_API_URL;
-        if (envUrl) return envUrl.replace(/\/$/, ''); // strip trailing slash
+        if (envUrl) return envUrl.replace(/\/$/, '');
     } catch (_) {}
-    // Fallback: try to derive from current page origin
     return window.location.origin + '/api';
 };
 
@@ -150,7 +152,7 @@ const getBrandingSettings = async () => {
             })
             .catch(err => {
                 console.warn("Could not fetch branding settings for PDF:", err);
-                brandingFetchPromise = null; // allow retry on next call
+                brandingFetchPromise = null;
                 return {};
             });
     }
@@ -167,8 +169,8 @@ const getImageFormat = (url) => {
 };
 
 /**
- * Dynamic Header Engine with safe text measurement, auto wrapping, and flexible Y calculation.
- * Prevents text overlapping between logo/company name/tagline and right-aligned title/address/GSTIN.
+ * Standardized Header Component
+ * Font Hierarchy: Company Name 18pt, Document Title 14pt, Details 9pt
  */
 const addHeader = (doc, title, companyInfoOverride = {}) => {
     const pageWidth = doc.internal.pageSize.width;
@@ -186,39 +188,31 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
     const contact = companyInfoOverride.contact || `Phone: ${phoneVal} | Email: ${emailVal}`;
     const gstin = companyInfoOverride.company_gstin || companyInfoOverride.gstin || cachedBranding?.company_gstin || COMPANY_DETAILS.gstin;
 
-    // Calculate left column height (Logo/Badge + Company Name + Tagline)
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
+    doc.setFontSize(18);
     const companyLines = doc.splitTextToSize(companyName, maxLeftWidth);
     const companyNameHeight = companyLines.length * 7;
-    const leftHeight = 12 + companyNameHeight + 6 + 6; // Y padding + name + tagline
+    const leftHeight = 12 + companyNameHeight + 6 + 6;
 
-    // Calculate right column height (Title + Address + Contact + GSTIN)
-    doc.setFontSize(13);
+    doc.setFontSize(14);
     const titleLines = doc.splitTextToSize(title.toUpperCase(), maxRightWidth);
     const titleHeight = titleLines.length * 6;
 
-    doc.setFontSize(7.5);
+    doc.setFontSize(9);
     const addressLines = doc.splitTextToSize(address, maxRightWidth);
     const contactLines = doc.splitTextToSize(contact, maxRightWidth);
     const gstinLines = doc.splitTextToSize(gstin, maxRightWidth);
 
-    const rightHeight = 12 + titleHeight + 4 + (addressLines.length * 3.5) + (contactLines.length * 3.5) + (gstinLines.length * 3.5);
+    const rightHeight = 12 + titleHeight + 4 + (addressLines.length * 4) + (contactLines.length * 4) + (gstinLines.length * 4);
+    const headerHeight = Math.max(52, leftHeight, rightHeight) + 8;
 
-    // Compute dynamic header height with safe padding
-    const headerHeight = Math.max(48, leftHeight, rightHeight) + 8;
-
-    // Draw header background block & accent bar
     doc.setFillColor(...THEME.primary);
     doc.rect(0, 0, pageWidth, headerHeight, 'F');
 
     doc.setFillColor(...THEME.accent);
     doc.rect(0, 0, 5, headerHeight, 'F');
 
-    // Render Left Column
     let leftY = 16;
-
-    // Company Logo / Brand Badge Rendering
     const logoUrl = companyInfoOverride.logo || companyInfoOverride.company_logo || (cachedBranding?.company_logo) || COMPANY_DETAILS.logo;
     const showLogoVal = companyInfoOverride.show_logo ?? companyInfoOverride.showLogo ?? cachedBranding?.show_logo;
     const showLogo = showLogoVal !== false && showLogoVal !== 'false';
@@ -235,7 +229,6 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
     }
 
     if (!logoRendered) {
-        // Fallback Badge
         doc.setFillColor(...THEME.accent);
         doc.roundedRect(margin, leftY - 4, 10, 10, 2, 2, 'F');
         doc.setTextColor(...THEME.textLight);
@@ -244,59 +237,55 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
         doc.text('K', margin + 3.5, leftY + 3);
     }
 
-    // Company Name
     const textStartX = margin + 18;
-    doc.setFontSize(14);
+    doc.setFontSize(18);
     doc.setTextColor(...THEME.textLight);
     doc.setFont('helvetica', 'bold');
     companyLines.forEach((line) => {
-        doc.text(line, textStartX, leftY + 2);
-        leftY += 6;
+        doc.text(line, textStartX, leftY + 3);
+        leftY += 7;
     });
 
-    // Tagline
-    doc.setFontSize(7.5);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...THEME.accent);
     doc.text(tagline, textStartX, leftY + 2);
 
-    // Render Right Column
     let rightY = 14;
-
-    // Document Title
-    doc.setFontSize(12);
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...THEME.textLight);
     titleLines.forEach((line) => {
         doc.text(line, rightMargin, rightY, { align: 'right' });
-        rightY += 5;
+        rightY += 6;
     });
 
     rightY += 2;
-
-    // Contact Details
-    doc.setFontSize(7);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(200, 210, 225);
 
     addressLines.forEach((line) => {
         doc.text(line, rightMargin, rightY, { align: 'right' });
-        rightY += 3.5;
+        rightY += 4;
     });
 
     contactLines.forEach((line) => {
         doc.text(line, rightMargin, rightY, { align: 'right' });
-        rightY += 3.5;
+        rightY += 4;
     });
 
     gstinLines.forEach((line) => {
         doc.text(line, rightMargin, rightY, { align: 'right' });
-        rightY += 3.5;
+        rightY += 4;
     });
 
     return headerHeight;
 };
 
+/**
+ * Standard Signature & Seal Component
+ */
 const addSignatureAndSeal = (doc, finalY, companyInfoOverride = {}) => {
     const pageW = doc.internal.pageSize.width;
     const signatureUrl = companyInfoOverride.signature || companyInfoOverride.company_signature || (cachedBranding?.company_signature) || COMPANY_DETAILS.signature;
@@ -312,24 +301,24 @@ const addSignatureAndSeal = (doc, finalY, companyInfoOverride = {}) => {
         }
     }
 
-    // Signature Line & Corporate Seal
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.5);
     doc.line(pageW - 80, finalY + 38, pageW - 15, finalY + 38);
-    doc.setFontSize(8.5);
+    doc.setFontSize(9);
     doc.setTextColor(...THEME.textDark);
     doc.setFont('helvetica', 'bold');
     doc.text('AUTHORIZED SIGNATURE', pageW - 47.5, finalY + 43, { align: 'center' });
-    doc.setFontSize(7);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...THEME.textMuted);
     doc.text('KRISHNA ENGINEERING WORKS [SEAL]', pageW - 47.5, finalY + 47, { align: 'center' });
 };
 
 /**
- * Universal Footer Engine with Page Numbers, Generation Timestamp, and Seal Notice
+ * Standardized Footer Engine
+ * Font size: 8pt
  */
-const addFooter = (doc) => {
+const addFooter = (doc, generatedBy = 'Official System') => {
     const pageCount = doc.internal.getNumberOfPages();
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
@@ -337,19 +326,45 @@ const addFooter = (doc) => {
 
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
-
-        // Accent Separator Line
         doc.setDrawColor(...THEME.accent);
         doc.setLineWidth(0.5);
-        doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14);
+        doc.line(margin, pageHeight - 16, pageWidth - margin, pageHeight - 16);
 
-        // Footer Text
-        doc.setFontSize(7.5);
+        doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...THEME.textMuted);
-        doc.text(`Generated on: ${new Date().toLocaleString()} | Official System Generated Document`, margin, pageHeight - 8);
-        doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
+        doc.text(`Generated: ${new Date().toLocaleString()} | By: ${generatedBy} | www.krishnaengg.com`, margin, pageHeight - 9);
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 9, { align: 'right' });
     }
+};
+
+/**
+ * Helper to render responsive amount box with auto font scaling
+ */
+const renderAmountBox = (doc, x, y, width, height, label, amountText) => {
+    doc.setFillColor(...THEME.bgLight);
+    doc.roundedRect(x, y, width, height, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(x, y, width, height, 2, 2, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...THEME.textMuted);
+    doc.text(label.toUpperCase(), x + 6, y + 12);
+
+    let fontSize = 14;
+    doc.setFontSize(fontSize);
+    let textWidth = doc.getTextWidth(amountText);
+    const maxAllowedWidth = width - 12;
+
+    while (textWidth > maxAllowedWidth && fontSize > 9) {
+        fontSize -= 1;
+        doc.setFontSize(fontSize);
+        textWidth = doc.getTextWidth(amountText);
+    }
+
+    doc.setTextColor(...THEME.accent);
+    doc.text(amountText, x + width - 6, y + 12, { align: 'right' });
 };
 
 /**
@@ -366,9 +381,8 @@ export const generateQuotePDF = async (quote) => {
 
     let startY = headerHeight + 12;
 
-    // Reference Block
     doc.setTextColor(...THEME.textDark);
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text(`Reference ID: #${quoteId}`, 15, startY);
     doc.text(`Quote Date: ${createdAt}`, 15, startY + 6);
@@ -389,8 +403,8 @@ export const generateQuotePDF = async (quote) => {
         ],
         theme: 'grid',
         showHead: 'everyPage',
-        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 8.5, cellPadding: 4, overflow: 'linebreak' },
+        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
         columnStyles: { 
             0: { fontStyle: 'bold', fillColor: [249, 250, 251], width: 55, halign: 'left' },
             1: { halign: 'left' }
@@ -398,19 +412,9 @@ export const generateQuotePDF = async (quote) => {
     });
 
     const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : startY + 60) + 12;
+    const formattedCost = formatIndianCurrency(quote.estimatedCost || 0);
 
-    doc.setFillColor(...THEME.bgLight);
-    doc.rect(15, finalY, 180, 22, 'F');
-
-    doc.setFontSize(10);
-    doc.setTextColor(...THEME.textMuted);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TOTAL ESTIMATED PROJECT COST (INR):', 22, finalY + 13);
-
-    doc.setFontSize(16);
-    doc.setTextColor(...THEME.accent);
-    const cost = quote.estimatedCost ? parseFloat(quote.estimatedCost).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00';
-    doc.text(`₹ ${cost}`, 185, finalY + 13, { align: 'right' });
+    renderAmountBox(doc, 15, finalY, 180, 22, 'Total Estimated Project Cost (INR):', formattedCost);
 
     addSignatureAndSeal(doc, finalY + 25);
     addFooter(doc);
@@ -464,12 +468,9 @@ export const generateSalaryPDF = async (salary, user) => {
             ],
             theme: 'grid',
             showHead: 'everyPage',
-            headStyles: { fillColor: THEME.primary, textColor: 255, fontStyle: 'bold' },
-            styles: { fontSize: 8.5, cellPadding: 4, overflow: 'linebreak' },
-            columnStyles: {
-                0: { halign: 'left' },
-                1: { halign: 'left' }
-            }
+            headStyles: { fillColor: THEME.primary, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+            styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+            columnStyles: { 0: { halign: 'left' }, 1: { halign: 'left' } }
         });
 
         const attendanceY = doc.lastAutoTable.finalY + 6;
@@ -480,16 +481,13 @@ export const generateSalaryPDF = async (salary, user) => {
             head: [['ATTENDANCE SUMMARY', 'OVERTIME SUMMARY']],
             body: [
                 [`Working Days: ${salary.totalWorkingDays || 26}\nPresent Days: ${salary.presentDays || 0}\nHalf Days: ${salary.halfDays || 0}\nLeave Days: ${salary.leaveDays || 0}\nHolidays: ${salary.holidays || 0}`,
-                 `Overtime Hours: ${salary.overtimeHours || 0} hrs\nOT Rate/Hr: \u20b9${salary.overtimeRate || emp.overtimeRate || user?.overtimeRate || 0}\nOvertime Earnings: \u20b9${(salary.overtimeEarnings || 0).toLocaleString('en-IN')}`]
+                 `Overtime Hours: ${salary.overtimeHours || 0} hrs\nOT Rate/Hr: ${formatIndianCurrency(salary.overtimeRate || emp.overtimeRate || user?.overtimeRate || 0)}\nOvertime Earnings: ${formatIndianCurrency(salary.overtimeEarnings || 0)}`]
             ],
             theme: 'grid',
             showHead: 'everyPage',
-            headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold' },
-            styles: { fontSize: 8.5, cellPadding: 4 },
-            columnStyles: {
-                0: { halign: 'left' },
-                1: { halign: 'left' }
-            }
+            headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+            styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+            columnStyles: { 0: { halign: 'left' }, 1: { halign: 'left' } }
         });
 
         const ledgerY = doc.lastAutoTable.finalY + 6;
@@ -509,17 +507,17 @@ export const generateSalaryPDF = async (salary, user) => {
             margin: { left: 15, right: 15, bottom: 20 },
             head: [['EARNINGS & ALLOWANCES', 'AMOUNT (INR)', 'DEDUCTIONS & RECOVERIES', 'AMOUNT (INR)']],
             body: [
-                ['Base Pay', `\u20b9 ${baseVal.toLocaleString('en-IN')}`, 'Advance Recovery', `\u20b9 ${advVal.toLocaleString('en-IN')}`],
-                ['Earned Salary (Wages/Sal)', `\u20b9 ${calcBase.toLocaleString('en-IN')}`, 'Other Deductions', `\u20b9 ${dedVal.toLocaleString('en-IN')}`],
-                ['Overtime Pay', `\u20b9 ${otEarn.toLocaleString('en-IN')}`, '', ''],
-                ['Bonus & Incentives', `\u20b9 ${(bonusVal + incentivesVal).toLocaleString('en-IN')}`, '', ''],
-                ['Allowances', `\u20b9 ${allowancesVal.toLocaleString('en-IN')}`, '', ''],
-                ['Gross Earnings', `\u20b9 ${(calcBase + otEarn + bonusVal + incentivesVal + allowancesVal).toLocaleString('en-IN')}`, 'Total Deductions', `\u20b9 ${(advVal + dedVal).toLocaleString('en-IN')}`],
+                ['Base Pay', formatIndianCurrency(baseVal), 'Advance Recovery', formatIndianCurrency(advVal)],
+                ['Earned Salary (Wages/Sal)', formatIndianCurrency(calcBase), 'Other Deductions', formatIndianCurrency(dedVal)],
+                ['Overtime Pay', formatIndianCurrency(otEarn), '', ''],
+                ['Bonus & Incentives', formatIndianCurrency(bonusVal + incentivesVal), '', ''],
+                ['Allowances', formatIndianCurrency(allowancesVal), '', ''],
+                ['Gross Earnings', formatIndianCurrency(calcBase + otEarn + bonusVal + incentivesVal + allowancesVal), 'Total Deductions', formatIndianCurrency(advVal + dedVal)],
             ],
             theme: 'striped',
             showHead: 'everyPage',
-            headStyles: { fillColor: THEME.primary, textColor: 255 },
-            styles: { fontSize: 8.5, cellPadding: 4 },
+            headStyles: { fillColor: THEME.primary, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+            styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
             columnStyles: {
                 0: { fontStyle: 'bold', halign: 'left' },
                 1: { halign: 'right' },
@@ -529,28 +527,21 @@ export const generateSalaryPDF = async (salary, user) => {
         });
 
         const finalY = doc.lastAutoTable.finalY + 8;
+        const formattedNet = formatIndianCurrency(netVal);
 
-        doc.setFillColor(...THEME.bgLight);
-        doc.rect(15, finalY, 180, 18, 'F');
-        doc.setFontSize(10);
-        doc.setTextColor(...THEME.textDark);
-        doc.setFont('helvetica', 'bold');
-        doc.text('NET DISBURSED SALARY:', 20, finalY + 11);
-        doc.setFontSize(14);
-        doc.setTextColor(...THEME.accent);
-        doc.text(`\u20b9 ${netVal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 190, finalY + 11, { align: 'right' });
+        renderAmountBox(doc, 15, finalY, 180, 20, 'Net Disbursed Salary:', formattedNet);
 
-        doc.setFontSize(8.5);
+        doc.setFontSize(9);
         const statusText = (salary.paymentStatus || 'Pending').toUpperCase();
         const isPaid = ['PAID', 'COMPLETED'].includes(statusText);
         doc.setTextColor(isPaid ? 0 : 180, isPaid ? 140 : 90, isPaid ? 0 : 0);
-        doc.text(`PAYMENT STATUS: ${statusText}`, 15, finalY + 26);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`PAYMENT STATUS: ${statusText}`, 15, finalY + 28);
 
-        doc.setFontSize(7.5);
+        doc.setFontSize(8);
         doc.setFont('helvetica', 'italic');
         doc.setTextColor(...THEME.textMuted);
-        doc.text('This is a Computer / System Generated Monthly Salary Slip.', 15, finalY + 32);
-        doc.text(`Generated Date: ${new Date().toLocaleDateString()}`, 15, finalY + 37);
+        doc.text('This is a Computer / System Generated Monthly Salary Slip.', 15, finalY + 34);
 
         addSignatureAndSeal(doc, finalY + 20);
         addFooter(doc);
@@ -580,11 +571,11 @@ export const generateInvoicePDF = async (invoice) => {
     const headerHeight = addHeader(doc, 'Tax Invoice');
 
     const startY = headerHeight + 10;
+    const invNumber = invoice._id ? `INV-${invoice._id.slice(-6).toUpperCase()}` : 'INV-GEN-2026';
 
     doc.setTextColor(...THEME.textDark);
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    const invNumber = invoice._id ? `INV-${invoice._id.slice(-6).toUpperCase()}` : 'INV-GEN-2026';
     doc.text(`Invoice ID: ${invNumber}`, 15, startY);
     doc.text(`Invoice Date: ${new Date(invoice.createdAt || Date.now()).toLocaleDateString()}`, 15, startY + 6);
     
@@ -592,6 +583,8 @@ export const generateInvoicePDF = async (invoice) => {
     doc.setFont('helvetica', 'normal');
     doc.text(`${invoice.customerId?.name || 'Valued Customer'}`, 130, startY + 6);
     doc.text(`Project: ${invoice.projectId?.title || 'General Structural Work'}`, 130, startY + 11);
+
+    const amountVal = parseFloat(invoice.amount || 0);
 
     autoTable(doc, {
         startY: startY + 18,
@@ -603,13 +596,13 @@ export const generateInvoicePDF = async (invoice) => {
                 invoice.projectId?.description?.substring(0, 70) || 'Heavy Industrial Fabrication & Services',
                 invoice.projectId?._id?.slice(-8).toUpperCase() || 'N/A',
                 (invoice.paymentStatus || 'unpaid').toUpperCase(),
-                `₹ ${parseFloat(invoice.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                formatIndianCurrency(amountVal)
             ]
         ],
         theme: 'grid',
         showHead: 'everyPage',
-        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 8.5, cellPadding: 4 },
+        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
         columnStyles: {
             0: { halign: 'center', width: 12 },
             1: { halign: 'left' },
@@ -620,17 +613,7 @@ export const generateInvoicePDF = async (invoice) => {
     });
 
     const finalY = doc.lastAutoTable.finalY + 12;
-    const pageWidth = doc.internal.pageSize.width;
-
-    doc.setFillColor(...THEME.bgLight);
-    doc.rect(110, finalY, 85, 20, 'F');
-
-    doc.setFontSize(10);
-    doc.text('TOTAL AMOUNT PAYABLE:', 115, finalY + 12);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...THEME.accent);
-    doc.text(`₹ ${parseFloat(invoice.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - 18, finalY + 12, { align: 'right' });
+    renderAmountBox(doc, 110, finalY, 85, 20, 'Total Amount Payable:', formatIndianCurrency(amountVal));
 
     addSignatureAndSeal(doc, finalY + 25);
     addFooter(doc);
@@ -658,7 +641,7 @@ export const generateAttendanceReportPDF = async (logs, user, type = 'Staff') =>
     const startY = headerHeight + 10;
 
     doc.setTextColor(...THEME.textDark);
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text(`Entity Name: ${(user?.name || 'Staff Member').toUpperCase()}`, 15, startY);
     doc.text(`Report Period: Generated on ${new Date().toLocaleDateString()}`, 15, startY + 6);
@@ -676,8 +659,8 @@ export const generateAttendanceReportPDF = async (logs, user, type = 'Staff') =>
         ]) : [],
         theme: 'striped',
         showHead: 'everyPage',
-        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 8, cellPadding: 4 },
+        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
         columnStyles: {
             0: { halign: 'center' },
             1: { halign: 'center' },
@@ -717,8 +700,8 @@ export const generateGeneralReportPDF = async (data, title, columns) => {
         body: Array.isArray(data) ? data : [],
         theme: 'striped',
         showHead: 'everyPage',
-        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 8, cellPadding: 4, overflow: 'linebreak' },
+        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
         columnStyles: {
             0: { halign: 'left' },
             1: { halign: 'left' }
@@ -752,7 +735,7 @@ export const generatePaymentReceiptPDF = async (payment, user) => {
     const rcptId = payment._id?.slice(-8).toUpperCase() || 'N/A';
 
     doc.setTextColor(...THEME.textDark);
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text(`Receipt ID: RCPT-${rcptId}`, 15, startY);
     doc.text(`Transaction Date: ${new Date(payment.createdAt || Date.now()).toLocaleDateString()}`, 15, startY + 6);
@@ -775,8 +758,8 @@ export const generatePaymentReceiptPDF = async (payment, user) => {
         ],
         theme: 'grid',
         showHead: 'everyPage',
-        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 8.5, cellPadding: 4 },
+        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
         columnStyles: {
             0: { fontStyle: 'bold', halign: 'left', width: 60 },
             1: { halign: 'left' }
@@ -784,19 +767,12 @@ export const generatePaymentReceiptPDF = async (payment, user) => {
     });
 
     const finalY = doc.lastAutoTable.finalY + 12;
-    const pageWidth = doc.internal.pageSize.width;
-    
-    doc.setFillColor(...THEME.bgLight);
-    doc.rect(110, finalY, 85, 20, 'F');
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TOTAL AMOUNT PAID:', 115, finalY + 12);
-    doc.setFontSize(14);
-    doc.setTextColor(...THEME.accent);
-    doc.text(`₹ ${parseFloat(payment.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - 18, finalY + 12, { align: 'right' });
+    const formattedAmount = formatIndianCurrency(payment.amount || 0);
 
-    doc.setFontSize(7.5);
+    renderAmountBox(doc, 110, finalY, 85, 20, 'Total Amount Paid:', formattedAmount);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor(...THEME.textMuted);
     const disclaimer = "This is an official system-generated receipt. Subject to final bank clearance.";
     doc.text(disclaimer, 15, finalY + 38);
