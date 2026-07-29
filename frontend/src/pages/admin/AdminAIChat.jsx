@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Bot, Save, Trash2, Plus, Users, MessageSquare, ToggleLeft, ToggleRight, Settings, Activity } from 'lucide-react';
+import { Bot, Save, Trash2, Plus, Users, MessageSquare, ToggleLeft, ToggleRight, Settings, Activity, Phone, Mail, Globe, Clock, Building } from 'lucide-react';
 
 const AdminAIChat = () => {
     const [settings, setSettings] = useState({ isAiEnabled: 'true', aiWorkMode: 'online', aiPrompt: '' });
@@ -10,9 +10,50 @@ const AdminAIChat = () => {
     const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
     const [loading, setLoading] = useState(true);
 
+    // AI Chatbot Contact Settings State
+    const [contactForm, setContactForm] = useState({
+        companyName: 'Krishna Engineering Works',
+        contactPerson: 'Managing Director / Desk',
+        primaryPhone: '+919447940835',
+        secondaryPhone: '',
+        whatsappNumber: '+919447940835',
+        email: 'contact@krishnaengg.com',
+        website: 'https://krishna-akhilnjcets-projects.vercel.app',
+        businessHours: 'Mon - Sat: 9:00 AM - 6:00 PM'
+    });
+    const [savingContact, setSavingContact] = useState(false);
+    const [contactSaveMsg, setContactSaveMsg] = useState('');
+
     useEffect(() => {
         fetchData();
+        fetchContactSettings();
     }, []);
+
+    const fetchContactSettings = async () => {
+        try {
+            const res = await api.get('/chatbot-settings/contact');
+            if (res.data) setContactForm(res.data);
+        } catch (err) {
+            console.warn('Failed to load contact settings:', err);
+        }
+    };
+
+    const handleSaveContactSettings = async (e) => {
+        e.preventDefault();
+        setSavingContact(true);
+        setContactSaveMsg('');
+        try {
+            const res = await api.post('/chatbot-settings/contact', contactForm);
+            setContactSaveMsg('✅ Chatbot Contact Settings updated successfully!');
+            if (res.data?.settings) setContactForm(res.data.settings);
+            setTimeout(() => setContactSaveMsg(''), 4000);
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || 'Failed to save Contact Settings');
+        } finally {
+            setSavingContact(false);
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -188,6 +229,129 @@ const AdminAIChat = () => {
                             </p>
                         </div>
                     </div>
+                </div>
+
+                {/* CHATBOT CONTACT SETTINGS CARD */}
+                <div className="bg-white border-4 border-slate-900 rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <h2 className="text-xl font-black uppercase text-slate-900 mb-2 flex items-center gap-2">
+                        <Phone className="w-5 h-5 text-indigo-600" /> Chatbot Contact Settings
+                    </h2>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-6">
+                        Configure phone dialer, WhatsApp number, and business info used by Call Now button
+                    </p>
+
+                    {contactSaveMsg && (
+                        <div className="mb-6 p-4 bg-emerald-50 border-2 border-emerald-300 rounded-2xl text-xs font-bold text-emerald-800 animate-in fade-in">
+                            {contactSaveMsg}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSaveContactSettings} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Company Name</label>
+                                <input 
+                                    type="text" 
+                                    value={contactForm.companyName || ''} 
+                                    onChange={e => setContactForm({ ...contactForm, companyName: e.target.value })}
+                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    placeholder="Krishna Engineering Works"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Contact Person</label>
+                                <input 
+                                    type="text" 
+                                    value={contactForm.contactPerson || ''} 
+                                    onChange={e => setContactForm({ ...contactForm, contactPerson: e.target.value })}
+                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    placeholder="Managing Director / Helpdesk"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">
+                                    Primary Phone Number <span className="text-indigo-600 font-bold">* (Used for Call Now)</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    required
+                                    value={contactForm.primaryPhone || ''} 
+                                    onChange={e => setContactForm({ ...contactForm, primaryPhone: e.target.value })}
+                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    placeholder="+91 9447940835"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">
+                                    Secondary Phone Number <span className="text-slate-400 font-normal">(Optional)</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    value={contactForm.secondaryPhone || ''} 
+                                    onChange={e => setContactForm({ ...contactForm, secondaryPhone: e.target.value })}
+                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    placeholder="+91 9446000000"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">WhatsApp Number</label>
+                                <input 
+                                    type="text" 
+                                    value={contactForm.whatsappNumber || ''} 
+                                    onChange={e => setContactForm({ ...contactForm, whatsappNumber: e.target.value })}
+                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    placeholder="+91 9447940835"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Email Address</label>
+                                <input 
+                                    type="email" 
+                                    value={contactForm.email || ''} 
+                                    onChange={e => setContactForm({ ...contactForm, email: e.target.value })}
+                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    placeholder="contact@krishnaengg.com"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Website URL</label>
+                                <input 
+                                    type="text" 
+                                    value={contactForm.website || ''} 
+                                    onChange={e => setContactForm({ ...contactForm, website: e.target.value })}
+                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    placeholder="https://krishnaengg.com"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Business Hours</label>
+                                <input 
+                                    type="text" 
+                                    value={contactForm.businessHours || ''} 
+                                    onChange={e => setContactForm({ ...contactForm, businessHours: e.target.value })}
+                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    placeholder="Mon - Sat: 9:00 AM - 6:00 PM"
+                                />
+                            </div>
+                        </div>
+
+                        <button 
+                            type="submit"
+                            disabled={savingContact}
+                            className="bg-emerald-600 text-white font-black px-6 py-3.5 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-900 transition w-full flex items-center justify-center gap-2 uppercase tracking-widest text-xs mt-4 disabled:opacity-50"
+                        >
+                            <Save className="w-4 h-4" /> {savingContact ? 'Saving...' : 'Save Chatbot Contact Settings'}
+                        </button>
+                    </form>
                 </div>
 
                 {/* FAQ MANAGER CARD */}

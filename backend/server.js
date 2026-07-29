@@ -90,6 +90,7 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/document-history', require('./routes/documentHistoryRoutes'));
 app.use('/api/lodge-billing', require('./routes/lodgeBillingRoutes'));
 app.use('/api/lodge-payments', require('./routes/lodgePaymentRoutes'));
+app.use('/api/chatbot-settings', require('./routes/chatbotSettingRoutes'));
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
 });
