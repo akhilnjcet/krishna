@@ -23,9 +23,14 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
     useEffect(() => {
         if (!bookingId) return;
         setLoading(true);
-        api.get(`/api/bookings/${bookingId}/acknowledgement`)
+        setError(null);
+        api.get(`/bookings/${bookingId}/acknowledgement`)
             .then(r => setData(r.data))
-            .catch(() => setError('Could not load acknowledgement details.'))
+            .catch((err) => {
+                console.error('[ACK-MODAL] Failed to load residency acknowledgement:', err);
+                const msg = err.response?.data?.message || 'Could not load acknowledgement details.';
+                setError(msg);
+            })
             .finally(() => setLoading(false));
     }, [bookingId]);
 
@@ -46,11 +51,18 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
     };
 
     const handleShare = async () => {
-        const url = `${window.location.origin}${window.location.pathname}#/lodge/verify-booking/${bookingId}`;
+        const basePath = window.location.hash ? `${window.location.origin}${window.location.pathname}#/lodge/verify-booking/${bookingId}` : `${window.location.origin}/lodge/verify-booking/${bookingId}`;
         if (navigator.share) {
-            navigator.share({ title: 'Residency Acknowledgement', text: `Verify my booking at ${data?.lodge?.name || 'Krishna Lodge'}`, url });
+            try {
+                await navigator.share({ title: 'Residency Acknowledgement', text: `Verify booking at ${data?.lodge?.name || 'Krishna Lodge'}`, url: basePath });
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    navigator.clipboard.writeText(basePath);
+                    alert('Verification link copied to clipboard!');
+                }
+            }
         } else {
-            navigator.clipboard.writeText(url);
+            navigator.clipboard.writeText(basePath);
             alert('Verification link copied to clipboard!');
         }
     };

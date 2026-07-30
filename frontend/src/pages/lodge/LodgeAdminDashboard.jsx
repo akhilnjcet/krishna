@@ -13,6 +13,7 @@ import useBookingStore from '../../stores/bookingStore';
 import useAuthStore from '../../stores/authStore';
 import { customerService } from '../../services/customerService';
 import api from '../../services/api';
+import { savePDF } from '../../services/pdfService';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import LodgeAdminPaymentVerification from '../../components/lodge/LodgeAdminPaymentVerification';
@@ -113,7 +114,7 @@ const LodgeAdminDashboard = () => {
         }
     };
 
-    const generateIndividualPDF = (customer) => {
+    const generateIndividualPDF = async (customer) => {
         const doc = new jsPDF();
         doc.setFont("helvetica", "bold");
         doc.text("KRISHNA LODGE - GUEST RECORD", 105, 20, { align: "center" });
@@ -139,7 +140,7 @@ const LodgeAdminDashboard = () => {
             headStyles: { fillColor: [45, 91, 227] }
         });
 
-        doc.save(`${customer.name}_record.pdf`);
+        await savePDF(doc, `${customer.name}_record.pdf`);
     };
 
     const generateGlobalPDF = async () => {
@@ -177,10 +178,10 @@ const LodgeAdminDashboard = () => {
             headStyles: { fillColor: [17, 24, 39] }
         });
 
-        doc.save(`Global_Booking_History.pdf`);
+        await savePDF(doc, `Global_Booking_History.pdf`);
     };
 
-    const generateFinancePDF = () => {
+    const generateFinancePDF = async () => {
         const doc = new jsPDF();
         doc.setFont("helvetica", "bold");
         doc.text("KRISHNA LODGE - FINANCIAL STATEMENT", 105, 20, { align: "center" });
@@ -211,7 +212,7 @@ const LodgeAdminDashboard = () => {
         doc.setFont("helvetica", "bold");
         doc.text(`Total Revenue Collected: ₹${total.toLocaleString()}`, 190, finalY, { align: "right" });
 
-        doc.save(`Financial_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        await savePDF(doc, `Financial_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     const handleUpdateCustomer = async (e) => {

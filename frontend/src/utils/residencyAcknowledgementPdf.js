@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { savePDF } from '../services/pdfService';
 
 // ─── jsPDF-safe Indian Currency Formatter (Rs. prefix — ₹ not in Helvetica) ──
 export const formatINR = (amount) => {
@@ -282,12 +283,41 @@ export const generateResidencyAcknowledgementPDF = async (data) => {
 export const downloadResidencyAcknowledgement = async (data) => {
     const doc = await generateResidencyAcknowledgementPDF(data);
     const name = data.booking?.agreementNumber || 'Acknowledgement';
-    doc.save(`${name}_Residency_Acknowledgement.pdf`);
+    await savePDF(doc, `${name}_Residency_Acknowledgement.pdf`);
 };
 
 export const printResidencyAcknowledgement = async (data) => {
     const doc = await generateResidencyAcknowledgementPDF(data);
-    const blob = doc.output('bloburl');
-    const win = window.open(blob, '_blank');
-    if (win) win.print();
+    const blob = doc.output('blob');
+    const blobUrl = URL.createObjectURL(blob);
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.src = blobUrl;
+
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+        setTimeout(() => {
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            } catch (err) {
+                console.warn('Iframe print fallback to window.open:', err);
+                const win = window.open(blobUrl, '_blank');
+                if (win) win.print();
+            }
+            setTimeout(() => {
+                if (document.body.contains(iframe)) {
+                    document.body.removeChild(iframe);
+                }
+                URL.revokeObjectURL(blobUrl);
+            }, 3000);
+        }, 300);
+    };
 };

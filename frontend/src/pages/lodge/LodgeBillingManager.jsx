@@ -13,6 +13,7 @@ import useAuthStore from '../../stores/authStore';
 import { getSocket } from '../../utils/socket';
 
 import { formatCurrencyINR, fitTextIntoBox } from '../../utils/pdfHelpers';
+import { savePDF } from '../../services/pdfService';
 
 // Simple Indian Number to Words Converter
 const numberToWords = (num) => {
@@ -631,7 +632,7 @@ const LodgeBillingManager = () => {
             doc.text('Terms & Conditions: Rent must be paid within the grace period. Overdue accounts attract late fees.', 15, currentY);
 
             const safeFilename = `Bill_${billData.billNumber}.pdf`;
-            doc.save(safeFilename);
+            await savePDF(doc, safeFilename);
 
             alert('Bill generated and saved successfully!');
             setGeneratingBillRoom(null);

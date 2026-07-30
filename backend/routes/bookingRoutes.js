@@ -227,11 +227,17 @@ router.put('/:id/extend/reject', protect, async (req, res) => {
 });
 
 // @route   GET /api/bookings/:id/acknowledgement
-// @desc    Get complete Residency Acknowledgement payload
+// @route   GET /api/bookings/:id/acknowledgement
+// @desc    Get complete Residency Acknowledgement payload (auto-generates missing acknowledgement records)
 // @access  Private
 router.get('/:id/acknowledgement', protect, async (req, res) => {
   try {
-    const booking = await BookingLodge.findById(req.params.id)
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid booking ID format' });
+    }
+
+    let booking = await BookingLodge.findById(req.params.id)
       .populate('userId', 'name email phone phoneNumber address fatherName emergencyContact emergencyPhone govtIdType govtIdNumber')
       .populate('roomId', 'type price rentCycle maxGuests description roomNumber building floor securityDeposit facilities amenities')
       .populate('lodgeId', 'name location.address phone email website');
@@ -242,7 +248,21 @@ router.get('/:id/acknowledgement', protect, async (req, res) => {
     const uid = (req.user.id || req.user._id || '').toString();
     const bookingUserId = (booking.userId?._id || booking.userId || '').toString();
     if (uid !== bookingUserId && req.user.role !== 'admin') {
-      return res.status(401).json({ message: 'Not authorized' });
+      return res.status(401).json({ message: 'Not authorized to access this acknowledgement' });
+    }
+
+    // Auto-create missing acknowledgement data on the booking if not present
+    let isModified = false;
+    if (!booking.agreementNumber) {
+      booking.agreementNumber = `KLR-ACK-${booking._id.toString().slice(-6).toUpperCase()}`;
+      isModified = true;
+    }
+    if (!booking.acknowledgementVersion) {
+      booking.acknowledgementVersion = 1;
+      isModified = true;
+    }
+    if (isModified) {
+      await booking.save().catch(e => console.warn('[ACK-AUTO-CREATE] Warning saving acknowledgement details:', e.message));
     }
 
     // Match all payment statuses that mean "paid" — case-insensitive
@@ -279,28 +299,28 @@ router.get('/:id/acknowledgement', protect, async (req, res) => {
         daysTotal,
         daysRemaining,
         nextDueDate: nextDue,
-        totalAmount: booking.totalAmount,
+        totalAmount: booking.totalAmount || 0,
         totalPaid,
         outstanding,
         paymentCycle: settings?.defaultBillingCycle || 'Monthly',
       },
       tenant: {
-        name: booking.userId?.name || '',
+        name: booking.userId?.name || 'Guest User',
         email: booking.userId?.email || '',
         phone: booking.userId?.phone || booking.userId?.phoneNumber || '',
-        address: booking.userId?.address || '',
+        address: booking.userId?.address || 'N/A',
         fatherName: booking.userId?.fatherName || '',
         emergencyContact: booking.userId?.emergencyContact || '',
         emergencyPhone: booking.userId?.emergencyPhone || '',
-        govtIdType: booking.userId?.govtIdType || '',
-        govtIdNumber: booking.userId?.govtIdNumber || '',
+        govtIdType: booking.userId?.govtIdType || 'Aadhaar Card',
+        govtIdNumber: booking.userId?.govtIdNumber || 'N/A',
       },
       room: {
-        roomNumber: booking.roomId?.roomNumber || '',
-        type: booking.roomId?.type || '',
-        building: booking.roomId?.building || '',
-        floor: booking.roomId?.floor || '',
-        monthlyRent: booking.roomId?.price || 0,
+        roomNumber: booking.roomId?.roomNumber || 'N/A',
+        type: booking.roomId?.type || 'Standard Room',
+        building: booking.roomId?.building || 'Main Block',
+        floor: booking.roomId?.floor || '1st Floor',
+        monthlyRent: booking.roomId?.price || booking.totalAmount || 0,
         rentCycle: booking.roomId?.rentCycle || 'Monthly',
         securityDeposit: booking.roomId?.securityDeposit || 0,
         maxGuests: booking.roomId?.maxGuests || 1,
@@ -311,8 +331,8 @@ router.get('/:id/acknowledgement', protect, async (req, res) => {
       lodge: {
         name: booking.lodgeId?.name || 'Krishna Lodge & Residency',
         address: booking.lodgeId?.location?.address || 'Krishna Complex, Ernakulam, Kerala',
-        phone: booking.lodgeId?.phone || '',
-        email: booking.lodgeId?.email || '',
+        phone: booking.lodgeId?.phone || '+91 98765 43210',
+        email: booking.lodgeId?.email || 'support@krishnaengg.com',
         website: booking.lodgeId?.website || 'www.krishnaengg.com',
       },
       policies: {
@@ -327,8 +347,8 @@ router.get('/:id/acknowledgement', protect, async (req, res) => {
       }
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server Error' });
+    console.error('[ACK-FETCH-ERROR] Failed to fetch residency acknowledgement:', err);
+    res.status(500).json({ message: 'Server error retrieving residency acknowledgement details' });
   }
 });
 
@@ -337,11 +357,21 @@ router.get('/:id/acknowledgement', protect, async (req, res) => {
 // @access  Public
 router.get('/:id/verify', async (req, res) => {
   try {
-    const booking = await BookingLodge.findById(req.params.id)
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ valid: false, message: 'Invalid booking ID format' });
+    }
+
+    let booking = await BookingLodge.findById(req.params.id)
       .populate('userId', 'name')
       .populate('roomId', 'type roomNumber building');
 
     if (!booking) return res.status(404).json({ valid: false, message: 'Booking not found' });
+
+    if (!booking.agreementNumber) {
+      booking.agreementNumber = `KLR-ACK-${booking._id.toString().slice(-6).toUpperCase()}`;
+      await booking.save().catch(e => console.warn('[VERIFY-AUTO-CREATE] Error saving agreement number:', e.message));
+    }
 
     const daysRemaining = Math.max(0, Math.ceil((new Date(booking.checkOut) - new Date()) / (1000 * 60 * 60 * 24)));
 
@@ -349,8 +379,8 @@ router.get('/:id/verify', async (req, res) => {
       valid: true,
       bookingId: booking._id,
       agreementNumber: booking.agreementNumber,
-      tenant: booking.userId?.name || 'Tenant',
-      room: `${booking.roomId?.roomNumber || ''} · ${booking.roomId?.type || ''} · ${booking.roomId?.building || ''}`,
+      tenant: booking.userId?.name || 'Guest User',
+      room: `${booking.roomId?.roomNumber || 'N/A'} · ${booking.roomId?.type || 'Room'} · ${booking.roomId?.building || 'Main Block'}`,
       checkIn: booking.checkIn,
       checkOut: booking.checkOut,
       daysRemaining,
@@ -359,7 +389,8 @@ router.get('/:id/verify', async (req, res) => {
       verifiedAt: new Date().toISOString(),
     });
   } catch (err) {
-    res.status(500).json({ valid: false, message: 'Server Error' });
+    console.error('[VERIFY-FETCH-ERROR] Failed to verify booking:', err);
+    res.status(500).json({ valid: false, message: 'Server error verifying booking' });
   }
 });
 

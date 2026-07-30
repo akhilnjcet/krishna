@@ -7,7 +7,9 @@ import {
     ScanLine, RefreshCw
 } from 'lucide-react';
 import { loadFaceModels } from '../utils/faceApiLoader';
-import { detectBlink } from '../utils/faceApiUtils';
+import { detectFaceAndLiveness, averageAndNormalizeDescriptors } from '../utils/faceApiUtils';
+
+const TARGET_SAMPLES = 5;
 
 const FaceCapture = ({ onCapture, loading }) => {
     const videoRef = useRef(null);
@@ -54,7 +56,7 @@ const FaceCapture = ({ onCapture, loading }) => {
         const camStart = performance.now();
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { width: { ideal: 640 }, height: { ideal: 480 } } 
+                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } 
             });
             streamRef.current = stream;
             if (videoRef.current) {
@@ -65,7 +67,7 @@ const FaceCapture = ({ onCapture, loading }) => {
             console.log(`[PERF] Enrollment Camera initialization: ${camDuration.toFixed(2)}ms`);
 
             setStatus('scanning');
-            setMessage('Optical link active. Synchronizing AI...');
+            setMessage('Optical link active. Align face straight at camera...');
         } catch (camErr) {
             console.error('Camera initialization failed:', camErr);
             setStatus('error');
@@ -94,7 +96,8 @@ const FaceCapture = ({ onCapture, loading }) => {
         scanActiveRef.current = true;
         let currentFrames = [];
         let lastAnalysisTime = 0;
-        const ANALYSIS_INTERVAL = 150; // Throttled frequency
+        let blinkVerified = false;
+        const ANALYSIS_INTERVAL = 150;
 
         const scanLoop = async () => {
             if (!scanActiveRef.current) return;
@@ -104,43 +107,41 @@ const FaceCapture = ({ onCapture, loading }) => {
                 lastAnalysisTime = nowTime;
 
                 try {
-                    const detectStart = performance.now();
-                    const detections = await faceapi.detectAllFaces(videoRef.current)
-                        .withFaceLandmarks()
-                        .withFaceDescriptors();
-                    const detectDuration = performance.now() - detectStart;
-                    console.log(`[PERF] Enrollment Throttled face detection: ${detectDuration.toFixed(2)}ms`);
+                    const result = await detectFaceAndLiveness(videoRef, canvasRef);
 
-                    if (detections.length > 1) {
+                    if (!result) {
+                        setMessage('ALIGN FACE WITHIN SCENE ANALYZER');
+                    } else if (result.multipleFaces) {
                         setMessage('CRITICAL: MULTIPLE FACES DETECTED. ENROLL ONLY ONE.');
-                    } else if (detections.length === 1) {
-                        const result = detections[0];
-                        const isBlinking = await detectBlink(result.landmarks);
-                        
-                        if (isBlinking) {
-                            setMessage(`CAPTURING FRAME BINARY... [${currentFrames.length + 1}/1]`);
-                            currentFrames.push(Array.from(result.descriptor));
-                            setCapturedFrames([...currentFrames]);
-                            
-                            await new Promise(resolve => setTimeout(resolve, 300));
+                    } else if (result.noFace) {
+                        setMessage('NO FACE DETECTED. POSITION YOUR FACE IN FRAME.');
+                    } else if (result.invalid) {
+                        setMessage(result.reason.toUpperCase());
+                    } else if (result.detection) {
+                        if (result.isBlinking) {
+                            blinkVerified = true;
+                        }
+
+                        if (!blinkVerified) {
+                            setMessage('PERFORM ONE CLEAR BLINK FOR LIVENESS CHECK');
                         } else {
-                            setMessage('PERFORM ONE CLEAR BLINK TO START CAPTURE');
-                        }
+                            setMessage(`CAPTURING BIOMETRIC SAMPLE [${currentFrames.length + 1}/${TARGET_SAMPLES}]...`);
+                            currentFrames.push(result.descriptor);
+                            setCapturedFrames([...currentFrames]);
 
-                        if (currentFrames.length >= 1) {
-                            scanActiveRef.current = false;
-                            
-                            // Use the single best descriptor directly
-                            const finalDesc = currentFrames[0];
+                            await new Promise(resolve => setTimeout(resolve, 200));
 
-                            setStatus('success');
-                            setMessage('BIOMETRIC PROFILE GENERATED SUCCESSFULLY');
-                            stopVideo();
-                            setFinalDescriptor(finalDesc);
-                            return;
+                            if (currentFrames.length >= TARGET_SAMPLES) {
+                                scanActiveRef.current = false;
+                                const averagedDescriptor = averageAndNormalizeDescriptors(currentFrames);
+
+                                setStatus('success');
+                                setMessage('HIGH-QUALITY BIOMETRIC PROFILE GENERATED SUCCESSFULLY');
+                                stopVideo();
+                                setFinalDescriptor(averagedDescriptor);
+                                return;
+                            }
                         }
-                    } else {
-                        setMessage('ALIGN EYES WITHIN SCENE ANALYZER');
                     }
                 } catch (err) {
                     console.error('Face capture failure:', err);
@@ -157,8 +158,6 @@ const FaceCapture = ({ onCapture, loading }) => {
 
         scanLoop();
     };
-
-
 
     return (
         <div className="w-full flex flex-col items-center gap-4 md:gap-8 py-2 md:py-4">
@@ -182,9 +181,9 @@ const FaceCapture = ({ onCapture, loading }) => {
                 </AnimatePresence>
 
                 {/* Progress Indicators */}
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
-                    {[0].map((i) => (
-                        <div key={i} className={`w-12 h-1 rounded-full transition-all duration-500 ${i < capturedFrames.length ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-slate-800'}`}></div>
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                        <div key={i} className={`w-8 h-1.5 rounded-full transition-all duration-500 ${i < capturedFrames.length ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-slate-800'}`}></div>
                     ))}
                 </div>
 

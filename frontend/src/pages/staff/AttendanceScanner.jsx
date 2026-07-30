@@ -102,7 +102,7 @@ const AttendanceScanner = () => {
         let highestScore = 0;
         let bestDescriptor = null;
         let lastAnalysisTime = 0;
-        const ANALYSIS_INTERVAL = 150; // Throttled frequency (run at most once every 150ms)
+        const ANALYSIS_INTERVAL = 150;
 
         const scanLoop = async () => {
             if (!scanActiveRef.current) return;
@@ -112,12 +112,18 @@ const AttendanceScanner = () => {
                 lastAnalysisTime = nowTime;
 
                 try {
-                    const detectStart = performance.now();
                     const result = await detectFaceAndLiveness(videoRef, canvasRef);
-                    const detectDuration = performance.now() - detectStart;
-                    console.log(`[PERF] Throttled face detection & liveness check: ${detectDuration.toFixed(2)}ms`);
 
-                    if (result) {
+                    if (!result || result.noFace) {
+                        setMessage('Align face within the secure perimeter.');
+                        setStats(prev => ({ ...prev, quality: 0 }));
+                    } else if (result.multipleFaces) {
+                        setMessage('Multiple faces detected. Please stand alone in front of the camera.');
+                        setStats(prev => ({ ...prev, quality: 0 }));
+                    } else if (result.invalid) {
+                        setMessage(result.reason);
+                        setStats(prev => ({ ...prev, quality: 0 }));
+                    } else if (result.detection) {
                         setStats(prev => ({ ...prev, quality: Math.round(result.score * 100) }));
 
                         if (!blinkDetected && result.isBlinking) {
@@ -126,24 +132,20 @@ const AttendanceScanner = () => {
                             setMessage('Liveness Verified. Holding for profile match...');
                         }
 
-                        if (result.score > 0.7) {
+                        if (result.score > 0.70) {
                             if (result.score > highestScore) {
                                 highestScore = result.score;
                                 bestDescriptor = result.descriptor;
                             }
                         }
 
-                        const threshold = blinkDetected ? 0.75 : 0.85;
-                        if (bestDescriptor && highestScore > threshold) {
+                        if (blinkDetected && bestDescriptor && highestScore >= 0.75) {
                             scanActiveRef.current = false;
                             verifyIdentity(bestDescriptor);
                             return;
                         } else if (!blinkDetected) {
                             setMessage('Face detected. Blink to verify liveness...');
                         }
-                    } else {
-                        setMessage('Align face within the secure perimeter.');
-                        setStats(prev => ({ ...prev, quality: 0 }));
                     }
                 } catch (err) {
                     console.error('Face detection failure:', err);
@@ -180,9 +182,8 @@ const AttendanceScanner = () => {
         } catch (error) {
             hapticService.error();
             setStatus('error');
-            setMessage(error.response?.data?.message === 'Face Not Recognized' 
-                ? 'Face verification failed. Unauthorized person detected. Please try again with the registered staff member.' 
-                : 'Cryptographic handshake failed.');
+            const serverMsg = error.response?.data?.message;
+            setMessage(serverMsg || 'Face verification failed. Unauthorized person detected.');
             
             // Re-use active camera stream: automatically resume detection loop after 3 seconds on verification failure
             setTimeout(() => {

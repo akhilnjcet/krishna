@@ -18,9 +18,13 @@ export default function BookingVerify() {
 
     useEffect(() => {
         if (!id) return;
-        api.get(`/api/bookings/${id}/verify`)
+        setLoading(true);
+        api.get(`/bookings/${id}/verify`)
             .then(r => setData(r.data))
-            .catch(() => setError('Booking not found or verification failed.'))
+            .catch((err) => {
+                console.error('[VERIFY-PAGE] Failed to verify booking:', err);
+                setError(err.response?.data?.message || 'Booking not found or verification failed.');
+            })
             .finally(() => setLoading(false));
     }, [id]);
 

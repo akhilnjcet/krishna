@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrencyINR, fitTextIntoBox, cleanTextString } from '../utils/pdfHelpers';
+import { savePDF } from './pdfService';
 
 export const generateLodgeReceiptPDF = async (payment) => {
   const doc = new jsPDF();
@@ -16,43 +17,44 @@ export const generateLodgeReceiptPDF = async (payment) => {
   const darkSlate = [15, 23, 42];     // Slate-900
   const lightGray = [248, 250, 252];   // Slate-50
 
-  // 1. Header Banner (A4 Top Margin)
+  // 1. Header Banner — taller to fit content comfortably
   doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, 210, 38, 'F');
+  doc.rect(0, 0, 210, 42, 'F');
 
-  // Company Name (18pt)
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.setTextColor(255, 255, 255);
-  doc.text(brandName, 15, 18, { charSpace: 0 });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(224, 231, 255);
-  doc.text(`${tagline} | ${address}`, 15, 25, { charSpace: 0 });
-  doc.text(`Contact: ${phone}`, 15, 31, { charSpace: 0 });
-
-  // 2. Receipt Badge (Top Right)
+  // 2. Receipt Badge (Top Right) — positioned first so text does not render over it
   doc.setFillColor(255, 255, 255);
-  doc.roundedRect(140, 8, 55, 24, 3, 3, 'F');
+  doc.roundedRect(138, 6, 58, 28, 3, 3, 'F');
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...primaryColor);
-  doc.text("PAYMENT RECEIPT", 143, 17, { charSpace: 0 });
+  doc.text("PAYMENT RECEIPT", 141, 16, { charSpace: 0 });
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
   const receiptNum = `#${payment.receiptNumber || 'REC-' + (payment._id ? payment._id.slice(-6).toUpperCase() : '2026')}`;
-  doc.text(receiptNum, 143, 25, { charSpace: 0 });
+  doc.text(receiptNum, 141, 24, { charSpace: 0 });
+
+  // Company Name — constrained to left zone (max width 118mm, stops before badge)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text(brandName, 15, 17, { charSpace: 0, maxWidth: 118 });
+
+  // Tagline & Contact — 8pt, below name
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(224, 231, 255);
+  doc.text(`${tagline} | ${address}`, 15, 27, { charSpace: 0, maxWidth: 118 });
+  doc.text(`Contact: ${phone}`, 15, 34, { charSpace: 0, maxWidth: 118 });
 
   // 3. Status Ribbon
   doc.setFillColor(220, 252, 231);
-  doc.rect(0, 38, 210, 8, 'F');
+  doc.rect(0, 42, 210, 8, 'F');
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(22, 101, 52);
-  doc.text("VERIFIED & PAID - OFFICIAL AUDIT RECORD", 105, 43.5, { align: "center", charSpace: 0 });
+  doc.text("VERIFIED & PAID - OFFICIAL AUDIT RECORD", 105, 47.5, { align: "center", charSpace: 0 });
 
-  let y = 54;
+  let y = 58;
 
   // 4. Details Box (Tenant & Payment info)
   doc.setFillColor(...lightGray);
@@ -155,5 +157,5 @@ export const generateLodgeReceiptPDF = async (payment) => {
   doc.text(`Generated Date: ${new Date().toLocaleString()} | Support: +91 94479 40835 | www.krishnaengg.com`, 105, footerY + 13, { align: "center", charSpace: 0 });
 
   const filename = `Receipt_${payment.receiptNumber || 'REC_' + (payment._id ? payment._id.slice(-6).toUpperCase() : '2026')}.pdf`;
-  doc.save(filename);
+  await savePDF(doc, filename);
 };

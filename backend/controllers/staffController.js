@@ -175,12 +175,28 @@ exports.deleteStaff = async (req, res) => {
 
 const FaceData = require('../models/FaceData');
 
+const getEuclideanDistance = (desc1, desc2) => {
+    if (!desc1 || !desc2 || desc1.length !== desc2.length) return 1.0;
+    let sum = 0;
+    for (let i = 0; i < desc1.length; i++) {
+        sum += Math.pow(desc1[i] - desc2[i], 2);
+    }
+    return Math.sqrt(sum);
+};
+
 exports.registerFace = async (req, res) => {
     try {
         const { descriptor } = req.body;
         const userId = req.params.id;
 
-        // 1. One Face Per User Rule: Check if face already exists
+        if (!descriptor || !Array.isArray(descriptor) || descriptor.length !== 128) {
+            return res.status(400).json({ message: 'Invalid face descriptor format. Must be a 128-dimensional embedding vector.' });
+        }
+
+        const staff = await User.findOne({ _id: userId, role: 'staff' });
+        if (!staff) return res.status(404).json({ message: 'Staff member not found' });
+
+        // 1. Check if face is already registered for this user
         const existingFace = await FaceData.findOne({ userId });
         if (existingFace) {
             return res.status(400).json({ 
@@ -188,17 +204,38 @@ exports.registerFace = async (req, res) => {
             });
         }
 
-        const staff = await User.findOne({ _id: userId, role: 'staff' });
-        if (!staff) return res.status(404).json({ message: 'Staff member not found' });
+        // 2. Prevent duplicate registrations: Check if the same face already exists for another employee
+        const allFaceData = await FaceData.find({});
+        for (const record of allFaceData) {
+            if (record.userId && record.userId.toString() !== userId.toString()) {
+                const distance = getEuclideanDistance(descriptor, record.faceEmbedding);
+                if (distance < 0.42) {
+                    return res.status(400).json({ 
+                        message: 'Duplicate face detected. This face is already registered to another employee.' 
+                    });
+                }
+            }
+        }
 
-        // 2. Store in FaceData collection
+        const usersWithDescriptor = await User.find({ 
+            _id: { $ne: userId }, 
+            faceDescriptor: { $exists: true, $ne: [] } 
+        });
+        for (const otherUser of usersWithDescriptor) {
+            const distance = getEuclideanDistance(descriptor, otherUser.faceDescriptor);
+            if (distance < 0.42) {
+                return res.status(400).json({ 
+                    message: 'Duplicate face detected. This face is already registered to another employee.' 
+                });
+            }
+        }
+
+        // 3. Store only face embedding vector in FaceData collection
         await FaceData.create({
             userId: userId,
             faceEmbedding: descriptor
         });
 
-        // Keep a reference in User model for convenience if needed, 
-        // but the core logic will now use FaceData
         staff.faceDescriptor = descriptor;
         await staff.save();
 

@@ -163,14 +163,14 @@ exports.verifyFace = async (req, res) => {
         const LoginLog = require('../models/LoginLog');
         const DailyAttendance = require('../models/DailyAttendance');
 
-        if (!descriptor || !Array.isArray(descriptor) || descriptor.length === 0) {
+        if (!descriptor || !Array.isArray(descriptor) || descriptor.length !== 128) {
             await LoginLog.create({
                 login_status: 'failed',
                 device: device || req.headers['user-agent'] || 'unknown',
-                reason: 'No Face Descriptor Provided',
+                reason: 'No Face Descriptor Provided or Invalid Format',
                 IP_address: req.ip || req.headers['x-forwarded-for']
             });
-            return res.status(400).json({ message: 'Face Not Recognized' });
+            return res.status(400).json({ message: 'Face not registered. Please contact the administrator.' });
         }
 
         // Check for authenticated user from optional Bearer token
@@ -187,7 +187,7 @@ exports.verifyFace = async (req, res) => {
 
         const allFaceData = await FaceData.find({}).populate('userId');
         let bestMatch = null;
-        let minDistance = 0.55; // Strict match threshold
+        let minDistance = 0.40; // Strict threshold: Euclidean distance <= 0.40 (Confidence >= 85%)
 
         for (const record of allFaceData) {
             if (!record.userId) continue;
@@ -219,13 +219,14 @@ exports.verifyFace = async (req, res) => {
                     reason: 'Unauthorized Face - Mismatched Staff Account',
                     IP_address: req.ip || req.headers['x-forwarded-for']
                 });
-                return res.status(401).json({ message: 'Face Not Recognized' });
+                return res.status(401).json({ message: 'Face does not match the registered employee.' });
             }
 
             const today = new Date().toISOString().split('T')[0];
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            const faceMatchConfidence = Math.round(Math.max(0, (1 - minDistance) * 100));
+            const cosineSim = 1 - (Math.pow(minDistance, 2) / 2);
+            const faceMatchConfidence = Math.round(Math.max(0, cosineSim * 100));
 
             let attendance = await Attendance.findOne({ staff_id: bestMatch._id, date: today, check_out: { $exists: false } }).sort({ login_time: -1 });
             let logType = 'IN';
@@ -328,10 +329,10 @@ exports.verifyFace = async (req, res) => {
             await LoginLog.create({
                 login_status: 'failed',
                 device: device || req.headers['user-agent'] || 'unknown',
-                reason: 'Unauthorized Face - Face Not Recognized',
+                reason: 'Unauthorized Face - Face Not Registered',
                 IP_address: req.ip || req.headers['x-forwarded-for']
             });
-            return res.status(401).json({ message: 'Face Not Recognized' });
+            return res.status(401).json({ message: 'Face not registered. Please contact the administrator.' });
         }
     } catch (error) {
         console.error('Gracefully caught face verification error:', error.message);
@@ -340,13 +341,13 @@ exports.verifyFace = async (req, res) => {
             await LoginLog.create({
                 login_status: 'failed',
                 device: req.body.device || req.headers['user-agent'] || 'unknown',
-                reason: 'Unauthorized Face',
+                reason: 'Unauthorized Face Verification Failure',
                 IP_address: req.ip || req.headers['x-forwarded-for']
             });
         } catch (logErr) {
             console.error('Failed to log biometric error to db:', logErr.message);
         }
-        res.status(401).json({ message: 'Face Not Recognized' });
+        res.status(401).json({ message: 'Face not registered. Please contact the administrator.' });
     }
 };
 

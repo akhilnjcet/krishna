@@ -41,12 +41,25 @@ A system-wide **Alert Hub** monitors room status in real-time.
 3. Enter the 4-digit PIN provided by the admin.
 4. You are now logged in! View your bills, pay rent via UPI, or report an issue.
 
+## 📄 APK PDF Download Fix & Rebuild
+- **Root Cause Fix**: Standard `doc.save()` links fail silently on Android WebViews. Replaced direct `doc.save()` calls across all screens (`lodgeReceiptService.js`, `residencyAcknowledgementPdf.js`, `RoomDashboard.jsx`, `LodgeBillingManager.jsx`, `LodgeAdminDashboard.jsx`) with `savePDF()`.
+- **Native Android Integration**: `savePDF()` delegates file saving to `window.Android.downloadBase64File`, which saves PDF files directly to the Android `Downloads` directory (with fallbacks for Android 10+ scoped storage), triggers `MediaScannerConnection`, shows a download Toast notification, and posts a system notification allowing users to tap to open the PDF. On Capacitor native fallback, it invokes Capacitor Filesystem and Native Share sheets.
+
 ## ✅ Verification Results
 - [x] PIN Generation on Check-in: **Passed**
 - [x] PIN Clearing on Check-out: **Passed**
 - [x] Authentication Guard for Room Dashboard: **Passed**
 - [x] Admin Income Reporting: **Passed**
 - [x] Automated Due Date Alerts: **Passed**
+- [x] Web Frontend Build (`npm run build`): **Passed**
+- [x] Capacitor Web Sync (`npx cap sync`): **Passed**
+- [x] Android Debug APK Build (`gradlew assembleDebug`): **Passed**
+- [x] Android Release Signed APK Build (`gradlew assembleRelease`): **Passed**
 
 > [!TIP]
-> All data is persisted locally. You can refresh the page or restart the app without losing your room status or payment history.
+> **Release Signed APK** (Keystore: `krishna-release-new.jks` | v1.0.8 / Code 7):  
+> 📍 `d:\AKHIL\krishna\release-output\krishna-v2.20-pdf-fixed-release-signed.apk`  
+> 📍 `d:\AKHIL\krishna\release-output\krishna-release-signed.apk`  
+>  
+> **Debug APK**:  
+> 📍 `d:\AKHIL\krishna\frontend\android\app\build\outputs\apk\debug\app-debug.apk`

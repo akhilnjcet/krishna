@@ -24,7 +24,7 @@ const THEME = {
     bgLight: [248, 250, 252]    // Slate 50
 };
 
-const savePDF = async (doc, filename, historyMetadata = null) => {
+export const savePDF = async (doc, filename, historyMetadata = null) => {
     try {
         const safeFilename = String(filename || 'Document.pdf')
             .trim()
@@ -33,15 +33,6 @@ const savePDF = async (doc, filename, historyMetadata = null) => {
 
         const pdfOutput = doc.output('datauristring');
         const base64Data = pdfOutput.split(',')[1];
-
-        if (window.Android && typeof window.Android.downloadBase64File === 'function') {
-            try {
-                window.Android.downloadBase64File(base64Data, safeFilename, 'application/pdf');
-                return;
-            } catch (err) {
-                console.error("Native Android download listener failed:", err);
-            }
-        }
 
         if (historyMetadata) {
             try {
@@ -65,6 +56,15 @@ const savePDF = async (doc, filename, historyMetadata = null) => {
             }
         }
 
+        if (window.Android && typeof window.Android.downloadBase64File === 'function') {
+            try {
+                window.Android.downloadBase64File(base64Data, safeFilename, 'application/pdf');
+                return;
+            } catch (err) {
+                console.error("Native Android download listener failed:", err);
+            }
+        }
+
         if (Capacitor.isNativePlatform()) {
             try {
                 const savedFile = await Filesystem.writeFile({
@@ -78,6 +78,7 @@ const savePDF = async (doc, filename, historyMetadata = null) => {
                     title: safeFilename,
                     text: 'Here is your generated PDF document.',
                     url: savedFile.uri,
+                    files: [savedFile.uri],
                     dialogTitle: 'Save or Share PDF'
                 });
                 return;
