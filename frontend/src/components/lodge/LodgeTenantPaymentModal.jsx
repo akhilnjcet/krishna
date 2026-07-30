@@ -14,12 +14,12 @@ const DEFAULT_CATEGORIES = [
   'Security Deposit', 'Advance Payment', 'Damage Charges', 'Miscellaneous'
 ];
 
-export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPayMore = false, onSuccess }) {
+export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPayMore = false, onSuccess, isAdmin: isAdminProp }) {
   if (!isOpen || !booking) return null;
 
   const user = useAuthStore(state => state.user);
   const storeUpiId = useLodgeStore(state => state.appSettings?.upiId);
-  const isAdmin = true; // Always enable Rent Payment Config header button for easy administration
+  const isAdmin = isAdminProp !== undefined ? isAdminProp : (user?.role === 'admin' || user?.role === 'manager');
 
   const room = booking.roomId || {};
   const lodge = booking.lodgeId || {};
@@ -235,7 +235,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
           <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
           <div>
             <span className="px-3 py-1 bg-white/20 text-white rounded-full text-[10px] font-black uppercase tracking-widest">
-              {isPayMore ? '➕ Additional Services Payment' : '💳 RENT PAYMENT CONFIG & SETTLEMENT'}
+              {isPayMore ? '➕ Additional Services Payment' : '💳 RENT PAYMENT & SETTLEMENT'}
             </span>
             <h2 className="text-2xl font-black tracking-tight mt-1">
               {isPayMore ? 'Pay Custom / Utility Charges' : 'Settle Room Rent & Dues'}
@@ -245,14 +245,16 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
             </p>
           </div>
           <div className="flex items-center gap-2 relative z-10">
-            <button 
-              onClick={() => setShowEditSettingsModal(true)}
-              className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-indigo-950 rounded-xl font-black text-xs flex items-center gap-1.5 transition-all shadow-md"
-              title="Edit UPI ID & Bank Account Config"
-            >
-              <Settings className="w-4 h-4 text-indigo-950 animate-spin-slow" />
-              <span>⚙️ Rent Payment Config</span>
-            </button>
+            {isAdmin && (
+              <button 
+                onClick={() => setShowEditSettingsModal(true)}
+                className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-indigo-950 rounded-xl font-black text-xs flex items-center gap-1.5 transition-all shadow-md"
+                title="Edit UPI ID & Bank Account Config (Admin Portal Only)"
+              >
+                <Settings className="w-4 h-4 text-indigo-950 animate-spin-slow" />
+                <span>⚙️ Rent Payment Config</span>
+              </button>
+            )}
             <button 
               onClick={onClose}
               className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all"
@@ -264,14 +266,23 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
 
         {/* Content Body */}
         {submittedSuccess ? (
-          <div className="p-16 text-center flex flex-col items-center justify-center">
-            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 animate-bounce">
+          <div className="p-16 text-center flex flex-col items-center justify-center space-y-3">
+            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-2 animate-bounce">
               <CheckCircle2 className="w-12 h-12" />
             </div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2">Payment Submitted!</h3>
-            <p className="text-slate-500 max-w-sm text-sm">
-              Your payment of <strong className="text-indigo-600 font-poppins">₹{grandTotal.toLocaleString()}</strong> has been submitted to Admin for verification.
+            <h3 className="text-2xl font-black text-slate-900">Payment Submitted!</h3>
+            <p className="text-slate-600 max-w-md text-sm">
+              Your payment of <strong className="text-indigo-600 font-poppins">₹{grandTotal.toLocaleString()}</strong> has been recorded and submitted for verification.
             </p>
+            {remainingRentBalance === 0 ? (
+              <div className="px-4 py-2 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-black uppercase tracking-wider">
+                ✅ Your rent is FULLY PAID!
+              </div>
+            ) : (
+              <div className="px-4 py-2 bg-amber-100 text-amber-800 rounded-xl text-xs font-black uppercase tracking-wider">
+                ⚠️ Remaining Rent Dues: ₹{remainingRentBalance.toLocaleString()} more needed
+              </div>
+            )}
           </div>
         ) : (
           <div className="p-6 overflow-y-auto space-y-6 flex-1">
@@ -377,15 +388,32 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                     </div>
                     <div>
                       <p className="text-[9px] font-black uppercase text-slate-400">Result Status</p>
-                      <p className="font-black text-slate-800">{livePaymentStatus}</p>
+                      <p className={`font-black ${remainingRentBalance === 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {remainingRentBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID'}
+                      </p>
                     </div>
+                  </div>
+
+                  {/* Status Banner */}
+                  <div className="mt-3">
+                    {remainingRentBalance === 0 ? (
+                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                        <span className="font-bold">Your payment is fully paid! All rent dues are completely settled.</span>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <span className="font-bold">Partial payment selected. You need to pay ₹{remainingRentBalance.toLocaleString()} more to complete full rent.</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
                 <div className="mt-4 pt-4 border-t border-slate-200 bg-emerald-50/80 p-3 rounded-xl border-emerald-200 text-xs">
                   <p className="font-bold text-emerald-800 flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    Rent is fully settled for this billing cycle! Select additional utility/service charges below.
+                    Rent is fully settled for this billing cycle! Select additional utility/service charges below if needed.
                   </p>
                 </div>
               )}
@@ -400,9 +428,9 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                   <select
                     value={selectedChargeCat}
                     onChange={(e) => setSelectedChargeCat(e.target.value)}
-                    className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700"
+                    className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none"
                   >
-                    {(paymentSettings.allowedAdditionalCharges || DEFAULT_CATEGORIES).map(cat => (
+                    {paymentSettings.allowedAdditionalCharges?.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
@@ -411,7 +439,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                     placeholder="Amount (₹)"
                     value={customChargeAmount}
                     onChange={(e) => setCustomChargeAmount(e.target.value)}
-                    className="w-32 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700"
+                    className="w-32 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none"
                   />
                   <button
                     type="button"
@@ -492,7 +520,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                   </div>
                   <h4 className="text-lg font-black text-white">Scan & Pay ₹{grandTotal.toLocaleString()}</h4>
                   <p className="text-slate-300 text-xs leading-relaxed">
-                    Open any UPI app on your phone, scan this code, and complete the payment. The exact payable amount of <strong className="text-white">₹{grandTotal}</strong> is encoded directly into the QR code.
+                    Open any UPI app on your phone, scan this code, and complete the payment. The exact payable amount of <strong className="text-white">₹{grandTotal.toLocaleString()}</strong> is encoded directly into the QR code.
                   </p>
                   <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-300">
                     <span>UPI ID: <strong className="text-white font-mono">{paymentSettings.upiId}</strong></span>
@@ -505,14 +533,16 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                         {copiedField === 'upiQr' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                         {copiedField === 'upiQr' ? 'Copied' : 'Copy'}
                       </button>
-                      <button 
-                        type="button" 
-                        onClick={() => setShowEditSettingsModal(true)} 
-                        className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-lg text-[10px] flex items-center gap-1 shadow-sm"
-                      >
-                        <Edit3 className="w-3 h-3" />
-                        <span>Edit UPI</span>
-                      </button>
+                      {isAdmin && (
+                        <button 
+                          type="button" 
+                          onClick={() => setShowEditSettingsModal(true)} 
+                          className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-lg text-[10px] flex items-center gap-1 shadow-sm"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          <span>Edit UPI</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
