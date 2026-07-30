@@ -131,8 +131,8 @@ const AdminLogin = () => {
                     <Shield className="w-10 h-10" />
                 </motion.div>
                 
-                <h1 className="text-4xl font-black text-slate-900 mb-2 italic tracking-tight">Admin <span className="text-blue-600">Secure.</span></h1>
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-12">Industrial Command Protocol</p>
+                <h1 className="text-4xl font-black text-slate-900 mb-2 italic tracking-tight">Lodge Manager <span className="text-blue-600">Secure.</span></h1>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-12">Lodge Management Command Protocol</p>
 
                 <form onSubmit={handleLogin} className="w-full space-y-4">
                     <SignalSwitcher />
@@ -141,7 +141,7 @@ const AdminLogin = () => {
                             <Mail className="w-5 h-5 text-slate-400" />
                             <input 
                                 type="text"
-                                placeholder="Admin ID / Email"
+                                placeholder="Lodge Manager ID / Email"
                                 className="bg-transparent border-0 p-0 w-full focus:ring-0 text-slate-900 font-bold placeholder:text-slate-300"
                                 value={formData.email}
                                 onChange={(e) => setFormData({...formData, email: e.target.value})}
