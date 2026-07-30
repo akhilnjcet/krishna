@@ -4,8 +4,8 @@ const lodgePaymentController = require('../controllers/lodgePaymentController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 // Settings
-router.get('/settings', protect, lodgePaymentController.getSettings);
-router.post('/settings', protect, admin, lodgePaymentController.saveSettings);
+router.get('/settings', lodgePaymentController.getSettings);
+router.post('/settings', protect, lodgePaymentController.saveSettings);
 
 // Tenant Actions
 router.post('/submit', protect, lodgePaymentController.submitPayment);

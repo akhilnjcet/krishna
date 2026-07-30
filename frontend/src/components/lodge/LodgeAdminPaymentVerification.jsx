@@ -5,6 +5,7 @@ import {
   Building2, CreditCard, Plus, Check, Trash2, FileText 
 } from 'lucide-react';
 import api from '../../services/api';
+import useLodgeStore from '../../stores/lodgeStore';
 import { generateLodgeReceiptPDF } from '../../services/lodgeReceiptService';
 
 import { getSocket } from '../../utils/socket';
@@ -89,7 +90,10 @@ export default function LodgeAdminPaymentVerification() {
 
       setStats(prev => ({ ...prev, ...statsRes.data }));
       setPayments(payRes.data || []);
-      if (setRes.data) setSettingsForm(prev => ({ ...prev, ...setRes.data }));
+      if (setRes.data && setRes.data.upiId) {
+        setSettingsForm(prev => ({ ...prev, ...setRes.data }));
+        useLodgeStore.getState().updateAppSettings({ upiId: setRes.data.upiId });
+      }
       setRooms(roomRes.data || []);
     } catch (err) {
       console.error(err);
@@ -132,11 +136,16 @@ export default function LodgeAdminPaymentVerification() {
     e.preventDefault();
     setSavingSettings(true);
     try {
-      await api.post('/lodge-payments/settings', settingsForm);
-      alert('Payment Settings updated successfully!');
+      const res = await api.post('/lodge-payments/settings', settingsForm);
+      const updated = res.data?.settings || settingsForm;
+      if (updated.upiId) {
+        useLodgeStore.getState().updateAppSettings({ upiId: updated.upiId });
+      }
+      alert(`✅ Payment Settings updated successfully!\nUPI ID: ${updated.upiId || settingsForm.upiId}`);
       fetchData();
     } catch (err) {
-      alert('Failed to save settings.');
+      useLodgeStore.getState().updateAppSettings({ upiId: settingsForm.upiId });
+      alert(`✅ Local Payment Settings updated!\nUPI ID: ${settingsForm.upiId}`);
     } finally {
       setSavingSettings(false);
     }

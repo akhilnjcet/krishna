@@ -525,6 +525,30 @@ const useLodgeStore = create((set, get) => ({
   getOccupiedCount: () => {
     return get().rooms.filter((r) => r.status === 'occupied').length;
   },
+
+  updateAppSettings: (newSettings) => {
+    set((state) => ({
+      appSettings: { ...state.appSettings, ...newSettings }
+    }));
+    saveData(get());
+    if (newSettings.upiId) {
+      api.post('/lodge-payments/settings', { upiId: newSettings.upiId }).catch(e => console.warn('Sync upi error:', e.message));
+    }
+  },
+
+  fetchPaymentSettings: async () => {
+    try {
+      const res = await api.get('/lodge-payments/settings');
+      if (res.data && res.data.upiId) {
+        set(state => ({
+          appSettings: { ...state.appSettings, upiId: res.data.upiId }
+        }));
+        saveData(get());
+      }
+    } catch (e) {
+      console.warn('Fetch payment settings error:', e.message);
+    }
+  },
 }));
 
 export default useLodgeStore;

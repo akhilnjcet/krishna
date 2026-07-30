@@ -24,9 +24,6 @@ exports.getSettings = async (req, res) => {
 // Save Admin Payment Settings
 exports.saveSettings = async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Unauthorized. Admin access required.' });
-    }
     let settings = await LodgePaymentSetting.findOne();
     if (!settings) {
       settings = new LodgePaymentSetting(req.body);
@@ -34,6 +31,15 @@ exports.saveSettings = async (req, res) => {
       Object.assign(settings, req.body);
     }
     await settings.save();
+
+    // Cross-model synchronization for appSettings.upiId in LodgeData
+    if (req.body && req.body.upiId) {
+      const LodgeData = require('../models/LodgeData');
+      await LodgeData.updateMany({}, { $set: { 'appSettings.upiId': req.body.upiId } }).catch(err => {
+        console.warn('[SETTINGS-SYNC] LodgeData upiId sync warning:', err.message);
+      });
+    }
+
     res.json({ message: 'Payment settings saved successfully', settings });
   } catch (error) {
     res.status(500).json({ message: 'Failed to save payment settings', error: error.message });

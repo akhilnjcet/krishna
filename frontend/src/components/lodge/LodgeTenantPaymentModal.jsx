@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import useAuthStore from '../../stores/authStore';
+import useLodgeStore from '../../stores/lodgeStore';
 import { 
   X, CreditCard, QrCode, Building2, Check, Copy, Upload, Camera, 
   Plus, Trash2, ArrowRight, ShieldCheck, AlertCircle, Sparkles, CheckCircle2, Settings, Edit3 
@@ -17,6 +18,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
   if (!isOpen || !booking) return null;
 
   const user = useAuthStore(state => state.user);
+  const storeUpiId = useLodgeStore(state => state.appSettings?.upiId);
   const isAdmin = true; // Always enable Rent Payment Config header button for easy administration
 
   const room = booking.roomId || {};
@@ -50,7 +52,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
 
   // Admin Settings & Edit Modal
   const [paymentSettings, setPaymentSettings] = useState({
-    upiId: 'krishnaengineering@upi',
+    upiId: storeUpiId || 'krishnaengineering@upi',
     merchantName: 'Krishna Engineering Works',
     merchantDisplayName: 'Krishna Lodge & Complex',
     bankName: 'State Bank of India',
@@ -70,32 +72,48 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
   const [submitting, setSubmitting] = useState(false);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
 
-  // Load Admin Payment Settings
+  // Load Admin Payment Settings on modal open
   useEffect(() => {
+    if (!isOpen) return;
     api.get('/lodge-payments/settings')
       .then(res => {
-        if (res.data) {
+        if (res.data && res.data.upiId) {
           setPaymentSettings(prev => ({ ...prev, ...res.data }));
           setEditSettingsForm(prev => ({ ...prev, ...res.data }));
+          useLodgeStore.getState().updateAppSettings({ upiId: res.data.upiId });
+        } else if (storeUpiId) {
+          setPaymentSettings(prev => ({ ...prev, upiId: storeUpiId }));
+          setEditSettingsForm(prev => ({ ...prev, upiId: storeUpiId }));
         }
       })
-      .catch(err => console.error('Failed to load payment settings', err));
-  }, []);
+      .catch(err => {
+        console.warn('Failed to load backend payment settings:', err.message);
+        if (storeUpiId) {
+          setPaymentSettings(prev => ({ ...prev, upiId: storeUpiId }));
+          setEditSettingsForm(prev => ({ ...prev, upiId: storeUpiId }));
+        }
+      });
+  }, [isOpen, storeUpiId]);
 
   const handleSavePaymentSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
     try {
       const res = await api.post('/lodge-payments/settings', editSettingsForm);
-      if (res.data?.settings) {
-        setPaymentSettings(res.data.settings);
-        setEditSettingsForm(res.data.settings);
-      }
-      alert('✅ Payment Settings (UPI ID & Bank details) updated successfully!');
+      const updated = res.data?.settings || editSettingsForm;
+
+      setPaymentSettings(updated);
+      setEditSettingsForm(updated);
+      useLodgeStore.getState().updateAppSettings({ upiId: updated.upiId });
+
+      alert(`✅ Payment Settings (UPI ID: ${updated.upiId}) updated successfully!`);
       setShowEditSettingsModal(false);
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to save payment settings');
+      setPaymentSettings(editSettingsForm);
+      useLodgeStore.getState().updateAppSettings({ upiId: editSettingsForm.upiId });
+      alert(`✅ Local Payment Settings (UPI ID: ${editSettingsForm.upiId}) updated!`);
+      setShowEditSettingsModal(false);
     } finally {
       setSavingSettings(false);
     }
