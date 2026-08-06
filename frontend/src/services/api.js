@@ -3,8 +3,24 @@ import useAuthStore from '../stores/authStore';
 
 import useSignalStore from '../stores/signalStore';
 
+// Determine the correct base URL:
+// - On production (Vercel), always use the cloud URL regardless of VITE_API_URL
+// - On localhost, use VITE_API_URL if set, else fall back to signalStore
+const isLocalhost = typeof window !== 'undefined' && (
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname.startsWith('192.168.')
+);
+
+const resolveBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  // If VITE_API_URL points to localhost but we're on production → ignore it
+  if (envUrl && isLocalhost) return envUrl;
+  return useSignalStore.getState().getApiUrl();
+};
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || useSignalStore.getState().getApiUrl(),
+    baseURL: resolveBaseUrl(),
 });
 
 
