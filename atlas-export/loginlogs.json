@@ -1,0 +1,22 @@
+[
+  {
+    "_id": "6a42990c60ee087189157c82",
+    "IP_address": "127.0.0.1",
+    "login_status": "failed",
+    "device": "Test Device 1",
+    "reason": "Unauthorized Face",
+    "log_id": "6a42990c60ee087189157c83",
+    "login_time": "2026-06-29T16:10:52.786Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a42990c60ee087189157c89",
+    "IP_address": "127.0.0.2",
+    "login_status": "failed",
+    "device": "Test Device 2",
+    "reason": "Unauthorized Face",
+    "log_id": "6a42990c60ee087189157c8a",
+    "login_time": "2026-06-29T16:10:52.843Z",
+    "__v": 0
+  }
+]

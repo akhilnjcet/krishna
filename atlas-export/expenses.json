@@ -1,0 +1,212 @@
+[
+  {
+    "_id": "6a429e4b219755590ac0e8af",
+    "title": "Staff Pay (Advance): John Staff",
+    "amount": 5000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: UPI. Remarks: Test mid-month advance payment",
+    "date": "2026-06-29T16:33:15.824Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a429e4b219755590ac0e8b6",
+    "title": "Staff Pay (Partial): John Staff",
+    "amount": 8000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Cash. Remarks: Partial payment on 15th",
+    "date": "2026-06-29T16:33:15.850Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a429e4b219755590ac0e8be",
+    "title": "Staff Pay (Overpayment): John Staff",
+    "amount": -11000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Bank Transfer. Remarks: Holiday special bonus overpayment approval (Exceeded balance approved by Main Admin for: Accidental check bypass test)",
+    "date": "2026-06-29T16:33:15.856Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a099c07f0260df18db42",
+    "title": "Staff Pay (Advance): John Staff",
+    "amount": 5000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: UPI. Remarks: Test mid-month advance payment",
+    "date": "2026-06-29T16:43:05.465Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a099c07f0260df18db49",
+    "title": "Staff Pay (Partial): John Staff",
+    "amount": 8000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Cash. Remarks: Partial payment on 15th",
+    "date": "2026-06-29T16:43:05.473Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a099c07f0260df18db51",
+    "title": "Staff Pay (Overpayment): John Staff",
+    "amount": -11000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Bank Transfer. Remarks: Holiday special bonus overpayment approval (Exceeded balance approved by Main Admin for: Accidental check bypass test)",
+    "date": "2026-06-29T16:43:05.481Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a301f675a31de9626d10",
+    "title": "Staff Pay (Advance): John Staff",
+    "amount": 5000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: UPI. Remarks: Test mid-month advance payment",
+    "date": "2026-06-29T16:53:21.668Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a301f675a31de9626d17",
+    "title": "Staff Pay (Partial): John Staff",
+    "amount": 8000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Cash. Remarks: Partial payment on 15th",
+    "date": "2026-06-29T16:53:21.677Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a301f675a31de9626d1f",
+    "title": "Staff Pay (Overpayment): John Staff",
+    "amount": -11000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Bank Transfer. Remarks: Holiday special bonus overpayment approval (Exceeded balance approved by Main Admin for: Accidental check bypass test)",
+    "date": "2026-06-29T16:53:21.683Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a48cbad20300dcfe5234",
+    "title": "Staff Pay (Advance): John Staff",
+    "amount": 5000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: UPI. Remarks: Test mid-month advance payment",
+    "date": "2026-06-29T16:59:56.778Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a48cbad20300dcfe523b",
+    "title": "Staff Pay (Partial): John Staff",
+    "amount": 8000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Cash. Remarks: Partial payment on 15th",
+    "date": "2026-06-29T16:59:56.786Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a48cbad20300dcfe5243",
+    "title": "Staff Pay (Overpayment): John Staff",
+    "amount": -11000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Bank Transfer. Remarks: Holiday special bonus overpayment approval (Exceeded balance approved by Main Admin for: Accidental check bypass test)",
+    "date": "2026-06-29T16:59:56.793Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a5eb84a21d9cd633a75d",
+    "title": "Staff Pay (Advance): John Staff",
+    "amount": 5000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: UPI. Remarks: Test mid-month advance payment",
+    "date": "2026-06-29T17:05:47.454Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a5eb84a21d9cd633a764",
+    "title": "Staff Pay (Partial): John Staff",
+    "amount": 8000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Cash. Remarks: Partial payment on 15th",
+    "date": "2026-06-29T17:05:47.463Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a5eb84a21d9cd633a76c",
+    "title": "Staff Pay (Overpayment): John Staff",
+    "amount": -11000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Bank Transfer. Remarks: Holiday special bonus overpayment approval (Exceeded balance approved by Main Admin for: Accidental check bypass test)",
+    "date": "2026-06-29T17:05:47.470Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a7654b20f2e992f79281",
+    "title": "Staff Pay (Advance): John Staff",
+    "amount": 5000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: UPI. Remarks: Test mid-month advance payment",
+    "date": "2026-06-29T17:12:05.898Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a7654b20f2e992f79288",
+    "title": "Staff Pay (Partial): John Staff",
+    "amount": 8000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Cash. Remarks: Partial payment on 15th",
+    "date": "2026-06-29T17:12:05.907Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a7654b20f2e992f79290",
+    "title": "Staff Pay (Overpayment): John Staff",
+    "amount": -11000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Bank Transfer. Remarks: Holiday special bonus overpayment approval (Exceeded balance approved by Main Admin for: Accidental check bypass test)",
+    "date": "2026-06-29T17:12:05.914Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a91317edf131c812e579",
+    "title": "Staff Pay (Advance): John Staff",
+    "amount": 5000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: UPI. Remarks: Test mid-month advance payment",
+    "date": "2026-06-29T17:19:15.602Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a91317edf131c812e580",
+    "title": "Staff Pay (Partial): John Staff",
+    "amount": 8000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Cash. Remarks: Partial payment on 15th",
+    "date": "2026-06-29T17:19:15.612Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  },
+  {
+    "_id": "6a42a91317edf131c812e588",
+    "title": "Staff Pay (Overpayment): John Staff",
+    "amount": -11000,
+    "category": "staff",
+    "description": "Month: 2026-07. Method: Bank Transfer. Remarks: Holiday special bonus overpayment approval (Exceeded balance approved by Main Admin for: Accidental check bypass test)",
+    "date": "2026-06-29T17:19:15.617Z",
+    "recordedBy": "69b467011eb76a8284830508",
+    "__v": 0
+  }
+]

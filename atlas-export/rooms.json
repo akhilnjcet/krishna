@@ -1,0 +1,18 @@
+[
+  {
+    "_id": "6a2acc302a7c4c4604090066",
+    "lodgeId": "6a2a66d8e8484c951b202284",
+    "type": "Quarters",
+    "price": 145456,
+    "rentCycle": "monthly",
+    "maxGuests": 354,
+    "description": "edc",
+    "amenities": [],
+    "interiorPhotos": [],
+    "exteriorPhotos": [],
+    "isActive": true,
+    "createdAt": "2026-06-11T14:54:40.416Z",
+    "updatedAt": "2026-06-11T14:54:40.416Z",
+    "__v": 0
+  }
+]

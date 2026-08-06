@@ -1,0 +1,242 @@
+[
+  {
+    "_id": "6a2a74890aec877973c56f35",
+    "key": "systemName",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "Krishna Engineering ERP"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f36",
+    "key": "maintenanceMode",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": false
+  },
+  {
+    "_id": "6a2a74890aec877973c56f34",
+    "key": "ownerEmail",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "admin@krishnaengg.com"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f37",
+    "key": "faceThreshold",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": 0.6
+  },
+  {
+    "_id": "6a2a74890aec877973c56f38",
+    "key": "allowRegistration",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": true
+  },
+  {
+    "_id": "6a2a74890aec877973c56f39",
+    "key": "footer_description",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "Heavy structural engineering, industrial roofing, and precision fabrication."
+  },
+  {
+    "_id": "6a2a74890aec877973c56f3a",
+    "key": "footer_address",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "Industrial Area Phase 1, Sector 123"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f3b",
+    "key": "social_in",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": ""
+  },
+  {
+    "_id": "6a2a74890aec877973c56f3c",
+    "key": "social_fb",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": ""
+  },
+  {
+    "_id": "6a2a74890aec877973c56f3d",
+    "key": "social_x",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": ""
+  },
+  {
+    "_id": "6a2a74890aec877973c56f3e",
+    "key": "map_embed_url",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3917.86141356417!2d76.3951277!3d10.8981353!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba7d7df303996fd%3A0xe144438f2273f6f2!2sKrishna%20engineering%20works%20thiruzhiyode.(welding%20workshop)!5e0!3m2!1sen!2sin!4v1775472335434!5m2!1sen!2sin"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f3f",
+    "key": "floating_whatsapp",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "919447940835"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f40",
+    "key": "floating_phone",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "+919447940835"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f41",
+    "key": "floating_email",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "contact@krishna.com"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f42",
+    "key": "footer_copyright",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "KRISHNA ENGINEERING WORKS. UNYIELDING QUALITY."
+  },
+  {
+    "_id": "6a2a74890aec877973c56f43",
+    "key": "footer_tos",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "1. ACCEPTANCE OF TERMS\nKrishna Engineering Works providing its service to you subject to the following Terms of Service..."
+  },
+  {
+    "_id": "6a2a74890aec877973c56f44",
+    "key": "footer_privacy",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "This Privacy Policy explains how we collect and use your data..."
+  },
+  {
+    "_id": "6a2a74890aec877973c56f45",
+    "key": "stat_projects",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "1200+"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f46",
+    "key": "stat_years",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "25+"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f47",
+    "key": "stat_clients",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "450+"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f48",
+    "key": "stat_satisfaction",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "99.9%"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f49",
+    "key": "stat_tons",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "12K Tons"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f4a",
+    "key": "stat_safety",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "100%"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f4b",
+    "key": "footer_phone",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "+91 9447940835"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f4c",
+    "key": "about_content",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "Krishna Engineering Works has been at the forefront of heavy structural fabrication and industrial roofing for over two decades. Our mission is to provide unyielding integrity in every weld and truss we complete."
+  },
+  {
+    "_id": "6a2a74890aec877973c56f4d",
+    "key": "about_image",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=1200"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f4e",
+    "key": "footer_email",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "HELLO@KRISHNAENGG.COM"
+  },
+  {
+    "_id": "6a2a74890aec877973c56f4f",
+    "key": "about_title",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-11T08:40:41.429Z",
+    "value": "ENGINEERING EXCELLENCE SINCE 1999"
+  },
+  {
+    "_id": "6a3533eace7acb15cb363926",
+    "key": "vapid_keys",
+    "value": "{\"publicKey\":\"BKcK7lLdu-7sYISVPsdQ8V36ibVbF1kEvtpNPz5tRyJSW1hsGSiFy9JGRqXu5G6O-2EHWLbipm6rTPdkCVLc-eU\",\"privateKey\":\"re0gtQZ_iy715L-WuxlW12B5E-RKB4O2WExr_qpoeRI\"}",
+    "category": "general",
+    "updatedAt": "2026-06-19T12:19:54.802Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a3541ed0aec877973c56f54",
+    "key": "whatsapp_creds",
+    "__v": 0,
+    "category": "general",
+    "updatedAt": "2026-06-19T13:19:47.727Z",
+    "value": "{\"noiseKey\":{\"private\":{\"type\":\"Buffer\",\"data\":\"6NC1hR0m1AI+MiI29DApJglqx4fyo1Z2fQ411QHtE2Q=\"},\"public\":{\"type\":\"Buffer\",\"data\":\"g0G/6N8ocifG+pAOXcfSbJDjRYrY5lTBaOIGPXhnkSg=\"}},\"pairingEphemeralKeyPair\":{\"private\":{\"type\":\"Buffer\",\"data\":\"UOMMkIo1H10qXJ2F7UIqrb38KoCI206vSmem6sRKYVo=\"},\"public\":{\"type\":\"Buffer\",\"data\":\"NMxmLK9zw+86nZKKEK0j34AVSiJXbn5YEDr3P6+akUk=\"}},\"signedIdentityKey\":{\"private\":{\"type\":\"Buffer\",\"data\":\"sHAZB43s/wVSjl29z6xuBjRhmj9K1Qd7fodi2HtP+Fk=\"},\"public\":{\"type\":\"Buffer\",\"data\":\"2kpRKxECA0RChnrFwc8fU5xkiuUUSvtOQHEwHhy0MEg=\"}},\"signedPreKey\":{\"keyPair\":{\"private\":{\"type\":\"Buffer\",\"data\":\"SBzZtkPtlYrzgC0nE/mTmvSGiMkutiJOc0+MqdEX+lA=\"},\"public\":{\"type\":\"Buffer\",\"data\":\"afyG6Ss586HwRyMm6Cs6W38Hgv6Tu19EZR4917+Xymc=\"}},\"signature\":{\"type\":\"Buffer\",\"data\":\"edn/xTTq47toFTVOwSvYt5uYb67pASVCgQsKYqI2hl2vSeY4kiMW3+BkhNP1+8BV/rX/T/IhAItuCqQpJhkjgA==\"},\"keyId\":1},\"registrationId\":18,\"advSecretKey\":\"rRmFpDwTz7MJai4TohA8W5pp+3V/7UecHa8gn9KyjSE=\",\"processedHistoryMessages\":[],\"nextPreKeyId\":813,\"firstUnuploadedPreKeyId\":813,\"accountSyncCounter\":0,\"accountSettings\":{\"unarchiveChats\":false},\"registered\":false,\"account\":{\"details\":\"CNb/pZQDEOmD1dEGGAYgASgA\",\"accountSignatureKey\":\"vezKKI6i9sIeXzzy+Vnf3axbybP6T54+LUrOcRFRGSM=\",\"accountSignature\":\"oUHL84AGukIv73YcFkvSb7TWRp8Abw2ZO39b/vUf95GRbE9sDeTQYLQ6kyuBO4RCwugge/GCdllw8erGsTf4Dg==\",\"deviceSignature\":\"tizWg8jnOuIATL4g6ve4Ul6W22tIMmya1zMReYRxv3L74xs0cIqiiWo+MnJdHvjT7ucAGNPNRln5sgoeLML2iw==\"},\"me\":{\"id\":\"916282769200:5@s.whatsapp.net\",\"name\":\"G\",\"lid\":\"89378353328264:5@lid\"},\"signalIdentities\":[{\"identifier\":{\"name\":\"89378353328264:5@lid\",\"deviceId\":0},\"identifierKey\":{\"type\":\"Buffer\",\"data\":\"Bb3syiiOovbCHl888vlZ392sW8mz+k+ePi1KznERURkj\"}}],\"platform\":\"smba\",\"routingInfo\":{\"type\":\"Buffer\",\"data\":\"CA0ICAgF\"},\"lastAccountSyncTimestamp\":1781875186}"
+  }
+]

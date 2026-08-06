@@ -1,0 +1,16 @@
+[
+  {
+    "_id": "6a2adf9d3dff682267383efc",
+    "userId": "6a2addba3dff682267383e92",
+    "lodgeId": "6a2a66d8e8484c951b202284",
+    "roomId": "6a2acc302a7c4c4604090066",
+    "bookingId": "6a2adf8f3dff682267383ef0",
+    "title": "hhu",
+    "description": "jh",
+    "status": "resolved",
+    "createdAt": "2026-06-11T16:17:33.862Z",
+    "updatedAt": "2026-06-11T16:19:18.770Z",
+    "__v": 0,
+    "resolvedAt": "2026-06-11T16:19:18.769Z"
+  }
+]

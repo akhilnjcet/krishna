@@ -1,0 +1,15 @@
+[
+  {
+    "_id": "6a35089c8f39954e09a9f788",
+    "title": "Test Operational Project",
+    "customerId": "69b467011eb76a828483050c",
+    "serviceType": "Structural Design",
+    "assignedStaff": [],
+    "status": "In Progress",
+    "budget": 0,
+    "progress": 0,
+    "sitePhotos": [],
+    "createdAt": "2026-06-19T09:15:08.318Z",
+    "__v": 0
+  }
+]

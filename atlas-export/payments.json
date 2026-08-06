@@ -1,0 +1,15 @@
+[
+  {
+    "_id": "6a2adfe33dff682267383f31",
+    "customerId": "6a2addba3dff682267383e92",
+    "amount": 145456,
+    "method": "cash",
+    "referenceId": "MANUAL",
+    "status": "verified",
+    "notes": "Manual Rent Settlement: Quarters",
+    "verifiedAt": "2026-06-11T16:18:43.503Z",
+    "verifiedBy": "00000000000000000000ad14",
+    "createdAt": "2026-06-11T16:18:43.504Z",
+    "__v": 0
+  }
+]

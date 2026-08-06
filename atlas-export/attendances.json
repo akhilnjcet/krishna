@@ -1,0 +1,57 @@
+[
+  {
+    "_id": "69b2eb6c132c1b4fd94026d6",
+    "staff_id": "69b2e759498e013827f4c240",
+    "full_name": "xfb",
+    "date": "2026-03-12",
+    "face_match_confidence": 0.5422225302450407,
+    "device_ip": "::1",
+    "status": "success",
+    "login_time": "2026-03-12T16:35:56.340Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b2eb7b132c1b4fd94026d9",
+    "staff_id": "69b2e759498e013827f4c240",
+    "full_name": "xfb",
+    "date": "2026-03-12",
+    "face_match_confidence": 0.4989164681388928,
+    "device_ip": "::1",
+    "status": "success",
+    "login_time": "2026-03-12T16:36:11.338Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b2ebf2132c1b4fd94026dc",
+    "staff_id": "69b2e759498e013827f4c240",
+    "full_name": "xfb",
+    "date": "2026-03-12",
+    "face_match_confidence": 0.5120358657929667,
+    "device_ip": "::1",
+    "status": "success",
+    "login_time": "2026-03-12T16:38:10.004Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b2ec1a132c1b4fd94026ec",
+    "staff_id": "69b2e759498e013827f4c240",
+    "full_name": "xfb",
+    "date": "2026-03-12",
+    "face_match_confidence": 0.5954688276446838,
+    "device_ip": "::1",
+    "status": "success",
+    "login_time": "2026-03-12T16:38:50.764Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b2ecdb132c1b4fd94026f0",
+    "staff_id": "69b2e759498e013827f4c240",
+    "full_name": "xfb",
+    "date": "2026-03-12",
+    "face_match_confidence": 0.7627312120210835,
+    "device_ip": "::1",
+    "status": "success",
+    "login_time": "2026-03-12T16:42:03.842Z",
+    "__v": 0
+  }
+]

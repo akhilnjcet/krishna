@@ -1,0 +1,44 @@
+[
+  {
+    "_id": "6a2adf433dff682267383ecf",
+    "userId": "6a2addba3dff682267383e92",
+    "roomId": "6a2acc302a7c4c4604090066",
+    "lodgeId": "6a2a66d8e8484c951b202284",
+    "checkIn": "2026-06-18T18:30:00.000Z",
+    "checkOut": "2026-06-25T18:30:00.000Z",
+    "totalAmount": 1018192,
+    "status": "cancelled",
+    "refundPercentage": 100,
+    "createdAt": "2026-06-11T16:16:03.466Z",
+    "updatedAt": "2026-06-11T16:19:00.886Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a2adf8f3dff682267383ef0",
+    "userId": "6a2addba3dff682267383e92",
+    "roomId": "6a2acc302a7c4c4604090066",
+    "lodgeId": "6a2a66d8e8484c951b202284",
+    "checkIn": "2026-06-26T18:30:00.000Z",
+    "checkOut": "2026-06-27T18:30:00.000Z",
+    "totalAmount": 145456,
+    "status": "cancelled",
+    "refundPercentage": 100,
+    "createdAt": "2026-06-11T16:17:19.284Z",
+    "updatedAt": "2026-06-11T16:19:00.886Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a2adff43dff682267383f37",
+    "userId": "6a2addba3dff682267383e92",
+    "roomId": "6a2acc302a7c4c4604090066",
+    "lodgeId": "6a2a66d8e8484c951b202284",
+    "checkIn": "2026-06-11T16:19:00.882Z",
+    "checkOut": "2027-06-11T16:19:00.882Z",
+    "totalAmount": 0,
+    "status": "active",
+    "refundPercentage": 0,
+    "createdAt": "2026-06-11T16:19:00.891Z",
+    "updatedAt": "2026-06-11T16:19:00.891Z",
+    "__v": 0
+  }
+]

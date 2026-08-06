@@ -6,9 +6,18 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/((?!api|models|assets|icons|favicon.ico|manifest.json|sw.js|robots.txt|sitemap.xml|logo).*)",
+      "source": "/((?!api|models|icons|favicon.ico|manifest.json|sw.js|robots.txt|sitemap.xml|logo|ads.txt).*)",
       "destination": "/index.html"
     }
   ],
-  "outputDirectory": "frontend/dist"
+  "outputDirectory": "frontend/dist",
+  "headers": [
+    {
+      "source": "/models/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400" },
+        { "key": "Content-Type", "value": "application/json" }
+      ]
+    }
+  ]
 }

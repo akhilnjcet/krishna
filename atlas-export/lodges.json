@@ -1,0 +1,42 @@
+[
+  {
+    "_id": "6a2a66d8e8484c951b202284",
+    "name": "Krishna Building",
+    "description": "Main Krishna ERP Tenancy Building Command Center",
+    "location": {
+      "address": "Main Street, Krishna Block",
+      "lat": 12.9716,
+      "lng": 77.5946
+    },
+    "amenities": [
+      "24/7 Security",
+      "High-Speed Wi-Fi",
+      "Power Backup"
+    ],
+    "images": [],
+    "adminId": "69b467011eb76a8284830508",
+    "createdAt": "2026-06-11T07:42:16.931Z",
+    "updatedAt": "2026-06-11T07:42:16.931Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a2a66d8e8484c951b202286",
+    "name": "Krishna Building",
+    "description": "Main Krishna ERP Tenancy Building Command Center",
+    "location": {
+      "address": "Main Street, Krishna Block",
+      "lat": 12.9716,
+      "lng": 77.5946
+    },
+    "amenities": [
+      "24/7 Security",
+      "High-Speed Wi-Fi",
+      "Power Backup"
+    ],
+    "images": [],
+    "adminId": "69b467011eb76a8284830508",
+    "createdAt": "2026-06-11T07:42:16.934Z",
+    "updatedAt": "2026-06-11T07:42:16.934Z",
+    "__v": 0
+  }
+]
