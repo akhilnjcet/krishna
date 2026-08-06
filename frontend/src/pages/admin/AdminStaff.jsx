@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
 import FaceCapture from '../../components/FaceCapture';
+import StaffIdCardModal from '../../components/StaffIdCardModal';
 import { 
   Users, UserPlus, Search, Filter, Mail, Phone, Briefcase, 
   Trash2, Edit, Camera, X, Check, Loader2, AlertCircle, ChevronRight,
-  Banknote, BadgeIndianRupee, Download
+  Banknote, BadgeIndianRupee, Download, CreditCard
 } from 'lucide-react';
 import { generateGeneralReportPDF } from '../../services/pdfService';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,7 +17,9 @@ const AdminStaff = () => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showFaceModal, setShowFaceModal] = useState(false);
     const [showPayModal, setShowPayModal] = useState(false);
+    const [showIdCardModal, setShowIdCardModal] = useState(false);
     const [selectedStaff, setSelectedStaff] = useState(null);
+
     const [searchQuery, setSearchQuery] = useState('');
     const [filterDept, setFilterDept] = useState('');
     const [payAmount, setPayAmount] = useState('');
@@ -401,12 +404,20 @@ const AdminStaff = () => {
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
                                             <button 
+                                                title="View Staff ID Card"
+                                                onClick={() => { setSelectedStaff(member); setShowIdCardModal(true); }}
+                                                className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                            >
+                                                <CreditCard className="w-5 h-5" />
+                                            </button>
+                                            <button 
                                                 title="Register Face"
                                                 onClick={() => { setSelectedStaff(member); setShowFaceModal(true); }}
                                                 className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                                             >
                                                 <Camera className="w-5 h-5" />
                                             </button>
+
                                             <button 
                                                 title="Calculate & Payout"
                                                 onClick={() => { 
@@ -879,9 +890,21 @@ const AdminStaff = () => {
                         </motion.div>
                     </div>
                 )}
+
+                {/* Dynamic Staff ID Card Modal */}
+                {showIdCardModal && selectedStaff && (
+                    <StaffIdCardModal 
+                        staff={selectedStaff}
+                        onClose={() => {
+                            setShowIdCardModal(false);
+                            setSelectedStaff(null);
+                        }}
+                    />
+                )}
             </AnimatePresence>
         </div>
     );
 };
 
 export default AdminStaff;
+
