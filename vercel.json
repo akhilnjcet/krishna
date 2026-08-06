@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "cd backend && npm install",
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -10,13 +13,17 @@
       "destination": "/index.html"
     }
   ],
-  "outputDirectory": "frontend/dist",
   "headers": [
     {
       "source": "/models/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400" },
-        { "key": "Content-Type", "value": "application/json" }
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
       ]
     }
   ]
