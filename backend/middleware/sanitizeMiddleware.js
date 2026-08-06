@@ -1,38 +1,33 @@
-const sanitizeInput = (obj) => {
-    if (obj === null || typeof obj !== 'object') {
-        if (typeof obj === 'string') {
-            // Remove MongoDB query operators starting with $
-            if (obj.startsWith('$')) {
-                return obj.replace(/^\$/, '');
-            }
+const sanitizeValue = (val) => {
+    if (val === null || val === undefined) return val;
+    if (typeof val === 'string') {
+        // Strip leading $ operators to prevent NoSQL query operator injection
+        if (val.startsWith('$')) {
+            return val.replace(/^\$/, '');
         }
-        return obj;
+        return val;
     }
-
-    if (Array.isArray(obj)) {
-        return obj.map(item => sanitizeInput(item));
+    if (Array.isArray(val)) {
+        return val.map(item => sanitizeValue(item));
     }
-
-    const sanitized = {};
-    for (const key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            // Strip key if it starts with $ or contains dots
+    if (typeof val === 'object' && val.constructor === Object) {
+        const sanitized = {};
+        for (const key of Object.keys(val)) {
             const sanitizedKey = key.replace(/^\$|\./g, '');
-            sanitized[sanitizedKey] = sanitizeInput(obj[key]);
+            sanitized[sanitizedKey] = sanitizeValue(val[key]);
         }
+        return sanitized;
     }
-    return sanitized;
+    return val;
 };
 
 const sanitizeMiddleware = (req, res, next) => {
-    if (req.body) {
-        req.body = sanitizeInput(req.body);
-    }
-    if (req.query) {
-        req.query = sanitizeInput(req.query);
-    }
-    if (req.params) {
-        req.params = sanitizeInput(req.params);
+    try {
+        if (req.body && typeof req.body === 'object' && req.body.constructor === Object) {
+            req.body = sanitizeValue(req.body);
+        }
+    } catch (e) {
+        console.error('Sanitizer warning:', e.message);
     }
     next();
 };

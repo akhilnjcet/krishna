@@ -54,13 +54,12 @@ export const loadFaceModels = async () => {
                 console.warn('[FACE-API] Running in CPU compatibility mode.');
             }
 
-            // Stage 2: Strategy Sequence (Local -> CDN Mirror)
+            // Stage 2: Strategy Sequence (Local /models -> Capacitor fallback -> CDN Mirror)
             const isNative = typeof window !== 'undefined' && !!window.Capacitor;
-            const strategies = [];
+            const strategies = ['/models'];
             if (isNative) {
                 strategies.push('http://localhost/models');
             }
-            strategies.push('/models');
             strategies.push(CDN_URL);
 
             for (const path of strategies) {
@@ -72,6 +71,7 @@ export const loadFaceModels = async () => {
                     return true;
                 }
             }
+
 
             throw new Error('Biometric model nodes unreachable.');
         } catch (error) {
