@@ -15,6 +15,41 @@ if (!isVercel) {
     socketUtil.init(server);
 }
 
+const helmet = require('helmet');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
+const sanitizeMiddleware = require('./middleware/sanitizeMiddleware');
+
+// Enable Gzip Compression for fast response delivery
+app.use(compression());
+
+// Security Headers via Helmet
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// Rate Limiter to mitigate Brute-Force & Denial of Service attacks
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 500, // Limit each IP to 500 requests per 15 minutes
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many requests from this IP, please try again after 15 minutes' }
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30, // Limit sensitive auth operations to 30 requests per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many authentication attempts, please try again later' }
+});
+
+app.use('/api/', apiLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+
 app.use(cors({
     origin: true,
     credentials: true,
@@ -23,6 +58,8 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(sanitizeMiddleware);
+
 const path = require('path');
 app.use('/uploads', express.static(isVercel ? '/tmp/uploads' : path.join(__dirname, 'uploads')));
 
@@ -33,6 +70,7 @@ app.use((req, res, next) => {
     res.set('Expires', '0');
     next();
 });
+
 
 // Connect to Database
 const connectDB = require('./config/database');

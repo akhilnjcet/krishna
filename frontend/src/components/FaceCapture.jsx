@@ -1,10 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
-import * as faceapi from 'face-api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Camera, CheckCircle2, AlertCircle, Loader2, 
     ShieldCheck, UserPlus, Fingerprint, Eye,
-    ScanLine, RefreshCw
+    ScanLine, RefreshCw, Sun, Maximize2
 } from 'lucide-react';
 import { loadFaceModels } from '../utils/faceApiLoader';
 import { detectFaceAndLiveness, averageAndNormalizeDescriptors } from '../utils/faceApiUtils';
@@ -18,8 +17,10 @@ const FaceCapture = ({ onCapture, loading }) => {
     const [message, setMessage] = useState('Initializing Biometric Engine...');
     const [capturedFrames, setCapturedFrames] = useState([]);
     const [finalDescriptor, setFinalDescriptor] = useState(null);
+    const [metrics, setMetrics] = useState({ luminance: 120, blurriness: 50, distance: 'good' });
     const streamRef = useRef(null);
     const scanActiveRef = useRef(false);
+    const isInitializingRef = useRef(false);
 
     const stopVideo = () => {
         scanActiveRef.current = false;
@@ -31,8 +32,6 @@ const FaceCapture = ({ onCapture, loading }) => {
             videoRef.current.srcObject = null;
         }
     };
-
-    const isInitializingRef = useRef(false);
 
     useEffect(() => {
         startVideo();
@@ -52,19 +51,45 @@ const FaceCapture = ({ onCapture, loading }) => {
         // Step 1: Preload models in background
         const modelPromise = loadFaceModels();
 
-        // Step 2: Initialize camera immediately in parallel
-        const camStart = performance.now();
+        // Step 2: Initialize camera with ideal resolution and front camera facingMode
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } 
+                video: { 
+                    width: { ideal: 1280, min: 640 }, 
+                    height: { ideal: 720, min: 480 }, 
+                    facingMode: 'user' 
+                } 
             });
+            
             streamRef.current = stream;
+            
+            // Try applying advanced camera exposure & focus controls if supported
+            const videoTrack = stream.getVideoTracks()[0];
+            if (videoTrack && typeof videoTrack.getCapabilities === 'function') {
+                try {
+                    const capabilities = videoTrack.getCapabilities();
+                    const advancedConstraints = {};
+                    if (capabilities.exposureMode && capabilities.exposureMode.includes('continuous')) {
+                        advancedConstraints.exposureMode = 'continuous';
+                    }
+                    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                        advancedConstraints.focusMode = 'continuous';
+                    }
+                    if (capabilities.whiteBalanceMode && capabilities.whiteBalanceMode.includes('continuous')) {
+                        advancedConstraints.whiteBalanceMode = 'continuous';
+                    }
+                    if (Object.keys(advancedConstraints).length > 0) {
+                        await videoTrack.applyConstraints({ advanced: [advancedConstraints] });
+                    }
+                } catch (cErr) {
+                    console.log('Advanced camera constraints not supported on browser:', cErr);
+                }
+            }
+
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
                 await videoRef.current.play();
             }
-            const camDuration = performance.now() - camStart;
-            console.log(`[PERF] Enrollment Camera initialization: ${camDuration.toFixed(2)}ms`);
 
             setStatus('scanning');
             setMessage('Optical link active. Align face straight at camera...');
@@ -76,11 +101,8 @@ const FaceCapture = ({ onCapture, loading }) => {
             return;
         }
 
-        // Step 3: Wait for models
-        const modelStart = performance.now();
+        // Step 3: Wait for model initialization
         const loaded = await modelPromise;
-        const modelDuration = performance.now() - modelStart;
-        console.log(`[PERF] Enrollment Model loading: ${modelDuration.toFixed(2)}ms`);
 
         if (!loaded) {
             setStatus('error');
@@ -92,12 +114,12 @@ const FaceCapture = ({ onCapture, loading }) => {
 
         isInitializingRef.current = false;
         
-        // Start throttled scan loop
+        // Throttled scan loop
         scanActiveRef.current = true;
         let currentFrames = [];
         let lastAnalysisTime = 0;
         let blinkVerified = false;
-        const ANALYSIS_INTERVAL = 150;
+        const ANALYSIS_INTERVAL = 120; // Fast 120ms cycle
 
         const scanLoop = async () => {
             if (!scanActiveRef.current) return;
@@ -109,12 +131,24 @@ const FaceCapture = ({ onCapture, loading }) => {
                 try {
                     const result = await detectFaceAndLiveness(videoRef, canvasRef);
 
+                    if (result) {
+                        setMetrics({
+                            luminance: Math.round(result.luminance || 120),
+                            blurriness: Math.round(result.blurriness || 50),
+                            distance: result.distanceStatus || 'good'
+                        });
+                    }
+
                     if (!result) {
                         setMessage('ALIGN FACE WITHIN SCENE ANALYZER');
                     } else if (result.multipleFaces) {
-                        setMessage('CRITICAL: MULTIPLE FACES DETECTED. ENROLL ONLY ONE.');
+                        setMessage('MULTIPLE FACES DETECTED. PLEASE ENSURE ONLY ONE FACE IS IN FRAME.');
                     } else if (result.noFace) {
-                        setMessage('NO FACE DETECTED. POSITION YOUR FACE IN FRAME.');
+                        if (result.luminance < 40) {
+                            setMessage('LIGHTING IS TOO LOW. PLEASE MOVE TO A BRIGHTER AREA.');
+                        } else {
+                            setMessage('NO FACE DETECTED. POSITION YOUR FACE IN FRAME.');
+                        }
                     } else if (result.invalid) {
                         setMessage(result.reason.toUpperCase());
                     } else if (result.detection) {
@@ -129,7 +163,7 @@ const FaceCapture = ({ onCapture, loading }) => {
                             currentFrames.push(result.descriptor);
                             setCapturedFrames([...currentFrames]);
 
-                            await new Promise(resolve => setTimeout(resolve, 200));
+                            await new Promise(resolve => setTimeout(resolve, 150));
 
                             if (currentFrames.length >= TARGET_SAMPLES) {
                                 scanActiveRef.current = false;
@@ -164,17 +198,33 @@ const FaceCapture = ({ onCapture, loading }) => {
             
             <div className="relative w-full aspect-video md:aspect-[4/3] max-w-md bg-slate-950 rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-4 border-indigo-500/30 group">
                 
-                {/* Visual Overlays */}
+                {/* Real-time Quality Meters */}
+                {status === 'scanning' && (
+                    <div className="absolute top-4 left-4 right-4 z-30 flex justify-between gap-2 px-3 py-1.5 bg-slate-900/80 backdrop-blur-md rounded-xl text-[9px] font-bold text-white border border-slate-700/50">
+                        <div className="flex items-center gap-1">
+                            <Sun className={`w-3 h-3 ${metrics.luminance < 40 ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}`} />
+                            <span>Light: {metrics.luminance < 40 ? 'Low' : 'Good'}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <Maximize2 className="w-3 h-3 text-cyan-400" />
+                            <span>Dist: {metrics.distance === 'too_far' ? 'Move Closer' : metrics.distance === 'too_close' ? 'Step Back' : 'Optimal'}</span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Oval Face Guide Overlay */}
                 <AnimatePresence>
                     {status === 'scanning' && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 pointer-events-none z-10">
-                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 border-2 border-indigo-400/30 rounded-full flex items-center justify-center">
-                                 <div className="w-64 h-64 border-2 border-indigo-400/20 border-dashed rounded-full animate-spin-slow"></div>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center">
+                             <div className={`w-64 h-80 border-2 rounded-[50%] transition-colors duration-300 flex items-center justify-center ${
+                                 metrics.luminance < 40 ? 'border-amber-400/80 shadow-[0_0_20px_rgba(251,191,36,0.3)]' : 'border-emerald-400/70 shadow-[0_0_25px_rgba(52,211,153,0.3)]'
+                             }`}>
+                                 <div className="w-60 h-76 border border-dashed border-white/20 rounded-[50%] animate-spin-slow"></div>
                              </div>
                              <motion.div 
-                                animate={{ top: ['20%', '80%', '20%'] }}
-                                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                                className="absolute left-[15%] right-[15%] h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_rgba(34,211,238,0.8)]"
+                                animate={{ top: ['22%', '78%', '22%'] }}
+                                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                                className="absolute left-[18%] right-[18%] h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_rgba(34,211,238,0.8)]"
                              />
                         </motion.div>
                     )}
@@ -187,11 +237,11 @@ const FaceCapture = ({ onCapture, loading }) => {
                     ))}
                 </div>
 
-                {/* Video / Content */}
+                {/* Video / Canvas */}
                 <video ref={videoRef} autoPlay muted playsInline style={{ transform: 'scaleX(-1)' }} className={`w-full h-full object-cover transition-opacity duration-700 ${['scanning', 'success'].includes(status) ? 'opacity-100' : 'opacity-20'}`} />
                 <canvas ref={canvasRef} style={{ transform: 'scaleX(-1)' }} className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none" />
 
-                {/* Overlays (Success, Error, Initializing, Idle) */}
+                {/* Overlays */}
                 <AnimatePresence mode="wait">
                     {status === 'initializing' && (
                         <motion.div key="init" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm">
@@ -214,7 +264,7 @@ const FaceCapture = ({ onCapture, loading }) => {
                             <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-2xl">
                                 <ShieldCheck className="w-14 h-14 text-emerald-500" />
                             </div>
-                            <p className="text-white font-black uppercase tracking-[0.2em] text-xs">{message}</p>
+                            <p className="text-white font-black uppercase tracking-[0.2em] text-xs text-center px-4">{message}</p>
                         </motion.div>
                     )}
 
@@ -229,12 +279,12 @@ const FaceCapture = ({ onCapture, loading }) => {
                     )}
                 </AnimatePresence>
 
-                {/* Bottom Status Message */}
+                {/* Bottom Message Banner */}
                 {status === 'scanning' && (
-                    <div className="absolute bottom-16 left-0 right-0 z-30 flex justify-center">
-                        <motion.div layout initial={{ y: 20 }} animate={{ y: 0 }} className="px-6 py-2 bg-indigo-600 rounded-full text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2">
-                             <div className="w-2 h-2 bg-white rounded-full animate-ping" />
-                             {message}
+                    <div className="absolute bottom-16 left-0 right-0 z-30 flex justify-center px-4">
+                        <motion.div layout initial={{ y: 20 }} animate={{ y: 0 }} className="px-5 py-2 bg-indigo-600/90 backdrop-blur-md border border-indigo-400/30 rounded-full text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 text-center">
+                             <div className="w-2 h-2 bg-white rounded-full animate-ping shrink-0" />
+                             <span className="truncate max-w-xs">{message}</span>
                         </motion.div>
                     </div>
                 )}
