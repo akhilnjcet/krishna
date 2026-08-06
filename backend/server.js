@@ -8,6 +8,10 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 
+// Trust Vercel / reverse proxy X-Forwarded-For so rate limiter uses the real client IP
+// Without this, ALL users share one Vercel proxy IP and hit rate limits together
+app.set('trust proxy', 1);
+
 // Initialize Socket.io
 const isVercel = process.env.VERCEL === '1';
 const socketUtil = require('./utils/socket');
@@ -40,21 +44,27 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(sanitizeMiddleware);
 
-// Rate Limiter to mitigate Brute-Force & Denial of Service attacks
+// Rate Limiter — uses real client IP via X-Forwarded-For (trust proxy must be set above)
 const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 500, // Limit each IP to 500 requests per 15 minutes
+    windowMs: 15 * 60 * 1000,       // 15 minutes
+    max: 1000,                        // 1000 requests per real IP per 15 min
     standardHeaders: true,
     legacyHeaders: false,
-    message: { message: 'Too many requests from this IP, please try again after 15 minutes' }
+    // Always return JSON — never HTML — so frontend can parse the error
+    handler: (req, res) => {
+        res.status(429).json({ message: 'Too many requests from this IP, please try again after 15 minutes.' });
+    }
 });
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 30, // Limit sensitive auth operations to 30 requests per window
+    max: 100,                         // 100 auth attempts per real IP per 15 min
     standardHeaders: true,
     legacyHeaders: false,
-    message: { message: 'Too many authentication attempts, please try again later' }
+    // Always return JSON so the login page shows a readable error
+    handler: (req, res) => {
+        res.status(429).json({ message: 'Too many authentication attempts. Please wait 15 minutes and try again.' });
+    }
 });
 
 app.use('/api/', apiLimiter);
