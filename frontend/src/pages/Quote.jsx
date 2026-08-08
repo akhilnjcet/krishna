@@ -69,7 +69,7 @@ const Quote = () => {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white border-4 border-brand-950 shadow-solid p-10 md:p-16 relative"
+                        className="bg-white dark:bg-slate-900 border-4 border-brand-950 shadow-solid p-10 md:p-16 relative"
                     >
                         <div className="bg-[#4CAF50] text-white font-black uppercase text-4xl w-20 h-20 flex items-center justify-center mb-8 border-4 border-brand-950 transform rotate-3 shadow-solid">
                             ✓
@@ -90,7 +90,7 @@ const Quote = () => {
                             
                             <a 
                                 href="/register"
-                                className="inline-block bg-brand-accent hover:bg-white text-brand-950 font-black uppercase tracking-widest text-xs py-4 px-10 transition-all rounded-sm border-2 border-brand-950 shadow-[4px_4px_0_0_#000]"
+                                className="inline-block bg-brand-accent hover:bg-white dark:bg-slate-900 text-brand-950 font-black uppercase tracking-widest text-xs py-4 px-10 transition-all rounded-sm border-2 border-brand-950 shadow-[4px_4px_0_0_#000]"
                             >
                                 Initialize Account for Quote Delivery →
                             </a>
@@ -109,7 +109,7 @@ const Quote = () => {
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white border-4 border-brand-950 shadow-solid"
+                        className="bg-white dark:bg-slate-900 border-4 border-brand-950 shadow-solid"
                     >
                         {/* Form Header Bar */}
                         <div className="bg-brand-950 text-white p-4 flex justify-between items-center border-b-4 border-brand-accent">
@@ -132,7 +132,7 @@ const Quote = () => {
                                             required
                                             value={formData.name}
                                             onChange={handleChange}
-                                            className="w-full px-4 py-3 border-2 border-brand-300 focus:border-brand-950 focus:ring-0 transition-colors bg-white font-medium text-brand-900 rounded-none shadow-[2px_2px_0_0_#d4d4d4]"
+                                            className="w-full px-4 py-3 border-2 border-brand-300 focus:border-brand-950 focus:ring-0 transition-colors bg-white dark:bg-slate-900 font-medium text-brand-900 rounded-none shadow-[2px_2px_0_0_#d4d4d4]"
                                         />
                                     </div>
                                     <div>
@@ -143,7 +143,7 @@ const Quote = () => {
                                             required
                                             value={formData.phone}
                                             onChange={handleChange}
-                                            className="w-full px-4 py-3 border-2 border-brand-300 focus:border-brand-950 focus:ring-0 transition-colors bg-white font-medium text-brand-900 rounded-none shadow-[2px_2px_0_0_#d4d4d4]"
+                                            className="w-full px-4 py-3 border-2 border-brand-300 focus:border-brand-950 focus:ring-0 transition-colors bg-white dark:bg-slate-900 font-medium text-brand-900 rounded-none shadow-[2px_2px_0_0_#d4d4d4]"
                                         />
                                     </div>
                                 </div>
@@ -157,7 +157,7 @@ const Quote = () => {
                                             required
                                             value={formData.location}
                                             onChange={handleChange}
-                                            className="w-full px-4 py-3 border-2 border-brand-300 focus:border-brand-950 focus:ring-0 transition-colors bg-white font-medium text-brand-900 rounded-none shadow-[2px_2px_0_0_#d4d4d4]"
+                                            className="w-full px-4 py-3 border-2 border-brand-300 focus:border-brand-950 focus:ring-0 transition-colors bg-white dark:bg-slate-900 font-medium text-brand-900 rounded-none shadow-[2px_2px_0_0_#d4d4d4]"
                                         />
                                     </div>
                                     <div>
@@ -167,7 +167,7 @@ const Quote = () => {
                                                 name="serviceType"
                                                 value={formData.serviceType}
                                                 onChange={handleChange}
-                                                className="w-full px-4 py-3 border-2 border-brand-300 focus:border-brand-950 focus:ring-0 transition-colors bg-white font-bold text-brand-900 appearance-none rounded-none shadow-[2px_2px_0_0_#d4d4d4] uppercase text-sm"
+                                                className="w-full px-4 py-3 border-2 border-brand-300 focus:border-brand-950 focus:ring-0 transition-colors bg-white dark:bg-slate-900 font-bold text-brand-900 appearance-none rounded-none shadow-[2px_2px_0_0_#d4d4d4] uppercase text-sm"
                                             >
                                                 <option value="welding">01 - Welding Service</option>
                                                 <option value="roofing">02 - Metal Roofing</option>
@@ -190,7 +190,7 @@ const Quote = () => {
                                         rows="5"
                                         value={formData.description}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 border-2 border-brand-300 focus:border-brand-950 focus:ring-0 transition-colors bg-white font-medium text-brand-900 resize-none rounded-none shadow-[2px_2px_0_0_#d4d4d4]"
+                                        className="w-full px-4 py-3 border-2 border-brand-300 focus:border-brand-950 focus:ring-0 transition-colors bg-white dark:bg-slate-900 font-medium text-brand-900 resize-none rounded-none shadow-[2px_2px_0_0_#d4d4d4]"
                                         placeholder="Enter structural dimensions, needed alloy type, and operational timeline..."
                                     ></textarea>
                                 </div>

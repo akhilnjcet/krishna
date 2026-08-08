@@ -47,7 +47,8 @@ exports.addStaff = async (req, res) => {
             upi_id, bank_name, account_number, ifsc_code, base_salary,
             joiningDate, address, emergencyContact, salaryType, overtimeRate,
             bonusAmount, advanceAmount, deductionAmount,
-            standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired
+            standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired,
+            profilePhoto
         } = req.body;
 
         const userExists = await User.findOne({ $or: [{ email }, { username }, { staff_id }] });
@@ -86,7 +87,8 @@ exports.addStaff = async (req, res) => {
             standardWorkingHoursPerDay: standardWorkingHoursPerDay !== undefined ? Number(standardWorkingHoursPerDay) : 8,
             workingDaysPerMonth: workingDaysPerMonth !== undefined ? Number(workingDaysPerMonth) : 26,
             autoSalaryCalculation: autoSalaryCalculation !== undefined ? (autoSalaryCalculation === true || autoSalaryCalculation === 'true') : true,
-            otApprovalRequired: otApprovalRequired !== undefined ? (otApprovalRequired === true || otApprovalRequired === 'true') : true
+            otApprovalRequired: otApprovalRequired !== undefined ? (otApprovalRequired === true || otApprovalRequired === 'true') : true,
+            profilePhoto
         });
 
         // Send Welcome Message via WhatsApp
@@ -112,7 +114,8 @@ exports.updateStaff = async (req, res) => {
             upi_id, bank_name, account_number, ifsc_code, base_salary,
             joiningDate, address, emergencyContact, salaryType, overtimeRate,
             bonusAmount, advanceAmount, deductionAmount,
-            standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired
+            standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired,
+            profilePhoto
         } = req.body;
 
         staff.name = name || full_name || staff.name;
@@ -142,6 +145,10 @@ exports.updateStaff = async (req, res) => {
         staff.workingDaysPerMonth = workingDaysPerMonth !== undefined ? Number(workingDaysPerMonth) : staff.workingDaysPerMonth;
         staff.autoSalaryCalculation = autoSalaryCalculation !== undefined ? (autoSalaryCalculation === true || autoSalaryCalculation === 'true') : staff.autoSalaryCalculation;
         staff.otApprovalRequired = otApprovalRequired !== undefined ? (otApprovalRequired === true || otApprovalRequired === 'true') : staff.otApprovalRequired;
+        
+        if (profilePhoto !== undefined) {
+            staff.profilePhoto = profilePhoto;
+        }
 
         const updatedStaff = await staff.save();
 

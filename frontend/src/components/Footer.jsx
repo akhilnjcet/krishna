@@ -36,7 +36,7 @@ const Footer = () => {
     }, []);
 
     return (
-        <footer className="bg-slate-100 text-slate-600 font-sans border-t-[12px] border-brand-accent transition-all duration-300">
+        <footer className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-sans border-t-[12px] border-brand-accent transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
 
@@ -56,7 +56,7 @@ const Footer = () => {
                                 </div>
                             </div>
                         </Link>
-                        <p className="text-slate-500 font-medium leading-relaxed mb-8 max-w-sm text-sm">
+                        <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-8 max-w-sm text-sm">
                             {settings.footer_description}
                         </p>
                         <div className="flex gap-4">
@@ -91,8 +91,8 @@ const Footer = () => {
                     </div>
 
                     <div className="md:col-span-2">
-                        <h3 className="text-primary font-black uppercase tracking-widest text-sm mb-6 border-b-2 border-slate-200 pb-2 inline-block">Company</h3>
-                        <ul className="space-y-3 font-bold text-sm text-slate-500">
+                        <h3 className="text-primary font-black uppercase tracking-widest text-sm mb-6 border-b-2 border-slate-200 dark:border-slate-700 pb-2 inline-block">Company</h3>
+                        <ul className="space-y-3 font-bold text-sm text-slate-500 dark:text-slate-400">
                             <li><Link to="/about" className="hover:text-primary transition flex items-center gap-2">About Us</Link></li>
                             <li><Link to="/services" className="hover:text-primary transition flex items-center gap-2">Services</Link></li>
                             <li><Link to="/projects" className="hover:text-primary transition flex items-center gap-2">Portfolio</Link></li>
@@ -100,8 +100,8 @@ const Footer = () => {
                     </div>
 
                     <div className="md:col-span-2">
-                        <h3 className="text-primary font-black uppercase tracking-widest text-sm mb-6 border-b-2 border-slate-200 pb-2 inline-block">Operations</h3>
-                        <ul className="space-y-3 font-bold text-sm text-slate-500">
+                        <h3 className="text-primary font-black uppercase tracking-widest text-sm mb-6 border-b-2 border-slate-200 dark:border-slate-700 pb-2 inline-block">Operations</h3>
+                        <ul className="space-y-3 font-bold text-sm text-slate-500 dark:text-slate-400">
                             <li><Link to="/services?type=welding" className="hover:text-primary transition">Heavy Welding</Link></li>
                             <li><Link to="/services?type=roofing" className="hover:text-primary transition">Metal Roofing</Link></li>
                             <li><Link to="/services?type=truss" className="hover:text-primary transition">Truss Assembly</Link></li>
@@ -110,8 +110,8 @@ const Footer = () => {
                     </div>
 
                     <div className="md:col-span-3">
-                        <h3 className="text-primary font-black uppercase tracking-widest text-sm mb-6 border-b-2 border-slate-200 pb-2 inline-block">Dispatch / Comms</h3>
-                        <ul className="space-y-4 font-bold text-sm text-slate-500">
+                        <h3 className="text-primary font-black uppercase tracking-widest text-sm mb-6 border-b-2 border-slate-200 dark:border-slate-700 pb-2 inline-block">Dispatch / Comms</h3>
+                        <ul className="space-y-4 font-bold text-sm text-slate-500 dark:text-slate-400">
                             <li className="flex items-start gap-3">
                                 <span className="text-primary mt-1">⌖</span>
                                 <span className="uppercase tracking-wide whitespace-pre-line">{settings.footer_address}</span>
@@ -132,7 +132,7 @@ const Footer = () => {
 
             {/* Heavy bottom bar */}
             <div className="bg-slate-200 py-6">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-widest text-center md:text-left">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center md:text-left">
                     <p>&copy; {new Date().getFullYear()} {settings.footer_copyright}</p>
                     <div className="flex space-x-6 mt-4 md:mt-0">
                         <Link to="/privacy" className="hover:text-primary transition">Privacy Spec</Link>

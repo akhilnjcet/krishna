@@ -23,13 +23,13 @@
   }
   
   body {
-    @apply antialiased text-slate-700 bg-slate-50 transition-colors duration-200;
+    @apply antialiased text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-900 transition-colors duration-200;
     font-family: 'Inter', sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold text-slate-900 tracking-tight;
+    @apply font-bold text-slate-900 dark:text-white tracking-tight;
     font-family: 'Poppins', sans-serif;
   }
 }

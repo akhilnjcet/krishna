@@ -65,12 +65,12 @@ const StaffLogin = () => {
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-lg bg-white dark:bg-dark-surface rounded-[2.5rem] border border-slate-200 dark:border-dark-border shadow-2xl relative z-10 overflow-hidden"
+                className="w-full max-w-lg bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-[2.5rem] border border-slate-200 dark:border-slate-700 dark:border-dark-border shadow-2xl relative z-10 overflow-hidden"
             >
                 <div className="bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] p-10 text-white relative">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
                     <div className="relative z-10 flex flex-col items-center text-center">
-                        <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 border border-white/20">
+                        <div className="w-16 h-16 bg-white dark:bg-slate-900/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 border border-white/20">
                             <ShieldCheck className="w-8 h-8 text-blue-200" />
                         </div>
                         <h1 className="text-3xl font-bold font-poppins">Staff Authentication</h1>
@@ -79,11 +79,11 @@ const StaffLogin = () => {
                 </div>
 
                 <div className="p-10">
-                    <div className="flex p-1.5 bg-slate-50 dark:bg-dark-bg rounded-2xl mb-10 border border-slate-200 dark:border-dark-border">
+                    <div className="flex p-1.5 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg rounded-2xl mb-10 border border-slate-200 dark:border-slate-700 dark:border-dark-border">
                         <button
                             onClick={() => setLoginMethod('password')}
                             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-300 font-bold text-xs uppercase tracking-widest ${
-                                loginMethod === 'password' ? 'bg-white dark:bg-dark-surface text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                                loginMethod === 'password' ? 'bg-white dark:bg-slate-900 dark:bg-dark-surface text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:text-slate-400'
                             }`}
                         >
                             <LogIn className="w-4 h-4" /> Passcode
@@ -91,7 +91,7 @@ const StaffLogin = () => {
                         <button
                             onClick={() => setLoginMethod('face')}
                             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-300 font-bold text-xs uppercase tracking-widest ${
-                                loginMethod === 'face' ? 'bg-white dark:bg-dark-surface text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                                loginMethod === 'face' ? 'bg-white dark:bg-slate-900 dark:bg-dark-surface text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:text-slate-400'
                             }`}
                         >
                             <Camera className="w-4 h-4" /> Face Biometrics
@@ -122,7 +122,7 @@ const StaffLogin = () => {
                                             autoComplete="username"
                                             value={username}
                                             onChange={(e) => setUsername(e.target.value)}
-                                            className="block w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
+                                            className="block w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
                                             placeholder="Enter operational ID"
                                         />
                                     </div>
@@ -142,7 +142,7 @@ const StaffLogin = () => {
                                             autoComplete="current-password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="block w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
+                                            className="block w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
                                             placeholder="Enter your private key"
                                         />
                                     </div>
@@ -190,7 +190,7 @@ const StaffLogin = () => {
                         )}
                     </AnimatePresence>
 
-                    <div className="mt-10 pt-8 border-t border-slate-100 dark:border-dark-border flex items-center justify-center">
+                    <div className="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800 dark:border-dark-border flex items-center justify-center">
                         <Link to="/" className="flex items-center gap-2 text-slate-400 hover:text-blue-600 transition-colors font-bold text-[10px] uppercase tracking-widest">
                             <ArrowLeft className="w-4 h-4" /> Return to Command Center
                         </Link>

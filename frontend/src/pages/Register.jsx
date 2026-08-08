@@ -63,7 +63,7 @@ const Register = () => {
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-4xl bg-white dark:bg-dark-surface rounded-[3rem] border border-slate-200 dark:border-dark-border shadow-2xl relative z-10 overflow-hidden"
+                className="w-full max-w-4xl bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-[3rem] border border-slate-200 dark:border-slate-700 dark:border-dark-border shadow-2xl relative z-10 overflow-hidden"
             >
                 <div className="grid grid-cols-1 lg:grid-cols-2">
                     
@@ -73,7 +73,7 @@ const Register = () => {
                         
                         <div className="relative z-10">
                             <Link to="/" className="flex items-center gap-3 mb-10">
-                                <div className="bg-white text-blue-600 w-10 h-10 rounded-xl flex items-center justify-center font-black shadow-lg">K</div>
+                                <div className="bg-white dark:bg-slate-900 text-blue-600 w-10 h-10 rounded-xl flex items-center justify-center font-black shadow-lg">K</div>
                                 <span className="font-bold tracking-tight text-xl">KRISHNA</span>
                             </Link>
                             
@@ -81,7 +81,7 @@ const Register = () => {
                             
                             <div className="space-y-6">
                                 <div className="flex items-start gap-4">
-                                    <div className="mt-1 p-2 bg-white/10 rounded-lg">
+                                    <div className="mt-1 p-2 bg-white dark:bg-slate-900/10 rounded-lg">
                                         <Activity className="w-5 h-5 text-emerald-400" />
                                     </div>
                                     <div>
@@ -90,7 +90,7 @@ const Register = () => {
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
-                                    <div className="mt-1 p-2 bg-white/10 rounded-lg">
+                                    <div className="mt-1 p-2 bg-white dark:bg-slate-900/10 rounded-lg">
                                         <Rocket className="w-5 h-5 text-emerald-400" />
                                     </div>
                                     <div>
@@ -102,7 +102,7 @@ const Register = () => {
                         </div>
 
                         <div className="relative z-10 pt-10">
-                            <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest bg-white/10 p-4 rounded-2xl border border-white/10">
+                            <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest bg-white dark:bg-slate-900/10 p-4 rounded-2xl border border-white/10">
                                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
                                 Verified Client Workspace Security
                             </div>
@@ -141,7 +141,7 @@ const Register = () => {
                                         required
                                         value={formData.name}
                                         onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                        className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
+                                        className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
                                         placeholder="Enter your name"
                                     />
                                 </div>
@@ -158,7 +158,7 @@ const Register = () => {
                                         required
                                         value={formData.email}
                                         onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                        className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
+                                        className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
                                         placeholder="partner@company.com"
                                     />
                                 </div>
@@ -175,7 +175,7 @@ const Register = () => {
                                         required
                                         value={formData.mobile}
                                         onChange={(e) => setFormData({...formData, mobile: e.target.value})}
-                                        className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
+                                        className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
                                         placeholder="+91 00000 00000"
                                     />
                                 </div>
@@ -192,7 +192,7 @@ const Register = () => {
                                         required
                                         value={formData.password}
                                         onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                        className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
+                                        className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
                                         placeholder="••••••••"
                                     />
                                 </div>
@@ -209,7 +209,7 @@ const Register = () => {
                                         required
                                         value={formData.confirmPassword}
                                         onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                                        className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
+                                        className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-sm"
                                         placeholder="••••••••"
                                     />
                                 </div>
@@ -230,7 +230,7 @@ const Register = () => {
                             </div>
                         </form>
 
-                        <div className="mt-10 pt-8 border-t border-slate-100 dark:border-dark-border text-center">
+                        <div className="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800 dark:border-dark-border text-center">
                             <Link to="/login" className="text-xs font-bold text-blue-600 hover:underline flex items-center justify-center gap-2">
                                 <Users className="w-4 h-4" /> Registered Operator? Login Here
                             </Link>

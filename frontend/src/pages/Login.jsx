@@ -90,7 +90,7 @@ const Login = () => {
             <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -mr-48 -mt-48"></div>
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -ml-48 -mb-48"></div>
 
-            <div className="w-full max-w-xl bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl relative z-10 overflow-hidden">
+            <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl relative z-10 overflow-hidden">
                 <div className="grid grid-cols-1 md:grid-cols-2">
                     <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] p-12 text-white flex flex-col justify-between relative overflow-hidden">
                         <div className="absolute inset-0 opacity-10">
@@ -107,16 +107,16 @@ const Login = () => {
                     </div>
 
                     <div className="p-10 md:p-12">
-                        <div className="flex gap-4 mb-10 bg-slate-100 p-1.5 rounded-2xl">
+                        <div className="flex gap-4 mb-10 bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl">
                             <button 
                                 onClick={() => { setLoginMode('identity'); setOtpSent(false); }}
-                                className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${loginMode === 'identity' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+                                className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${loginMode === 'identity' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-400'}`}
                             >
                                 Admin ID
                             </button>
                             <button 
                                 onClick={() => setLoginMode('mail')}
-                                className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${loginMode === 'mail' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+                                className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${loginMode === 'mail' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-400'}`}
                             >
                                 Mail/OTP
                             </button>
@@ -132,7 +132,7 @@ const Login = () => {
                                         exit={{ opacity: 0, x: -20 }}
                                         className="space-y-4"
                                     >
-                                        <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-4 focus-within:border-blue-500 transition-all">
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center gap-4 focus-within:border-blue-500 transition-all">
                                             <Users className="w-5 h-5 text-slate-400" />
                                             <input
                                                 type="text"
@@ -142,11 +142,11 @@ const Login = () => {
                                                 autocomplete="username"
                                                 value={identifier}
                                                 onChange={(e) => setIdentifier(e.target.value)}
-                                                className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 placeholder:text-slate-300"
+                                                className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-300"
                                                 placeholder="Admin User ID"
                                             />
                                         </div>
-                                        <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-4 focus-within:border-blue-500 transition-all">
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center gap-4 focus-within:border-blue-500 transition-all">
                                             <Lock className="w-5 h-5 text-slate-400" />
                                             <input
                                                 type="password"
@@ -156,7 +156,7 @@ const Login = () => {
                                                 autocomplete="current-password"
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
-                                                className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 placeholder:text-slate-300"
+                                                className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-300"
                                                 placeholder="Security Key"
                                             />
                                         </div>
@@ -169,7 +169,7 @@ const Login = () => {
                                         exit={{ opacity: 0, x: -20 }}
                                         className="space-y-4"
                                     >
-                                        <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-4 focus-within:border-blue-500 transition-all">
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center gap-4 focus-within:border-blue-500 transition-all">
                                             <Mail className="w-5 h-5 text-slate-400" />
                                             <input
                                                 type="email"
@@ -177,7 +177,7 @@ const Login = () => {
                                                 disabled={otpSent}
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
-                                                className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 placeholder:text-slate-300"
+                                                className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-300"
                                                 placeholder="Registered Email"
                                             />
                                         </div>

@@ -71,24 +71,24 @@ const Profile = () => {
 
     return (
         <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-500">
-            <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+            <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-1">Account Identity</div>
-                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900">Profile Settings</h2>
+                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 dark:text-white">Profile Settings</h2>
                 </div>
                 
                 <div className="mt-6 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-start gap-4">
                     <ShieldAlert className="w-6 h-6 text-blue-500 flex-shrink-0 mt-1" />
                     <div>
                         <h4 className="text-sm font-black uppercase tracking-widest text-blue-900 mb-1">WhatsApp Integration</h4>
-                        <p className="text-xs font-bold text-slate-600 leading-relaxed">
+                        <p className="text-xs font-bold text-slate-600 dark:text-slate-400 leading-relaxed">
                             Linking your 10-digit mobile number here allows the system to send you instant alerts via WhatsApp. This includes security login alerts, OTPs, and project updates.
                         </p>
                     </div>
                 </div>
             </div>
 
-            <form onSubmit={handleSave} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-xl space-y-6">
+            <form onSubmit={handleSave} className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl space-y-6">
                 {message && (
                     <div className={`p-4 rounded-2xl text-xs font-black uppercase tracking-widest text-center ${message.includes('success') ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
                         {message}
@@ -104,7 +104,7 @@ const Profile = () => {
                             required
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full bg-slate-50 border border-slate-200 py-4 pl-12 pr-4 rounded-2xl font-bold text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-4 pl-12 pr-4 rounded-2xl font-bold text-slate-800 dark:text-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
                             placeholder="Enter your full name"
                         />
                     </div>
@@ -118,7 +118,7 @@ const Profile = () => {
                             type="text"
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 15) })}
-                            className="w-full bg-slate-50 border border-slate-200 py-4 pl-12 pr-4 rounded-2xl font-bold text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-4 pl-12 pr-4 rounded-2xl font-bold text-slate-800 dark:text-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
                             placeholder="e.g. 9876543210"
                         />
                     </div>
@@ -150,16 +150,16 @@ const Profile = () => {
                     <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic mb-8">Hardware Environment</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
-                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Model Architecture</div>
+                        <div className="bg-white dark:bg-slate-900/5 border border-white/10 p-5 rounded-2xl">
+                            <div className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Model Architecture</div>
                             <div className="text-sm font-black text-white uppercase italic">{deviceInfo?.model || 'Generic Interface'}</div>
                         </div>
-                        <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
-                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Operating System</div>
+                        <div className="bg-white dark:bg-slate-900/5 border border-white/10 p-5 rounded-2xl">
+                            <div className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Operating System</div>
                             <div className="text-sm font-black text-white uppercase italic">{deviceInfo?.platform} {deviceInfo?.osVersion}</div>
                         </div>
-                        <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
-                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Battery Payload</div>
+                        <div className="bg-white dark:bg-slate-900/5 border border-white/10 p-5 rounded-2xl">
+                            <div className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Battery Payload</div>
                             <div className="flex items-center gap-3">
                                 <Battery className={`w-4 h-4 ${deviceInfo?.batteryLevel > 0.2 ? 'text-emerald-500' : 'text-rose-500'}`} />
                                 <div className="text-sm font-black text-white uppercase italic">
@@ -167,8 +167,8 @@ const Profile = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
-                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">System State</div>
+                        <div className="bg-white dark:bg-slate-900/5 border border-white/10 p-5 rounded-2xl">
+                            <div className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">System State</div>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                                 <div className="text-sm font-black text-white uppercase italic">Authenticated & Verified</div>
@@ -179,14 +179,14 @@ const Profile = () => {
                 </div>
 
             {/* Developer Disclosure Link - satisfying Reason 3 of rejection */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
                     <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Developer & Legal Info</h5>
-                    <p className="text-[10px] font-bold text-slate-900 uppercase">Krishna Engineering Works • AKHIL N</p>
+                    <p className="text-[10px] font-bold text-slate-900 dark:text-white uppercase">Krishna Engineering Works • AKHIL N</p>
                 </div>
                 <a 
                     href="#/privacy" 
-                    className="text-[9px] font-black uppercase tracking-widest px-4 py-2 bg-slate-50 text-slate-400 hover:bg-blue-600 hover:text-white rounded-lg transition-all"
+                    className="text-[9px] font-black uppercase tracking-widest px-4 py-2 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:bg-blue-600 hover:text-white rounded-lg transition-all"
                 >
                     View Policy
                 </a>
@@ -207,7 +207,7 @@ const Profile = () => {
                             alert("Request Dispatched: Our data compliance lead will process this within 24 hours. You will be notified via WhatsApp.");
                         }
                     }}
-                    className="w-full py-4 bg-white border-2 border-rose-200 text-rose-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-600 hover:text-white transition-all shadow-xl shadow-rose-900/5"
+                    className="w-full py-4 bg-white dark:bg-slate-900 border-2 border-rose-200 text-rose-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-600 hover:text-white transition-all shadow-xl shadow-rose-900/5"
                 >
                     Signaling Account Termination
                 </button>

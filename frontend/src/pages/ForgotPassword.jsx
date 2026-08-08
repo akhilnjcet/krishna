@@ -64,7 +64,7 @@ const ForgotPassword = () => {
 
     return (
         <div className="min-h-screen bg-brand-50 flex items-center justify-center p-4 font-sans">
-            <div className="max-w-md w-full bg-white p-8 md:p-12 border-4 border-brand-950 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col relative overflow-hidden">
+            <div className="max-w-md w-full bg-white dark:bg-slate-900 p-8 md:p-12 border-4 border-brand-950 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col relative overflow-hidden">
                 <Link to="/login" className="absolute top-6 left-6 text-brand-400 hover:text-brand-950 transition-colors">
                     <ChevronLeft className="w-6 h-6" />
                 </Link>
@@ -100,7 +100,7 @@ const ForgotPassword = () => {
                                 <input 
                                     type="email" required
                                     value={email} onChange={e => setEmail(e.target.value)}
-                                    className="w-full bg-brand-50 border-4 border-brand-100 pl-12 pr-4 py-4 rounded-none font-bold text-brand-950 outline-none focus:border-brand-950 focus:bg-white transition-all placeholder:text-gray-300"
+                                    className="w-full bg-brand-50 border-4 border-brand-100 pl-12 pr-4 py-4 rounded-none font-bold text-brand-950 outline-none focus:border-brand-950 focus:bg-white dark:bg-slate-900 transition-all placeholder:text-gray-300"
                                     placeholder="operator@krishna.com"
                                 />
                             </div>
@@ -123,7 +123,7 @@ const ForgotPassword = () => {
                             <input 
                                 type="text" required maxLength="6"
                                 value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-                                className="w-full bg-brand-50 border-4 border-brand-100 px-4 py-4 rounded-none h-16 font-black text-3xl tracking-[1em] text-center text-brand-950 outline-none focus:border-brand-950 focus:bg-white transition-all"
+                                className="w-full bg-brand-50 border-4 border-brand-100 px-4 py-4 rounded-none h-16 font-black text-3xl tracking-[1em] text-center text-brand-950 outline-none focus:border-brand-950 focus:bg-white dark:bg-slate-900 transition-all"
                                 placeholder="------"
                             />
                         </div>
@@ -147,7 +147,7 @@ const ForgotPassword = () => {
                                 <input 
                                     type="password" required minLength="6"
                                     value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                                    className="w-full bg-brand-50 border-4 border-brand-100 pl-12 pr-4 py-4 rounded-none font-bold text-brand-950 outline-none focus:border-brand-950 focus:bg-white transition-all placeholder:text-gray-300"
+                                    className="w-full bg-brand-50 border-4 border-brand-100 pl-12 pr-4 py-4 rounded-none font-bold text-brand-950 outline-none focus:border-brand-950 focus:bg-white dark:bg-slate-900 transition-all placeholder:text-gray-300"
                                     placeholder="Enter new password"
                                 />
                             </div>

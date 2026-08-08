@@ -39,17 +39,17 @@ const About = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
                 <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="bg-slate-50 min-h-screen text-slate-800 font-sans selection:bg-brand-accent selection:text-slate-900 pb-32">
+        <div className="bg-slate-50 dark:bg-slate-800 min-h-screen text-slate-800 dark:text-slate-200 font-sans selection:bg-brand-accent selection:text-slate-900 dark:text-white pb-32">
             
             {/* HERO SECTION */}
-            <section className="relative h-[80vh] flex items-center justify-center overflow-hidden pt-20 bg-white">
+            <section className="relative h-[80vh] flex items-center justify-center overflow-hidden pt-20 bg-white dark:bg-slate-900">
                 <div className="absolute inset-0 z-0">
                     <img 
                         src={aboutData.about_image} 
@@ -65,9 +65,9 @@ const About = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1 }}
                     >
-                        <div className="inline-flex items-center gap-4 bg-white/90 backdrop-blur-md border border-slate-200 px-8 py-3 rounded-full mb-10 shadow-sm">
+                        <div className="inline-flex items-center gap-4 bg-white dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 px-8 py-3 rounded-full mb-10 shadow-sm">
                             <span className="w-3 h-3 rounded-full bg-blue-600 animate-pulse"></span>
-                            <span className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-500 italic">Established 1999 // REINFORCED</span>
+                            <span className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-500 dark:text-slate-400 italic">Established 1999 // REINFORCED</span>
                         </div>
                         <h1 className="text-6xl md:text-9xl font-black uppercase tracking-tighter leading-[0.8] mb-12 italic text-white drop-shadow-md font-poppins">
                             {aboutData.about_title.split(' ').map((word, i) => (
@@ -90,8 +90,8 @@ const About = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-24">
                         <div className="lg:col-span-12 xl:col-span-7">
                             <span className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-600 mb-6 block italic">Corporate Manifesto</span>
-                            <h2 className="text-5xl md:text-7xl font-black text-slate-900 uppercase tracking-tighter italic mb-12 leading-[0.9] font-poppins">FORGING <br /> INTEGRITY.</h2>
-                            <p className="text-2xl md:text-3xl text-slate-600 font-bold uppercase tracking-tight leading-relaxed mb-16 italic">
+                            <h2 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-12 leading-[0.9] font-poppins">FORGING <br /> INTEGRITY.</h2>
+                            <p className="text-2xl md:text-3xl text-slate-600 dark:text-slate-400 font-bold uppercase tracking-tight leading-relaxed mb-16 italic">
                                 {aboutData.about_content}
                             </p>
 
@@ -102,17 +102,17 @@ const About = () => {
                                 ].map((item, i) => (
                                     <div key={i} className="space-y-4">
                                         <div className="text-blue-600">{item.icon}</div>
-                                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-widest font-poppins">{item.label}</h3>
-                                        <p className="text-sm font-bold text-slate-500 uppercase tracking-tighter">{item.desc}</p>
+                                        <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest font-poppins">{item.label}</h3>
+                                        <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter">{item.desc}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
                         <div className="lg:col-span-12 xl:col-span-5 relative">
-                            <div className="sticky top-32 p-12 bg-white border border-slate-200/60 rounded-[4rem] shadow-xl shadow-slate-100/50">
+                            <div className="sticky top-32 p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-[4rem] shadow-xl shadow-slate-100/50">
                                 <Radio className="w-12 h-12 text-blue-600 mb-12 animate-pulse" />
-                                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-8 italic font-poppins">OUR DNA</h3>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-8 italic font-poppins">OUR DNA</h3>
                                 <div className="space-y-6">
                                     {[
                                         'Heavy Structural Design',
@@ -121,7 +121,7 @@ const About = () => {
                                         'Crane Supportive Truss',
                                         'Massive Site Execution'
                                     ].map((item, i) => (
-                                        <div key={i} className="flex items-center gap-6 text-[11px] font-black uppercase tracking-[0.4em] text-slate-600 hover:text-slate-900 transition-colors cursor-default">
+                                        <div key={i} className="flex items-center gap-6 text-[11px] font-black uppercase tracking-[0.4em] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white transition-colors cursor-default">
                                             <CheckCircle2 className="w-4 h-4 text-blue-600" /> {item}
                                         </div>
                                     ))}
@@ -133,7 +133,7 @@ const About = () => {
             </section>
 
             {/* CORE VALUES */}
-            <section className="py-40 border-y border-slate-200/60 bg-white">
+            <section className="py-40 border-y border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
                         {[
@@ -145,7 +145,7 @@ const About = () => {
                                 <div className="w-20 h-20 bg-blue-600 text-white rounded-3xl flex items-center justify-center rotate-12 hover:rotate-0 transition-transform duration-500 shadow-md">
                                     {React.cloneElement(v.icon, { size: 40 })}
                                 </div>
-                                <h3 className="text-4xl font-black text-slate-900 uppercase tracking-tighter italic font-poppins">{v.label}</h3>
+                                <h3 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic font-poppins">{v.label}</h3>
                                 <div className="w-12 h-1 bg-blue-600"></div>
                             </div>
                         ))}
@@ -157,18 +157,18 @@ const About = () => {
             <section className="py-40 relative px-6 text-center">
                 <div className="max-w-4xl mx-auto">
                     <Users className="w-24 h-24 text-slate-300 mx-auto mb-16" />
-                    <h2 className="text-6xl md:text-8xl font-black text-slate-900 uppercase tracking-tighter italic mb-12 font-poppins">BEYOND <br /> <span className="text-blue-600">STRUCTURES.</span></h2>
-                    <p className="text-xl text-slate-500 font-bold uppercase tracking-widest leading-relaxed mb-20 max-w-2xl mx-auto">
+                    <h2 className="text-6xl md:text-8xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-12 font-poppins">BEYOND <br /> <span className="text-blue-600">STRUCTURES.</span></h2>
+                    <p className="text-xl text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest leading-relaxed mb-20 max-w-2xl mx-auto">
                         We build more than just industrial sheds. We build the backbone of national infrastructure and manufacturing progress.
                     </p>
                     <div className="inline-grid grid-cols-2 gap-20">
                         <div className="text-center">
                             <div className="text-4xl font-black text-blue-600 italic mb-2 tracking-tighter">150+</div>
-                            <div className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500">Specialists</div>
+                            <div className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500 dark:text-slate-400">Specialists</div>
                         </div>
                         <div className="text-center">
                             <div className="text-4xl font-black text-blue-600 italic mb-2 tracking-tighter">0.1%</div>
-                            <div className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500">Error Margin</div>
+                            <div className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500 dark:text-slate-400">Error Margin</div>
                         </div>
                     </div>
                 </div>

@@ -189,12 +189,12 @@ const Home = () => {
         <>
             <FloatingContact />
 
-            <div className="bg-white text-slate-800 overflow-x-hidden">
+            <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 overflow-x-hidden">
 
                 {/* ════════════════════════════════════════
                     1. HERO SECTION — Immersive Animated 
                     ════════════════════════════════════════ */}
-                <section ref={heroRef} className="relative min-h-screen flex items-center bg-white overflow-hidden">
+                <section ref={heroRef} className="relative min-h-screen flex items-center bg-white dark:bg-slate-900 overflow-hidden">
                     {/* Dynamic animated gradient bg */}
                     <motion.div
                         animate={{ background: [
@@ -258,7 +258,7 @@ const Home = () => {
 
                             {/* Animated headline */}
                             <motion.div variants={stagger} className="mb-8">
-                                <div className="text-[clamp(3rem,8vw,6.5rem)] font-black text-slate-900 leading-[0.95] tracking-[-0.03em] font-poppins">
+                                <div className="text-[clamp(3rem,8vw,6.5rem)] font-black text-slate-900 dark:text-white leading-[0.95] tracking-[-0.03em] font-poppins">
                                     <WordReveal text="Precision" className="block" />
                                     <span className="block overflow-hidden">
                                         <motion.span
@@ -274,7 +274,7 @@ const Home = () => {
                             </motion.div>
 
                             <motion.p variants={fadeUp} custom={5}
-                                className="text-lg md:text-xl text-slate-600 mb-14 max-w-2xl leading-relaxed font-medium"
+                                className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-14 max-w-2xl leading-relaxed font-medium"
                             >
                                 Kerala's premier industrial fabrication & welding specialists.
                                 Over two decades of precision engineering — delivered on-time, every time.
@@ -288,7 +288,7 @@ const Home = () => {
                                     {/* shimmer sweep */}
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                                 </Link>
-                                 <a href={(settings.floating_phone || settings.footer_phone || '+918594030186').startsWith('tel:') ? (settings.floating_phone || settings.footer_phone || '+918594030186') : `tel:${(settings.floating_phone || settings.footer_phone || '+918594030186').replace(/\s+/g, '')}`} className="px-8 py-4 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-2xl border border-slate-200 hover:border-slate-300 flex items-center gap-3 transition-all hover:-translate-y-1 text-base shadow-sm">
+                                 <a href={(settings.floating_phone || settings.footer_phone || '+918594030186').startsWith('tel:') ? (settings.floating_phone || settings.footer_phone || '+918594030186') : `tel:${(settings.floating_phone || settings.footer_phone || '+918594030186').replace(/\s+/g, '')}`} className="px-8 py-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600 flex items-center gap-3 transition-all hover:-translate-y-1 text-base shadow-sm">
                                     <motion.span animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
                                         <Phone className="w-5 h-5 text-blue-600" />
                                     </motion.span>
@@ -298,7 +298,7 @@ const Home = () => {
 
                             {/* ── PERFORMANCE METRICS ── 
                                 Glassmorphism cards with animated counters */}
-                            <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-10 border-t border-slate-200">
+                            <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-10 border-t border-slate-200 dark:border-slate-700">
                                 {[
                                     { label: 'Projects Completed', value: (settings.stat_projects || '1200+').replace(/[^0-9,.]/g, ''), suffix: (settings.stat_projects || '1200+').replace(/[0-9,. ]/g, '') || '+', icon: <Layers className="w-7 h-7" />, color: 'from-blue-50/50 to-white', glow: 'shadow-blue-100/40', border: 'border-blue-100', iconColor: 'text-blue-600', bgIcon: 'bg-blue-50' },
                                     { label: 'Happy Clients', value: (settings.stat_clients || '450+').replace(/[^0-9,.]/g, ''), suffix: (settings.stat_clients || '450+').replace(/[0-9,. ]/g, '') || '+', icon: <Users className="w-7 h-7" />, color: 'from-cyan-50/50 to-white', glow: 'shadow-cyan-100/40', border: 'border-cyan-100', iconColor: 'text-cyan-600', bgIcon: 'bg-cyan-50' },
@@ -315,10 +315,10 @@ const Home = () => {
                                         {/* Background shine on hover */}
                                         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-slate-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                                         <div className={`w-12 h-12 ${stat.bgIcon} rounded-2xl flex items-center justify-center mb-4 ${stat.iconColor} group-hover:scale-110 transition-transform`}>{stat.icon}</div>
-                                        <div className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-2">
+                                        <div className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">
                                             <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                                         </div>
-                                        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-600 transition-colors">
+                                        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-600 dark:text-slate-400 transition-colors">
                                             {stat.label}
                                         </div>
                                         {/* Bottom accent line */}
@@ -336,7 +336,7 @@ const Home = () => {
                         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-400/50"
                     >
                         <span className="text-[9px] font-black uppercase tracking-[0.4em]">Scroll</span>
-                        <div className="w-5 h-9 rounded-full border border-slate-300 flex justify-center pt-1.5">
+                        <div className="w-5 h-9 rounded-full border border-slate-300 dark:border-slate-600 flex justify-center pt-1.5">
                             <motion.div animate={{ y: [0, 12, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-1 h-2 bg-slate-400 rounded-full" />
                         </div>
                     </motion.div>
@@ -344,7 +344,7 @@ const Home = () => {
 
                 {/* Banner Ad Placement */}
                 {/* Banner Ad Placement */}
-                <div className="bg-slate-50 pt-12 pb-6 border-b border-slate-200">
+                <div className="bg-slate-50 dark:bg-slate-800 pt-12 pb-6 border-b border-slate-200 dark:border-slate-700">
                     <div className="max-w-7xl mx-auto px-6">
                         <AdBanner adSlot="7234567890" adFormat="horizontal" />
                     </div>
@@ -364,10 +364,10 @@ const Home = () => {
                                 viewport={{ once: true, margin: "-80px" }} variants={stagger}
                             >
                                 <motion.p variants={fadeUp} custom={0} className="text-blue-600 font-black uppercase tracking-[0.4em] text-xs mb-5">Our Story</motion.p>
-                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-6xl font-black text-slate-900 leading-tight tracking-tighter mb-8 font-poppins">
+                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white leading-tight tracking-tighter mb-8 font-poppins">
                                     {settings.about_title}
                                 </motion.h2>
-                                <motion.p variants={fadeUp} custom={2} className="text-slate-600 text-lg leading-relaxed mb-12 font-medium">
+                                <motion.p variants={fadeUp} custom={2} className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed mb-12 font-medium">
                                     {settings.about_content}
                                 </motion.p>
                                 <motion.div variants={fadeUp} custom={3} className="space-y-5">
@@ -376,7 +376,7 @@ const Home = () => {
                                             <div className="w-6 h-6 rounded-full bg-blue-50 border border-blue-200/50 flex items-center justify-center flex-shrink-0">
                                                 <CheckCircle className="w-3.5 h-3.5 text-blue-600" />
                                             </div>
-                                            <span className="text-slate-700 font-semibold">{item}</span>
+                                            <span className="text-slate-700 dark:text-slate-300 font-semibold">{item}</span>
                                         </div>
                                     ))}
                                 </motion.div>
@@ -395,7 +395,7 @@ const Home = () => {
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
                                 </motion.div>
                                 <motion.div whileHover={{ scale: 1.03, rotate: 1 }} transition={{ type: 'spring', stiffness: 200 }}
-                                    className="absolute bottom-0 right-0 left-16 h-[280px] rounded-[3rem] overflow-hidden shadow-[0_25px_50px_rgba(15,23,42,0.15)] border border-slate-100"
+                                    className="absolute bottom-0 right-0 left-16 h-[280px] rounded-[3rem] overflow-hidden shadow-[0_25px_50px_rgba(15,23,42,0.15)] border border-slate-100 dark:border-slate-800"
                                 >
                                     <img src="https://images.unsplash.com/photo-1502444330042-d1a1ddf9bb5b?w=700&h=400&fit=crop" alt="Fabrication" className="w-full h-full object-cover" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
@@ -417,13 +417,13 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     3. SERVICES — 3D Perspective Cards     
                     ════════════════════════════════════════ */}
-                <section id="services" className="py-36 bg-white relative overflow-hidden">
+                <section id="services" className="py-36 bg-white dark:bg-slate-900 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-50 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/3 pointer-events-none opacity-60" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-24">
                             <motion.p variants={fadeUp} custom={0} className="text-blue-500 font-black uppercase tracking-[0.4em] text-xs mb-4">What We Do</motion.p>
-                            <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter mb-6">End-to-End Metal Solutions</motion.h2>
-                            <motion.p variants={fadeUp} custom={2} className="text-slate-500 text-xl max-w-2xl mx-auto font-medium">
+                            <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter mb-6">End-to-End Metal Solutions</motion.h2>
+                            <motion.p variants={fadeUp} custom={2} className="text-slate-500 dark:text-slate-400 text-xl max-w-2xl mx-auto font-medium">
                                 World-class engineering services tailored for industrial and residential needs.
                             </motion.p>
                         </motion.div>
@@ -443,13 +443,13 @@ const Home = () => {
                                     custom={i}
                                     whileHover={{ y: -16, rotateX: 5, scale: 1.02 }}
                                     style={{ perspective: 800 }}
-                                    className={`group p-10 bg-white rounded-[2.5rem] border ${svc.border} shadow-xl ${svc.glow} hover:shadow-2xl transition-all duration-500 flex flex-col items-start`}
+                                    className={`group p-10 bg-white dark:bg-slate-900 rounded-[2.5rem] border ${svc.border} shadow-xl ${svc.glow} hover:shadow-2xl transition-all duration-500 flex flex-col items-start`}
                                 >
                                     <div className={`w-20 h-20 ${svc.color} rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-700 shadow-sm`}>
                                         {svc.icon}
                                     </div>
-                                    <h3 className="text-xl font-black text-slate-900 mb-4 tracking-tight">{svc.title}</h3>
-                                    <p className="text-slate-500 text-sm leading-relaxed font-semibold flex-1">{svc.desc}</p>
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">{svc.title}</h3>
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-semibold flex-1">{svc.desc}</p>
                                     <div className="mt-8 flex items-center gap-2 text-blue-600 font-bold text-sm group-hover:gap-4 transition-all">
                                         <span>Learn More</span>
                                         <ArrowRight className="w-4 h-4" />
@@ -463,22 +463,22 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     4. PORTFOLIO / GALLERY — animated grid 
                     ════════════════════════════════════════ */}
-                <section id="portfolio" className="py-36 bg-slate-50 overflow-hidden border-y border-slate-200/50">
+                <section id="portfolio" className="py-36 bg-slate-50 dark:bg-slate-800 overflow-hidden border-y border-slate-200 dark:border-slate-700/50">
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
                             <div>
                                 <motion.p variants={fadeUp} custom={0} className="text-blue-600 font-black uppercase tracking-[0.4em] text-xs mb-3">Our Work</motion.p>
-                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 tracking-tighter">Recent Projects</motion.h2>
+                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">Recent Projects</motion.h2>
                             </div>
                             <motion.div variants={fadeUp} custom={2}>
-                                <Link to="/projects" className="group flex items-center gap-3 text-slate-500 hover:text-primary font-bold transition-colors">
+                                <Link to="/projects" className="group flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-primary font-bold transition-colors">
                                     View All <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
                                 </Link>
                             </motion.div>
                         </motion.div>
 
                         {/* Auto-scrolling Project Slideshow */}
-                        <div className="relative w-full max-w-4xl mx-auto h-[350px] sm:h-[450px] rounded-[2.5rem] overflow-hidden shadow-xl border border-slate-200/60 group cursor-pointer bg-white">
+                        <div className="relative w-full max-w-4xl mx-auto h-[350px] sm:h-[450px] rounded-[2.5rem] overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700/60 group cursor-pointer bg-white dark:bg-slate-900">
                             <Link to="/projects" className="block w-full h-full relative">
                                 <AnimatePresence mode="wait">
                                     <motion.div
@@ -520,7 +520,7 @@ const Home = () => {
                                             e.preventDefault();
                                             setActiveProjectIdx(idx);
                                         }}
-                                        className={`h-2 rounded-full transition-all duration-300 ${idx === activeProjectIdx ? 'bg-blue-500 w-6' : 'bg-white/40 w-2'}`}
+                                        className={`h-2 rounded-full transition-all duration-300 ${idx === activeProjectIdx ? 'bg-blue-500 w-6' : 'bg-white dark:bg-slate-900/40 w-2'}`}
                                     />
                                 ))}
                             </div>
@@ -531,14 +531,14 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     5. PROFESSIONAL TRUST & REPUTATION SECTION
                     ════════════════════════════════════════ */}
-                <section className="py-36 bg-white relative overflow-hidden">
+                <section className="py-36 bg-white dark:bg-slate-900 relative overflow-hidden">
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-50 rounded-full blur-[100px] pointer-events-none opacity-60" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
                         {/* Header */}
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-24">
                             <motion.p variants={fadeUp} custom={0} className="text-blue-500 font-black uppercase tracking-[0.4em] text-xs mb-4">Reputation & Trust</motion.p>
-                            <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 tracking-tighter mb-4">Uncompromising Quality & Standards</motion.h2>
-                            <motion.p variants={fadeUp} custom={2} className="text-slate-500 text-lg max-w-2xl mx-auto font-medium">
+                            <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter mb-4">Uncompromising Quality & Standards</motion.h2>
+                            <motion.p variants={fadeUp} custom={2} className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto font-medium">
                                 Trusted by industrial and residential clients across Kerala. Certified expertise and a proven track record.
                             </motion.p>
                         </motion.div>
@@ -547,9 +547,9 @@ const Home = () => {
                             {/* Left Side: Core Trust Badges */}
                             <motion.div 
                                 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}
-                                className="lg:col-span-5 bg-gradient-to-br from-slate-50 to-blue-50/20 border border-slate-100 rounded-[2.5rem] p-10 shadow-xl shadow-slate-100/50"
+                                className="lg:col-span-5 bg-gradient-to-br from-slate-50 to-blue-50/20 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-10 shadow-xl shadow-slate-100/50"
                             >
-                                <h3 className="text-2xl font-black text-slate-900 mb-8 tracking-tight border-l-4 border-blue-600 pl-4">Our Quality Guarantees</h3>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-8 tracking-tight border-l-4 border-blue-600 pl-4">Our Quality Guarantees</h3>
                                 <div className="space-y-6">
                                     {[
                                         { text: '⭐ 4.8+ Rated Company', desc: 'Consistently high performance and client feedback ratings.' },
@@ -562,8 +562,8 @@ const Home = () => {
                                         <motion.div key={idx} variants={fadeUp} className="flex gap-4 items-start">
                                             <div className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0" />
                                             <div>
-                                                <h4 className="font-bold text-slate-900 text-sm">{badge.text}</h4>
-                                                <p className="text-xs text-slate-500 font-medium mt-0.5">{badge.desc}</p>
+                                                <h4 className="font-bold text-slate-900 dark:text-white text-sm">{badge.text}</h4>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{badge.desc}</p>
                                             </div>
                                         </motion.div>
                                     ))}
@@ -589,12 +589,12 @@ const Home = () => {
                                         whileHover={{ y: -8, scale: 1.02 }}
                                         className={`p-8 bg-gradient-to-br ${card.color} border ${card.border} rounded-[2.5rem] shadow-xl ${card.shadow} flex flex-col items-start transition-all cursor-default group ${idx === 4 ? 'sm:col-span-2' : ''}`}
                                     >
-                                        <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-slate-50 mb-6 group-hover:scale-110 transition-transform">
+                                        <div className="w-14 h-14 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center shadow-md border border-slate-50 mb-6 group-hover:scale-110 transition-transform">
                                             {card.icon}
                                         </div>
-                                        <h4 className="text-xl font-black text-slate-900 tracking-tight mb-2">{card.title}</h4>
-                                        <p className="text-xs text-slate-500 font-semibold leading-relaxed flex-grow">{card.desc}</p>
-                                        <div className="w-full border-t border-slate-100/50 pt-4 mt-6 flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                        <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2">{card.title}</h4>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed flex-grow">{card.desc}</p>
+                                        <div className="w-full border-t border-slate-100 dark:border-slate-800/50 pt-4 mt-6 flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400">
                                             <span>{card.sub}</span>
                                             <span className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-600">Verified ✓</span>
                                         </div>
@@ -609,7 +609,7 @@ const Home = () => {
                     6. CTA BANNER                          
                     ════════════════════════════════════════ */}
                 <section className="py-24 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 relative overflow-hidden">
-                    <motion.div animate={{ x: [0, 60, 0] }} transition={{ duration: 12, repeat: Infinity }} className="absolute -top-1/2 -left-1/4 w-[600px] h-[600px] bg-white/5 rounded-full blur-[80px] pointer-events-none" />
+                    <motion.div animate={{ x: [0, 60, 0] }} transition={{ duration: 12, repeat: Infinity }} className="absolute -top-1/2 -left-1/4 w-[600px] h-[600px] bg-white dark:bg-slate-900/5 rounded-full blur-[80px] pointer-events-none" />
                     <motion.div animate={{ x: [0, -60, 0] }} transition={{ duration: 10, repeat: Infinity }} className="absolute -bottom-1/2 -right-1/4 w-[600px] h-[600px] bg-indigo-800/40 rounded-full blur-[80px] pointer-events-none" />
                     <div className="max-w-5xl mx-auto px-6 text-center relative">
                         <motion.h2 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
@@ -625,10 +625,10 @@ const Home = () => {
                         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} viewport={{ once: true }}
                             className="flex flex-wrap justify-center gap-5"
                         >
-                            <Link to="/quote" className="group px-10 py-5 bg-white text-blue-700 font-black rounded-2xl hover:-translate-y-2 transition-all shadow-2xl text-lg flex items-center gap-3">
+                            <Link to="/quote" className="group px-10 py-5 bg-white dark:bg-slate-900 text-blue-700 font-black rounded-2xl hover:-translate-y-2 transition-all shadow-2xl text-lg flex items-center gap-3">
                                 Get Free Quote <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
                             </Link>
-                            <a href={`tel:${settings.footer_phone}`} className="px-10 py-5 bg-white/10 hover:bg-white/20 text-white font-black rounded-2xl border border-white/20 hover:-translate-y-2 transition-all text-lg flex items-center gap-3">
+                            <a href={`tel:${settings.footer_phone}`} className="px-10 py-5 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 text-white font-black rounded-2xl border border-white/20 hover:-translate-y-2 transition-all text-lg flex items-center gap-3">
                                 <Phone className="w-5 h-5" /> {settings.footer_phone}
                             </a>
                         </motion.div>
@@ -638,13 +638,13 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     7. CONTACT SECTION                     
                     ════════════════════════════════════════ */}
-                <section id="contact" className="py-36 bg-slate-50 text-slate-800 overflow-hidden border-t border-slate-200/50">
+                <section id="contact" className="py-36 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 overflow-hidden border-t border-slate-200 dark:border-slate-700/50">
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
                             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
                                 <motion.p variants={fadeUp} custom={0} className="text-blue-600 font-black uppercase tracking-[0.4em] text-xs mb-4">Get In Touch</motion.p>
-                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 tracking-tighter mb-6 font-poppins">Free Consultation</motion.h2>
-                                <motion.p variants={fadeUp} custom={2} className="text-slate-600 text-lg mb-12 font-medium">Have a project in mind? Let's discuss. We provide estimates across Kerala.</motion.p>
+                                <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter mb-6 font-poppins">Free Consultation</motion.h2>
+                                <motion.p variants={fadeUp} custom={2} className="text-slate-600 dark:text-slate-400 text-lg mb-12 font-medium">Have a project in mind? Let's discuss. We provide estimates across Kerala.</motion.p>
                                 <motion.div variants={stagger} className="space-y-6">
                                     {[
                                         { icon: <Phone className="w-5 h-5" />, label: 'Direct Line', value: settings.footer_phone, href: `tel:${settings.footer_phone}` },
@@ -653,14 +653,14 @@ const Home = () => {
                                     ].map((item, i) => (
                                         <motion.div key={i} variants={fadeUp} custom={i + 3}>
                                             {item.href ? (
-                                                <a href={item.href} className="flex items-center gap-5 p-5 rounded-2xl bg-white border border-slate-200/60 shadow-sm hover:border-blue-500/30 hover:bg-blue-50/20 hover:shadow-md transition-all group">
+                                                <a href={item.href} className="flex items-center gap-5 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:border-blue-500/30 hover:bg-blue-50/20 hover:shadow-md transition-all group">
                                                     <div className={`w-12 h-12 rounded-2xl ${item.green ? 'bg-green-500/20 text-green-600' : 'bg-blue-500/20 text-blue-600'} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>{item.icon}</div>
-                                                    <div><p className="text-slate-400 text-xs font-black uppercase tracking-wider mb-1">{item.label}</p><p className="text-slate-800 font-black text-lg">{item.value}</p></div>
+                                                    <div><p className="text-slate-400 text-xs font-black uppercase tracking-wider mb-1">{item.label}</p><p className="text-slate-800 dark:text-slate-200 font-black text-lg">{item.value}</p></div>
                                                 </a>
                                             ) : (
-                                                <div className="flex items-center gap-5 p-5 rounded-2xl bg-white border border-slate-200/60 shadow-sm">
+                                                <div className="flex items-center gap-5 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 shadow-sm">
                                                     <div className="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-600 flex items-center justify-center flex-shrink-0">{item.icon}</div>
-                                                    <div><p className="text-slate-400 text-xs font-black uppercase tracking-wider mb-1">{item.label}</p><p className="text-slate-800 font-bold">{item.value}</p></div>
+                                                    <div><p className="text-slate-400 text-xs font-black uppercase tracking-wider mb-1">{item.label}</p><p className="text-slate-800 dark:text-slate-200 font-bold">{item.value}</p></div>
                                                 </div>
                                             )}
                                         </motion.div>
@@ -670,25 +670,25 @@ const Home = () => {
 
                             {/* Contact Form */}
                             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeRight}
-                                className="bg-white border border-slate-200/60 rounded-[3rem] p-10 shadow-xl shadow-slate-100/55"
+                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-[3rem] p-10 shadow-xl shadow-slate-100/55"
                             >
-                                <h3 className="text-2xl font-black text-slate-900 mb-8 font-poppins">Send a Message</h3>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-8 font-poppins">Send a Message</h3>
                                 <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); alert("Message sent! We'll contact you within 2 hours."); }}>
                                     {[
                                         { label: 'Full Name', type: 'text', placeholder: 'Your Name' },
                                         { label: 'Phone Number', type: 'tel', placeholder: '+91 00000 00000' },
                                     ].map((field, i) => (
                                         <div key={i}>
-                                            <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">{field.label}</label>
+                                            <label className="block text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">{field.label}</label>
                                             <input type={field.type} placeholder={field.placeholder} required
-                                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all font-medium text-sm"
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white dark:bg-slate-900 transition-all font-medium text-sm"
                                             />
                                         </div>
                                     ))}
                                     <div>
-                                        <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Message</label>
+                                        <label className="block text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Message</label>
                                         <textarea rows={4} placeholder="Tell us about your project..." required
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all resize-none font-medium text-sm"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white dark:bg-slate-900 transition-all resize-none font-medium text-sm"
                                         />
                                     </div>
                                     <motion.button type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -702,7 +702,7 @@ const Home = () => {
 
                         {/* Map */}
                         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
-                            className="mt-16 rounded-[2.5rem] overflow-hidden h-64 border border-slate-200/60 shadow-sm bg-white"
+                            className="mt-16 rounded-[2.5rem] overflow-hidden h-64 border border-slate-200 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900"
                         >
                             <iframe src={settings.map_embed_url} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Location Map" />
                         </motion.div>
