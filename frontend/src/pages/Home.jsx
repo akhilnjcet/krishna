@@ -353,7 +353,7 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     2. ABOUT SECTION — Cinematic reveal   
                     ════════════════════════════════════════ */}
-                <section id="about" className="py-36 bg-[#F8FAFC] relative overflow-hidden">
+                <section id="about" className="py-36 bg-slate-50 dark:bg-slate-900/50 relative overflow-hidden">
                     {/* Ambient glow */}
                     <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-100/30 rounded-full blur-[150px] pointer-events-none -translate-x-1/2 -translate-y-1/2 opacity-40" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
