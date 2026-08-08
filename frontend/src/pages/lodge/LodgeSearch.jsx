@@ -62,7 +62,7 @@ export default function LodgeSearch() {
       <div className="mb-6">
          <button 
              onClick={() => navigate('/lodge/dashboard')}
-             className="flex items-center gap-2 px-4 py-2 border rounded-xl hover:bg-slate-50 transition-colors font-bold text-sm text-slate-600 shadow-sm bg-white"
+             className="flex items-center gap-2 px-4 py-2 border rounded-xl hover:bg-slate-50 dark:bg-slate-800 transition-colors font-bold text-sm text-slate-600 dark:text-slate-400 shadow-sm bg-white dark:bg-slate-900"
          >
              <ArrowLeft className="w-4.5 h-4.5" /> Back to Dashboard
          </button>
@@ -70,7 +70,7 @@ export default function LodgeSearch() {
       <div className="flex flex-col md:flex-row gap-8">
         {/* Filters */}
         <div className="w-full md:w-64 flex-shrink-0">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100">
             <h3 className="font-bold text-lg mb-4">Filter Lodges</h3>
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
@@ -96,14 +96,14 @@ export default function LodgeSearch() {
           {loading ? (
              <div className="p-12 text-center">Loading properties...</div>
           ) : lodges.length === 0 ? (
-             <div className="bg-white p-12 rounded-2xl text-center border border-gray-100">
+             <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl text-center border border-gray-100">
                 <h3 className="text-xl font-bold text-gray-800">No parameters matched.</h3>
                 <p className="text-gray-500">Broaden your search location.</p>
              </div>
           ) : (
             <div className="space-y-6">
               {lodges.map(lodge => (
-                <div key={lodge._id} className="bg-white border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col sm:flex-row">
+                <div key={lodge._id} className="bg-white dark:bg-slate-900 border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col sm:flex-row">
                   <div className="sm:w-72 h-48 sm:h-auto bg-gray-200 relative">
                     {lodge.images && lodge.images[0] ? (
                        <DriveImage src={typeof lodge.images[0] === 'string' ? lodge.images[0] : (lodge.images[0].url || '')} alt={lodge.name} className="w-full h-full object-cover" />

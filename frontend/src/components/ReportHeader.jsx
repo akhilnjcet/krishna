@@ -27,16 +27,16 @@ const ReportHeader = ({ title, subtitle, data, columns, specializedReport }) => 
 
     return (
         <div className="mb-10 group">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4 py-6 md:p-8 bg-white border-l-[6px] md:border-l-[12px] border-slate-900 rounded-r-2xl md:rounded-r-[2rem] shadow-xl relative overflow-hidden transition-all hover:shadow-2xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4 py-6 md:p-8 bg-white dark:bg-slate-900 border-l-[6px] md:border-l-[12px] border-slate-900 rounded-r-2xl md:rounded-r-[2rem] shadow-xl relative overflow-hidden transition-all hover:shadow-2xl">
                 {/* Decorative Elements */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-slate-800 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
                 
                 <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-2">
                         <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
                         <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 italic">SECURE DATA TERMINAL</span>
                     </div>
-                    <h1 className="text-2xl md:text-5xl font-black uppercase tracking-tighter text-slate-900 leading-tight mb-3 hero-title">
+                    <h1 className="text-2xl md:text-5xl font-black uppercase tracking-tighter text-slate-900 dark:text-white leading-tight mb-3 hero-title">
                         {title} <span className="text-slate-300 font-light italic">Report</span>
                     </h1>
                     <p className="text-slate-400 font-bold uppercase tracking-widest text-[11px] flex items-center gap-2 flex-wrap">
@@ -58,7 +58,7 @@ const ReportHeader = ({ title, subtitle, data, columns, specializedReport }) => 
                         {generating ? 'Compiling...' : 'Download PDF Report'}
                     </button>
                     
-                    <button className="p-4 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-100 transition-colors border border-slate-200">
+                    <button className="p-4 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-2xl hover:bg-slate-100 dark:bg-slate-800/80 transition-colors border border-slate-200 dark:border-slate-700">
                         <Share2 className="w-4 h-4" />
                     </button>
                 </div>
@@ -70,7 +70,7 @@ const ReportHeader = ({ title, subtitle, data, columns, specializedReport }) => 
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Database Sync: ACTIVE</span>
                 </div>
-                <div className="flex items-center gap-2 border-l border-slate-200 pl-6">
+                <div className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-700 pl-6">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Platform: {navigator.platform.includes('Win') ? 'Windows Node' : 'Mobile Web'}</span>
                 </div>

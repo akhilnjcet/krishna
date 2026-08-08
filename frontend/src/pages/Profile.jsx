@@ -74,7 +74,7 @@ const Profile = () => {
             <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-1">Account Identity</div>
-                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 dark:text-white">Profile Settings</h2>
+                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 dark:text-white ">Profile Settings</h2>
                 </div>
                 
                 <div className="mt-6 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-start gap-4">
@@ -150,15 +150,15 @@ const Profile = () => {
                     <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic mb-8">Hardware Environment</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-white dark:bg-slate-900/5 border border-white/10 p-5 rounded-2xl">
+                        <div className="bg-white dark:bg-slate-900 /5 border border-white/10 p-5 rounded-2xl">
                             <div className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Model Architecture</div>
                             <div className="text-sm font-black text-white uppercase italic">{deviceInfo?.model || 'Generic Interface'}</div>
                         </div>
-                        <div className="bg-white dark:bg-slate-900/5 border border-white/10 p-5 rounded-2xl">
+                        <div className="bg-white dark:bg-slate-900 /5 border border-white/10 p-5 rounded-2xl">
                             <div className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Operating System</div>
                             <div className="text-sm font-black text-white uppercase italic">{deviceInfo?.platform} {deviceInfo?.osVersion}</div>
                         </div>
-                        <div className="bg-white dark:bg-slate-900/5 border border-white/10 p-5 rounded-2xl">
+                        <div className="bg-white dark:bg-slate-900 /5 border border-white/10 p-5 rounded-2xl">
                             <div className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Battery Payload</div>
                             <div className="flex items-center gap-3">
                                 <Battery className={`w-4 h-4 ${deviceInfo?.batteryLevel > 0.2 ? 'text-emerald-500' : 'text-rose-500'}`} />
@@ -167,7 +167,7 @@ const Profile = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white dark:bg-slate-900/5 border border-white/10 p-5 rounded-2xl">
+                        <div className="bg-white dark:bg-slate-900 /5 border border-white/10 p-5 rounded-2xl">
                             <div className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">System State</div>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>

@@ -95,7 +95,7 @@ const LegalPage = ({ type }) => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="bg-white dark:bg-slate-900/[0.02] border border-white/5 p-10 md:p-16 rounded-[3rem] backdrop-blur-3xl"
+                    className="bg-white dark:bg-slate-900 /[0.02] border border-white/5 p-10 md:p-16 rounded-[3rem] backdrop-blur-3xl"
                 >
                     <div className="prose prose-invert max-w-none">
                         <p className="text-gray-400 font-medium leading-relaxed whitespace-pre-line text-lg">

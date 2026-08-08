@@ -61,7 +61,7 @@ export default function LodgeDetail() {
       <div className="mb-6">
          <button 
              onClick={() => navigate('/lodge/search')}
-             className="flex items-center gap-2 px-4 py-2 border rounded-xl hover:bg-slate-50 transition-colors font-bold text-sm text-slate-600 shadow-sm bg-white"
+             className="flex items-center gap-2 px-4 py-2 border rounded-xl hover:bg-slate-50 dark:bg-slate-800 transition-colors font-bold text-sm text-slate-600 dark:text-slate-400 shadow-sm bg-white dark:bg-slate-900"
          >
              <ArrowLeft className="w-4.5 h-4.5" /> Back to Search
          </button>
@@ -110,10 +110,10 @@ export default function LodgeDetail() {
                       {rooms.map(room => {
                          const allPhotos = [...(room.interiorPhotos || []), ...(room.exteriorPhotos || [])];
                          return (
-                            <div key={room._id} className="border hover:border-blue-300 rounded-xl p-6 flex flex-col md:flex-row justify-between bg-white shadow-sm transition-colors gap-6">
+                            <div key={room._id} className="border hover:border-blue-300 rounded-xl p-6 flex flex-col md:flex-row justify-between bg-white dark:bg-slate-900 shadow-sm transition-colors gap-6">
                                <div className="flex-1 flex flex-col sm:flex-row gap-6">
                                   {allPhotos.length > 0 && (
-                                     <div className="w-full sm:w-48 h-32 bg-slate-50 border rounded-xl overflow-hidden relative flex-shrink-0 group cursor-pointer" onClick={() => setActiveGalleryRoom(room)}>
+                                     <div className="w-full sm:w-48 h-32 bg-slate-50 dark:bg-slate-800 border rounded-xl overflow-hidden relative flex-shrink-0 group cursor-pointer" onClick={() => setActiveGalleryRoom(room)}>
                                          <DriveImage src={allPhotos[0].url} alt="Room preview" className="w-full h-full group-hover:scale-105 transition-transform duration-300" />
                                         {allPhotos.length > 1 && (
                                            <span className="absolute bottom-2 right-2 bg-slate-900/70 text-white text-xs px-2 py-1 rounded font-bold">
@@ -122,7 +122,7 @@ export default function LodgeDetail() {
                                         )}
                                         {room.videoUrl && (
                                            <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] uppercase tracking-widest px-2 py-0.5 rounded font-black flex items-center gap-1 shadow">
-                                              <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
+                                              <span className="w-1.5 h-1.5 bg-white dark:bg-slate-900 rounded-full animate-ping"></span>
                                               Video tour
                                            </span>
                                         )}
@@ -155,7 +155,7 @@ export default function LodgeDetail() {
 
          <div className="lg:col-span-1">
             <div className="sticky top-24">
-                <div className="bg-white border rounded-2xl shadow-sm p-6">
+                <div className="bg-white dark:bg-slate-900 border rounded-2xl shadow-sm p-6">
                    <h3 className="font-bold text-lg mb-4 flex items-center"><Navigation className="w-5 h-5 mr-2 text-blue-600" /> Location</h3>
                    {lodge.location.mapUrl || mapsApiKey ? (
                       <div className="w-full h-64 rounded-xl overflow-hidden mb-4">
@@ -180,10 +180,10 @@ export default function LodgeDetail() {
 
       {activeGalleryRoom && (
          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex flex-col justify-center items-center p-4">
-             <div className="bg-white p-8 rounded-[2rem] w-full max-w-4xl relative shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
+             <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] w-full max-w-4xl relative shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
                  <h3 className="text-3xl font-black mb-2 tracking-tight uppercase">{activeGalleryRoom.type} Room Assets</h3>
-                 <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest italic mb-6">Viewing all linked photo & video assets</p>
-                 <button type="button" onClick={() => setActiveGalleryRoom(null)} className="absolute top-10 right-10 text-slate-400 bg-slate-50 p-3 rounded-full hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm border border-slate-100"><X className="w-5 h-5"/></button>
+                 <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest italic mb-6">Viewing all linked photo & video assets</p>
+                 <button type="button" onClick={() => setActiveGalleryRoom(null)} className="absolute top-10 right-10 text-slate-400 bg-slate-50 dark:bg-slate-800 p-3 rounded-full hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm border border-slate-100 dark:border-slate-800"><X className="w-5 h-5"/></button>
                  
                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-y-auto pr-2 flex-grow">
                      {/* Video Player Column */}
@@ -199,7 +199,7 @@ export default function LodgeDetail() {
                          <h4 className="font-black text-sm uppercase text-slate-400 tracking-wider">Photos</h4>
                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                              {[...(activeGalleryRoom.interiorPhotos || []), ...(activeGalleryRoom.exteriorPhotos || [])].map((img, idx) => (
-                                 <div key={idx} className="relative aspect-square border rounded-2xl overflow-hidden bg-slate-50">
+                                 <div key={idx} className="relative aspect-square border rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-800">
                                      <DriveImage src={img.url} alt="Gallery asset" className="w-full h-full" />
                                  </div>
                              ))}

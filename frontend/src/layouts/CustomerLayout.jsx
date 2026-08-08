@@ -22,9 +22,9 @@ const navItems = [
 
 /* ── Shared Sidebar Content ─────────────────────────────────────── */
 const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-900 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800">
         {/* Logo */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center gap-3 flex-shrink-0">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 dark:bg-slate-900/50 flex flex-col items-center gap-3 flex-shrink-0">
             <Link to="/" onClick={onNavClick} className="flex flex-col items-center gap-3 group">
                 <img src="/logo512.png" alt="Client Portal" className="w-14 h-14 rounded-2xl object-contain shadow-lg group-hover:scale-105 transition-transform" />
                 <div className="text-center">
@@ -36,7 +36,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
-            <p className="px-3 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-600 mb-3">Client Services</p>
+            <p className="px-3 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-600 dark:text-slate-400 mb-3">Client Services</p>
             {navItems.map(item => {
                 const active = location.pathname === item.path;
                 return (
@@ -44,10 +44,10 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                         key={item.name}
                         to={item.path}
                         onClick={onNavClick}
-                        className={`flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-semibold transition-all ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-900 dark:hover:text-white'
+                        className={`flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-semibold transition-all ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80 hover:text-slate-900 dark:text-white dark:hover:bg-slate-900 dark:hover:text-white'
                             }`}
                     >
-                        <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
+                        <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`} />
                         <span className="truncate">{item.name}</span>
                     </Link>
                 );
@@ -75,7 +75,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-3 flex-shrink-0">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 dark:bg-slate-900/50 space-y-3 flex-shrink-0">
             <Link to="/customer/profile" onClick={onNavClick} className="flex items-center gap-3 p-3 bg-slate-250 dark:bg-slate-800/50 hover:bg-slate-300 dark:hover:bg-slate-700/50 rounded-xl transition-colors group">
                 <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 group-hover:scale-110 transition-transform">
                     {user?.name?.charAt(0)?.toUpperCase()}
@@ -85,7 +85,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                     <p className="text-[9px] text-blue-600 dark:text-blue-405 font-bold uppercase tracking-wider">Edit Profile (WA)</p>
                 </div>
             </Link>
-            <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-600/20 text-slate-500 dark:text-slate-400 py-3 rounded-xl text-xs font-bold uppercase tracking-widest border border-slate-200 dark:border-slate-700 transition-all">
+            <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-900 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-600/20 text-slate-500 dark:text-slate-400 py-3 rounded-xl text-xs font-bold uppercase tracking-widest border border-slate-200 dark:border-slate-700 transition-all">
                 <LogOut className="w-4 h-4" /> Log Out
             </button>
         </div>
@@ -122,7 +122,7 @@ const CustomerLayout = () => {
         <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex font-sans overflow-x-hidden transition-colors duration-250">
 
             {/* ── Desktop Sidebar ─────────────────────── */}
-            <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-slate-950 text-slate-800 dark:text-white z-40 border-r border-slate-200 dark:border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
+            <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-40 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
                 {desktopOpen && <SidebarContent location={location} user={user} onNavClick={() => { }} onLogout={handleLogout} />}
             </aside>
 
@@ -130,10 +130,10 @@ const CustomerLayout = () => {
             {mobileOpen && (
                 <div className="fixed inset-0 z-[60] md:hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
-                    <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-950 text-slate-800 dark:text-white z-[70] flex flex-col border-r border-slate-200 dark:border-slate-800 shadow-2xl ${SIDEBAR_W}`}>
-                        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                    <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-[70] flex flex-col border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl ${SIDEBAR_W}`}>
+                        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 dark:bg-slate-900/50">
                             <h2 className="text-sm font-black uppercase tracking-widest text-[#2563EB]">Client Menu</h2>
-                            <button onClick={closeMobile} className="p-2 text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800 rounded-xl z-10">
+                            <button onClick={closeMobile} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800/80 dark:bg-slate-800 rounded-xl z-10">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -150,14 +150,14 @@ const CustomerLayout = () => {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}
-                            className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all border border-white/10"
+                            className="p-2 bg-white dark:bg-slate-900/10 rounded-xl text-white hover:bg-white dark:bg-slate-900/20 transition-all border border-white/10"
                             title="Toggle Menu"
                         >
                             <Menu className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => navigate(-1)}
-                            className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all border border-white/10 flex items-center justify-center"
+                            className="p-2 bg-white dark:bg-slate-900/10 rounded-xl text-white hover:bg-white dark:bg-slate-900/20 transition-all border border-white/10 flex items-center justify-center"
                             title="Go Back"
                         >
                             <ChevronLeft className="w-5 h-5" />
@@ -169,17 +169,17 @@ const CustomerLayout = () => {
 
                     <div className="flex items-center gap-2">
                         <ThemeToggle darkNavbar={true} />
-                        <button className="relative p-2 text-blue-100 hover:bg-white/10 rounded-xl transition-all">
+                        <button className="relative p-2 text-blue-100 hover:bg-white dark:bg-slate-900/10 rounded-xl transition-all">
                             <Bell className="w-5 h-5" />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full border-2 border-blue-700" />
                         </button>
-                        <Link to="/customer/support" className="hidden sm:flex items-center gap-1.5 p-2 text-blue-100 hover:bg-white/10 rounded-xl transition-all">
+                        <Link to="/customer/support" className="hidden sm:flex items-center gap-1.5 p-2 text-blue-100 hover:bg-white dark:bg-slate-900/10 rounded-xl transition-all">
                             <HelpCircle className="w-5 h-5" />
                             <span className="text-xs font-bold uppercase tracking-wider hidden md:inline">Support</span>
                         </Link>
                         <div className="flex items-center gap-2">
                             <p className="text-sm font-bold text-white hidden sm:block truncate max-w-[100px]">{user?.name}</p>
-                            <div className="w-8 h-8 bg-white/20 rounded-xl border border-white/20 flex items-center justify-center text-white text-sm font-bold">
+                            <div className="w-8 h-8 bg-white dark:bg-slate-900/20 rounded-xl border border-white/20 flex items-center justify-center text-white text-sm font-bold">
                                 {user?.name?.charAt(0)?.toUpperCase() || <User className="w-4 h-4" />}
                             </div>
                         </div>

@@ -52,7 +52,7 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
     <div className="space-y-6">
       
       {/* Controls Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
         
         {/* Search */}
         <div className="relative w-full sm:w-80">
@@ -62,7 +62,7 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
             placeholder="Search Ref ID, Invoice, Room, Tenant..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs font-semibold text-slate-800"
+            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200"
           />
         </div>
 
@@ -76,7 +76,7 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
               className={`px-3 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all ${
                 statusFilter === st
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
               }`}
             >
               {st === 'ALL' ? 'All Transactions' : st === 'VERIFIED' ? 'Verified' : st === 'WAITING' ? 'Pending' : 'Rejected'}
@@ -95,7 +95,7 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
           return (
             <div 
               key={p._id}
-              className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all space-y-4"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all space-y-4"
             >
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                 <div className="flex items-center gap-3">
@@ -104,13 +104,13 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-black text-slate-900 text-base font-poppins">
+                      <h4 className="font-black text-slate-900 dark:text-white text-base font-poppins">
                         ₹{p.amount.toLocaleString()}
                       </h4>
                       <span className="text-slate-400 text-xs font-bold">• {p.method || 'UPI QR'}</span>
                     </div>
-                    <p className="text-xs text-slate-500">
-                      Ref: <span className="font-mono text-slate-700 font-bold">{p.referenceId || 'N/A'}</span> • {new Date(p.createdAt || p.paymentDate).toLocaleDateString()}
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Ref: <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">{p.referenceId || 'N/A'}</span> • {new Date(p.createdAt || p.paymentDate).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -130,18 +130,18 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
               </div>
 
               {/* Breakdown Row */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl text-xs border border-slate-100">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl text-xs border border-slate-100 dark:border-slate-800">
                 <div>
                   <p className="text-slate-400 font-medium">Tenant</p>
-                  <p className="font-bold text-slate-800">{p.tenantName || p.customerId?.name || 'Tenant'}</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">{p.tenantName || p.customerId?.name || 'Tenant'}</p>
                 </div>
                 <div>
                   <p className="text-slate-400 font-medium">Room / Suite</p>
-                  <p className="font-bold text-slate-800">#{p.roomId?.roomNumber || '101'}</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">#{p.roomId?.roomNumber || '101'}</p>
                 </div>
                 <div>
                   <p className="text-slate-400 font-medium">Category</p>
-                  <p className="font-bold text-slate-800">{p.chargeCategory || p.paymentType || 'Rent'}</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">{p.chargeCategory || p.paymentType || 'Rent'}</p>
                 </div>
                 <div>
                   <p className="text-slate-400 font-medium">Receipt No</p>
@@ -154,7 +154,7 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
                 <div className="flex flex-wrap gap-1.5 text-[11px]">
                   <span className="text-slate-400 font-bold mr-1">Includes:</span>
                   {p.additionalCharges.map((chg, i) => (
-                    <span key={i} className="px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-md font-semibold">
+                    <span key={i} className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-md font-semibold">
                       {chg.name}: ₹{chg.amount}
                     </span>
                   ))}
@@ -189,9 +189,9 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
         })}
 
         {filteredPayments.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+          <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700">
             <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h4 className="text-lg font-black text-slate-800">No Payment History Found</h4>
+            <h4 className="text-lg font-black text-slate-800 dark:text-slate-200">No Payment History Found</h4>
             <p className="text-slate-400 text-xs mt-1">There are no records matching your current filter.</p>
           </div>
         )}
@@ -200,10 +200,10 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
       {/* Proof Preview Modal */}
       {selectedProof && (
         <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="font-black text-slate-900 text-sm">Payment Proof Screenshot</h3>
-              <button onClick={() => setSelectedProof(null)} className="p-2 text-slate-400 hover:text-slate-600">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="font-black text-slate-900 dark:text-white text-sm">Payment Proof Screenshot</h3>
+              <button onClick={() => setSelectedProof(null)} className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400">
                 <XCircle className="w-6 h-6" />
               </button>
             </div>

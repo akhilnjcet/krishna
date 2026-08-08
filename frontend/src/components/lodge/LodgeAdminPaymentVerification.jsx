@@ -197,7 +197,7 @@ export default function LodgeAdminPaymentVerification() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-slate-200 gap-4 overflow-x-auto no-scrollbar">
+      <div className="flex border-b border-slate-200 dark:border-slate-700 gap-4 overflow-x-auto no-scrollbar">
         {[
           { id: 'queue', label: `Pending Verification (${pendingPayments.length})`, icon: Clock },
           { id: 'all', label: `All Payment Audit Logs (${payments.length})`, icon: FileText },
@@ -210,7 +210,7 @@ export default function LodgeAdminPaymentVerification() {
             className={`pb-4 px-2 font-black text-xs uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
               activeTab === t.id
                 ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-400 hover:text-slate-600'
+                : 'border-transparent text-slate-400 hover:text-slate-600 dark:text-slate-400'
             }`}
           >
             <t.icon className="w-4 h-4" />
@@ -223,26 +223,26 @@ export default function LodgeAdminPaymentVerification() {
       {activeTab === 'queue' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-black text-slate-900">Tenant Payments Awaiting Verification</h3>
-            <button onClick={fetchData} className="p-2 text-slate-500 hover:text-indigo-600 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white">Tenant Payments Awaiting Verification</h3>
+            <button onClick={fetchData} className="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
 
           <div className="grid gap-4">
             {pendingPayments.map(p => (
-              <div key={p._id} className="bg-white border-2 border-amber-100 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all space-y-4">
+              <div key={p._id} className="bg-white dark:bg-slate-900 border-2 border-amber-100 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all space-y-4">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center font-black text-xl font-poppins flex-shrink-0">
                       ₹{p.amount}
                     </div>
                     <div>
-                      <h4 className="font-black text-slate-900 text-base">
+                      <h4 className="font-black text-slate-900 dark:text-white text-base">
                         {p.tenantName || p.customerId?.name || 'Tenant'} • Room #{p.roomId?.roomNumber || '101'}
                       </h4>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Method: <strong className="text-slate-800">{p.method}</strong> • Ref ID: <span className="font-mono text-indigo-600 font-bold">{p.referenceId || 'N/A'}</span>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Method: <strong className="text-slate-800 dark:text-slate-200">{p.method}</strong> • Ref ID: <span className="font-mono text-indigo-600 font-bold">{p.referenceId || 'N/A'}</span>
                       </p>
                     </div>
                   </div>
@@ -264,18 +264,18 @@ export default function LodgeAdminPaymentVerification() {
                 </div>
 
                 {/* Proof & Details */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs">
                   <div>
                     <p className="text-slate-400 font-bold text-[10px] uppercase">Payment Category</p>
-                    <p className="font-bold text-slate-800 mt-0.5">{p.chargeCategory || p.paymentType || 'Rent'}</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{p.chargeCategory || p.paymentType || 'Rent'}</p>
                   </div>
                   <div>
                     <p className="text-slate-400 font-bold text-[10px] uppercase">Submission Time</p>
-                    <p className="font-bold text-slate-800 mt-0.5">{new Date(p.createdAt).toLocaleString()}</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{new Date(p.createdAt).toLocaleString()}</p>
                   </div>
                   <div>
                     <p className="text-slate-400 font-bold text-[10px] uppercase">Tenant Remarks</p>
-                    <p className="font-bold text-slate-800 mt-0.5">{p.notes || 'None'}</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{p.notes || 'None'}</p>
                   </div>
                 </div>
 
@@ -293,9 +293,9 @@ export default function LodgeAdminPaymentVerification() {
             ))}
 
             {pendingPayments.length === 0 && (
-              <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700">
                 <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-                <h4 className="text-lg font-black text-slate-800">No Pending Verifications</h4>
+                <h4 className="text-lg font-black text-slate-800 dark:text-slate-200">No Pending Verifications</h4>
                 <p className="text-slate-400 text-xs mt-1">All tenant payment submissions have been verified.</p>
               </div>
             )}
@@ -305,11 +305,11 @@ export default function LodgeAdminPaymentVerification() {
 
       {/* 2. All Payments */}
       {activeTab === 'all' && (
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-          <h3 className="text-lg font-black text-slate-900">Complete Lodge Payment Ledger</h3>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+          <h3 className="text-lg font-black text-slate-900 dark:text-white">Complete Lodge Payment Ledger</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-400 font-black uppercase text-[10px] tracking-wider border-b border-slate-100">
+              <thead className="bg-slate-50 dark:bg-slate-800 text-slate-400 font-black uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800">
                 <tr>
                   <th className="p-3">Tenant & Room</th>
                   <th className="p-3">Amount</th>
@@ -319,10 +319,10 @@ export default function LodgeAdminPaymentVerification() {
                   <th className="p-3">Receipt</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700 dark:text-slate-300">
                 {payments.map(p => (
-                  <tr key={p._id} className="hover:bg-slate-50/50">
-                    <td className="p-3 font-bold text-slate-900">
+                  <tr key={p._id} className="hover:bg-slate-50 dark:bg-slate-800/50">
+                    <td className="p-3 font-bold text-slate-900 dark:text-white">
                       {p.tenantName || p.customerId?.name || 'Tenant'} (Room #{p.roomId?.roomNumber || '101'})
                     </td>
                     <td className="p-3 font-black text-indigo-600 font-poppins">₹{p.amount}</td>
@@ -356,19 +356,19 @@ export default function LodgeAdminPaymentVerification() {
 
       {/* 3. Issue Payment Request */}
       {activeTab === 'request' && (
-        <form onSubmit={handleCreateRequest} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm max-w-2xl space-y-6">
+        <form onSubmit={handleCreateRequest} className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm max-w-2xl space-y-6">
           <div>
-            <h3 className="text-xl font-black text-slate-900">Generate Tenant Payment Request</h3>
-            <p className="text-xs text-slate-500 mt-1">Send a custom bill or payment request directly to a tenant dashboard.</p>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white">Generate Tenant Payment Request</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Send a custom bill or payment request directly to a tenant dashboard.</p>
           </div>
 
           <div className="space-y-4 text-xs">
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Select Room / Active Residency</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Select Room / Active Residency</label>
               <select
                 value={requestForm.roomId}
                 onChange={(e) => setRequestForm({ ...requestForm, roomId: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-semibold text-slate-800 dark:text-slate-200"
                 required
               >
                 <option value="">Select Room...</option>
@@ -380,48 +380,48 @@ export default function LodgeAdminPaymentVerification() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Payable Amount (₹)</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Payable Amount (₹)</label>
                 <input
                   type="number"
                   placeholder="e.g. 3500"
                   value={requestForm.amount}
                   onChange={(e) => setRequestForm({ ...requestForm, amount: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-semibold text-slate-800 dark:text-slate-200"
                   required
                 />
               </div>
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Due Date</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Due Date</label>
                 <input
                   type="date"
                   value={requestForm.dueDate}
                   onChange={(e) => setRequestForm({ ...requestForm, dueDate: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-semibold text-slate-800 dark:text-slate-200"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Reason / Description</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Reason / Description</label>
               <input
                 type="text"
                 placeholder="e.g. July Electricity & Water Meter Bill"
                 value={requestForm.reason}
                 onChange={(e) => setRequestForm({ ...requestForm, reason: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-semibold text-slate-800 dark:text-slate-200"
                 required
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Custom Message to Tenant</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Custom Message to Tenant</label>
               <textarea
                 rows={3}
                 placeholder="Optional custom message..."
                 value={requestForm.customMessage}
                 onChange={(e) => setRequestForm({ ...requestForm, customMessage: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-semibold text-slate-800 dark:text-slate-200"
               />
             </div>
           </div>
@@ -434,78 +434,78 @@ export default function LodgeAdminPaymentVerification() {
 
       {/* 4. Payment Settings */}
       {activeTab === 'settings' && (
-        <form onSubmit={handleSaveSettings} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm max-w-3xl space-y-6">
+        <form onSubmit={handleSaveSettings} className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm max-w-3xl space-y-6">
           <div>
-            <h3 className="text-xl font-black text-slate-900">💳 Rent Payment Config (UPI & Bank Details)</h3>
-            <p className="text-xs text-slate-500 mt-1">Configure Merchant UPI ID, Dynamic QR Display Name, Bank Accounts, and allowed additional charge categories.</p>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white">💳 Rent Payment Config (UPI & Bank Details)</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Configure Merchant UPI ID, Dynamic QR Display Name, Bank Accounts, and allowed additional charge categories.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Merchant UPI ID</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Merchant UPI ID</label>
               <input
                 type="text"
                 value={settingsForm.upiId}
                 onChange={(e) => setSettingsForm({ ...settingsForm, upiId: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-semibold text-slate-800 dark:text-slate-200"
                 required
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Merchant Display Name</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Merchant Display Name</label>
               <input
                 type="text"
                 value={settingsForm.merchantDisplayName}
                 onChange={(e) => setSettingsForm({ ...settingsForm, merchantDisplayName: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-semibold text-slate-800 dark:text-slate-200"
                 required
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Bank Name</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Bank Name</label>
               <input
                 type="text"
                 value={settingsForm.bankName}
                 onChange={(e) => setSettingsForm({ ...settingsForm, bankName: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-semibold text-slate-800 dark:text-slate-200"
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Account Holder</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Account Holder</label>
               <input
                 type="text"
                 value={settingsForm.accountHolder}
                 onChange={(e) => setSettingsForm({ ...settingsForm, accountHolder: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-semibold text-slate-800 dark:text-slate-200"
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Account Number</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Account Number</label>
               <input
                 type="text"
                 value={settingsForm.accountNumber}
                 onChange={(e) => setSettingsForm({ ...settingsForm, accountNumber: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-semibold text-slate-800 dark:text-slate-200"
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 mb-1">IFSC Code</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">IFSC Code</label>
               <input
                 type="text"
                 value={settingsForm.ifsc}
                 onChange={(e) => setSettingsForm({ ...settingsForm, ifsc: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-semibold text-slate-800 dark:text-slate-200"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Payment Instructions for Tenants</label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Payment Instructions for Tenants</label>
             <textarea
               rows={2}
               value={settingsForm.paymentInstructions}
               onChange={(e) => setSettingsForm({ ...settingsForm, paymentInstructions: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-semibold text-slate-800 dark:text-slate-200"
             />
           </div>
 
@@ -522,19 +522,19 @@ export default function LodgeAdminPaymentVerification() {
       {/* Rejection Modal */}
       {rejectModal.show && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={submitRejection} className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <h3 className="font-black text-slate-900 text-base">Reject Payment Submission</h3>
-            <p className="text-xs text-slate-500">Please provide a mandatory reason for rejecting this payment submission so the tenant can correct it.</p>
+          <form onSubmit={submitRejection} className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h3 className="font-black text-slate-900 dark:text-white text-base">Reject Payment Submission</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Please provide a mandatory reason for rejecting this payment submission so the tenant can correct it.</p>
             <textarea
               rows={3}
               placeholder="e.g. Invalid UTR number provided. Screenshot does not match amount."
               value={rejectModal.reason}
               onChange={(e) => setRejectModal({ ...rejectModal, reason: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-semibold text-slate-800 dark:text-slate-200"
               required
             />
             <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setRejectModal({ show: false, payment: null, reason: '' })} className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 rounded-xl">
+              <button type="button" onClick={() => setRejectModal({ show: false, payment: null, reason: '' })} className="px-4 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl">
                 Back / Close
               </button>
               <button type="submit" className="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2 rounded-xl text-xs font-bold">
@@ -548,10 +548,10 @@ export default function LodgeAdminPaymentVerification() {
       {/* Proof Modal */}
       {proofModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="font-black text-sm text-slate-900">Uploaded Screenshot Proof</h3>
-              <button onClick={() => setProofModal(null)} className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition">
+              <h3 className="font-black text-sm text-slate-900 dark:text-white">Uploaded Screenshot Proof</h3>
+              <button onClick={() => setProofModal(null)} className="p-1.5 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl transition">
                 <XCircle className="w-5 h-5" />
               </button>
             </div>

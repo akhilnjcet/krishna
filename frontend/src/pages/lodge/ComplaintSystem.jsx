@@ -21,7 +21,7 @@ const ComplaintSystem = () => {
         { label: 'Power Cut', icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-50' },
         { label: 'Cleaning Issue', icon: Brush, color: 'text-emerald-500', bg: 'bg-emerald-50' },
         { label: 'Parking Issue', icon: Car, color: 'text-purple-500', bg: 'bg-purple-50' },
-        { label: 'Other', icon: MessageCircle, color: 'text-slate-500', bg: 'bg-slate-50' }
+        { label: 'Other', icon: MessageCircle, color: 'text-slate-500 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-800' }
     ];
 
     const handleSubmit = (e) => {
@@ -40,7 +40,7 @@ const ComplaintSystem = () => {
 
     if (submitted) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-white">
+            <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-white dark:bg-slate-900">
                 <motion.div 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -48,20 +48,20 @@ const ComplaintSystem = () => {
                 >
                     <CheckCircle2 className="w-12 h-12 text-emerald-500" />
                 </motion.div>
-                <h1 className="text-2xl font-black text-slate-800 mb-2 font-poppins text-center">Protocol Logged</h1>
-                <p className="text-slate-500 font-medium text-center">Administrator has been notified. Redirecting shortly...</p>
+                <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200 mb-2 font-poppins text-center">Protocol Logged</h1>
+                <p className="text-slate-500 dark:text-slate-400 font-medium text-center">Administrator has been notified. Redirecting shortly...</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-800">
             {/* Slim Complaint Ribbon */}
             <div className="bg-[#2D5BE3] pt-6 pb-12 px-6 relative flex-shrink-0">
                 <div className="relative z-10 flex items-center gap-4">
                     <button 
                         onClick={() => navigate(-1)}
-                        className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
+                        className="w-9 h-9 bg-white dark:bg-slate-900/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </button>
@@ -73,7 +73,7 @@ const ComplaintSystem = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Issue Type Selection */}
-                    <div className="bg-white rounded-3xl p-6 shadow-xl shadow-blue-900/5 border border-slate-100">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl shadow-blue-900/5 border border-slate-100 dark:border-slate-800">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Select Category</p>
                         <div className="grid grid-cols-2 gap-3">
                             {issueTypes.map((type) => (
@@ -84,14 +84,14 @@ const ComplaintSystem = () => {
                                     className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
                                         selectedType === type.label 
                                         ? 'border-[#2D5BE3] bg-blue-50' 
-                                        : 'border-slate-50 bg-slate-50 hover:bg-slate-100'
+                                        : 'border-slate-50 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:bg-slate-800/80'
                                     }`}
                                 >
                                     <div className={`w-8 h-8 ${type.bg} ${type.color} rounded-lg flex items-center justify-center`}>
                                         <type.icon className="w-5 h-5" />
                                     </div>
                                     <span className={`text-xs font-bold ${
-                                        selectedType === type.label ? 'text-[#2D5BE3]' : 'text-slate-600'
+                                        selectedType === type.label ? 'text-[#2D5BE3]' : 'text-slate-600 dark:text-slate-400'
                                     }`}>{type.label}</span>
                                 </button>
                             ))}
@@ -99,13 +99,13 @@ const ComplaintSystem = () => {
                     </div>
 
                     {/* Details */}
-                    <div className="bg-white rounded-3xl p-6 shadow-xl shadow-blue-900/5 border border-slate-100">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl shadow-blue-900/5 border border-slate-100 dark:border-slate-800">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Brief Explanation (Optional)</p>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Tell us what's happening..."
-                            className="w-full bg-slate-50 border-0 rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-[#2D5BE3]/20 min-h-[120px] resize-none"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-[#2D5BE3]/20 min-h-[120px] resize-none"
                         />
                     </div>
 

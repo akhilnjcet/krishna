@@ -62,8 +62,8 @@ const StaffLeave = () => {
             {/* Header */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Time Off & Leaves</h1>
-                    <p className="text-sm text-slate-500">Track your leave status and apply for new authorizations.</p>
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200 tracking-tight">Time Off & Leaves</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Track your leave status and apply for new authorizations.</p>
                 </div>
                 <button 
                     onClick={() => setApplyModalOpen(true)}
@@ -77,24 +77,24 @@ const StaffLeave = () => {
                 
                 {/* Leave Balance / Info */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
                                 <Calendar className="w-6 h-6" />
                             </div>
-                            <h3 className="font-bold text-slate-800">Leave Balance</h3>
+                            <h3 className="font-bold text-slate-800 dark:text-slate-200">Leave Balance</h3>
                         </div>
                         <div className="space-y-4">
                             <div className="flex justify-between items-center py-3 border-b border-slate-50">
-                                <span className="text-sm font-medium text-slate-500 uppercase tracking-widest text-[10px]">Sick Leave</span>
-                                <span className="text-sm font-bold text-slate-800">08 Days</span>
+                                <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Sick Leave</span>
+                                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">08 Days</span>
                             </div>
                             <div className="flex justify-between items-center py-3 border-b border-slate-50">
-                                <span className="text-sm font-medium text-slate-500 uppercase tracking-widest text-[10px]">Casual Leave</span>
-                                <span className="text-sm font-bold text-slate-800">04 Days</span>
+                                <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Casual Leave</span>
+                                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">04 Days</span>
                             </div>
                             <div className="flex justify-between items-center py-3">
-                                <span className="text-sm font-medium text-slate-500 uppercase tracking-widest text-[10px]">Total Available</span>
+                                <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Total Available</span>
                                 <span className="text-sm font-black text-indigo-600">12 Days</span>
                             </div>
                         </div>
@@ -112,9 +112,9 @@ const StaffLeave = () => {
                 </div>
 
                 {/* History List */}
-                <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm flex flex-col min-h-[500px]">
-                    <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
-                        <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm flex flex-col min-h-[500px]">
+                    <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50 dark:bg-slate-800/30">
+                        <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                             <History className="w-5 h-5 text-indigo-600" /> Request Timeline
                         </h3>
                     </div>
@@ -132,15 +132,15 @@ const StaffLeave = () => {
                         ) : (
                             <div className="divide-y divide-slate-50">
                                 {leaves.map((leave) => (
-                                    <div key={leave._id} className="p-6 hover:bg-slate-50/50 transition-all flex items-center justify-between group">
+                                    <div key={leave._id} className="p-6 hover:bg-slate-50 dark:bg-slate-800/50 transition-all flex items-center justify-between group">
                                         <div className="flex items-center gap-5">
                                             <div className="text-center w-12 flex-shrink-0">
                                                 <div className="text-[10px] font-black uppercase text-slate-400 mb-0.5">{new Date(leave.startDate).toLocaleString('default', { month: 'short' })}</div>
-                                                <div className="text-xl font-black text-slate-800 leading-none">{new Date(leave.startDate).getDate()}</div>
+                                                <div className="text-xl font-black text-slate-800 dark:text-slate-200 leading-none">{new Date(leave.startDate).getDate()}</div>
                                             </div>
-                                            <div className="h-10 w-[1px] bg-slate-100 hidden sm:block"></div>
+                                            <div className="h-10 w-[1px] bg-slate-100 dark:bg-slate-800/80 hidden sm:block"></div>
                                             <div className="space-y-1">
-                                                <h4 className="text-sm font-bold text-slate-800">
+                                                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
                                                     {new Date(leave.startDate).toLocaleDateString()} — {new Date(leave.endDate).toLocaleDateString()}
                                                 </h4>
                                                 <p className="text-xs text-slate-400 font-medium truncate max-w-xs md:max-w-md">{leave.reason}</p>
@@ -175,7 +175,7 @@ const StaffLeave = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white w-full max-w-lg rounded-3xl shadow-2xl relative z-10 overflow-hidden"
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl relative z-10 overflow-hidden"
                         >
                             <div className="bg-indigo-600 p-8 text-white">
                                 <h3 className="text-2xl font-bold mb-1">New Leave Request</h3>
@@ -189,7 +189,7 @@ const StaffLeave = () => {
                                         <input 
                                             type="date" 
                                             required
-                                            className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 w-full outline-none text-slate-700 font-bold text-sm"
+                                            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 w-full outline-none text-slate-700 dark:text-slate-300 font-bold text-sm"
                                             value={formData.startDate}
                                             onChange={(e) => setFormData({...formData, startDate: e.target.value})}
                                         />
@@ -199,7 +199,7 @@ const StaffLeave = () => {
                                         <input 
                                             type="date" 
                                             required
-                                            className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 w-full outline-none text-slate-700 font-bold text-sm"
+                                            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 w-full outline-none text-slate-700 dark:text-slate-300 font-bold text-sm"
                                             value={formData.endDate}
                                             onChange={(e) => setFormData({...formData, endDate: e.target.value})}
                                         />
@@ -212,7 +212,7 @@ const StaffLeave = () => {
                                         required
                                         rows="4" 
                                         placeholder="Briefly explain the reason for this request..." 
-                                        className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 w-full outline-none text-slate-700 font-medium text-sm focus:ring-2 focus:ring-indigo-100 transition-all"
+                                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 w-full outline-none text-slate-700 dark:text-slate-300 font-medium text-sm focus:ring-2 focus:ring-indigo-100 transition-all"
                                         value={formData.reason}
                                         onChange={(e) => setFormData({...formData, reason: e.target.value})}
                                     />
@@ -222,7 +222,7 @@ const StaffLeave = () => {
                                     <button 
                                         type="button"
                                         onClick={() => setApplyModalOpen(false)}
-                                        className="flex-1 py-3 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors"
+                                        className="flex-1 py-3 text-sm font-bold text-slate-400 hover:text-slate-600 dark:text-slate-400 transition-colors"
                                     >
                                         Cancel
                                     </button>

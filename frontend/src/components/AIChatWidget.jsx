@@ -176,7 +176,7 @@ const AIChatWidget = () => {
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="absolute bottom-20 right-0 w-[90vw] md:w-[380px] h-[550px] max-h-[80vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200"
+                        className="absolute bottom-20 right-0 w-[90vw] md:w-[380px] h-[550px] max-h-[80vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700"
                     >
                         {/* Header */}
                         <div 
@@ -204,11 +204,11 @@ const AIChatWidget = () => {
                         </div>
  
                         {/* Quick Actions */}
-                        <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex gap-2 overflow-x-auto mx-auto scrollbar-hide w-full">
+                        <div className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2 flex gap-2 overflow-x-auto mx-auto scrollbar-hide w-full">
                             {contactSettings.primaryPhone ? (
                                 <a 
                                     href={`tel:${contactSettings.primaryPhone.replace(/[^0-9+]/g, '')}`} 
-                                    className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-bold bg-white border border-slate-200 px-3 py-1.5 rounded-full text-brand-900 shadow-sm hover:border-brand-accent transition-colors"
+                                    className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full text-brand-900 shadow-sm hover:border-brand-accent transition-colors"
                                     title={`Call ${contactSettings.primaryPhone}`}
                                 >
                                     <Phone className="w-3 h-3 text-brand-accent" /> Call Now
@@ -216,7 +216,7 @@ const AIChatWidget = () => {
                             ) : (
                                 <button 
                                     disabled 
-                                    className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-bold bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-full text-slate-400 cursor-not-allowed"
+                                    className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-bold bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full text-slate-400 cursor-not-allowed"
                                     title="Contact number not available."
                                 >
                                     <Phone className="w-3 h-3 text-slate-400" /> Contact number not available.
@@ -234,19 +234,19 @@ const AIChatWidget = () => {
                                 </a>
                             )}
 
-                            <button onClick={() => setInput("Get Quote")} className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-bold bg-white border border-slate-200 px-3 py-1.5 rounded-full text-brand-900 shadow-sm hover:border-brand-accent transition-colors">
+                            <button onClick={() => setInput("Get Quote")} className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full text-brand-900 shadow-sm hover:border-brand-accent transition-colors">
                                 <FileText className="w-3 h-3 text-brand-accent" /> Get Quote
                             </button>
                         </div>
  
                         {/* Chat Body */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-800/50">
                             {messages.map((msg, i) => (
                                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
                                         msg.role === 'user' 
                                             ? 'bg-brand-900 text-white rounded-br-sm' 
-                                            : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm shadow-sm'
+                                            : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-sm shadow-sm'
                                     }`}>
                                         {msg.content}
                                     </div>
@@ -255,7 +255,7 @@ const AIChatWidget = () => {
  
                             {isTyping && (
                                 <div className="flex justify-start">
-                                    <div className="bg-white border border-slate-200 px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-1">
+                                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-1">
                                         <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></div>
                                         <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                                         <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
@@ -264,18 +264,18 @@ const AIChatWidget = () => {
                             )}
  
                             {leadForm.show && (
-                                <form onSubmit={submitLead} className="bg-white border-2 border-brand-accent/30 rounded-xl p-4 shadow-sm animate-in slide-in-from-bottom-2">
+                                <form onSubmit={submitLead} className="bg-white dark:bg-slate-900 border-2 border-brand-accent/30 rounded-xl p-4 shadow-sm animate-in slide-in-from-bottom-2">
                                     <h4 className="text-[11px] font-bold uppercase tracking-wider text-brand-accent mb-3">Instant Callback Request</h4>
                                     <div className="space-y-3">
                                         <input 
                                             required placeholder="Your Name" 
                                             value={leadForm.name} onChange={e => setLeadForm({...leadForm, name: e.target.value})}
-                                            className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-brand-accent"
+                                            className="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-brand-accent"
                                         />
                                         <input 
                                             required placeholder="Phone Number" type="tel"
                                             value={leadForm.phone} onChange={e => setLeadForm({...leadForm, phone: e.target.value})}
-                                            className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-brand-accent"
+                                            className="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-brand-accent"
                                         />
                                         <button type="submit" className="w-full bg-brand-900 hover:bg-black text-white font-bold py-2 rounded-lg text-sm transition-colors flex justify-center items-center gap-2">
                                             {isTyping ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Quote / Callback'}
@@ -288,14 +288,14 @@ const AIChatWidget = () => {
                         </div>
  
                         {/* Input Area */}
-                        <div className="p-3 bg-white border-t border-slate-200">
+                        <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
                             <form onSubmit={handleSend} className="flex items-center gap-2 relative">
                                 <input 
                                     type="text" 
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     placeholder="Type your message..." 
-                                    className="flex-1 bg-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-accent/20 transition-all border border-transparent focus:border-brand-accent/50 pr-12"
+                                    className="flex-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-accent/20 transition-all border border-transparent focus:border-brand-accent/50 pr-12"
                                 />
                                 <button type="submit" disabled={!input.trim() || isTyping} className="absolute right-2 p-1.5 bg-brand-accent text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-brand-accentHover transition-colors">
                                     <Send className="w-4 h-4" />

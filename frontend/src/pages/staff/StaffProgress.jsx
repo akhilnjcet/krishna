@@ -273,7 +273,7 @@ const StaffProgress = () => {
                             </button>
                             <button 
                                 onClick={() => setShowForm(true)}
-                                className="bg-brand-accent text-brand-950 px-6 py-3 font-black uppercase tracking-widest text-xs flex items-center gap-2 border-2 border-white hover:bg-white transition-all shadow-custom"
+                                className="bg-brand-accent text-brand-950 px-6 py-3 font-black uppercase tracking-widest text-xs flex items-center gap-2 border-2 border-white hover:bg-white dark:bg-slate-900 transition-all shadow-custom"
                             >
                                 <Plus className="w-4 h-4" /> New Update
                             </button>
@@ -291,7 +291,7 @@ const StaffProgress = () => {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className="bg-white border-8 border-brand-950 shadow-solid p-8"
+                                className="bg-white dark:bg-slate-900 border-8 border-brand-950 shadow-solid p-8"
                             >
                                 <div className="flex justify-between items-center mb-10 border-b-4 border-brand-50 pb-6">
                                     <h2 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3">
@@ -448,7 +448,7 @@ const StaffProgress = () => {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className="bg-white border-8 border-brand-950 shadow-solid p-8"
+                                className="bg-white dark:bg-slate-900 border-8 border-brand-950 shadow-solid p-8"
                             >
                                 <div className="flex justify-between items-center mb-10 border-b-4 border-brand-50 pb-6">
                                     <h2 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3 text-brand-accent">
@@ -590,7 +590,7 @@ const StaffProgress = () => {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className="bg-white border-8 border-brand-950 shadow-solid p-8"
+                                className="bg-white dark:bg-slate-900 border-8 border-brand-950 shadow-solid p-8"
                             >
                                 <div className="flex justify-between items-center mb-10 border-b-4 border-brand-50 pb-6">
                                     <h2 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3 text-brand-accent">
@@ -704,7 +704,7 @@ const StaffProgress = () => {
  
                         {/* Summary View for Staff */}
                         {!showForm && !showStatusForm && (
-                            <div className="bg-white border-8 border-brand-950 p-8 shadow-solid">
+                            <div className="bg-white dark:bg-slate-900 border-8 border-brand-950 p-8 shadow-solid">
                                 <div className="flex items-center gap-4 mb-8">
                                     <BarChart3 className="w-10 h-10 text-brand-accent" />
                                     <div>

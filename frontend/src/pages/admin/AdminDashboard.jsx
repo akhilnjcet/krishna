@@ -118,7 +118,7 @@ const AdminDashboard = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button onClick={fetchDashboardData} className="px-5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-bold text-[#111827] hover:bg-[#F8FAFC] transition-all flex items-center gap-2 shadow-sm">
+                    <button onClick={fetchDashboardData} className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-[#E2E8F0] rounded-xl text-sm font-bold text-[#111827] hover:bg-[#F8FAFC] transition-all flex items-center gap-2 shadow-sm">
                         <Activity className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                         Refresh Data
                     </button>
@@ -152,7 +152,7 @@ const AdminDashboard = () => {
                             key={i} 
                             variants={itemVariants}
                             onClick={() => navigate('/admin/projects')}
-                            className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+                            className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group cursor-pointer relative overflow-hidden"
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className={`w-10 h-10 bg-${item.color}-50 dark:bg-blue-950/30 text-${item.color}-600 rounded-xl flex items-center justify-center`}>
@@ -172,7 +172,7 @@ const AdminDashboard = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Activity Feed */}
-                <div className="bg-white dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm p-8 md:p-10">
+                <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm p-8 md:p-10">
                     <div className="flex items-center justify-between mb-10">
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl text-blue-600">
@@ -222,7 +222,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Recent Project Alerts Feed */}
-                <div className="bg-white dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm p-8 md:p-10">
+                <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm p-8 md:p-10">
                     <div className="flex items-center justify-between mb-10">
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-rose-50 dark:bg-rose-950/20 rounded-2xl text-rose-600">
@@ -269,11 +269,11 @@ const AdminDashboard = () => {
                                     </span>
                                 </div>
                                 <h4 className="font-bold text-sm text-[#111827] dark:text-dark-text">{notif.projectName}</h4>
-                                <p className="text-xs text-slate-500 dark:text-dark-muted mt-1">
-                                    <span className="font-semibold text-slate-700 dark:text-dark-text">By:</span> {notif.updatedBy?.name || 'Staff'}
+                                <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-dark-muted mt-1">
+                                    <span className="font-semibold text-slate-700 dark:text-slate-300 dark:text-dark-text">By:</span> {notif.updatedBy?.name || 'Staff'}
                                 </p>
                                 {notif.reason && (
-                                    <p className="text-[11px] text-slate-600 dark:text-dark-muted mt-1 bg-slate-50 dark:bg-dark-bg p-1.5 rounded border border-slate-100 dark:border-dark-border">
+                                    <p className="text-[11px] text-slate-600 dark:text-slate-400 dark:text-dark-muted mt-1 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg p-1.5 rounded border border-slate-100 dark:border-slate-800 dark:border-dark-border">
                                         <span className="font-bold text-amber-600">Reason:</span> {notif.reason}
                                     </p>
                                 )}
@@ -298,7 +298,7 @@ const AdminDashboard = () => {
                                 Biometric verification is active across all terminals. 3 unregistered attempts blocked today.
                             </p>
                             <div className="space-y-4">
-                                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                <div className="h-1.5 bg-white dark:bg-slate-900/10 rounded-full overflow-hidden">
                                      <div className="h-full bg-blue-500 w-[92%] shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
                                 </div>
                                 <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
@@ -311,7 +311,7 @@ const AdminDashboard = () => {
 
                     {/* Recent Quotations Widget */}
                     {recentQuotations.length > 0 && (
-                        <div className="bg-white dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border p-8 shadow-sm">
+                        <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border p-8 shadow-sm">
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-lg font-bold text-[#111827] dark:text-dark-text flex items-center gap-2">
                                     <History className="w-4 h-4 text-indigo-500" />
@@ -326,24 +326,24 @@ const AdminDashboard = () => {
                             </div>
                             <div className="space-y-3">
                                 {recentQuotations.map((q) => (
-                                    <div key={q._id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-dark-bg border border-slate-100 dark:border-dark-border hover:bg-indigo-50/30 transition">
+                                    <div key={q._id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-100 dark:border-slate-800 dark:border-dark-border hover:bg-indigo-50/30 transition">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-indigo-50 rounded-lg">
                                                 <FileText className="w-4 h-4 text-indigo-500" />
                                             </div>
                                             <div>
-                                                <p className="text-xs font-bold text-slate-900 dark:text-dark-text">{q.documentNumber}</p>
+                                                <p className="text-xs font-bold text-slate-900 dark:text-white dark:text-dark-text">{q.documentNumber}</p>
                                                 <p className="text-[10px] text-slate-400 font-medium">{q.customerId?.name || 'General'} • {new Date(q.createdAt).toLocaleDateString('en-IN')}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">
                                             {q.totalAmount > 0 && (
-                                                <span className="text-xs font-black text-slate-700">₹{q.totalAmount.toLocaleString('en-IN')}</span>
+                                                <span className="text-xs font-black text-slate-700 dark:text-slate-300">₹{q.totalAmount.toLocaleString('en-IN')}</span>
                                             )}
                                             <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
                                                 q.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                                                 q.status === 'Pending' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                                                'bg-slate-100 text-slate-500 border border-slate-200'
+                                                'bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                                             }`}>{q.status}</span>
                                         </div>
                                     </div>
@@ -353,7 +353,7 @@ const AdminDashboard = () => {
                     )}
 
                     {/* Operational Shortcuts */}
-                    <div className="bg-white dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border p-8 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border p-8 shadow-sm">
                         <h3 className="text-lg font-bold text-[#111827] dark:text-dark-text mb-8 flex items-center gap-2">
                             <Search className="w-4 h-4 text-blue-600" />
                             Command Shortcuts

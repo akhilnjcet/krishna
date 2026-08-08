@@ -69,13 +69,13 @@ const AdminQuotes = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50 dark:bg-slate-800">
             {/* Sub-tab Navigation */}
-            <div className="no-print flex items-center gap-3 mb-6 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-sm w-fit">
+            <div className="no-print flex items-center gap-3 mb-6 bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm w-fit">
                 <button
                     onClick={() => setActiveSubTab('log')}
                     className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
-                        activeSubTab === 'log' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'
+                        activeSubTab === 'log' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80'
                     }`}
                 >
                     Inbound Quotes Log
@@ -83,7 +83,7 @@ const AdminQuotes = () => {
                 <button
                     onClick={() => setActiveSubTab('studio')}
                     className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
-                        activeSubTab === 'studio' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'
+                        activeSubTab === 'studio' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80'
                     }`}
                 >
                     Interactive Quotation Studio
@@ -94,10 +94,10 @@ const AdminQuotes = () => {
                 <Quotations />
             ) : (
                 <>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200 shadow-xl">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-xl">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Sales & Quotes</div>
-                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900">Inbound Quotes Log</h2>
+                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 dark:text-white">Inbound Quotes Log</h2>
                 </div>
             </div>
 
@@ -107,7 +107,7 @@ const AdminQuotes = () => {
                     <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Scanning Quote Database</p>
                 </div>
             ) : quotes.length === 0 ? (
-                <div className="bg-white p-20 rounded-[2.5rem] text-center border border-slate-200">
+                <div className="bg-white dark:bg-slate-900 p-20 rounded-[2.5rem] text-center border border-slate-200 dark:border-slate-700">
                      <FileText className="w-16 h-16 text-slate-100 mx-auto mb-4" />
                      <p className="text-slate-400 font-bold uppercase tracking-widest">No quote requests recorded.</p>
                 </div>
@@ -119,7 +119,7 @@ const AdminQuotes = () => {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: i * 0.05 }}
                             key={quote._id}
-                            className="bg-white border border-slate-200 rounded-[2.5rem] shadow-xl overflow-hidden flex flex-col hover:border-indigo-200 transition-all group"
+                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-[2.5rem] shadow-xl overflow-hidden flex flex-col hover:border-indigo-200 transition-all group"
                         >
                             <div className="bg-slate-900 text-white p-6 flex justify-between items-center relative overflow-hidden">
                                 {/* Grid texture */}
@@ -157,19 +157,19 @@ const AdminQuotes = () => {
 
                             <div className="p-8 flex-1 flex flex-col justify-between">
                                 <div>
-                                    <h3 className="font-black text-2xl uppercase tracking-tighter text-slate-900 mb-4">{quote.name}</h3>
+                                    <h3 className="font-black text-2xl uppercase tracking-tighter text-slate-900 dark:text-white mb-4">{quote.name}</h3>
                                     
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <div className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Contact Details</div>
                                             <div className="flex flex-col gap-1">
-                                                <span className="flex items-center gap-2 text-xs font-bold text-slate-600"><Phone className="w-3 h-3"/> {quote.phone}</span>
-                                                <span className="flex items-center gap-2 text-xs font-bold text-slate-600"><MapPin className="w-3 h-3"/> {quote.location}</span>
+                                                <span className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400"><Phone className="w-3 h-3"/> {quote.phone}</span>
+                                                <span className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400"><MapPin className="w-3 h-3"/> {quote.location}</span>
                                             </div>
                                         </div>
-                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <div className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Service Type</div>
-                                            <div className="font-black text-slate-900 uppercase">{quote.serviceType}</div>
+                                            <div className="font-black text-slate-900 dark:text-white uppercase">{quote.serviceType}</div>
                                         </div>
                                     </div>
 
@@ -177,11 +177,11 @@ const AdminQuotes = () => {
                                         <div className="text-[10px] uppercase font-black tracking-widest text-indigo-400 mb-1 flex items-center gap-2">
                                             Description Override
                                         </div>
-                                        <p className="text-sm font-bold text-slate-600 line-clamp-2">{quote.description}</p>
+                                        <p className="text-sm font-bold text-slate-600 dark:text-slate-400 line-clamp-2">{quote.description}</p>
                                     </div>
 
-                                    <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
-                                        <div className="text-sm font-black text-slate-500 uppercase tracking-widest">Pricing Quote</div>
+                                    <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100 dark:border-slate-800">
+                                        <div className="text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Pricing Quote</div>
                                         <div className="text-3xl font-black text-indigo-600">
                                             {quote.estimatedCost ? `₹ ${quote.estimatedCost.toLocaleString()}` : 'Pending Pricing'}
                                         </div>
@@ -199,7 +199,7 @@ const AdminQuotes = () => {
                                             </button>
                                             <button 
                                                 onClick={() => handleUpdateStatus(quote._id, 'rejected')}
-                                                className="flex-1 bg-white hover:bg-red-50 text-red-600 font-black uppercase tracking-widest text-xs py-4 rounded-2xl border-2 border-red-100 transition flex items-center justify-center gap-2"
+                                                className="flex-1 bg-white dark:bg-slate-900 hover:bg-red-50 text-red-600 font-black uppercase tracking-widest text-xs py-4 rounded-2xl border-2 border-red-100 transition flex items-center justify-center gap-2"
                                             >
                                                 <X className="w-4 h-4" /> Reject
                                             </button>
@@ -216,7 +216,7 @@ const AdminQuotes = () => {
                                     {quote.status === 'new' && (
                                         <button 
                                             onClick={() => handleUpdateStatus(quote._id, 'reviewed')}
-                                            className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black uppercase tracking-widest text-xs py-4 rounded-2xl transition"
+                                            className="flex-1 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest text-xs py-4 rounded-2xl transition"
                                         >
                                             Mark Reviewed
                                         </button>
@@ -240,7 +240,7 @@ const AdminQuotes = () => {
                             initial={{ scale: 0.9, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.9, y: 20 }}
-                            className="bg-white rounded-[3rem] w-full max-w-2xl shadow-2xl border border-slate-200 overflow-hidden"
+                            className="bg-white dark:bg-slate-900 rounded-[3rem] w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
                         >
                             <div className="bg-slate-900 p-8 flex justify-between items-center border-b-4 border-indigo-500">
                                 <div>
@@ -249,7 +249,7 @@ const AdminQuotes = () => {
                                     </h3>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Refining Inbound Data Log</p>
                                 </div>
-                                <button onClick={() => setEditingQuote(null)} className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-2xl transition">
+                                <button onClick={() => setEditingQuote(null)} className="p-3 bg-white dark:bg-slate-900/5 hover:bg-white dark:bg-slate-900/10 text-white rounded-2xl transition">
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
@@ -261,7 +261,7 @@ const AdminQuotes = () => {
                                         <input 
                                             value={editingQuote.name}
                                             onChange={(e) => editField('name', e.target.value)}
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -269,7 +269,7 @@ const AdminQuotes = () => {
                                         <input 
                                             value={editingQuote.phone}
                                             onChange={(e) => editField('phone', e.target.value)}
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none"
                                         />
                                     </div>
                                 </div>
@@ -280,7 +280,7 @@ const AdminQuotes = () => {
                                         <input 
                                             value={editingQuote.location}
                                             onChange={(e) => editField('location', e.target.value)}
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -288,7 +288,7 @@ const AdminQuotes = () => {
                                         <select 
                                             value={editingQuote.serviceType}
                                             onChange={(e) => editField('serviceType', e.target.value)}
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none uppercase"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none uppercase"
                                         >
                                             <option value="welding">Welding Service</option>
                                             <option value="roofing">Metal Roofing</option>
@@ -304,7 +304,7 @@ const AdminQuotes = () => {
                                         rows={4}
                                         value={editingQuote.description}
                                         onChange={(e) => editField('description', e.target.value)}
-                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none"
                                     />
                                 </div>
 
@@ -322,7 +322,7 @@ const AdminQuotes = () => {
                                             type="number"
                                             value={editingQuote.estimatedCost}
                                             onChange={(e) => editField('estimatedCost', parseFloat(e.target.value))}
-                                            className="w-32 bg-white border border-indigo-200 p-3 rounded-xl font-black text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-500"
+                                            className="w-32 bg-white dark:bg-slate-900 border border-indigo-200 p-3 rounded-xl font-black text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-500"
                                         />
                                     </div>
                                 </div>

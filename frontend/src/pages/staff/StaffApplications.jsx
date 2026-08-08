@@ -57,11 +57,11 @@ const StaffApplications = () => {
             {/* Header */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
                         <FileText className="w-8 h-8 text-blue-600" />
                         My Applications
                     </h1>
-                    <p className="text-sm text-slate-500 font-medium">Track your submitted leave and salary requests in real-time.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Track your submitted leave and salary requests in real-time.</p>
                 </div>
             </header>
 
@@ -75,7 +75,7 @@ const StaffApplications = () => {
                             className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
                                 filterType === type 
                                 ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-lg shadow-slate-200' 
-                                : 'bg-white text-slate-500 border-slate-200 hover:border-blue-400'
+                                : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-blue-400'
                             }`}
                         >
                             {type.replace('_', ' ')}
@@ -89,7 +89,7 @@ const StaffApplications = () => {
                         placeholder="Search applications..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 transition-all text-sm font-medium"
+                        className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 transition-all text-sm font-medium"
                     />
                 </div>
             </div>
@@ -98,12 +98,12 @@ const StaffApplications = () => {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-2 space-y-4 mobile-table-scroll">
                     {loading ? (
-                        <div className="h-64 flex flex-col items-center justify-center bg-white rounded-[2.5rem] border border-slate-100 opacity-50">
+                        <div className="h-64 flex flex-col items-center justify-center bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 opacity-50">
                             <Clock className="w-8 h-8 text-blue-600 animate-spin mb-4" />
                             <p className="text-[10px] font-black uppercase tracking-[0.2em]">Synchronizing Registry...</p>
                         </div>
                     ) : filtered.length === 0 ? (
-                        <div className="h-64 flex flex-col items-center justify-center bg-white rounded-[2.5rem] border border-slate-100">
+                        <div className="h-64 flex flex-col items-center justify-center bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
                             <AlertCircle className="w-12 h-12 text-slate-200 mb-4" />
                             <p className="text-slate-400 font-bold italic">No matching applications found.</p>
                         </div>
@@ -114,7 +114,7 @@ const StaffApplications = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.05 }}
                                 key={app._id}
-                                className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-100 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6 group"
+                                className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-slate-100 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6 group"
                             >
                                 <div className="flex items-start gap-5">
                                     <div className={`p-4 rounded-2xl ${
@@ -124,10 +124,10 @@ const StaffApplications = () => {
                                     </div>
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-3">
-                                            <h3 className="font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{app.title}</h3>
+                                            <h3 className="font-black text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors uppercase tracking-tight">{app.title}</h3>
                                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">#{app._id.slice(-6)}</span>
                                         </div>
-                                        <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-md">{app.description}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-md">{app.description}</p>
                                         <div className="flex items-center gap-4 pt-2">
                                             <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 ring-1 ring-slate-100 px-2 py-0.5 rounded-md">
                                                 <History className="w-3 h-3" /> {new Date(app.createdAt).toLocaleDateString()}

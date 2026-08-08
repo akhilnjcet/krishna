@@ -62,7 +62,7 @@ export default function BookingVerify() {
                 <Icon className="w-4 h-4 text-slate-400" />
             </div>
             <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{label}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">{label}</p>
                 <p className="font-bold text-white mt-0.5">{value}</p>
             </div>
         </div>
@@ -98,10 +98,10 @@ export default function BookingVerify() {
 
                 {/* Verified Footer */}
                 <div className="text-center space-y-1">
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
+                    <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest">
                         ✓ Verified at {data.verifiedAt ? new Date(data.verifiedAt).toLocaleString('en-IN') : '-'}
                     </p>
-                    <p className="text-slate-600 text-[10px]">Krishna Lodge & Residency · Authentic Document Verification System</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-[10px]">Krishna Lodge & Residency · Authentic Document Verification System</p>
                 </div>
             </div>
         </div>

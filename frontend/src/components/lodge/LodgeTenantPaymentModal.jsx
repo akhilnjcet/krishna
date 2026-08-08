@@ -228,13 +228,13 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
         
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 text-white flex justify-between items-center relative overflow-hidden flex-shrink-0">
-          <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+          <div className="absolute right-0 top-0 w-32 h-32 bg-white dark:bg-slate-900/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
           <div>
-            <span className="px-3 py-1 bg-white/20 text-white rounded-full text-[10px] font-black uppercase tracking-widest">
+            <span className="px-3 py-1 bg-white dark:bg-slate-900/20 text-white rounded-full text-[10px] font-black uppercase tracking-widest">
               {isPayMore ? '➕ Additional Services Payment' : '💳 RENT PAYMENT & SETTLEMENT'}
             </span>
             <h2 className="text-2xl font-black tracking-tight mt-1">
@@ -257,7 +257,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
             )}
             <button 
               onClick={onClose}
-              className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all"
+              className="p-2.5 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 text-white rounded-2xl transition-all"
             >
               <X className="w-6 h-6" />
             </button>
@@ -270,8 +270,8 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
             <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-2 animate-bounce">
               <CheckCircle2 className="w-12 h-12" />
             </div>
-            <h3 className="text-2xl font-black text-slate-900">Payment Submitted!</h3>
-            <p className="text-slate-600 max-w-md text-sm">
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white">Payment Submitted!</h3>
+            <p className="text-slate-600 dark:text-slate-400 max-w-md text-sm">
               Your payment of <strong className="text-indigo-600 font-poppins">₹{grandTotal.toLocaleString()}</strong> has been recorded and submitted for verification.
             </p>
             {remainingRentBalance === 0 ? (
@@ -288,16 +288,16 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
           <div className="p-6 overflow-y-auto space-y-6 flex-1">
 
             {/* 1. Summary & Rent Mode Card */}
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80">
+            <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80">
               <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">Billing & Residency Breakdown</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                 <div>
                   <p className="text-slate-400 font-medium">Tenant Name</p>
-                  <p className="font-bold text-slate-800">{booking.tenantName || 'Valued Tenant'}</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">{booking.tenantName || 'Valued Tenant'}</p>
                 </div>
                 <div>
                   <p className="text-slate-400 font-medium">Room / Class</p>
-                  <p className="font-bold text-slate-800">#{room.roomNumber || '101'} ({room.type || 'Suite'})</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">#{room.roomNumber || '101'} ({room.type || 'Suite'})</p>
                 </div>
                 <div>
                   <p className="text-slate-400 font-medium">Outstanding Rent</p>
@@ -309,7 +309,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                     livePaymentStatus === 'FULLY PAID' ? 'bg-emerald-100 text-emerald-700' :
                     livePaymentStatus === 'PARTIALLY PAID' ? 'bg-amber-100 text-amber-700' :
                     livePaymentStatus === 'ADDITIONAL_SERVICES' ? 'bg-indigo-100 text-indigo-700' :
-                    'bg-slate-200 text-slate-700'
+                    'bg-slate-200 text-slate-700 dark:text-slate-300'
                   }`}>
                     {livePaymentStatus}
                   </span>
@@ -318,8 +318,8 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
 
               {/* Payment Mode Selector (Full vs Custom Amount) */}
               {!isRentFullyPaid ? (
-                <div className="mt-4 pt-4 border-t border-slate-200">
-                  <label className="text-xs font-bold text-slate-700 block mb-2">Select Rent Payment Mode:</label>
+                <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">Select Rent Payment Mode:</label>
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <button
                       type="button"
@@ -327,7 +327,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                       className={`p-3 rounded-xl border-2 text-xs font-bold transition-all text-left flex items-center justify-between ${
                         paymentMode === 'FULL'
                           ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm'
-                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-800'
                       }`}
                     >
                       <div>
@@ -343,12 +343,12 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                       className={`p-3 rounded-xl border-2 text-xs font-bold transition-all text-left flex items-center justify-between ${
                         paymentMode === 'CUSTOM'
                           ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm'
-                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-800'
                       }`}
                     >
                       <div>
                         <p className="font-black uppercase text-[10px] tracking-wider">② Custom Amount</p>
-                        <p className="text-[11px] font-semibold text-slate-500">Partial payment option</p>
+                        <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Partial payment option</p>
                       </div>
                       {paymentMode === 'CUSTOM' && <CheckCircle2 className="w-5 h-5 text-indigo-600" />}
                     </button>
@@ -356,7 +356,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
 
                   {paymentMode === 'CUSTOM' && (
                     <div className="mb-3">
-                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider block mb-1">
+                      <label className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1">
                         Enter Custom Rent Payment Amount (₹)
                       </label>
                       <input
@@ -364,8 +364,8 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                         placeholder="e.g. 500, 2500, 10000..."
                         value={customRentInput}
                         onChange={(e) => setCustomRentInput(e.target.value)}
-                        className={`w-full bg-white border-2 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 outline-none transition ${
-                          isAmountExceeded ? 'border-red-500 focus:border-red-600' : 'border-slate-200 focus:border-indigo-600'
+                        className={`w-full bg-white dark:bg-slate-900 border-2 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 dark:text-slate-200 outline-none transition ${
+                          isAmountExceeded ? 'border-red-500 focus:border-red-600' : 'border-slate-200 dark:border-slate-700 focus:border-indigo-600'
                         }`}
                       />
                       {isAmountExceeded && (
@@ -377,7 +377,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                   )}
 
                   {/* Live Calculation breakdown */}
-                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-xs grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs grid grid-cols-3 gap-2 text-center">
                     <div>
                       <p className="text-[9px] font-black uppercase text-slate-400">Paying Now</p>
                       <p className="font-black text-indigo-600 font-poppins">₹{rentAmount.toLocaleString()}</p>
@@ -410,7 +410,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                   </div>
                 </div>
               ) : (
-                <div className="mt-4 pt-4 border-t border-slate-200 bg-emerald-50/80 p-3 rounded-xl border-emerald-200 text-xs">
+                <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 bg-emerald-50/80 p-3 rounded-xl border-emerald-200 text-xs">
                   <p className="font-bold text-emerald-800 flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     Rent is fully settled for this billing cycle! Select additional utility/service charges below if needed.
@@ -419,8 +419,8 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
               )}
 
               {/* Additional Charges Builder */}
-              <div className="mt-4 pt-4 border-t border-slate-200">
-                <p className="text-xs font-bold text-slate-700 mb-2 flex items-center">
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center">
                   <Sparkles className="w-3.5 h-3.5 mr-1 text-indigo-600" />
                   Add Additional Utility / Service Charges:
                 </p>
@@ -428,7 +428,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                   <select
                     value={selectedChargeCat}
                     onChange={(e) => setSelectedChargeCat(e.target.value)}
-                    className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none"
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none"
                   >
                     {paymentSettings.allowedAdditionalCharges?.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -439,7 +439,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                     placeholder="Amount (₹)"
                     value={customChargeAmount}
                     onChange={(e) => setCustomChargeAmount(e.target.value)}
-                    className="w-32 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none"
+                    className="w-32 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none"
                   />
                   <button
                     type="button"
@@ -454,8 +454,8 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                 {additionalCharges.length > 0 && (
                   <div className="space-y-1.5 mb-2">
                     {additionalCharges.map(item => (
-                      <div key={item.id} className="flex justify-between items-center bg-white px-3 py-1.5 rounded-lg border border-slate-100 text-xs">
-                        <span className="font-medium text-slate-700">{item.name}</span>
+                      <div key={item.id} className="flex justify-between items-center bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800 text-xs">
+                        <span className="font-medium text-slate-700 dark:text-slate-300">{item.name}</span>
                         <div className="flex items-center gap-3">
                           <span className="font-bold text-indigo-600">₹{item.amount}</span>
                           <button type="button" onClick={() => handleRemoveCharge(item.id)} className="text-red-500 hover:text-red-700">
@@ -471,7 +471,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                 <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-xl border border-indigo-100 mt-2">
                   <div>
                     <p className="text-[10px] font-black uppercase text-indigo-500 tracking-wider">Total Amount Payable</p>
-                    <p className="text-xs text-slate-500">Rent (₹{rentAmount}) + Additional (₹{extraTotal})</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Rent (₹{rentAmount}) + Additional (₹{extraTotal})</p>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-black text-indigo-600 font-poppins">₹{grandTotal.toLocaleString()}</p>
@@ -497,7 +497,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                     className={`p-3 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-1.5 transition-all ${
                       paymentMethod === m.id
                         ? 'border-indigo-600 bg-indigo-50/50 text-indigo-600 shadow-sm'
-                        : 'border-slate-100 bg-white text-slate-500 hover:bg-slate-50'
+                        : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-800'
                     }`}
                   >
                     <m.icon className="w-5 h-5" />
@@ -510,7 +510,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
             {/* 3. Method Details Panel */}
             {paymentMethod === 'UPI QR' && (
               <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-6 rounded-3xl flex flex-col sm:flex-row items-center gap-6 shadow-xl">
-                <div className="bg-white p-4 rounded-2xl shadow-2xl flex-shrink-0">
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-2xl flex-shrink-0">
                   <QRCodeSVG value={upiUrl} size={150} level="H" includeMargin={false} />
                   <p className="text-[9px] font-black text-center text-slate-400 mt-2 uppercase tracking-widest">Scan with GPay / PhonePe / Paytm</p>
                 </div>
@@ -528,7 +528,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                       <button 
                         type="button" 
                         onClick={() => copyToClipboard(paymentSettings.upiId, 'upiQr')} 
-                        className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-white font-bold flex items-center gap-1"
+                        className="px-2.5 py-1 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-lg text-white font-bold flex items-center gap-1"
                       >
                         {copiedField === 'upiQr' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                         {copiedField === 'upiQr' ? 'Copied' : 'Copy'}
@@ -583,29 +583,29 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                   <Building2 className="w-4 h-4 mr-2" /> Direct Bank Transfer Details
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                  <div className="bg-white dark:bg-slate-900/5 p-3 rounded-xl border border-white/10">
                     <p className="text-slate-400 text-[10px] uppercase font-bold">Bank Name</p>
                     <p className="font-bold text-white mt-0.5">{paymentSettings.bankName}</p>
                   </div>
-                  <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                  <div className="bg-white dark:bg-slate-900/5 p-3 rounded-xl border border-white/10">
                     <p className="text-slate-400 text-[10px] uppercase font-bold">Account Holder</p>
                     <p className="font-bold text-white mt-0.5">{paymentSettings.accountHolder}</p>
                   </div>
-                  <div className="bg-white/5 p-3 rounded-xl border border-white/10 flex justify-between items-center">
+                  <div className="bg-white dark:bg-slate-900/5 p-3 rounded-xl border border-white/10 flex justify-between items-center">
                     <div>
                       <p className="text-slate-400 text-[10px] uppercase font-bold">Account Number</p>
                       <p className="font-bold font-mono text-white mt-0.5">{paymentSettings.accountNumber}</p>
                     </div>
-                    <button type="button" onClick={() => copyToClipboard(paymentSettings.accountNumber, 'acc')} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white">
+                    <button type="button" onClick={() => copyToClipboard(paymentSettings.accountNumber, 'acc')} className="p-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-lg text-white">
                       {copiedField === 'acc' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
-                  <div className="bg-white/5 p-3 rounded-xl border border-white/10 flex justify-between items-center">
+                  <div className="bg-white dark:bg-slate-900/5 p-3 rounded-xl border border-white/10 flex justify-between items-center">
                     <div>
                       <p className="text-slate-400 text-[10px] uppercase font-bold">IFSC Code</p>
                       <p className="font-bold font-mono text-white mt-0.5">{paymentSettings.ifsc}</p>
                     </div>
-                    <button type="button" onClick={() => copyToClipboard(paymentSettings.ifsc, 'ifsc')} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white">
+                    <button type="button" onClick={() => copyToClipboard(paymentSettings.ifsc, 'ifsc')} className="p-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-lg text-white">
                       {copiedField === 'ifsc' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
@@ -625,41 +625,41 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
             )}
 
             {/* 4. Payment Reference & Proof Section */}
-            <div className="space-y-4 pt-2 border-t border-slate-100">
+            <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
               <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">Transaction Details & Proof (Optional)</h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Transaction Ref / UTR / UPI ID</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Transaction Ref / UTR / UPI ID</label>
                   <input
                     type="text"
                     placeholder="e.g. 420912384910 or UTR Number"
                     value={referenceId}
                     onChange={(e) => setReferenceId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-800"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Payment Remarks (Optional)</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Payment Remarks (Optional)</label>
                   <input
                     type="text"
                     placeholder="e.g. Paid via GPay for July rent"
                     value={remarks}
                     onChange={(e) => setRemarks(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-800"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200"
                   />
                 </div>
               </div>
 
               {/* Upload Screenshot / Proof */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-300">
+              <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs font-bold text-slate-800">Upload Payment Screenshot / Receipt (Optional)</p>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Upload Payment Screenshot / Receipt (Optional)</p>
                     <p className="text-[11px] text-slate-400">Supported formats: JPG, PNG, PDF</p>
                   </div>
                   <div className="flex gap-2">
-                    <label className="bg-white hover:bg-slate-100 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 cursor-pointer flex items-center gap-1.5 shadow-sm">
+                    <label className="bg-white dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 cursor-pointer flex items-center gap-1.5 shadow-sm">
                       <Upload className="w-3.5 h-3.5 text-indigo-600" />
                       <span>{proofFile ? 'Change File' : 'Browse File'}</span>
                       <input type="file" accept="image/*,.pdf" onChange={handleFileChange} className="hidden" />
@@ -669,7 +669,7 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                     <button
                       type="button"
                       onClick={handleCameraCapture}
-                      className="bg-white hover:bg-slate-100 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 flex items-center gap-1.5 shadow-sm"
+                      className="bg-white dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 shadow-sm"
                     >
                       <Camera className="w-3.5 h-3.5 text-indigo-600" />
                       <span>Camera</span>
@@ -679,10 +679,10 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
 
                 {/* Proof Preview */}
                 {proofPreview && (
-                  <div className="mt-3 flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
+                  <div className="mt-3 flex items-center justify-between bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
                     <div className="flex items-center gap-3">
                       <img src={proofPreview} alt="Proof" className="w-10 h-10 object-cover rounded-lg" />
-                      <span className="text-xs font-bold text-slate-700 truncate max-w-xs">{proofFile?.name || 'Payment_Proof.jpg'}</span>
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-xs">{proofFile?.name || 'Payment_Proof.jpg'}</span>
                     </div>
                     <button type="button" onClick={() => { setProofFile(null); setProofPreview(''); }} className="text-red-500 p-1 hover:bg-red-50 rounded-lg">
                       <X className="w-4 h-4" />
@@ -697,13 +697,13 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
 
         {/* Footer Action */}
         {!submittedSuccess && (
-          <div className="p-5 bg-slate-50 border-t border-slate-100 flex items-center justify-between flex-shrink-0">
+          <div className="p-5 bg-slate-50 dark:bg-slate-800 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 bg-white border-2 border-slate-200 hover:bg-slate-100 text-slate-700 hover:border-slate-300 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
+              className="px-5 py-2.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
             >
-              <X className="w-4 h-4 text-slate-500" />
+              <X className="w-4 h-4 text-slate-500 dark:text-slate-400" />
               <span>Back / Close</span>
             </button>
             <button
@@ -729,17 +729,17 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
       {/* Admin Edit Payment Settings (UPI & Bank Details) Overlay */}
       {showEditSettingsModal && (
         <div className="fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 border border-slate-100 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b pb-3">
               <div>
                 <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-wider">
                   ⚙️ Admin Configuration
                 </span>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight mt-1">Edit UPI ID & Bank Account Details</h3>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mt-1">Edit UPI ID & Bank Account Details</h3>
               </div>
               <button 
                 onClick={() => setShowEditSettingsModal(false)}
-                className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl transition"
+                className="p-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-2xl transition"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -752,104 +752,104 @@ export default function LodgeTenantPaymentModal({ isOpen, onClose, booking, isPa
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Official UPI ID (VPA)</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Official UPI ID (VPA)</label>
                     <input
                       type="text"
                       required
                       placeholder="e.g. krishnaengineering@upi"
                       value={editSettingsForm.upiId || ''}
                       onChange={(e) => setEditSettingsForm({ ...editSettingsForm, upiId: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800 outline-none focus:border-indigo-600"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-600"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Merchant Display Name</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Merchant Display Name</label>
                     <input
                       type="text"
                       required
                       placeholder="e.g. Krishna Lodge & Complex"
                       value={editSettingsForm.merchantDisplayName || ''}
                       onChange={(e) => setEditSettingsForm({ ...editSettingsForm, merchantDisplayName: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800 outline-none focus:border-indigo-600"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-600"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h4 className="font-black text-slate-900 uppercase text-[11px] tracking-wider flex items-center gap-1.5">
+              <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <h4 className="font-black text-slate-900 dark:text-white uppercase text-[11px] tracking-wider flex items-center gap-1.5">
                   <Building2 className="w-4 h-4 text-indigo-600" /> Bank Account Transfer Details
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Bank Name</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Bank Name</label>
                     <input
                       type="text"
                       placeholder="State Bank of India"
                       value={editSettingsForm.bankName || ''}
                       onChange={(e) => setEditSettingsForm({ ...editSettingsForm, bankName: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-semibold text-slate-800 outline-none focus:border-indigo-600"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-600"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Account Holder Name</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Account Holder Name</label>
                     <input
                       type="text"
                       placeholder="Krishna Engineering Works"
                       value={editSettingsForm.accountHolder || ''}
                       onChange={(e) => setEditSettingsForm({ ...editSettingsForm, accountHolder: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-semibold text-slate-800 outline-none focus:border-indigo-600"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-600"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Account Number</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Account Number</label>
                     <input
                       type="text"
                       placeholder="39485720194"
                       value={editSettingsForm.accountNumber || ''}
                       onChange={(e) => setEditSettingsForm({ ...editSettingsForm, accountNumber: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-mono font-bold text-slate-800 outline-none focus:border-indigo-600"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-mono font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-600"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">IFSC Code</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">IFSC Code</label>
                     <input
                       type="text"
                       placeholder="SBIN0001234"
                       value={editSettingsForm.ifsc || ''}
                       onChange={(e) => setEditSettingsForm({ ...editSettingsForm, ifsc: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-mono font-bold text-slate-800 outline-none focus:border-indigo-600"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-mono font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-600"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Branch Location</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Branch Location</label>
                   <input
                     type="text"
                     placeholder="Palakkad, Kerala"
                     value={editSettingsForm.branch || ''}
                     onChange={(e) => setEditSettingsForm({ ...editSettingsForm, branch: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-semibold text-slate-800 outline-none focus:border-indigo-600"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-600"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Tenant Payment Instructions</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tenant Payment Instructions</label>
                 <textarea
                   rows={2}
                   value={editSettingsForm.paymentInstructions || ''}
                   onChange={(e) => setEditSettingsForm({ ...editSettingsForm, paymentInstructions: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-semibold text-slate-800 outline-none focus:border-indigo-600"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-600"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowEditSettingsModal(false)}
-                  className="px-5 py-2.5 border border-slate-200 hover:bg-slate-50 rounded-xl font-bold text-slate-700 text-xs"
+                  className="px-5 py-2.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800 rounded-xl font-bold text-slate-700 dark:text-slate-300 text-xs"
                 >
                   Cancel
                 </button>

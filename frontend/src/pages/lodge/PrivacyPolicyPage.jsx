@@ -64,8 +64,8 @@ const PrivacyPolicy = () => {
         {
             title: "6. Temporary Access (PIN)",
             icon: Lock,
-            color: "text-slate-500",
-            bg: "bg-slate-50",
+            color: "text-slate-500 dark:text-slate-400",
+            bg: "bg-slate-50 dark:bg-slate-800",
             content: [
                 "A temporary access PIN may be provided for room entry and usage.",
                 "The PIN is valid only during the booking period and expires at checkout.",
@@ -85,7 +85,7 @@ const PrivacyPolicy = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-800 flex flex-col font-sans">
             {/* Header */}
             <div className="bg-slate-900 pt-16 pb-20 px-6 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(45,91,227,0.1),transparent)]"></div>
@@ -93,7 +93,7 @@ const PrivacyPolicy = () => {
                     <div>
                         <button 
                             onClick={() => navigate(-1)}
-                            className="p-2 bg-white/5 rounded-xl text-slate-400 mb-6 border border-white/5"
+                            className="p-2 bg-white dark:bg-slate-900/5 rounded-xl text-slate-400 mb-6 border border-white/5"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </button>
@@ -106,12 +106,12 @@ const PrivacyPolicy = () => {
                 <motion.div 
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="bg-white rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200 border border-slate-100"
+                    className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200 border border-slate-100 dark:border-slate-800"
                 >
                     <div className="flex items-center gap-3 mb-8 pb-6 border-b border-slate-50">
                         <FileText className="w-6 h-6 text-blue-600" />
                         <div>
-                            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest leading-none">Privacy & Terms</h2>
+                            <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest leading-none">Privacy & Terms</h2>
                             <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Last Updated: April 17, 2026</p>
                         </div>
                     </div>
@@ -123,11 +123,11 @@ const PrivacyPolicy = () => {
                                     <div className={`w-10 h-10 ${section.bg} ${section.color} rounded-xl flex items-center justify-center`}>
                                         <section.icon className="w-5 h-5" />
                                     </div>
-                                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">{section.title}</h3>
+                                    <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">{section.title}</h3>
                                 </div>
                                 <div className="space-y-4 pl-14">
                                     {section.content.map((point, pIdx) => (
-                                        <p key={pIdx} className="text-sm font-medium text-slate-500 leading-relaxed">
+                                        <p key={pIdx} className="text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
                                             • {point}
                                         </p>
                                     ))}

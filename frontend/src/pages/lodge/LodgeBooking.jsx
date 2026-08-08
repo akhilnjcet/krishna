@@ -107,7 +107,7 @@ export default function LodgeBookingCheckout() {
       <div className="mb-6">
          <button 
              onClick={() => navigate('/lodge/dashboard')}
-             className="flex items-center gap-2 px-4 py-2 border rounded-xl hover:bg-slate-50 transition-colors font-bold text-sm text-slate-600 shadow-sm bg-white"
+             className="flex items-center gap-2 px-4 py-2 border rounded-xl hover:bg-slate-50 dark:bg-slate-800 transition-colors font-bold text-sm text-slate-600 dark:text-slate-400 shadow-sm bg-white dark:bg-slate-900"
          >
              <ArrowLeft className="w-4.5 h-4.5" /> Go Back
          </button>
@@ -116,7 +116,7 @@ export default function LodgeBookingCheckout() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         <div className="space-y-6">
-            <div className="bg-white border text-center border-gray-200 rounded-2xl shadow-sm p-3 sm:p-6 flex flex-col items-center w-full max-w-full overflow-x-auto">
+            <div className="bg-white dark:bg-slate-900 border text-center border-gray-200 rounded-2xl shadow-sm p-3 sm:p-6 flex flex-col items-center w-full max-w-full overflow-x-auto">
                <h3 className="font-bold text-lg mb-4 flex items-center"><CalIcon className="w-5 h-5 mr-2 text-blue-600" /> Choose Range</h3>
                <DayPicker
                   mode="range"
@@ -131,7 +131,7 @@ export default function LodgeBookingCheckout() {
         </div>
 
         <div>
-           <div className="bg-white border rounded-2xl shadow-sm sticky top-24">
+           <div className="bg-white dark:bg-slate-900 border rounded-2xl shadow-sm sticky top-24">
               <div className="p-6 border-b border-gray-100 bg-gray-50">
                  <h2 className="text-xl font-bold">{lodge.name}</h2>
                  <p className="text-gray-500">{room.type} Suite</p>

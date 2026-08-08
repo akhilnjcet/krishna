@@ -25,11 +25,11 @@ export default function LodgeHome() {
         <div className="absolute top-4 right-4 left-4 z-20 flex justify-between items-center md:right-6 md:top-6 md:left-6 md:justify-between">
             <span className="text-white font-black text-sm tracking-tight italic">KRISHNA</span>
             <div className="flex gap-2 sm:gap-4">
-                <button onClick={() => navigate('/')} className="text-white hover:text-blue-200 font-bold px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm transition-colors border border-white/40 rounded-xl bg-white/10 backdrop-blur-md flex items-center gap-1.5 shadow">
+                <button onClick={() => navigate('/')} className="text-white hover:text-blue-200 font-bold px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm transition-colors border border-white/40 rounded-xl bg-white dark:bg-slate-900/10 backdrop-blur-md flex items-center gap-1.5 shadow">
                     <ArrowLeft className="w-4 h-4" /> Main Home
                 </button>
-                <button onClick={() => navigate('/lodge/dashboard')} className="text-white hover:text-blue-200 font-bold px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm transition-colors border border-white/40 rounded-xl bg-white/10 backdrop-blur-md">My Dashboard</button>
-                <button onClick={() => navigate('/login')} className="bg-white/10 text-white font-bold px-3 py-1.5 sm:px-4 sm:py-2 border border-white/20 rounded-xl hover:bg-white/20 backdrop-blur-md text-xs sm:text-sm shadow-lg transition-all">Portal Entrance</button>
+                <button onClick={() => navigate('/lodge/dashboard')} className="text-white hover:text-blue-200 font-bold px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm transition-colors border border-white/40 rounded-xl bg-white dark:bg-slate-900/10 backdrop-blur-md">My Dashboard</button>
+                <button onClick={() => navigate('/login')} className="bg-white dark:bg-slate-900/10 text-white font-bold px-3 py-1.5 sm:px-4 sm:py-2 border border-white/20 rounded-xl hover:bg-white dark:bg-slate-900/20 backdrop-blur-md text-xs sm:text-sm shadow-lg transition-all">Portal Entrance</button>
             </div>
         </div>
 

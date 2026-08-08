@@ -261,7 +261,7 @@ const FaceCapture = ({ onCapture, loading }) => {
 
                     {status === 'success' && (
                         <motion.div key="success" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="absolute inset-0 z-40 bg-emerald-600/20 backdrop-blur-md flex flex-col items-center justify-center">
-                            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-2xl">
+                            <div className="w-24 h-24 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center mb-6 shadow-2xl">
                                 <ShieldCheck className="w-14 h-14 text-emerald-500" />
                             </div>
                             <p className="text-white font-black uppercase tracking-[0.2em] text-xs text-center px-4">{message}</p>
@@ -283,7 +283,7 @@ const FaceCapture = ({ onCapture, loading }) => {
                 {status === 'scanning' && (
                     <div className="absolute bottom-16 left-0 right-0 z-30 flex justify-center px-4">
                         <motion.div layout initial={{ y: 20 }} animate={{ y: 0 }} className="px-5 py-2 bg-indigo-600/90 backdrop-blur-md border border-indigo-400/30 rounded-full text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 text-center">
-                             <div className="w-2 h-2 bg-white rounded-full animate-ping shrink-0" />
+                             <div className="w-2 h-2 bg-white dark:bg-slate-900 rounded-full animate-ping shrink-0" />
                              <span className="truncate max-w-xs">{message}</span>
                         </motion.div>
                     </div>
@@ -324,7 +324,7 @@ const FaceCapture = ({ onCapture, loading }) => {
                     </div>
                 )}
 
-                <div className="flex items-center gap-4 py-3 px-6 bg-slate-50 border border-slate-100 rounded-2xl">
+                <div className="flex items-center gap-4 py-3 px-6 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl">
                     <div className="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-widest text-[8px]">
                         <ShieldCheck className="w-3 h-3 text-indigo-400" /> AES-256 Encrypted
                     </div>

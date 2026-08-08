@@ -163,24 +163,24 @@ const RealTimeChat = ({ chatId: propChatId }) => {
     };
 
     return (
-        <div className="flex h-[calc(100svh-4rem)] md:h-[88vh] flex-col md:flex-row bg-[#f0f2f5] rounded-none md:rounded-2xl border border-slate-200 overflow-hidden shadow-2xl relative">
+        <div className="flex h-[calc(100svh-4rem)] md:h-[88vh] flex-col md:flex-row bg-[#f0f2f5] rounded-none md:rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-2xl relative">
             
             {/* Sidebar View (Mobile Toggled) */}
-            <aside className={`w-full md:w-[320px] lg:w-[400px] flex-shrink-0 border-r border-slate-200 flex flex-col bg-white overflow-hidden ${activeRoom && 'hidden md:flex'}`}>
-                <header className="p-4 bg-[#f0f2f5] border-b border-slate-200 flex justify-between items-center h-[60px] flex-shrink-0">
+            <aside className={`w-full md:w-[320px] lg:w-[400px] flex-shrink-0 border-r border-slate-200 dark:border-slate-700 flex flex-col bg-white dark:bg-slate-900 overflow-hidden ${activeRoom && 'hidden md:flex'}`}>
+                <header className="p-4 bg-[#f0f2f5] border-b border-slate-200 dark:border-slate-700 flex justify-between items-center h-[60px] flex-shrink-0">
                     <User className="w-10 h-10 bg-slate-300 p-2 rounded-full text-white shadow-sm" />
                     <div className="flex gap-6 text-[#54656f]">
                         <MessageSquare className="w-5 h-5 cursor-pointer" />
                         <MoreHorizontal className="w-5 h-5 cursor-pointer" />
                     </div>
                 </header>
-                <div className="p-2 bg-white flex-shrink-0 border-b border-slate-100">
+                <div className="p-2 bg-white dark:bg-slate-900 flex-shrink-0 border-b border-slate-100 dark:border-slate-800">
                     <div className="bg-[#f0f2f5] rounded-xl px-4 py-2 flex items-center gap-4">
-                        <Search className="w-4 h-4 text-slate-500" />
+                        <Search className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                         <input type="text" placeholder="Search" className="bg-transparent text-[14px] w-full outline-none" />
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto bg-white custom-scrollbar">
+                <div className="flex-1 overflow-y-auto bg-white dark:bg-slate-900 custom-scrollbar">
                     {rooms.map(room => {
                         const isSelected = activeRoom?.id === room.id;
                         return (
@@ -188,10 +188,10 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                                 <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-black text-white text-lg shadow-sm ${isSelected ? 'bg-[#00a884]' : 'bg-slate-400'}`}>{room.title?.charAt(0).toUpperCase()}</div>
                                 <div className="flex-1 min-w-0 pr-1">
                                     <div className="flex justify-between items-center mb-1">
-                                        <h4 className="text-[17px] font-normal text-slate-900 truncate">{room.title}</h4>
+                                        <h4 className="text-[17px] font-normal text-slate-900 dark:text-white truncate">{room.title}</h4>
                                         <span className="text-[11px] text-slate-400">{(room.lastMessageTime?.toDate?.() || new Date()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                     </div>
-                                    <div className="flex items-center gap-1"><CheckCheck className="w-3.5 h-3.5 text-blue-400" /><p className="text-[14px] text-slate-500 truncate leading-relaxed">{room.lastMessage || "Begin Chat..."}</p></div>
+                                    <div className="flex items-center gap-1"><CheckCheck className="w-3.5 h-3.5 text-blue-400" /><p className="text-[14px] text-slate-500 dark:text-slate-400 truncate leading-relaxed">{room.lastMessage || "Begin Chat..."}</p></div>
                                 </div>
                             </div>
                         );
@@ -204,12 +204,12 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                 <main className="flex-1 flex flex-col bg-[#efeae2] overflow-hidden relative min-w-0">
                     <div className="absolute inset-0 opacity-[0.08] pointer-events-none" style={{ backgroundImage: 'url("https://w0.peakpx.com/wallpaper/580/678/HD-wallpaper-whatsapp-background-whatsapp-texture.jpg")', backgroundSize: '400px' }}></div>
                     
-                    <header className="px-4 py-2 min-h-[60px] border-b border-slate-200 flex items-center justify-between bg-[#f0f2f5] z-30 flex-shrink-0">
+                    <header className="px-4 py-2 min-h-[60px] border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-[#f0f2f5] z-30 flex-shrink-0">
                         <div className="flex items-center gap-3">
                             {/* Mobile Back Button */}
                             <button onClick={() => setActiveRoom(null)} className="md:hidden p-1 text-[#54656f]"><ArrowDown className="w-6 h-6 rotate-90" /></button>
                             <div className="w-10 h-10 bg-[#00a884] rounded-full flex items-center justify-center font-bold text-white uppercase shadow-sm">{activeRoom.title?.charAt(0).toUpperCase()}</div>
-                            <div><h3 className="text-[15px] font-medium text-slate-800 leading-tight truncate max-w-[150px]">{activeRoom.title}</h3><p className="text-[11px] text-emerald-600 font-medium">online</p></div>
+                            <div><h3 className="text-[15px] font-medium text-slate-800 dark:text-slate-200 leading-tight truncate max-w-[150px]">{activeRoom.title}</h3><p className="text-[11px] text-emerald-600 font-medium">online</p></div>
                         </div>
                         <div className="flex gap-4 text-[#54656f]">
                              <Search className="w-5 h-5 cursor-pointer" /><MoreHorizontal className="w-5 h-5 cursor-pointer" />
@@ -217,21 +217,21 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                     </header>
 
                     <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-4 md:px-12 py-6 space-y-3 z-10 custom-scrollbar scroll-smooth">
-                        <div className="flex justify-center mb-6"><span className="bg-[#fff9ee] text-[#54656f] px-4 py-1 rounded-xl text-[11px] font-semibold uppercase tracking-wider shadow-sm border border-slate-100">Today</span></div>
+                        <div className="flex justify-center mb-6"><span className="bg-[#fff9ee] text-[#54656f] px-4 py-1 rounded-xl text-[11px] font-semibold uppercase tracking-wider shadow-sm border border-slate-100 dark:border-slate-800">Today</span></div>
                         
                         {messages.length > 0 ? messages.map((msg, index) => {
                             const isMe = msg.senderId === userId;
                             return (
                                 <div key={msg.id || index} className={`flex w-full mb-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[85%] md:max-w-[70%] px-3 py-1.5 rounded-lg text-[14.5px] shadow-sm relative ${isMe ? 'bg-[#dcf8c6] text-[#111b21] rounded-tr-none' : 'bg-white text-[#111b21] rounded-tl-none'}`}>
+                                    <div className={`max-w-[85%] md:max-w-[70%] px-3 py-1.5 rounded-lg text-[14.5px] shadow-sm relative ${isMe ? 'bg-[#dcf8c6] text-[#111b21] rounded-tr-none' : 'bg-white dark:bg-slate-900 text-[#111b21] rounded-tl-none'}`}>
                                         <div className="flex flex-col">
                                             {!isMe && <span className="text-[13px] font-bold text-[#e542a3] mb-0.5">{msg.senderName}</span>}
                                             <div className="flex flex-wrap items-end justify-between pr-2">
                                                 <span className="whitespace-pre-wrap flex-1 break-words font-normal leading-relaxed">{msg.text}</span>
-                                                <div className="flex items-center gap-1 self-end pl-6"><span className="text-[10px] text-slate-500">{(msg.timestamp?.toDate?.() || new Date()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>{isMe && <CheckCheck className={`w-4 h-4 ${msg.seen ? 'text-blue-400' : 'text-slate-400'}`} />}</div>
+                                                <div className="flex items-center gap-1 self-end pl-6"><span className="text-[10px] text-slate-500 dark:text-slate-400">{(msg.timestamp?.toDate?.() || new Date()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>{isMe && <CheckCheck className={`w-4 h-4 ${msg.seen ? 'text-blue-400' : 'text-slate-400'}`} />}</div>
                                             </div>
                                         </div>
-                                        <div className={`absolute top-0 w-3 h-3 ${isMe ? 'right-[-7px] bg-[#dcf8c6]' : 'left-[-7px] bg-white'}`} style={{ clipPath: isMe ? 'polygon(0 0, 0 100%, 100% 0)' : 'polygon(100% 0, 100% 100%, 0 0)' }}></div>
+                                        <div className={`absolute top-0 w-3 h-3 ${isMe ? 'right-[-7px] bg-[#dcf8c6]' : 'left-[-7px] bg-white dark:bg-slate-900'}`} style={{ clipPath: isMe ? 'polygon(0 0, 0 100%, 100% 0)' : 'polygon(100% 0, 100% 100%, 0 0)' }}></div>
                                     </div>
                                 </div>
                             );
@@ -241,12 +241,12 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                         <div ref={messagesEndRef} className="h-6" />
                     </div>
 
-                    <AnimatePresence>{showNewMessageToast && (<motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} onClick={scrollToBottom} className="absolute bottom-[90px] right-10 z-40 bg-white p-3 rounded-full shadow-2xl border border-slate-100"><ArrowDown className="w-6 h-6 text-[#54656f]" /></motion.button>)}</AnimatePresence>
+                    <AnimatePresence>{showNewMessageToast && (<motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} onClick={scrollToBottom} className="absolute bottom-[90px] right-10 z-40 bg-white dark:bg-slate-900 p-3 rounded-full shadow-2xl border border-slate-100 dark:border-slate-800"><ArrowDown className="w-6 h-6 text-[#54656f]" /></motion.button>)}</AnimatePresence>
 
                     <footer className="px-4 py-3 bg-[#f0f2f5] z-40 flex-shrink-0">
                         <form onSubmit={sendMessage} className="flex items-center gap-4">
                             <Smile className="w-7 h-7 text-[#54656f] cursor-pointer" /><Paperclip className="w-7 h-7 text-[#54656f] cursor-pointer" />
-                            <div className="flex-1 bg-white rounded-lg px-4 py-2.5 flex items-center shadow-sm">
+                            <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg px-4 py-2.5 flex items-center shadow-sm">
                                 <input type="text" placeholder="Type a message" className="bg-transparent text-[15.5px] w-full outline-none" value={message} onChange={(e) => setMessage(e.target.value)} />
                             </div>
                             {message.trim() ? (<button type="submit" className="p-2 text-[#00a884]"><Send className="w-7 h-7 rotate-45" /></button>) : (<Mic className="w-7 h-7 text-[#54656f] cursor-pointer" />)}
@@ -255,9 +255,9 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                 </main>
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-[#f0f2f5] border-b-8 border-[#00a884] h-full">
-                     <div className="w-36 h-36 bg-white rounded-full flex items-center justify-center mb-10 shadow-lg border-2 border-slate-100 transition-transform hover:scale-105 duration-300"><MessageSquare className="w-16 h-16 text-emerald-500" /></div>
-                     <h3 className="text-4xl font-light text-slate-800 mb-2">WhatsApp Web</h3>
-                     <p className="text-[15px] text-slate-500 max-w-sm font-normal leading-relaxed opacity-70">Experience real-time encrypted support across all platforms. Synchronizing now.</p>
+                     <div className="w-36 h-36 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center mb-10 shadow-lg border-2 border-slate-100 dark:border-slate-800 transition-transform hover:scale-105 duration-300"><MessageSquare className="w-16 h-16 text-emerald-500" /></div>
+                     <h3 className="text-4xl font-light text-slate-800 dark:text-slate-200 mb-2">WhatsApp Web</h3>
+                     <p className="text-[15px] text-slate-500 dark:text-slate-400 max-w-sm font-normal leading-relaxed opacity-70">Experience real-time encrypted support across all platforms. Synchronizing now.</p>
                 </div>
             )}
 

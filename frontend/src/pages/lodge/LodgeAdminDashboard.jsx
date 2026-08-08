@@ -396,7 +396,7 @@ const LodgeAdminDashboard = () => {
                     <div className="flex items-center gap-4">
                         <button 
                             onClick={() => navigate('/admin')}
-                            className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-slate-400"
+                            className="p-3 bg-white dark:bg-slate-900/5 rounded-2xl hover:bg-white dark:bg-slate-900/10 transition-all text-slate-400"
                             title="Return to Main Portal"
                         >
                             <ArrowLeft className="w-5 h-5" />
@@ -419,14 +419,14 @@ const LodgeAdminDashboard = () => {
                         </button>
                         <button 
                             onClick={() => navigate('/lodge')}
-                            className="px-4 py-3 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+                            className="px-4 py-3 bg-white dark:bg-slate-900/5 hover:bg-white dark:bg-slate-900/10 text-slate-300 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
                             title="Lodge Home"
                         >
                             Lodge Home
                         </button>
                         <button 
                             onClick={() => { logoutAdmin(); useAuthStore.getState().logout(); navigate('/lodge/admin-login'); }}
-                            className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-slate-400"
+                            className="p-3 bg-white dark:bg-slate-900/5 rounded-2xl hover:bg-white dark:bg-slate-900/10 transition-all text-slate-400"
                             title="Logout Portal"
                         >
                             <LogOut className="w-5 h-5" />
@@ -443,7 +443,7 @@ const LodgeAdminDashboard = () => {
                             className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm whitespace-nowrap transition-all ${
                                 activeTab === tab.id 
                                 ? 'bg-[#2D5BE3] text-white shadow-lg shadow-blue-500/20' 
-                                : 'bg-white/5 text-slate-400 hover:bg-white/10'
+                                : 'bg-white dark:bg-slate-900/5 text-slate-400 hover:bg-white dark:bg-slate-900/10'
                             }`}
                         >
                             <tab.icon className="w-4 h-4" />
@@ -476,9 +476,9 @@ const LodgeAdminDashboard = () => {
                             {/* Live Metrics Grid */}
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                 {liveStats.map((stat, i) => (
-                                    <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                                    <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                                        <p className="text-2xl font-black text-slate-800">{stat.value}</p>
+                                        <p className="text-2xl font-black text-slate-800 dark:text-slate-200">{stat.value}</p>
                                     </div>
                                 ))}
                             </div>
@@ -487,18 +487,18 @@ const LodgeAdminDashboard = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 
                                 {/* Recent Bookings Feed */}
-                                <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+                                <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Recent Bookings</h3>
+                                        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Recent Bookings</h3>
                                         <button onClick={() => setActiveTab('bookings')} className="text-[10px] font-bold text-blue-600 uppercase tracking-wider hover:underline">
                                             View All ({allBookings.length})
                                         </button>
                                     </div>
                                     <div className="space-y-3">
                                         {allBookings.slice(0, 5).map((booking) => (
-                                            <div key={booking._id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                                            <div key={booking._id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl">
                                                 <div>
-                                                    <p className="text-xs font-bold text-slate-800">{booking.guestName || 'Guest'}</p>
+                                                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{booking.guestName || 'Guest'}</p>
                                                     <p className="text-[10px] text-slate-400 font-bold uppercase">
                                                         {new Date(booking.checkIn).toLocaleDateString('en-IN')} - {new Date(booking.checkOut).toLocaleDateString('en-IN')}
                                                     </p>
@@ -506,7 +506,7 @@ const LodgeAdminDashboard = () => {
                                                 <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
                                                     booking.bookingStatus === 'booked' ? 'bg-blue-50 text-blue-600' :
                                                     booking.bookingStatus === 'checked-in' ? 'bg-emerald-50 text-emerald-600' :
-                                                    'bg-slate-100 text-slate-500'
+                                                    'bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400'
                                                 }`}>
                                                     {booking.bookingStatus || 'Active'}
                                                 </span>
@@ -519,26 +519,26 @@ const LodgeAdminDashboard = () => {
                                 </div>
 
                                 {/* Recent Payments Feed */}
-                                <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+                                <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Recent Transactions</h3>
+                                        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Recent Transactions</h3>
                                         <button onClick={generateFinancePDF} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest">
                                             <Download className="w-3 h-3" /> Report
                                         </button>
                                     </div>
                                     <div className="space-y-3">
                                         {payments.slice(0, 5).map((pay, i) => (
-                                            <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                                            <div key={i} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm">
+                                                    <div className="w-9 h-9 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-blue-600 shadow-sm">
                                                         <IndianRupee className="w-4 h-4" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs font-bold text-slate-800">Room {pay.roomNumber} - {pay.type}</p>
+                                                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Room {pay.roomNumber} - {pay.type}</p>
                                                         <p className="text-[10px] text-slate-400 font-bold uppercase">{pay.method || 'Online'}</p>
                                                     </div>
                                                 </div>
-                                                <p className="text-sm font-black text-slate-800">+₹{pay.amount}</p>
+                                                <p className="text-sm font-black text-slate-800 dark:text-slate-200">+₹{pay.amount}</p>
                                             </div>
                                         ))}
                                         {payments.length === 0 && (
@@ -560,36 +560,36 @@ const LodgeAdminDashboard = () => {
                             className="space-y-4"
                         >
                             <div className="flex justify-between items-center px-2">
-                                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Master Reservations</h3>
+                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Master Reservations</h3>
                                 <button onClick={() => fetchAllBookings()} className="p-2 bg-blue-50 text-blue-600 rounded-xl">
                                     <RefreshCw className="w-4 h-4" />
                                 </button>
                             </div>
 
                             {allBookings.map((booking) => (
-                                <div key={booking._id} className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm">
+                                <div key={booking._id} className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
                                     <div className="flex justify-between items-start mb-4">
                                         <div>
-                                            <h4 className="text-lg font-black text-slate-900 leading-none">Guest: {booking.guestName}</h4>
+                                            <h4 className="text-lg font-black text-slate-900 dark:text-white leading-none">Guest: {booking.guestName}</h4>
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Phone: {booking.guestPhone}</p>
                                         </div>
                                         <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                                             booking.bookingStatus === 'booked' ? 'bg-blue-50 text-blue-600' :
                                             booking.bookingStatus === 'checked-in' ? 'bg-emerald-50 text-emerald-600' :
-                                            'bg-slate-100 text-slate-500'
+                                            'bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400'
                                         }`}>
                                             {booking.bookingStatus}
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4 mb-5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <div className="grid grid-cols-2 gap-4 mb-5 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
                                         <div>
                                             <p className="text-[8px] font-bold text-slate-400 uppercase">Stay Dates</p>
-                                            <p className="text-xs font-black text-slate-800">{new Date(booking.checkIn).toLocaleDateString()} - {new Date(booking.checkOut).toLocaleDateString()}</p>
+                                            <p className="text-xs font-black text-slate-800 dark:text-slate-200">{new Date(booking.checkIn).toLocaleDateString()} - {new Date(booking.checkOut).toLocaleDateString()}</p>
                                         </div>
                                         <div>
                                             <p className="text-[8px] font-bold text-slate-400 uppercase">Room Allocation</p>
-                                            <p className="text-xs font-black text-slate-800">Room {booking.roomId?.number || '???'}</p>
+                                            <p className="text-xs font-black text-slate-800 dark:text-slate-200">Room {booking.roomId?.number || '???'}</p>
                                         </div>
                                     </div>
 
@@ -621,7 +621,7 @@ const LodgeAdminDashboard = () => {
                             ))}
 
                             {allBookings.length === 0 && (
-                                <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+                                <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-[3rem] border-2 border-dashed border-slate-100 dark:border-slate-800">
                                     <Calendar className="w-12 h-12 text-slate-200 mx-auto mb-4" />
                                     <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No active reservations found</p>
                                 </div>
@@ -638,7 +638,7 @@ const LodgeAdminDashboard = () => {
                             className="space-y-4"
                         >
                             <div className="flex justify-between items-center px-2">
-                                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Floor Configuration</h3>
+                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Floor Configuration</h3>
                                 <button 
                                     onClick={() => {
                                         const number = prompt('Define Room Number / Name:');
@@ -651,14 +651,14 @@ const LodgeAdminDashboard = () => {
                                 </button>
                             </div>
                             {rooms.map((room) => (
-                                <div key={room.id} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                                <div key={room.id} className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
                                     <div className="flex items-center justify-between mb-6">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-bold">
                                                 {room.number}
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-slate-800">{room.tenant || 'Unassigned'}</p>
+                                                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{room.tenant || 'Unassigned'}</p>
                                                 <div className="flex items-center gap-2">
                                                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Rent: ₹{room.rent}</p>
                                                     {room.pin && (
@@ -667,7 +667,7 @@ const LodgeAdminDashboard = () => {
                                                                 const newPin = prompt('Enter New PIN (4 digits):', room.pin);
                                                                 if (newPin) updateRoom(room.id, { pin: newPin });
                                                             }}
-                                                            className="flex items-center gap-1.5 text-[10px] text-blue-500 font-black uppercase tracking-tight border-l border-slate-200 pl-2 hover:text-blue-700 transition-colors"
+                                                            className="flex items-center gap-1.5 text-[10px] text-blue-500 font-black uppercase tracking-tight border-l border-slate-200 dark:border-slate-700 pl-2 hover:text-blue-700 transition-colors"
                                                         >
                                                             PIN: {room.pin} <Edit3 className="w-3 h-3" />
                                                         </button>
@@ -706,19 +706,19 @@ const LodgeAdminDashboard = () => {
                                                 const rnt = prompt('Edit Rent:', room.rent);
                                                 if (no && rnt) editRoomDetails(room.id, no, rnt);
                                             }}
-                                            className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100" title="Edit Configuration"
+                                            className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl hover:bg-slate-100 dark:bg-slate-800/80" title="Edit Configuration"
                                         >
                                             <Edit3 className="w-5 h-5" />
                                         </button>
                                         <button 
                                             onClick={() => { if(confirm('Permanently decommission this room?')) deleteRoomManual(room.id); }}
-                                            className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-rose-50 hover:text-rose-600" title="Delete Room"
+                                            className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl hover:bg-rose-50 hover:text-rose-600" title="Delete Room"
                                         >
                                             <Trash2 className="w-5 h-5" />
                                         </button>
                                         <button 
                                             onClick={() => updateRoom(room.id, { status: room.status === 'maintenance' ? 'available' : 'maintenance' })}
-                                            className={`p-3 rounded-xl transition-all ${room.status === 'maintenance' ? 'bg-amber-100 text-amber-600' : 'bg-slate-50 text-slate-400'}`}
+                                            className={`p-3 rounded-xl transition-all ${room.status === 'maintenance' ? 'bg-amber-100 text-amber-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'}`}
                                         >
                                             <Clock className="w-5 h-5" />
                                         </button>
@@ -737,7 +737,7 @@ const LodgeAdminDashboard = () => {
                             className="space-y-6"
                         >
                             <div className="flex justify-between items-center px-2">
-                                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Guest Registry</h3>
+                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Guest Registry</h3>
                                 <button 
                                     onClick={generateGlobalPDF}
                                     className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-slate-200"
@@ -754,7 +754,7 @@ const LodgeAdminDashboard = () => {
                             )}
 
                             {!lookupLoading && allCustomers.length === 0 && (
-                                <div className="text-center py-20 bg-white rounded-[3rem] border border-slate-100">
+                                <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800">
                                     <User className="w-12 h-12 text-slate-200 mx-auto mb-4" />
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No guest history found</p>
                                 </div>
@@ -763,17 +763,17 @@ const LodgeAdminDashboard = () => {
                             {!lookupLoading && allCustomers.map((customer) => {
                                 const activeRoom = rooms.find(r => r.tenant === customer.name && r.status === 'occupied');
                                 return (
-                                    <div key={customer.id} className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm group hover:border-blue-200 transition-all">
+                                    <div key={customer.id} className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm group hover:border-blue-200 transition-all">
                                         <div className="flex items-start justify-between mb-6">
                                             <div className="flex gap-4">
                                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
-                                                    activeRoom ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600'
+                                                    activeRoom ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600'
                                                 }`}>
                                                     <User className="w-6 h-6" />
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center gap-2">
-                                                        <p className="font-black text-slate-800 tracking-tight">{customer.name}</p>
+                                                        <p className="font-black text-slate-800 dark:text-slate-200 tracking-tight">{customer.name}</p>
                                                         {activeRoom && (
                                                             <span className="px-2 py-0.5 bg-emerald-500 text-white text-[8px] font-black uppercase rounded-md tracking-widest">Live</span>
                                                         )}
@@ -793,7 +793,7 @@ const LodgeAdminDashboard = () => {
                                             {activeRoom ? (
                                                 <button 
                                                     onClick={() => { setSelectedCustomer(customer); setIsCustomerModalOpen(true); }}
-                                                    className="flex-grow py-3 bg-slate-50 text-slate-600 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all"
+                                                    className="flex-grow py-3 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 dark:bg-slate-800/80 transition-all"
                                                 >
                                                     View Profile
                                                 </button>
@@ -808,7 +808,7 @@ const LodgeAdminDashboard = () => {
                                             
                                             <button 
                                                 onClick={() => { setSelectedCustomer(customer); setIsCustomerModalOpen(true); }}
-                                                className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100 transition-all"
+                                                className="w-12 h-12 flex items-center justify-center bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl hover:bg-slate-100 dark:bg-slate-800/80 transition-all"
                                             >
                                                 <Settings className="w-5 h-5" />
                                             </button>
@@ -839,19 +839,19 @@ const LodgeAdminDashboard = () => {
                             {/* Pending Approvals Section */}
                             {payments.filter(p => p.status === 'Waiting for Approval').length > 0 && (
                                 <div className="space-y-4">
-                                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest pl-2">Pending Validation</h3>
+                                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest pl-2">Pending Validation</h3>
                                     {payments.filter(p => p.status === 'Waiting for Approval').map(pay => (
-                                        <div key={pay.id} className="bg-white rounded-3xl p-6 border border-amber-100 shadow-xl shadow-amber-500/5">
+                                        <div key={pay.id} className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-amber-100 shadow-xl shadow-amber-500/5">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div>
                                                     <p className="text-xs font-bold text-amber-600 uppercase tracking-widest leading-none mb-1">Room {pay.roomNumber} • {pay.type}</p>
-                                                    <p className="text-2xl font-black text-slate-800">₹{pay.amount}</p>
+                                                    <p className="text-2xl font-black text-slate-800 dark:text-slate-200">₹{pay.amount}</p>
                                                 </div>
                                                 <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-bold uppercase">{pay.method}</span>
                                             </div>
                                             
                                             {pay.screenshot && (
-                                                <div className="mb-6 rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 relative group">
+                                                <div className="mb-6 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 relative group">
                                                     <img src={pay.screenshot} alt="Payment SS" className="w-full h-48 object-cover" />
                                                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer text-white text-xs font-bold" onClick={() => window.open(pay.screenshot, '_blank')}>View Full Image</div>
                                                 </div>
@@ -876,14 +876,14 @@ const LodgeAdminDashboard = () => {
                                 </div>
                             )}
 
-                            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest pl-2 pt-4">Room Billing Management</h3>
+                            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest pl-2 pt-4">Room Billing Management</h3>
                             {rooms.filter(r => r.status === 'occupied').map((room) => (
-                                <div key={room.id} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-6">
+                                <div key={room.id} className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-6">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 font-bold text-xs">
+                                        <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 font-bold text-xs">
                                             {room.number}
                                         </div>
-                                        <p className="font-bold text-slate-800">{room.tenant}</p>
+                                        <p className="font-bold text-slate-800 dark:text-slate-200">{room.tenant}</p>
                                     </div>
 
                                     <div className="space-y-3">
@@ -893,7 +893,7 @@ const LodgeAdminDashboard = () => {
                                                 <Lightbulb className="w-5 h-5 text-yellow-600" />
                                                 <div>
                                                     <p className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest">Electricity</p>
-                                                    <p className="text-sm font-black text-slate-800">₹{room.electricityBill || 0}</p>
+                                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200">₹{room.electricityBill || 0}</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-2">
@@ -902,7 +902,7 @@ const LodgeAdminDashboard = () => {
                                                         const amt = prompt('Enter Electricity Bill Amount:');
                                                         if(amt) setBill(room.id, 'electricity', parseFloat(amt));
                                                     }}
-                                                    className="p-3 bg-white text-slate-400 rounded-xl border border-yellow-100"
+                                                    className="p-3 bg-white dark:bg-slate-900 text-slate-400 rounded-xl border border-yellow-100"
                                                 >
                                                     <Plus className="w-4 h-4" />
                                                 </button>
@@ -929,7 +929,7 @@ const LodgeAdminDashboard = () => {
                                                 <Clock className="w-5 h-5 text-cyan-600" />
                                                 <div>
                                                     <p className="text-[10px] font-bold text-cyan-600 uppercase tracking-widest">Water Bill</p>
-                                                    <p className="text-sm font-black text-slate-800">₹{room.waterBill || 0}</p>
+                                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200">₹{room.waterBill || 0}</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-2">
@@ -938,7 +938,7 @@ const LodgeAdminDashboard = () => {
                                                         const amt = prompt('Enter Water Bill Amount:');
                                                         if(amt) setBill(room.id, 'water', parseFloat(amt));
                                                     }}
-                                                    className="p-3 bg-white text-slate-400 rounded-xl border border-cyan-100"
+                                                    className="p-3 bg-white dark:bg-slate-900 text-slate-400 rounded-xl border border-cyan-100"
                                                 >
                                                     <Plus className="w-4 h-4" />
                                                 </button>
@@ -965,7 +965,7 @@ const LodgeAdminDashboard = () => {
                                                 <Wifi className="w-5 h-5 text-indigo-600" />
                                                 <div>
                                                     <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">WiFi Bill</p>
-                                                    <p className="text-sm font-black text-slate-800">₹{room.wifiBill || 0}</p>
+                                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200">₹{room.wifiBill || 0}</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-2">
@@ -974,7 +974,7 @@ const LodgeAdminDashboard = () => {
                                                         const amt = prompt('Enter WiFi Bill Amount:');
                                                         if(amt) setBill(room.id, 'wifi', parseFloat(amt));
                                                     }}
-                                                    className="p-3 bg-white text-slate-400 rounded-xl border border-indigo-100"
+                                                    className="p-3 bg-white dark:bg-slate-900 text-slate-400 rounded-xl border border-indigo-100"
                                                 >
                                                     <Plus className="w-4 h-4" />
                                                 </button>
@@ -1001,7 +1001,7 @@ const LodgeAdminDashboard = () => {
                                                 <Settings className="w-5 h-5 text-rose-600" />
                                                 <div>
                                                     <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest">Maintenance</p>
-                                                    <p className="text-sm font-black text-slate-800">₹{room.maintenanceBill || 0}</p>
+                                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200">₹{room.maintenanceBill || 0}</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-2">
@@ -1010,7 +1010,7 @@ const LodgeAdminDashboard = () => {
                                                         const amt = prompt('Enter Maintenance Bill Amount:');
                                                         if(amt) setBill(room.id, 'maintenance', parseFloat(amt));
                                                     }}
-                                                    className="p-3 bg-white text-slate-400 rounded-xl border border-rose-100"
+                                                    className="p-3 bg-white dark:bg-slate-900 text-slate-400 rounded-xl border border-rose-100"
                                                 >
                                                     <Plus className="w-4 h-4" />
                                                 </button>
@@ -1037,7 +1037,7 @@ const LodgeAdminDashboard = () => {
                                                 <IndianRupee className="w-5 h-5 text-emerald-600" />
                                                 <div>
                                                     <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Advance Rent</p>
-                                                    <p className="text-sm font-black text-slate-800">₹{room.advanceRentBill || 0}</p>
+                                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200">₹{room.advanceRentBill || 0}</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-2">
@@ -1046,7 +1046,7 @@ const LodgeAdminDashboard = () => {
                                                         const amt = prompt('Enter Advance Rent Bill Amount:');
                                                         if(amt) setBill(room.id, 'advanceRent', parseFloat(amt));
                                                     }}
-                                                    className="p-3 bg-white text-slate-400 rounded-xl border border-emerald-100"
+                                                    className="p-3 bg-white dark:bg-slate-900 text-slate-400 rounded-xl border border-emerald-100"
                                                 >
                                                     <Plus className="w-4 h-4" />
                                                 </button>
@@ -1084,14 +1084,14 @@ const LodgeAdminDashboard = () => {
                             className="space-y-4"
                         >
                             {complaints.map((comp) => (
-                                <div key={comp.id} className={`bg-white rounded-3xl p-6 border border-slate-100 shadow-sm ${comp.resolved ? 'opacity-50' : ''}`}>
+                                <div key={comp.id} className={`bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm ${comp.resolved ? 'opacity-50' : ''}`}>
                                     <div className="flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${comp.resolved ? 'bg-slate-100 text-slate-400' : 'bg-rose-50 text-rose-600'}`}>
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${comp.resolved ? 'bg-slate-100 dark:bg-slate-800/80 text-slate-400' : 'bg-rose-50 text-rose-600'}`}>
                                                 <AlertTriangle className="w-5 h-5" />
                                             </div>
                                             <div>
-                                                <p className="text-xs font-bold text-slate-800">Room {comp.roomNumber} - {comp.issueType}</p>
+                                                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Room {comp.roomNumber} - {comp.issueType}</p>
                                                 <p className="text-[10px] text-slate-400 font-bold uppercase">{new Date(comp.timestamp).toLocaleString()}</p>
                                             </div>
                                         </div>
@@ -1099,7 +1099,7 @@ const LodgeAdminDashboard = () => {
                                             <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-bold uppercase">Pending</span>
                                         )}
                                     </div>
-                                    <p className="text-xs text-slate-500 font-medium leading-relaxed mb-6 bg-slate-50 p-4 rounded-2xl">{comp.description || 'No additional details provided.'}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-6 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl">{comp.description || 'No additional details provided.'}</p>
                                     
                                     {!comp.resolved && (
                                         <div className="flex gap-2">
@@ -1136,14 +1136,14 @@ const LodgeAdminDashboard = () => {
                             exit={{ opacity: 0, y: -20 }}
                             className="space-y-6"
                         >
-                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 italic">
+                            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 italic">
                                 <div className="flex items-center justify-between mb-6">
                                     <div className="flex items-center gap-3">
                                         <div className={`p-2 rounded-lg ${isSyncing ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
                                             <Cloud className={`w-5 h-5 ${isSyncing ? 'animate-pulse' : ''}`} />
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Cloud Infrastructure</h3>
+                                            <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">Cloud Infrastructure</h3>
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">
                                                 {isSyncing ? 'Synchronizing records...' : `Last Backup: ${lastSynced ? new Date(lastSynced).toLocaleString() : 'Never'}`}
                                             </p>
@@ -1152,7 +1152,7 @@ const LodgeAdminDashboard = () => {
                                     <button 
                                         onClick={() => pushToCloud()}
                                         disabled={isSyncing}
-                                        className="p-2.5 bg-slate-50 text-slate-400 hover:text-[#2D5BE3] hover:bg-blue-50 rounded-xl transition-all"
+                                        className="p-2.5 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-[#2D5BE3] hover:bg-blue-50 rounded-xl transition-all"
                                     >
                                         <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
                                     </button>
@@ -1164,8 +1164,8 @@ const LodgeAdminDashboard = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                                <h3 className="text-xl font-black text-slate-800 font-poppins mb-6">Global Properties</h3>
+                            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                                <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 font-poppins mb-6">Global Properties</h3>
                                 
                                 <form onSubmit={(e) => {
                                     e.preventDefault();
@@ -1179,45 +1179,45 @@ const LodgeAdminDashboard = () => {
                                     alert('Settings Updated Successfully');
                                 }} className="space-y-6">
                                     <div className="space-y-4">
-                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Merchant UPI ID</p>
                                             <input 
                                                 name="upiId" 
                                                 defaultValue={appSettings?.upiId}
-                                                className="w-full bg-white border border-slate-200 p-3 rounded-xl font-bold text-slate-900 focus:ring-[#2D5BE3] focus:border-[#2D5BE3]" 
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl font-bold text-slate-900 dark:text-white focus:ring-[#2D5BE3] focus:border-[#2D5BE3]" 
                                                 placeholder="e.g. yourname@upi"
                                             />
                                         </div>
                                         <div className="p-4 bg-blue-50/30 rounded-2xl border border-blue-100">
                                             <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-2">Admin / Emergency Contact</p>
                                             <div className="flex items-center gap-3">
-                                                 <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-blue-600 border border-blue-100">
+                                                 <div className="w-12 h-12 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-blue-600 border border-blue-100">
                                                      <Phone className="w-5 h-5" />
                                                  </div>
                                                  <input 
                                                     name="adminPhone" 
                                                     type="tel"
                                                     defaultValue={appSettings?.adminPhone || '9876543210'}
-                                                    className="flex-grow bg-white border border-slate-200 p-3 rounded-xl font-black text-slate-900 focus:ring-[#2D5BE3] focus:border-[#2D5BE3] text-lg tracking-wider" 
+                                                    className="flex-grow bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl font-black text-slate-900 dark:text-white focus:ring-[#2D5BE3] focus:border-[#2D5BE3] text-lg tracking-wider" 
                                                     placeholder="9876543210"
                                                 />
                                             </div>
                                         </div>
-                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Google Maps URL</p>
                                             <input 
                                                 name="mapUrl" 
                                                 defaultValue={appSettings?.mapUrl}
-                                                className="w-full bg-white border border-slate-200 p-3 rounded-xl font-bold text-slate-900 focus:ring-[#2D5BE3] focus:border-[#2D5BE3]" 
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl font-bold text-slate-900 dark:text-white focus:ring-[#2D5BE3] focus:border-[#2D5BE3]" 
                                                 placeholder="https://maps.google.com/..."
                                             />
                                         </div>
-                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Building Address</p>
                                             <textarea 
                                                 name="buildingLocation" 
                                                 defaultValue={appSettings?.buildingLocation}
-                                                className="w-full bg-white border border-slate-200 p-3 rounded-xl font-medium text-slate-900 focus:ring-[#2D5BE3] focus:border-[#2D5BE3]" 
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-[#2D5BE3] focus:border-[#2D5BE3]" 
                                                 rows="2"
                                                 placeholder="Enter full building address..."
                                             />
@@ -1225,16 +1225,16 @@ const LodgeAdminDashboard = () => {
                                     </div>
                                     <button type="submit" className="w-full py-4 bg-[#2D5BE3] text-white rounded-2xl font-bold shadow-xl shadow-blue-200">Save Configuration</button>
                                 </form>
-                                <div className="mt-8 pt-6 border-t border-slate-100">
+                                <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
                                     <p className="text-[8px] font-bold text-slate-300 uppercase tracking-[0.2em] mb-3">Diagnostic Telemetry (Phase 3)</p>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-3 bg-slate-50 rounded-xl">
+                                        <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
                                             <p className="text-[7px] text-slate-400 uppercase font-black mb-1">Active Core ID</p>
-                                            <p className="text-[9px] text-slate-600 font-mono truncate">{user?._id || user?.id || 'Unknown'}</p>
+                                            <p className="text-[9px] text-slate-600 dark:text-slate-400 font-mono truncate">{user?._id || user?.id || 'Unknown'}</p>
                                         </div>
-                                        <div className="p-3 bg-slate-50 rounded-xl">
+                                        <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
                                             <p className="text-[7px] text-slate-400 uppercase font-black mb-1">Signal Gateway</p>
-                                            <p className="text-[9px] text-slate-600 font-mono truncate">{api.defaults.baseURL || 'Dynamic Local'}</p>
+                                            <p className="text-[9px] text-slate-600 dark:text-slate-400 font-mono truncate">{api.defaults.baseURL || 'Dynamic Local'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1259,11 +1259,11 @@ const LodgeAdminDashboard = () => {
                             initial={{ y: '100%' }}
                             animate={{ y: 0 }}
                             exit={{ y: '100%' }}
-                            className="relative bg-white w-full max-w-lg rounded-t-[3rem] sm:rounded-[3rem] p-8 shadow-2xl"
+                            className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-t-[3rem] sm:rounded-[3rem] p-8 shadow-2xl"
                         >
                             <div className="flex justify-between items-center mb-8">
-                                <h3 className="text-xl font-bold text-slate-800 font-poppins">Assign Room {selectedRoom?.number}</h3>
-                                <button onClick={() => setIsAssignModalOpen(false)} className="p-2 bg-slate-50 rounded-full text-slate-400"><X className="w-6 h-6"/></button>
+                                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 font-poppins">Assign Room {selectedRoom?.number}</h3>
+                                <button onClick={() => setIsAssignModalOpen(false)} className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full text-slate-400"><X className="w-6 h-6"/></button>
                             </div>
                                        <form onSubmit={handleAssign} className="space-y-6 max-h-[70vh] overflow-y-auto px-1 no-scrollbar">
                                 <div className="space-y-4">
@@ -1279,7 +1279,7 @@ const LodgeAdminDashboard = () => {
                                                     onChange={handleMobileChange}
                                                     onBlur={() => setTimeout(() => setSuggestions([]), 200)}
                                                     placeholder="9876543210" 
-                                                    className="w-full bg-transparent border-0 p-0 font-black text-slate-900 focus:ring-0 text-xl" 
+                                                    className="w-full bg-transparent border-0 p-0 font-black text-slate-900 dark:text-white focus:ring-0 text-xl" 
                                                 />
                                             </div>
                                             {lookupLoading ? (
@@ -1296,17 +1296,17 @@ const LodgeAdminDashboard = () => {
                                                     initial={{ opacity: 0, y: -10 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     exit={{ opacity: 0, y: -10 }}
-                                                    className="absolute z-50 left-0 right-0 top-full mt-2 bg-white rounded-2xl border border-slate-100 shadow-2xl shadow-slate-200 overflow-hidden"
+                                                    className="absolute z-50 left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-2xl shadow-slate-200 overflow-hidden"
                                                 >
                                                     {suggestions.map((guest) => (
                                                         <button
                                                             key={guest.id}
                                                             type="button"
                                                             onClick={() => selectSuggestion(guest)}
-                                                            className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"
+                                                            className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:bg-slate-800 transition-colors border-b border-slate-50 last:border-0"
                                                         >
                                                             <div className="text-left">
-                                                                <p className="font-bold text-slate-800 text-sm leading-none mb-1">{guest.name}</p>
+                                                                <p className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-none mb-1">{guest.name}</p>
                                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{guest.mobile}</p>
                                                             </div>
                                                             <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
@@ -1322,7 +1322,7 @@ const LodgeAdminDashboard = () => {
 
                                     {/* Real-time Customer Profile */}
                                     <div className="grid grid-cols-1 gap-4">
-                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
                                             <UserPlus className="w-5 h-5 text-slate-400" />
                                             <div className="flex-grow">
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Full Name</p>
@@ -1332,12 +1332,12 @@ const LodgeAdminDashboard = () => {
                                                     value={customerData.name}
                                                     onChange={(e) => setCustomerData({ ...customerData, name: e.target.value })}
                                                     placeholder="Enter tenant name" 
-                                                    className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 focus:ring-0" 
+                                                    className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 dark:text-slate-200 focus:ring-0" 
                                                 />
                                             </div>
                                         </div>
 
-                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
                                             <MapPin className="w-5 h-5 text-slate-400" />
                                             <div className="flex-grow">
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Permanent Address</p>
@@ -1347,13 +1347,13 @@ const LodgeAdminDashboard = () => {
                                                     value={customerData.address}
                                                     onChange={(e) => setCustomerData({ ...customerData, address: e.target.value })}
                                                     placeholder="City, State" 
-                                                    className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 focus:ring-0" 
+                                                    className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 dark:text-slate-200 focus:ring-0" 
                                                 />
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
+                                            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
                                                 <FileText className="w-5 h-5 text-slate-400" />
                                                 <div className="flex-grow">
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">ID Type</p>
@@ -1361,7 +1361,7 @@ const LodgeAdminDashboard = () => {
                                                         name="idType" 
                                                         value={customerData.idType}
                                                         onChange={(e) => setCustomerData({ ...customerData, idType: e.target.value })}
-                                                        className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 focus:ring-0 appearance-none outline-none"
+                                                        className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 dark:text-slate-200 focus:ring-0 appearance-none outline-none"
                                                     >
                                                         <option value="Aadhar">Aadhar</option>
                                                         <option value="Voter ID">Voter ID</option>
@@ -1370,7 +1370,7 @@ const LodgeAdminDashboard = () => {
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
+                                            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
                                                 <ShieldCheck className="w-5 h-5 text-slate-400" />
                                                 <div className="flex-grow">
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">ID Number</p>
@@ -1380,7 +1380,7 @@ const LodgeAdminDashboard = () => {
                                                         value={customerData.idNumber}
                                                         onChange={(e) => setCustomerData({ ...customerData, idNumber: e.target.value })}
                                                         placeholder="XXXX-XXXX-XXXX" 
-                                                        className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 focus:ring-0" 
+                                                        className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 dark:text-slate-200 focus:ring-0" 
                                                     />
                                                 </div>
                                             </div>
@@ -1388,20 +1388,20 @@ const LodgeAdminDashboard = () => {
                                     </div>
 
                                     {/* Billing & Stay */}
-                                    <div className="pt-4 border-t border-slate-100 space-y-4">
+                                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Monthly Rent</p>
                                                 <input name="rent" type="number" required defaultValue="5000" className="w-full bg-transparent border-0 p-0 font-black text-[#2D5BE3] focus:ring-0" />
                                             </div>
-                                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Advance Amount</p>
-                                                <input name="advance" type="number" defaultValue="0" className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 focus:ring-0" />
+                                                <input name="advance" type="number" defaultValue="0" className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 dark:text-slate-200 focus:ring-0" />
                                             </div>
                                         </div>
-                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Rent Cycle Start Date</p>
-                                            <input name="date" type="date" required className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 focus:ring-0" />
+                                            <input name="date" type="date" required className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 dark:text-slate-200 focus:ring-0" />
                                         </div>
                                     </div>
                                 </div>
@@ -1434,7 +1434,7 @@ const LodgeAdminDashboard = () => {
                             initial={{ y: '100%', scale: 0.95 }}
                             animate={{ y: 0, scale: 1 }}
                             exit={{ y: '100%', scale: 0.95 }}
-                            className="relative bg-white w-full max-w-lg rounded-t-[3rem] sm:rounded-[3rem] p-8 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar"
+                            className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-t-[3rem] sm:rounded-[3rem] p-8 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar"
                         >
                             <div className="flex justify-between items-center mb-8">
                                 <div className="flex items-center gap-4">
@@ -1442,40 +1442,40 @@ const LodgeAdminDashboard = () => {
                                         <User className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-black text-slate-800 font-poppins leading-none">Guest Profile</h3>
+                                        <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 font-poppins leading-none">Guest Profile</h3>
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">UUID: {selectedCustomer.mobile || selectedCustomer.id}</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setIsCustomerModalOpen(false)} className="p-3 bg-slate-50 rounded-full text-slate-400 hover:text-rose-500 transition-colors">
+                                <button onClick={() => setIsCustomerModalOpen(false)} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-full text-slate-400 hover:text-rose-500 transition-colors">
                                     <X className="w-6 h-6"/>
                                 </button>
                             </div>
                             
                             <form onSubmit={handleUpdateCustomer} className="space-y-6">
                                 <div className="space-y-4">
-                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Full Name</p>
-                                        <input name="name" required defaultValue={selectedCustomer.name} className="w-full bg-transparent border-0 p-0 font-bold text-slate-900 focus:ring-0" />
+                                        <input name="name" required defaultValue={selectedCustomer.name} className="w-full bg-transparent border-0 p-0 font-bold text-slate-900 dark:text-white focus:ring-0" />
                                     </div>
                                     
-                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Permanent Address</p>
-                                        <textarea name="address" required defaultValue={selectedCustomer.address} rows="2" className="w-full bg-transparent border-0 p-0 font-medium text-slate-800 focus:ring-0 resize-none" />
+                                        <textarea name="address" required defaultValue={selectedCustomer.address} rows="2" className="w-full bg-transparent border-0 p-0 font-medium text-slate-800 dark:text-slate-200 focus:ring-0 resize-none" />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">ID Proof Type</p>
-                                            <select name="idType" defaultValue={selectedCustomer.idType} className="w-full bg-transparent border-0 p-0 font-bold text-slate-900 focus:ring-0 appearance-none outline-none">
+                                            <select name="idType" defaultValue={selectedCustomer.idType} className="w-full bg-transparent border-0 p-0 font-bold text-slate-900 dark:text-white focus:ring-0 appearance-none outline-none">
                                                 <option value="Aadhar">Aadhar</option>
                                                 <option value="Voter ID">Voter ID</option>
                                                 <option value="Driving License">Driving License</option>
                                                 <option value="Passport">Passport</option>
                                             </select>
                                         </div>
-                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">ID Number</p>
-                                            <input name="idNumber" required defaultValue={selectedCustomer.idNumber} className="w-full bg-transparent border-0 p-0 font-bold text-slate-900 focus:ring-0" />
+                                            <input name="idNumber" required defaultValue={selectedCustomer.idNumber} className="w-full bg-transparent border-0 p-0 font-bold text-slate-900 dark:text-white focus:ring-0" />
                                         </div>
                                     </div>
 

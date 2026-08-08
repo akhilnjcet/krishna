@@ -145,8 +145,8 @@ const StaffFinance = () => {
         if (s === 'processing') return 'bg-blue-100 text-blue-800 border-blue-300';
         if (s === 'pending' || s === 'unpaid' || s === 'partially_paid') return 'bg-amber-100 text-amber-800 border-amber-300';
         if (s === 'failed') return 'bg-rose-100 text-rose-800 border-rose-300';
-        if (s === 'cancelled') return 'bg-slate-200 text-slate-800 border-slate-300';
-        return 'bg-slate-100 text-slate-700 border-slate-200';
+        if (s === 'cancelled') return 'bg-slate-200 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-600';
+        return 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
     };
 
     // Calendar Calculations
@@ -168,7 +168,7 @@ const StaffFinance = () => {
             case 'Half Day': return { symbol: '🟡', color: 'bg-amber-50 text-amber-700 border-amber-100' };
             case 'Leave': return { symbol: '🟣', color: 'bg-purple-50 text-purple-700 border-purple-100' };
             case 'Holiday': return { symbol: '🔵', color: 'bg-blue-50 text-blue-700 border-blue-100' };
-            default: return { symbol: '-', color: 'bg-slate-50 text-slate-400 border-slate-100' };
+            default: return { symbol: '-', color: 'bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-800' };
         }
     };
 
@@ -200,22 +200,22 @@ const StaffFinance = () => {
             {/* Request Advance Action */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 -mt-4">
                 {/* Tab Navigation */}
-                <div className="flex flex-wrap bg-slate-200/50 p-1 rounded-2xl w-full md:w-fit border border-slate-200 gap-1">
+                <div className="flex flex-wrap bg-slate-200/50 p-1 rounded-2xl w-full md:w-fit border border-slate-200 dark:border-slate-700 gap-1">
                     <button 
                         onClick={() => setActiveTab('slips')}
-                        className={`flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'slips' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                        className={`flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'slips' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                     >
                         💰 Payouts & Slips
                     </button>
                     <button 
                         onClick={() => setActiveTab('attendance')}
-                        className={`flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'attendance' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                        className={`flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'attendance' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                     >
                         📅 Calendar
                     </button>
                     <button 
                         onClick={() => setActiveTab('overtime')}
-                        className={`flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'overtime' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                        className={`flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'overtime' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                     >
                         ⏱️ Overtime
                     </button>
@@ -235,22 +235,22 @@ const StaffFinance = () => {
                     {/* Quick Stats */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                         {stats.map((stat, idx) => (
-                            <div key={stat.label} className={`bg-white p-4 sm:p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center text-center sm:text-left gap-3 sm:gap-4 w-full ${idx === 2 ? 'col-span-2 md:col-span-1' : ''}`}>
+                            <div key={stat.label} className={`bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center text-center sm:text-left gap-3 sm:gap-4 w-full ${idx === 2 ? 'col-span-2 md:col-span-1' : ''}`}>
                                 <div className={`${stat.bg} ${stat.color} p-3 sm:p-4 rounded-2xl flex-shrink-0`}>
                                     <stat.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </div>
                                 <div className="min-w-0">
                                     <p className="text-[9px] sm:text-[10px] uppercase font-black tracking-widest text-slate-400 mb-0.5 truncate">{stat.label}</p>
-                                    <h3 className="text-base sm:text-2xl font-bold text-slate-800 tracking-tight truncate">{stat.value}</h3>
+                                    <h3 className="text-base sm:text-2xl font-bold text-slate-800 dark:text-slate-200 tracking-tight truncate">{stat.value}</h3>
                                 </div>
                             </div>
                         ))}
                     </div>
 
                     {/* Salary History Table */}
-                    <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
-                        <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
-                            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+                        <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50 dark:bg-slate-800/30">
+                            <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                                 <History className="w-5 h-5 text-indigo-600" /> Payout History
                             </h3>
                         </div>
@@ -258,7 +258,7 @@ const StaffFinance = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                    <tr className="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black uppercase tracking-widest text-slate-400">
                                         <th className="px-6 py-4">Month / Cycle</th>
                                         <th className="px-6 py-4">Base Salary</th>
                                         <th className="px-6 py-4">OT Pay</th>
@@ -270,7 +270,7 @@ const StaffFinance = () => {
                                         <th className="px-6 py-4 text-center">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-600">
+                                <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-600 dark:text-slate-400">
                                     {Array.isArray(history) && history.length > 0 ? history.map((sal) => {
                                         if (!sal) return null;
                                         const netPayable   = sal.netSalary || sal.salaryAmount || 0;
@@ -279,10 +279,10 @@ const StaffFinance = () => {
                                         const deductions   = (sal.deductions || 0) + (sal.advanceRecovery || 0);
                                         const isCurrentMonth = sal.month === (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })();
                                         return (
-                                            <tr key={sal._id} className={`hover:bg-slate-50/50 transition group ${isCurrentMonth ? 'bg-indigo-50/30' : ''}`}>
+                                            <tr key={sal._id} className={`hover:bg-slate-50 dark:bg-slate-800/50 transition group ${isCurrentMonth ? 'bg-indigo-50/30' : ''}`}>
                                                 <td className="px-6 py-5">
                                                     <div>
-                                                        <span className="text-sm font-bold text-slate-700">{sal.month}</span>
+                                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{sal.month}</span>
                                                         {isCurrentMonth && (
                                                             <span className="ml-2 text-[9px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full">Current</span>
                                                         )}
@@ -294,7 +294,7 @@ const StaffFinance = () => {
                                                 <td className="px-6 py-5 italic">₹ {(sal.baseSalary || sal.salaryAmount || 0).toLocaleString('en-IN')}</td>
                                                 <td className="px-6 py-5 text-emerald-600 font-bold">₹ {(sal.overtimeEarnings || 0).toLocaleString('en-IN')}</td>
                                                 <td className="px-6 py-5 text-rose-500 font-bold">₹ {deductions.toLocaleString('en-IN')}</td>
-                                                <td className="px-6 py-5 text-sm font-black text-slate-900">₹ {netPayable.toLocaleString('en-IN')}</td>
+                                                <td className="px-6 py-5 text-sm font-black text-slate-900 dark:text-white">₹ {netPayable.toLocaleString('en-IN')}</td>
                                                 <td className="px-6 py-5 text-sm font-bold text-emerald-700">₹ {disbursed.toLocaleString('en-IN')}</td>
                                                 <td className={`px-6 py-5 text-sm font-bold ${remaining > 0 ? 'text-amber-600' : 'text-slate-400'}`}>₹ {Math.max(0, remaining).toLocaleString('en-IN')}</td>
                                                 <td className="px-6 py-5">
@@ -306,7 +306,7 @@ const StaffFinance = () => {
                                                     <div className="flex items-center justify-center gap-2">
                                                         <button 
                                                             onClick={() => setSelectedSlipForView(sal)}
-                                                            className="p-2 rounded-xl border border-slate-200 text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
+                                                            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
                                                             title="View Salary Slip Details"
                                                         >
                                                             <Eye className="w-4 h-4" />
@@ -347,52 +347,52 @@ const StaffFinance = () => {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-slate-200 space-y-6 max-h-[90vh] overflow-y-auto font-sans"
+                            className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-6 max-h-[90vh] overflow-y-auto font-sans"
                         >
                             {/* Modal Header */}
-                            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+                            <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white font-black text-xl flex items-center justify-center shadow">
                                         K
                                     </div>
                                     <div>
-                                        <h2 className="text-lg font-black uppercase text-slate-900 tracking-tight">KRISHNA ENGINEERING WORKS</h2>
+                                        <h2 className="text-lg font-black uppercase text-slate-900 dark:text-white tracking-tight">KRISHNA ENGINEERING WORKS</h2>
                                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Official Monthly Salary Slip ({selectedSlipForView.month})</p>
                                     </div>
                                 </div>
                                 <button 
                                     onClick={() => setSelectedSlipForView(null)}
-                                    className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition"
+                                    className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80 transition"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
 
                             {/* Employee Info Grid */}
-                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 grid grid-cols-2 gap-4 text-xs">
+                            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-4 text-xs">
                                 <div>
                                     <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-0.5">EMPLOYEE INFORMATION</span>
-                                    <p className="font-black text-slate-900">{selectedSlipForView.staffId?.name || user?.name || 'Employee'}</p>
-                                    <p className="text-slate-600 font-medium">ID: {selectedSlipForView.staffId?.staff_id || user?.staff_id || 'N/A'}</p>
-                                    <p className="text-slate-600 font-medium">Dept: {selectedSlipForView.staffId?.department || user?.department || 'Operations'}</p>
-                                    <p className="text-slate-600 font-medium">Designation: {selectedSlipForView.staffId?.designation || user?.designation || 'Staff'}</p>
+                                    <p className="font-black text-slate-900 dark:text-white">{selectedSlipForView.staffId?.name || user?.name || 'Employee'}</p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-medium">ID: {selectedSlipForView.staffId?.staff_id || user?.staff_id || 'N/A'}</p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-medium">Dept: {selectedSlipForView.staffId?.department || user?.department || 'Operations'}</p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-medium">Designation: {selectedSlipForView.staffId?.designation || user?.designation || 'Staff'}</p>
                                 </div>
                                 <div className="text-right">
                                     <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-0.5">TRANSACTION DETAILS</span>
                                     <p className="font-black text-indigo-600">TXN-{String(selectedSlipForView._id).slice(-8).toUpperCase()}</p>
-                                    <p className="text-slate-600 font-medium">Month: {selectedSlipForView.month}</p>
-                                    <p className="text-slate-600 font-medium">Status: <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${getStatusStyle(selectedSlipForView.paymentStatus)}`}>{selectedSlipForView.paymentStatus}</span></p>
-                                    <p className="text-slate-600 font-medium">Method: {selectedSlipForView.payments?.[0]?.paymentMethod || 'Bank Transfer'}</p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-medium">Month: {selectedSlipForView.month}</p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-medium">Status: <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${getStatusStyle(selectedSlipForView.paymentStatus)}`}>{selectedSlipForView.paymentStatus}</span></p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-medium">Method: {selectedSlipForView.payments?.[0]?.paymentMethod || 'Bank Transfer'}</p>
                                 </div>
                             </div>
 
                             {/* Attendance Summary */}
-                            <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs">
+                            <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden text-xs">
                                 <div className="bg-slate-900 text-white px-4 py-2 font-black uppercase tracking-wider text-[10px]">
                                     Attendance Summary
                                 </div>
-                                <div className="p-4 grid grid-cols-3 sm:grid-cols-6 gap-2 text-center bg-slate-50">
-                                    <div><span className="text-[9px] text-slate-400 font-bold block">WORKING</span><span className="font-black text-slate-800">{selectedSlipForView.totalWorkingDays || 26}</span></div>
+                                <div className="p-4 grid grid-cols-3 sm:grid-cols-6 gap-2 text-center bg-slate-50 dark:bg-slate-800">
+                                    <div><span className="text-[9px] text-slate-400 font-bold block">WORKING</span><span className="font-black text-slate-800 dark:text-slate-200">{selectedSlipForView.totalWorkingDays || 26}</span></div>
                                     <div><span className="text-[9px] text-slate-400 font-bold block">PRESENT</span><span className="font-black text-emerald-600">{selectedSlipForView.presentDays || 0}</span></div>
                                     <div><span className="text-[9px] text-slate-400 font-bold block">HALF DAYS</span><span className="font-black text-amber-600">{selectedSlipForView.halfDays || 0}</span></div>
                                     <div><span className="text-[9px] text-slate-400 font-bold block">LEAVES</span><span className="font-black text-purple-600">{selectedSlipForView.leaveDays || 0}</span></div>
@@ -402,7 +402,7 @@ const StaffFinance = () => {
                             </div>
 
                             {/* Financial Breakdown Table */}
-                            <div className="border border-slate-200 rounded-2xl overflow-x-auto text-xs">
+                            <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-x-auto text-xs">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="bg-indigo-600 text-white font-black uppercase text-[10px]">
@@ -431,7 +431,7 @@ const StaffFinance = () => {
                                             <td className="p-3"></td>
                                             <td className="p-3"></td>
                                         </tr>
-                                        <tr className="bg-slate-50 font-black">
+                                        <tr className="bg-slate-50 dark:bg-slate-800 font-black">
                                             <td className="p-3">Net Disbursed Salary</td>
                                             <td className="p-3 text-right text-indigo-600 text-sm" colSpan="3">
                                                 ₹ {(selectedSlipForView.netSalary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -442,9 +442,9 @@ const StaffFinance = () => {
                             </div>
 
                             {/* Footer & Signature */}
-                            <div className="flex justify-between items-end border-t border-slate-100 pt-4 text-[10px] text-slate-400">
+                            <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-800 pt-4 text-[10px] text-slate-400">
                                 <div>
-                                    <p className="font-bold text-slate-500">Krishna Engineering Works [SEAL]</p>
+                                    <p className="font-bold text-slate-500 dark:text-slate-400">Krishna Engineering Works [SEAL]</p>
                                     <p>System Generated Monthly Salary Slip</p>
                                 </div>
                                 <button
@@ -465,19 +465,19 @@ const StaffFinance = () => {
             {activeTab === 'attendance' && (
                 <div className="space-y-6">
                     {/* Controls & Metrics */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-wrap gap-4 items-center justify-between">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-wrap gap-4 items-center justify-between">
                         <div className="flex items-center gap-3">
                             <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Inspect Month:</span>
                             <input 
                                 type="month" 
                                 value={selectedMonth}
                                 onChange={(e) => setSelectedMonth(e.target.value)}
-                                className="bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl outline-none font-bold text-slate-700 focus:border-indigo-500"
+                                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl outline-none font-bold text-slate-700 dark:text-slate-300 focus:border-indigo-500"
                             />
                         </div>
 
                         {attendanceSummary && (
-                            <div className="flex flex-wrap gap-6 text-xs font-bold text-slate-600">
+                            <div className="flex flex-wrap gap-6 text-xs font-bold text-slate-600 dark:text-slate-400">
                                 <p>Score Index: <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-black">{attendanceSummary.percentage}%</span></p>
                                 <p>Present: <span className="text-emerald-600">{attendanceSummary.present}</span></p>
                                 <p>Half Days: <span className="text-amber-500">{attendanceSummary.halfDay}</span></p>
@@ -489,7 +489,7 @@ const StaffFinance = () => {
                     </div>
 
                     {/* 35-Day Grid Calendar */}
-                    <div className="bg-white p-4 sm:p-8 rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 p-4 sm:p-8 rounded-3xl md:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
                         <div className="grid grid-cols-7 gap-1 sm:gap-3 text-center mb-4">
                             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
                                 <div key={d} className="text-[8px] sm:text-[10px] font-black text-slate-400 tracking-widest">{d}</div>
@@ -510,7 +510,7 @@ const StaffFinance = () => {
                                     const boxes = [];
                                     
                                     for (let i = 0; i < offset; i++) {
-                                        boxes.push(<div key={`blank-${i}`} className="aspect-square bg-slate-50 border border-slate-100 rounded-lg sm:rounded-2xl opacity-40"></div>);
+                                        boxes.push(<div key={`blank-${i}`} className="aspect-square bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-lg sm:rounded-2xl opacity-40"></div>);
                                     }
 
                                     daysInMonth.forEach(day => {
@@ -541,24 +541,24 @@ const StaffFinance = () => {
             {/* OVERTIME LOGS VIEW */}
             {activeTab === 'overtime' && (
                 <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-wrap gap-4 items-center justify-between">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-wrap gap-4 items-center justify-between">
                         <div className="flex items-center gap-3">
                             <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Inspect Month:</span>
                             <input 
                                 type="month" 
                                 value={selectedMonth}
                                 onChange={(e) => setSelectedMonth(e.target.value)}
-                                className="bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl outline-none font-bold text-slate-700 focus:border-indigo-500"
+                                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl outline-none font-bold text-slate-700 dark:text-slate-300 focus:border-indigo-500"
                             />
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
-                        <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
-                            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+                        <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50 dark:bg-slate-800/30">
+                            <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                                 <Clock className="w-5 h-5 text-indigo-600" /> Overtime Logging Summary
                             </h3>
-                            <div className="text-[9px] font-black uppercase text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">
+                            <div className="text-[9px] font-black uppercase text-slate-400 bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800">
                                 Total OT Yield: ₹ {otRecords.reduce((acc, r) => acc + r.totalAmount, 0).toLocaleString()}
                             </div>
                         </div>
@@ -566,7 +566,7 @@ const StaffFinance = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse text-xs">
                                 <thead>
-                                    <tr className="bg-slate-50/50 font-black text-[10px] text-slate-400 uppercase tracking-widest">
+                                    <tr className="bg-slate-50 dark:bg-slate-800/50 font-black text-[10px] text-slate-400 uppercase tracking-widest">
                                         <th className="px-6 py-4">Date</th>
                                         <th className="px-6 py-4">Hours Logged</th>
                                         <th className="px-6 py-4">Rate Per Hour</th>
@@ -574,7 +574,7 @@ const StaffFinance = () => {
                                         <th className="px-6 py-4">Remarks</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-50 text-slate-600 font-semibold">
+                                <tbody className="divide-y divide-slate-50 text-slate-600 dark:text-slate-400 font-semibold">
                                     {loadingTabContent ? (
                                         <tr>
                                             <td colSpan="5" className="p-12 text-center text-slate-400">
@@ -582,11 +582,11 @@ const StaffFinance = () => {
                                             </td>
                                         </tr>
                                     ) : otRecords.length > 0 ? otRecords.map(ot => (
-                                        <tr key={ot._id} className="hover:bg-slate-50/50 transition">
+                                        <tr key={ot._id} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
                                             <td className="px-6 py-5 font-bold">{ot.date}</td>
-                                            <td className="px-6 py-5 font-bold text-slate-700">{ot.hours} hrs</td>
-                                            <td className="px-6 py-5 text-slate-500">₹ {ot.ratePerHour}</td>
-                                            <td className="px-6 py-5 text-sm font-black text-slate-800">₹ {ot.totalAmount?.toLocaleString()}</td>
+                                            <td className="px-6 py-5 font-bold text-slate-700 dark:text-slate-300">{ot.hours} hrs</td>
+                                            <td className="px-6 py-5 text-slate-500 dark:text-slate-400">₹ {ot.ratePerHour}</td>
+                                            <td className="px-6 py-5 text-sm font-black text-slate-800 dark:text-slate-200">₹ {ot.totalAmount?.toLocaleString()}</td>
                                             <td className="px-6 py-5 text-slate-400 font-medium italic">{ot.remarks || '-'}</td>
                                         </tr>
                                     )) : (
@@ -616,7 +616,7 @@ const StaffFinance = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white w-full max-w-lg rounded-3xl shadow-2xl relative z-10 overflow-hidden"
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl relative z-10 overflow-hidden"
                         >
                             <div className="bg-indigo-600 p-8 text-white relative">
                                 <div className="absolute top-0 right-0 p-8 opacity-20"><Wallet className="w-24 h-24 rotate-12" /></div>
@@ -628,13 +628,13 @@ const StaffFinance = () => {
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Request Amount (₹)</label>
-                                        <div className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+                                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 flex items-center gap-3">
                                             <CreditCard className="w-5 h-5 text-slate-300" />
                                             <input 
                                                 type="number" 
                                                 required
                                                 placeholder="e.g. 5000" 
-                                                className="bg-transparent w-full outline-none text-slate-700 font-bold"
+                                                className="bg-transparent w-full outline-none text-slate-700 dark:text-slate-300 font-bold"
                                                 value={advanceForm.amount}
                                                 onChange={(e) => setAdvanceForm({...advanceForm, amount: e.target.value})}
                                             />
@@ -646,7 +646,7 @@ const StaffFinance = () => {
                                             required
                                             rows="4" 
                                             placeholder="Please describe why you need the advance..." 
-                                            className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 w-full outline-none text-slate-700 font-medium text-sm focus:ring-2 focus:ring-indigo-100 transition-all"
+                                            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 w-full outline-none text-slate-700 dark:text-slate-300 font-medium text-sm focus:ring-2 focus:ring-indigo-100 transition-all"
                                             value={advanceForm.reason}
                                             onChange={(e) => setAdvanceForm({...advanceForm, reason: e.target.value})}
                                         />
@@ -662,7 +662,7 @@ const StaffFinance = () => {
                                     <button 
                                         type="button"
                                         onClick={() => setAdvanceModalOpen(false)}
-                                        className="flex-1 py-3 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors"
+                                        className="flex-1 py-3 text-sm font-bold text-slate-400 hover:text-slate-600 dark:text-slate-400 transition-colors"
                                     >
                                         Cancel
                                     </button>

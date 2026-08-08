@@ -42,10 +42,10 @@ const StaffDashboard = () => {
             
             {/* High-Contrast Impact Banner */}
             <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] dark:from-[#0B1222] dark:to-[#1E3A8A] rounded-[2.5rem] p-6 md:p-10 relative overflow-hidden text-white shadow-2xl shadow-blue-900/20 group transition-all duration-500">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -mr-40 -mt-40 group-hover:scale-110 transition-transform duration-1000"></div>
+                <div className="absolute top-0 right-0 w-96 h-96 bg-white dark:bg-slate-900/5 rounded-full blur-3xl -mr-40 -mt-40 group-hover:scale-110 transition-transform duration-1000"></div>
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                     <div className="space-y-6">
-                        <div className="inline-flex items-center gap-3 bg-white/10 dark:bg-white/5 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] border border-white/10 ring-1 ring-white/10">
+                        <div className="inline-flex items-center gap-3 bg-white dark:bg-slate-900/10 dark:bg-white dark:bg-slate-900/5 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] border border-white/10 ring-1 ring-white/10">
                             <span className="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span>
                             Operational Unit: Active
                         </div>
@@ -60,7 +60,7 @@ const StaffDashboard = () => {
                         <div className="flex flex-wrap gap-5 pt-4">
                             <button 
                                 onClick={() => navigate('/staff/attendance')}
-                                className="bg-white text-[#2563EB] px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 hover:translate-y-[-2px] hover:shadow-xl transition-all"
+                                className="bg-white dark:bg-slate-900 text-[#2563EB] px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 hover:translate-y-[-2px] hover:shadow-xl transition-all"
                             >
                                 <ShieldCheck className="w-5 h-5" /> Mark Presence
                             </button>
@@ -72,7 +72,7 @@ const StaffDashboard = () => {
                             </button>
                             <button 
                                 onClick={() => navigate('/staff/progress')}
-                                className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 transition-all"
+                                className="bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 backdrop-blur-md border border-white/20 text-white px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 transition-all"
                             >
                                 <Plus className="w-5 h-5" /> Log Daily Update
                             </button>
@@ -90,7 +90,7 @@ const StaffDashboard = () => {
                         transition={{ delay: i * 0.1 }}
                         key={stat.label}
                         onClick={() => navigate(stat.link)}
-                        className="bg-white dark:bg-dark-surface p-8 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-2xl hover:shadow-blue-500/5 hover:border-blue-200 dark:hover:border-blue-800 transition-all cursor-pointer group relative overflow-hidden"
+                        className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-8 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-2xl hover:shadow-blue-500/5 hover:border-blue-200 dark:hover:border-blue-800 transition-all cursor-pointer group relative overflow-hidden"
                     >
                         <div className="flex justify-between items-start mb-6">
                             <div className={`w-12 h-12 bg-${stat.color}-50 dark:bg-blue-950/30 text-${stat.color}-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -116,7 +116,7 @@ const StaffDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 
                 {/* Task Logistics Preview */}
-                <div className="lg:col-span-8 bg-white dark:bg-dark-surface rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border p-6 md:p-10 shadow-sm relative overflow-hidden">
+                <div className="lg:col-span-8 bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border p-6 md:p-10 shadow-sm relative overflow-hidden">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-blue-50 dark:bg-blue-950/30 text-[#2563EB] rounded-2xl">
@@ -156,7 +156,7 @@ const StaffDashboard = () => {
 
                 {/* Performance Analytics */}
                 <div className="lg:col-span-4 space-y-8">
-                    <div className="bg-white dark:bg-dark-surface rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border p-10 shadow-sm text-center group">
+                    <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border p-10 shadow-sm text-center group">
                         <div className="relative inline-block mb-8">
                             <div className="w-32 h-32 rounded-full border-8 border-slate-50 dark:border-dark-bg flex items-center justify-center text-3xl font-bold text-[#111827] dark:text-dark-text shadow-xl group-hover:scale-105 transition-transform duration-500">
                                 <div className="absolute inset-0 border-8 border-blue-500 rounded-full border-t-transparent -rotate-45"></div>
@@ -166,7 +166,7 @@ const StaffDashboard = () => {
                         <h3 className="text-xl font-bold text-[#111827] dark:text-dark-text mb-2 font-poppins">Efficiency Rating</h3>
                         <p className="text-sm text-[#6B7280] dark:text-dark-muted font-medium px-4 leading-relaxed">System performance is 12% above targets this cycle. Keep reporting!</p>
                         <div className="mt-8 space-y-4">
-                            <div className="h-1.5 bg-slate-50 dark:bg-dark-bg rounded-full overflow-hidden">
+                            <div className="h-1.5 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg rounded-full overflow-hidden">
                                 <div className="h-full bg-blue-600 w-[94%]" />
                             </div>
                             <div className="flex justify-between text-[10px] font-bold text-[#6B7280] dark:text-dark-muted uppercase tracking-widest">

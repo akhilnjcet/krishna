@@ -38,20 +38,20 @@ const AdminLeave = () => {
         : leaves;
 
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-slate-50 min-h-screen">
-            <div className="flex flex-col gap-4 bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200 shadow-xl">
+        <div className="p-4 md:p-8 space-y-8 bg-slate-50 dark:bg-slate-800 min-h-screen">
+            <div className="flex flex-col gap-4 bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-xl">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Human Resources</div>
-                    <h1 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter">Staff Absence Log</h1>
+                    <h1 className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Staff Absence Log</h1>
                 </div>
                 <div className="flex gap-4 overflow-x-auto">
-                    <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 flex-shrink-0">
+                    <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 flex-shrink-0">
                         {['', 'pending', 'approved', 'rejected'].map((s) => (
                             <button
                                 key={s}
                                 onClick={() => setFilterStatus(s)}
                                 className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                    filterStatus === s ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-500 hover:text-slate-800'
+                                    filterStatus === s ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                                 }`}
                             >
                                 {s || 'All'}
@@ -61,11 +61,11 @@ const AdminLeave = () => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-50/50 text-[10px] font-black uppercase text-slate-500 tracking-widest border-b border-slate-100">
+                            <tr className="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest border-b border-slate-100 dark:border-slate-800">
                                 <th className="p-8">Staff Member</th>
                                 <th className="p-8">Requested Period</th>
                                 <th className="p-8">Reason / Vindication</th>
@@ -101,14 +101,14 @@ const AdminLeave = () => {
                                                 {leave.staffId?.name?.charAt(0)}
                                             </div>
                                             <div>
-                                                <div className="font-black text-slate-900 leading-none mb-1">{leave.staffId?.name}</div>
-                                                <div className="text-xs text-slate-500 font-bold">{leave.staffId?.email}</div>
+                                                <div className="font-black text-slate-900 dark:text-white leading-none mb-1">{leave.staffId?.name}</div>
+                                                <div className="text-xs text-slate-500 dark:text-slate-400 font-bold">{leave.staffId?.email}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="p-8">
                                         <div className="flex flex-col gap-1">
-                                            <span className="flex items-center gap-2 text-sm font-black text-slate-700">
+                                            <span className="flex items-center gap-2 text-sm font-black text-slate-700 dark:text-slate-300">
                                                 <Calendar className="w-4 h-4 text-indigo-500" />
                                                 {new Date(leave.startDate).toLocaleDateString()}
                                             </span>
@@ -116,7 +116,7 @@ const AdminLeave = () => {
                                         </div>
                                     </td>
                                     <td className="p-8">
-                                        <p className="text-sm font-bold text-slate-600 max-w-xs line-clamp-2">{leave.reason}</p>
+                                        <p className="text-sm font-bold text-slate-600 dark:text-slate-400 max-w-xs line-clamp-2">{leave.reason}</p>
                                     </td>
                                     <td className="p-8">
                                         <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${

@@ -75,16 +75,16 @@ const ProjectTimeline = ({ projectId }) => {
                                     </div>
                                     <div className="flex-1 min-w-0 pt-1.5 flex justify-between space-x-4">
                                         <div>
-                                            <p className="text-sm font-bold text-slate-800 dark:text-dark-text">
+                                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200 dark:text-dark-text">
                                                 {label}{' '}
                                                 {event.reason && (
-                                                    <span className="font-normal text-slate-500 dark:text-dark-muted">
-                                                        due to <span className="font-semibold text-slate-700 dark:text-dark-text">{event.reason}</span>
+                                                    <span className="font-normal text-slate-500 dark:text-slate-400 dark:text-dark-muted">
+                                                        due to <span className="font-semibold text-slate-700 dark:text-slate-300 dark:text-dark-text">{event.reason}</span>
                                                     </span>
                                                 )}
                                             </p>
                                             {event.remarks && (
-                                                <p className="text-xs text-slate-500 dark:text-dark-muted mt-1 bg-slate-50 dark:bg-dark-bg p-2 rounded-lg border border-slate-100 dark:border-dark-border inline-block max-w-md">
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-dark-muted mt-1 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg p-2 rounded-lg border border-slate-100 dark:border-slate-800 dark:border-dark-border inline-block max-w-md">
                                                     {event.remarks}
                                                 </p>
                                             )}
@@ -92,7 +92,7 @@ const ProjectTimeline = ({ projectId }) => {
                                                 By: {event.reportedBy?.name || 'Operator'}
                                             </p>
                                         </div>
-                                        <div className="text-right text-xs whitespace-nowrap text-slate-500 dark:text-dark-muted font-medium">
+                                        <div className="text-right text-xs whitespace-nowrap text-slate-500 dark:text-slate-400 dark:text-dark-muted font-medium">
                                             <time dateTime={event.reportedAt}>
                                                 {new Date(event.reportedAt).toLocaleString([], {
                                                     month: 'short',

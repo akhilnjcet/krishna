@@ -25,7 +25,7 @@ const Navbar = () => {
     ];
 
     return (
-        <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 transition-all dark:bg-slate-900/80 dark:border-slate-800">
+        <nav className="sticky top-0 z-50 bg-white dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 transition-all dark:bg-slate-900/80 dark:border-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-20">
 
@@ -34,7 +34,7 @@ const Navbar = () => {
                             {location.pathname !== '/' && (
                                 <button
                                     onClick={() => navigate(-1)}
-                                    className="p-2.5 bg-slate-50 text-primary hover:bg-blue-50 hover:text-cta rounded-xl transition-all duration-300 border border-slate-100 flex items-center justify-center dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+                                    className="p-2.5 bg-slate-50 dark:bg-slate-800 text-primary hover:bg-blue-50 hover:text-cta rounded-xl transition-all duration-300 border border-slate-100 dark:border-slate-800 flex items-center justify-center dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
                                     title="Go Back"
                                 >
                                     <ChevronLeft className="w-6 h-6" />
@@ -60,7 +60,7 @@ const Navbar = () => {
                                             to={link.path}
                                             className={`text-sm font-semibold tracking-tight px-5 py-2.5 rounded-xl transition-all duration-300 ${isActive
                                                     ? 'bg-blue-50 text-cta dark:bg-slate-850 dark:text-blue-400'
-                                                    : 'text-textMain/80 hover:bg-slate-50 hover:text-primary dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+                                                    : 'text-textMain/80 hover:bg-slate-50 dark:bg-slate-800 hover:text-primary dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
                                                 }`}
                                         >
                                             {link.name}
@@ -130,7 +130,7 @@ const Navbar = () => {
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.25, ease: 'easeInOut' }}
-                            className="md:hidden bg-white border-t border-slate-100 shadow-2xl overflow-hidden"
+                            className="md:hidden bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden"
                         >
                             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                                 {navLinks.map((link) => (
@@ -139,7 +139,7 @@ const Navbar = () => {
                                         to={link.path}
                                         className={`block px-5 py-4 text-sm font-bold rounded-2xl transition-all ${location.pathname === link.path
                                                 ? 'bg-blue-50 text-cta'
-                                                : 'text-textMain/70 hover:bg-slate-50'
+                                                : 'text-textMain/70 hover:bg-slate-50 dark:bg-slate-800'
                                             }`}
                                         onClick={() => setIsOpen(false)}
                                     >

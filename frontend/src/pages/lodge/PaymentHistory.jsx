@@ -25,11 +25,11 @@ const PaymentHistory = () => {
         <div className="min-h-screen bg-[#F8FAFC]">
             {/* Header */}
             <div className="bg-[#2D5BE3] pt-12 pb-20 px-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white dark:bg-slate-900/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
                 <div className="relative z-10 flex items-center gap-4">
                     <button 
                         onClick={() => navigate(-1)}
-                        className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white backdrop-blur-md"
+                        className="w-10 h-10 bg-white dark:bg-slate-900/20 rounded-xl flex items-center justify-center text-white backdrop-blur-md"
                     >
                         <ArrowLeft className="w-6 h-6" />
                     </button>
@@ -38,7 +38,7 @@ const PaymentHistory = () => {
             </div>
 
             <div className="px-6 -mt-10 pb-12 max-w-lg mx-auto">
-                <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-blue-900/5 border border-slate-100 min-h-[400px]">
+                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl shadow-blue-900/5 border border-slate-100 dark:border-slate-800 min-h-[400px]">
                     <div className="flex items-center gap-3 mb-8">
                         <History className="w-5 h-5 text-slate-400" />
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Archive for Room {roomNumber}</p>
@@ -60,7 +60,7 @@ const PaymentHistory = () => {
                                             <typeInfo.icon className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-slate-800 capitalize">{pay.type} Settlement</p>
+                                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200 capitalize">{pay.type} Settlement</p>
                                             <p className="text-[10px] text-slate-400 font-bold uppercase">{new Date(pay.timestamp).toLocaleDateString()} • {pay.method}</p>
                                             {pay.status === 'Completed' && (
                                                 <button 
@@ -76,7 +76,7 @@ const PaymentHistory = () => {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-black text-slate-800">₹{pay.amount.toLocaleString()}</p>
+                                        <p className="text-sm font-black text-slate-800 dark:text-slate-200">₹{pay.amount.toLocaleString()}</p>
                                         <p className={`text-[10px] font-bold uppercase tracking-wider ${
                                             pay.status === 'Completed' ? 'text-emerald-500' : 
                                             pay.status === 'Rejected' ? 'text-rose-500' : 'text-amber-500'

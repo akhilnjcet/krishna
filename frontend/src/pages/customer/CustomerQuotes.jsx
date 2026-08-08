@@ -52,7 +52,7 @@ const CustomerQuotes = () => {
             </div>
 
             {quotes.length === 0 ? (
-                <div className="bg-white border-4 border-brand-950 p-20 text-center shadow-solid">
+                <div className="bg-white dark:bg-slate-900 border-4 border-brand-950 p-20 text-center shadow-solid">
                      <FileText className="w-16 h-16 text-gray-100 mx-auto mb-4" />
                      <p className="text-gray-400 font-bold uppercase tracking-widest italic">No quote requests currently logged for this profile.</p>
                 </div>
@@ -61,7 +61,7 @@ const CustomerQuotes = () => {
                     {quotes.map((quote) => (
                         <div
                             key={quote._id}
-                            className={`bg-white border-4 border-brand-950 shadow-solid overflow-hidden flex flex-col relative ${quote.status === 'accepted' ? 'border-brand-accent' : ''}`}
+                            className={`bg-white dark:bg-slate-900 border-4 border-brand-950 shadow-solid overflow-hidden flex flex-col relative ${quote.status === 'accepted' ? 'border-brand-accent' : ''}`}
                         >
                             {/* Status Banner */}
                             <div className={`p-4 flex justify-between items-center border-b-4 border-brand-950 ${
@@ -80,7 +80,7 @@ const CustomerQuotes = () => {
                                 
                                 <div className="space-y-4 mb-8">
                                     <div className="flex items-start gap-4 p-4 bg-brand-50 border-2 border-brand-100">
-                                        <div className="p-2 bg-white rounded-lg"><MapPin className="w-4 h-4" /></div>
+                                        <div className="p-2 bg-white dark:bg-slate-900 rounded-lg"><MapPin className="w-4 h-4" /></div>
                                         <div>
                                             <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest leading-none mb-1">Site Coordinate</p>
                                             <p className="text-xs font-bold text-brand-950 uppercase">{quote.location}</p>
@@ -114,8 +114,8 @@ const CustomerQuotes = () => {
                                             ].map((step, idx) => (
                                                 <div key={idx} className="flex gap-6 relative z-10 pb-8 last:pb-0">
                                                     <div className="flex flex-col items-center">
-                                                        <div className={`w-6 h-6 rounded-full border-4 flex items-center justify-center transition-all duration-500 shadow-sm ${step.active ? (quote.status === 'rejected' && idx === 2 ? 'bg-red-500 border-red-200' : 'bg-brand-accent border-brand-100') : 'bg-white border-gray-200'}`}>
-                                                            {step.active && <div className={`w-2 h-2 rounded-full ${quote.status === 'rejected' && idx === 2 ? 'bg-white' : 'bg-brand-950'}`} />}
+                                                        <div className={`w-6 h-6 rounded-full border-4 flex items-center justify-center transition-all duration-500 shadow-sm ${step.active ? (quote.status === 'rejected' && idx === 2 ? 'bg-red-500 border-red-200' : 'bg-brand-accent border-brand-100') : 'bg-white dark:bg-slate-900 border-gray-200'}`}>
+                                                            {step.active && <div className={`w-2 h-2 rounded-full ${quote.status === 'rejected' && idx === 2 ? 'bg-white dark:bg-slate-900' : 'bg-brand-950'}`} />}
                                                         </div>
                                                     </div>
                                                     <div className="-mt-1 flex-1">
@@ -160,7 +160,7 @@ const CustomerQuotes = () => {
                             </div>
 
                             {quote.status !== 'accepted' && (
-                                <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] pointer-events-none flex items-center justify-center">
+                                <div className="absolute inset-0 bg-white dark:bg-slate-900/40 backdrop-blur-[1px] pointer-events-none flex items-center justify-center">
                                     <div className="bg-brand-950 text-brand-accent px-6 py-2 font-black uppercase tracking-widest text-[10px] rotate-12 shadow-2xl">
                                         RESTRICTED / AWAITING APPROVAL
                                     </div>

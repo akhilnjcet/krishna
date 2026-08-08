@@ -255,12 +255,12 @@ const StaffTasks = () => {
 
     const getStatusStyles = (status) => {
         switch (status) {
-            case 'Pending': return 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-dark-bg dark:text-slate-300 dark:border-dark-border';
+            case 'Pending': return 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 dark:bg-dark-bg dark:text-slate-300 dark:border-dark-border';
             case 'In Progress': return 'bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-950/50';
             case 'Delayed': return 'bg-amber-100 text-amber-700 border border-amber-200 animate-pulse dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-950/50';
             case 'Completed': return 'bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-950/50';
             case 'Cancelled': return 'bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-950/50';
-            default: return 'bg-slate-100 text-slate-700 border border-slate-200';
+            default: return 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
         }
     };
 
@@ -281,7 +281,7 @@ const StaffTasks = () => {
         <div className="space-y-10 animate-in fade-in duration-500 pb-24">
             
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-dark-border">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800 dark:border-dark-border">
                 <div>
                     <h1 className="text-4xl font-bold text-[#111827] dark:text-dark-text tracking-tight font-poppins">
                         Operational <span className="text-[#2563EB]">Task Board</span>
@@ -293,7 +293,7 @@ const StaffTasks = () => {
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={fetchTasks}
-                        className="p-3 bg-white border border-[#E2E8F0] dark:border-dark-border dark:bg-dark-surface rounded-xl text-slate-600 dark:text-dark-text hover:bg-slate-50 dark:hover:bg-dark-bg transition-all shadow-sm"
+                        className="p-3 bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-dark-border dark:bg-dark-surface rounded-xl text-slate-600 dark:text-slate-400 dark:text-dark-text hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-dark-bg transition-all shadow-sm"
                         title="Sync Board"
                     >
                         <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
@@ -303,11 +303,11 @@ const StaffTasks = () => {
 
             {/* Metrics Dashboard */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                <div className="bg-slate-50 dark:bg-dark-surface/40 p-4 border border-slate-200/60 dark:border-dark-border rounded-2xl">
+                <div className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-surface/40 p-4 border border-slate-200 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Total Assigned</p>
-                    <p className="text-2xl font-black text-slate-800 dark:text-white mt-1">{totalCount}</p>
+                    <p className="text-2xl font-black text-slate-800 dark:text-slate-200 dark:text-white mt-1">{totalCount}</p>
                 </div>
-                <div className="bg-slate-50 dark:bg-dark-surface/40 p-4 border border-slate-200/60 dark:border-dark-border rounded-2xl">
+                <div className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-surface/40 p-4 border border-slate-200 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Pending</p>
                     <p className="text-2xl font-black text-slate-700 dark:text-slate-300 mt-1">{pendingCount}</p>
                 </div>
@@ -330,8 +330,8 @@ const StaffTasks = () => {
                 
                 {/* Sidebar Filter Tabs */}
                 <div className="lg:col-span-3 space-y-6">
-                    <div className="bg-white dark:bg-dark-surface border border-[#E2E8F0] dark:border-dark-border p-6 rounded-3xl shadow-sm">
-                        <h3 className="font-extrabold text-slate-800 dark:text-white uppercase text-xs mb-4 flex items-center gap-2 border-b dark:border-dark-border pb-3">
+                    <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface border border-[#E2E8F0] dark:border-dark-border p-6 rounded-3xl shadow-sm">
+                        <h3 className="font-extrabold text-slate-800 dark:text-slate-200 dark:text-white uppercase text-xs mb-4 flex items-center gap-2 border-b dark:border-dark-border pb-3">
                             <Filter className="w-4 h-4 text-[#2563EB]" /> Filtering System
                         </h3>
                         {/* Desktop vertical sidebar / Mobile horizontal strip */}
@@ -349,14 +349,14 @@ const StaffTasks = () => {
                                     className={`flex items-center justify-between gap-3 px-4 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap lg:w-full ${
                                         activeTab === tab.name
                                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                            : 'bg-slate-50 dark:bg-dark-bg/60 text-slate-500 hover:text-slate-800 dark:hover:text-white border border-transparent'
+                                            : 'bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg/60 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 dark:hover:text-white border border-transparent'
                                     }`}
                                 >
                                     <span>{tab.name}</span>
                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
                                         activeTab === tab.name
-                                            ? 'bg-white text-blue-600'
-                                            : 'bg-slate-200/80 dark:bg-dark-border text-slate-600 dark:text-slate-400'
+                                            ? 'bg-white dark:bg-slate-900 text-blue-600'
+                                            : 'bg-slate-200/80 dark:bg-dark-border text-slate-600 dark:text-slate-400 '
                                     }`}>
                                         {tab.count}
                                     </span>
@@ -374,9 +374,9 @@ const StaffTasks = () => {
                             <span className="text-[10px] font-black uppercase tracking-widest italic">Syncing assignments...</span>
                         </div>
                     ) : filteredTasks.length === 0 ? (
-                        <div className="bg-white dark:bg-dark-surface border border-slate-100 dark:border-dark-border p-16 text-center rounded-[2.5rem] shadow-sm">
+                        <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface border border-slate-100 dark:border-slate-800 dark:border-dark-border p-16 text-center rounded-[2.5rem] shadow-sm">
                             <Briefcase className="w-16 h-16 mx-auto mb-4 text-slate-200" />
-                            <h3 className="text-xl font-bold text-slate-800 dark:text-white uppercase tracking-tight">No Operational Assignments</h3>
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 dark:text-white uppercase tracking-tight">No Operational Assignments</h3>
                             <p className="text-slate-400 font-bold text-xs uppercase mt-2">There are no tasks matching the "{activeTab}" filter.</p>
                         </div>
                     ) : (
@@ -394,7 +394,7 @@ const StaffTasks = () => {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, scale: 0.98 }}
                                             key={task._id} 
-                                            className={`bg-white dark:bg-dark-surface border border-[#E2E8F0] dark:border-dark-border rounded-[2.5rem] p-6 md:p-8 shadow-sm hover:shadow-md transition-all border-l-8 ${getPriorityStyles(task.priority).border}`}
+                                            className={`bg-white dark:bg-slate-900 dark:bg-dark-surface border border-[#E2E8F0] dark:border-dark-border rounded-[2.5rem] p-6 md:p-8 shadow-sm hover:shadow-md transition-all border-l-8 ${getPriorityStyles(task.priority).border}`}
                                         >
                                             {/* Upper Block */}
                                             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
@@ -415,7 +415,7 @@ const StaffTasks = () => {
                                                             Project: {task.projectName || 'General Work'}
                                                         </span>
                                                     </div>
-                                                    <h3 className="text-xl font-bold text-slate-800 dark:text-white font-poppins">{task.title}</h3>
+                                                    <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 dark:text-white font-poppins">{task.title}</h3>
                                                 </div>
 
                                                 {/* Desktop/Mobile Status triggers */}
@@ -449,36 +449,36 @@ const StaffTasks = () => {
                                             </div>
 
                                             {/* Description */}
-                                            <p className="text-sm font-medium text-slate-600 dark:text-dark-muted leading-relaxed mb-6">
+                                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400 dark:text-dark-muted leading-relaxed mb-6">
                                                 {task.description}
                                             </p>
 
                                             {/* Meta data row */}
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-5 border-t border-b border-slate-50 dark:border-dark-border/40 text-xs font-bold text-slate-500 mb-6">
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-5 border-t border-b border-slate-50 dark:border-dark-border/40 text-xs font-bold text-slate-500 dark:text-slate-400 mb-6">
                                                 <div>
                                                     <span className="text-[9px] text-slate-400 uppercase tracking-widest block mb-1">Start Date</span>
-                                                    <span className="text-slate-700 dark:text-white flex items-center gap-1.5">
+                                                    <span className="text-slate-700 dark:text-slate-300 dark:text-white flex items-center gap-1.5">
                                                         <Calendar className="w-4 h-4 text-slate-400" />
                                                         {task.startDate ? new Date(task.startDate).toLocaleDateString() : 'ASAP'}
                                                     </span>
                                                 </div>
                                                 <div>
                                                     <span className="text-[9px] text-slate-400 uppercase tracking-widest block mb-1">Due Date</span>
-                                                    <span className={`flex items-center gap-1.5 ${isOverdue ? 'text-rose-600 animate-pulse' : 'text-slate-700 dark:text-white'}`}>
+                                                    <span className={`flex items-center gap-1.5 ${isOverdue ? 'text-rose-600 animate-pulse' : 'text-slate-700 dark:text-slate-300 dark:text-white'}`}>
                                                         <Calendar className="w-4 h-4" />
                                                         {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'ASAP'}
                                                     </span>
                                                 </div>
                                                 <div>
                                                     <span className="text-[9px] text-slate-400 uppercase tracking-widest block mb-1">Estimated Hours</span>
-                                                    <span className="text-slate-700 dark:text-white flex items-center gap-1.5">
+                                                    <span className="text-slate-700 dark:text-slate-300 dark:text-white flex items-center gap-1.5">
                                                         <Clock className="w-4 h-4 text-slate-400" />
                                                         {task.estimatedHours ? `${task.estimatedHours} hrs` : 'N/A'}
                                                     </span>
                                                 </div>
                                                 <div>
                                                     <span className="text-[9px] text-slate-400 uppercase tracking-widest block mb-1">Assigned By</span>
-                                                    <span className="text-slate-700 dark:text-white flex items-center gap-1.5">
+                                                    <span className="text-slate-700 dark:text-slate-300 dark:text-white flex items-center gap-1.5">
                                                         <User className="w-4 h-4 text-slate-400" />
                                                         {task.assignedBy?.name || 'Administrator'}
                                                     </span>
@@ -491,7 +491,7 @@ const StaffTasks = () => {
                                                     <span className="text-slate-400 uppercase tracking-wider text-[10px]">Work Completion Progress</span>
                                                     <span className="text-blue-600 dark:text-blue-400">{task.progressPercentage}%</span>
                                                 </div>
-                                                <div className="h-2.5 bg-slate-100 dark:bg-dark-bg w-full rounded-full overflow-hidden border border-slate-200/50 dark:border-transparent">
+                                                <div className="h-2.5 bg-slate-100 dark:bg-slate-800/80 dark:bg-dark-bg w-full rounded-full overflow-hidden border border-slate-200 dark:border-slate-700/50 dark:border-transparent">
                                                     <div 
                                                         className={`h-full transition-all duration-500 ${
                                                             task.status === 'Delayed' ? 'bg-amber-500' :
@@ -504,7 +504,7 @@ const StaffTasks = () => {
 
                                             {/* File attachments from Admin */}
                                             {task.attachments && task.attachments.length > 0 && (
-                                                <div className="mb-6 bg-slate-50 dark:bg-dark-bg/40 p-4 rounded-2xl border border-slate-100 dark:border-dark-border/40">
+                                                <div className="mb-6 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 dark:border-dark-border/40">
                                                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 flex items-center gap-1.5">
                                                         <Paperclip className="w-3.5 h-3.5" /> Reference Attachments ({task.attachments.length})
                                                     </p>
@@ -515,7 +515,7 @@ const StaffTasks = () => {
                                                                 href={url} 
                                                                 target="_blank" 
                                                                 rel="noopener noreferrer" 
-                                                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-dark-surface border dark:border-dark-border rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors"
+                                                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 dark:bg-dark-surface border dark:border-dark-border rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 dark:text-slate-300 hover:text-blue-600 transition-colors"
                                                             >
                                                                 <FileUp className="w-3.5 h-3.5 text-blue-500" /> Reference File #{idx + 1}
                                                             </a>
@@ -537,7 +537,7 @@ const StaffTasks = () => {
                                                                 href={url} 
                                                                 target="_blank" 
                                                                 rel="noopener noreferrer" 
-                                                                className="relative group border border-slate-100 rounded-2xl overflow-hidden shadow-sm flex-shrink-0"
+                                                                className="relative group border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm flex-shrink-0"
                                                             >
                                                                 <img 
                                                                     src={url} 
@@ -554,7 +554,7 @@ const StaffTasks = () => {
                                             <div className="flex justify-between items-center mt-2">
                                                 <button
                                                     onClick={() => toggleExpand(task)}
-                                                    className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-dark-bg/60 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-300 transition-colors"
+                                                    className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-dark-bg/60 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-300 transition-colors"
                                                 >
                                                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                                     {isExpanded ? 'Hide Task Timeline & Forms' : 'Show Task Timeline & Log Updates'}
@@ -574,7 +574,7 @@ const StaffTasks = () => {
                                                         initial={{ opacity: 0, height: 0 }}
                                                         animate={{ opacity: 1, height: 'auto' }}
                                                         exit={{ opacity: 0, height: 0 }}
-                                                        className="overflow-hidden mt-6 pt-6 border-t border-slate-100 dark:border-dark-border/60 space-y-6"
+                                                        className="overflow-hidden mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 dark:border-dark-border/60 space-y-6"
                                                     >
                                                         {/* Work Notes Timeline */}
                                                         <div className="space-y-3">
@@ -582,7 +582,7 @@ const StaffTasks = () => {
                                                                 <MessageSquare className="w-3.5 h-3.5" /> Logged Notes Timeline ({task.workNotes?.length || 0})
                                                             </h4>
                                                             {task.workNotes && task.workNotes.length > 0 ? (
-                                                                <div className="relative pl-4 border-l border-slate-100 dark:border-dark-border space-y-4">
+                                                                <div className="relative pl-4 border-l border-slate-100 dark:border-slate-800 dark:border-dark-border space-y-4">
                                                                     {task.workNotes.map((note, idx) => (
                                                                         <div key={note._id || idx} className="relative space-y-1">
                                                                             {/* Dot */}
@@ -593,7 +593,7 @@ const StaffTasks = () => {
                                                                                 <span>•</span>
                                                                                 <span>{new Date(note.createdAt).toLocaleString()}</span>
                                                                             </div>
-                                                                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-dark-bg/30 p-3 rounded-2xl border border-slate-100/50 dark:border-transparent inline-block">
+                                                                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg/30 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/50 dark:border-transparent inline-block">
                                                                                 {note.note}
                                                                             </p>
                                                                         </div>
@@ -606,15 +606,15 @@ const StaffTasks = () => {
 
                                                         {/* Log new update section (only if editable status) */}
                                                         {task.status !== 'Completed' && task.status !== 'Cancelled' && task.status !== 'Pending' && (
-                                                            <div className="bg-slate-50 dark:bg-dark-bg/20 p-6 rounded-3xl border border-slate-100 dark:border-dark-border/40 space-y-6">
+                                                            <div className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg/20 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 dark:border-dark-border/40 space-y-6">
                                                                 <div className="flex items-center gap-2 border-b dark:border-dark-border pb-3">
                                                                     <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                                                                    <h4 className="text-xs font-black uppercase text-slate-800 dark:text-white tracking-wider">Log Real-Time Work Progress</h4>
+                                                                    <h4 className="text-xs font-black uppercase text-slate-800 dark:text-slate-200 dark:text-white tracking-wider">Log Real-Time Work Progress</h4>
                                                                 </div>
 
                                                                 {/* Progress slider */}
                                                                 <div className="space-y-3">
-                                                                    <div className="flex justify-between text-xs font-bold text-slate-500">
+                                                                    <div className="flex justify-between text-xs font-bold text-slate-500 dark:text-slate-400">
                                                                         <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Progress Slider</label>
                                                                         <span className="text-blue-600 dark:text-blue-400 font-black">{draft.progressPercentage}% Completed</span>
                                                                     </div>
@@ -655,7 +655,7 @@ const StaffTasks = () => {
                                                                                 note: e.target.value
                                                                             }
                                                                         }))}
-                                                                        className="w-full px-4 py-3 bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-border rounded-2xl text-xs font-semibold outline-none focus:border-blue-500 text-slate-800 dark:text-white"
+                                                                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 dark:bg-dark-surface border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-2xl text-xs font-semibold outline-none focus:border-blue-500 text-slate-800 dark:text-slate-200 dark:text-white"
                                                                     />
                                                                 </div>
 
@@ -665,7 +665,7 @@ const StaffTasks = () => {
                                                                     
                                                                     <div className="flex flex-wrap items-center gap-3">
                                                                         {/* Upload Button */}
-                                                                        <label className="cursor-pointer bg-white dark:bg-dark-surface border-2 border-dashed border-slate-200 dark:border-dark-border hover:border-blue-500 dark:hover:border-blue-500 w-16 h-16 rounded-2xl flex flex-col items-center justify-center text-slate-400 transition-colors">
+                                                                        <label className="cursor-pointer bg-white dark:bg-slate-900 dark:bg-dark-surface border-2 border-dashed border-slate-200 dark:border-slate-700 dark:border-dark-border hover:border-blue-500 dark:hover:border-blue-500 w-16 h-16 rounded-2xl flex flex-col items-center justify-center text-slate-400 transition-colors">
                                                                             <Camera className="w-5 h-5" />
                                                                             <span className="text-[8px] font-black mt-1 uppercase">Upload</span>
                                                                             <input 
@@ -679,14 +679,14 @@ const StaffTasks = () => {
 
                                                                         {/* Uploading Spinner */}
                                                                         {uploading && (
-                                                                            <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
+                                                                            <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center">
                                                                                 <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
                                                                             </div>
                                                                         )}
 
                                                                         {/* Draft Upload Previews */}
                                                                         {draft.photos && draft.photos.map((photoUrl, pIdx) => (
-                                                                            <div key={pIdx} className="relative w-16 h-16 rounded-2xl border overflow-hidden group shadow-sm bg-white">
+                                                                            <div key={pIdx} className="relative w-16 h-16 rounded-2xl border overflow-hidden group shadow-sm bg-white dark:bg-slate-900">
                                                                                 <img src={photoUrl} alt="draft progress upload" className="w-full h-full object-cover" />
                                                                                 <button 
                                                                                     type="button"
@@ -741,10 +741,10 @@ const StaffTasks = () => {
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white dark:bg-dark-surface w-full max-w-lg rounded-[2.5rem] shadow-2xl relative z-10 border border-slate-100 dark:border-dark-border overflow-hidden"
+                            className="bg-white dark:bg-slate-900 dark:bg-dark-surface w-full max-w-lg rounded-[2.5rem] shadow-2xl relative z-10 border border-slate-100 dark:border-slate-800 dark:border-dark-border overflow-hidden"
                         >
                             <div className="bg-amber-500 p-8 text-white flex items-center gap-3">
-                                <div className="p-3 bg-white/20 rounded-2xl text-white">
+                                <div className="p-3 bg-white dark:bg-slate-900/20 rounded-2xl text-white">
                                     <AlertTriangle className="w-6 h-6 animate-bounce" />
                                 </div>
                                 <div>
@@ -758,7 +758,7 @@ const StaffTasks = () => {
                                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Primary Reason for Delay</label>
                                     <select 
                                         required
-                                        className="bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl px-4 py-3 w-full outline-none text-slate-700 dark:text-white font-bold text-xs"
+                                        className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-2xl px-4 py-3 w-full outline-none text-slate-700 dark:text-slate-300 dark:text-white font-bold text-xs"
                                         value={delayModal.reason}
                                         onChange={(e) => setDelayModal({...delayModal, reason: e.target.value})}
                                     >
@@ -780,7 +780,7 @@ const StaffTasks = () => {
                                         required
                                         rows="4" 
                                         placeholder="Briefly describe the root cause of the delay and estimated resolution duration..." 
-                                        className="bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl px-4 py-3 w-full outline-none text-slate-700 dark:text-white font-medium text-xs focus:ring-2 focus:ring-amber-100 transition-all"
+                                        className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-2xl px-4 py-3 w-full outline-none text-slate-700 dark:text-slate-300 dark:text-white font-medium text-xs focus:ring-2 focus:ring-amber-100 transition-all"
                                         value={delayModal.remarks}
                                         onChange={(e) => setDelayModal({...delayModal, remarks: e.target.value})}
                                     />

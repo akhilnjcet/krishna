@@ -97,8 +97,8 @@ const VerificationFlow = ({ onComplete }) => {
                 {step === 1 && (
                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                         <header className="space-y-2">
-                             <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Select Work Entry</h2>
-                             <p className="text-sm text-slate-500 font-medium">Verify your administrative identity via an active service record.</p>
+                             <h2 className="text-2xl font-extrabold text-slate-800 dark:text-slate-200 tracking-tight">Select Work Entry</h2>
+                             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Verify your administrative identity via an active service record.</p>
                         </header>
 
                         <div className="space-y-4">
@@ -109,15 +109,15 @@ const VerificationFlow = ({ onComplete }) => {
                                     className={`p-6 rounded-3xl border-2 transition-all cursor-pointer flex items-center justify-between group ${
                                         selectedProject?._id === p._id 
                                         ? 'border-indigo-600 bg-indigo-50 shadow-lg shadow-indigo-100' 
-                                        : 'border-slate-100 hover:border-slate-200 bg-white'
+                                        : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900'
                                     }`}
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className={`p-3 rounded-2xl ${selectedProject?._id === p._id ? 'bg-white text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
+                                        <div className={`p-3 rounded-2xl ${selectedProject?._id === p._id ? 'bg-white dark:bg-slate-900 text-indigo-600' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400'}`}>
                                             <Project className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <h4 className="text-sm font-bold text-slate-800">{p.title}</h4>
+                                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">{p.title}</h4>
                                             <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">ID: {p._id.substring(18)} • Status: {p.status}</p>
                                         </div>
                                     </div>
@@ -125,7 +125,7 @@ const VerificationFlow = ({ onComplete }) => {
                                 </div>
                             ))}
                             {projects.length === 0 && (
-                                <div className="text-center p-12 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                                <div className="text-center p-12 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700">
                                     <AlertCircle className="w-12 h-12 text-slate-200 mx-auto mb-4" />
                                     <p className="text-slate-400 font-bold uppercase tracking-tight text-sm">No active fabrication project found for this account.</p>
                                 </div>
@@ -135,7 +135,7 @@ const VerificationFlow = ({ onComplete }) => {
                         <button 
                             disabled={!selectedProject}
                             onClick={() => setStep(2)}
-                            className="w-full bg-indigo-600 disabled:bg-slate-100 text-white disabled:text-slate-400 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 group shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700"
+                            className="w-full bg-indigo-600 disabled:bg-slate-100 dark:bg-slate-800/80 text-white disabled:text-slate-400 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 group shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700"
                         >
                             Confirm Selection <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </button>
@@ -145,8 +145,8 @@ const VerificationFlow = ({ onComplete }) => {
                 {step === 2 && (
                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                         <header className="space-y-2">
-                             <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Channel Authorization</h2>
-                             <p className="text-sm text-slate-500 font-medium italic">Selected: {selectedProject.title}</p>
+                             <h2 className="text-2xl font-extrabold text-slate-800 dark:text-slate-200 tracking-tight">Channel Authorization</h2>
+                             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium italic">Selected: {selectedProject.title}</p>
                         </header>
 
                         <div className="grid grid-cols-1 gap-3">
@@ -157,11 +157,11 @@ const VerificationFlow = ({ onComplete }) => {
                                     className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${
                                         selectedReason === r 
                                         ? 'border-indigo-600 bg-indigo-50' 
-                                        : 'border-slate-50 hover:border-slate-200'
+                                        : 'border-slate-50 hover:border-slate-200 dark:border-slate-700'
                                     }`}
                                 >
-                                    <span className="text-sm font-bold text-slate-700 uppercase tracking-tight">{r}</span>
-                                    <div className={`w-5 h-5 rounded-full border-2 ${selectedReason === r ? 'border-indigo-600 bg-indigo-600' : 'border-slate-200'}`} />
+                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-tight">{r}</span>
+                                    <div className={`w-5 h-5 rounded-full border-2 ${selectedReason === r ? 'border-indigo-600 bg-indigo-600' : 'border-slate-200 dark:border-slate-700'}`} />
                                 </div>
                             ))}
                         </div>
@@ -169,7 +169,7 @@ const VerificationFlow = ({ onComplete }) => {
                         {(selectedReason === "Other (technical detail)" || selectedReason === "Other (internal ref)") && (
                             <textarea 
                                 placeholder="Describe the issue in detail..."
-                                className="w-full bg-slate-50 border border-slate-200 rounded-3xl p-6 outline-none text-slate-700 font-medium focus:ring-2 focus:ring-indigo-100"
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 outline-none text-slate-700 dark:text-slate-300 font-medium focus:ring-2 focus:ring-indigo-100"
                                 rows="4"
                                 value={otherReason}
                                 onChange={(e) => setOtherReason(e.target.value)}
@@ -177,7 +177,7 @@ const VerificationFlow = ({ onComplete }) => {
                         )}
 
                         <div className="flex gap-4">
-                             <button onClick={() => setStep(1)} className="flex-1 py-4 text-xs font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">Go Back</button>
+                             <button onClick={() => setStep(1)} className="flex-1 py-4 text-xs font-black uppercase text-slate-400 hover:text-slate-600 dark:text-slate-400 transition-colors">Go Back</button>
                              <button 
                                 onClick={submitRequest}
                                 disabled={!selectedReason || ((selectedReason === "Other (technical detail)" || selectedReason === "Other (internal ref)") && !otherReason)}
@@ -195,8 +195,8 @@ const VerificationFlow = ({ onComplete }) => {
                              <CheckCircle2 className="w-12 h-12" />
                         </div>
                         <div className="space-y-2">
-                             <h2 className="text-3xl font-black text-slate-800 tracking-tight leading-none uppercase">Authentication Locked</h2>
-                             <p className="text-slate-500 font-medium px-12">Your channel request for Project #{selectedProject._id.substring(18)} has been submitted to HQ for administrative clearance.</p>
+                             <h2 className="text-3xl font-black text-slate-800 dark:text-slate-200 tracking-tight leading-none uppercase">Authentication Locked</h2>
+                             <p className="text-slate-500 dark:text-slate-400 font-medium px-12">Your channel request for Project #{selectedProject._id.substring(18)} has been submitted to HQ for administrative clearance.</p>
                         </div>
                         <div className="pt-8 flex flex-col items-center gap-4">
                              <button 

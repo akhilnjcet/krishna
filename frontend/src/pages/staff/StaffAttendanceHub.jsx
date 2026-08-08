@@ -143,7 +143,7 @@ const StaffAttendanceHub = () => {
             case 'Holiday':
                 return 'bg-blue-100 text-blue-800 border-blue-300';
             default:
-                return 'bg-slate-100 text-slate-700 border-slate-200';
+                return 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
         }
     };
 
@@ -220,61 +220,61 @@ const StaffAttendanceHub = () => {
             {/* SUMMARY CARDS GRID */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                 {/* Present Days */}
-                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Present</span>
                         <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600"><CheckCircle2 className="w-4 h-4" /></div>
                     </div>
                     <div>
-                        <h3 className="text-2xl font-black text-slate-900">{summary.present}</h3>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white">{summary.present}</h3>
                         <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Days Attended</p>
                     </div>
                 </div>
 
                 {/* Absent Days */}
-                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Absent</span>
                         <div className="p-2 rounded-xl bg-rose-50 text-rose-600"><XCircle className="w-4 h-4" /></div>
                     </div>
                     <div>
-                        <h3 className="text-2xl font-black text-slate-900">{summary.absent}</h3>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white">{summary.absent}</h3>
                         <p className="text-[10px] text-rose-600 font-bold mt-0.5">Days Missed</p>
                     </div>
                 </div>
 
                 {/* Half Days */}
-                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Half Day</span>
                         <div className="p-2 rounded-xl bg-amber-50 text-amber-600"><Clock className="w-4 h-4" /></div>
                     </div>
                     <div>
-                        <h3 className="text-2xl font-black text-slate-900">{summary.halfDay}</h3>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white">{summary.halfDay}</h3>
                         <p className="text-[10px] text-amber-600 font-bold mt-0.5">Half Shifts</p>
                     </div>
                 </div>
 
                 {/* Leave Days */}
-                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Leave</span>
                         <div className="p-2 rounded-xl bg-purple-50 text-purple-600"><FileText className="w-4 h-4" /></div>
                     </div>
                     <div>
-                        <h3 className="text-2xl font-black text-slate-900">{summary.leave}</h3>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white">{summary.leave}</h3>
                         <p className="text-[10px] text-purple-600 font-bold mt-0.5">Approved Leaves</p>
                     </div>
                 </div>
 
                 {/* Holidays */}
-                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Holiday</span>
                         <div className="p-2 rounded-xl bg-blue-50 text-blue-600"><Award className="w-4 h-4" /></div>
                     </div>
                     <div>
-                        <h3 className="text-2xl font-black text-slate-900">{summary.holiday}</h3>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white">{summary.holiday}</h3>
                         <p className="text-[10px] text-blue-600 font-bold mt-0.5">Company Holidays</p>
                     </div>
                 </div>
@@ -293,9 +293,9 @@ const StaffAttendanceHub = () => {
             </div>
 
             {/* ATTENDANCE HISTORY TABLE & CONTROLS */}
-            <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm space-y-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm space-y-4">
                 {/* Search & Filter Bar */}
-                <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
+                <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-800/50">
                     <div className="flex items-center gap-3 flex-1">
                         <div className="relative flex-1 max-w-xs">
                             <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
@@ -307,7 +307,7 @@ const StaffAttendanceHub = () => {
                                     setSearchTerm(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full pl-10 pr-4 py-2 bg-white rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
+                                className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
                             />
                         </div>
 
@@ -320,7 +320,7 @@ const StaffAttendanceHub = () => {
                                     setStatusFilter(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="bg-white border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl focus:outline-none focus:border-indigo-500 shadow-sm"
+                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 px-3 py-2 rounded-xl focus:outline-none focus:border-indigo-500 shadow-sm"
                             >
                                 <option value="ALL">All Statuses</option>
                                 <option value="Present">Present</option>
@@ -332,8 +332,8 @@ const StaffAttendanceHub = () => {
                         </div>
                     </div>
 
-                    <div className="text-xs text-slate-500 font-semibold flex items-center gap-4">
-                        <span>Total Records: <strong className="text-slate-900">{filteredLogs.length}</strong></span>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-4">
+                        <span>Total Records: <strong className="text-slate-900 dark:text-white">{filteredLogs.length}</strong></span>
                         <span>Overtime Total: <strong className="text-indigo-600">{totalOvertimeHours} hrs</strong></span>
                     </div>
                 </div>
@@ -342,7 +342,7 @@ const StaffAttendanceHub = () => {
                 <div className="mobile-table-scroll">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                            <tr className="bg-slate-50 dark:bg-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
                                 <th className="px-6 py-4">Date</th>
                                 <th className="px-6 py-4">Check-In Time</th>
                                 <th className="px-6 py-4">Check-Out Time</th>
@@ -353,7 +353,7 @@ const StaffAttendanceHub = () => {
                                 <th className="px-6 py-4">Remarks</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-600">
+                        <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-600 dark:text-slate-400">
                             {loading ? (
                                 <tr>
                                     <td colSpan="8" className="p-12 text-center text-slate-400">
@@ -363,14 +363,14 @@ const StaffAttendanceHub = () => {
                                 </tr>
                             ) : paginatedLogs.length > 0 ? (
                                 paginatedLogs.map((log) => (
-                                    <tr key={log._id || log.date} className="hover:bg-slate-50/60 transition">
-                                        <td className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap">
+                                    <tr key={log._id || log.date} className="hover:bg-slate-50 dark:bg-slate-800/60 transition">
+                                        <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                                             {log.date}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-slate-700">
+                                        <td className="px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                             {log.checkIn || '--'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-slate-700">
+                                        <td className="px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                             {log.checkOut || '--'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -378,17 +378,17 @@ const StaffAttendanceHub = () => {
                                                 {log.status}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-center font-bold text-slate-800 whitespace-nowrap">
+                                        <td className="px-6 py-4 text-center font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                                             {log.workedHours || 0} hrs
                                         </td>
                                         <td className="px-6 py-4 text-center font-bold text-indigo-600 whitespace-nowrap">
                                             {overtimeMap[log.date] || 0} hrs
                                         </td>
-                                        <td className="px-6 py-4 text-slate-500 whitespace-nowrap flex items-center gap-1">
+                                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap flex items-center gap-1">
                                             <MapPin className="w-3.5 h-3.5 text-slate-400" />
                                             {log.location || 'Factory / Site'}
                                         </td>
-                                        <td className="px-6 py-4 text-slate-500 italic max-w-xs truncate">
+                                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400 italic max-w-xs truncate">
                                             {log.remarks || 'Standard Shift Logged'}
                                         </td>
                                     </tr>
@@ -406,20 +406,20 @@ const StaffAttendanceHub = () => {
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                    <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-600 bg-slate-50/30">
+                    <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/30">
                         <span>Page {currentPage} of {totalPages}</span>
                         <div className="flex items-center gap-2">
                             <button
                                 disabled={currentPage === 1}
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
+                                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
                             >
                                 <ArrowLeft className="w-4 h-4" />
                             </button>
                             <button
                                 disabled={currentPage === totalPages}
                                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
+                                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
                             >
                                 <ArrowRight className="w-4 h-4" />
                             </button>
@@ -441,40 +441,40 @@ const StaffAttendanceHub = () => {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white rounded-3xl max-w-3xl w-full p-6 md:p-8 shadow-2xl border border-slate-200 space-y-6 max-h-[90vh] overflow-y-auto font-sans"
+                            className="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full p-6 md:p-8 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-6 max-h-[90vh] overflow-y-auto font-sans"
                         >
                             {/* Modal Header */}
-                            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+                            <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-4">
                                 <div>
-                                    <h2 className="text-lg font-black uppercase text-slate-900 tracking-tight">ATTENDANCE REPORT SUMMARY</h2>
+                                    <h2 className="text-lg font-black uppercase text-slate-900 dark:text-white tracking-tight">ATTENDANCE REPORT SUMMARY</h2>
                                     <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest">Monthly Personnel Statement ({selectedMonth})</p>
                                 </div>
                                 <button 
                                     onClick={() => setReportModalOpen(false)}
-                                    className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition"
+                                    className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80 transition"
                                 >
                                     ✕
                                 </button>
                             </div>
 
                             {/* Employee Info Header */}
-                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 grid grid-cols-2 gap-4 text-xs">
+                            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-4 text-xs">
                                 <div>
                                     <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-0.5">EMPLOYEE DETAILS</span>
-                                    <p className="font-black text-slate-900">{user?.name || 'Staff Member'}</p>
-                                    <p className="text-slate-600 font-medium">ID: {user?.staff_id || user?._id || 'N/A'}</p>
-                                    <p className="text-slate-600 font-medium">Dept: {user?.department || 'Operations'}</p>
+                                    <p className="font-black text-slate-900 dark:text-white">{user?.name || 'Staff Member'}</p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-medium">ID: {user?.staff_id || user?._id || 'N/A'}</p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-medium">Dept: {user?.department || 'Operations'}</p>
                                 </div>
                                 <div className="text-right">
                                     <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-0.5">REPORT PARAMETERS</span>
                                     <p className="font-black text-indigo-600">CYCLE: {selectedMonth}</p>
-                                    <p className="text-slate-600 font-medium">Score: {summary.percentage}%</p>
-                                    <p className="text-slate-600 font-medium">Overtime: {totalOvertimeHours} hrs</p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-medium">Score: {summary.percentage}%</p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-medium">Overtime: {totalOvertimeHours} hrs</p>
                                 </div>
                             </div>
 
                             {/* Summary Grid inside Modal */}
-                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center text-xs bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                                 <div><span className="text-[9px] text-slate-400 font-bold block">PRESENT</span><span className="font-black text-emerald-600">{summary.present}</span></div>
                                 <div><span className="text-[9px] text-slate-400 font-bold block">ABSENT</span><span className="font-black text-rose-600">{summary.absent}</span></div>
                                 <div><span className="text-[9px] text-slate-400 font-bold block">HALF DAYS</span><span className="font-black text-amber-600">{summary.halfDay}</span></div>
@@ -484,7 +484,7 @@ const StaffAttendanceHub = () => {
                             </div>
 
                             {/* Preview Table */}
-                            <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs max-h-60 overflow-y-auto">
+                            <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden text-xs max-h-60 overflow-y-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="bg-slate-900 text-white font-black uppercase text-[10px]">
@@ -497,16 +497,16 @@ const StaffAttendanceHub = () => {
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {attendanceLogs.map((log) => (
-                                            <tr key={log.date} className="hover:bg-slate-50 font-medium">
-                                                <td className="p-2.5 font-bold text-slate-800">{log.date}</td>
-                                                <td className="p-2.5 text-slate-600">{log.checkIn || '--'}</td>
-                                                <td className="p-2.5 text-slate-600">{log.checkOut || '--'}</td>
+                                            <tr key={log.date} className="hover:bg-slate-50 dark:bg-slate-800 font-medium">
+                                                <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200">{log.date}</td>
+                                                <td className="p-2.5 text-slate-600 dark:text-slate-400">{log.checkIn || '--'}</td>
+                                                <td className="p-2.5 text-slate-600 dark:text-slate-400">{log.checkOut || '--'}</td>
                                                 <td className="p-2.5">
                                                     <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${getStatusBadge(log.status)}`}>
                                                         {log.status}
                                                     </span>
                                                 </td>
-                                                <td className="p-2.5 text-right font-bold text-slate-900">{log.workedHours || 0} hrs</td>
+                                                <td className="p-2.5 text-right font-bold text-slate-900 dark:text-white">{log.workedHours || 0} hrs</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -514,7 +514,7 @@ const StaffAttendanceHub = () => {
                             </div>
 
                             {/* Modal Actions */}
-                            <div className="flex justify-between items-center border-t border-slate-100 pt-4 text-xs">
+                            <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-4 text-xs">
                                 <span className="text-slate-400 font-bold">Krishna Engineering Works [Official Registry]</span>
                                 <button
                                     onClick={handleDownloadPDF}

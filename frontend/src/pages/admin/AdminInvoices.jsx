@@ -61,13 +61,13 @@ const AdminInvoices = () => {
         .reduce((sum, inv) => sum + inv.amount, 0);
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50 dark:bg-slate-800">
             {/* Tab Navigation */}
-            <div className="no-print flex items-center gap-3 mb-6 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-sm w-fit">
+            <div className="no-print flex items-center gap-3 mb-6 bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm w-fit">
                 <button
                     onClick={() => setActiveSubTab('ledger')}
                     className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
-                        activeSubTab === 'ledger' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'
+                        activeSubTab === 'ledger' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80'
                     }`}
                 >
                     Accounts Receivable Ledger
@@ -75,7 +75,7 @@ const AdminInvoices = () => {
                 <button
                     onClick={() => setActiveSubTab('builder')}
                     className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
-                        activeSubTab === 'builder' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'
+                        activeSubTab === 'builder' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80'
                     }`}
                 >
                     Interactive Invoice Studio
@@ -83,7 +83,7 @@ const AdminInvoices = () => {
                 <button
                     onClick={() => setActiveSubTab('labour-transport')}
                     className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
-                        activeSubTab === 'labour-transport' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'
+                        activeSubTab === 'labour-transport' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80'
                     }`}
                 >
                     Labour & Goods Transport Bills
@@ -97,15 +97,15 @@ const AdminInvoices = () => {
             ) : (
                 <>
                     {/* Header Section */}
-                    <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl gap-6">
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-xl gap-6">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Financial Oversight</div>
-                    <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Accounts Receivable</h2>
+                    <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900 dark:text-white">Accounts Receivable</h2>
                 </div>
                 <div className="flex items-center gap-6">
                     <button 
                         onClick={handleDownloadLedger}
-                        className="bg-white border border-slate-200 text-slate-600 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm"
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-50 dark:bg-slate-800 transition shadow-sm"
                     >
                         <Download className="w-5 h-5" /> Download Ledger
                     </button>
@@ -119,11 +119,11 @@ const AdminInvoices = () => {
             </div>
 
             {/* Invoices Table */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
-                            <tr className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
+                            <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] uppercase font-black tracking-widest border-b border-slate-100 dark:border-slate-800">
                                 <th className="p-6">Invoice ID</th>
                                 <th className="p-6">Client / Project</th>
                                 <th className="p-6">Amount</th>
@@ -131,7 +131,7 @@ const AdminInvoices = () => {
                                 <th className="p-6 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="text-sm font-bold text-slate-900 divide-y divide-slate-100">
+                        <tbody className="text-sm font-bold text-slate-900 dark:text-white divide-y divide-slate-100">
                             {loading ? (
                                 <tr>
                                     <td colSpan="5" className="p-20 text-center">
@@ -154,7 +154,7 @@ const AdminInvoices = () => {
                                     className="hover:bg-indigo-50/30 transition-colors"
                                 >
                                     <td className="p-6">
-                                        <div className="font-black text-slate-900 uppercase">INV-{inv._id.slice(-6).toUpperCase()}</div>
+                                        <div className="font-black text-slate-900 dark:text-white uppercase">INV-{inv._id.slice(-6).toUpperCase()}</div>
                                         <div className="text-[10px] text-slate-400 italic font-medium">{new Date(inv.createdAt).toLocaleDateString()}</div>
                                     </td>
                                     <td className="p-6">
@@ -162,7 +162,7 @@ const AdminInvoices = () => {
                                         <div className="text-[10px] uppercase tracking-widest text-slate-400">Project: {inv.projectId?.title || 'Unknown'}</div>
                                     </td>
                                     <td className="p-6">
-                                        <span className="text-xl font-black text-slate-900">₹ {inv.amount.toLocaleString()}</span>
+                                        <span className="text-xl font-black text-slate-900 dark:text-white">₹ {inv.amount.toLocaleString()}</span>
                                     </td>
                                     <td className="p-6">
                                         <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
@@ -186,7 +186,7 @@ const AdminInvoices = () => {
                                             ) : (
                                                 <button 
                                                     onClick={() => handleUpdateStatus(inv._id, 'unpaid')}
-                                                    className="bg-slate-100 text-slate-400 p-2 rounded-xl transition"
+                                                    className="bg-slate-100 dark:bg-slate-800/80 text-slate-400 p-2 rounded-xl transition"
                                                     title="Revert to Unpaid"
                                                 >
                                                     <RotateCcw className="w-4 h-4" />

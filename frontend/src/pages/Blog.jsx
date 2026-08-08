@@ -105,7 +105,7 @@ const Blog = () => {
                             placeholder="FILTER INTELLIGENCE ARCHIVES..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-white dark:bg-slate-900/[0.03] border border-white/10 rounded-2xl py-6 pl-16 pr-8 text-[11px] font-black uppercase tracking-[0.3em] focus:border-brand-accent outline-none backdrop-blur-3xl transition-all shadow-2xl"
+                            className="w-full bg-white dark:bg-slate-900 /[0.03] border border-white/10 rounded-2xl py-6 pl-16 pr-8 text-[11px] font-black uppercase tracking-[0.3em] focus:border-brand-accent outline-none backdrop-blur-3xl transition-all shadow-2xl"
                         />
                     </div>
                 </div>
@@ -133,7 +133,7 @@ const Blog = () => {
                         </button>
                     </div>
                 ) : filteredPosts.length === 0 ? (
-                    <div className="text-center py-40 bg-white dark:bg-slate-900/[0.01] rounded-[4rem] border-2 border-dashed border-white/5">
+                    <div className="text-center py-40 bg-white dark:bg-slate-900 /[0.01] rounded-[4rem] border-2 border-dashed border-white/5">
                         <AlertCircle className="w-20 h-20 text-white/5 mx-auto mb-8" />
                         <p className="text-gray-600 font-black uppercase tracking-[0.4em]">No matching intel logs found in current sector</p>
                     </div>
@@ -149,7 +149,7 @@ const Blog = () => {
                                         whileInView={{ opacity: 1, y: 0 }}
                                         viewport={{ once: true, margin: "-100px" }}
                                         transition={{ duration: 0.8, delay: i * 0.1 }}
-                                        className="bg-white dark:bg-slate-900/[0.02] border border-white/5 rounded-[3rem] overflow-hidden backdrop-blur-3xl flex flex-col md:flex-row group hover:border-brand-accent/30 transition-all duration-500 shadow-2xl"
+                                        className="bg-white dark:bg-slate-900 /[0.02] border border-white/5 rounded-[3rem] overflow-hidden backdrop-blur-3xl flex flex-col md:flex-row group hover:border-brand-accent/30 transition-all duration-500 shadow-2xl"
                                     >
                                         <div className="w-full md:w-[40%] h-80 md:h-auto relative overflow-hidden bg-gray-900 flex items-center justify-center">
                                             <div className="text-[10px] font-black uppercase text-brand-accent/10 opacity-50 relative z-0">Loading Media...</div>
@@ -187,7 +187,7 @@ const Blog = () => {
                                             </p>
 
                                             <div className="mt-auto">
-                                                <button className="group/btn relative inline-flex items-center gap-4 bg-white dark:bg-slate-900/5 text-white px-8 py-4 rounded-xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white dark:bg-slate-900 hover:text-black transition-all active:scale-95 overflow-hidden shadow-xl border border-white/5">
+                                                <button className="group/btn relative inline-flex items-center gap-4 bg-white dark:bg-slate-900 /5 text-white px-8 py-4 rounded-xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white dark:bg-slate-900 hover:text-black transition-all active:scale-95 overflow-hidden shadow-xl border border-white/5">
                                                     <div className="absolute inset-x-0 bottom-0 h-1 bg-brand-accent translate-y-full group-hover/btn:translate-y-0 transition-transform"></div>
                                                     Access Full Intel <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform text-brand-accent" />
                                                 </button>
@@ -200,7 +200,7 @@ const Blog = () => {
 
                         {/* Sidebar */}
                         <div className="lg:col-span-4 space-y-12">
-                            <div className="p-10 bg-white dark:bg-slate-900/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl sticky top-32 shadow-2xl">
+                            <div className="p-10 bg-white dark:bg-slate-900 /[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl sticky top-32 shadow-2xl">
                                 <h3 className="text-brand-accent font-black text-[10px] uppercase tracking-[0.4em] mb-10 flex items-center gap-4">
                                     <Tag className="w-4 h-4" /> Operations Matrix
                                 </h3>
@@ -218,7 +218,7 @@ const Blog = () => {
                                     <h3 className="text-2xl font-black uppercase tracking-tighter italic leading-none mb-4">INTEL UPLINK</h3>
                                     <p className="text-[9px] font-black uppercase tracking-widest leading-tight mb-8 opacity-60">Subscriber-only structural bulletins deployed weekly.</p>
                                     <div className="space-y-3">
-                                        <input type="email" placeholder="UPLINK EMAIL..." className="w-full bg-white dark:bg-slate-900/20 border-2 border-transparent focus:border-brand-950 placeholder:text-brand-950/40 p-5 rounded-xl text-[10px] font-black outline-none italic" />
+                                        <input type="email" placeholder="UPLINK EMAIL..." className="w-full bg-white dark:bg-slate-900 /20 border-2 border-transparent focus:border-brand-950 placeholder:text-brand-950/40 p-5 rounded-xl text-[10px] font-black outline-none italic" />
                                         <button className="w-full bg-brand-950 text-brand-accent font-black uppercase tracking-[0.4em] py-5 rounded-xl text-[10px] hover:bg-white dark:bg-slate-900 hover:text-black transition-all">Initiate Uplink</button>
                                     </div>
                                 </div>

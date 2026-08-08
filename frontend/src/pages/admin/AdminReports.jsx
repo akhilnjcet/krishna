@@ -184,19 +184,19 @@ const AdminReports = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-slate-50 min-h-screen font-sans">
+        <div className="p-4 md:p-8 space-y-8 bg-slate-50 dark:bg-slate-800 min-h-screen font-sans">
             
             {/* Header / Config Panel */}
-            <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl space-y-6">
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl space-y-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter italic">Enterprise Business Intelligence</h1>
-                        <p className="text-slate-500 font-medium">Generate custom reports, audit workforce operations, track project constraints, and export CSV/PDF datasets.</p>
+                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Enterprise Business Intelligence</h1>
+                        <p className="text-slate-500 dark:text-slate-400 font-medium">Generate custom reports, audit workforce operations, track project constraints, and export CSV/PDF datasets.</p>
                     </div>
                     <div className="flex flex-wrap gap-3">
                         <button 
                             onClick={handleDownloadCSV}
-                            className="bg-white border-2 border-slate-200 text-slate-700 px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition flex items-center gap-2 active:scale-95"
+                            className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 dark:bg-slate-800 transition flex items-center gap-2 active:scale-95"
                         >
                             Export Excel / CSV
                         </button>
@@ -210,13 +210,13 @@ const AdminReports = () => {
                 </div>
 
                 {/* Filters */}
-                <div className="pt-6 border-t border-slate-100 flex flex-wrap gap-4 items-center">
+                <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-4 items-center">
                     <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Analytical Registry</label>
                         <select 
                             value={reportType}
                             onChange={(e) => setReportType(e.target.value)}
-                            className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase tracking-wider text-slate-700 focus:border-indigo-500"
+                            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 focus:border-indigo-500"
                         >
                             <option value="attendance">Staff Attendance Log</option>
                             <option value="payroll">Monthly Payroll Sheet</option>
@@ -234,7 +234,7 @@ const AdminReports = () => {
                                 type="month"
                                 value={selectedMonth}
                                 onChange={(e) => setSelectedMonth(e.target.value)}
-                                className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 focus:border-indigo-500"
+                                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300 focus:border-indigo-500"
                             />
                         </div>
                     )}
@@ -245,7 +245,7 @@ const AdminReports = () => {
                             <select 
                                 value={paymentStatusFilter}
                                 onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                                className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 focus:border-indigo-500"
+                                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 dark:text-slate-300 focus:border-indigo-500"
                             >
                                 <option value="">All Transactions</option>
                                 <option value="paid">PAID ONLY</option>
@@ -263,22 +263,22 @@ const AdminReports = () => {
                     { label: 'Analytical Domain', value: reportSchema.title, icon: FileText, color: 'blue' },
                     { label: 'Report Integrity', value: 'Verified', icon: FileBarChart, color: 'emerald' }
                 ].map((stat, i) => (
-                    <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-5">
+                    <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-5">
                         <div className={`w-12 h-12 bg-${stat.color}-50 rounded-xl flex items-center justify-center`}>
                             <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
                         </div>
                         <div>
                             <p className="text-slate-400 font-bold uppercase text-[9px] tracking-widest">{stat.label}</p>
-                            <p className="text-xl font-extrabold text-slate-900 leading-tight mt-0.5">{stat.value}</p>
+                            <p className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight mt-0.5">{stat.value}</p>
                         </div>
                     </div>
                 ))}
             </div>
 
             {/* Data Grid view */}
-            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
-                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h3 className="font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                    <h3 className="font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
                         📋 Dynamic Data Grid
                     </h3>
                 </div>
@@ -286,7 +286,7 @@ const AdminReports = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr className="bg-slate-100/50 text-[10px] font-black uppercase text-slate-500 tracking-widest">
+                            <tr className="bg-slate-100 dark:bg-slate-800/80/50 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest">
                                 {reportSchema.columns.map((col, idx) => (
                                     <th key={idx} className="p-5">{col}</th>
                                 ))}
@@ -311,7 +311,7 @@ const AdminReports = () => {
                                 return (
                                     <tr key={rowIdx} className="hover:bg-indigo-50/30 transition-colors">
                                         {mapped.map((val, colIdx) => (
-                                            <td key={colIdx} className="p-5 text-slate-700 font-semibold">{val}</td>
+                                            <td key={colIdx} className="p-5 text-slate-700 dark:text-slate-300 font-semibold">{val}</td>
                                         ))}
                                     </tr>
                                 );

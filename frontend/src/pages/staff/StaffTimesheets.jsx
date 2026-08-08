@@ -54,14 +54,14 @@ const StaffTimesheets = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-slate-50 min-h-screen">
+        <div className="p-4 md:p-8 space-y-8 bg-slate-50 dark:bg-slate-800 min-h-screen">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl lg:text-4xl font-black text-slate-900 flex items-center gap-3">
+                    <h1 className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white flex items-center gap-3">
                         <History className="w-10 h-10 text-blue-600" />
                         My Timesheets
                     </h1>
-                    <p className="text-slate-500 mt-2 font-medium">Review your daily attendance, shift logs, and calculated pay status.</p>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">Review your daily attendance, shift logs, and calculated pay status.</p>
                 </div>
                 
                 <button 
@@ -72,15 +72,15 @@ const StaffTimesheets = () => {
                 </button>
             </div>
 
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse min-w-[700px]">
                         <thead>
-                            <tr className="bg-slate-50/50 border-b border-slate-200 text-left">
-                                <th className="px-6 py-5 font-bold text-slate-600">Date</th>
-                                <th className="px-6 py-5 font-bold text-slate-600">IN / OUT Times</th>
-                                <th className="px-6 py-5 font-bold text-slate-600">Duration</th>
-                                <th className="px-6 py-5 font-bold text-slate-600">Salary Status</th>
+                            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-left">
+                                <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Date</th>
+                                <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">IN / OUT Times</th>
+                                <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Duration</th>
+                                <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Salary Status</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -88,12 +88,12 @@ const StaffTimesheets = () => {
                                 <tr>
                                     <td colSpan="4" className="px-6 py-20 text-center">
                                         <Loader2 className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-4" />
-                                        <p className="text-slate-500 font-medium">Loading your records...</p>
+                                        <p className="text-slate-500 dark:text-slate-400 font-medium">Loading your records...</p>
                                     </td>
                                 </tr>
                             ) : logs.length === 0 ? (
                                 <tr>
-                                    <td colSpan="4" className="px-6 py-20 text-center text-slate-500">
+                                    <td colSpan="4" className="px-6 py-20 text-center text-slate-500 dark:text-slate-400">
                                         No attendance activity recorded yet. Time to log in!
                                     </td>
                                 </tr>
@@ -102,18 +102,18 @@ const StaffTimesheets = () => {
                                 return (
                                 <tr key={log._id} className="hover:bg-blue-50/30 transition-colors group">
                                     <td className="px-6 py-6">
-                                        <span className="flex items-center gap-2 text-slate-900 font-black">
+                                        <span className="flex items-center gap-2 text-slate-900 dark:text-white font-black">
                                             <Calendar className="w-5 h-5 text-blue-500" />
                                             {log.date}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-6 font-medium text-slate-700">
+                                    <td className="px-6 py-6 font-medium text-slate-700 dark:text-slate-300">
                                         <div className="flex flex-col gap-1 text-sm">
                                             <span className="text-emerald-600 font-bold">IN: {log.login_time ? new Date(log.login_time).toLocaleTimeString() : 'N/A'}</span>
                                             <span className="text-red-500 font-bold">OUT: {log.check_out ? new Date(log.check_out).toLocaleTimeString() : '--:--'}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-6 font-mono font-bold text-slate-600 text-lg">
+                                    <td className="px-6 py-6 font-mono font-bold text-slate-600 dark:text-slate-400 text-lg">
                                         {log.duration_minutes ? `${Math.floor(log.duration_minutes / 60)}h ${log.duration_minutes % 60}m` : '--'}
                                     </td>
                                     <td className="px-6 py-6">

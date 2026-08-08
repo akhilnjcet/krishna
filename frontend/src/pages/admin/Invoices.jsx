@@ -227,14 +227,14 @@ const Invoices = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 p-4 md:p-8 font-sans">
+        <div className="min-h-screen bg-slate-100 dark:bg-slate-800/80 p-4 md:p-8 font-sans">
             {/* Header Toolbar */}
-            <div className="no-print bg-white p-6 rounded-3xl border border-slate-200 shadow-xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="no-print bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1 flex items-center gap-2">
                         <FileText className="w-4 h-4" /> Admin Financial Suite
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter">Interactive Invoice Studio</h1>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Interactive Invoice Studio</h1>
                     {saveMessage && (
                         <div className="mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 animate-in fade-in">
                             {saveMessage}
@@ -264,26 +264,26 @@ const Invoices = () => {
                 {/* LEFT: Controls & Form (no-print) */}
                 <div className="no-print lg:col-span-5 space-y-6">
                     {/* Invoice Meta Controls */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg space-y-4">
-                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
+                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                             <Hash className="w-4 h-4 text-indigo-500" /> Invoice Identifier & Status
                         </h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Invoice Number</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Invoice Number</label>
                                 <input
                                     type="text"
                                     value={invoiceNumber}
                                     onChange={(e) => setInvoiceNumber(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Payment Status</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Payment Status</label>
                                 <select
                                     value={status}
                                     onChange={(e) => setStatus(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                 >
                                     <option value="Paid">Paid</option>
                                     <option value="Unpaid">Unpaid</option>
@@ -294,37 +294,37 @@ const Invoices = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Invoice Date</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Invoice Date</label>
                                 <input
                                     type="date"
                                     value={invoiceDate}
                                     onChange={(e) => setInvoiceDate(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Due Date</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Due Date</label>
                                 <input
                                     type="date"
                                     value={dueDate}
                                     onChange={(e) => setDueDate(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                 />
                             </div>
                         </div>
                     </div>
 
                     {/* Customer Selection & Autofill */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg space-y-4">
-                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
+                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                             <User className="w-4 h-4 text-indigo-500" /> Client Selector & Autofill
                         </h2>
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Select Registered Customer</label>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Select Registered Customer</label>
                             <select
                                 value={selectedCustomerId}
                                 onChange={handleSelectCustomer}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                             >
                                 <option value="">-- Choose Customer --</option>
                                 {customers.map(c => (
@@ -335,44 +335,44 @@ const Invoices = () => {
 
                         <div className="space-y-3 pt-2">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Customer / Company Name</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Customer / Company Name</label>
                                 <input
                                     type="text"
                                     value={customerName}
                                     onChange={(e) => setCustomerName(e.target.value)}
                                     placeholder="Customer or Firm Name"
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Billing Address</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Billing Address</label>
                                 <textarea
                                     rows="2"
                                     value={billingAddress}
                                     onChange={(e) => setBillingAddress(e.target.value)}
                                     placeholder="Full billing address..."
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 resize-none"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 resize-none"
                                 />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Phone Number</label>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Phone Number</label>
                                     <input
                                         type="text"
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
                                         placeholder="+91 9876543210"
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">GSTIN</label>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">GSTIN</label>
                                     <input
                                         type="text"
                                         value={gstin}
                                         onChange={(e) => setGstin(e.target.value)}
                                         placeholder="32AAAAA0000A1Z5"
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                     />
                                 </div>
                             </div>
@@ -380,8 +380,8 @@ const Invoices = () => {
                     </div>
 
                     {/* Itemized Billing Table Form */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg space-y-4">
-                        <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
+                        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
                             <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                 <Building className="w-4 h-4 text-indigo-500" /> Itemized Billing Table
                             </h2>
@@ -395,7 +395,7 @@ const Invoices = () => {
 
                         <div className="space-y-4">
                             {items.map((item, idx) => (
-                                <div key={item.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3 relative group">
+                                <div key={item.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-3 relative group">
                                     <div className="flex justify-between items-center">
                                         <span className="text-[10px] font-black uppercase text-indigo-500 tracking-wider">Item #{idx + 1}</span>
                                         {items.length > 1 && (
@@ -413,7 +413,7 @@ const Invoices = () => {
                                         <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Quick Catalog Pull-through</label>
                                         <select
                                             onChange={(e) => handleCatalogSelect(item.id, e.target.value)}
-                                            className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 mb-2 focus:outline-none"
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 mb-2 focus:outline-none"
                                         >
                                             <option value="">-- Pick from Catalog --</option>
                                             {PRECONFIGURED_CATALOG.map(cat => (
@@ -426,7 +426,7 @@ const Invoices = () => {
                                             value={item.description}
                                             onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
                                             placeholder="Product Name / Custom Description"
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                         />
                                     </div>
 
@@ -437,7 +437,7 @@ const Invoices = () => {
                                                 type="number"
                                                 value={item.price}
                                                 onChange={(e) => handleItemChange(item.id, 'price', e.target.value)}
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 focus:outline-none"
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
                                         </div>
                                         <div>
@@ -446,7 +446,7 @@ const Invoices = () => {
                                                 type="number"
                                                 value={item.quantity}
                                                 onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 focus:outline-none"
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
                                         </div>
                                         <div>
@@ -456,7 +456,7 @@ const Invoices = () => {
                                                 value={item.unit}
                                                 onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)}
                                                 placeholder="Kg, Metres"
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 focus:outline-none"
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
                                         </div>
                                         <div>
@@ -465,7 +465,7 @@ const Invoices = () => {
                                                 type="number"
                                                 value={item.taxRate}
                                                 onChange={(e) => handleItemChange(item.id, 'taxRate', e.target.value)}
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 focus:outline-none"
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
                                         </div>
                                     </div>
@@ -475,8 +475,8 @@ const Invoices = () => {
                     </div>
 
                     {/* Print Configuration Toggles & Styling */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg space-y-4">
-                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
+                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                             <Palette className="w-4 h-4 text-indigo-500" /> Interactive Print Toggles & Theme
                         </h2>
 
@@ -486,7 +486,7 @@ const Invoices = () => {
                                     key={t}
                                     onClick={() => setTheme(t)}
                                     className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition ${
-                                        theme === t ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                        theme === t ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800/80'
                                     }`}
                                 >
                                     {t}
@@ -495,69 +495,69 @@ const Invoices = () => {
                         </div>
 
                         <div className="flex items-center gap-3 pt-2">
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">Theme Color Accent:</label>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Theme Color Accent:</label>
                             <input
                                 type="color"
                                 value={themeColor}
                                 onChange={(e) => setThemeColor(e.target.value)}
-                                className="w-8 h-8 rounded-lg cursor-pointer border border-slate-200 p-0.5"
+                                className="w-8 h-8 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5"
                             />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 pt-2">
-                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={showTerms}
                                     onChange={(e) => setShowTerms(e.target.checked)}
-                                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    className="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500"
                                 />
                                 showTerms
                             </label>
-                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={showTax}
                                     onChange={(e) => setShowTax(e.target.checked)}
-                                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    className="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500"
                                 />
                                 showTax
                             </label>
-                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={showSignature}
                                     onChange={(e) => setShowSignature(e.target.checked)}
-                                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    className="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500"
                                 />
                                 showSignature
                             </label>
-                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={showFooter}
                                     onChange={(e) => setShowFooter(e.target.checked)}
-                                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    className="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500"
                                 />
                                 showFooter
                             </label>
-                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer col-span-2">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer col-span-2">
                                 <input
                                     type="checkbox"
                                     checked={showLogo}
                                     onChange={(e) => setShowLogo(e.target.checked)}
-                                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    className="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500"
                                 />
                                 Display Company Logo
                             </label>
                         </div>
 
                         <div className="pt-2">
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Tax Calculation Breakdown</label>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Tax Calculation Breakdown</label>
                             <select
                                 value={taxType}
                                 onChange={(e) => setTaxType(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none"
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                             >
                                 <option value="GST_SPLIT">CGST (9%) + SGST (9%) [Intrastate]</option>
                                 <option value="IGST">IGST (18%) [Interstate]</option>
@@ -580,7 +580,7 @@ const Invoices = () => {
 
                         {/* Document Container */}
                         <div 
-                            className={`print-document-container bg-white p-8 md:p-12 shadow-2xl rounded-b-3xl border border-slate-200 text-slate-800 font-sans transition-all`}
+                            className={`print-document-container bg-white dark:bg-slate-900 p-8 md:p-12 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-sans transition-all`}
                             style={{ '--theme-color': themeColor }}
                         >
                             {/* Header Section based on Theme */}
@@ -593,9 +593,9 @@ const Invoices = () => {
                                         <div className="flex items-center gap-4 flex-wrap">
                                             {showLogo && (
                                                 brandingSettings.company_logo ? (
-                                                    <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white/90 p-1 rounded-xl mb-3 shadow-md" />
+                                                    <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900/90 p-1 rounded-xl mb-3 shadow-md" />
                                                 ) : (
-                                                    <div className="w-12 h-12 bg-white text-slate-900 rounded-xl font-black text-2xl flex items-center justify-center mb-3 shadow-md">
+                                                    <div className="w-12 h-12 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl font-black text-2xl flex items-center justify-center mb-3 shadow-md">
                                                         K
                                                     </div>
                                                 )
@@ -606,7 +606,7 @@ const Invoices = () => {
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
-                                            <span className="inline-block bg-white/20 backdrop-blur px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-2">
+                                            <span className="inline-block bg-white dark:bg-slate-900/20 backdrop-blur px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-2">
                                                 TAX INVOICE
                                             </span>
                                             <p className="text-sm font-black">{invoiceNumber}</p>
@@ -625,23 +625,23 @@ const Invoices = () => {
                                             )
                                         )}
                                         <div>
-                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 company-name">KRISHNA ENGINEERING WORKS</h1>
-                                            <p className="text-xs text-slate-500 font-medium">Industrial Area Phase 1, Sector 123 | GSTIN: 32ABCDE1234F1Z5</p>
+                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white company-name">KRISHNA ENGINEERING WORKS</h1>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Industrial Area Phase 1, Sector 123 | GSTIN: 32ABCDE1234F1Z5</p>
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right">
                                         <h2 className="text-2xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>INVOICE</h2>
-                                        <p className="text-xs font-bold text-slate-700">{invoiceNumber}</p>
-                                        <p className="text-xs text-slate-500">Date: {invoiceDate}</p>
+                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{invoiceNumber}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Date: {invoiceDate}</p>
                                     </div>
                                 </div>
                             ) : (
                                 /* Classic Theme */
-                                <div className="border-b border-slate-200 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
+                                <div className="border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
                                     <div className="flex items-center gap-4 flex-wrap">
                                         {showLogo && (
                                             brandingSettings.company_logo ? (
-                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-14 w-auto object-contain rounded-2xl shadow p-1 bg-white" />
+                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-14 w-auto object-contain rounded-2xl shadow p-1 bg-white dark:bg-slate-900" />
                                             ) : (
                                                 <div 
                                                     className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow"
@@ -652,8 +652,8 @@ const Invoices = () => {
                                             )
                                         )}
                                         <div>
-                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
-                                            <p className="text-xs text-slate-500">Heavy Structural Engineering & Roofing Solutions</p>
+                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Heavy Structural Engineering & Roofing Solutions</p>
                                             <p className="text-[11px] text-slate-400 font-medium mt-0.5 whitespace-pre-wrap break-all">
                                                 Phone: {brandingSettings?.company_phone || brandingSettings?.footer_phone || '+91 9447940835'} | Email: {brandingSettings?.company_email || brandingSettings?.footer_email || 'contact@krishnaengg.com'}
                                             </p>
@@ -666,21 +666,21 @@ const Invoices = () => {
                                         >
                                             TAX INVOICE
                                         </span>
-                                        <p className="text-xs font-black text-slate-900">{invoiceNumber}</p>
-                                        <p className="text-xs text-slate-500">Date: {invoiceDate}</p>
-                                        <p className="text-xs text-slate-500">Due: {dueDate}</p>
+                                        <p className="text-xs font-black text-slate-900 dark:text-white">{invoiceNumber}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Date: {invoiceDate}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Due: {dueDate}</p>
                                     </div>
                                 </div>
                             )}
 
                             {/* Client & Status Section */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 bg-slate-50/80 p-6 rounded-2xl border border-slate-100">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 bg-slate-50 dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-100 dark:border-slate-800">
                                 <div>
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">BILLED TO CUSTOMER:</span>
-                                    <h3 className="font-black text-slate-900 text-sm uppercase">{customerName || 'Valued Customer / Client'}</h3>
-                                    <p className="text-xs text-slate-600 mt-1 whitespace-pre-line">{billingAddress || 'No Address Specified'}</p>
-                                    {phone && <p className="text-xs text-slate-600 mt-1">Ph: {phone}</p>}
-                                    {gstin && <p className="text-xs font-mono font-bold text-slate-700 mt-1">GSTIN: {gstin}</p>}
+                                    <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase">{customerName || 'Valued Customer / Client'}</h3>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-line">{billingAddress || 'No Address Specified'}</p>
+                                    {phone && <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Ph: {phone}</p>}
+                                    {gstin && <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mt-1">GSTIN: {gstin}</p>}
                                 </div>
 
                                 <div className="text-left sm:text-right flex flex-col justify-between gap-4 sm:gap-0">
@@ -696,7 +696,7 @@ const Invoices = () => {
                                     </div>
                                     <div>
                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">TOTAL DUE AMOUNT:</span>
-                                        <span className="text-2xl font-black text-slate-900 tracking-normal" style={{ color: themeColor, letterSpacing: 'normal' }}>
+                                        <span className="text-2xl font-black text-slate-900 dark:text-white tracking-normal" style={{ color: themeColor, letterSpacing: 'normal' }}>
                                             {formatCurrencyINR(grandTotal)}
                                         </span>
                                     </div>
@@ -704,7 +704,7 @@ const Invoices = () => {
                             </div>
 
                             {/* Line Items Table */}
-                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200">
+                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                                 <table className="w-full text-left border-collapse" style={{ letterSpacing: 'normal' }}>
                                     <thead>
                                         <tr 
@@ -720,18 +720,18 @@ const Invoices = () => {
                                             <th className="p-3 text-right">Line Total</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="text-xs font-medium text-slate-800 divide-y divide-slate-100">
+                                    <tbody className="text-xs font-medium text-slate-800 dark:text-slate-200 divide-y divide-slate-100">
                                         {items.map((item, index) => {
                                             const lineTotal = (parseFloat(item.price || 0) * parseFloat(item.quantity || 0));
                                             return (
-                                                <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}>
+                                                <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
                                                     <td className="p-3 font-bold text-slate-400">{index + 1}</td>
-                                                    <td className="p-3 font-bold text-slate-900">{item.description || 'Custom Line Item'}</td>
+                                                    <td className="p-3 font-bold text-slate-900 dark:text-white">{item.description || 'Custom Line Item'}</td>
                                                     <td className="p-3 text-right font-bold" style={{ letterSpacing: 'normal' }}>{formatCurrencyINR(item.price || 0)}</td>
                                                     <td className="p-3 text-center font-bold">{item.quantity}</td>
-                                                    <td className="p-3 text-center text-slate-500">{item.unit}</td>
-                                                    {showTax && <td className="p-3 text-right text-slate-500">{item.taxRate}%</td>}
-                                                    <td className="p-3 text-right font-black text-slate-900" style={{ letterSpacing: 'normal' }}>
+                                                    <td className="p-3 text-center text-slate-500 dark:text-slate-400">{item.unit}</td>
+                                                    {showTax && <td className="p-3 text-right text-slate-500 dark:text-slate-400">{item.taxRate}%</td>}
+                                                    <td className="p-3 text-right font-black text-slate-900 dark:text-white" style={{ letterSpacing: 'normal' }}>
                                                         {formatCurrencyINR(lineTotal)}
                                                     </td>
                                                 </tr>
@@ -742,11 +742,11 @@ const Invoices = () => {
                             </div>
 
                             {/* Summary & Tax Breakdown */}
-                            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 pb-6">
+                            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6">
                                 <div className="flex-1 space-y-3">
                                     <div>
                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">AMOUNT IN WORDS:</span>
-                                        <p className="text-xs font-bold text-slate-700 italic bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300 italic bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                                             "{amountInWords}"
                                         </p>
                                     </div>
@@ -754,7 +754,7 @@ const Invoices = () => {
                                     {showTerms && (
                                         <div>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">TERMS & CONDITIONS:</span>
-                                            <p className="text-[11px] text-slate-500 whitespace-pre-line leading-relaxed font-medium">
+                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-pre-line leading-relaxed font-medium">
                                                 {termsText}
                                             </p>
                                         </div>
@@ -762,26 +762,26 @@ const Invoices = () => {
                                 </div>
 
                                 <div className="w-full sm:w-64 space-y-2 text-xs">
-                                    <div className="flex justify-between py-1 border-b border-slate-100">
-                                        <span className="font-bold text-slate-500">Subtotal:</span>
-                                        <span className="font-bold text-slate-900">₹ {subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                                        <span className="font-bold text-slate-500 dark:text-slate-400">Subtotal:</span>
+                                        <span className="font-bold text-slate-900 dark:text-white">₹ {subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                     </div>
 
                                     {showTax && (
                                         <>
                                             {taxType === 'GST_SPLIT' ? (
                                                 <>
-                                                    <div className="flex justify-between py-1 border-b border-slate-100 text-slate-600">
+                                                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                                                         <span>CGST (9%):</span>
                                                         <span>₹ {cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                                     </div>
-                                                    <div className="flex justify-between py-1 border-b border-slate-100 text-slate-600">
+                                                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                                                         <span>SGST (9%):</span>
                                                         <span>₹ {sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                                     </div>
                                                 </>
                                             ) : (
-                                                <div className="flex justify-between py-1 border-b border-slate-100 text-slate-600">
+                                                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                                                     <span>IGST (18%):</span>
                                                     <span>₹ {igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                                 </div>
@@ -789,7 +789,7 @@ const Invoices = () => {
                                         </>
                                     )}
 
-                                    <div className="flex justify-between py-2 text-base font-black text-slate-900 border-t-2 border-slate-900 pt-2">
+                                    <div className="flex justify-between py-2 text-base font-black text-slate-900 dark:text-white border-t-2 border-slate-900 pt-2">
                                         <span>Grand Total:</span>
                                         <span style={{ color: themeColor }}>₹ {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                     </div>
@@ -807,11 +807,11 @@ const Invoices = () => {
                                 </div>
 
                                 {showSignature && (
-                                    <div className="text-right border-t border-slate-300 pt-3 w-48">
+                                    <div className="text-right border-t border-slate-300 dark:border-slate-600 pt-3 w-48">
                                         {brandingSettings.company_signature && (
                                             <img src={brandingSettings.company_signature} alt="Digital Signature" className="h-10 w-auto object-contain ml-auto mb-1" />
                                         )}
-                                        <p className="text-xs font-black uppercase text-slate-900">Authorized Signature</p>
+                                        <p className="text-xs font-black uppercase text-slate-900 dark:text-white">Authorized Signature</p>
                                         <p className="text-[10px] text-slate-400 font-medium mt-0.5">Krishna Engineering Works</p>
                                     </div>
                                 )}

@@ -59,7 +59,7 @@ const AdminApplications = () => {
             case 'leave': return <Calendar className="w-5 h-5 text-indigo-600" />;
             case 'emergency_leave': return <AlertCircle className="w-5 h-5 text-red-600" />;
             case 'salary_request': return <Landmark className="w-5 h-5 text-amber-600" />;
-            default: return <FileText className="w-5 h-5 text-slate-600" />;
+            default: return <FileText className="w-5 h-5 text-slate-600 dark:text-slate-400" />;
         }
     };
 
@@ -73,26 +73,26 @@ const AdminApplications = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 space-y-6 md:space-y-8 bg-slate-50 min-h-screen font-sans">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200 shadow-xl gap-4">
+        <div className="p-4 md:p-8 space-y-6 md:space-y-8 bg-slate-50 dark:bg-slate-800 min-h-screen font-sans">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-xl gap-4">
                 <div className="text-left">
                     <div className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500 mb-1">Human Capital Registry</div>
-                    <h1 className="text-3xl md:text-5xl font-black text-slate-900 uppercase tracking-tighter italic">Application Portal</h1>
+                    <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Application Portal</h1>
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">Managing Leaves, Advance Salaries & Special Requests</p>
                 </div>
             </div>
 
             {/* Filter Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4">
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
                     <Filter className="w-5 h-5 text-slate-400" />
-                    <div className="flex bg-slate-100 p-1 rounded-2xl flex-1 overflow-x-auto">
+                    <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl flex-1 overflow-x-auto">
                         {['', 'pending', 'reviewed', 'approved', 'rejected'].map((s) => (
                             <button
                                 key={s}
                                 onClick={() => setFilterStatus(s)}
                                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                                    filterStatus === s ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-500 hover:text-slate-800'
+                                    filterStatus === s ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                                 }`}
                             >
                                 {s || 'All Status'}
@@ -100,14 +100,14 @@ const AdminApplications = () => {
                         ))}
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4 overflow-x-auto">
-                    <div className="flex bg-slate-50/50 p-1 rounded-2xl flex-1 justify-around">
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4 overflow-x-auto">
+                    <div className="flex bg-slate-50 dark:bg-slate-800/50 p-1 rounded-2xl flex-1 justify-around">
                         {['', 'advance_salary', 'leave', 'emergency_leave', 'salary_request'].map((t) => (
                             <button
                                 key={t}
                                 onClick={() => setFilterType(t)}
                                 className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                                    filterType === t ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'
+                                    filterType === t ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400 hover:text-slate-600 dark:text-slate-400'
                                 }`}
                             >
                                 {t ? t.replace('_', ' ') : 'All Types'}
@@ -117,11 +117,11 @@ const AdminApplications = () => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[1000px]">
                         <thead>
-                            <tr className="bg-slate-50/50 text-[10px] font-black uppercase text-slate-500 tracking-widest border-b border-slate-100">
+                            <tr className="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest border-b border-slate-100 dark:border-slate-800">
                                 <th className="p-8">Staff & Identity</th>
                                 <th className="p-8">Application Type</th>
                                 <th className="p-8">Details / Reasoning</th>
@@ -158,7 +158,7 @@ const AdminApplications = () => {
                                                 {app.staffId?.name?.charAt(0)}
                                             </div>
                                             <div>
-                                                <div className="font-black text-slate-900 leading-none mb-1.5 text-lg uppercase tracking-tight">{app.staffId?.name}</div>
+                                                <div className="font-black text-slate-900 dark:text-white leading-none mb-1.5 text-lg uppercase tracking-tight">{app.staffId?.name}</div>
                                                 <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-1.5">
                                                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
                                                     {app.staffId?.role} Registry
@@ -168,15 +168,15 @@ const AdminApplications = () => {
                                     </td>
                                     <td className="p-8">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-100">
+                                            <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
                                                 {getTypeIcon(app.type)}
                                             </div>
-                                            <span className="font-black text-slate-700 text-xs uppercase tracking-widest">{app.type.replace('_', ' ')}</span>
+                                            <span className="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-widest">{app.type.replace('_', ' ')}</span>
                                         </div>
                                     </td>
                                     <td className="p-8">
                                         <div className="max-w-xs space-y-1">
-                                            <p className="font-black text-slate-900 uppercase text-xs tracking-tight leading-tight">{app.title}</p>
+                                            <p className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight leading-tight">{app.title}</p>
                                             <p className="text-[11px] font-bold text-slate-400 italic line-clamp-2 leading-relaxed">"{app.description}"</p>
                                         </div>
                                     </td>
@@ -238,7 +238,7 @@ const AdminApplications = () => {
                                             </div>
                                         ) : (
                                             <div className="flex justify-end pr-4">
-                                                <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 border border-slate-100">
+                                                <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-300 border border-slate-100 dark:border-slate-800">
                                                     <CheckCircle className="w-5 h-5 opacity-40" />
                                                 </div>
                                             </div>
@@ -259,9 +259,9 @@ const AdminApplications = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-10 md:p-12 border-4 border-indigo-50"
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] shadow-2xl p-10 md:p-12 border-4 border-indigo-50"
                         >
-                            <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-2 italic">Official Verdict</h3>
+                            <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-2 italic">Official Verdict</h3>
                             <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px] mb-8">
                                 Application ID: {selectedApp._id.slice(-8).toUpperCase()} | Action: <span className={pendingAction === 'approved' ? 'text-emerald-500' : pendingAction === 'reviewed' ? 'text-indigo-500' : 'text-rose-500'}>{pendingAction}</span>
                             </p>
@@ -274,14 +274,14 @@ const AdminApplications = () => {
                                         value={adminRemark}
                                         onChange={(e) => setAdminRemark(e.target.value)}
                                         placeholder="Enter your justified remarks here..."
-                                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] p-6 focus:border-indigo-600 focus:bg-white outline-none transition-all font-medium text-slate-700 placeholder:text-slate-300 tracking-tight"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 focus:border-indigo-600 focus:bg-white dark:bg-slate-900 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 placeholder:text-slate-300 tracking-tight"
                                     />
                                 </div>
 
                                 <div className="flex gap-4 pt-4">
                                     <button 
                                         onClick={() => { setShowRemarkModal(false); setAdminRemark(''); }}
-                                        className="flex-1 px-8 py-5 rounded-3xl bg-slate-100 hover:bg-slate-200 text-slate-500 font-black uppercase tracking-widest text-[10px] transition"
+                                        className="flex-1 px-8 py-5 rounded-3xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest text-[10px] transition"
                                     >
                                         Cancel Protocol
                                     </button>

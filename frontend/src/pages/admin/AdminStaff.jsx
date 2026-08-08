@@ -262,20 +262,20 @@ const AdminStaff = () => {
     const departments = [...new Set(safeStaff.map(s => s?.department || 'General'))];
 
     return (
-        <div className="mobile-p-reset space-y-6 md:space-y-8 bg-slate-50 min-h-screen force-full-width">
+        <div className="mobile-p-reset space-y-6 md:space-y-8 bg-slate-50 dark:bg-slate-800 min-h-screen force-full-width">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="text-left">
-                    <h1 className="text-2xl md:text-4xl font-black text-slate-900 flex items-center gap-3 italic uppercase tracking-tighter">
+                    <h1 className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white flex items-center gap-3 italic uppercase tracking-tighter">
                         <Users className="w-8 h-8 md:w-10 md:h-10 text-indigo-600" />
                         Staff Management
                     </h1>
-                    <p className="text-xs md:text-sm text-slate-500 mt-2 font-bold uppercase tracking-widest opacity-60">Operations Registry & Biometrics</p>
+                    <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-2 font-bold uppercase tracking-widest opacity-60">Operations Registry & Biometrics</p>
                 </div>
                 
                 <div className="flex gap-3">
                     <button 
                         onClick={handleDownloadRoster}
-                        className="bg-white border-2 border-slate-200 text-slate-600 px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition active:scale-95 flex items-center gap-2"
+                        className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 dark:bg-slate-800 transition active:scale-95 flex items-center gap-2"
                     >
                         <Download className="w-5 h-5" /> Export Staff List
                     </button>
@@ -296,15 +296,15 @@ const AdminStaff = () => {
                     { label: 'Face ID', value: safeStaff.filter(s => s?.faceDescriptor && Array.isArray(s.faceDescriptor) && s.faceDescriptor.length > 0).length, color: 'amber' },
                     { label: 'Dept', value: departments.length, color: 'purple' }
                 ].map((stat, i) => (
-                    <div key={i} className="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 shadow-sm text-left">
-                        <p className="text-slate-500 font-black text-[9px] md:text-xs uppercase tracking-widest">{stat.label}</p>
+                    <div key={i} className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm text-left">
+                        <p className="text-slate-500 dark:text-slate-400 font-black text-[9px] md:text-xs uppercase tracking-widest">{stat.label}</p>
                         <p className={`text-xl md:text-3xl font-black text-${stat.color}-600 mt-1`}>{stat.value}</p>
                     </div>
                 ))}
             </div>
 
             {/* Filter Bar */}
-            <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
+            <div className="flex flex-col md:flex-row gap-4 bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 <div className="flex-1 relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input 
@@ -312,7 +312,7 @@ const AdminStaff = () => {
                         placeholder="Search by name, ID or email..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition"
+                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition"
                     />
                 </div>
                 <div className="md:w-64 relative">
@@ -320,7 +320,7 @@ const AdminStaff = () => {
                     <select 
                         value={filterDept}
                         onChange={(e) => setFilterDept(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl appearance-none focus:ring-2 focus:ring-indigo-500/20 outline-none transition"
+                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl appearance-none focus:ring-2 focus:ring-indigo-500/20 outline-none transition"
                     >
                         <option value="">All Departments</option>
                         {departments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
@@ -329,17 +329,17 @@ const AdminStaff = () => {
             </div>
 
             {/* Staff Table */}
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden mobile-table-scroll">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden mobile-table-scroll">
                 <div className="min-w-[800px] md:min-w-full">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="bg-slate-50/50 border-b border-slate-200 text-left">
-                                <th className="px-6 py-5 font-bold text-slate-600">ID / Name</th>
-                                <th className="px-6 py-5 font-bold text-slate-600">Department / Role</th>
-                                <th className="px-6 py-5 font-bold text-slate-600">Contact</th>
-                                <th className="px-6 py-5 font-bold text-slate-600 text-center">Face Data</th>
-                                <th className="px-6 py-5 font-bold text-slate-600">Status</th>
-                                <th className="px-6 py-5 font-bold text-slate-600 text-right">Actions</th>
+                            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-left">
+                                <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">ID / Name</th>
+                                <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Department / Role</th>
+                                <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Contact</th>
+                                <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400 text-center">Face Data</th>
+                                <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Status</th>
+                                <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -347,12 +347,12 @@ const AdminStaff = () => {
                                 <tr>
                                     <td colSpan="6" className="px-6 py-20 text-center">
                                         <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mx-auto mb-4" />
-                                        <p className="text-slate-500 font-medium font-mono">Synchronizing staff data...</p>
+                                        <p className="text-slate-500 dark:text-slate-400 font-medium font-mono">Synchronizing staff data...</p>
                                     </td>
                                 </tr>
                             ) : safeStaff.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" className="px-6 py-20 text-center text-slate-500">
+                                    <td colSpan="6" className="px-6 py-20 text-center text-slate-500 dark:text-slate-400">
                                         <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-20" />
                                         No staff members found matching your search criteria.
                                     </td>
@@ -362,24 +362,24 @@ const AdminStaff = () => {
                                     <td className="px-6 py-4">
                                         <div>
                                             <p className="text-sm font-mono text-indigo-600 font-bold">{member.staff_id}</p>
-                                            <p className="text-lg font-bold text-slate-900 capitalize leading-tight mt-1">{member.name}</p>
+                                            <p className="text-lg font-bold text-slate-900 dark:text-white capitalize leading-tight mt-1">{member.name}</p>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col">
-                                            <span className="flex items-center gap-1.5 text-slate-700 font-semibold">
+                                            <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-semibold">
                                                 <Briefcase className="w-4 h-4 text-slate-400" />
                                                 {member.designation}
                                             </span>
-                                            <span className="text-sm text-slate-500">{member.department}</span>
+                                            <span className="text-sm text-slate-500 dark:text-slate-400">{member.department}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm font-medium">
                                         <div className="flex flex-col gap-1">
-                                            <span className="flex items-center gap-2 text-slate-600 group-hover:text-indigo-600 transition-colors">
+                                            <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400 group-hover:text-indigo-600 transition-colors">
                                                 <Mail className="w-3.5 h-3.5" /> {member.email}
                                             </span>
-                                            <span className="flex items-center gap-2 text-slate-600">
+                                            <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                                 <Phone className="w-3.5 h-3.5" /> {member.phone}
                                             </span>
                                         </div>
@@ -399,7 +399,7 @@ const AdminStaff = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex px-3 py-1 rounded-lg text-xs font-bold uppercase ${
-                                            member.status === 'active' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'
+                                            member.status === 'active' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600 dark:text-slate-400'
                                         }`}>
                                             {member.status}
                                         </span>
@@ -465,7 +465,7 @@ const AdminStaff = () => {
                                                     });
                                                     setShowEditModal(true); 
                                                 }}
-                                                className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                                className="p-2.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                                             >
                                                 <Edit className="w-5 h-5" />
                                             </button>
@@ -493,12 +493,12 @@ const AdminStaff = () => {
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
+                            className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
                         >
-                            <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900">{showEditModal ? 'Update' : 'Register'} Staff</h2>
-                                    <p className="text-slate-500 font-medium">Capture profile details for the system.</p>
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">{showEditModal ? 'Update' : 'Register'} Staff</h2>
+                                    <p className="text-slate-500 dark:text-slate-400 font-medium">Capture profile details for the system.</p>
                                 </div>
                                 <button onClick={() => { setShowAddModal(false); setShowEditModal(false); }} className="p-2 hover:bg-slate-200 rounded-full transition">
                                     <X className="w-6 h-6 text-slate-400" />
@@ -506,38 +506,38 @@ const AdminStaff = () => {
                             </div>
                             <form onSubmit={showEditModal ? handleEditStaff : handleAddStaff} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Staff ID*</label>
-                                    <input required type="text" placeholder="STF-001" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.staff_id} onChange={e => setFormData({...formData, staff_id: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Staff ID*</label>
+                                    <input required type="text" placeholder="STF-001" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.staff_id} onChange={e => setFormData({...formData, staff_id: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Name*</label>
-                                    <input required type="text" placeholder="John Doe" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Name*</label>
+                                    <input required type="text" placeholder="John Doe" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Email*</label>
-                                    <input required type="email" placeholder="john@example.com" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Email*</label>
+                                    <input required type="email" placeholder="john@example.com" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Phone*</label>
-                                    <input required type="tel" placeholder="+91 99999 99999" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Phone*</label>
+                                    <input required type="tel" placeholder="+91 99999 99999" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Department*</label>
-                                    <input required type="text" placeholder="Engineering" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Department*</label>
+                                    <input required type="text" placeholder="Engineering" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Designation*</label>
-                                    <input required type="text" placeholder="Field Engineer" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.designation} onChange={e => setFormData({...formData, designation: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Designation*</label>
+                                    <input required type="text" placeholder="Field Engineer" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.designation} onChange={e => setFormData({...formData, designation: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Username*</label>
-                                    <input required type="text" placeholder="johndoe.user" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Username*</label>
+                                    <input required type="text" placeholder="johndoe.user" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Access Role*</label>
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Access Role*</label>
                                     <select 
                                         required 
-                                        className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" 
+                                        className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" 
                                         value={formData.role} 
                                         onChange={e => setFormData({...formData, role: e.target.value})}
                                     >
@@ -547,9 +547,9 @@ const AdminStaff = () => {
                                 </div>
                                 {showEditModal && (
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Account Status*</label>
+                                        <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Account Status*</label>
                                         <select 
-                                            className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" 
+                                            className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" 
                                             value={formData.status} 
                                             onChange={e => setFormData({...formData, status: e.target.value})}
                                         >
@@ -560,14 +560,14 @@ const AdminStaff = () => {
                                 )}
 
                                 {/* --- Profile Parameters Section --- */}
-                                <div className="md:col-span-2 pt-6 border-t border-slate-100 mt-4">
+                                <div className="md:col-span-2 pt-6 border-t border-slate-100 dark:border-slate-800 mt-4">
                                     <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-4">Profile Parameters</h4>
                                 </div>
-                                <div className="md:col-span-2 space-y-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                    <label className="text-sm font-bold text-slate-700 uppercase tracking-wider block">Profile Photo (JPG / PNG / Google Drive Link)</label>
+                                <div className="md:col-span-2 space-y-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Profile Photo (JPG / PNG / Google Drive Link)</label>
                                     
                                     <div className="flex flex-col sm:flex-row gap-4 items-center">
-                                        <div className="w-20 h-20 rounded-full border border-slate-200 overflow-hidden bg-white flex-shrink-0 flex items-center justify-center">
+                                        <div className="w-20 h-20 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 flex-shrink-0 flex items-center justify-center">
                                             {formData.profilePhoto ? (
                                                 <img src={getDirectImageUrl(formData.profilePhoto)} alt="Preview" className="w-full h-full object-cover" />
                                             ) : (
@@ -579,7 +579,7 @@ const AdminStaff = () => {
                                             <input 
                                                 type="file" 
                                                 accept="image/png, image/jpeg, image/jpg" 
-                                                className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                                                className="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
                                                 onChange={(e) => {
                                                     const file = e.target.files[0];
                                                     if (file) {
@@ -594,7 +594,7 @@ const AdminStaff = () => {
                                             <input 
                                                 type="text" 
                                                 placeholder="Or paste direct image URL / Google Drive link" 
-                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500/20 outline-none transition" 
+                                                className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500/20 outline-none transition" 
                                                 value={formData.profilePhoto || ''} 
                                                 onChange={e => {
                                                     const rawVal = e.target.value;
@@ -610,71 +610,71 @@ const AdminStaff = () => {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Joining Date</label>
-                                    <input type="date" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" value={formData.joiningDate} onChange={e => setFormData({...formData, joiningDate: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Joining Date</label>
+                                    <input type="date" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" value={formData.joiningDate} onChange={e => setFormData({...formData, joiningDate: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Emergency Contact</label>
-                                    <input type="text" placeholder="Contact Name & Phone" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.emergencyContact} onChange={e => setFormData({...formData, emergencyContact: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Emergency Contact</label>
+                                    <input type="text" placeholder="Contact Name & Phone" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.emergencyContact} onChange={e => setFormData({...formData, emergencyContact: e.target.value})} />
                                 </div>
                                 <div className="md:col-span-2 space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Address</label>
-                                    <textarea rows={2} placeholder="Full Residing Address..." className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Address</label>
+                                    <textarea rows={2} placeholder="Full Residing Address..." className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
                                 </div>
 
                                 {/* --- Financial Data Section --- */}
-                                <div className="md:col-span-2 pt-6 border-t border-slate-100 mt-4">
+                                <div className="md:col-span-2 pt-6 border-t border-slate-100 dark:border-slate-800 mt-4">
                                     <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-4">Financial Protocol Registry</h4>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Salary Type</label>
-                                    <select className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" value={formData.salaryType} onChange={e => setFormData({...formData, salaryType: e.target.value})}>
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Salary Type</label>
+                                    <select className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" value={formData.salaryType} onChange={e => setFormData({...formData, salaryType: e.target.value})}>
                                         <option value="Monthly">Monthly</option>
                                         <option value="Daily Wage">Daily Wage</option>
                                         <option value="Contract">Contract</option>
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Base Salary (INR)</label>
-                                    <input type="number" placeholder="25000" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.base_salary} onChange={e => setFormData({...formData, base_salary: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Base Salary (INR)</label>
+                                    <input type="number" placeholder="25000" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.base_salary} onChange={e => setFormData({...formData, base_salary: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Overtime Rate Per Hour (INR)</label>
-                                    <input type="number" placeholder="150" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.overtimeRate} onChange={e => setFormData({...formData, overtimeRate: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Overtime Rate Per Hour (INR)</label>
+                                    <input type="number" placeholder="150" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.overtimeRate} onChange={e => setFormData({...formData, overtimeRate: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Bonus Amount (INR)</label>
-                                    <input type="number" placeholder="0" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.bonusAmount} onChange={e => setFormData({...formData, bonusAmount: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Bonus Amount (INR)</label>
+                                    <input type="number" placeholder="0" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.bonusAmount} onChange={e => setFormData({...formData, bonusAmount: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Advance Amount (INR)</label>
-                                    <input type="number" placeholder="0" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.advanceAmount} onChange={e => setFormData({...formData, advanceAmount: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Advance Amount (INR)</label>
+                                    <input type="number" placeholder="0" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.advanceAmount} onChange={e => setFormData({...formData, advanceAmount: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Deduction Amount (INR)</label>
-                                    <input type="number" placeholder="0" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.deductionAmount} onChange={e => setFormData({...formData, deductionAmount: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Deduction Amount (INR)</label>
+                                    <input type="number" placeholder="0" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.deductionAmount} onChange={e => setFormData({...formData, deductionAmount: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">UPI ID (for Direct Pay)</label>
-                                    <input type="text" placeholder="name@upi" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.upi_id} onChange={e => setFormData({...formData, upi_id: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">UPI ID (for Direct Pay)</label>
+                                    <input type="text" placeholder="name@upi" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.upi_id} onChange={e => setFormData({...formData, upi_id: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Bank Name</label>
-                                    <input type="text" placeholder="SBI / HDFC / Federal" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.bank_name} onChange={e => setFormData({...formData, bank_name: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Bank Name</label>
+                                    <input type="text" placeholder="SBI / HDFC / Federal" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.bank_name} onChange={e => setFormData({...formData, bank_name: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Account Number</label>
-                                    <input type="text" placeholder="00000000000" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.account_number} onChange={e => setFormData({...formData, account_number: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Account Number</label>
+                                    <input type="text" placeholder="00000000000" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.account_number} onChange={e => setFormData({...formData, account_number: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">IFSC Code</label>
-                                    <input type="text" placeholder="SBIN0000001" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.ifsc_code} onChange={e => setFormData({...formData, ifsc_code: e.target.value})} />
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">IFSC Code</label>
+                                    <input type="text" placeholder="SBIN0000001" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.ifsc_code} onChange={e => setFormData({...formData, ifsc_code: e.target.value})} />
                                 </div>
 
                                 {!showEditModal && (
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Secure Access Key [Password]*</label>
-                                        <input required type="password" placeholder="••••••••" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+                                        <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Secure Access Key [Password]*</label>
+                                        <input required type="password" placeholder="••••••••" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
                                     </div>
                                 )}
                                 <div className="md:col-span-2 pt-6 flex gap-4">
@@ -693,13 +693,13 @@ const AdminStaff = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl p-6 md:p-10 flex flex-col items-center max-h-[95vh] overflow-y-auto"
+                            className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-[2.5rem] shadow-2xl p-6 md:p-10 flex flex-col items-center max-h-[95vh] overflow-y-auto"
                         >
                             <div className="w-20 h-20 bg-indigo-50 rounded-[2rem] flex items-center justify-center mb-6">
                                 <Camera className="w-10 h-10 text-indigo-600" />
                             </div>
-                            <h2 className="text-3xl font-black text-slate-900 text-center">Facial Biometrics</h2>
-                            <p className="text-slate-500 text-center mt-2 font-medium mb-10 max-w-sm">Registering face for <span className="text-indigo-600 font-bold">{selectedStaff?.name}</span>. Ensure proper lighting.</p>
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white text-center">Facial Biometrics</h2>
+                            <p className="text-slate-500 dark:text-slate-400 text-center mt-2 font-medium mb-10 max-w-sm">Registering face for <span className="text-indigo-600 font-bold">{selectedStaff?.name}</span>. Ensure proper lighting.</p>
                             
                             <FaceCapture 
                                 onCapture={handleFaceRegister} 
@@ -708,7 +708,7 @@ const AdminStaff = () => {
                             
                             <button 
                                 onClick={() => setShowFaceModal(false)}
-                                className="mt-8 text-slate-400 font-bold hover:text-slate-600 transition uppercase tracking-widest text-xs py-2"
+                                className="mt-8 text-slate-400 font-bold hover:text-slate-600 dark:text-slate-400 transition uppercase tracking-widest text-xs py-2"
                             >
                                 Cancel Process
                             </button>
@@ -722,38 +722,38 @@ const AdminStaff = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-8 md:p-10 flex flex-col my-8"
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] shadow-2xl p-8 md:p-10 flex flex-col my-8"
                         >
                             <div className="flex items-center gap-4 mb-6">
                                 <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex-shrink-0 flex items-center justify-center">
                                     <BadgeIndianRupee className="w-8 h-8 text-emerald-600" />
                                 </div>
                                 <div className="text-left text-balance">
-                                    <h2 className="text-2xl font-black text-slate-900 leading-tight">Salary Disburser</h2>
-                                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[9px] mt-1">Recipient: {selectedStaff?.name}</p>
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">Salary Disburser</h2>
+                                    <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[9px] mt-1">Recipient: {selectedStaff?.name}</p>
                                 </div>
                             </div>
                             
                             <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
-                                    <p className="text-slate-500 font-medium">Total Earned: <span className="font-extrabold text-slate-900">₹{attendanceSummary.totalEarnedSalary?.toLocaleString()}</span></p>
-                                    <p className="text-slate-500 font-medium">Already Paid: <span className="font-extrabold text-slate-900">₹{attendanceSummary.salaryAlreadyPaid?.toLocaleString()}</span></p>
-                                    <p className="text-slate-500 font-medium">Advance Paid: <span className="font-extrabold text-slate-900">₹{attendanceSummary.salaryAdvance?.toLocaleString()}</span></p>
+                                <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60">
+                                    <p className="text-slate-500 dark:text-slate-400 font-medium">Total Earned: <span className="font-extrabold text-slate-900 dark:text-white">₹{attendanceSummary.totalEarnedSalary?.toLocaleString()}</span></p>
+                                    <p className="text-slate-500 dark:text-slate-400 font-medium">Already Paid: <span className="font-extrabold text-slate-900 dark:text-white">₹{attendanceSummary.salaryAlreadyPaid?.toLocaleString()}</span></p>
+                                    <p className="text-slate-500 dark:text-slate-400 font-medium">Advance Paid: <span className="font-extrabold text-slate-900 dark:text-white">₹{attendanceSummary.salaryAdvance?.toLocaleString()}</span></p>
                                     <p className="text-indigo-600 font-extrabold">Remaining: <span>₹{attendanceSummary.remainingBalance?.toLocaleString()}</span></p>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex flex-col items-center">
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col items-center">
                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Shifts</p>
-                                        <p className="text-lg font-black text-slate-900">{attendanceSummary.shifts}</p>
+                                        <p className="text-lg font-black text-slate-900 dark:text-white">{attendanceSummary.shifts}</p>
                                     </div>
-                                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex flex-col items-center">
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col items-center">
                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Hours</p>
-                                        <p className="text-lg font-black text-slate-900">{(attendanceSummary.totalMinutes / 60).toFixed(1)}h</p>
+                                        <p className="text-lg font-black text-slate-900 dark:text-white">{(attendanceSummary.totalMinutes / 60).toFixed(1)}h</p>
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-50 p-5 rounded-3xl border border-slate-150 flex flex-col items-start relative">
+                                <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-3xl border border-slate-150 flex flex-col items-start relative">
                                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Payment Amount (₹)</label>
                                     <div className="flex items-center gap-2">
                                         <span className="text-xl font-black text-slate-400">₹</span>
@@ -765,10 +765,10 @@ const AdminStaff = () => {
                                                 setPayAmount(val.toString());
                                                 setPayAdjustment(0);
                                             }}
-                                            className="text-3xl font-black text-slate-900 bg-transparent w-full outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-2 -ml-2"
+                                            className="text-3xl font-black text-slate-900 dark:text-white bg-transparent w-full outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-2 -ml-2"
                                         />
                                     </div>
-                                    <div className="mt-3 pt-3 border-t border-slate-200 w-full flex items-center justify-between">
+                                    <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 w-full flex items-center justify-between">
                                         <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Quick Adjust:</span>
                                         <div className="flex items-center gap-3">
                                             <button 
@@ -792,7 +792,7 @@ const AdminStaff = () => {
                                         <select
                                             value={paymentFormType}
                                             onChange={e => setPaymentFormType(e.target.value)}
-                                            className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl outline-none font-bold text-xs"
                                         >
                                             <option value="Partial">Partial Salary</option>
                                             <option value="Advance">Salary Advance</option>
@@ -804,7 +804,7 @@ const AdminStaff = () => {
                                         <select
                                             value={paymentFormMethod}
                                             onChange={e => setPaymentFormMethod(e.target.value)}
-                                            className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl outline-none font-bold text-xs"
                                         >
                                             <option value="Cash">Cash</option>
                                             <option value="UPI">UPI</option>
@@ -821,14 +821,14 @@ const AdminStaff = () => {
                                         placeholder="e.g. Paid mid-month advance"
                                         value={paymentFormNotes}
                                         onChange={e => setPaymentFormNotes(e.target.value)}
-                                        className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300"
                                     />
                                 </div>
 
                                 {selectedStaff?.upi_id && paymentFormMethod === 'UPI' && (
                                     <div className="flex flex-col items-center gap-4 p-4 bg-indigo-50/50 rounded-3xl border border-indigo-100">
                                         <p className="text-[9px] font-bold text-indigo-600 uppercase tracking-[0.2em] italic">Scan with GPay / PhonePe / Any UPI</p>
-                                        <div className="bg-white p-3 rounded-2xl shadow-md">
+                                        <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl shadow-md">
                                             <img 
                                                 src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`upi://pay?pa=${selectedStaff.upi_id}&pn=${selectedStaff.name}&am=${parseFloat(payAmount) + parseFloat(payAdjustment || 0)}&cu=INR`)}`} 
                                                 alt="UPI QR Code"
@@ -836,7 +836,7 @@ const AdminStaff = () => {
                                             />
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-xs font-black text-slate-900">{selectedStaff.upi_id}</p>
+                                            <p className="text-xs font-black text-slate-900 dark:text-white">{selectedStaff.upi_id}</p>
                                         </div>
                                     </div>
                                 )}
@@ -844,7 +844,7 @@ const AdminStaff = () => {
                                 <div className="flex gap-3 pt-2">
                                     <button 
                                         onClick={() => setShowPayModal(false)}
-                                        className="flex-1 px-4 py-3.5 rounded-2xl bg-slate-100 text-slate-500 font-bold text-[9px] uppercase tracking-widest hover:bg-slate-200 transition"
+                                        className="flex-1 px-4 py-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold text-[9px] uppercase tracking-widest hover:bg-slate-200 transition"
                                     >
                                         Cancel
                                     </button>
@@ -873,7 +873,7 @@ const AdminStaff = () => {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white w-full max-w-md rounded-3xl shadow-2xl border-4 border-rose-500 overflow-hidden"
+                            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl border-4 border-rose-500 overflow-hidden"
                         >
                             <div className="p-6 bg-rose-50 border-b border-rose-100 flex items-center gap-3">
                                 <AlertCircle className="w-8 h-8 text-rose-600 shrink-0" />
@@ -884,13 +884,13 @@ const AdminStaff = () => {
                             </div>
                             
                             <div className="p-6 space-y-4">
-                                <p className="text-xs text-slate-600 font-bold leading-relaxed">
+                                <p className="text-xs text-slate-600 dark:text-slate-400 font-bold leading-relaxed">
                                     The entered payment amount is greater than the employee's remaining payable salary based on working hours.
                                 </p>
                                 
-                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
-                                    <p className="text-slate-600 font-bold">Remaining Balance: <span className="text-slate-900 font-black">₹{parseFloat(attendanceSummary.remainingBalance || 0).toLocaleString()}</span></p>
-                                    <p className="text-slate-600 font-bold">Entered Amount: <span className="text-rose-600 font-black">₹{parseFloat(payAmount).toLocaleString()}</span></p>
+                                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs">
+                                    <p className="text-slate-600 dark:text-slate-400 font-bold">Remaining Balance: <span className="text-slate-900 dark:text-white font-black">₹{parseFloat(attendanceSummary.remainingBalance || 0).toLocaleString()}</span></p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-bold">Entered Amount: <span className="text-rose-600 font-black">₹{parseFloat(payAmount).toLocaleString()}</span></p>
                                 </div>
 
                                 <div className="space-y-3 pt-2">
@@ -902,7 +902,7 @@ const AdminStaff = () => {
                                             placeholder="Enter admin name"
                                             value={overpaymentForm.approvedBy}
                                             onChange={e => setOverpaymentForm({...overpaymentForm, approvedBy: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -913,7 +913,7 @@ const AdminStaff = () => {
                                             placeholder="Specify approval reason"
                                             value={overpaymentForm.reason}
                                             onChange={e => setOverpaymentForm({...overpaymentForm, reason: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300"
                                         />
                                     </div>
                                 </div>
@@ -922,7 +922,7 @@ const AdminStaff = () => {
                                     <button 
                                         type="button"
                                         onClick={() => setShowOverpaymentWarning(false)}
-                                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black uppercase tracking-wider text-xs py-4 rounded-xl transition active:scale-95 text-center"
+                                        className="bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black uppercase tracking-wider text-xs py-4 rounded-xl transition active:scale-95 text-center"
                                     >
                                         No, Edit Amount
                                     </button>

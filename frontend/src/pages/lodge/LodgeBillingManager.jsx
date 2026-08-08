@@ -686,18 +686,18 @@ const LodgeBillingManager = () => {
     const previewTotals = generatingBillRoom ? calculateTotals() : { grandTotal: 0, taxesTotal: 0, discountAmt: 0, advanceUsed: 0, advanceRemaining: 0 };
 
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-slate-50 min-h-screen relative font-sans print:p-0 print:bg-white">
+        <div className="p-4 md:p-8 space-y-8 bg-slate-50 dark:bg-slate-800 min-h-screen relative font-sans print:p-0 print:bg-white dark:bg-slate-900">
             
             {/* Header Banner */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl print:hidden">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl print:hidden">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter italic">Live Room Billing Dashboard</h1>
-                    <p className="text-slate-500 font-medium">Real-time building accounts, live room allocation status, utility settles, and reminders dispatch console.</p>
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Live Room Billing Dashboard</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium">Real-time building accounts, live room allocation status, utility settles, and reminders dispatch console.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={loadDashboardData}
-                        className="p-3 bg-slate-50 text-slate-400 hover:text-indigo-600 rounded-2xl border border-slate-200 transition-colors flex items-center gap-2 font-bold text-xs uppercase"
+                        className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-indigo-600 rounded-2xl border border-slate-200 dark:border-slate-700 transition-colors flex items-center gap-2 font-bold text-xs uppercase"
                     >
                         <RefreshCw className={`w-4 h-4 ${loadingLive ? 'animate-spin' : ''}`} /> Refresh
                     </button>
@@ -705,17 +705,17 @@ const LodgeBillingManager = () => {
             </div>
 
             {/* Quick Tabs Menu */}
-            <div className="flex flex-wrap gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200 w-fit print:hidden">
+            <div className="flex flex-wrap gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 w-fit print:hidden">
                 <button
                     onClick={() => setActiveTab('dashboard')}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'dashboard' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'dashboard' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                 >
                     <LayoutDashboard className="w-4 h-4 inline-block mr-1.5 -mt-0.5" /> Dashboard Board
                 </button>
                 {isAdmin && (
                     <button
                         onClick={() => setActiveTab('verifications')}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'verifications' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'verifications' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                     >
                         <ShieldCheck className="w-4 h-4 inline-block mr-1.5 -mt-0.5" /> Payment Verifications
                     </button>
@@ -723,7 +723,7 @@ const LodgeBillingManager = () => {
                 {isAdmin && (
                     <button
                         onClick={() => setActiveTab('settings')}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'settings' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'settings' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                     >
                         <Settings className="w-4 h-4 inline-block mr-1.5 -mt-0.5" /> General Settings
                     </button>
@@ -767,31 +767,31 @@ const LodgeBillingManager = () => {
                             { label: 'Overdue Rooms', value: roomsOverdue, desc: 'Dues exceeded' },
                             { label: 'Outstanding amount', value: `₹ ${stats.outstandingAmount.toLocaleString('en-IN')}`, desc: 'Total collections gap' }
                         ].map((w, idx) => (
-                            <div key={idx} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-2">
+                            <div key={idx} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-2">
                                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">{w.label}</span>
-                                <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{w.value}</h3>
+                                <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">{w.value}</h3>
                                 <span className="text-[9px] text-slate-400 block">{w.desc}</span>
                             </div>
                         ))}
                     </div>
 
                     {/* Filter & Controls Panel */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                         <div className="flex flex-col md:flex-row gap-4">
-                            <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+                            <div className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 flex items-center gap-3">
                                 <Search className="w-5 h-5 text-slate-400" />
                                 <input
                                     type="text"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     placeholder="Search by Room Number, Type, Tenant name, Phone..."
-                                    className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 placeholder:text-slate-300"
+                                    className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-300"
                                 />
                             </div>
                             <select 
                                 value={sortFilter}
                                 onChange={(e) => setSortFilter(e.target.value)}
-                                className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl font-bold text-xs uppercase text-slate-700"
+                                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-2xl font-bold text-xs uppercase text-slate-700 dark:text-slate-300"
                             >
                                 <option value="Nearest Due Date">Nearest Due Date</option>
                                 <option value="Highest Due">Highest Due</option>
@@ -806,7 +806,7 @@ const LodgeBillingManager = () => {
                                 <select 
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl font-bold text-slate-700 uppercase"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl font-bold text-slate-700 dark:text-slate-300 uppercase"
                                 >
                                     <option value="">All Statuses</option>
                                     <option value="Occupied">Occupied</option>
@@ -820,7 +820,7 @@ const LodgeBillingManager = () => {
                                 <select 
                                     value={cycleFilter}
                                     onChange={(e) => setCycleFilter(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl font-bold text-slate-700 uppercase"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl font-bold text-slate-700 dark:text-slate-300 uppercase"
                                 >
                                     <option value="">All Cycles</option>
                                     <option value="Daily">Daily</option>
@@ -833,7 +833,7 @@ const LodgeBillingManager = () => {
                                 <select 
                                     value={typeFilter}
                                     onChange={(e) => setTypeFilter(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl font-bold text-slate-700 uppercase"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl font-bold text-slate-700 dark:text-slate-300 uppercase"
                                 >
                                     <option value="">All Types</option>
                                     <option value="Standard">Standard</option>
@@ -842,7 +842,7 @@ const LodgeBillingManager = () => {
                                 </select>
                             </div>
                             <div className="flex items-end">
-                                <div className="bg-slate-100 p-2.5 rounded-xl w-full text-center text-slate-500 font-bold uppercase tracking-wider text-[10px] border border-slate-200">
+                                <div className="bg-slate-100 dark:bg-slate-800/80 p-2.5 rounded-xl w-full text-center text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] border border-slate-200 dark:border-slate-700">
                                     Matches: {sortedRooms.length}
                                 </div>
                             </div>
@@ -850,16 +850,16 @@ const LodgeBillingManager = () => {
                     </div>
 
                     {/* Live Room Billing Status Grid / Table */}
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <h3 className="font-black text-slate-900 uppercase text-sm tracking-tight">Live Room Billing Registry</h3>
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                            <h3 className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-tight">Live Room Billing Registry</h3>
                         </div>
 
                         {/* Desktop Table View */}
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse text-[11px] font-semibold">
                                 <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                         <th className="px-6 py-4">Room No.</th>
                                         <th className="px-6 py-4">Occupant</th>
                                         <th className="px-6 py-4">Next Due Date</th>
@@ -870,27 +870,27 @@ const LodgeBillingManager = () => {
                                         <th className="px-6 py-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 text-slate-700">
+                                <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300">
                                     {sortedRooms.map(room => (
-                                        <tr key={room._id} className="hover:bg-slate-50/50 transition">
+                                        <tr key={room._id} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
                                             <td className="px-6 py-4">
-                                                <p className="font-bold text-slate-900">Room {room.number}</p>
+                                                <p className="font-bold text-slate-900 dark:text-white">Room {room.number}</p>
                                                 <p className="text-[9px] uppercase font-black text-slate-400 mt-0.5">{room.type}</p>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <p className="font-bold text-slate-800">{room.occupantName}</p>
+                                                <p className="font-bold text-slate-800 dark:text-slate-200">{room.occupantName}</p>
                                                 {room.phone !== 'N/A' && <p className="text-[9px] text-slate-400">{room.phone}</p>}
                                             </td>
-                                            <td className="px-6 py-4 text-slate-500 font-bold">{room.nextBillDate}</td>
+                                            <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-bold">{room.nextBillDate}</td>
                                             <td className="px-6 py-4 font-bold">
-                                                <span className={`${room.daysRemaining < 0 ? 'text-rose-600' : room.daysRemaining === 0 ? 'text-amber-600' : 'text-slate-600'}`}>
+                                                <span className={`${room.daysRemaining < 0 ? 'text-rose-600' : room.daysRemaining === 0 ? 'text-amber-600' : 'text-slate-600 dark:text-slate-400'}`}>
                                                     {room.daysRemainingText}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 font-black">
                                                 {room.outstandingAmt > 0 ? (
                                                     <div>
-                                                        <p className="text-slate-900">₹ {room.outstandingAmt}</p>
+                                                        <p className="text-slate-900 dark:text-white">₹ {room.outstandingAmt}</p>
                                                         {room.lateFee > 0 && <p className="text-[8px] text-rose-500 uppercase">Late Fee: ₹{room.lateFee}</p>}
                                                     </div>
                                                 ) : '—'}
@@ -908,7 +908,7 @@ const LodgeBillingManager = () => {
                                                     room.paymentBadge === 'Paid' || room.paymentBadge === 'Advance Paid' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                                                     room.paymentBadge === 'Upcoming' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
                                                     room.paymentBadge === 'Overdue' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-                                                    'bg-slate-100 text-slate-500'
+                                                    'bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400'
                                                 }`}>
                                                     {room.paymentBadge}
                                                 </span>
@@ -917,7 +917,7 @@ const LodgeBillingManager = () => {
                                                 <div className="flex justify-end gap-1.5">
                                                     <button 
                                                         onClick={() => setSelectedRoomDetail(room)}
-                                                        className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-slate-500 transition"
+                                                        className="p-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:bg-slate-800/80 rounded-lg text-slate-500 dark:text-slate-400 transition"
                                                         title="View Details"
                                                     >
                                                         <Eye className="w-4 h-4" />
@@ -960,8 +960,8 @@ const LodgeBillingManager = () => {
 
             {/* Tab: Settings */}
             {activeTab === 'settings' && (
-                <form onSubmit={handleSaveSettings} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-lg space-y-6 max-w-4xl print:hidden">
-                    <h3 className="text-xl font-black text-slate-900 uppercase">Lodge Billing Configuration</h3>
+                <form onSubmit={handleSaveSettings} className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-6 max-w-4xl print:hidden">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase">Lodge Billing Configuration</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
                         <div className="space-y-2">
@@ -969,7 +969,7 @@ const LodgeBillingManager = () => {
                             <select
                                 value={settings.defaultBillingCycle}
                                 onChange={(e) => setSettings({ ...settings, defaultBillingCycle: e.target.value })}
-                                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold uppercase text-slate-700"
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold uppercase text-slate-700 dark:text-slate-300"
                             >
                                 <option value="Daily">Daily</option>
                                 <option value="Weekly">Weekly</option>
@@ -982,7 +982,7 @@ const LodgeBillingManager = () => {
                                 type="number"
                                 value={settings.gracePeriodDays}
                                 onChange={(e) => setSettings({ ...settings, gracePeriodDays: parseInt(e.target.value) })}
-                                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold"
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold"
                             />
                         </div>
                     </div>
@@ -1062,19 +1062,19 @@ const LodgeBillingManager = () => {
 
                 return (
                     <div className="space-y-6 print:hidden">
-                        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="flex-grow flex flex-col md:flex-row gap-4">
                                 <input
                                     type="text"
                                     placeholder="Search by name, room, booking or transaction ID..."
                                     value={verificationSearch}
                                     onChange={(e) => setVerificationSearch(e.target.value)}
-                                    className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-medium text-xs flex-grow"
+                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-medium text-xs flex-grow"
                                 />
                                 <select
                                     value={verificationStatusFilter}
                                     onChange={(e) => setVerificationStatusFilter(e.target.value)}
-                                    className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 w-full md:w-56"
+                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 dark:text-slate-300 w-full md:w-56"
                                 >
                                     <option value="WAITING_FOR_VERIFICATION">Waiting for Verification</option>
                                     <option value="APPROVED">Approved</option>
@@ -1084,7 +1084,7 @@ const LodgeBillingManager = () => {
                                 <select
                                     value={verificationDateFilter}
                                     onChange={(e) => setVerificationDateFilter(e.target.value)}
-                                    className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 w-full md:w-44"
+                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 dark:text-slate-300 w-full md:w-44"
                                 >
                                     <option value="all">All Dates</option>
                                     <option value="Today">Today</option>
@@ -1094,10 +1094,10 @@ const LodgeBillingManager = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-xl">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-[2rem] overflow-hidden shadow-xl">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-xs border-collapse">
-                                    <thead className="bg-slate-50 border-b border-slate-100 font-bold uppercase tracking-wider text-slate-400">
+                                    <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 font-bold uppercase tracking-wider text-slate-400">
                                         <tr>
                                             <th className="px-6 py-4">Tenant / Room / Booking</th>
                                             <th className="px-6 py-4">Amount</th>
@@ -1109,17 +1109,17 @@ const LodgeBillingManager = () => {
                                             <th className="px-6 py-4 text-right">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700 dark:text-slate-300">
                                         {filteredVerifications.map((v) => (
-                                            <tr key={v._id} className="hover:bg-slate-50/50 transition">
+                                            <tr key={v._id} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
                                                 <td className="px-6 py-4">
-                                                    <p className="font-black text-slate-900">{v.tenantName || v.name || v.customerId?.name || 'Unknown Guest'}</p>
+                                                    <p className="font-black text-slate-900 dark:text-white">{v.tenantName || v.name || v.customerId?.name || 'Unknown Guest'}</p>
                                                     <p className="text-[10px] text-slate-400">Room ID: {v.roomId?._id || v.roomId || 'N/A'}</p>
                                                     <p className="text-[9px] text-indigo-500 uppercase font-bold tracking-tight">Booking: {v.bookingId?._id || v.bookingId || 'Direct Settlement'}</p>
                                                 </td>
-                                                <td className="px-6 py-4 font-black text-slate-900">₹{v.amount}</td>
-                                                <td className="px-6 py-4 uppercase text-slate-500 font-bold">{v.method}</td>
-                                                <td className="px-6 py-4 font-mono font-bold text-slate-500">{v.referenceId || v.transactionReference || 'N/A'}</td>
+                                                <td className="px-6 py-4 font-black text-slate-900 dark:text-white">₹{v.amount}</td>
+                                                <td className="px-6 py-4 uppercase text-slate-500 dark:text-slate-400 font-bold">{v.method}</td>
+                                                <td className="px-6 py-4 font-mono font-bold text-slate-500 dark:text-slate-400">{v.referenceId || v.transactionReference || 'N/A'}</td>
                                                 <td className="px-6 py-4 text-slate-400">{new Date(v.createdAt).toLocaleString()}</td>
                                                 <td className="px-6 py-4">
                                                     {v.uploadedProof ? (
@@ -1128,7 +1128,7 @@ const LodgeBillingManager = () => {
                                                                 src={v.uploadedProof} 
                                                                 alt="Proof" 
                                                                 onClick={() => setActiveVerificationPhoto(v.uploadedProof)}
-                                                                className="w-10 h-10 object-cover rounded-lg border border-slate-200 cursor-zoom-in hover:opacity-85 transition" 
+                                                                className="w-10 h-10 object-cover rounded-lg border border-slate-200 dark:border-slate-700 cursor-zoom-in hover:opacity-85 transition" 
                                                             />
                                                             <a 
                                                                 href={v.uploadedProof} 
@@ -1177,7 +1177,7 @@ const LodgeBillingManager = () => {
                                 </table>
                             </div>
                             {filteredVerifications.length === 0 && (
-                                <div className="text-center py-20 text-slate-400 font-bold uppercase text-xs tracking-widest italic bg-slate-50/50">
+                                <div className="text-center py-20 text-slate-400 font-bold uppercase text-xs tracking-widest italic bg-slate-50 dark:bg-slate-800/50">
                                     {loadingVerifications ? 'Fetching latest verification telemetry...' : 'No verifications pending match.'}
                                 </div>
                             )}
@@ -1222,7 +1222,7 @@ const LodgeBillingManager = () => {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 max-h-[90vh] overflow-y-auto flex flex-col print:max-h-full print:rounded-none print:shadow-none print:w-full"
+                            className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 max-h-[90vh] overflow-y-auto flex flex-col print:max-h-full print:rounded-none print:shadow-none print:w-full"
                         >
                             {/* Modal Header */}
                             <div className="bg-slate-900 p-6 text-white flex justify-between items-center print:hidden">
@@ -1239,7 +1239,7 @@ const LodgeBillingManager = () => {
                             </div>
 
                             {/* Step Indicator */}
-                            <div className="bg-slate-100 p-4 border-b flex justify-around text-[10px] font-black uppercase tracking-wider text-slate-500 print:hidden">
+                            <div className="bg-slate-100 dark:bg-slate-800/80 p-4 border-b flex justify-around text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 print:hidden">
                                 {[
                                     { step: 1, label: 'Room & Rent' },
                                     { step: 2, label: 'Charges & Taxes' },
@@ -1259,14 +1259,14 @@ const LodgeBillingManager = () => {
                                 {billStep === 1 && (
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="bg-slate-50 p-5 rounded-2xl border space-y-3">
+                                            <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border space-y-3">
                                                 <h4 className="text-[10px] font-black uppercase text-slate-400">Room Details (Read-only)</h4>
-                                                <p>Room: <span className="font-bold text-slate-900">Room {generatingBillRoom.number} ({generatingBillRoom.type})</span></p>
-                                                <p>Occupant: <span className="font-bold text-slate-900">{generatingBillRoom.occupantName}</span></p>
-                                                <p>Phone: <span className="font-bold text-slate-900">{generatingBillRoom.phone}</span></p>
-                                                <p>Check-in Date: <span className="font-bold text-slate-900">{generatingBillRoom.checkInDate}</span></p>
+                                                <p>Room: <span className="font-bold text-slate-900 dark:text-white">Room {generatingBillRoom.number} ({generatingBillRoom.type})</span></p>
+                                                <p>Occupant: <span className="font-bold text-slate-900 dark:text-white">{generatingBillRoom.occupantName}</span></p>
+                                                <p>Phone: <span className="font-bold text-slate-900 dark:text-white">{generatingBillRoom.phone}</span></p>
+                                                <p>Check-in Date: <span className="font-bold text-slate-900 dark:text-white">{generatingBillRoom.checkInDate}</span></p>
                                             </div>
-                                            <div className="bg-slate-50 p-5 rounded-2xl border space-y-3">
+                                            <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border space-y-3">
                                                 <h4 className="text-[10px] font-black uppercase text-slate-400 font-bold">Rent Details</h4>
                                                 <div className="space-y-2">
                                                     <div>
@@ -1275,7 +1275,7 @@ const LodgeBillingManager = () => {
                                                             type="number"
                                                             value={billForm.monthlyRent}
                                                             onChange={(e) => setBillForm({ ...billForm, monthlyRent: parseFloat(e.target.value) || 0 })}
-                                                            className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                            className="w-full bg-white dark:bg-slate-900 border p-3 rounded-xl outline-none"
                                                         />
                                                     </div>
                                                     <div>
@@ -1284,14 +1284,14 @@ const LodgeBillingManager = () => {
                                                             type="number"
                                                             value={billForm.previousOutstanding}
                                                             onChange={(e) => setBillForm({ ...billForm, previousOutstanding: parseFloat(e.target.value) || 0 })}
-                                                            className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                            className="w-full bg-white dark:bg-slate-900 border p-3 rounded-xl outline-none"
                                                         />
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="bg-slate-50 p-5 rounded-2xl border space-y-3">
+                                        <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border space-y-3">
                                             <h4 className="text-[10px] font-black uppercase text-slate-400">Billing Period</h4>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
@@ -1300,7 +1300,7 @@ const LodgeBillingManager = () => {
                                                         type="date"
                                                         value={billForm.billingPeriodStart}
                                                         onChange={(e) => setBillForm({ ...billForm, billingPeriodStart: e.target.value })}
-                                                        className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                        className="w-full bg-white dark:bg-slate-900 border p-3 rounded-xl outline-none"
                                                     />
                                                 </div>
                                                 <div>
@@ -1309,7 +1309,7 @@ const LodgeBillingManager = () => {
                                                         type="date"
                                                         value={billForm.billingPeriodEnd}
                                                         onChange={(e) => setBillForm({ ...billForm, billingPeriodEnd: e.target.value })}
-                                                        className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                        className="w-full bg-white dark:bg-slate-900 border p-3 rounded-xl outline-none"
                                                     />
                                                 </div>
                                             </div>
@@ -1320,14 +1320,14 @@ const LodgeBillingManager = () => {
                                 {/* Step 2: Additional Charges & Taxes */}
                                 {billStep === 2 && (
                                     <div className="space-y-6">
-                                        <div className="bg-slate-50 p-5 rounded-2xl border space-y-4">
+                                        <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border space-y-4">
                                             <h4 className="text-[10px] font-black uppercase text-slate-400">Add Unlimited Extra Services/Charges</h4>
                                             
                                             <div className="grid grid-cols-3 gap-3">
                                                 <select
                                                     value={newCharge.name}
                                                     onChange={(e) => setNewCharge({ ...newCharge, name: e.target.value })}
-                                                    className="bg-white border p-3 rounded-xl font-bold"
+                                                    className="bg-white dark:bg-slate-900 border p-3 rounded-xl font-bold"
                                                 >
                                                     <option>Electricity</option>
                                                     <option>Water</option>
@@ -1343,14 +1343,14 @@ const LodgeBillingManager = () => {
                                                     placeholder="Amount (₹)"
                                                     value={newCharge.amount}
                                                     onChange={(e) => setNewCharge({ ...newCharge, amount: e.target.value })}
-                                                    className="bg-white border p-3 rounded-xl outline-none"
+                                                    className="bg-white dark:bg-slate-900 border p-3 rounded-xl outline-none"
                                                 />
                                                 <input 
                                                     type="text"
                                                     placeholder="Remarks"
                                                     value={newCharge.remarks}
                                                     onChange={(e) => setNewCharge({ ...newCharge, remarks: e.target.value })}
-                                                    className="bg-white border p-3 rounded-xl outline-none"
+                                                    className="bg-white dark:bg-slate-900 border p-3 rounded-xl outline-none"
                                                 />
                                             </div>
                                             <button 
@@ -1365,10 +1365,10 @@ const LodgeBillingManager = () => {
                                             {billForm.additionalCharges.length > 0 && (
                                                 <div className="space-y-2 mt-4 border-t pt-4">
                                                     {billForm.additionalCharges.map(charge => (
-                                                        <div key={charge.id} className="flex justify-between items-center bg-white p-3 rounded-xl border">
-                                                            <p className="font-bold text-slate-800">{charge.name} <span className="text-slate-400 font-medium">({charge.remarks || 'No remarks'})</span></p>
+                                                        <div key={charge.id} className="flex justify-between items-center bg-white dark:bg-slate-900 p-3 rounded-xl border">
+                                                            <p className="font-bold text-slate-800 dark:text-slate-200">{charge.name} <span className="text-slate-400 font-medium">({charge.remarks || 'No remarks'})</span></p>
                                                             <div className="flex items-center gap-4">
-                                                                <p className="font-black text-slate-900">₹ {charge.amount}</p>
+                                                                <p className="font-black text-slate-900 dark:text-white">₹ {charge.amount}</p>
                                                                 <button type="button" onClick={() => handleRemoveCharge(charge.id)} className="text-rose-600">
                                                                     <Trash2 className="w-4 h-4" />
                                                                 </button>
@@ -1381,9 +1381,9 @@ const LodgeBillingManager = () => {
 
                                         {/* Taxes & Discounts */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="bg-slate-50 p-5 rounded-2xl border space-y-3">
+                                            <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border space-y-3">
                                                 <h4 className="text-[10px] font-black uppercase text-slate-400">Taxes Configuration</h4>
-                                                <div className="grid grid-cols-2 gap-3 text-slate-700">
+                                                <div className="grid grid-cols-2 gap-3 text-slate-700 dark:text-slate-300">
                                                     <label className="flex items-center gap-2">
                                                         <input 
                                                             type="checkbox" 
@@ -1422,13 +1422,13 @@ const LodgeBillingManager = () => {
                                                             type="number"
                                                             value={billForm.customTaxPercent}
                                                             onChange={(e) => setBillForm({ ...billForm, customTaxPercent: parseFloat(e.target.value) || 0 })}
-                                                            className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                            className="w-full bg-white dark:bg-slate-900 border p-3 rounded-xl outline-none"
                                                         />
                                                     </div>
                                                 )}
                                             </div>
 
-                                            <div className="bg-slate-50 p-5 rounded-2xl border space-y-3">
+                                            <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border space-y-3">
                                                 <h4 className="text-[10px] font-black uppercase text-slate-400">Discount Configuration</h4>
                                                 <div className="flex gap-4">
                                                     <label className="flex items-center gap-2">
@@ -1455,7 +1455,7 @@ const LodgeBillingManager = () => {
                                                             type="number"
                                                             value={billForm.discountValue}
                                                             onChange={(e) => setBillForm({ ...billForm, discountValue: parseFloat(e.target.value) || 0 })}
-                                                            className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                            className="w-full bg-white dark:bg-slate-900 border p-3 rounded-xl outline-none"
                                                         />
                                                     </div>
                                                     <div>
@@ -1464,7 +1464,7 @@ const LodgeBillingManager = () => {
                                                             type="text"
                                                             value={billForm.discountReason}
                                                             onChange={(e) => setBillForm({ ...billForm, discountReason: e.target.value })}
-                                                            className="w-full bg-white border p-3 rounded-xl outline-none"
+                                                            className="w-full bg-white dark:bg-slate-900 border p-3 rounded-xl outline-none"
                                                             placeholder="Promo / Festive Offer"
                                                         />
                                                     </div>
@@ -1478,7 +1478,7 @@ const LodgeBillingManager = () => {
                                 {billStep === 3 && (
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="bg-slate-50 p-5 rounded-2xl border space-y-4">
+                                            <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border space-y-4">
                                                 <h4 className="text-[10px] font-black uppercase text-slate-400">Advance Balance Adjustment</h4>
                                                 
                                                 <div className="flex items-center justify-between">
@@ -1502,16 +1502,16 @@ const LodgeBillingManager = () => {
                                                 </div>
 
                                                 {billForm.useAdvance && (
-                                                    <div className="text-[10px] text-slate-500 border-t pt-3 space-y-1">
+                                                    <div className="text-[10px] text-slate-500 dark:text-slate-400 border-t pt-3 space-y-1">
                                                         <p>Advance Used: ₹ {previewTotals.advanceUsed}</p>
                                                         <p>Advance Remaining: ₹ {previewTotals.advanceRemaining}</p>
                                                     </div>
                                                 )}
                                             </div>
 
-                                            <div className="bg-slate-50 p-5 rounded-2xl border space-y-4">
+                                            <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border space-y-4">
                                                 <h4 className="text-[10px] font-black uppercase text-slate-400">Select Invoice Status</h4>
-                                                <div className="flex gap-3 text-slate-700">
+                                                <div className="flex gap-3 text-slate-700 dark:text-slate-300">
                                                     <label className="flex items-center gap-1.5">
                                                         <input 
                                                             type="radio" 
@@ -1545,7 +1545,7 @@ const LodgeBillingManager = () => {
                                                             <select 
                                                                 value={billForm.paymentMethod}
                                                                 onChange={(e) => setBillForm({ ...billForm, paymentMethod: e.target.value })}
-                                                                className="w-full bg-white border p-2.5 rounded-xl font-bold"
+                                                                className="w-full bg-white dark:bg-slate-900 border p-2.5 rounded-xl font-bold"
                                                             >
                                                                 <option>Cash</option>
                                                                 <option>UPI / QR Scan</option>
@@ -1558,7 +1558,7 @@ const LodgeBillingManager = () => {
                                                                 type="text"
                                                                 value={billForm.transactionId}
                                                                 onChange={(e) => setBillForm({ ...billForm, transactionId: e.target.value })}
-                                                                className="w-full bg-white border p-2.5 rounded-xl outline-none"
+                                                                className="w-full bg-white dark:bg-slate-900 border p-2.5 rounded-xl outline-none"
                                                             />
                                                         </div>
                                                     </div>
@@ -1572,7 +1572,7 @@ const LodgeBillingManager = () => {
                                                                 type="date"
                                                                 value={billForm.dueDate}
                                                                 onChange={(e) => setBillForm({ ...billForm, dueDate: e.target.value })}
-                                                                className="w-full bg-white border p-2.5 rounded-xl outline-none"
+                                                                className="w-full bg-white dark:bg-slate-900 border p-2.5 rounded-xl outline-none"
                                                             />
                                                         </div>
                                                         <div>
@@ -1581,7 +1581,7 @@ const LodgeBillingManager = () => {
                                                                 type="number"
                                                                 value={billForm.lateFee}
                                                                 onChange={(e) => setBillForm({ ...billForm, lateFee: parseFloat(e.target.value) || 0 })}
-                                                                className="w-full bg-white border p-2.5 rounded-xl outline-none"
+                                                                className="w-full bg-white dark:bg-slate-900 border p-2.5 rounded-xl outline-none"
                                                             />
                                                         </div>
                                                     </div>
@@ -1595,7 +1595,7 @@ const LodgeBillingManager = () => {
                                                                 type="number"
                                                                 value={billForm.paidAmount}
                                                                 onChange={(e) => setBillForm({ ...billForm, paidAmount: parseFloat(e.target.value) || 0 })}
-                                                                className="w-full bg-white border p-2.5 rounded-xl outline-none"
+                                                                className="w-full bg-white dark:bg-slate-900 border p-2.5 rounded-xl outline-none"
                                                             />
                                                         </div>
                                                         <div>
@@ -1604,7 +1604,7 @@ const LodgeBillingManager = () => {
                                                                 type="date"
                                                                 value={billForm.balanceDueDate}
                                                                 onChange={(e) => setBillForm({ ...billForm, balanceDueDate: e.target.value })}
-                                                                className="w-full bg-white border p-2.5 rounded-xl outline-none"
+                                                                className="w-full bg-white dark:bg-slate-900 border p-2.5 rounded-xl outline-none"
                                                             />
                                                         </div>
                                                     </div>
@@ -1617,7 +1617,7 @@ const LodgeBillingManager = () => {
                                 {/* Step 4: Live Invoice Preview */}
                                 {billStep === 4 && (
                                     <div className="space-y-6">
-                                        <div className="bg-white border p-8 rounded-2xl shadow-sm relative overflow-hidden print:border-none print:shadow-none">
+                                        <div className="bg-white dark:bg-slate-900 border p-8 rounded-2xl shadow-sm relative overflow-hidden print:border-none print:shadow-none">
                                             
                                             {/* Watermark Overlay Stamp in CSS */}
                                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none select-none text-center">
@@ -1633,7 +1633,7 @@ const LodgeBillingManager = () => {
                                             {/* Top Branding Section */}
                                             <div className="flex justify-between items-start border-b pb-6 mb-6">
                                                 <div>
-                                                    <h2 className="text-xl font-bold text-slate-900">KRISHNA LODGE RESIDENCY</h2>
+                                                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">KRISHNA LODGE RESIDENCY</h2>
                                                     <p className="text-slate-400 font-semibold">Premium Tenancy and ERP Solutions</p>
                                                     <p className="text-slate-400">Palakkad, Kerala | GSTIN: 32ABCDE1234F1Z5</p>
                                                 </div>
@@ -1648,9 +1648,9 @@ const LodgeBillingManager = () => {
                                             <div className="grid grid-cols-2 gap-6 mb-6">
                                                 <div>
                                                     <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">Bill To:</span>
-                                                    <p className="font-extrabold text-slate-900">{generatingBillRoom.occupantName}</p>
-                                                    <p className="text-slate-500">Room {generatingBillRoom.number} ({generatingBillRoom.type})</p>
-                                                    <p className="text-slate-500">Phone: {generatingBillRoom.phone}</p>
+                                                    <p className="font-extrabold text-slate-900 dark:text-white">{generatingBillRoom.occupantName}</p>
+                                                    <p className="text-slate-500 dark:text-slate-400">Room {generatingBillRoom.number} ({generatingBillRoom.type})</p>
+                                                    <p className="text-slate-500 dark:text-slate-400">Phone: {generatingBillRoom.phone}</p>
                                                 </div>
                                                 <div className="text-right">
                                                     <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">Status:</span>
@@ -1667,12 +1667,12 @@ const LodgeBillingManager = () => {
                                             {/* Summary Table Mock */}
                                             <table className="w-full text-left border-collapse mb-6">
                                                 <thead>
-                                                    <tr className="bg-slate-100 text-slate-600 uppercase text-[9px] tracking-wider">
+                                                    <tr className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 uppercase text-[9px] tracking-wider">
                                                         <th className="p-3 rounded-l-xl">Description</th>
                                                         <th className="p-3 text-right rounded-r-xl">Amount (INR)</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-slate-100 text-slate-700">
+                                                <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300">
                                                     <tr>
                                                         <td className="p-3 font-semibold">Monthly Stay Rent (Base Room Charges)</td>
                                                         <td className="p-3 text-right font-black">₹ {billForm.monthlyRent.toLocaleString()}</td>
@@ -1688,11 +1688,11 @@ const LodgeBillingManager = () => {
 
                                             {/* Final Calculations Summary */}
                                             <div className="border-t pt-4 flex flex-col items-end gap-2 text-right">
-                                                <p>Subtotal: <span className="font-extrabold text-slate-900">₹ {previewTotals.subtotal.toLocaleString()}</span></p>
-                                                <p>Taxes (GST/Custom): <span className="font-extrabold text-slate-900">₹ {previewTotals.taxesTotal.toLocaleString()}</span></p>
+                                                <p>Subtotal: <span className="font-extrabold text-slate-900 dark:text-white">₹ {previewTotals.subtotal.toLocaleString()}</span></p>
+                                                <p>Taxes (GST/Custom): <span className="font-extrabold text-slate-900 dark:text-white">₹ {previewTotals.taxesTotal.toLocaleString()}</span></p>
                                                 {previewTotals.discountAmt > 0 && <p className="text-emerald-600">Discount: <span>- ₹ {previewTotals.discountAmt.toLocaleString()}</span></p>}
                                                 {billForm.useAdvance && <p className="text-indigo-600">Advance Used: <span>- ₹ {previewTotals.advanceUsed.toLocaleString()}</span></p>}
-                                                <p className="text-base font-black text-slate-900 border-t pt-2 w-48">Grand Total: <span className="text-indigo-600">₹ {previewTotals.grandTotal.toLocaleString()}</span></p>
+                                                <p className="text-base font-black text-slate-900 dark:text-white border-t pt-2 w-48">Grand Total: <span className="text-indigo-600">₹ {previewTotals.grandTotal.toLocaleString()}</span></p>
                                                 <p className="text-[9px] text-slate-400 font-bold mt-1">In Words: {numberToWords(previewTotals.grandTotal)}</p>
                                             </div>
 
@@ -1700,7 +1700,7 @@ const LodgeBillingManager = () => {
                                             <div className="grid grid-cols-2 gap-6 mt-12 pt-6 border-t border-dashed">
                                                 <div>
                                                     <span className="text-[10px] font-black uppercase text-slate-400 block mb-6">Authorized Signature</span>
-                                                    <p className="font-bold text-slate-800">Krishna Lodge ERP System</p>
+                                                    <p className="font-bold text-slate-800 dark:text-slate-200">Krishna Lodge ERP System</p>
                                                 </div>
                                                 <div className="text-right">
                                                     <span className="text-[10px] font-black uppercase text-slate-400 block mb-6">Manager Seal Stamp</span>
@@ -1714,7 +1714,7 @@ const LodgeBillingManager = () => {
                             </div>
 
                             {/* Modal Footer Controls */}
-                            <div className="p-6 border-t flex justify-between bg-slate-50 print:hidden">
+                            <div className="p-6 border-t flex justify-between bg-slate-50 dark:bg-slate-800 print:hidden">
                                 <button
                                     type="button"
                                     onClick={() => setBillStep(prev => Math.max(1, prev - 1))}
@@ -1738,7 +1738,7 @@ const LodgeBillingManager = () => {
                                             <button
                                                 type="button"
                                                 onClick={handlePrintPreview}
-                                                className="px-5 py-3 bg-slate-100 hover:bg-slate-200 border rounded-xl font-bold uppercase flex items-center gap-1.5"
+                                                className="px-5 py-3 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 border rounded-xl font-bold uppercase flex items-center gap-1.5"
                                             >
                                                 <Printer className="w-4.5 h-4.5" /> Print Invoice
                                             </button>
@@ -1773,7 +1773,7 @@ const LodgeBillingManager = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl relative z-10 overflow-hidden"
+                            className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl relative z-10 overflow-hidden"
                         >
                             <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
                                 <div>
@@ -1787,20 +1787,20 @@ const LodgeBillingManager = () => {
 
                             <div className="p-6 space-y-6 text-xs font-semibold">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border">
+                                    <div className="space-y-3 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border">
                                         <h4 className="text-[10px] font-black uppercase text-slate-400">Tenant Profile</h4>
-                                        <div className="space-y-2 text-slate-700">
-                                            <p>Name: <span className="text-slate-900 font-extrabold">{selectedRoomDetail.occupantName}</span></p>
-                                            <p>Phone: <span className="text-slate-900 font-extrabold">{selectedRoomDetail.phone}</span></p>
-                                            <p>Email: <span className="text-slate-900 font-extrabold">{selectedRoomDetail.email}</span></p>
-                                            <p>Check-in: <span className="text-slate-900 font-extrabold">{selectedRoomDetail.checkInDate}</span></p>
+                                        <div className="space-y-2 text-slate-700 dark:text-slate-300">
+                                            <p>Name: <span className="text-slate-900 dark:text-white font-extrabold">{selectedRoomDetail.occupantName}</span></p>
+                                            <p>Phone: <span className="text-slate-900 dark:text-white font-extrabold">{selectedRoomDetail.phone}</span></p>
+                                            <p>Email: <span className="text-slate-900 dark:text-white font-extrabold">{selectedRoomDetail.email}</span></p>
+                                            <p>Check-in: <span className="text-slate-900 dark:text-white font-extrabold">{selectedRoomDetail.checkInDate}</span></p>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border">
+                                    <div className="space-y-3 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border">
                                         <h4 className="text-[10px] font-black uppercase text-slate-400 font-bold">Billing Properties</h4>
-                                        <div className="space-y-2 text-slate-700">
-                                            <p>Monthly Rent: <span className="text-slate-900 font-extrabold">₹ {selectedRoomDetail.rent || selectedRoomDetail.price}</span></p>
+                                        <div className="space-y-2 text-slate-700 dark:text-slate-300">
+                                            <p>Monthly Rent: <span className="text-slate-900 dark:text-white font-extrabold">₹ {selectedRoomDetail.rent || selectedRoomDetail.price}</span></p>
                                             <p>Payment Status: <span className="text-indigo-600 font-extrabold">{selectedRoomDetail.paymentBadge}</span></p>
                                             <p>Outstanding Due: <span className="text-rose-600 font-extrabold">₹ {selectedRoomDetail.outstandingAmt}</span></p>
                                         </div>
@@ -1810,7 +1810,7 @@ const LodgeBillingManager = () => {
                                 <div className="flex gap-3 justify-end pt-4 border-t">
                                     <button 
                                         onClick={() => setSelectedRoomDetail(null)}
-                                        className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold uppercase"
+                                        className="px-6 py-3 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 rounded-xl font-bold uppercase"
                                     >
                                         Close Details
                                     </button>
@@ -1836,7 +1836,7 @@ const LodgeBillingManager = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white w-full max-w-md rounded-3xl shadow-2xl relative z-10 overflow-hidden"
+                            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl relative z-10 overflow-hidden"
                         >
                             <div className="bg-slate-900 p-6 text-white">
                                 <h3 className="text-lg font-bold">Collect Advance Rent</h3>
@@ -1857,14 +1857,14 @@ const LodgeBillingManager = () => {
                                     <input 
                                         type="number"
                                         defaultValue={30000}
-                                        className="w-full bg-slate-50 border p-3 rounded-xl outline-none"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border p-3 rounded-xl outline-none"
                                     />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-black uppercase text-slate-400">Covers Until Date</label>
                                     <input 
                                         type="date"
-                                        className="w-full bg-slate-50 border p-3 rounded-xl outline-none"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border p-3 rounded-xl outline-none"
                                     />
                                 </div>
 
@@ -1872,7 +1872,7 @@ const LodgeBillingManager = () => {
                                     <button 
                                         type="button"
                                         onClick={() => setCollectingAdvanceRoom(null)}
-                                        className="flex-1 py-3 text-slate-400 hover:text-slate-600 transition"
+                                        className="flex-1 py-3 text-slate-400 hover:text-slate-600 dark:text-slate-400 transition"
                                     >
                                         Cancel
                                     </button>

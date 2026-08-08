@@ -511,13 +511,13 @@ const AdminFinance = () => {
     }
 
     return (
-        <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-8 font-sans bg-slate-50 min-h-screen">
+        <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-8 font-sans bg-slate-50 dark:bg-slate-800 min-h-screen">
             
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter italic">Financial Intelligence & Payroll</h1>
-                    <p className="text-slate-500 font-medium">Log expenditures, process monthly staff payrolls, lock salary disbursements, and administer overtime registries.</p>
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Financial Intelligence & Payroll</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium">Log expenditures, process monthly staff payrolls, lock salary disbursements, and administer overtime registries.</p>
                 </div>
                 <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block">Disbursement Cycle</label>
@@ -525,34 +525,34 @@ const AdminFinance = () => {
                         type="month" 
                         value={selectedMonth}
                         onChange={(e) => setSelectedMonth(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl outline-none font-bold text-slate-700 focus:border-indigo-500"
+                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl outline-none font-bold text-slate-700 dark:text-slate-300 focus:border-indigo-500"
                     />
                 </div>
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex bg-slate-200/50 p-1.5 rounded-2xl w-fit border border-slate-200">
+            <div className="flex bg-slate-200/50 p-1.5 rounded-2xl w-fit border border-slate-200 dark:border-slate-700">
                 <button 
                     onClick={() => setActiveTab('expenses')}
-                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'expenses' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'expenses' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                 >
                     📈 Expense Ledger
                 </button>
                 <button 
                     onClick={() => setActiveTab('payroll')}
-                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'payroll' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'payroll' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                 >
                     💰 Salary & Payroll Manager
                 </button>
                 <button 
                     onClick={() => setActiveTab('overtime')}
-                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'overtime' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'overtime' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                 >
                     ⏱️ Overtime Registry
                 </button>
                 <button 
                     onClick={() => setActiveTab('labour-bills')}
-                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'labour-bills' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'labour-bills' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                 >
                     🚚 Labour & Transport Bills
                 </button>
@@ -572,12 +572,12 @@ const AdminFinance = () => {
                             <TrendingUp className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
                             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-2">Authenticated Income</p>
                             <h2 className="text-4xl font-black italic">₹ {summary?.totalIncome?.toLocaleString() || 0}</h2>
-                            <p className="text-[9px] font-bold text-slate-500 mt-4 uppercase tracking-widest leading-none">Net Revenue from Paid Units</p>
+                            <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 mt-4 uppercase tracking-widest leading-none">Net Revenue from Paid Units</p>
                         </div>
-                        <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-xl relative overflow-hidden group">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-8 rounded-[2rem] shadow-xl relative overflow-hidden group">
                             <TrendingDown className="absolute -right-4 -bottom-4 w-32 h-32 opacity-5 text-rose-500 group-hover:scale-110 transition-transform" />
                             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-2">Total Expenditure</p>
-                            <h2 className="text-4xl font-black italic text-slate-900">₹ {summary?.totalExpense?.toLocaleString() || 0}</h2>
+                            <h2 className="text-4xl font-black italic text-slate-900 dark:text-white">₹ {summary?.totalExpense?.toLocaleString() || 0}</h2>
                             <div className="mt-4 flex gap-4">
                                 <span className="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded italic uppercase">Salaries: {summary?.expenseBreakdown?.staff?.toLocaleString() || 0}</span>
                                 <span className="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded italic uppercase">Ops: {summary?.expenseBreakdown?.others?.toLocaleString() || 0}</span>
@@ -593,9 +593,9 @@ const AdminFinance = () => {
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                         {/* TRANSACTION INJECTION PORT (EXPENSE / INCOME) */}
-                        <div className="lg:col-span-5 bg-white border border-slate-200 p-8 rounded-[3rem] shadow-2xl h-fit">
+                        <div className="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-8 rounded-[3rem] shadow-2xl h-fit">
                             {/* Toggle Switch */}
-                            <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-6 border border-slate-200">
+                            <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl mb-6 border border-slate-200 dark:border-slate-700">
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -605,7 +605,7 @@ const AdminFinance = () => {
                                     className={`flex-1 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
                                         transactionType === 'expense' 
                                             ? 'bg-rose-600 text-white shadow-md' 
-                                            : 'text-slate-500 hover:text-slate-900'
+                                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'
                                     }`}
                                 >
                                     🔴 Log Expense
@@ -619,14 +619,14 @@ const AdminFinance = () => {
                                     className={`flex-1 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
                                         transactionType === 'income' 
                                             ? 'bg-emerald-600 text-white shadow-md' 
-                                            : 'text-slate-500 hover:text-slate-900'
+                                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'
                                     }`}
                                 >
                                     🟢 Log Income
                                 </button>
                             </div>
 
-                            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic flex items-center gap-3 mb-6">
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic flex items-center gap-3 mb-6">
                                 {transactionType === 'expense' ? (
                                     <><Plus className="text-rose-600" /> Log Operational Expense</>
                                 ) : (
@@ -642,7 +642,7 @@ const AdminFinance = () => {
                                         value={newExpense.title}
                                         onChange={(e) => setNewExpense({...newExpense, title: e.target.value})}
                                         placeholder={transactionType === 'expense' ? "e.g. Structural Steel Order" : "e.g. Scrap Steel Material Sale"}
-                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none text-sm"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none text-sm"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -653,7 +653,7 @@ const AdminFinance = () => {
                                         value={newExpense.amount}
                                         onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
                                         placeholder="0.00"
-                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none text-sm"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none text-sm"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -661,7 +661,7 @@ const AdminFinance = () => {
                                     <select 
                                         value={newExpense.category}
                                         onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
-                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-800 focus:border-indigo-500 outline-none uppercase text-xs tracking-wider"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none uppercase text-xs tracking-wider"
                                     >
                                         {transactionType === 'expense' ? (
                                             <>
@@ -697,16 +697,16 @@ const AdminFinance = () => {
                         </div>
 
                         {/* FINANCIAL AUDIT LOG */}
-                        <div className="lg:col-span-7 bg-white border border-slate-200 p-8 rounded-[3rem] shadow-2xl flex flex-col">
+                        <div className="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-8 rounded-[3rem] shadow-2xl flex flex-col">
                             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic flex items-center gap-3">
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic flex items-center gap-3">
                                     <PieChart className="text-indigo-600" /> Financial Audit Log
                                 </h3>
-                                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                                <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
                                     <button
                                         onClick={() => setLedgerFilter('all')}
                                         className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${
-                                            ledgerFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                                            ledgerFilter === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'
                                         }`}
                                     >
                                         All
@@ -714,7 +714,7 @@ const AdminFinance = () => {
                                     <button
                                         onClick={() => setLedgerFilter('expense')}
                                         className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${
-                                            ledgerFilter === 'expense' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                                            ledgerFilter === 'expense' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'
                                         }`}
                                     >
                                         Expenses
@@ -722,7 +722,7 @@ const AdminFinance = () => {
                                     <button
                                         onClick={() => setLedgerFilter('income')}
                                         className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${
-                                            ledgerFilter === 'income' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                                            ledgerFilter === 'income' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'
                                         }`}
                                     >
                                         Income
@@ -745,11 +745,11 @@ const AdminFinance = () => {
                                     const isIncome = exp.type === 'income';
                                     return (
                                         <div key={exp._id} className={`p-4 rounded-2xl border transition flex items-center justify-between group ${
-                                            isIncome ? 'bg-emerald-50/40 border-emerald-100 hover:bg-emerald-50' : 'bg-slate-50 border-slate-100 hover:bg-indigo-50/50'
+                                            isIncome ? 'bg-emerald-50/40 border-emerald-100 hover:bg-emerald-50' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-800 hover:bg-indigo-50/50'
                                         }`}>
                                             <div className="flex items-center gap-4">
                                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black shadow-sm uppercase text-[9px] ${
-                                                    isIncome ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-indigo-600'
+                                                    isIncome ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-indigo-600'
                                                 }`}>
                                                     {exp.category?.slice(0, 3) || (isIncome ? 'INC' : 'EXP')}
                                                 </div>
@@ -782,7 +782,7 @@ const AdminFinance = () => {
             {/* TAB 2: SALARY & PAYROLL MANAGER */}
             {activeTab === 'payroll' && (
                 <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center justify-between">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap gap-4 items-center justify-between">
                         <div>
                             <h3 className="text-xl font-black uppercase tracking-tight text-slate-950">Staff Payroll Registry</h3>
                             <p className="text-xs text-slate-400 font-medium">Verify draft sheets, configure modifer fields, lock salaries, and download professional salary slips.</p>
@@ -797,20 +797,20 @@ const AdminFinance = () => {
                         </button>
                     </div>
 
-                    <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full border-collapse text-left text-xs min-w-[1200px]">
                                 <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-200">
-                                        <th className="px-6 py-5 font-bold text-slate-600">Employee Details</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Type / Base</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Total Earned</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Already Paid</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Salary Advance</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Remaining Balance</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Outstanding</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Status</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600 text-right">Actions</th>
+                                    <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Employee Details</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Type / Base</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Total Earned</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Already Paid</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Salary Advance</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Remaining Balance</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Outstanding</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Status</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -832,26 +832,26 @@ const AdminFinance = () => {
                                         const statusText = record ? (record.paymentStatus ?? 'DRAFT') : 'DRAFT';
 
                                         return (
-                                            <tr key={staff._id} className="hover:bg-slate-50/50 transition">
+                                            <tr key={staff._id} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
                                                 <td className="px-6 py-5">
                                                     <div>
-                                                        <p className="font-extrabold text-slate-900 text-sm leading-tight">{staff.name}</p>
+                                                        <p className="font-extrabold text-slate-900 dark:text-white text-sm leading-tight">{staff.name}</p>
                                                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{staff.staff_id} • {staff.designation}</p>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-5">
                                                     <div>
-                                                        <span className="font-bold text-slate-700">{staff.salaryType || 'Monthly'}</span>
+                                                        <span className="font-bold text-slate-700 dark:text-slate-300">{staff.salaryType || 'Monthly'}</span>
                                                         <p className="font-bold text-indigo-600 mt-0.5">₹ {baseSal.toLocaleString()}</p>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-5 font-bold text-slate-900">
+                                                <td className="px-6 py-5 font-bold text-slate-900 dark:text-white">
                                                     ₹ {totalEarned.toLocaleString()}
                                                 </td>
-                                                <td className="px-6 py-5 font-semibold text-slate-700">
+                                                <td className="px-6 py-5 font-semibold text-slate-700 dark:text-slate-300">
                                                     ₹ {alreadyPaid.toLocaleString()}
                                                 </td>
-                                                <td className="px-6 py-5 font-semibold text-slate-700">
+                                                <td className="px-6 py-5 font-semibold text-slate-700 dark:text-slate-300">
                                                     ₹ {advancePaid.toLocaleString()}
                                                 </td>
                                                 <td className="px-6 py-5 font-black text-indigo-600">
@@ -863,7 +863,7 @@ const AdminFinance = () => {
                                                 <td className="px-6 py-5">
                                                     <span className={`inline-flex px-2.5 py-1 rounded-lg font-black uppercase tracking-wider text-[9px] ${
                                                         statusText === 'paid' ? 'bg-emerald-50 text-emerald-700' : 
-                                                        statusText === 'partially_paid' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-700'
+                                                        statusText === 'partially_paid' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300'
                                                     }`}>
                                                         {statusText}
                                                     </span>
@@ -893,7 +893,7 @@ const AdminFinance = () => {
                                                                 });
                                                                 setShowEditStaffModal(true);
                                                             }}
-                                                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition"
+                                                            className="p-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-lg transition"
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </button>
@@ -923,7 +923,7 @@ const AdminFinance = () => {
                                                         <button 
                                                             title="View Payment History"
                                                             onClick={() => handleOpenHistoryModal(staff, record)}
-                                                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition"
+                                                            className="p-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg transition"
                                                         >
                                                             <Activity className="w-4 h-4" />
                                                         </button>
@@ -933,7 +933,7 @@ const AdminFinance = () => {
                                                             <button 
                                                                 title="Download salary slip"
                                                                 onClick={() => generateSalaryPDF(locked, staff)}
-                                                                className="p-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-lg transition"
+                                                                className="p-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg transition"
                                                             >
                                                                 <Download className="w-4 h-4" />
                                                             </button>
@@ -953,7 +953,7 @@ const AdminFinance = () => {
             {/* TAB 3: OVERTIME REGISTRY */}
             {activeTab === 'overtime' && (
                 <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center justify-between">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap gap-4 items-center justify-between">
                         <div>
                             <h3 className="text-xl font-black uppercase tracking-tight text-slate-950">Overtime Logbook</h3>
                             <p className="text-xs text-slate-400 font-medium">Log staff overtime hours, edit remarks, and verify historical work cycles.</p>
@@ -970,19 +970,19 @@ const AdminFinance = () => {
                         </button>
                     </div>
 
-                    <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full border-collapse text-left text-xs">
                                 <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-200">
-                                        <th className="px-6 py-5 font-bold text-slate-600">Employee Details</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Log Date</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Hours Logged</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Rate / Hour</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Total Yield</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Remarks</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600">Status</th>
-                                        <th className="px-6 py-5 font-bold text-slate-600 text-right">Actions</th>
+                                    <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Employee Details</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Log Date</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Hours Logged</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Rate / Hour</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Total Yield</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Remarks</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Status</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -993,18 +993,18 @@ const AdminFinance = () => {
                                     ) : otRecords.map(ot => {
                                         const staff = ot.staffId || {};
                                         return (
-                                            <tr key={ot._id} className="hover:bg-slate-50/50 transition">
+                                            <tr key={ot._id} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
                                                 <td className="px-6 py-5">
                                                     <div>
-                                                        <p className="font-extrabold text-slate-900 text-sm leading-tight">{staff.name || 'Unknown'}</p>
+                                                        <p className="font-extrabold text-slate-900 dark:text-white text-sm leading-tight">{staff.name || 'Unknown'}</p>
                                                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{staff.staff_id || 'N/A'} • {staff.designation || 'Staff'}</p>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-5 font-bold text-slate-600">{ot.date}</td>
-                                                <td className="px-6 py-5 font-bold text-slate-700">{ot.hours} hrs</td>
-                                                <td className="px-6 py-5 font-semibold text-slate-500">₹ {ot.ratePerHour || staff.overtimeRate || 0}</td>
-                                                <td className="px-6 py-5 font-black text-slate-900 text-sm">₹ {ot.totalAmount?.toLocaleString()}</td>
-                                                <td className="px-6 py-5 font-medium text-slate-500 max-w-xs truncate" title={ot.remarks}>{ot.remarks || 'Regular overtime'}</td>
+                                                <td className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">{ot.date}</td>
+                                                <td className="px-6 py-5 font-bold text-slate-700 dark:text-slate-300">{ot.hours} hrs</td>
+                                                <td className="px-6 py-5 font-semibold text-slate-500 dark:text-slate-400">₹ {ot.ratePerHour || staff.overtimeRate || 0}</td>
+                                                <td className="px-6 py-5 font-black text-slate-900 dark:text-white text-sm">₹ {ot.totalAmount?.toLocaleString()}</td>
+                                                <td className="px-6 py-5 font-medium text-slate-500 dark:text-slate-400 max-w-xs truncate" title={ot.remarks}>{ot.remarks || 'Regular overtime'}</td>
                                                 <td className="px-6 py-5">
                                                     <span className={`inline-flex px-2.5 py-1 rounded-lg font-black uppercase tracking-wider text-[9px] ${
                                                         ot.status === 'Approved' ? 'bg-emerald-50 text-emerald-700' :
@@ -1044,7 +1044,7 @@ const AdminFinance = () => {
                                                                 });
                                                                 setShowOtModal(true);
                                                             }}
-                                                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition"
+                                                            className="p-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-lg transition"
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </button>
@@ -1074,12 +1074,12 @@ const AdminFinance = () => {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
+                            className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
                         >
-                            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-xl font-black text-slate-900 uppercase">Edit Financial Parameters</h3>
-                                    <p className="text-xs text-slate-500 font-medium">Configure payroll base rates and recurring modifier parameters for {selectedStaffForEdit?.name}.</p>
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase">Edit Financial Parameters</h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Configure payroll base rates and recurring modifier parameters for {selectedStaffForEdit?.name}.</p>
                                 </div>
                                 <button onClick={() => setShowEditStaffModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
                                     <X className="w-5 h-5 text-slate-400" />
@@ -1093,7 +1093,7 @@ const AdminFinance = () => {
                                         <select 
                                             value={editStaffFinanceForm.salaryType}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, salaryType: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         >
                                             <option value="Monthly">Monthly</option>
                                             <option value="Daily Wage">Daily Wage</option>
@@ -1106,7 +1106,7 @@ const AdminFinance = () => {
                                             type="number"
                                             value={editStaffFinanceForm.base_salary}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, base_salary: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -1115,7 +1115,7 @@ const AdminFinance = () => {
                                             type="number"
                                             value={editStaffFinanceForm.overtimeRate}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, overtimeRate: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -1124,7 +1124,7 @@ const AdminFinance = () => {
                                             type="number"
                                             value={editStaffFinanceForm.bonusAmount}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, bonusAmount: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -1133,7 +1133,7 @@ const AdminFinance = () => {
                                             type="number"
                                             value={editStaffFinanceForm.advanceAmount}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, advanceAmount: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -1142,7 +1142,7 @@ const AdminFinance = () => {
                                             type="number"
                                             value={editStaffFinanceForm.deductionAmount}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, deductionAmount: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -1151,7 +1151,7 @@ const AdminFinance = () => {
                                             type="number"
                                             value={editStaffFinanceForm.standardWorkingHoursPerDay}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, standardWorkingHoursPerDay: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -1160,7 +1160,7 @@ const AdminFinance = () => {
                                             type="number"
                                             value={editStaffFinanceForm.workingDaysPerMonth}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, workingDaysPerMonth: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -1168,7 +1168,7 @@ const AdminFinance = () => {
                                         <select 
                                             value={editStaffFinanceForm.autoSalaryCalculation}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, autoSalaryCalculation: e.target.value === 'true'})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         >
                                             <option value="true">Enable</option>
                                             <option value="false">Disable</option>
@@ -1179,14 +1179,14 @@ const AdminFinance = () => {
                                         <select 
                                             value={editStaffFinanceForm.otApprovalRequired}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, otApprovalRequired: e.target.value === 'true'})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         >
                                             <option value="true">Yes</option>
                                             <option value="false">No</option>
                                         </select>
                                     </div>
 
-                                    <div className="md:col-span-2 pt-4 border-t border-slate-100">
+                                    <div className="md:col-span-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                                         <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-3">Bank Details for Payout Transfer</h4>
                                     </div>
 
@@ -1197,7 +1197,7 @@ const AdminFinance = () => {
                                             placeholder="name@upi"
                                             value={editStaffFinanceForm.upi_id}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, upi_id: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -1207,7 +1207,7 @@ const AdminFinance = () => {
                                             placeholder="SBI / Federal"
                                             value={editStaffFinanceForm.bank_name}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, bank_name: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -1217,7 +1217,7 @@ const AdminFinance = () => {
                                             placeholder="00000000"
                                             value={editStaffFinanceForm.account_number}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, account_number: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -1227,7 +1227,7 @@ const AdminFinance = () => {
                                             placeholder="SBIN0000000"
                                             value={editStaffFinanceForm.ifsc_code}
                                             onChange={e => setEditStaffFinanceForm({...editStaffFinanceForm, ifsc_code: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                         />
                                     </div>
                                 </div>
@@ -1254,10 +1254,10 @@ const AdminFinance = () => {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+                            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
                         >
-                            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                                <h3 className="text-lg font-black text-slate-900 uppercase">{editingOt ? 'Edit' : 'Log'} Overtime Hours</h3>
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">{editingOt ? 'Edit' : 'Log'} Overtime Hours</h3>
                                 <button onClick={() => setShowOtModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
                                     <X className="w-5 h-5 text-slate-400" />
                                 </button>
@@ -1268,7 +1268,7 @@ const AdminFinance = () => {
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Staff Employee</label>
                                         {editingOt ? (
-                                            <div className="bg-slate-100 p-3.5 border border-slate-200 text-slate-800 font-bold rounded-xl text-xs">
+                                            <div className="bg-slate-100 dark:bg-slate-800/80 p-3.5 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs">
                                                 {editingOt.staffId?.name}
                                             </div>
                                         ) : (
@@ -1276,7 +1276,7 @@ const AdminFinance = () => {
                                                 required
                                                 value={otForm.staffId}
                                                 onChange={e => setOtForm({...otForm, staffId: e.target.value})}
-                                                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                             >
                                                 <option value="">Select Employee...</option>
                                                 {staffList.map(s => (
@@ -1288,7 +1288,7 @@ const AdminFinance = () => {
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Service Date</label>
                                         {editingOt ? (
-                                            <div className="bg-slate-100 p-3.5 border border-slate-200 text-slate-800 font-bold rounded-xl text-xs">
+                                            <div className="bg-slate-100 dark:bg-slate-800/80 p-3.5 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs">
                                                 {editingOt.date}
                                             </div>
                                         ) : (
@@ -1297,7 +1297,7 @@ const AdminFinance = () => {
                                                 type="date"
                                                 value={otForm.date}
                                                 onChange={e => setOtForm({...otForm, date: e.target.value})}
-                                                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300"
                                             />
                                         )}
                                     </div>
@@ -1310,7 +1310,7 @@ const AdminFinance = () => {
                                             placeholder="e.g. 2.5"
                                             value={otForm.hours}
                                             onChange={e => setOtForm({...otForm, hours: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -1320,7 +1320,7 @@ const AdminFinance = () => {
                                             placeholder="e.g. Welding support on project #2"
                                             value={otForm.remarks}
                                             onChange={e => setOtForm({...otForm, remarks: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300"
                                         />
                                     </div>
                                 </div>
@@ -1347,11 +1347,11 @@ const AdminFinance = () => {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-8"
+                            className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-8"
                         >
-                            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-xl font-black text-slate-900 uppercase">Salary Payout Dashboard</h3>
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase">Salary Payout Dashboard</h3>
                                     <p className="text-xs text-slate-400 font-semibold mt-0.5">Staff Profile: {paymentForm.staffName} • Cycle: {paymentForm.month}</p>
                                 </div>
                                 <button onClick={() => setShowPaymentModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
@@ -1361,22 +1361,22 @@ const AdminFinance = () => {
                             
                             <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
                                 {/* Detailed Salary Dashboard Grid */}
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                                    <div className="bg-white p-3 rounded-xl border border-slate-200">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                    <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Monthly Salary</p>
-                                        <p className="text-base font-black text-slate-900 mt-1">₹ {paymentForm.baseSalary?.toLocaleString()}</p>
+                                        <p className="text-base font-black text-slate-900 dark:text-white mt-1">₹ {paymentForm.baseSalary?.toLocaleString()}</p>
                                     </div>
-                                    <div className="bg-white p-3 rounded-xl border border-slate-200">
+                                    <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Hourly Rate</p>
-                                        <p className="text-base font-black text-slate-900 mt-1">₹ {paymentForm.hourlyRate?.toLocaleString()}</p>
+                                        <p className="text-base font-black text-slate-900 dark:text-white mt-1">₹ {paymentForm.hourlyRate?.toLocaleString()}</p>
                                     </div>
-                                    <div className="bg-white p-3 rounded-xl border border-slate-200">
+                                    <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Present Days</p>
-                                        <p className="text-base font-black text-slate-900 mt-1">{paymentForm.presentDays} Days</p>
+                                        <p className="text-base font-black text-slate-900 dark:text-white mt-1">{paymentForm.presentDays} Days</p>
                                     </div>
-                                    <div className="bg-white p-3 rounded-xl border border-slate-200">
+                                    <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Worked Hours</p>
-                                        <p className="text-base font-black text-slate-900 mt-1">{paymentForm.workedHours?.toFixed(2)} hrs</p>
+                                        <p className="text-base font-black text-slate-900 dark:text-white mt-1">{paymentForm.workedHours?.toFixed(2)} hrs</p>
                                     </div>
                                 </div>
 
@@ -1444,7 +1444,7 @@ const AdminFinance = () => {
                                                 required
                                                 value={paymentForm.type}
                                                 onChange={e => setPaymentForm({...paymentForm, type: e.target.value})}
-                                                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                             >
                                                 <option value="Partial">Partial Salary</option>
                                                 <option value="Advance">Salary Advance</option>
@@ -1457,7 +1457,7 @@ const AdminFinance = () => {
                                                 required
                                                 value={paymentForm.paymentMethod}
                                                 onChange={e => setPaymentForm({...paymentForm, paymentMethod: e.target.value})}
-                                                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs"
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs"
                                             >
                                                 <option value="Cash">Cash</option>
                                                 <option value="UPI">UPI</option>
@@ -1475,7 +1475,7 @@ const AdminFinance = () => {
                                                 type="number"
                                                 value={paymentForm.amount}
                                                 onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})}
-                                                className="flex-1 bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                                className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300"
                                             />
                                             <button
                                                 type="button"
@@ -1496,7 +1496,7 @@ const AdminFinance = () => {
                                             placeholder="e.g. Paid mid-month partial salary"
                                             value={paymentForm.notes}
                                             onChange={e => setPaymentForm({...paymentForm, notes: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300"
                                         />
                                     </div>
 
@@ -1504,7 +1504,7 @@ const AdminFinance = () => {
                                         <button 
                                             type="button" 
                                             onClick={() => setShowPaymentModal(false)}
-                                            className="px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold uppercase tracking-wider text-xs"
+                                            className="px-6 py-4 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-xl font-bold uppercase tracking-wider text-xs"
                                         >
                                             Close
                                         </button>
@@ -1532,7 +1532,7 @@ const AdminFinance = () => {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white w-full max-w-md rounded-3xl shadow-2xl border-4 border-rose-500 overflow-hidden"
+                            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl border-4 border-rose-500 overflow-hidden"
                         >
                             <div className="p-6 bg-rose-50 border-b border-rose-100 flex items-center gap-3">
                                 <AlertCircle className="w-8 h-8 text-rose-600 shrink-0" />
@@ -1543,13 +1543,13 @@ const AdminFinance = () => {
                             </div>
                             
                             <div className="p-6 space-y-4">
-                                <p className="text-xs text-slate-600 font-bold leading-relaxed">
+                                <p className="text-xs text-slate-600 dark:text-slate-400 font-bold leading-relaxed">
                                     The entered payment amount is greater than the employee's remaining payable salary based on working hours.
                                 </p>
                                 
-                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
-                                    <p className="text-slate-600 font-bold">Remaining Balance: <span className="text-slate-900 font-black">₹{parseFloat(paymentForm.remainingBalance).toLocaleString()}</span></p>
-                                    <p className="text-slate-600 font-bold">Entered Amount: <span className="text-rose-600 font-black">₹{parseFloat(paymentForm.amount).toLocaleString()}</span></p>
+                                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs">
+                                    <p className="text-slate-600 dark:text-slate-400 font-bold">Remaining Balance: <span className="text-slate-900 dark:text-white font-black">₹{parseFloat(paymentForm.remainingBalance).toLocaleString()}</span></p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-bold">Entered Amount: <span className="text-rose-600 font-black">₹{parseFloat(paymentForm.amount).toLocaleString()}</span></p>
                                 </div>
 
                                 <div className="space-y-3 pt-2">
@@ -1561,7 +1561,7 @@ const AdminFinance = () => {
                                             placeholder="Enter admin name"
                                             value={overpaymentForm.approvedBy}
                                             onChange={e => setOverpaymentForm({...overpaymentForm, approvedBy: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -1572,7 +1572,7 @@ const AdminFinance = () => {
                                             placeholder="Specify approval reason"
                                             value={overpaymentForm.reason}
                                             onChange={e => setOverpaymentForm({...overpaymentForm, reason: e.target.value})}
-                                            className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300"
                                         />
                                     </div>
                                 </div>
@@ -1581,7 +1581,7 @@ const AdminFinance = () => {
                                     <button 
                                         type="button"
                                         onClick={() => setShowOverpaymentWarning(false)}
-                                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black uppercase tracking-wider text-xs py-4 rounded-xl transition active:scale-95 text-center"
+                                        className="bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black uppercase tracking-wider text-xs py-4 rounded-xl transition active:scale-95 text-center"
                                     >
                                         No, Edit Amount
                                     </button>
@@ -1609,11 +1609,11 @@ const AdminFinance = () => {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
+                            className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
                         >
-                            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-lg font-black text-slate-900 uppercase">Payment Ledger History</h3>
+                                    <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Payment Ledger History</h3>
                                     <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{historyStaffName} • Cycle: {selectedMonth}</p>
                                 </div>
                                 <button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
@@ -1629,18 +1629,18 @@ const AdminFinance = () => {
                                 ) : (
                                     <table className="w-full border-collapse text-left text-xs">
                                         <thead>
-                                            <tr className="bg-slate-50 border-b border-slate-200">
-                                                <th className="px-4 py-3 font-bold text-slate-600">Date & Time</th>
-                                                <th className="px-4 py-3 font-bold text-slate-600">Type</th>
-                                                <th className="px-4 py-3 font-bold text-slate-600">Method</th>
-                                                <th className="px-4 py-3 font-bold text-slate-600">Amount</th>
-                                                <th className="px-4 py-3 font-bold text-slate-600">Remarks</th>
+                                            <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                                                <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Date & Time</th>
+                                                <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Type</th>
+                                                <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Method</th>
+                                                <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Amount</th>
+                                                <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Remarks</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
                                             {historyList.map((tx, idx) => (
-                                                <tr key={tx._id || idx} className="hover:bg-slate-50/50 transition">
-                                                    <td className="px-4 py-3 font-medium text-slate-500">
+                                                <tr key={tx._id || idx} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
+                                                    <td className="px-4 py-3 font-medium text-slate-500 dark:text-slate-400">
                                                         {new Date(tx.createdAt).toLocaleString()}
                                                     </td>
                                                     <td className="px-4 py-3">
@@ -1651,9 +1651,9 @@ const AdminFinance = () => {
                                                             {tx.type}
                                                         </span>
                                                     </td>
-                                                    <td className="px-4 py-3 font-bold text-slate-600">{tx.paymentMethod}</td>
-                                                    <td className="px-4 py-3 font-extrabold text-slate-900">₹{tx.amount.toLocaleString()}</td>
-                                                    <td className="px-4 py-3 text-slate-500">
+                                                    <td className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">{tx.paymentMethod}</td>
+                                                    <td className="px-4 py-3 font-extrabold text-slate-900 dark:text-white">₹{tx.amount.toLocaleString()}</td>
+                                                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                                                         <p>{tx.notes || '-'}</p>
                                                         {tx.exceededAllowed && (
                                                             <div className="mt-1 bg-rose-50 text-rose-700 p-1.5 rounded border border-rose-100 text-[9px] font-semibold">

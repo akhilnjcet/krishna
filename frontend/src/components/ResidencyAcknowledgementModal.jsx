@@ -72,7 +72,7 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
 
     return (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in duration-300 relative">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in duration-300 relative">
 
                 {/* Header */}
                 <div className="bg-slate-900 px-8 py-6 flex items-start justify-between shrink-0">
@@ -93,12 +93,12 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-24 gap-4">
                             <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading acknowledgement...</p>
+                            <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-xs">Loading acknowledgement...</p>
                         </div>
                     ) : error ? (
                         <div className="flex flex-col items-center justify-center py-24 gap-4">
                             <XCircle className="w-12 h-12 text-red-400" />
-                            <p className="text-slate-700 font-bold">{error}</p>
+                            <p className="text-slate-700 dark:text-slate-300 font-bold">{error}</p>
                         </div>
                     ) : data ? (
                         <div className="p-8 space-y-6">
@@ -127,16 +127,16 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
                                     { label: 'Check-Out', value: fmtDate(data.booking?.checkOut) },
                                     { label: 'Days Remaining', value: `${data.booking?.daysRemaining ?? '-'} Days` },
                                 ].map(({ label, value }) => (
-                                    <div key={label} className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                                    <div key={label} className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
-                                        <p className="font-black text-slate-900 text-sm">{value}</p>
+                                        <p className="font-black text-slate-900 dark:text-white text-sm">{value}</p>
                                     </div>
                                 ))}
                             </div>
 
                             {/* Financial Summary */}
-                            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-3">
-                                <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest">Financial Summary</h3>
+                            <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 space-y-3">
+                                <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase tracking-widest">Financial Summary</h3>
                                 {[
                                     ['Monthly Rent', formatINR(data.room?.monthlyRent)],
                                     ['Security Deposit', formatINR(data.room?.securityDeposit)],
@@ -145,11 +145,11 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
                                     ['Next Due Date', fmtDate(data.booking?.nextDueDate)],
                                 ].map(([k, v]) => (
                                     <div key={k} className="flex justify-between items-center text-sm">
-                                        <span className="text-slate-500 font-bold">{k}</span>
-                                        <span className="font-black text-slate-900">{v}</span>
+                                        <span className="text-slate-500 dark:text-slate-400 font-bold">{k}</span>
+                                        <span className="font-black text-slate-900 dark:text-white">{v}</span>
                                     </div>
                                 ))}
-                                <div className={`flex justify-between items-center text-sm pt-3 border-t border-slate-200 ${data.booking?.outstanding <= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                                <div className={`flex justify-between items-center text-sm pt-3 border-t border-slate-200 dark:border-slate-700 ${data.booking?.outstanding <= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
                                     <span className="font-black uppercase tracking-wider">Payment Status</span>
                                     <span className="font-black">{data.booking?.outstanding <= 0 ? '✓ FULLY PAID' : `BALANCE DUE: ${formatINR(data.booking?.outstanding)}`}</span>
                                 </div>
@@ -171,7 +171,7 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
                                 <div>
                                     <button
                                         onClick={() => setShowVersions(v => !v)}
-                                        className="flex items-center gap-2 text-sm font-black text-slate-600 hover:text-indigo-600 transition-colors"
+                                        className="flex items-center gap-2 text-sm font-black text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition-colors"
                                     >
                                         <Clock className="w-4 h-4" />
                                         Version History ({data.booking.versionHistory.length})
@@ -180,9 +180,9 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
                                     {showVersions && (
                                         <div className="mt-3 space-y-2">
                                             {data.booking.versionHistory.map((v) => (
-                                                <div key={v.version} className="flex items-center justify-between text-xs bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                <div key={v.version} className="flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                                                     <span className="font-black text-indigo-600">v{v.version}.0</span>
-                                                    <span className="text-slate-500 font-medium">{v.reason}</span>
+                                                    <span className="text-slate-500 dark:text-slate-400 font-medium">{v.reason}</span>
                                                     <span className="text-slate-400">{fmtDate(v.generatedAt)}</span>
                                                 </div>
                                             ))}
@@ -195,7 +195,7 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
                 </div>
 
                 {/* Action Bar */}
-                <div className="bg-slate-50 border-t border-slate-200 px-8 py-5 flex items-center gap-3 flex-wrap shrink-0">
+                <div className="bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-8 py-5 flex items-center gap-3 flex-wrap shrink-0">
                     <button
                         onClick={handleDownload}
                         disabled={!data || generating}

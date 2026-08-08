@@ -110,7 +110,7 @@ const PermissionGuard = ({ children }) => {
                         <motion.div 
                             initial={{ y: 100, scale: 0.95 }}
                             animate={{ y: 0, scale: 1 }}
-                            className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden border border-slate-200"
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700"
                         >
                             <div className="bg-slate-900 p-10 text-white relative overflow-hidden">
                                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:20px_20px]"></div>
@@ -124,37 +124,37 @@ const PermissionGuard = ({ children }) => {
                             </div>
 
                             <div className="p-10 space-y-8">
-                                <p className="text-slate-600 font-medium leading-relaxed">To ensure full operational functionality for downloads, reporting, and staff attendance, please authorize the following secure parameters:</p>
+                                <p className="text-slate-600 dark:text-slate-400 font-medium leading-relaxed">To ensure full operational functionality for downloads, reporting, and staff attendance, please authorize the following secure parameters:</p>
                                 
                                 <div className="space-y-4">
-                                    <div className="flex items-center gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                                        <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center border border-slate-100">
+                                    <div className="flex items-center gap-5 p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                        <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center border border-slate-100 dark:border-slate-800">
                                             <MapPin className="w-6 h-6 text-indigo-600" />
                                         </div>
                                         <div className="flex-1">
-                                            <h4 className="font-black text-slate-900 uppercase tracking-widest text-xs">Precise Location</h4>
+                                            <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-xs">Precise Location</h4>
                                             <p className="text-[10px] font-bold text-slate-400 leading-tight mt-1">Required for high-integrity attendance geo-tagging.</p>
                                         </div>
                                         {permissions.location === 'granted' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                                     </div>
 
-                                    <div className="flex items-center gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                                        <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center border border-slate-100">
+                                    <div className="flex items-center gap-5 p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                        <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center border border-slate-100 dark:border-slate-800">
                                             <HardDrive className="w-6 h-6 text-indigo-600" />
                                         </div>
                                         <div className="flex-1">
-                                            <h4 className="font-black text-slate-900 uppercase tracking-widest text-xs">External Storage</h4>
+                                            <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-xs">External Storage</h4>
                                             <p className="text-[10px] font-bold text-slate-400 leading-tight mt-1">Allows secure downloading of PDF reports & invoices.</p>
                                         </div>
                                         {permissions.storage === 'granted' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                                     </div>
 
-                                    <div className="flex items-center gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                                        <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center border border-slate-100">
+                                    <div className="flex items-center gap-5 p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                        <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center border border-slate-100 dark:border-slate-800">
                                             <ShieldCheck className="w-6 h-6 text-indigo-600" />
                                         </div>
                                         <div className="flex-1">
-                                            <h4 className="font-black text-slate-900 uppercase tracking-widest text-xs">Biometric Camera</h4>
+                                            <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-xs">Biometric Camera</h4>
                                             <p className="text-[10px] font-bold text-slate-400 leading-tight mt-1">Required for facial recognition and attendance scanning.</p>
                                         </div>
                                         {permissions.camera === 'granted' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
@@ -167,7 +167,7 @@ const PermissionGuard = ({ children }) => {
                                             localStorage.setItem('krishna_permissions_prompted', 'true');
                                             setShowOverlay(false);
                                         }}
-                                        className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] text-slate-400 hover:text-slate-600 transition"
+                                        className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] text-slate-400 hover:text-slate-600 dark:text-slate-400 transition"
                                     >
                                         Ignore
                                     </button>

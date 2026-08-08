@@ -210,12 +210,12 @@ const DocumentHistory = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-slate-50 min-h-screen relative font-sans">
+        <div className="p-4 md:p-8 space-y-8 bg-slate-50 dark:bg-slate-800 min-h-screen relative font-sans">
             {/* Header Banner */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter italic">Document History & Archive</h1>
-                    <p className="text-slate-500 font-medium">Access, search, filter, and inspect previous versions of generated invoices, quotations, receipts, and reports.</p>
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Document History & Archive</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium">Access, search, filter, and inspect previous versions of generated invoices, quotations, receipts, and reports.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button 
@@ -223,7 +223,7 @@ const DocumentHistory = () => {
                         className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs border transition ${
                             showArchived 
                                 ? 'bg-indigo-50 border-indigo-200 text-indigo-600' 
-                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-800'
                         }`}
                     >
                         <Archive className="w-4 h-4" /> {showArchived ? 'View Live Items' : 'View Archived'}
@@ -232,15 +232,15 @@ const DocumentHistory = () => {
             </div>
 
             {/* Quick Categories Bar */}
-            <div className="flex flex-wrap gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200 w-fit">
+            <div className="flex flex-wrap gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 w-fit">
                 {['All', 'Quotations', 'Estimates', 'Invoices', 'Labour Bills', 'Salary Slips', 'Reports', 'Receipts'].map(cat => (
                     <button
                         key={cat}
                         onClick={() => { setCategory(cat); setPage(1); }}
                         className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${
                             category === cat 
-                                ? 'bg-white text-indigo-600 shadow-sm' 
-                                : 'text-slate-500 hover:text-slate-900'
+                                ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' 
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'
                         }`}
                     >
                         {cat}
@@ -249,16 +249,16 @@ const DocumentHistory = () => {
             </div>
 
             {/* Filters & Control Panel */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg space-y-4">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
                 <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+                    <div className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 flex items-center gap-3">
                         <Search className="w-5 h-5 text-slate-400" />
                         <input
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search by doc number, client, project, amount, phone..."
-                            className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 placeholder:text-slate-300"
+                            className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-300"
                         />
                     </div>
                     <button 
@@ -275,7 +275,7 @@ const DocumentHistory = () => {
                         <select
                             value={status}
                             onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-                            className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl outline-none font-bold text-xs uppercase tracking-wider text-slate-700"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl outline-none font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300"
                         >
                             <option value="">All Statuses</option>
                             <option value="Draft">Draft</option>
@@ -292,7 +292,7 @@ const DocumentHistory = () => {
                         <select
                             value={dateRange}
                             onChange={(e) => { setDateRange(e.target.value); setPage(1); }}
-                            className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl outline-none font-bold text-xs uppercase tracking-wider text-slate-700"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl outline-none font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300"
                         >
                             <option value="">Any Time</option>
                             <option value="Today">Today</option>
@@ -309,7 +309,7 @@ const DocumentHistory = () => {
                         <select
                             value={sort}
                             onChange={(e) => { setSort(e.target.value); setPage(1); }}
-                            className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl outline-none font-bold text-xs uppercase tracking-wider text-slate-700"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl outline-none font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300"
                         >
                             <option value="Newest First">Newest First</option>
                             <option value="Oldest First">Oldest First</option>
@@ -321,7 +321,7 @@ const DocumentHistory = () => {
 
                     <div className="space-y-1">
                         <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider pl-1">Items Per Page</label>
-                        <div className="bg-slate-100 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-slate-500 text-center border border-slate-200">
+                        <div className="bg-slate-100 dark:bg-slate-800/80 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center border border-slate-200 dark:border-slate-700">
                             Total Records: {total}
                         </div>
                     </div>
@@ -331,7 +331,7 @@ const DocumentHistory = () => {
                     <motion.div 
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
-                        className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200"
+                        className="flex gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
                     >
                         <div className="flex-1 space-y-1">
                             <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Start Date</span>
@@ -339,7 +339,7 @@ const DocumentHistory = () => {
                                 type="date" 
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full bg-white border border-slate-200 px-4 py-2 rounded-xl outline-none text-xs font-bold"
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl outline-none text-xs font-bold"
                             />
                         </div>
                         <div className="flex-1 space-y-1">
@@ -348,7 +348,7 @@ const DocumentHistory = () => {
                                 type="date" 
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full bg-white border border-slate-200 px-4 py-2 rounded-xl outline-none text-xs font-bold"
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl outline-none text-xs font-bold"
                             />
                         </div>
                     </motion.div>
@@ -356,11 +356,11 @@ const DocumentHistory = () => {
             </div>
 
             {/* Document List Table */}
-            <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-lg">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr className="bg-slate-50/70 border-b border-slate-200 font-black text-[10px] text-slate-400 uppercase tracking-widest">
+                            <tr className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-700 font-black text-[10px] text-slate-400 uppercase tracking-widest">
                                 <th className="px-6 py-4">Document Details</th>
                                 <th className="px-6 py-4">Client / Project</th>
                                 <th className="px-6 py-4">Financial metrics</th>
@@ -369,7 +369,7 @@ const DocumentHistory = () => {
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                        <tbody className="divide-y divide-slate-100 font-semibold text-slate-700 dark:text-slate-300">
                             {loading ? (
                                 <tr>
                                     <td colSpan={6} className="py-20 text-center text-slate-400">
@@ -378,29 +378,29 @@ const DocumentHistory = () => {
                                     </td>
                                 </tr>
                             ) : documents.length > 0 ? documents.map(doc => (
-                                <tr key={doc._id} className="hover:bg-slate-50/50 transition">
+                                <tr key={doc._id} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
                                     <td className="px-6 py-5">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
                                                 <FileText className="w-5 h-5" />
                                             </div>
                                             <div>
-                                                <p className="font-bold text-slate-900">{doc.documentNumber}</p>
+                                                <p className="font-bold text-slate-900 dark:text-white">{doc.documentNumber}</p>
                                                 <p className="text-[9px] uppercase font-black text-slate-400 mt-0.5 tracking-wider">{doc.documentType} • {new Date(doc.createdAt).toLocaleDateString()}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-5">
-                                        <p className="text-slate-800 font-bold">{doc.customerId?.name || 'General Operations'}</p>
+                                        <p className="text-slate-800 dark:text-slate-200 font-bold">{doc.customerId?.name || 'General Operations'}</p>
                                         {doc.projectId && (
                                             <p className="text-[10px] text-slate-400 truncate max-w-xs">{doc.projectId.title}</p>
                                         )}
                                     </td>
-                                    <td className="px-6 py-5 font-black text-slate-800 text-sm">
+                                    <td className="px-6 py-5 font-black text-slate-800 dark:text-slate-200 text-sm">
                                         {doc.totalAmount > 0 ? `₹ ${doc.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : 'N/A'}
                                     </td>
                                     <td className="px-6 py-5 text-center">
-                                        <span className="bg-slate-100 border border-slate-200 text-slate-600 text-[10px] px-2.5 py-1 rounded-full font-black">
+                                        <span className="bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[10px] px-2.5 py-1 rounded-full font-black">
                                             v{doc.version}
                                         </span>
                                     </td>
@@ -413,7 +413,7 @@ const DocumentHistory = () => {
                                             doc.status === 'Expired' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
                                             doc.status === 'Pending' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
                                             doc.status === 'Printed' ? 'bg-teal-50 text-teal-600 border border-teal-100' :
-                                            'bg-slate-100 text-slate-600 border border-slate-200'
+                                            'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                                         }`}>
                                             {doc.status}
                                         </span>
@@ -422,7 +422,7 @@ const DocumentHistory = () => {
                                         <div className="flex items-center justify-end gap-2">
                                             <button 
                                                 onClick={() => handleViewDetail(doc)}
-                                                className="p-2 hover:bg-slate-100 text-slate-600 rounded-xl transition"
+                                                className="p-2 hover:bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 rounded-xl transition"
                                                 title="View Version log"
                                             >
                                                 <Eye className="w-4.5 h-4.5" />
@@ -430,7 +430,7 @@ const DocumentHistory = () => {
                                             {doc.pdfData && (
                                                 <button 
                                                     onClick={() => handleDownloadPDF(doc.documentNumber, doc.pdfData)}
-                                                    className="p-2 hover:bg-slate-100 text-indigo-600 rounded-xl transition"
+                                                    className="p-2 hover:bg-slate-100 dark:bg-slate-800/80 text-indigo-600 rounded-xl transition"
                                                     title="Download PDF"
                                                 >
                                                     <Download className="w-4.5 h-4.5" />
@@ -448,7 +448,7 @@ const DocumentHistory = () => {
                                             )}
                                             <button 
                                                 onClick={() => handleDuplicate(doc)}
-                                                className="p-2 hover:bg-slate-100 text-teal-600 rounded-xl transition"
+                                                className="p-2 hover:bg-slate-100 dark:bg-slate-800/80 text-teal-600 rounded-xl transition"
                                                 title="Duplicate to Studio"
                                             >
                                                 <Copy className="w-4.5 h-4.5" />
@@ -469,19 +469,19 @@ const DocumentHistory = () => {
 
                 {/* Pagination Footer */}
                 {pages > 1 && (
-                    <div className="bg-slate-50/50 p-4 border-t border-slate-200 flex items-center justify-between">
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
                         <button 
                             disabled={page === 1}
                             onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                            className="p-2 border border-slate-200 bg-white rounded-xl disabled:opacity-50 text-slate-600"
+                            className="p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl disabled:opacity-50 text-slate-600 dark:text-slate-400"
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>
-                        <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Page {page} of {pages}</span>
+                        <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Page {page} of {pages}</span>
                         <button 
                             disabled={page === pages}
                             onClick={() => setPage(prev => Math.min(pages, prev + 1))}
-                            className="p-2 border border-slate-200 bg-white rounded-xl disabled:opacity-50 text-slate-600"
+                            className="p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl disabled:opacity-50 text-slate-600 dark:text-slate-400"
                         >
                             <ChevronRight className="w-5 h-5" />
                         </button>
@@ -504,7 +504,7 @@ const DocumentHistory = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]"
+                            className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]"
                         >
                             <div className="bg-slate-900 p-6 text-white flex justify-between items-center flex-shrink-0">
                                 <div>
@@ -525,11 +525,11 @@ const DocumentHistory = () => {
                                 ) : selectedDocDetail ? (
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         {/* Metadata Left Block */}
-                                        <div className="md:col-span-1 space-y-6 border-r border-slate-100 pr-0 md:pr-6">
-                                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                                        <div className="md:col-span-1 space-y-6 border-r border-slate-100 dark:border-slate-800 pr-0 md:pr-6">
+                                            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
                                                 <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Document Summary</h4>
-                                                <div className="space-y-2 text-xs font-bold text-slate-600">
-                                                    <p className="flex justify-between"><span>Status:</span> <span className="text-slate-900 font-extrabold">{selectedDocDetail.status}</span></p>
+                                                <div className="space-y-2 text-xs font-bold text-slate-600 dark:text-slate-400">
+                                                    <p className="flex justify-between"><span>Status:</span> <span className="text-slate-900 dark:text-white font-extrabold">{selectedDocDetail.status}</span></p>
                                                     {selectedDocDetail.approvalStatus && (
                                                         <p className="flex justify-between">
                                                             <span>Approval:</span>
@@ -543,12 +543,12 @@ const DocumentHistory = () => {
                                                         </p>
                                                     )}
                                                     {selectedDocDetail.preparedBy && (
-                                                        <p className="flex justify-between"><span>Prepared By:</span> <span className="text-slate-900 truncate max-w-[120px]">{selectedDocDetail.preparedBy}</span></p>
+                                                        <p className="flex justify-between"><span>Prepared By:</span> <span className="text-slate-900 dark:text-white truncate max-w-[120px]">{selectedDocDetail.preparedBy}</span></p>
                                                     )}
-                                                    <p className="flex justify-between"><span>Amount:</span> <span className="text-slate-900 font-extrabold">₹ {selectedDocDetail.totalAmount?.toLocaleString('en-IN')}</span></p>
+                                                    <p className="flex justify-between"><span>Amount:</span> <span className="text-slate-900 dark:text-white font-extrabold">₹ {selectedDocDetail.totalAmount?.toLocaleString('en-IN')}</span></p>
                                                     <p className="flex justify-between"><span>Version:</span> <span className="text-indigo-600 font-extrabold">v{selectedDocDetail.version}</span></p>
-                                                    <p className="flex justify-between"><span>Created By:</span> <span className="text-slate-900 truncate max-w-[120px]">{selectedDocDetail.createdBy?.name}</span></p>
-                                                    <p className="flex justify-between"><span>Date Created:</span> <span className="text-slate-900">{new Date(selectedDocDetail.createdAt).toLocaleDateString()}</span></p>
+                                                    <p className="flex justify-between"><span>Created By:</span> <span className="text-slate-900 dark:text-white truncate max-w-[120px]">{selectedDocDetail.createdBy?.name}</span></p>
+                                                    <p className="flex justify-between"><span>Date Created:</span> <span className="text-slate-900 dark:text-white">{new Date(selectedDocDetail.createdAt).toLocaleDateString()}</span></p>
                                                 </div>
                                             </div>
 
@@ -564,7 +564,7 @@ const DocumentHistory = () => {
                                                         </button>
                                                         <button 
                                                             onClick={() => handlePrintPDF(selectedDocDetail.pdfData)}
-                                                            className="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition"
+                                                            className="w-full flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition"
                                                         >
                                                             <Printer className="w-4 h-4" /> Print / Save
                                                         </button>
@@ -608,7 +608,7 @@ const DocumentHistory = () => {
 
                                         {/* Version History Right Block */}
                                         <div className="md:col-span-2 space-y-6">
-                                            <div className="flex border-b border-slate-100 pb-2 gap-4">
+                                            <div className="flex border-b border-slate-100 dark:border-slate-800 pb-2 gap-4">
                                                 <button 
                                                     onClick={() => setActiveVersionTab('current')}
                                                     className={`pb-2 text-xs font-black uppercase tracking-wider transition border-b-2 ${activeVersionTab === 'current' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400'}`}
@@ -626,16 +626,16 @@ const DocumentHistory = () => {
                                             </div>
 
                                             {activeVersionTab === 'current' ? (
-                                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 max-h-[40vh] overflow-y-auto">
+                                                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 max-h-[40vh] overflow-y-auto">
                                                     <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-3">Decoded Parameter JSON Data</h5>
-                                                    <pre className="text-[10px] font-mono text-slate-600 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                                                    <pre className="text-[10px] font-mono text-slate-600 dark:text-slate-400 overflow-x-auto whitespace-pre-wrap leading-relaxed">
                                                         {JSON.stringify(selectedDocDetail.data, null, 2)}
                                                     </pre>
                                                 </div>
                                             ) : (
                                                 <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
                                                     {selectedDocDetail.versions.map((ver, idx) => (
-                                                        <div key={idx} className="bg-slate-50/55 p-4 border border-slate-200 rounded-2xl flex flex-col gap-3">
+                                                        <div key={idx} className="bg-slate-50 dark:bg-slate-800/55 p-4 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col gap-3">
                                                             <div className="flex justify-between items-center">
                                                                 <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-black">
                                                                     Version {ver.version}
@@ -647,7 +647,7 @@ const DocumentHistory = () => {
                                                             <div className="flex gap-2">
                                                                 <button 
                                                                     onClick={() => handleDownloadPDF(`${selectedDocDetail.documentNumber}_v${ver.version}`, ver.pdfData)}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-[10px] font-black text-slate-600 uppercase tracking-widest shadow-sm transition"
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800 rounded-lg text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest shadow-sm transition"
                                                                 >
                                                                     <Download className="w-3.5 h-3.5" /> Download PDF v{ver.version}
                                                                 </button>

@@ -63,15 +63,15 @@ const AdminWhatsApp = () => {
                         <MessageSquare className="w-8 h-8" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black uppercase italic tracking-tighter text-slate-900 leading-none">WhatsApp Dispatch</h1>
-                        <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em] mt-2">Industrial Communication Relay System</p>
+                        <h1 className="text-4xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-white leading-none">WhatsApp Dispatch</h1>
+                        <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2">Industrial Communication Relay System</p>
                     </div>
                 </div>
                 
                 <button 
                     onClick={fetchStatus} 
                     disabled={refreshing}
-                    className="flex items-center gap-2 px-6 py-3 bg-white border-4 border-slate-900 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-[4px_4px_0px_0px_#000]"
+                    className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-900 border-4 border-slate-900 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 dark:bg-slate-800 transition-all active:scale-95 shadow-[4px_4px_0px_0px_#000]"
                 >
                     <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                     {refreshing ? 'Syncing...' : 'Force System Sync'}
@@ -82,7 +82,7 @@ const AdminWhatsApp = () => {
                 
                 {/* Status Dashboard */}
                 <div className="lg:col-span-4 space-y-8">
-                    <div className="bg-white border-4 border-slate-900 rounded-[2.5rem] p-8 shadow-[10px_10px_0px_0px_#000] relative overflow-hidden group">
+                    <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 rounded-[2.5rem] p-8 shadow-[10px_10px_0px_0px_#000] relative overflow-hidden group">
                         <div className="relative z-10">
                             <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6 italic">Signal Integrity</h2>
                             
@@ -101,13 +101,13 @@ const AdminWhatsApp = () => {
                             </div>
 
                             <div className="space-y-3">
-                                <div className="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl flex items-center justify-between">
+                                <div className="p-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-2xl flex items-center justify-between">
                                     <span className="text-[9px] font-black uppercase text-slate-400">Node Phone</span>
-                                    <span className="font-black text-slate-900 tracking-tighter tabular-nums">{status?.phone || 'UNIDENTIFIED'}</span>
+                                    <span className="font-black text-slate-900 dark:text-white tracking-tighter tabular-nums">{status?.phone || 'UNIDENTIFIED'}</span>
                                 </div>
-                                <div className="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl flex items-center justify-between">
+                                <div className="p-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-2xl flex items-center justify-between">
                                     <span className="text-[9px] font-black uppercase text-slate-400">Persistent Auth</span>
-                                    <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${status?.database?.hasCreds ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-slate-200 text-slate-600'}`}>
+                                    <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${status?.database?.hasCreds ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-slate-200 text-slate-600 dark:text-slate-400'}`}>
                                         {status?.database?.hasCreds ? 'SECURED' : 'NOT FOUND'}
                                     </span>
                                 </div>
@@ -131,7 +131,7 @@ const AdminWhatsApp = () => {
 
                 {/* PAIRING MODULE */}
                 <div className="lg:col-span-8">
-                    <div className="bg-white border-4 border-slate-900 rounded-[3rem] p-10 md:p-14 shadow-[12px_12px_0px_0px_#000] h-full flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 rounded-[3rem] p-10 md:p-14 shadow-[12px_12px_0px_0px_#000] h-full flex flex-col items-center justify-center relative overflow-hidden">
                         
                         <AnimatePresence mode="wait">
                             {status?.connected ? (
@@ -145,8 +145,8 @@ const AdminWhatsApp = () => {
                                     <div className="w-32 h-32 bg-[#25D366] text-white rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-[0_20px_50px_rgba(37,211,102,0.3)] transform -rotate-1 hover:rotate-0 transition-transform">
                                         <CheckCircle2 className="w-16 h-16" />
                                     </div>
-                                    <h2 className="text-5xl font-black uppercase italic tracking-tighter text-slate-900 mb-4 leading-none">Transmission Ready</h2>
-                                    <p className="text-slate-500 font-bold max-w-sm mx-auto leading-relaxed text-[11px] uppercase tracking-widest">
+                                    <h2 className="text-5xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-white mb-4 leading-none">Transmission Ready</h2>
+                                    <p className="text-slate-500 dark:text-slate-400 font-bold max-w-sm mx-auto leading-relaxed text-[11px] uppercase tracking-widest">
                                         Device successfully paired. Automation logic will now relay signals through <span className="text-green-600 px-2 py-0.5 bg-green-50 rounded-lg">{status.phone}</span>.
                                     </p>
                                     
@@ -172,8 +172,8 @@ const AdminWhatsApp = () => {
                                 >
                                     <div className="relative group">
                                         <div className="absolute -inset-10 bg-[#25D366] blur-[50px] opacity-10 group-hover:opacity-20 transition-all duration-1000"></div>
-                                        <div className="bg-white p-10 border-4 border-slate-900 rounded-[3rem] shadow-[10px_10px_0px_0px_#000] relative z-10 hover:-translate-y-2 transition-transform duration-500">
-                                            <div className="bg-white p-4 rounded-2xl border-2 border-slate-100 inline-block overflow-hidden">
+                                        <div className="bg-white dark:bg-slate-900 p-10 border-4 border-slate-900 rounded-[3rem] shadow-[10px_10px_0px_0px_#000] relative z-10 hover:-translate-y-2 transition-transform duration-500">
+                                            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border-2 border-slate-100 dark:border-slate-800 inline-block overflow-hidden">
                                                 <QRCodeSVG 
                                                     value={status.qr} 
                                                     size={220} 
@@ -184,10 +184,10 @@ const AdminWhatsApp = () => {
                                                 />
                                             </div>
                                             <div className="mt-8 flex flex-col items-center">
-                                                <div className="px-5 py-2 bg-slate-50 border-2 border-slate-100 rounded-full mb-4">
+                                                <div className="px-5 py-2 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-full mb-4">
                                                     <p className="font-mono text-[9px] font-black text-slate-400 break-all max-w-[240px] truncate">{status.qr}</p>
                                                 </div>
-                                                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-900 leading-none">Scan via WhatsApp &gt; Linked Devices</p>
+                                                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-900 dark:text-white leading-none">Scan via WhatsApp &gt; Linked Devices</p>
                                             </div>
                                         </div>
                                     </div>
@@ -212,10 +212,10 @@ const AdminWhatsApp = () => {
                                     className="text-center"
                                 >
                                     <div className="relative inline-block mb-10">
-                                        <div className="w-24 h-24 border-8 border-slate-100 rounded-full animate-pulse"></div>
+                                        <div className="w-24 h-24 border-8 border-slate-100 dark:border-slate-800 rounded-full animate-pulse"></div>
                                         <Loader2 className="w-24 h-24 text-[#2563EB] animate-spin absolute inset-0" />
                                     </div>
-                                    <h2 className="text-3xl font-black uppercase text-slate-900 italic tracking-tighter leading-none mb-4">Establishing Uplink</h2>
+                                    <h2 className="text-3xl font-black uppercase text-slate-900 dark:text-white italic tracking-tighter leading-none mb-4">Establishing Uplink</h2>
                                     <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]">Generating secure QR handshake...</p>
                                 </motion.div>
                             )}

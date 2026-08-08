@@ -58,12 +58,12 @@ const UPIAppPicker = ({ isOpen, onClose, upiData, onFallbackTriggered }) => {
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200"
+          className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700"
         >
           {/* Header */}
-          <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+          <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800">
             <div>
-              <h3 className="text-xl font-black uppercase tracking-tighter text-slate-900 italic">Select Payment <span className="text-blue-600 font-bold">Node</span></h3>
+              <h3 className="text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white italic">Select Payment <span className="text-blue-600 font-bold">Node</span></h3>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Authorized App Dispatch</p>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-xl transition-colors">
@@ -90,7 +90,7 @@ const UPIAppPicker = ({ isOpen, onClose, upiData, onFallbackTriggered }) => {
                   key={app.id}
                   onClick={() => handleLaunch(app)}
                   disabled={isOpening}
-                  className="group relative bg-slate-50 border border-slate-100 p-6 rounded-[2rem] flex flex-col items-center gap-3 hover:bg-white hover:border-blue-500 hover:shadow-xl transition-all active:scale-95 disabled:opacity-50"
+                  className="group relative bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 p-6 rounded-[2rem] flex flex-col items-center gap-3 hover:bg-white dark:bg-slate-900 hover:border-blue-500 hover:shadow-xl transition-all active:scale-95 disabled:opacity-50"
                 >
                   <div 
                     className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform"
@@ -98,7 +98,7 @@ const UPIAppPicker = ({ isOpen, onClose, upiData, onFallbackTriggered }) => {
                   >
                     <Send className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{app.name}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">{app.name}</span>
                 </button>
               ))}
             </div>
@@ -118,10 +118,10 @@ const UPIAppPicker = ({ isOpen, onClose, upiData, onFallbackTriggered }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-white/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center"
+                className="absolute inset-0 bg-white dark:bg-slate-900/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center"
               >
                 <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-6" />
-                <h4 className="text-lg font-black uppercase tracking-tighter italic text-slate-900">Activating App</h4>
+                <h4 className="text-lg font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">Activating App</h4>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 max-w-[200px]">
                   Waiting for secure handshake... If app fails to open, try a different one.
                 </p>

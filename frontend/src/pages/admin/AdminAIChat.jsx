@@ -146,24 +146,24 @@ const AdminAIChat = () => {
                     <Bot className="w-8 h-8" />
                 </div>
                 <div>
-                    <h1 className="text-4xl font-black uppercase italic tracking-tighter text-slate-900">AI Support Agent</h1>
-                    <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">Chatbot Engine & Leads Network</p>
+                    <h1 className="text-4xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-white">AI Support Agent</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Chatbot Engine & Leads Network</p>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 
                 {/* SETTINGS CARD */}
-                <div className="bg-white border-4 border-slate-900 rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                    <h2 className="text-xl font-black uppercase text-slate-900 mb-6 flex items-center gap-2">
+                <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <h2 className="text-xl font-black uppercase text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                         <Settings className="w-5 h-5 text-indigo-600" /> Neural System Directives
                     </h2>
 
                     <div className="space-y-6">
-                        <div className="flex items-center justify-between p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl">
+                        <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl">
                             <div>
-                                <h3 className="font-bold text-sm uppercase text-slate-900">Bot Status</h3>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Enable or disable website chat</p>
+                                <h3 className="font-bold text-sm uppercase text-slate-900 dark:text-white">Bot Status</h3>
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">Enable or disable website chat</p>
                             </div>
                             <button 
                                 onClick={() => setSettings({ ...settings, isAiEnabled: settings.isAiEnabled === 'true' ? 'false' : 'true' })}
@@ -173,21 +173,21 @@ const AdminAIChat = () => {
                             </button>
                         </div>
 
-                        <div className="flex items-center justify-between p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl">
+                        <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl">
                             <div>
-                                <h3 className="font-bold text-sm uppercase text-slate-900">Neural Connect</h3>
+                                <h3 className="font-bold text-sm uppercase text-slate-900 dark:text-white">Neural Connect</h3>
                                 <p className="text-[10px] text-[#4f46e5] font-black uppercase tracking-widest">Flash AI vs Offline Brain</p>
                             </div>
-                            <div className="flex bg-white border-4 border-slate-900 rounded-2xl p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            <div className="flex bg-white dark:bg-slate-900 border-4 border-slate-900 rounded-2xl p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                                 <button 
                                     onClick={() => setSettings({ ...settings, aiWorkMode: 'online' })}
-                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${settings.aiWorkMode === 'online' ? 'bg-[#4f46e5] text-white' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${settings.aiWorkMode === 'online' ? 'bg-[#4f46e5] text-white' : 'text-slate-400 hover:text-slate-600 dark:text-slate-400'}`}
                                 >
                                     Online
                                 </button>
                                 <button 
                                     onClick={() => setSettings({ ...settings, aiWorkMode: 'offline' })}
-                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${settings.aiWorkMode === 'offline' ? 'bg-[#4f46e5] text-white' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${settings.aiWorkMode === 'offline' ? 'bg-[#4f46e5] text-white' : 'text-slate-400 hover:text-slate-600 dark:text-slate-400'}`}
                                 >
                                     Offline
                                 </button>
@@ -195,12 +195,12 @@ const AdminAIChat = () => {
                         </div>
 
                         <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">System Identity Prompt</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">System Identity Prompt</label>
                             <textarea 
                                 rows={6}
                                 value={settings.aiPrompt}
                                 onChange={e => setSettings({ ...settings, aiPrompt: e.target.value })}
-                                className="w-full border-4 border-slate-200 p-4 rounded-2xl font-medium outline-none focus:border-indigo-600 transition"
+                                className="w-full border-4 border-slate-200 dark:border-slate-700 p-4 rounded-2xl font-medium outline-none focus:border-indigo-600 transition"
                             />
                             
                             {/* Neural Diagnostic Button */}
@@ -236,19 +236,19 @@ const AdminAIChat = () => {
                             <h4 className="text-[10px] font-black uppercase text-blue-600 mb-2 flex items-center gap-2">
                                 <Bot className="w-3 h-3" /> Pro Tip: Intelligent Free Tier
                             </h4>
-                            <p className="text-[9px] font-bold text-slate-600 leading-relaxed uppercase">
-                                To use AI for <span className="text-blue-600 underline font-black">FREE</span>, get a Gemini API Key from <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" className="text-indigo-600 font-bold underline">Google AI Studio</a> and add <code className="bg-white px-1">GEMINI_API_KEY</code> to your .env.
+                            <p className="text-[9px] font-bold text-slate-600 dark:text-slate-400 leading-relaxed uppercase">
+                                To use AI for <span className="text-blue-600 underline font-black">FREE</span>, get a Gemini API Key from <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" className="text-indigo-600 font-bold underline">Google AI Studio</a> and add <code className="bg-white dark:bg-slate-900 px-1">GEMINI_API_KEY</code> to your .env.
                             </p>
                         </div>
                     </div>
                 </div>
 
                 {/* CHATBOT CONTACT SETTINGS CARD */}
-                <div className="bg-white border-4 border-slate-900 rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                    <h2 className="text-xl font-black uppercase text-slate-900 mb-2 flex items-center gap-2">
+                <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <h2 className="text-xl font-black uppercase text-slate-900 dark:text-white mb-2 flex items-center gap-2">
                         <Phone className="w-5 h-5 text-indigo-600" /> Chatbot Contact Settings
                     </h2>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-6">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-6">
                         Configure phone dialer, WhatsApp number, and business info used by Call Now button
                     </p>
 
@@ -261,22 +261,22 @@ const AdminAIChat = () => {
                     <form onSubmit={handleSaveContactSettings} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Company Name</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Company Name</label>
                                 <input 
                                     type="text" 
                                     value={contactForm.companyName || ''} 
                                     onChange={e => setContactForm({ ...contactForm, companyName: e.target.value })}
-                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    className="w-full border-2 border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-bold text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-600 outline-none"
                                     placeholder="Krishna Engineering Works"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Contact Person</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Contact Person</label>
                                 <input 
                                     type="text" 
                                     value={contactForm.contactPerson || ''} 
                                     onChange={e => setContactForm({ ...contactForm, contactPerson: e.target.value })}
-                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    className="w-full border-2 border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-bold text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-600 outline-none"
                                     placeholder="Managing Director / Helpdesk"
                                 />
                             </div>
@@ -284,7 +284,7 @@ const AdminAIChat = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
                                     Primary Phone Number <span className="text-indigo-600 font-bold">* (Used for Call Now)</span>
                                 </label>
                                 <input 
@@ -292,19 +292,19 @@ const AdminAIChat = () => {
                                     required
                                     value={contactForm.primaryPhone || ''} 
                                     onChange={e => setContactForm({ ...contactForm, primaryPhone: e.target.value })}
-                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    className="w-full border-2 border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-bold text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-600 outline-none"
                                     placeholder="+91 9447940835"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
                                     Secondary Phone Number <span className="text-slate-400 font-normal">(Optional)</span>
                                 </label>
                                 <input 
                                     type="text" 
                                     value={contactForm.secondaryPhone || ''} 
                                     onChange={e => setContactForm({ ...contactForm, secondaryPhone: e.target.value })}
-                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    className="w-full border-2 border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-bold text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-600 outline-none"
                                     placeholder="+91 9446000000"
                                 />
                             </div>
@@ -312,22 +312,22 @@ const AdminAIChat = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">WhatsApp Number</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">WhatsApp Number</label>
                                 <input 
                                     type="text" 
                                     value={contactForm.whatsappNumber || ''} 
                                     onChange={e => setContactForm({ ...contactForm, whatsappNumber: e.target.value })}
-                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    className="w-full border-2 border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-bold text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-600 outline-none"
                                     placeholder="+91 9447940835"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Email Address</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Email Address</label>
                                 <input 
                                     type="email" 
                                     value={contactForm.email || ''} 
                                     onChange={e => setContactForm({ ...contactForm, email: e.target.value })}
-                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    className="w-full border-2 border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-bold text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-600 outline-none"
                                     placeholder="contact@krishnaengg.com"
                                 />
                             </div>
@@ -335,22 +335,22 @@ const AdminAIChat = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Website URL</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Website URL</label>
                                 <input 
                                     type="text" 
                                     value={contactForm.website || ''} 
                                     onChange={e => setContactForm({ ...contactForm, website: e.target.value })}
-                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    className="w-full border-2 border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-bold text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-600 outline-none"
                                     placeholder="https://krishnaengg.com"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Business Hours</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Business Hours</label>
                                 <input 
                                     type="text" 
                                     value={contactForm.businessHours || ''} 
                                     onChange={e => setContactForm({ ...contactForm, businessHours: e.target.value })}
-                                    className="w-full border-2 border-slate-200 p-2.5 rounded-xl font-bold text-xs text-slate-800 focus:border-indigo-600 outline-none"
+                                    className="w-full border-2 border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-bold text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-600 outline-none"
                                     placeholder="Mon - Sat: 9:00 AM - 6:00 PM"
                                 />
                             </div>
@@ -367,8 +367,8 @@ const AdminAIChat = () => {
                 </div>
 
                 {/* FAQ MANAGER CARD */}
-                <div className="bg-white border-4 border-slate-900 rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[600px]">
-                    <h2 className="text-xl font-black uppercase text-slate-900 mb-6 flex items-center gap-2">
+                <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[600px]">
+                    <h2 className="text-xl font-black uppercase text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                         <MessageSquare className="w-5 h-5 text-indigo-600" /> FAQ Knowledge Base
                     </h2>
 
@@ -377,12 +377,12 @@ const AdminAIChat = () => {
                             <input 
                                 required placeholder="Question" 
                                 value={newFaq.question} onChange={e => setNewFaq({...newFaq, question: e.target.value})}
-                                className="w-full border-4 border-slate-200 p-3 rounded-xl font-bold text-sm outline-none focus:border-indigo-600"
+                                className="w-full border-4 border-slate-200 dark:border-slate-700 p-3 rounded-xl font-bold text-sm outline-none focus:border-indigo-600"
                             />
                             <input 
                                 required placeholder="Answer" 
                                 value={newFaq.answer} onChange={e => setNewFaq({...newFaq, answer: e.target.value})}
-                                className="w-full border-4 border-slate-200 p-3 rounded-xl font-bold text-sm outline-none focus:border-indigo-600"
+                                className="w-full border-4 border-slate-200 dark:border-slate-700 p-3 rounded-xl font-bold text-sm outline-none focus:border-indigo-600"
                             />
                         </div>
                         <button type="submit" className="bg-slate-900 text-white font-black p-4 rounded-xl shadow-[4px_4px_0px_0px_#4f46e5]">
@@ -390,11 +390,11 @@ const AdminAIChat = () => {
                         </button>
                     </form>
 
-                    <div className="flex-1 overflow-y-auto space-y-3 pr-2 border-t-2 border-slate-100 pt-6">
+                    <div className="flex-1 overflow-y-auto space-y-3 pr-2 border-t-2 border-slate-100 dark:border-slate-800 pt-6">
                         {faqs.map(faq => (
-                            <div key={faq._id} className="p-4 border-2 border-slate-200 rounded-2xl relative group hover:border-indigo-600 bg-slate-50">
-                                <h4 className="font-bold text-sm uppercase text-slate-900 mb-1">Q: {faq.question}</h4>
-                                <p className="text-xs font-semibold text-slate-600">A: {faq.answer}</p>
+                            <div key={faq._id} className="p-4 border-2 border-slate-200 dark:border-slate-700 rounded-2xl relative group hover:border-indigo-600 bg-slate-50 dark:bg-slate-800">
+                                <h4 className="font-bold text-sm uppercase text-slate-900 dark:text-white mb-1">Q: {faq.question}</h4>
+                                <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">A: {faq.answer}</p>
                                 <button 
                                     onClick={() => handleDeleteFaq(faq._id)}
                                     className="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 transition p-2 hover:bg-red-50 rounded"
@@ -407,8 +407,8 @@ const AdminAIChat = () => {
                 </div>
 
                 {/* LEADS DATABASE */}
-                <div className="lg:col-span-2 bg-white border-4 border-slate-900 rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                    <h2 className="text-xl font-black uppercase text-slate-900 mb-6 flex items-center gap-2">
+                <div className="lg:col-span-2 bg-white dark:bg-slate-900 border-4 border-slate-900 rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <h2 className="text-xl font-black uppercase text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                         <Users className="w-5 h-5 text-indigo-600" /> Captured AI Leads ({leads.length})
                     </h2>
 
@@ -416,22 +416,22 @@ const AdminAIChat = () => {
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b-4 border-slate-900">
-                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500">Date/Time</th>
-                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500">Prospect</th>
-                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500">Phone</th>
-                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500">Chat Context</th>
-                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500 text-right">Action</th>
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500 dark:text-slate-400">Date/Time</th>
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500 dark:text-slate-400">Prospect</th>
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500 dark:text-slate-400">Phone</th>
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500 dark:text-slate-400">Chat Context</th>
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500 dark:text-slate-400 text-right">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {leads.map(lead => (
-                                    <tr key={lead._id} className="border-b-2 border-slate-100 hover:bg-slate-50">
-                                        <td className="p-4 text-xs font-bold text-slate-500">
+                                    <tr key={lead._id} className="border-b-2 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:bg-slate-800">
+                                        <td className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400">
                                             {new Date(lead.createdAt).toLocaleString()}
                                         </td>
-                                        <td className="p-4 font-black text-slate-900 uppercase">{lead.name}</td>
+                                        <td className="p-4 font-black text-slate-900 dark:text-white uppercase">{lead.name}</td>
                                         <td className="p-4 font-bold text-indigo-600">{lead.phone}</td>
-                                        <td className="p-4 text-xs font-semibold text-slate-600 max-w-sm">{lead.message}</td>
+                                        <td className="p-4 text-xs font-semibold text-slate-600 dark:text-slate-400 max-w-sm">{lead.message}</td>
                                         <td className="p-4 text-right">
                                             <button 
                                                 onClick={() => handleDeleteLead(lead._id)}
@@ -455,32 +455,32 @@ const AdminAIChat = () => {
                 </div>
 
                 {/* AI AGENT CONVERSATION HISTORY */}
-                <div className="lg:col-span-2 bg-white border-4 border-slate-900 rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                    <h2 className="text-xl font-black uppercase text-slate-900 mb-2 flex items-center gap-2">
+                <div className="lg:col-span-2 bg-white dark:bg-slate-900 border-4 border-slate-900 rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <h2 className="text-xl font-black uppercase text-slate-900 dark:text-white mb-2 flex items-center gap-2">
                         <Bot className="w-5 h-5 text-indigo-600" /> Real-Time AI Agent Chat History ({chatLogs.length})
                     </h2>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-6">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-6">
                         Live conversations, AI model providers used, and intent responses
                     </p>
 
                     <div className="overflow-x-auto max-h-[500px]">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="border-b-4 border-slate-900 sticky top-0 bg-white z-10">
-                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500">Timestamp</th>
-                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500">User Message</th>
-                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500">AI Agent Response</th>
-                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500 text-right">Engine Provider</th>
+                                <tr className="border-b-4 border-slate-900 sticky top-0 bg-white dark:bg-slate-900 z-10">
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500 dark:text-slate-400">Timestamp</th>
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500 dark:text-slate-400">User Message</th>
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500 dark:text-slate-400">AI Agent Response</th>
+                                    <th className="p-4 font-black uppercase tracking-widest text-xs text-slate-500 dark:text-slate-400 text-right">Engine Provider</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {chatLogs.map(log => (
-                                    <tr key={log._id} className="border-b border-slate-100 hover:bg-slate-50">
-                                        <td className="p-4 text-[11px] font-bold text-slate-500 whitespace-nowrap">
+                                    <tr key={log._id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:bg-slate-800">
+                                        <td className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                             {new Date(log.createdAt).toLocaleString()}
                                         </td>
-                                        <td className="p-4 text-xs font-black text-slate-900 max-w-xs">{log.userMessage}</td>
-                                        <td className="p-4 text-xs font-medium text-slate-700 whitespace-pre-line leading-relaxed max-w-md">{log.botReply}</td>
+                                        <td className="p-4 text-xs font-black text-slate-900 dark:text-white max-w-xs">{log.userMessage}</td>
+                                        <td className="p-4 text-xs font-medium text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed max-w-md">{log.botReply}</td>
                                         <td className="p-4 text-right">
                                             <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
                                                 log.providerUsed === 'gemini' 

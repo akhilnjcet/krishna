@@ -185,7 +185,7 @@ const AdminSettings = () => {
                     </div>
                 </div>
                 {status && (
-                    <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[8px] font-black text-brand-accent uppercase tracking-widest">
+                    <div className="px-3 py-1 bg-white dark:bg-slate-900/5 border border-white/10 rounded-full text-[8px] font-black text-brand-accent uppercase tracking-widest">
                         {status}
                     </div>
                 )}
@@ -216,7 +216,7 @@ const AdminSettings = () => {
                     <button 
                         onClick={handleSave}
                         disabled={saving}
-                        className="group relative px-12 py-5 bg-brand-accent text-black font-black uppercase tracking-[0.3em] text-[10px] flex items-center gap-4 hover:bg-white transition-all active:scale-95 rounded-xl shadow-[0_0_30px_rgba(255,180,0,0.2)]"
+                        className="group relative px-12 py-5 bg-brand-accent text-black font-black uppercase tracking-[0.3em] text-[10px] flex items-center gap-4 hover:bg-white dark:bg-slate-900 transition-all active:scale-95 rounded-xl shadow-[0_0_30px_rgba(255,180,0,0.2)]"
                     >
                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : success ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                         {saving ? 'Syncing...' : success ? 'Config Updated' : 'Push Deployment'}
@@ -225,7 +225,7 @@ const AdminSettings = () => {
 
                 {/* ── COMPANY BRANDING & DIGITAL SIGNATURE SECTION ── */}
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 mb-12">
-                    <section className="xl:col-span-12 p-8 md:p-10 bg-white/[0.02] border border-white/5 rounded-[2.5rem] backdrop-blur-3xl relative overflow-hidden group hover:border-amber-500/20 transition-all">
+                    <section className="xl:col-span-12 p-8 md:p-10 bg-white dark:bg-slate-900/[0.02] border border-white/5 rounded-[2.5rem] backdrop-blur-3xl relative overflow-hidden group hover:border-amber-500/20 transition-all">
                         <ModuleHeader icon={ImageIcon} title="Company Branding & Digital Signature Management" status="PDF & Web" />
                         
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -247,7 +247,7 @@ const AdminSettings = () => {
                                             className="sr-only"
                                         />
                                         <div className={`w-10 h-6 rounded-full transition-colors p-1 ${settings.show_logo !== false && settings.show_logo !== 'false' ? 'bg-amber-500' : 'bg-gray-800'}`}>
-                                            <div className={`w-4 h-4 rounded-full bg-white transition-transform ${settings.show_logo !== false && settings.show_logo !== 'false' ? 'translate-x-4' : ''}`} />
+                                            <div className={`w-4 h-4 rounded-full bg-white dark:bg-slate-900 transition-transform ${settings.show_logo !== false && settings.show_logo !== 'false' ? 'translate-x-4' : ''}`} />
                                         </div>
                                         <span className="text-[9px] font-black uppercase text-gray-400">PDF Logo</span>
                                     </label>
@@ -313,7 +313,7 @@ const AdminSettings = () => {
                                             className="sr-only"
                                         />
                                         <div className={`w-10 h-6 rounded-full transition-colors p-1 ${settings.show_signature !== false && settings.show_signature !== 'false' ? 'bg-blue-500' : 'bg-gray-800'}`}>
-                                            <div className={`w-4 h-4 rounded-full bg-white transition-transform ${settings.show_signature !== false && settings.show_signature !== 'false' ? 'translate-x-4' : ''}`} />
+                                            <div className={`w-4 h-4 rounded-full bg-white dark:bg-slate-900 transition-transform ${settings.show_signature !== false && settings.show_signature !== 'false' ? 'translate-x-4' : ''}`} />
                                         </div>
                                         <span className="text-[9px] font-black uppercase text-gray-400">PDF Signature</span>
                                     </label>
@@ -454,7 +454,7 @@ const AdminSettings = () => {
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 mb-12">
-                    <section className="xl:col-span-12 p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-blue-500/20 transition-all">
+                    <section className="xl:col-span-12 p-10 bg-white dark:bg-slate-900/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-blue-500/20 transition-all">
                         <ModuleHeader icon={Building} title="Commercial Gateway Configuration" status="Official" />
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                             <div className="space-y-3">
@@ -510,7 +510,7 @@ const AdminSettings = () => {
                     
                     {/* LEFT COLUMN: ABOUT & SAFETY */}
                     <div className="xl:col-span-12 space-y-10">
-                        <section className="p-6 md:p-10 bg-white/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-brand-accent/20 transition-all">
+                        <section className="p-6 md:p-10 bg-white dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-brand-accent/20 transition-all">
                             <ModuleHeader icon={Info} title="Corporate Identity Protocol (About Us)" status="Live" />
                             
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
@@ -552,7 +552,7 @@ const AdminSettings = () => {
                     </div>
 
                     <div className="xl:col-span-4 space-y-10">
-                        <section className="p-8 bg-white/[0.02] border border-white/5 rounded-[2rem] backdrop-blur-3xl hover:border-brand-accent/20 transition-colors group">
+                        <section className="p-8 bg-white dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] backdrop-blur-3xl hover:border-brand-accent/20 transition-colors group">
                             <ModuleHeader icon={BarChart3} title="Performance Metrics" status="Dynamic" />
                             
                             <div className="space-y-6">
@@ -595,7 +595,7 @@ const AdminSettings = () => {
                             </div>
                         </section>
 
-                        <section className="p-8 bg-white/[0.02] border border-white/5 rounded-[2rem] backdrop-blur-3xl hover:border-brand-accent/20 transition-colors group">
+                        <section className="p-8 bg-white dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] backdrop-blur-3xl hover:border-brand-accent/20 transition-colors group">
                            <ModuleHeader icon={Shield} title="Identity Protocols" status="Secure" />
                            <div className="space-y-8">
                                 <div className="space-y-3">
@@ -607,19 +607,19 @@ const AdminSettings = () => {
                                         type="range" min="0.1" max="1.0" step="0.1" 
                                         value={settings.faceThreshold}
                                         onChange={(e) => updateField('faceThreshold', parseFloat(e.target.value))}
-                                        className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-brand-accent"
+                                        className="w-full h-1 bg-white dark:bg-slate-900/10 rounded-full appearance-none cursor-pointer accent-brand-accent"
                                     />
                                 </div>
-                                <div className="p-6 bg-white/[0.01] border border-white/5 rounded-2xl flex items-center justify-between group-hover:bg-brand-accent/[0.02] transition-colors">
+                                <div className="p-6 bg-white dark:bg-slate-900/[0.01] border border-white/5 rounded-2xl flex items-center justify-between group-hover:bg-brand-accent/[0.02] transition-colors">
                                     <div>
                                         <h4 className="text-xs font-black uppercase tracking-widest text-white mb-1">Public Pipeline</h4>
                                         <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Registration Node</p>
                                     </div>
                                     <button 
                                         onClick={() => updateField('allowRegistration', !settings.allowRegistration)}
-                                        className={`w-12 h-6 rounded-full transition-all relative ${settings.allowRegistration ? 'bg-brand-accent' : 'bg-white/10'}`}
+                                        className={`w-12 h-6 rounded-full transition-all relative ${settings.allowRegistration ? 'bg-brand-accent' : 'bg-white dark:bg-slate-900/10'}`}
                                     >
-                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.allowRegistration ? 'left-7' : 'left-1'}`}></div>
+                                        <div className={`absolute top-1 w-4 h-4 bg-white dark:bg-slate-900 rounded-full transition-all ${settings.allowRegistration ? 'left-7' : 'left-1'}`}></div>
                                     </button>
                                 </div>
                             </div>
@@ -627,7 +627,7 @@ const AdminSettings = () => {
                     </div>
 
                     <div className="xl:col-span-8 space-y-10 font-sans">
-                        <section className="p-6 md:p-10 bg-white/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden">
+                        <section className="p-6 md:p-10 bg-white dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden">
                             <ModuleHeader icon={Radio} title="Comms Node Deployment" status="Global" />
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -700,7 +700,7 @@ const AdminSettings = () => {
                             </div>
                         </section>
 
-                        <section className="p-6 md:p-10 bg-white/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-green-500/20 transition-all">
+                        <section className="p-6 md:p-10 bg-white dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-green-500/20 transition-all">
                             <ModuleHeader icon={Radio} title="Engagement Relay (Floating Links)" status="Active" />
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 <div className="space-y-3">
@@ -730,7 +730,7 @@ const AdminSettings = () => {
                             </div>
                         </section>
 
-                        <section className="p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl">
+                        <section className="p-10 bg-white dark:bg-slate-900/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl">
                             <ModuleHeader icon={Globe} title="Environment Identity" status="Instance 01" />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="space-y-3">
@@ -752,7 +752,7 @@ const AdminSettings = () => {
                             </div>
                         </section>
 
-                        <section className="p-6 md:p-10 bg-white/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-red-500/20 transition-all">
+                        <section className="p-6 md:p-10 bg-white dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-red-500/20 transition-all">
                             <ModuleHeader icon={Shield} title="Legal Configuration (ToS & Copyright)" status="Compliance" />
                             <div className="space-y-8">
                                 <div className="space-y-3">

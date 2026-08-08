@@ -92,7 +92,7 @@ const Footer = () => {
 
                     <div className="md:col-span-2">
                         <h3 className="text-primary font-black uppercase tracking-widest text-sm mb-6 border-b-2 border-slate-200 dark:border-slate-700 pb-2 inline-block">Company</h3>
-                        <ul className="space-y-3 font-bold text-sm text-slate-500 dark:text-slate-400">
+                        <ul className="space-y-3 font-bold text-sm text-slate-500 dark:text-slate-400 ">
                             <li><Link to="/about" className="hover:text-primary transition flex items-center gap-2">About Us</Link></li>
                             <li><Link to="/services" className="hover:text-primary transition flex items-center gap-2">Services</Link></li>
                             <li><Link to="/projects" className="hover:text-primary transition flex items-center gap-2">Portfolio</Link></li>
@@ -101,7 +101,7 @@ const Footer = () => {
 
                     <div className="md:col-span-2">
                         <h3 className="text-primary font-black uppercase tracking-widest text-sm mb-6 border-b-2 border-slate-200 dark:border-slate-700 pb-2 inline-block">Operations</h3>
-                        <ul className="space-y-3 font-bold text-sm text-slate-500 dark:text-slate-400">
+                        <ul className="space-y-3 font-bold text-sm text-slate-500 dark:text-slate-400 ">
                             <li><Link to="/services?type=welding" className="hover:text-primary transition">Heavy Welding</Link></li>
                             <li><Link to="/services?type=roofing" className="hover:text-primary transition">Metal Roofing</Link></li>
                             <li><Link to="/services?type=truss" className="hover:text-primary transition">Truss Assembly</Link></li>
@@ -111,7 +111,7 @@ const Footer = () => {
 
                     <div className="md:col-span-3">
                         <h3 className="text-primary font-black uppercase tracking-widest text-sm mb-6 border-b-2 border-slate-200 dark:border-slate-700 pb-2 inline-block">Dispatch / Comms</h3>
-                        <ul className="space-y-4 font-bold text-sm text-slate-500 dark:text-slate-400">
+                        <ul className="space-y-4 font-bold text-sm text-slate-500 dark:text-slate-400 ">
                             <li className="flex items-start gap-3">
                                 <span className="text-primary mt-1">⌖</span>
                                 <span className="uppercase tracking-wide whitespace-pre-line">{settings.footer_address}</span>

@@ -198,7 +198,7 @@ const AttendanceScanner = () => {
     };
 
     return (
-        <div className="min-h-[calc(100vh-100px)] p-6 lg:p-12 bg-slate-50 flex items-center justify-center">
+        <div className="min-h-[calc(100vh-100px)] p-6 lg:p-12 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
             <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
                 
                 {/* Left Side: Status & Controls */}
@@ -207,13 +207,13 @@ const AttendanceScanner = () => {
                         <div className="flex items-center gap-3 text-indigo-600 font-black text-xs uppercase tracking-[0.3em]">
                             <Fingerprint className="w-4 h-4" /> Secure Auth Node
                         </div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-none">
+                        <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
                             BIOMETRIC <span className="text-indigo-600">RECOGNITION.</span>
                         </h1>
-                        <p className="text-slate-500 font-medium">Verify your identity to log shift attendance using enterprise-grade facial recognition.</p>
+                        <p className="text-slate-500 dark:text-slate-400 font-medium">Verify your identity to log shift attendance using enterprise-grade facial recognition.</p>
                     </div>
 
-                    <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 space-y-6">
+                    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 dark:border-slate-800 space-y-6">
                         <div className="flex items-center gap-4 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
                             <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
                                 <Info className="w-6 h-6" />
@@ -250,15 +250,15 @@ const AttendanceScanner = () => {
 
                     {/* Stats Widget */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center">
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center">
                             <Timer className="w-5 h-5 text-indigo-500 mb-2" />
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quality</span>
-                            <span className="text-lg font-black text-slate-900">{stats.quality}%</span>
+                            <span className="text-lg font-black text-slate-900 dark:text-white">{stats.quality}%</span>
                         </div>
-                        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center">
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center">
                             <ShieldCheck className={`w-5 h-5 mb-2 ${stats.blinkCount > 0 ? 'text-emerald-500' : 'text-slate-300'}`} />
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Liveness</span>
-                            <span className={`text-lg font-black ${stats.blinkCount > 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
+                            <span className={`text-lg font-black ${stats.blinkCount > 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-white'}`}>
                                 {stats.blinkCount > 0 ? 'Verified' : 'Pending'}
                             </span>
                         </div>
@@ -342,7 +342,7 @@ const AttendanceScanner = () => {
                             <div className="absolute inset-0 bg-emerald-600/20 backdrop-blur-sm flex flex-col items-center justify-center z-30">
                                 <motion.div 
                                     initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }}
-                                    className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-2xl"
+                                    className="w-32 h-32 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center shadow-2xl"
                                 >
                                     <CheckCircle2 className="w-20 h-20 text-emerald-500" />
                                 </motion.div>

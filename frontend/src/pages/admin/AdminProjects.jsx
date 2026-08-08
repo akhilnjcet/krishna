@@ -13,7 +13,7 @@ const ApproveWithAmountButton = ({ workItem, onApprove, isLoading }) => {
                 type="number"
                 value={approveAmount}
                 onChange={e => setApproveAmount(e.target.value)}
-                className="w-20 px-2 py-1.5 bg-white border border-emerald-200 rounded-lg font-bold text-[9px] outline-none focus:ring-2 focus:ring-emerald-500/20"
+                className="w-20 px-2 py-1.5 bg-white dark:bg-slate-900 border border-emerald-200 rounded-lg font-bold text-[9px] outline-none focus:ring-2 focus:ring-emerald-500/20"
                 placeholder="₹ Amount"
             />
             <button
@@ -416,11 +416,11 @@ const AdminProjects = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50 dark:bg-slate-800">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Director View</div>
-                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900">Projects & Payments</h2>
+                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 dark:text-white">Projects & Payments</h2>
                 </div>
                 {activeTab === 'projects' && (
                     <button 
@@ -433,11 +433,11 @@ const AdminProjects = () => {
             </div>
 
             {/* Tab Switcher */}
-            <div className="flex gap-2 mb-8 bg-white p-2 rounded-2xl border border-slate-200 shadow-md w-fit">
+            <div className="flex gap-2 mb-8 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-md w-fit">
                 <button
                     onClick={() => setActiveTab('projects')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${
-                        activeTab === 'projects' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
+                        activeTab === 'projects' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-800'
                     }`}
                 >
                     <Briefcase className="w-4 h-4" /> Projects Registry
@@ -445,7 +445,7 @@ const AdminProjects = () => {
                 <button
                     onClick={() => setActiveTab('payments')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${
-                        activeTab === 'payments' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
+                        activeTab === 'payments' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-800'
                     }`}
                 >
                     <Wallet className="w-4 h-4" /> Payment History
@@ -458,11 +458,11 @@ const AdminProjects = () => {
             </div>
 
             {activeTab === 'projects' && (
-            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
-                            <tr className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
+                            <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] uppercase font-black tracking-widest border-b border-slate-100 dark:border-slate-800">
                                 <th className="p-6">Project Title / Client</th>
                                 <th className="p-6">Category</th>
                                 <th className="p-6">Budget</th>
@@ -471,7 +471,7 @@ const AdminProjects = () => {
                                 <th className="p-6 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="text-sm font-bold text-slate-900 divide-y divide-slate-100">
+                        <tbody className="text-sm font-bold text-slate-900 dark:text-white divide-y divide-slate-100">
                             {loading ? (
                                 <tr>
                                     <td colSpan="6" className="p-20 text-center">
@@ -495,7 +495,7 @@ const AdminProjects = () => {
                                     className="hover:bg-indigo-50/30 transition-colors group"
                                 >
                                     <td className="p-6">
-                                        <div className="font-black text-slate-900 text-lg uppercase tracking-tight">{prj.title}</div>
+                                        <div className="font-black text-slate-900 dark:text-white text-lg uppercase tracking-tight">{prj.title}</div>
                                         <div className="flex flex-wrap gap-2 mt-1">
                                             <span className="text-[10px] uppercase tracking-widest text-indigo-500 font-black">ID: {prj._id.slice(-8).toUpperCase()}</span>
                                             {prj.assignedStaff && prj.assignedStaff.length > 0 && (
@@ -505,7 +505,7 @@ const AdminProjects = () => {
                                             )}
                                         </div>
                                     </td>
-                                    <td className="p-6 text-slate-600 uppercase text-xs font-black">
+                                    <td className="p-6 text-slate-600 dark:text-slate-400 uppercase text-xs font-black">
                                        {prj.serviceType}
                                     </td>
                                     <td className="p-6">
@@ -513,14 +513,14 @@ const AdminProjects = () => {
                                             ₹ {prj.budget?.toLocaleString()}
                                         </span>
                                     </td>
-                                    <td className="p-6 text-slate-500 font-mono">
+                                    <td className="p-6 text-slate-500 dark:text-slate-400 font-mono">
                                         {prj.deadline ? new Date(prj.deadline).toLocaleDateString() : 'N/A'}
                                     </td>
                                     <td className="p-6">
                                         <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${
                                             prj.status === 'completed' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                                             prj.status === 'in-progress' ? 'bg-indigo-100 text-indigo-700 border-indigo-200' :
-                                            'bg-slate-100 text-slate-600 border-slate-200'
+                                            'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                                         }`}>
                                             {prj.status}
                                         </span>
@@ -546,7 +546,7 @@ const AdminProjects = () => {
                                                 setEditAssignedStaff(prj.assignedStaff.map(s => s._id || s));
                                                 setShowStaffModal(true);
                                             }}
-                                            className="bg-slate-100 text-slate-600 p-2 rounded-xl hover:bg-indigo-600 hover:text-white transition"
+                                            className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 p-2 rounded-xl hover:bg-indigo-600 hover:text-white transition"
                                             title="Manage Assigned Staff"
                                         >
                                             <Briefcase className="w-4 h-4" />
@@ -596,7 +596,7 @@ const AdminProjects = () => {
                     <div className="flex items-center justify-between mb-2">
                         <div>
                             <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Client Financials</div>
-                            <h3 className="text-xl font-black uppercase tracking-tighter text-slate-900 flex items-center gap-2">
+                            <h3 className="text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white flex items-center gap-2">
                                 <History className="w-5 h-5 text-indigo-600" /> Transaction History
                             </h3>
                         </div>
@@ -605,11 +605,11 @@ const AdminProjects = () => {
                         </span>
                     </div>
 
-                    <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse min-w-[700px]">
                                 <thead>
-                                    <tr className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
+                                    <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] uppercase font-black tracking-widest border-b border-slate-100 dark:border-slate-800">
                                         <th className="p-6">Client Name</th>
                                         <th className="p-6">Payment / Details</th>
                                         <th className="p-6">Amount</th>
@@ -643,12 +643,12 @@ const AdminProjects = () => {
                                             className="hover:bg-indigo-50/30 transition-colors group"
                                         >
                                             <td className="p-6">
-                                                <div className="font-black text-slate-900 text-sm">{p.customerId?.name || 'Unknown'}</div>
+                                                <div className="font-black text-slate-900 dark:text-white text-sm">{p.customerId?.name || 'Unknown'}</div>
                                                 <div className="text-[10px] text-slate-400 font-bold mt-0.5">{p.customerId?.email || ''}</div>
                                             </td>
                                             <td className="p-6">
-                                                <div className="font-black text-slate-800 text-sm uppercase">{p.name || 'General Payment'}</div>
-                                                <div className="text-[10px] text-slate-500 font-semibold mt-0.5 max-w-xs truncate">{p.notes || '—'}</div>
+                                                <div className="font-black text-slate-800 dark:text-slate-200 text-sm uppercase">{p.name || 'General Payment'}</div>
+                                                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5 max-w-xs truncate">{p.notes || '—'}</div>
                                                 {p.referenceId && (
                                                     <div className="text-[9px] text-indigo-600 font-black mt-1 uppercase tracking-wider">UTR: {p.referenceId}</div>
                                                 )}
@@ -659,13 +659,13 @@ const AdminProjects = () => {
                                                 ) : null}
                                             </td>
                                             <td className="p-6">
-                                                <div className="flex items-center gap-1 text-sm font-black text-slate-900">
+                                                <div className="flex items-center gap-1 text-sm font-black text-slate-900 dark:text-white">
                                                     <IndianRupee className="w-3.5 h-3.5 text-emerald-600" />
                                                     {p.amount?.toLocaleString('en-IN')}
                                                 </div>
                                             </td>
                                             <td className="p-6">
-                                                <div className="text-xs font-bold text-slate-700">
+                                                <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
                                                     {new Date(p.paymentDate || p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                 </div>
                                                 <div className="text-[10px] text-slate-400 mt-0.5">
@@ -673,7 +673,7 @@ const AdminProjects = () => {
                                                 </div>
                                             </td>
                                             <td className="p-6">
-                                                <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase rounded-lg">{p.method}</span>
+                                                <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase rounded-lg">{p.method}</span>
                                             </td>
                                             <td className="p-6">
                                                 <div className="flex justify-center">
@@ -735,9 +735,9 @@ const AdminProjects = () => {
                         <motion.div 
                             initial={{ scale: 0.9, y: 20, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
-                            className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
                         >
-                            <button onClick={() => setShowNotifyModal(false)} className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full">
+                            <button onClick={() => setShowNotifyModal(false)} className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full">
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
 
@@ -746,24 +746,24 @@ const AdminProjects = () => {
                                     <Send className="w-8 h-8 text-indigo-600" />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Sudden Pulse Transmit</h2>
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Sudden Pulse Transmit</h2>
                                     <p className="text-[10px] font-black uppercase text-indigo-500 tracking-[0.2em]">Uplink to Client Portal</p>
                                 </div>
                             </div>
 
-                            <div className="bg-slate-50 p-4 rounded-2xl mb-8 border border-slate-100">
+                            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl mb-8 border border-slate-100 dark:border-slate-800">
                                 <div className="text-[9px] font-black uppercase text-slate-400 mb-1">Target Project Archive</div>
-                                <div className="text-sm font-black text-slate-900 uppercase">{selectedProject?.title}</div>
+                                <div className="text-sm font-black text-slate-900 dark:text-white uppercase">{selectedProject?.title}</div>
                             </div>
 
                             <form onSubmit={handlePostUpdate} className="space-y-6">
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Subject Heading</label>
-                                    <input required value={notificationText.title} onChange={e => setNotificationText({...notificationText, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none uppercase text-xs" placeholder="TECHNICAL ALERT / SAFETY MILESTONE" />
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Subject Heading</label>
+                                    <input required value={notificationText.title} onChange={e => setNotificationText({...notificationText, title: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none uppercase text-xs" placeholder="TECHNICAL ALERT / SAFETY MILESTONE" />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Core Intelligence Message</label>
-                                    <textarea required rows={4} value={notificationText.message} onChange={e => setNotificationText({...notificationText, message: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" placeholder="Detail the structural update or sudden site information..." />
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Core Intelligence Message</label>
+                                    <textarea required rows={4} value={notificationText.message} onChange={e => setNotificationText({...notificationText, message: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" placeholder="Detail the structural update or sudden site information..." />
                                 </div>
                                 <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100 mb-4">
                                     <AlertTriangle className="w-5 h-5 text-amber-500" />
@@ -785,28 +785,28 @@ const AdminProjects = () => {
                         <motion.div 
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl p-10 relative"
+                            className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-[2.5rem] shadow-2xl p-10 relative"
                         >
-                            <button onClick={() => setShowModal(false)} className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full">
+                            <button onClick={() => setShowModal(false)} className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full">
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
 
-                            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-2">Commission Project</h2>
-                            <p className="text-slate-500 font-medium mb-8">Initialize a new industrial contract in the registry.</p>
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-2">Commission Project</h2>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">Initialize a new industrial contract in the registry.</p>
 
                             <form onSubmit={handleCreateProject} className="space-y-6">
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Project Title</label>
-                                    <input required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" />
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Project Title</label>
+                                    <input required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Select Customer*</label>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Select Customer*</label>
                                         <select 
                                             required 
                                             value={formData.customerId} 
                                             onChange={e => setFormData({...formData, customerId: e.target.value})} 
-                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none appearance-none"
+                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none appearance-none"
                                         >
                                             <option value="">Select a Client</option>
                                             {customers.map(c => (
@@ -815,27 +815,27 @@ const AdminProjects = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Service Type</label>
-                                        <input required value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="e.g. Fabrication" />
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Service Type</label>
+                                        <input required value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="e.g. Fabrication" />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Budget (₹)</label>
-                                        <input type="number" value={formData.budget} onChange={e => setFormData({...formData, budget: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" />
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Budget (₹)</label>
+                                        <input type="number" value={formData.budget} onChange={e => setFormData({...formData, budget: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" />
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Deadline</label>
-                                        <input type="date" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" />
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Deadline</label>
+                                        <input type="date" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none" />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Assign Staff Members</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Assign Staff Members</label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl">
                                         {staffList.map(staff => {
                                             const checked = formData.assignedStaff.includes(staff._id);
                                             return (
-                                                <label key={staff._id} className="flex items-center gap-3 cursor-pointer hover:bg-slate-100 p-2 rounded-lg transition-colors">
+                                                <label key={staff._id} className="flex items-center gap-3 cursor-pointer hover:bg-slate-100 dark:bg-slate-800/80 p-2 rounded-lg transition-colors">
                                                     <input 
                                                         type="checkbox"
                                                         checked={checked}
@@ -848,7 +848,7 @@ const AdminProjects = () => {
                                                         className="w-4 h-4 rounded accent-indigo-600"
                                                     />
                                                     <div className="flex flex-col">
-                                                        <span className="text-xs font-bold text-slate-800">{staff.name}</span>
+                                                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{staff.name}</span>
                                                         <span className="text-[9px] text-slate-400 font-bold uppercase">{staff.designation}</span>
                                                     </div>
                                                 </label>
@@ -870,29 +870,29 @@ const AdminProjects = () => {
                         <motion.div 
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
                         >
                             <button 
                                 onClick={() => {
                                     setShowStaffModal(false);
                                     setSelectedProject(null);
                                 }} 
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full"
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full"
                             >
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
 
-                            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-2">Assign Staff</h2>
-                            <p className="text-slate-500 font-medium mb-8 font-sans">Manage staff assigned to: <span className="font-black text-indigo-600 uppercase">{selectedProject.title}</span></p>
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-2">Assign Staff</h2>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8 font-sans">Manage staff assigned to: <span className="font-black text-indigo-600 uppercase">{selectedProject.title}</span></p>
 
                             <form onSubmit={handleUpdateStaffAssignment} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Select Assigned Staff</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Select Assigned Staff</label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl">
                                         {staffList.map(staff => {
                                             const checked = editAssignedStaff.includes(staff._id);
                                             return (
-                                                <label key={staff._id} className="flex items-center gap-3 cursor-pointer hover:bg-slate-100 p-2 rounded-lg transition-colors">
+                                                <label key={staff._id} className="flex items-center gap-3 cursor-pointer hover:bg-slate-100 dark:bg-slate-800/80 p-2 rounded-lg transition-colors">
                                                     <input 
                                                         type="checkbox"
                                                         checked={checked}
@@ -905,7 +905,7 @@ const AdminProjects = () => {
                                                         className="w-4 h-4 rounded accent-indigo-600"
                                                     />
                                                     <div className="flex flex-col">
-                                                        <span className="text-xs font-bold text-slate-800">{staff.name}</span>
+                                                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{staff.name}</span>
                                                         <span className="text-[9px] text-slate-400 font-bold uppercase">{staff.designation}</span>
                                                     </div>
                                                 </label>
@@ -928,14 +928,14 @@ const AdminProjects = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
+                            className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
                         >
                             <button 
                                 onClick={() => {
                                     setShowTimelineModal(false);
                                     setSelectedProject(null);
                                 }} 
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full"
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full"
                             >
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
@@ -945,8 +945,8 @@ const AdminProjects = () => {
                                     <Clock className="w-8 h-8 text-indigo-600" />
                                 </div>
                                 <div>
-                                    <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Timeline Management</h2>
-                                    <p className="text-slate-500 font-medium font-sans">Manage milestone delivery for: <span className="font-black text-indigo-600 uppercase">{selectedProject.title}</span></p>
+                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Timeline Management</h2>
+                                    <p className="text-slate-500 dark:text-slate-400 font-medium font-sans">Manage milestone delivery for: <span className="font-black text-indigo-600 uppercase">{selectedProject.title}</span></p>
                                 </div>
                             </div>
 
@@ -973,7 +973,7 @@ const AdminProjects = () => {
                             <form onSubmit={handleSubmitTimeline} className="space-y-6">
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center border-b pb-2">
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Project Milestones</label>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Project Milestones</label>
                                         <button 
                                             type="button" 
                                             onClick={handleAddMilestone}
@@ -984,13 +984,13 @@ const AdminProjects = () => {
                                     </div>
 
                                     {timelineDraft.length === 0 ? (
-                                        <div className="text-center py-10 bg-slate-50 rounded-2xl border-2 border-dashed text-slate-400 font-bold uppercase text-xs">
+                                        <div className="text-center py-10 bg-slate-50 dark:bg-slate-800 rounded-2xl border-2 border-dashed text-slate-400 font-bold uppercase text-xs">
                                             No milestones drafted. Add at least one milestone.
                                         </div>
                                     ) : (
                                         <div className="space-y-4 max-h-60 overflow-y-auto pr-1">
                                             {timelineDraft.map((milestone, idx) => (
-                                                <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 relative">
+                                                <div key={idx} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 space-y-3 relative">
                                                     <button 
                                                         type="button"
                                                         onClick={() => handleRemoveMilestone(idx)}
@@ -1007,7 +1007,7 @@ const AdminProjects = () => {
                                                                 required
                                                                 type="text"
                                                                 placeholder="e.g. Excavation Completion"
-                                                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
+                                                                className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
                                                                 value={milestone.title}
                                                                 onChange={e => handleMilestoneChange(idx, 'title', e.target.value)}
                                                             />
@@ -1017,7 +1017,7 @@ const AdminProjects = () => {
                                                             <input 
                                                                 required
                                                                 type="date"
-                                                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
+                                                                className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
                                                                 value={milestone.date}
                                                                 onChange={e => handleMilestoneChange(idx, 'date', e.target.value)}
                                                             />
@@ -1030,7 +1030,7 @@ const AdminProjects = () => {
                                                             <input 
                                                                 type="text"
                                                                 placeholder="Details of the phase..."
-                                                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-medium text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
+                                                                className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-medium text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
                                                                 value={milestone.description}
                                                                 onChange={e => handleMilestoneChange(idx, 'description', e.target.value)}
                                                             />
@@ -1038,7 +1038,7 @@ const AdminProjects = () => {
                                                         <div>
                                                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Status</label>
                                                             <select
-                                                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
+                                                                className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
                                                                 value={milestone.status}
                                                                 onChange={e => handleMilestoneChange(idx, 'status', e.target.value)}
                                                             >
@@ -1060,7 +1060,7 @@ const AdminProjects = () => {
                                             setShowTimelineModal(false);
                                             setSelectedProject(null);
                                         }}
-                                        className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
+                                        className="flex-1 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
                                     >
                                         Cancel
                                     </button>
@@ -1085,11 +1085,11 @@ const AdminProjects = () => {
                         <motion.div 
                             initial={{ scale: 0.9, y: 20, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
-                            className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-rose-600"
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-rose-600"
                         >
                             <button 
                                 onClick={() => setRejectModal({ show: false, paymentId: null, reason: '' })} 
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full border-none bg-transparent cursor-pointer"
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full border-none bg-transparent cursor-pointer"
                             >
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
@@ -1099,20 +1099,20 @@ const AdminProjects = () => {
                                     <XCircle className="w-8 h-8 text-rose-600" />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Reject Payment</h2>
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Reject Payment</h2>
                                     <p className="text-[10px] font-black uppercase text-rose-500 tracking-[0.2em]">Transaction Audit Action</p>
                                 </div>
                             </div>
 
                             <form onSubmit={handleRejectPaymentSubmit} className="space-y-6">
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Rejection Reason *</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Rejection Reason *</label>
                                     <textarea 
                                         required 
                                         rows={4} 
                                         value={rejectModal.reason} 
                                         onChange={e => setRejectModal({...rejectModal, reason: e.target.value})} 
-                                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-rose-500/20 outline-none text-xs" 
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-rose-500/20 outline-none text-xs" 
                                         placeholder="Please provide the specific reason for rejecting this transaction (e.g. Invalid UTR, Amount mismatch)..." 
                                     />
                                 </div>
@@ -1126,7 +1126,7 @@ const AdminProjects = () => {
                                     <button 
                                         type="button"
                                         onClick={() => setRejectModal({ show: false, paymentId: null, reason: '' })}
-                                        className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
+                                        className="flex-1 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
                                     >
                                         Cancel
                                     </button>
@@ -1152,14 +1152,14 @@ const AdminProjects = () => {
                         <motion.div 
                             initial={{ scale: 0.95, y: 20, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
-                            className="bg-white w-full max-w-5xl rounded-[2rem] shadow-2xl p-6 relative border-t-[8px] border-emerald-600 my-4 max-h-[92vh] overflow-y-auto"
+                            className="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-[2rem] shadow-2xl p-6 relative border-t-[8px] border-emerald-600 my-4 max-h-[92vh] overflow-y-auto"
                         >
                             <button 
                                 onClick={() => {
                                     setShowRemittanceModal(false);
                                     setSelectedProject(null);
                                 }} 
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full border-none bg-transparent cursor-pointer"
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full border-none bg-transparent cursor-pointer"
                             >
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
@@ -1169,7 +1169,7 @@ const AdminProjects = () => {
                                     <Wallet className="w-6 h-6 text-emerald-600" />
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Project Remittance Manager</h2>
+                                    <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">Project Remittance Manager</h2>
                                     <p className="text-[10px] font-black uppercase text-emerald-500 tracking-[0.2em]">{selectedProject.title}</p>
                                 </div>
                             </div>
@@ -1177,28 +1177,28 @@ const AdminProjects = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-5">
                                 {/* Left Side: Ledger Settings */}
                                 <div className="lg:col-span-6 space-y-4">
-                                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 space-y-3">
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-3">
                                         <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Project Ledger Settings</h3>
                                         
                                         <form onSubmit={handleUpdateLedger} className="space-y-4">
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Discount Allowed</label>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Discount Allowed</label>
                                                     <input 
                                                         type="number"
                                                         value={remittanceLedger.discount}
                                                         onChange={e => setRemittanceLedger({...remittanceLedger, discount: e.target.value})}
-                                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                                        className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
                                                         placeholder="0.00"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Advance Paid</label>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Advance Paid</label>
                                                     <input 
                                                         type="number"
                                                         value={remittanceLedger.advancePaid}
                                                         onChange={e => setRemittanceLedger({...remittanceLedger, advancePaid: e.target.value})}
-                                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                                        className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
                                                         placeholder="0.00"
                                                     />
                                                 </div>
@@ -1228,7 +1228,7 @@ const AdminProjects = () => {
                                     <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 grid grid-cols-3 gap-3">
                                         <div>
                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Base Budget</p>
-                                            <p className="text-sm font-black text-slate-800">₹ {budget.toLocaleString()}</p>
+                                            <p className="text-sm font-black text-slate-800 dark:text-slate-200">₹ {budget.toLocaleString()}</p>
                                         </div>
                                         <div>
                                             <p className="text-[8px] font-black text-violet-500 uppercase tracking-widest">Additional Work</p>
@@ -1272,28 +1272,28 @@ const AdminProjects = () => {
 
                                 {/* Right Side: Record Manual Payment */}
                                 <div className="lg:col-span-6 space-y-4">
-                                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 space-y-3">
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-3">
                                         <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Record Manual / Cash Payment</h3>
                                         
                                         <form onSubmit={handleRecordManualPayment} className="space-y-4">
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Payment Amount (INR) *</label>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Payment Amount (INR) *</label>
                                                     <input 
                                                         required
                                                         type="number"
                                                         value={manualPaymentForm.amount}
                                                         onChange={e => setManualPaymentForm({...manualPaymentForm, amount: e.target.value})}
-                                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                                        className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
                                                         placeholder="0.00"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Payment Method *</label>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Payment Method *</label>
                                                     <select 
                                                         value={manualPaymentForm.method}
                                                         onChange={e => setManualPaymentForm({...manualPaymentForm, method: e.target.value})}
-                                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                                        className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
                                                     >
                                                         <option value="cash">Cash Override</option>
                                                         <option value="upi">UPI Portal</option>
@@ -1304,22 +1304,22 @@ const AdminProjects = () => {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Reference ID / UTR</label>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Reference ID / UTR</label>
                                                     <input 
                                                         type="text"
                                                         value={manualPaymentForm.referenceId}
                                                         onChange={e => setManualPaymentForm({...manualPaymentForm, referenceId: e.target.value})}
-                                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                                        className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
                                                         placeholder="e.g. CASH, UTR9988..."
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Payment Notes</label>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Payment Notes</label>
                                                     <input 
                                                         type="text"
                                                         value={manualPaymentForm.notes}
                                                         onChange={e => setManualPaymentForm({...manualPaymentForm, notes: e.target.value})}
-                                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                                        className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
                                                         placeholder="Cash received on site..."
                                                     />
                                                 </div>
@@ -1339,14 +1339,14 @@ const AdminProjects = () => {
                             </div>
 
                             {/* Project-Specific Transactions History Table */}
-                            <div className="border-t border-slate-100 pt-4">
-                                <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-700 mb-3">Project Transactions Audit History</h3>
+                            <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                                <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">Project Transactions Audit History</h3>
                                 
-                                <div className="bg-slate-50/50 rounded-xl border border-slate-200 overflow-hidden">
+                                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                                     <div className="overflow-x-auto max-h-48 overflow-y-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
-                                                <tr className="bg-slate-100 text-[8px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-200">
+                                                <tr className="bg-slate-100 dark:bg-slate-800/80 text-[8px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-200 dark:border-slate-700">
                                                     <th className="p-4">Payment Info</th>
                                                     <th className="p-4">Amount</th>
                                                     <th className="p-4">Method / UTR</th>
@@ -1363,9 +1363,9 @@ const AdminProjects = () => {
                                                     </tr>
                                                 ) : (
                                                     payments.filter(p => p.projectId === selectedProject._id || p.projectId?._id === selectedProject._id).map(p => (
-                                                        <tr key={p._id} className="hover:bg-slate-50 transition-colors text-xs">
+                                                        <tr key={p._id} className="hover:bg-slate-50 dark:bg-slate-800 transition-colors text-xs">
                                                             <td className="p-4">
-                                                                <div className="font-black text-slate-800 uppercase">{p.name || 'General Remittance'}</div>
+                                                                <div className="font-black text-slate-800 dark:text-slate-200 uppercase">{p.name || 'General Remittance'}</div>
                                                                 <div className="text-[8px] text-slate-400 mt-1">Paid on: {new Date(p.paymentDate || p.createdAt).toLocaleDateString()}</div>
                                                                 {(p.status === 'Completed' || p.status === 'verified') && (
                                                                     <div className="text-[7px] text-emerald-600 font-bold mt-0.5 uppercase">Verified by {p.verifiedByName || 'Admin'}</div>
@@ -1374,11 +1374,11 @@ const AdminProjects = () => {
                                                                     <div className="text-[7px] text-rose-500 font-bold mt-0.5 uppercase">Rejected Reason: {p.rejectionReason}</div>
                                                                 )}
                                                             </td>
-                                                            <td className="p-4 font-black text-slate-900">
+                                                            <td className="p-4 font-black text-slate-900 dark:text-white">
                                                                 ₹ {p.amount?.toLocaleString()}
                                                             </td>
                                                             <td className="p-4">
-                                                                <span className="px-2 py-0.5 bg-slate-200 text-slate-700 text-[8px] font-black uppercase rounded">{p.method}</span>
+                                                                <span className="px-2 py-0.5 bg-slate-200 text-slate-700 dark:text-slate-300 text-[8px] font-black uppercase rounded">{p.method}</span>
                                                                 {p.referenceId && (
                                                                     <div className="text-[8px] text-indigo-650 font-bold mt-1 uppercase">UTR: {p.referenceId}</div>
                                                                 )}
@@ -1436,11 +1436,11 @@ const AdminProjects = () => {
                             initial={{ scale: 0.95, y: 20, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-violet-600 my-8"
+                            className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-violet-600 my-8"
                         >
                             <button
                                 onClick={() => { setShowAdditionalWorkModal(false); setAdditionalWorkProject(null); }}
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full border-none bg-transparent cursor-pointer"
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full border-none bg-transparent cursor-pointer"
                             >
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
@@ -1451,7 +1451,7 @@ const AdminProjects = () => {
                                     <Wrench className="w-8 h-8 text-violet-600" />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Additional Work Scope</h2>
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Additional Work Scope</h2>
                                     <p className="text-[10px] font-black uppercase text-violet-500 tracking-[0.2em]">{additionalWorkProject.title}</p>
                                 </div>
                             </div>
@@ -1466,7 +1466,7 @@ const AdminProjects = () => {
                                     <div className="grid grid-cols-3 gap-4 mb-8 bg-violet-50/50 p-5 rounded-2xl border border-violet-100">
                                         <div>
                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Base Budget</p>
-                                            <p className="text-lg font-black text-slate-800">₹ {(additionalWorkProject.budget || 0).toLocaleString()}</p>
+                                            <p className="text-lg font-black text-slate-800 dark:text-slate-200">₹ {(additionalWorkProject.budget || 0).toLocaleString()}</p>
                                         </div>
                                         <div>
                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Approved Additional</p>
@@ -1483,12 +1483,12 @@ const AdminProjects = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                                 {/* Left: Existing Work Items */}
                                 <div className="lg:col-span-7 space-y-3">
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 border-b pb-2">
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 border-b pb-2">
                                         Scope Items ({(additionalWorkProject.additionalWork || []).length})
                                     </h3>
 
                                     {(additionalWorkProject.additionalWork || []).length === 0 ? (
-                                        <div className="py-12 text-center bg-slate-50 border-2 border-dashed rounded-2xl text-slate-400">
+                                        <div className="py-12 text-center bg-slate-50 dark:bg-slate-800 border-2 border-dashed rounded-2xl text-slate-400">
                                             <PlusCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
                                             <p className="text-xs font-bold uppercase tracking-widest">No additional work items yet.</p>
                                         </div>
@@ -1510,7 +1510,7 @@ const AdminProjects = () => {
                                                         <div className="flex items-start justify-between gap-3">
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                                    <p className="text-sm font-black text-slate-800 uppercase">{w.title}</p>
+                                                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase">{w.title}</p>
                                                                     <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
                                                                         isPending ? 'bg-amber-200 text-amber-800' :
                                                                         isApproved ? 'bg-emerald-200 text-emerald-800' :
@@ -1518,9 +1518,9 @@ const AdminProjects = () => {
                                                                     }`}>{w.status}</span>
                                                                 </div>
                                                                 {w.description && (
-                                                                    <p className="text-xs text-slate-500 font-semibold mt-1">{w.description}</p>
+                                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1">{w.description}</p>
                                                                 )}
-                                                                <p className="text-xs font-black text-slate-700 mt-1">
+                                                                <p className="text-xs font-black text-slate-700 dark:text-slate-300 mt-1">
                                                                     ₹ {(w.amount || 0).toLocaleString()}
                                                                     {isApproved && <span className="text-emerald-600 ml-1">✓ Approved</span>}
                                                                 </p>
@@ -1549,7 +1549,7 @@ const AdminProjects = () => {
                                                                 <button
                                                                     disabled={updatingWorkId === w._id}
                                                                     onClick={() => handleDeleteWork(w._id)}
-                                                                    className="px-3 py-1.5 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-xl hover:bg-rose-50 hover:text-rose-600 transition disabled:opacity-50 border-none cursor-pointer flex items-center gap-1"
+                                                                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase rounded-xl hover:bg-rose-50 hover:text-rose-600 transition disabled:opacity-50 border-none cursor-pointer flex items-center gap-1"
                                                                 >
                                                                     {updatingWorkId === w._id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Trash2 className="w-2.5 h-2.5" />}
                                                                     Delete
@@ -1565,36 +1565,36 @@ const AdminProjects = () => {
 
                                 {/* Right: Add New Item */}
                                 <div className="lg:col-span-5">
-                                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4">
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4">
                                         <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Log New Approved Work</h3>
                                         <form onSubmit={handleAdminAddWork} className="space-y-4">
                                             <div>
-                                                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Work Title *</label>
+                                                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Work Title *</label>
                                                 <input
                                                     required
                                                     value={newAdditionalWork.title}
                                                     onChange={e => setNewAdditionalWork({ ...newAdditionalWork, title: e.target.value })}
-                                                    className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-violet-500/20"
+                                                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-violet-500/20"
                                                     placeholder="e.g. Extra Flooring Work"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Description</label>
+                                                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Description</label>
                                                 <textarea
                                                     rows={2}
                                                     value={newAdditionalWork.description}
                                                     onChange={e => setNewAdditionalWork({ ...newAdditionalWork, description: e.target.value })}
-                                                    className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-semibold text-xs outline-none focus:ring-2 focus:ring-violet-500/20 resize-none"
+                                                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold text-xs outline-none focus:ring-2 focus:ring-violet-500/20 resize-none"
                                                     placeholder="Brief description of the scope..."
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Approved Amount (₹)</label>
+                                                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Approved Amount (₹)</label>
                                                 <input
                                                     type="number"
                                                     value={newAdditionalWork.amount}
                                                     onChange={e => setNewAdditionalWork({ ...newAdditionalWork, amount: e.target.value })}
-                                                    className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-violet-500/20"
+                                                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-violet-500/20"
                                                     placeholder="0.00"
                                                 />
                                             </div>

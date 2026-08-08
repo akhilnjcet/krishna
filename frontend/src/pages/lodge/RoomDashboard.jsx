@@ -25,9 +25,9 @@ const RoomDashboard = () => {
     
     if (!room) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
+            <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-800">
                 <AlertCircle className="w-16 h-16 text-slate-300 mb-4" />
-                <p className="text-slate-500 font-bold uppercase tracking-widest text-center">Room Not Found</p>
+                <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-center">Room Not Found</p>
                 <button 
                     onClick={() => navigate('/lodge/rooms')}
                     className="mt-6 px-8 py-3 bg-[#2D5BE3] text-white rounded-2xl font-bold shadow-lg shadow-blue-200"
@@ -112,7 +112,7 @@ const RoomDashboard = () => {
                     <div className="flex items-center gap-3">
                         <button 
                             onClick={() => navigate('/lodge')}
-                            className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
+                            className="w-8 h-8 bg-white dark:bg-slate-900/10 rounded-lg flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
                         >
                             <ArrowLeft className="w-4 h-4" />
                         </button>
@@ -123,7 +123,7 @@ const RoomDashboard = () => {
                     </div>
                     <button 
                         onClick={generateReceipt}
-                        className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10 active:scale-95 transition-all"
+                        className="w-10 h-10 bg-white dark:bg-slate-900/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10 active:scale-95 transition-all"
                         title="Download Stay Record"
                     >
                         <Download className="w-5 h-5" />
@@ -137,7 +137,7 @@ const RoomDashboard = () => {
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-3xl p-6 shadow-xl shadow-blue-900/5 border border-slate-100"
+                    className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl shadow-blue-900/5 border border-slate-100 dark:border-slate-800"
                 >
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ const RoomDashboard = () => {
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Tenant Name</p>
-                                <p className="text-lg font-bold text-slate-800">{room.tenant || 'Unassigned'}</p>
+                                <p className="text-lg font-bold text-slate-800 dark:text-slate-200">{room.tenant || 'Unassigned'}</p>
                             </div>
                         </div>
                         <div className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
@@ -158,10 +158,10 @@ const RoomDashboard = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         {stats.map((stat, i) => (
-                            <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div key={i} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
                                 <stat.icon className={`w-5 h-5 text-${stat.color}-500 mb-2`} />
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{stat.label}</p>
-                                <p className="text-sm font-black text-slate-800">{stat.value}</p>
+                                <p className="text-sm font-black text-slate-800 dark:text-slate-200">{stat.value}</p>
                             </div>
                         ))}
                     </div>
@@ -174,12 +174,12 @@ const RoomDashboard = () => {
                             key={i}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => navigate(action.path)}
-                            className="flex flex-col items-center justify-center p-6 bg-white rounded-3xl shadow-lg shadow-slate-200/50 border border-slate-50 group hover:border-[#2D5BE3]/30 transition-all"
+                            className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-lg shadow-slate-200/50 border border-slate-50 group hover:border-[#2D5BE3]/30 transition-all"
                         >
                             <div className={`w-12 h-12 ${action.color} text-white rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-${action.color}/20 group-hover:scale-110 transition-transform`}>
                                 <action.icon className="w-6 h-6" />
                             </div>
-                            <span className="text-xs font-bold text-slate-600 group-hover:text-[#2D5BE3]">{action.label}</span>
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 group-hover:text-[#2D5BE3]">{action.label}</span>
                         </motion.button>
                     ))}
                 </div>
@@ -187,11 +187,11 @@ const RoomDashboard = () => {
                 {/* History Link */}
                 <button 
                     onClick={() => navigate(`/lodge/history/${roomNumber}`)}
-                    className="w-full flex items-center justify-between p-5 bg-white rounded-2xl border border-slate-100 shadow-sm"
+                    className="w-full flex items-center justify-between p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm"
                 >
                     <div className="flex items-center gap-3">
                         <History className="w-5 h-5 text-slate-400" />
-                        <span className="text-sm font-bold text-slate-700">Payment History</span>
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Payment History</span>
                     </div>
                     <ChevronRight className="w-5 h-5 text-slate-300" />
                 </button>

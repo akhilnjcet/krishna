@@ -45,7 +45,7 @@ const AdminAnalytics = () => {
 
     return (
         <div className="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-6">
-            <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100">
                 <div>
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-3">
                         <Activity className="text-blue-500 w-8 h-8" />
@@ -78,7 +78,7 @@ const AdminAnalytics = () => {
                                 {loading ? '...' : stats.totalVisits.toLocaleString()}
                             </h3>
                         </div>
-                        <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                        <div className="p-3 bg-white dark:bg-slate-900/20 rounded-xl backdrop-blur-sm">
                             <Users className="w-8 h-8 text-white" />
                         </div>
                     </div>
@@ -92,7 +92,7 @@ const AdminAnalytics = () => {
                                 {loading ? '...' : todayVisits.toLocaleString()}
                             </h3>
                         </div>
-                        <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                        <div className="p-3 bg-white dark:bg-slate-900/20 rounded-xl backdrop-blur-sm">
                             <Calendar className="w-8 h-8 text-white" />
                         </div>
                     </div>
@@ -100,7 +100,7 @@ const AdminAnalytics = () => {
             </div>
 
             {/* Daily Breakdown Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-8">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-8">
                 <div className="p-6 border-b border-gray-100 flex items-center gap-3">
                     <BarChart2 className="w-6 h-6 text-indigo-500" />
                     <h2 className="text-xl font-bold text-gray-800">Daily Breakdown</h2>

@@ -46,14 +46,14 @@ const StaffContacts = () => {
         <div className="space-y-8 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
             
             {/* Contextual Header */}
-            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/40 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
                     <UserCheck className="w-40 h-40" />
                 </div>
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="text-left">
                         <div className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500 mb-2">Operational Resources</div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">Field Contacts</h1>
+                        <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase leading-none">Field Contacts</h1>
                         <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-3 flex items-center gap-2">
                             <BadgeCheck className="w-4 h-4 text-emerald-500" />
                             Official Customer Communications Directory
@@ -67,7 +67,7 @@ const StaffContacts = () => {
                             placeholder="Search by Identity or Metadata..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 outline-none focus:border-indigo-600/20 focus:bg-white transition-all font-medium text-slate-700 placeholder:text-slate-300 shadow-inner"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-2xl pl-12 pr-6 py-4 outline-none focus:border-indigo-600/20 focus:bg-white dark:bg-slate-900 transition-all font-medium text-slate-700 dark:text-slate-300 placeholder:text-slate-300 shadow-inner"
                         />
                     </div>
                 </div>
@@ -86,7 +86,7 @@ const StaffContacts = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.05 }}
-                            className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm hover:shadow-2xl hover:shadow-indigo-100 transition-all group relative overflow-hidden"
+                            className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-8 shadow-sm hover:shadow-2xl hover:shadow-indigo-100 transition-all group relative overflow-hidden"
                         >
                             <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/50 rounded-bl-[4rem] group-hover:bg-indigo-600 transition-colors duration-500 flex items-center justify-center pl-4 pb-4">
                                 <ExternalLink className="w-5 h-5 text-indigo-200 group-hover:text-white" />
@@ -97,7 +97,7 @@ const StaffContacts = () => {
                                     {contact.name?.charAt(0)}
                                 </div>
                                 <div className="text-left">
-                                    <h3 className="font-black text-slate-900 text-lg uppercase tracking-tight group-hover:text-indigo-600 transition-colors leading-none mb-2">{contact.name}</h3>
+                                    <h3 className="font-black text-slate-900 dark:text-white text-lg uppercase tracking-tight group-hover:text-indigo-600 transition-colors leading-none mb-2">{contact.name}</h3>
                                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100">
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                                         <span className="text-[9px] font-black uppercase tracking-widest text-emerald-700">Verified Client</span>
@@ -106,23 +106,23 @@ const StaffContacts = () => {
                             </div>
 
                             <div className="space-y-4 mb-8">
-                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 group-hover:bg-white transition-colors">
-                                    <div className="p-2 bg-white rounded-xl shadow-sm text-indigo-600 border border-slate-50">
+                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group-hover:bg-white dark:bg-slate-900 transition-colors">
+                                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-indigo-600 border border-slate-50">
                                         <Mail className="w-4 h-4" />
                                     </div>
                                     <div className="text-left min-w-0">
                                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Corporate Email</p>
-                                        <p className="text-sm font-bold text-slate-700 truncate">{contact.email}</p>
+                                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">{contact.email}</p>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 group-hover:bg-white transition-colors">
-                                    <div className="p-2 bg-white rounded-xl shadow-sm text-emerald-600 border border-slate-50">
+                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group-hover:bg-white dark:bg-slate-900 transition-colors">
+                                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-emerald-600 border border-slate-50">
                                         <Phone className="w-4 h-4" />
                                     </div>
                                     <div className="text-left">
                                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Mobile Registry</p>
-                                        <p className="text-sm font-bold text-slate-700">{contact.phone || contact.phoneNumber || 'Unlisted'}</p>
+                                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{contact.phone || contact.phoneNumber || 'Unlisted'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -139,7 +139,7 @@ const StaffContacts = () => {
                                     href={`https://wa.me/${(contact.phone || contact.phoneNumber)?.replace(/\D/g, '') || ''}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex-1 border-2 border-slate-100 bg-white text-slate-600 p-4 rounded-2xl flex items-center justify-center gap-2 hover:border-indigo-200 hover:text-indigo-600 transition-all"
+                                    className="flex-1 border-2 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 p-4 rounded-2xl flex items-center justify-center gap-2 hover:border-indigo-200 hover:text-indigo-600 transition-all"
                                 >
                                     <MessageCircle className="w-4 h-4" />
                                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Message</span>

@@ -167,12 +167,12 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                     {/* ID Card Rendering Container */}
                     <div className="flex justify-center py-4">
                         {cardSide === 'front' && (
-                            <div className="w-[300px] h-[480px] bg-white rounded-3xl p-5 border border-slate-200 shadow-2xl flex flex-col justify-between relative overflow-hidden text-slate-800">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-100 rounded-full blur-3xl pointer-events-none" />
+                            <div className="w-[300px] h-[480px] bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col justify-between relative overflow-hidden text-slate-800 dark:text-slate-200">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-100 dark:bg-slate-800/80 rounded-full blur-3xl pointer-events-none" />
                                 
                                 {/* Front Header */}
                                 <div className="flex items-center gap-3 border-b border-slate-950 pb-3">
-                                    <img src="/logo512.png" alt="Logo" className="w-9 h-9 rounded-lg shadow-sm border border-slate-200" />
+                                    <img src="/logo512.png" alt="Logo" className="w-9 h-9 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700" />
                                     <div>
                                         <h4 className="font-extrabold text-[11px] tracking-wider text-slate-950 uppercase">KRISHNA ENGINEERING WORKS</h4>
                                     </div>
@@ -188,25 +188,25 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                                         />
                                     </div>
                                     <h3 className="font-extrabold text-sm text-slate-950 uppercase tracking-tight">{staff.name}</h3>
-                                    <p className="text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wide">{staff.designation || 'Staff Member'}</p>
+                                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">{staff.designation || 'Staff Member'}</p>
                                     
-                                    <span className="inline-block px-3 py-0.5 bg-slate-100 border border-slate-200 rounded-full text-[9px] font-mono text-slate-700 font-bold mb-4">
+                                    <span className="inline-block px-3 py-0.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-full text-[9px] font-mono text-slate-700 dark:text-slate-300 font-bold mb-4">
                                         ID: {staff.staff_id || 'KEW-000'}
                                     </span>
 
-                                    <div className="space-y-1 text-[10px] text-slate-600 text-left bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                        <div className="flex justify-between"><span className="text-slate-400 font-semibold">Department:</span> <strong className="text-slate-900">{staff.department || 'Operations'}</strong></div>
-                                        <div className="flex justify-between"><span className="text-slate-400 font-semibold">Phone:</span> <strong className="text-slate-900">{staff.phone || 'N/A'}</strong></div>
-                                        <div className="flex justify-between"><span className="text-slate-400 font-semibold">Email:</span> <strong className="text-slate-900 truncate max-w-[140px]">{staff.email || 'N/A'}</strong></div>
+                                    <div className="space-y-1 text-[10px] text-slate-600 dark:text-slate-400 text-left bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                        <div className="flex justify-between"><span className="text-slate-400 font-semibold">Department:</span> <strong className="text-slate-900 dark:text-white">{staff.department || 'Operations'}</strong></div>
+                                        <div className="flex justify-between"><span className="text-slate-400 font-semibold">Phone:</span> <strong className="text-slate-900 dark:text-white">{staff.phone || 'N/A'}</strong></div>
+                                        <div className="flex justify-between"><span className="text-slate-400 font-semibold">Email:</span> <strong className="text-slate-900 dark:text-white truncate max-w-[140px]">{staff.email || 'N/A'}</strong></div>
                                     </div>
                                 </div>
 
                                 {/* Front Footer */}
-                                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                                <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
                                     <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-extrabold rounded-full uppercase">
                                         {staff.status || 'ACTIVE'}
                                     </span>
-                                    <div className="bg-white p-0.5 rounded-lg border border-slate-200">
+                                    <div className="bg-white dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
                                         <QRCodeSVG value={verificationUrl} size={36} />
                                     </div>
                                 </div>
@@ -214,9 +214,9 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                         )}
 
                         {cardSide === 'back' && (
-                            <div className="w-[300px] h-[480px] bg-white rounded-3xl p-5 border border-slate-200 shadow-2xl flex flex-col justify-between text-left text-slate-800">
+                            <div className="w-[300px] h-[480px] bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col justify-between text-left text-slate-800 dark:text-slate-200">
                                 <div>
-                                    <div className="border-b border-slate-200 pb-3 mb-4">
+                                    <div className="border-b border-slate-200 dark:border-slate-700 pb-3 mb-4">
                                         <h4 className="font-extrabold text-[11px] text-slate-950 uppercase tracking-wider">EMPLOYEE CREDENTIALS</h4>
                                         <p className="text-[9px] text-slate-400">Krishna Engineering Works Official Identification</p>
                                     </div>
@@ -234,16 +234,16 @@ const StaffIdCardModal = ({ staff, onClose }) => {
 
                                         <div>
                                             <span className="text-slate-400 font-bold block text-[8px] uppercase tracking-wider">Office Address</span>
-                                            <p className="text-slate-600 leading-relaxed">Industrial Development Area, Kanjikode, Palakkad, Kerala - 678621</p>
+                                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Industrial Development Area, Kanjikode, Palakkad, Kerala - 678621</p>
                                         </div>
 
-                                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-[9px] text-slate-400 italic">
+                                        <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 text-[9px] text-slate-400 italic">
                                             This card remains the property of Krishna Engineering Works. If found, please return to office address.
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="text-center border-t border-slate-200 pt-3">
+                                <div className="text-center border-t border-slate-200 dark:border-slate-700 pt-3">
                                     <p className="text-[9px] font-bold text-slate-950">www.krishnaengineering.com</p>
                                 </div>
                             </div>

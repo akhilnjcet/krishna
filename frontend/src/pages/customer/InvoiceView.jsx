@@ -39,7 +39,7 @@ const InvoiceView = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white border-4 border-brand-950 shadow-[12px_12px_0_0_rgba(0,0,0,1)] relative"
+                    className="bg-white dark:bg-slate-900 border-4 border-brand-950 shadow-[12px_12px_0_0_rgba(0,0,0,1)] relative"
                 >
                     {/* Invoice Header */}
                     <div className="bg-brand-950 text-white p-8 md:p-12 border-b-8 border-brand-accent flex flex-col md:flex-row justify-between items-start md:items-end">

@@ -211,7 +211,7 @@ const Quotations = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 p-4 md:p-8 font-sans">
+        <div className="min-h-screen bg-slate-100 dark:bg-slate-800/80 p-4 md:p-8 font-sans">
             {/* Toast Notification */}
             <AnimatePresence>
                 {(saveState === 'saved' || saveState === 'error') && toastMsg && (
@@ -234,12 +234,12 @@ const Quotations = () => {
                 )}
             </AnimatePresence>
             {/* Header Toolbar */}
-            <div className="no-print bg-white p-6 rounded-3xl border border-slate-200 shadow-xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="no-print bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1 flex items-center gap-2">
                         <FileText className="w-4 h-4" /> Cost Estimation & Proposals
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter">Quotation Studio</h1>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Quotation Studio</h1>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -250,12 +250,12 @@ const Quotations = () => {
                         disabled={saveState === 'saving'}
                         className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg transition border ${
                             saveState === 'saving'
-                                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                ? 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 border-slate-200 dark:border-slate-700 cursor-wait'
                                 : saveState === 'saved'
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                 : saveState === 'error'
                                 ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
-                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800'
                         }`}
                     >
                         {saveState === 'saving' ? (
@@ -294,53 +294,53 @@ const Quotations = () => {
                 {/* LEFT: Controls & Form */}
                 <div className="no-print lg:col-span-5 space-y-6">
                     {/* Core Structure */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg space-y-4">
-                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
+                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                             <Hash className="w-4 h-4 text-indigo-500" /> Estimation Metadata
                         </h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Quotation Number</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Quotation Number</label>
                                 <input
                                     type="text"
                                     value={quotationNumber}
                                     onChange={(e) => setQuotationNumber(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Quotation Date</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Quotation Date</label>
                                 <input
                                     type="date"
                                     value={quotationDate}
                                     onChange={(e) => setQuotationDate(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Proposal Validity Date</label>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Proposal Validity Date</label>
                             <input
                                 type="date"
                                 value={proposalValidityDate}
                                 onChange={(e) => setProposalValidityDate(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                             />
                         </div>
                     </div>
 
                     {/* Client Information Lookup */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg space-y-4">
-                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
+                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                             <User className="w-4 h-4 text-indigo-500" /> Client Lookup & Details
                         </h2>
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Select Client from Database</label>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Select Client from Database</label>
                             <select
                                 value={selectedCustomerId}
                                 onChange={handleSelectClient}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                             >
                                 <option value="">-- Choose Existing Customer --</option>
                                 {customers.map(c => (
@@ -351,44 +351,44 @@ const Quotations = () => {
 
                         <div className="space-y-3 pt-2">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Client Name / Business</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Client Name / Business</label>
                                 <input
                                     type="text"
                                     value={clientName}
                                     onChange={(e) => setClientName(e.target.value)}
                                     placeholder="Client Name"
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Address</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Address</label>
                                 <textarea
                                     rows="2"
                                     value={clientAddress}
                                     onChange={(e) => setClientAddress(e.target.value)}
                                     placeholder="Client Location Address"
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none resize-none"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none resize-none"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Phone</label>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Phone</label>
                                     <input
                                         type="text"
                                         value={clientPhone}
                                         onChange={(e) => setClientPhone(e.target.value)}
                                         placeholder="Phone"
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">GSTIN</label>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">GSTIN</label>
                                     <input
                                         type="text"
                                         value={clientGstin}
                                         onChange={(e) => setClientGstin(e.target.value)}
                                         placeholder="GSTIN"
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                     />
                                 </div>
                             </div>
@@ -396,8 +396,8 @@ const Quotations = () => {
                     </div>
 
                     {/* Flexible Quotation Items & Services */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg space-y-4">
-                        <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
+                        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
                             <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                 <Layers className="w-4 h-4 text-indigo-500" /> Quotation Line Items & Services
                             </h2>
@@ -411,14 +411,14 @@ const Quotations = () => {
 
                         <div className="space-y-4">
                             {items.map((item, idx) => (
-                                <div key={item.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                                <div key={item.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
                                     <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-2">
                                             <span className="text-[10px] font-black uppercase text-indigo-600">Block #{idx + 1}</span>
                                             <select
                                                 value={item.type}
                                                 onChange={(e) => handleItemChange(item.id, 'type', e.target.value)}
-                                                className="text-[10px] font-bold bg-white border border-slate-200 rounded-md px-1.5 py-0.5"
+                                                className="text-[10px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md px-1.5 py-0.5"
                                             >
                                                 <option value="Item">Item</option>
                                                 <option value="Service">Service</option>
@@ -441,14 +441,14 @@ const Quotations = () => {
                                             value={item.name}
                                             onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
                                             placeholder="Item / Service Title"
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none mb-2"
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none mb-2"
                                         />
                                         <textarea
                                             rows="2"
                                             value={item.description}
                                             onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
                                             placeholder="Detailed specification & scope of work description block..."
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-700 focus:outline-none resize-none"
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 focus:outline-none resize-none"
                                         />
                                     </div>
 
@@ -459,7 +459,7 @@ const Quotations = () => {
                                                 type="number"
                                                 value={item.rate}
                                                 onChange={(e) => handleItemChange(item.id, 'rate', e.target.value)}
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 focus:outline-none"
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
                                         </div>
                                         <div>
@@ -468,7 +468,7 @@ const Quotations = () => {
                                                 type="number"
                                                 value={item.quantity}
                                                 onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 focus:outline-none"
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
                                         </div>
                                         <div>
@@ -478,7 +478,7 @@ const Quotations = () => {
                                                 value={item.unit}
                                                 onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)}
                                                 placeholder="Units / Job"
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 focus:outline-none"
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
                                         </div>
                                     </div>
@@ -488,42 +488,42 @@ const Quotations = () => {
                     </div>
 
                     {/* Pre-fillable Disclaimers & Project Notes */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg space-y-4">
-                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
+                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                             <FileText className="w-4 h-4 text-indigo-500" /> Disclaimers, Timelines & Notes
                         </h2>
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Standard Terms & Disclaimers</label>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Standard Terms & Disclaimers</label>
                             <textarea
                                 rows="3"
                                 value={disclaimers}
                                 onChange={(e) => setDisclaimers(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none resize-none"
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none resize-none"
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Project Execution Timeline</label>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Project Execution Timeline</label>
                             <input
                                 type="text"
                                 value={timelines}
                                 onChange={(e) => setTimelines(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none"
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Additional Project Notes</label>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Additional Project Notes</label>
                             <textarea
                                 rows="2"
                                 value={projectNotes}
                                 onChange={(e) => setProjectNotes(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none resize-none"
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none resize-none"
                             />
                         </div>
                     </div>
 
                     {/* Print Config & Themes */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg space-y-4">
-                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
+                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                             <Palette className="w-4 h-4 text-indigo-500" /> Custom Print Configuration
                         </h2>
                         <div className="grid grid-cols-3 gap-2">
@@ -532,7 +532,7 @@ const Quotations = () => {
                                     key={t}
                                     onClick={() => setTheme(t)}
                                     className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition ${
-                                        theme === t ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                        theme === t ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800/80'
                                     }`}
                                 >
                                     {t}
@@ -541,31 +541,31 @@ const Quotations = () => {
                         </div>
 
                         <div className="flex items-center gap-3 pt-2">
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">Theme Color:</label>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Theme Color:</label>
                             <input
                                 type="color"
                                 value={themeColor}
                                 onChange={(e) => setThemeColor(e.target.value)}
-                                className="w-8 h-8 rounded-lg cursor-pointer border border-slate-200 p-0.5"
+                                className="w-8 h-8 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5"
                             />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 pt-2">
-                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={showTax}
                                     onChange={(e) => setShowTax(e.target.checked)}
-                                    className="rounded border-slate-300 text-indigo-600"
+                                    className="rounded border-slate-300 dark:border-slate-600 text-indigo-600"
                                 />
                                 Toggle Tax Display
                             </label>
-                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={showSignature}
                                     onChange={(e) => setShowSignature(e.target.checked)}
-                                    className="rounded border-slate-300 text-indigo-600"
+                                    className="rounded border-slate-300 dark:border-slate-600 text-indigo-600"
                                 />
                                 Signature Verification Block
                             </label>
@@ -587,7 +587,7 @@ const Quotations = () => {
 
                         {/* Proposal Document */}
                         <div 
-                            className="print-document-container bg-white p-8 md:p-12 shadow-2xl rounded-b-3xl border border-slate-200 text-slate-800 font-sans"
+                            className="print-document-container bg-white dark:bg-slate-900 p-8 md:p-12 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-sans"
                             style={{ '--theme-color': themeColor }}
                         >
                             {/* Header */}
@@ -599,7 +599,7 @@ const Quotations = () => {
                                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
                                         <div className="flex items-center gap-4 flex-wrap">
                                             {brandingSettings.company_logo && (
-                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white/90 p-1 rounded-xl shadow-md" />
+                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900/90 p-1 rounded-xl shadow-md" />
                                             )}
                                             <div>
                                                 <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
@@ -607,7 +607,7 @@ const Quotations = () => {
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
-                                            <span className="bg-white/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
+                                            <span className="bg-white dark:bg-slate-900/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
                                                 QUOTATION
                                             </span>
                                             <p className="text-sm font-black">{quotationNumber}</p>
@@ -622,26 +622,26 @@ const Quotations = () => {
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-10 w-auto object-contain" />
                                         )}
                                         <div>
-                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 company-name">KRISHNA ENGINEERING WORKS</h1>
-                                            <p className="text-xs text-slate-500 font-medium">Industrial Area Phase 1 | Engineering & Structural Division</p>
+                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white company-name">KRISHNA ENGINEERING WORKS</h1>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Industrial Area Phase 1 | Engineering & Structural Division</p>
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right">
                                         <h2 className="text-2xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>PROPOSAL</h2>
-                                        <p className="text-xs font-bold text-slate-700">{quotationNumber}</p>
-                                        <p className="text-xs text-slate-500">Date: {quotationDate}</p>
+                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{quotationNumber}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Date: {quotationDate}</p>
                                     </div>
                                 </div>
                             ) : (
                                 /* Classic Theme */
-                                <div className="border-b border-slate-200 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
+                                <div className="border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
                                     <div className="flex items-center gap-4 flex-wrap">
                                         {brandingSettings.company_logo && (
-                                            <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white rounded-xl shadow p-1" />
+                                            <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900 rounded-xl shadow p-1" />
                                         )}
                                         <div>
-                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
-                                            <p className="text-xs text-slate-500">Heavy Fabrication, Roofing & Structural Design</p>
+                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Heavy Fabrication, Roofing & Structural Design</p>
                                             <p className="text-[11px] text-slate-400 font-medium mt-0.5 whitespace-pre-wrap break-all">
                                                 Phone: {brandingSettings?.company_phone || brandingSettings?.footer_phone || '+91 9447940835'} | Email: {brandingSettings?.company_email || brandingSettings?.footer_email || 'contact@krishnaengg.com'}
                                             </p>
@@ -654,21 +654,21 @@ const Quotations = () => {
                                         >
                                             COST ESTIMATE
                                         </span>
-                                        <p className="text-xs font-black text-slate-900">{quotationNumber}</p>
-                                        <p className="text-xs text-slate-500">Date: {quotationDate}</p>
-                                        <p className="text-xs text-slate-500">Valid Until: {proposalValidityDate}</p>
+                                        <p className="text-xs font-black text-slate-900 dark:text-white">{quotationNumber}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Date: {quotationDate}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Valid Until: {proposalValidityDate}</p>
                                     </div>
                                 </div>
                             )}
 
                             {/* Client Block */}
-                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
+                            <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
                                 <div>
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">PROPOSAL PREPARED FOR:</span>
-                                    <h3 className="font-black text-slate-900 text-sm uppercase">{clientName || 'Valued Client'}</h3>
-                                    <p className="text-xs text-slate-600 mt-1 whitespace-pre-line">{clientAddress || 'Client Location'}</p>
-                                    {clientPhone && <p className="text-xs text-slate-600 mt-1">Ph: {clientPhone}</p>}
-                                    {clientGstin && <p className="text-xs font-mono font-bold text-slate-700 mt-1">GSTIN: {clientGstin}</p>}
+                                    <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase">{clientName || 'Valued Client'}</h3>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-line">{clientAddress || 'Client Location'}</p>
+                                    {clientPhone && <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Ph: {clientPhone}</p>}
+                                    {clientGstin && <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mt-1">GSTIN: {clientGstin}</p>}
                                 </div>
                                 <div className="text-left sm:text-right">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">VALIDITY DATE:</span>
@@ -679,7 +679,7 @@ const Quotations = () => {
                             </div>
 
                             {/* Quotation Table */}
-                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200">
+                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr 
@@ -694,22 +694,22 @@ const Quotations = () => {
                                             <th className="p-3 text-right">Total (₹)</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="text-xs font-medium text-slate-800 divide-y divide-slate-100">
+                                    <tbody className="text-xs font-medium text-slate-800 dark:text-slate-200 divide-y divide-slate-100">
                                         {items.map((item, index) => {
                                             const lineTotal = (parseFloat(item.rate || 0) * parseFloat(item.quantity || 0));
                                             return (
-                                                <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}>
+                                                <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
                                                     <td className="p-3 font-bold text-slate-400">{index + 1}</td>
                                                     <td className="p-3">
-                                                        <span className="font-bold text-slate-900 block">{item.name || 'Scope Item'}</span>
+                                                        <span className="font-bold text-slate-900 dark:text-white block">{item.name || 'Scope Item'}</span>
                                                         {item.description && (
-                                                            <p className="text-[11px] text-slate-500 mt-0.5 whitespace-pre-line">{item.description}</p>
+                                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 whitespace-pre-line">{item.description}</p>
                                                         )}
                                                     </td>
                                                     <td className="p-3 text-right font-bold" style={{ letterSpacing: 'normal' }}>{formatCurrencyINR(item.rate || 0)}</td>
                                                     <td className="p-3 text-center font-bold">{item.quantity}</td>
-                                                    <td className="p-3 text-center text-slate-500">{item.unit}</td>
-                                                    <td className="p-3 text-right font-black text-slate-900" style={{ letterSpacing: 'normal' }}>
+                                                    <td className="p-3 text-center text-slate-500 dark:text-slate-400">{item.unit}</td>
+                                                    <td className="p-3 text-right font-black text-slate-900 dark:text-white" style={{ letterSpacing: 'normal' }}>
                                                         {formatCurrencyINR(lineTotal)}
                                                     </td>
                                                 </tr>
@@ -720,12 +720,12 @@ const Quotations = () => {
                             </div>
 
                             {/* Summary & Disclaimers */}
-                            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 pb-6">
+                            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6">
                                 <div className="flex-1 space-y-4">
                                     {timelines && (
                                         <div>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">ESTIMATED TIMELINE:</span>
-                                            <p className="text-xs font-bold text-slate-800 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                                                 {timelines}
                                             </p>
                                         </div>
@@ -734,7 +734,7 @@ const Quotations = () => {
                                     {projectNotes && (
                                         <div>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">PROJECT NOTES:</span>
-                                            <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 whitespace-pre-line font-medium">
+                                            <p className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 whitespace-pre-line font-medium">
                                                 {projectNotes}
                                             </p>
                                         </div>
@@ -742,26 +742,26 @@ const Quotations = () => {
 
                                     <div>
                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">TERMS & CONDITIONS:</span>
-                                        <p className="text-[11px] text-slate-500 whitespace-pre-line leading-relaxed font-medium">
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-pre-line leading-relaxed font-medium">
                                             {disclaimers}
                                         </p>
                                     </div>
                                 </div>
 
                                 <div className="w-full sm:w-64 space-y-2 text-xs" style={{ letterSpacing: 'normal' }}>
-                                    <div className="flex justify-between py-1 border-b border-slate-100">
-                                        <span className="font-bold text-slate-500">Subtotal:</span>
-                                        <span className="font-bold text-slate-900">{formatCurrencyINR(subtotal)}</span>
+                                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                                        <span className="font-bold text-slate-500 dark:text-slate-400">Subtotal:</span>
+                                        <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(subtotal)}</span>
                                     </div>
 
                                     {showTax && (
-                                        <div className="flex justify-between py-1 border-b border-slate-100 text-slate-600">
+                                        <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                                             <span>Estimated Tax ({taxPercentage}%):</span>
                                             <span>{formatCurrencyINR(taxAmount)}</span>
                                         </div>
                                     )}
 
-                                    <div className="flex justify-between py-2 text-base font-black text-slate-900 border-t-2 border-slate-900 pt-2">
+                                    <div className="flex justify-between py-2 text-base font-black text-slate-900 dark:text-white border-t-2 border-slate-900 pt-2">
                                         <span>Estimated Total:</span>
                                         <span style={{ color: themeColor, letterSpacing: 'normal' }}>{formatCurrencyINR(grandTotal)}</span>
                                     </div>
@@ -775,7 +775,7 @@ const Quotations = () => {
                                         <p>Proposal Reference: {quotationNumber}</p>
                                         <p>Subject to Final Technical Audit</p>
                                     </div>
-                                    <div className="text-right border-t border-slate-300 pt-3 w-48">
+                                    <div className="text-right border-t border-slate-300 dark:border-slate-600 pt-3 w-48">
                                         {brandingSettings.company_signature && (
                                             <img src={brandingSettings.company_signature} alt="Digital Signature" className="h-10 w-auto object-contain ml-auto mb-1" />
                                         )}
@@ -783,7 +783,7 @@ const Quotations = () => {
                                             <ShieldCheck className="w-3.5 h-3.5" />
                                             <span className="text-[9px] font-black uppercase">Verified Estimate</span>
                                         </div>
-                                        <p className="text-xs font-black uppercase text-slate-900">Authorized Signatory</p>
+                                        <p className="text-xs font-black uppercase text-slate-900 dark:text-white">Authorized Signatory</p>
                                         <p className="text-[10px] text-slate-400 font-medium">Krishna Engineering Works</p>
                                     </div>
                                 </div>

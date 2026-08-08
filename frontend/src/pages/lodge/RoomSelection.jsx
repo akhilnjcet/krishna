@@ -22,7 +22,7 @@ const RoomSelection = () => {
       {/* Header */}
       <div className="bg-gradient-to-br from-[#1a3a7a] via-[#2D5BE3] to-[#4f7af7] pt-14 pb-16 px-6 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 right-10 w-40 h-40 bg-white rounded-full blur-3xl" />
+          <div className="absolute top-10 right-10 w-40 h-40 bg-white dark:bg-slate-900 rounded-full blur-3xl" />
         </div>
         <div className="relative z-10">
           <button
@@ -57,7 +57,7 @@ const RoomSelection = () => {
                 onClick={() => navigate(`/lodge/room/${room.number}`)}
                 className="w-full group"
               >
-                <div className="bg-white rounded-2xl p-6 shadow-lg shadow-slate-200/50 border border-slate-100 hover:shadow-xl hover:border-blue-100 transition-all duration-300">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-lg shadow-slate-200/50 border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:border-blue-100 transition-all duration-300">
                   {/* Room Header */}
                   <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-3">
@@ -69,7 +69,7 @@ const RoomSelection = () => {
                         {isOccupied && room.tenant && (
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <User className="w-3 h-3 text-slate-400" />
-                            <span className="text-xs text-slate-500 font-medium">{room.tenant}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{room.tenant}</span>
                           </div>
                         )}
                       </div>
@@ -82,12 +82,12 @@ const RoomSelection = () => {
 
                   {/* Room Details */}
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-slate-50 rounded-xl p-3 text-center">
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
                       <IndianRupee className="w-4 h-4 text-blue-500 mx-auto mb-1" />
                       <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Rent</p>
                       <p className="text-sm font-bold text-[#111827]">₹{room.rent?.toLocaleString()}</p>
                     </div>
-                    <div className="bg-slate-50 rounded-xl p-3 text-center">
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
                       <Calendar className="w-4 h-4 text-amber-500 mx-auto mb-1" />
                       <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Due Date</p>
                       <p className="text-sm font-bold text-[#111827]">
@@ -96,7 +96,7 @@ const RoomSelection = () => {
                           : '—'}
                       </p>
                     </div>
-                    <div className="bg-slate-50 rounded-xl p-3 text-center">
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
                       {room.status === 'maintenance' ? (
                         <Wrench className="w-4 h-4 text-amber-500 mx-auto mb-1" />
                       ) : isOccupied ? (

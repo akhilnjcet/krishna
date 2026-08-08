@@ -298,7 +298,7 @@ const Home = () => {
 
                             {/* ── PERFORMANCE METRICS ── 
                                 Glassmorphism cards with animated counters */}
-                            <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-10 border-t border-slate-200 dark:border-slate-700">
+                            <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-10 border-t border-slate-200 dark:border-slate-700 ">
                                 {[
                                     { label: 'Projects Completed', value: (settings.stat_projects || '1200+').replace(/[^0-9,.]/g, ''), suffix: (settings.stat_projects || '1200+').replace(/[0-9,. ]/g, '') || '+', icon: <Layers className="w-7 h-7" />, color: 'from-blue-50/50 to-white', glow: 'shadow-blue-100/40', border: 'border-blue-100', iconColor: 'text-blue-600', bgIcon: 'bg-blue-50' },
                                     { label: 'Happy Clients', value: (settings.stat_clients || '450+').replace(/[^0-9,.]/g, ''), suffix: (settings.stat_clients || '450+').replace(/[0-9,. ]/g, '') || '+', icon: <Users className="w-7 h-7" />, color: 'from-cyan-50/50 to-white', glow: 'shadow-cyan-100/40', border: 'border-cyan-100', iconColor: 'text-cyan-600', bgIcon: 'bg-cyan-50' },
@@ -344,7 +344,7 @@ const Home = () => {
 
                 {/* Banner Ad Placement */}
                 {/* Banner Ad Placement */}
-                <div className="bg-slate-50 dark:bg-slate-800 pt-12 pb-6 border-b border-slate-200 dark:border-slate-700">
+                <div className="bg-slate-50 dark:bg-slate-800 pt-12 pb-6 border-b border-slate-200 dark:border-slate-700 ">
                     <div className="max-w-7xl mx-auto px-6">
                         <AdBanner adSlot="7234567890" adFormat="horizontal" />
                     </div>
@@ -395,7 +395,7 @@ const Home = () => {
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
                                 </motion.div>
                                 <motion.div whileHover={{ scale: 1.03, rotate: 1 }} transition={{ type: 'spring', stiffness: 200 }}
-                                    className="absolute bottom-0 right-0 left-16 h-[280px] rounded-[3rem] overflow-hidden shadow-[0_25px_50px_rgba(15,23,42,0.15)] border border-slate-100 dark:border-slate-800"
+                                    className="absolute bottom-0 right-0 left-16 h-[280px] rounded-[3rem] overflow-hidden shadow-[0_25px_50px_rgba(15,23,42,0.15)] border border-slate-100 dark:border-slate-800 "
                                 >
                                     <img src="https://images.unsplash.com/photo-1502444330042-d1a1ddf9bb5b?w=700&h=400&fit=crop" alt="Fabrication" className="w-full h-full object-cover" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
@@ -463,7 +463,7 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     4. PORTFOLIO / GALLERY — animated grid 
                     ════════════════════════════════════════ */}
-                <section id="portfolio" className="py-36 bg-slate-50 dark:bg-slate-800 overflow-hidden border-y border-slate-200 dark:border-slate-700/50">
+                <section id="portfolio" className="py-36 bg-slate-50 dark:bg-slate-800 overflow-hidden border-y border-slate-200 dark:border-slate-700 /50">
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
                             <div>
@@ -478,7 +478,7 @@ const Home = () => {
                         </motion.div>
 
                         {/* Auto-scrolling Project Slideshow */}
-                        <div className="relative w-full max-w-4xl mx-auto h-[350px] sm:h-[450px] rounded-[2.5rem] overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700/60 group cursor-pointer bg-white dark:bg-slate-900">
+                        <div className="relative w-full max-w-4xl mx-auto h-[350px] sm:h-[450px] rounded-[2.5rem] overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700 /60 group cursor-pointer bg-white dark:bg-slate-900 ">
                             <Link to="/projects" className="block w-full h-full relative">
                                 <AnimatePresence mode="wait">
                                     <motion.div
@@ -520,7 +520,7 @@ const Home = () => {
                                             e.preventDefault();
                                             setActiveProjectIdx(idx);
                                         }}
-                                        className={`h-2 rounded-full transition-all duration-300 ${idx === activeProjectIdx ? 'bg-blue-500 w-6' : 'bg-white dark:bg-slate-900/40 w-2'}`}
+                                        className={`h-2 rounded-full transition-all duration-300 ${idx === activeProjectIdx ? 'bg-blue-500 w-6' : 'bg-white dark:bg-slate-900 /40 w-2'}`}
                                     />
                                 ))}
                             </div>
@@ -594,7 +594,7 @@ const Home = () => {
                                         </div>
                                         <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2">{card.title}</h4>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed flex-grow">{card.desc}</p>
-                                        <div className="w-full border-t border-slate-100 dark:border-slate-800/50 pt-4 mt-6 flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                        <div className="w-full border-t border-slate-100 dark:border-slate-800 /50 pt-4 mt-6 flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400">
                                             <span>{card.sub}</span>
                                             <span className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-600">Verified ✓</span>
                                         </div>
@@ -609,7 +609,7 @@ const Home = () => {
                     6. CTA BANNER                          
                     ════════════════════════════════════════ */}
                 <section className="py-24 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 relative overflow-hidden">
-                    <motion.div animate={{ x: [0, 60, 0] }} transition={{ duration: 12, repeat: Infinity }} className="absolute -top-1/2 -left-1/4 w-[600px] h-[600px] bg-white dark:bg-slate-900/5 rounded-full blur-[80px] pointer-events-none" />
+                    <motion.div animate={{ x: [0, 60, 0] }} transition={{ duration: 12, repeat: Infinity }} className="absolute -top-1/2 -left-1/4 w-[600px] h-[600px] bg-white dark:bg-slate-900 /5 rounded-full blur-[80px] pointer-events-none" />
                     <motion.div animate={{ x: [0, -60, 0] }} transition={{ duration: 10, repeat: Infinity }} className="absolute -bottom-1/2 -right-1/4 w-[600px] h-[600px] bg-indigo-800/40 rounded-full blur-[80px] pointer-events-none" />
                     <div className="max-w-5xl mx-auto px-6 text-center relative">
                         <motion.h2 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
@@ -628,7 +628,7 @@ const Home = () => {
                             <Link to="/quote" className="group px-10 py-5 bg-white dark:bg-slate-900 text-blue-700 font-black rounded-2xl hover:-translate-y-2 transition-all shadow-2xl text-lg flex items-center gap-3">
                                 Get Free Quote <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
                             </Link>
-                            <a href={`tel:${settings.footer_phone}`} className="px-10 py-5 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 text-white font-black rounded-2xl border border-white/20 hover:-translate-y-2 transition-all text-lg flex items-center gap-3">
+                            <a href={`tel:${settings.footer_phone}`} className="px-10 py-5 bg-white dark:bg-slate-900 /10 hover:bg-white dark:bg-slate-900 /20 text-white font-black rounded-2xl border border-white/20 hover:-translate-y-2 transition-all text-lg flex items-center gap-3">
                                 <Phone className="w-5 h-5" /> {settings.footer_phone}
                             </a>
                         </motion.div>
@@ -638,7 +638,7 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     7. CONTACT SECTION                     
                     ════════════════════════════════════════ */}
-                <section id="contact" className="py-36 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 overflow-hidden border-t border-slate-200 dark:border-slate-700/50">
+                <section id="contact" className="py-36 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 overflow-hidden border-t border-slate-200 dark:border-slate-700 /50">
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
                             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
@@ -653,12 +653,12 @@ const Home = () => {
                                     ].map((item, i) => (
                                         <motion.div key={i} variants={fadeUp} custom={i + 3}>
                                             {item.href ? (
-                                                <a href={item.href} className="flex items-center gap-5 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:border-blue-500/30 hover:bg-blue-50/20 hover:shadow-md transition-all group">
+                                                <a href={item.href} className="flex items-center gap-5 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 /60 shadow-sm hover:border-blue-500/30 hover:bg-blue-50/20 hover:shadow-md transition-all group">
                                                     <div className={`w-12 h-12 rounded-2xl ${item.green ? 'bg-green-500/20 text-green-600' : 'bg-blue-500/20 text-blue-600'} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>{item.icon}</div>
                                                     <div><p className="text-slate-400 text-xs font-black uppercase tracking-wider mb-1">{item.label}</p><p className="text-slate-800 dark:text-slate-200 font-black text-lg">{item.value}</p></div>
                                                 </a>
                                             ) : (
-                                                <div className="flex items-center gap-5 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                                                <div className="flex items-center gap-5 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 /60 shadow-sm">
                                                     <div className="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-600 flex items-center justify-center flex-shrink-0">{item.icon}</div>
                                                     <div><p className="text-slate-400 text-xs font-black uppercase tracking-wider mb-1">{item.label}</p><p className="text-slate-800 dark:text-slate-200 font-bold">{item.value}</p></div>
                                                 </div>
@@ -670,7 +670,7 @@ const Home = () => {
 
                             {/* Contact Form */}
                             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeRight}
-                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-[3rem] p-10 shadow-xl shadow-slate-100/55"
+                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 /60 rounded-[3rem] p-10 shadow-xl shadow-slate-100/55"
                             >
                                 <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-8 font-poppins">Send a Message</h3>
                                 <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); alert("Message sent! We'll contact you within 2 hours."); }}>
@@ -702,7 +702,7 @@ const Home = () => {
 
                         {/* Map */}
                         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
-                            className="mt-16 rounded-[2.5rem] overflow-hidden h-64 border border-slate-200 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900"
+                            className="mt-16 rounded-[2.5rem] overflow-hidden h-64 border border-slate-200 dark:border-slate-700 /60 shadow-sm bg-white dark:bg-slate-900 "
                         >
                             <iframe src={settings.map_embed_url} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Location Map" />
                         </motion.div>

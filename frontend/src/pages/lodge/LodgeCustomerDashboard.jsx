@@ -160,10 +160,10 @@ export default function LodgeCustomerDashboard() {
     const [ackModal, setAckModal] = useState(null); // bookingId string or null
 
     if (loading) return (
-        <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-800">
             <div className="flex flex-col items-center">
                 <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-slate-500 font-bold tracking-widest uppercase text-xs">Accessing Portal...</p>
+                <p className="text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase text-xs">Accessing Portal...</p>
             </div>
         </div>
     );
@@ -179,7 +179,7 @@ export default function LodgeCustomerDashboard() {
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
             {/* Sidebar */}
-            <div className="w-full md:w-80 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-4 md:p-8 flex flex-col shadow-sm flex-shrink-0">
+            <div className="w-full md:w-80 bg-white dark:bg-slate-900 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 p-4 md:p-8 flex flex-col shadow-sm flex-shrink-0">
                 {/* Header (visible on desktop) */}
                 <div className="hidden md:block mb-12">
                     <h2 className="text-2xl font-black text-indigo-600 tracking-tight flex items-center">
@@ -190,13 +190,13 @@ export default function LodgeCustomerDashboard() {
 
                 {/* Header (visible on mobile) */}
                 <div className="flex md:hidden items-center justify-between mb-4">
-                    <button onClick={() => navigate('/lodge')} className="p-2 text-slate-500 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded-xl transition-all" title="Lodge Home">
+                    <button onClick={() => navigate('/lodge')} className="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 rounded-xl transition-all" title="Lodge Home">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <h2 className="text-lg font-black text-indigo-600 tracking-tight flex items-center">
                         <Shield className="w-5 h-5 mr-1" /> PORTAL
                     </h2>
-                    <button onClick={() => { useAuthStore.getState().logout(); navigate('/login'); }} className="p-2 text-slate-500 hover:text-red-600 bg-slate-50 hover:bg-red-50 rounded-xl transition-all" title="Logout">
+                    <button onClick={() => { useAuthStore.getState().logout(); navigate('/login'); }} className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 bg-slate-50 dark:bg-slate-800 hover:bg-red-50 rounded-xl transition-all" title="Logout">
                         <LogOut className="w-5 h-5" />
                     </button>
                 </div>
@@ -210,7 +210,7 @@ export default function LodgeCustomerDashboard() {
                             className={`flex items-center gap-2 md:gap-4 px-4 py-2.5 md:px-6 md:py-4 rounded-xl md:rounded-2xl font-bold whitespace-nowrap transition-all ${
                                 activeTab === tab.id 
                                 ? 'bg-indigo-600 text-white shadow-lg md:shadow-xl md:shadow-indigo-600/30' 
-                                : 'text-slate-500 bg-slate-50/50 md:bg-transparent hover:bg-slate-50'
+                                : 'text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 md:bg-transparent hover:bg-slate-50 dark:bg-slate-800'
                             }`}
                         >
                             <tab.icon className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === tab.id ? 'text-white' : 'text-slate-400'}`} />
@@ -220,11 +220,11 @@ export default function LodgeCustomerDashboard() {
                 </div>
 
                 {/* Back / Logout Buttons (visible on desktop) */}
-                <div className="hidden md:flex flex-col gap-2 mt-auto pt-8 border-t border-slate-100">
-                    <button onClick={() => navigate('/lodge')} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-all text-sm">
+                <div className="hidden md:flex flex-col gap-2 mt-auto pt-8 border-t border-slate-100 dark:border-slate-800">
+                    <button onClick={() => navigate('/lodge')} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-800 transition-all text-sm">
                         <ArrowLeft className="w-4.5 h-4.5" /> Lodge Home
                     </button>
-                    <button onClick={() => navigate('/')} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-all text-sm">
+                    <button onClick={() => navigate('/')} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-800 transition-all text-sm">
                         <ArrowLeft className="w-4.5 h-4.5" /> Main Home
                     </button>
                     <button onClick={() => { useAuthStore.getState().logout(); navigate('/login'); }} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-red-500 hover:bg-red-50 transition-all text-sm">
@@ -241,8 +241,8 @@ export default function LodgeCustomerDashboard() {
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="mb-10 flex justify-between items-center">
                             <div>
-                                <h1 className="text-4xl font-black text-slate-900 tracking-tight">Stay Management</h1>
-                                <p className="text-slate-500 font-medium mt-2">Oversee your active and historical residency records.</p>
+                                <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Stay Management</h1>
+                                <p className="text-slate-500 dark:text-slate-400 font-medium mt-2">Oversee your active and historical residency records.</p>
                             </div>
                             <button onClick={() => navigate('/lodge/manager/booking')} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/20 flex items-center transition-all">
                                 <Plus className="w-5 h-5 mr-2" /> Book New Residence
@@ -251,7 +251,7 @@ export default function LodgeCustomerDashboard() {
 
                         <div className="grid gap-6">
                             {bookings.map(b => (
-                                <div key={b._id} className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+                                <div key={b._id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-[2rem] p-8 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity -mr-16 -mt-16"></div>
                                     
                                     <div className="flex flex-col lg:flex-row justify-between gap-8 relative z-10">
@@ -273,23 +273,23 @@ export default function LodgeCustomerDashboard() {
                                                 <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">ID: #{b._id.slice(-6).toUpperCase()}</span>
                                             </div>
 
-                                            <h3 className="text-2xl font-black text-slate-900 mb-2 truncate max-w-md">{b.lodgeId?.name || 'Krishna Building'} Suite</h3>
-                                            <div className="flex items-center text-slate-500 font-medium text-sm mb-6">
+                                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 truncate max-w-md">{b.lodgeId?.name || 'Krishna Building'} Suite</h3>
+                                            <div className="flex items-center text-slate-500 dark:text-slate-400 font-medium text-sm mb-6">
                                                 <MapPin className="w-4 h-4 mr-1 text-slate-400" /> {b.lodgeId?.location?.address || 'Site A, Krishna Complex'}
                                             </div>
 
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-800">
                                                 <div>
                                                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1 flex items-center"><Calendar className="w-3 h-3 mr-1" /> Check In</p>
-                                                    <p className="text-sm font-black text-slate-800">{new Date(b.checkIn).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200">{new Date(b.checkIn).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1 flex items-center"><Calendar className="w-3 h-3 mr-1" /> Check Out</p>
-                                                    <p className="text-sm font-black text-slate-800">{new Date(b.checkOut).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200">{new Date(b.checkOut).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Room Class</p>
-                                                    <p className="text-sm font-black text-slate-800 uppercase tracking-wide">{b.roomId?.type || 'Suite'}</p>
+                                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide">{b.roomId?.type || 'Suite'}</p>
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1 font-poppins">Total Paid</p>
@@ -334,11 +334,11 @@ export default function LodgeCustomerDashboard() {
                                 </div>
                             ))}
                             {bookings.length === 0 && (
-                                <div className="text-center py-40 bg-white rounded-[3rem] border-4 border-dashed border-slate-100">
-                                    <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
+                                <div className="text-center py-40 bg-white dark:bg-slate-900 rounded-[3rem] border-4 border-dashed border-slate-100 dark:border-slate-800">
+                                    <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 text-slate-300 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
                                         <Calendar className="w-10 h-10" />
                                     </div>
-                                    <h3 className="text-2xl font-black text-slate-900 mb-2">No Residency History</h3>
+                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">No Residency History</h3>
                                     <p className="text-slate-400 max-w-xs mx-auto font-medium">Your historical records are empty. Book your first site visit residency today.</p>
                                 </div>
                             )}
@@ -349,19 +349,19 @@ export default function LodgeCustomerDashboard() {
                 {/* Wishlist View */}
                 {activeTab === 'wishlist' && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-10">Saved Residencies</h1>
+                        <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-10">Saved Residencies</h1>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {wishlist.map(w => (
-                                <div key={w._id} className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all group">
+                                <div key={w._id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all group">
                                     <div className="h-64 relative bg-slate-200 overflow-hidden">
                                         <img src={w.lodgeId?.images?.[0] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945'} alt={w.lodgeId?.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                                        <button onClick={() => handleToggleWishlist(w.lodgeId?._id)} className="absolute top-6 right-6 p-4 bg-white/90 text-red-500 rounded-2xl shadow-xl backdrop-blur-md">
+                                        <button onClick={() => handleToggleWishlist(w.lodgeId?._id)} className="absolute top-6 right-6 p-4 bg-white dark:bg-slate-900/90 text-red-500 rounded-2xl shadow-xl backdrop-blur-md">
                                             <Heart className="w-6 h-6 fill-current" />
                                         </button>
                                     </div>
                                     <div className="p-8">
-                                        <h3 className="text-2xl font-black text-slate-900 mb-2 truncate">{w.lodgeId?.name || 'Krishna Residency'}</h3>
-                                        <p className="text-slate-500 font-medium mb-8 flex items-center"><MapPin className="w-4 h-4 mr-1 text-slate-400" /> {w.lodgeId?.location?.address}</p>
+                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 truncate">{w.lodgeId?.name || 'Krishna Residency'}</h3>
+                                        <p className="text-slate-500 dark:text-slate-400 font-medium mb-8 flex items-center"><MapPin className="w-4 h-4 mr-1 text-slate-400" /> {w.lodgeId?.location?.address}</p>
                                         <div className="flex items-center justify-between">
                                             <p className="font-poppins text-2xl font-black text-indigo-600">₹{w.lodgeId?.priceRange || '3,500'}<span className="text-xs text-slate-400 font-bold uppercase ml-1">/ Month</span></p>
                                             <button onClick={() => window.location.href = `/lodge/book/${w.lodgeId?._id}`} className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/20 hover:scale-105 transition-transform active:scale-95">
@@ -374,7 +374,7 @@ export default function LodgeCustomerDashboard() {
                             {wishlist.length === 0 && (
                                 <div className="col-span-2 text-center py-40">
                                     <Heart className="w-20 h-20 text-slate-200 mx-auto mb-6" />
-                                    <h3 className="text-xl font-black text-slate-900 mb-2">Wishlist is Empty</h3>
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Wishlist is Empty</h3>
                                     <p className="text-slate-400">Save residency suites to access them quickly later.</p>
                                 </div>
                             )}
@@ -385,8 +385,8 @@ export default function LodgeCustomerDashboard() {
                 {/* Payments View */}
                 {activeTab === 'payments' && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2 font-poppins">Financial Ledger & Payment History</h1>
-                        <p className="text-slate-500 font-medium mb-8">Settle room rent, track payment requests, and download official receipts.</p>
+                        <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-2 font-poppins">Financial Ledger & Payment History</h1>
+                        <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">Settle room rent, track payment requests, and download official receipts.</p>
                         <LodgePaymentHistory payments={payments} onRefresh={fetchData} />
                     </div>
                 )}
@@ -401,7 +401,7 @@ export default function LodgeCustomerDashboard() {
                                     <Camera className="w-8 h-8" />
                                 </div>
                             </div>
-                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">{profile.name}</h1>
+                            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{profile.name}</h1>
                             <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">{profile.role || 'Residency Client'}</p>
                         </div>
 
@@ -409,19 +409,19 @@ export default function LodgeCustomerDashboard() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Display Name</label>
-                                    <input required className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} />
+                                    <input required className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Primary Contact</label>
-                                    <input required className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} />
+                                    <input required className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Phone Telemetry</label>
-                                    <input className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value={profile.phone || profile.phoneNumber || ''} onChange={e => setProfile({...profile, phone: e.target.value})} />
+                                    <input className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value={profile.phone || profile.phoneNumber || ''} onChange={e => setProfile({...profile, phone: e.target.value})} />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Secure Passcode</label>
-                                    <input type="password" placeholder="••••••••" className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value={profile.password} onChange={e => setProfile({...profile, password: e.target.value})} />
+                                    <input type="password" placeholder="••••••••" className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value={profile.password} onChange={e => setProfile({...profile, password: e.target.value})} />
                                 </div>
                             </div>
                             <button type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black text-sm shadow-2xl shadow-indigo-600/30 hover:scale-105 hover:bg-indigo-700 transition-all flex items-center justify-center">
@@ -438,8 +438,8 @@ export default function LodgeCustomerDashboard() {
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="flex justify-between items-center mb-10">
                             <div>
-                                <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">Maintenance Support</h1>
-                                <p className="text-slate-500 font-medium">Log requests for your active residency.</p>
+                                <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Maintenance Support</h1>
+                                <p className="text-slate-500 dark:text-slate-400 font-medium">Log requests for your active residency.</p>
                             </div>
                             <button onClick={() => setComplaintModal({ show: true, bookingId: '', title: '', description: '' })} className="bg-amber-500 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-amber-500/20 hover:scale-105 transition-transform flex items-center">
                                 <AlertCircle className="w-5 h-5 mr-2" /> Raise Ticket
@@ -448,22 +448,22 @@ export default function LodgeCustomerDashboard() {
                         
                         <div className="space-y-4">
                             {myComplaints.map(c => (
-                                <div key={c._id} className={`p-6 rounded-[2rem] border ${c.status === 'resolved' ? 'bg-white border-slate-200' : 'bg-amber-50 border-amber-200 shadow-sm'}`}>
+                                <div key={c._id} className={`p-6 rounded-[2rem] border ${c.status === 'resolved' ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700' : 'bg-amber-50 border-amber-200 shadow-sm'}`}>
                                     <div className="flex justify-between items-start mb-4">
-                                        <h3 className="font-black text-lg text-slate-900">{c.title}</h3>
+                                        <h3 className="font-black text-lg text-slate-900 dark:text-white">{c.title}</h3>
                                         <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${c.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-200 text-amber-800'}`}>
                                             {c.status}
                                         </span>
                                     </div>
-                                    <p className="text-slate-600 font-medium mb-4">{c.description}</p>
+                                    <p className="text-slate-600 dark:text-slate-400 font-medium mb-4">{c.description}</p>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{new Date(c.createdAt).toLocaleDateString()}</p>
                                 </div>
                             ))}
                             {myComplaints.length === 0 && (
-                                <div className="text-center py-20 bg-slate-50 border border-slate-100 rounded-[2rem]">
+                                <div className="text-center py-20 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-[2rem]">
                                     <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                                    <h3 className="text-xl font-bold text-slate-900 mb-2">No Open Tickets</h3>
-                                    <p className="text-slate-500">Your maintenance history is clear.</p>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No Open Tickets</h3>
+                                    <p className="text-slate-500 dark:text-slate-400">Your maintenance history is clear.</p>
                                 </div>
                             )}
                         </div>
@@ -476,25 +476,25 @@ export default function LodgeCustomerDashboard() {
             {/* Extension Modal */}
             {extendModal.show && (
                 <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4">
-                    <form onSubmit={submitExtension} className="bg-white rounded-[3rem] p-10 w-full max-w-md shadow-2xl relative animate-in zoom-in duration-300">
-                        <button type="button" onClick={() => setExtendModal({ show: false, booking: null, newDate: '', extraAmount: 0 })} className="absolute top-8 right-8 text-slate-400 hover:text-red-500 p-2 bg-slate-50 rounded-full transition-all">
+                    <form onSubmit={submitExtension} className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 w-full max-w-md shadow-2xl relative animate-in zoom-in duration-300">
+                        <button type="button" onClick={() => setExtendModal({ show: false, booking: null, newDate: '', extraAmount: 0 })} className="absolute top-8 right-8 text-slate-400 hover:text-red-500 p-2 bg-slate-50 dark:bg-slate-800 rounded-full transition-all">
                             <X className="w-6 h-6" />
                         </button>
 
                         <div className="text-center mb-8">
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Extend Residency</h3>
-                            <p className="text-slate-500 font-medium mt-2">Request more time for your stay.</p>
+                            <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Extend Residency</h3>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium mt-2">Request more time for your stay.</p>
                         </div>
                         
-                        <div className="bg-slate-50 p-6 rounded-3xl mb-8 border border-slate-100">
+                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl mb-8 border border-slate-100 dark:border-slate-800">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Current Check Out</p>
-                            <p className="font-bold text-slate-800 mb-6">{new Date(extendModal.booking.checkOut).toLocaleDateString()}</p>
+                            <p className="font-bold text-slate-800 dark:text-slate-200 mb-6">{new Date(extendModal.booking.checkOut).toLocaleDateString()}</p>
                             
                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Requested Check Out</label>
                             <input 
                                 type="date" required 
                                 min={new Date(extendModal.booking.checkOut).toISOString().split('T')[0]} 
-                                className="w-full bg-white border border-slate-200 p-4 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none mb-6" 
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none mb-6" 
                                 value={extendModal.newDate} 
                                 onChange={e => {
                                     const dateStr = e.target.value;
@@ -522,20 +522,20 @@ export default function LodgeCustomerDashboard() {
             {/* Complaint Modal */}
             {complaintModal.show && (
                 <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4">
-                    <form onSubmit={submitComplaint} className="bg-white rounded-[3rem] p-10 w-full max-w-lg shadow-2xl relative animate-in zoom-in duration-300">
-                        <button type="button" onClick={() => setComplaintModal({ show: false, bookingId: '', title: '', description: '' })} className="absolute top-8 right-8 text-slate-400 hover:text-red-500 p-2 bg-slate-50 rounded-full transition-all">
+                    <form onSubmit={submitComplaint} className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 w-full max-w-lg shadow-2xl relative animate-in zoom-in duration-300">
+                        <button type="button" onClick={() => setComplaintModal({ show: false, bookingId: '', title: '', description: '' })} className="absolute top-8 right-8 text-slate-400 hover:text-red-500 p-2 bg-slate-50 dark:bg-slate-800 rounded-full transition-all">
                             <X className="w-6 h-6" />
                         </button>
 
                         <div className="mb-8">
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Raise Ticket</h3>
-                            <p className="text-slate-500 font-medium mt-1">Log a maintenance issue for your room.</p>
+                            <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Raise Ticket</h3>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Log a maintenance issue for your room.</p>
                         </div>
                         
                         <div className="space-y-4 mb-8">
                             <div>
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Active Booking</label>
-                                <select required className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-900 outline-none" value={complaintModal.bookingId} onChange={e => setComplaintModal({...complaintModal, bookingId: e.target.value})}>
+                                <select required className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-900 dark:text-white outline-none" value={complaintModal.bookingId} onChange={e => setComplaintModal({...complaintModal, bookingId: e.target.value})}>
                                     <option value="" disabled>Select Room...</option>
                                     {bookings.filter(b => b.status === 'active').map(b => (
                                         <option key={b._id} value={b._id}>{b.lodgeId?.name} - {b.roomId?.type} (#{b._id.slice(-4)})</option>
@@ -544,11 +544,11 @@ export default function LodgeCustomerDashboard() {
                             </div>
                             <div>
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Issue Title</label>
-                                <input placeholder="e.g., AC Not Working" required className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-slate-900 outline-none" value={complaintModal.title} onChange={e => setComplaintModal({...complaintModal, title: e.target.value})} />
+                                <input placeholder="e.g., AC Not Working" required className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-900 dark:text-white outline-none" value={complaintModal.title} onChange={e => setComplaintModal({...complaintModal, title: e.target.value})} />
                             </div>
                             <div>
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Description</label>
-                                <textarea placeholder="Details about the issue..." required rows="4" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-medium text-slate-900 outline-none" value={complaintModal.description} onChange={e => setComplaintModal({...complaintModal, description: e.target.value})} />
+                                <textarea placeholder="Details about the issue..." required rows="4" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-medium text-slate-900 dark:text-white outline-none" value={complaintModal.description} onChange={e => setComplaintModal({...complaintModal, description: e.target.value})} />
                             </div>
                         </div>
 

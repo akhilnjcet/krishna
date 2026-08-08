@@ -25,7 +25,7 @@ const SignalSwitcher = () => {
                     <Wifi className="w-4 h-4" />
                     <span className="text-[9px] font-black uppercase tracking-widest">Signal Status: {activeSignal === 'cloud' ? 'Cloud Link' : 'Local Override'}</span>
                 </div>
-                <div className="px-2 py-1 bg-white rounded-lg border border-blue-100 text-[8px] font-black uppercase">Adjust Signal</div>
+                <div className="px-2 py-1 bg-white dark:bg-slate-900 rounded-lg border border-blue-100 text-[8px] font-black uppercase">Adjust Signal</div>
             </button>
             <AnimatePresence>
                 {isExpanded && (
@@ -39,23 +39,23 @@ const SignalSwitcher = () => {
                             <button 
                                 type="button"
                                 onClick={() => toggleSignal('cloud')}
-                                className={`flex-grow py-3 rounded-xl text-[8px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${activeSignal === 'cloud' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-blue-400 border border-blue-100'}`}
+                                className={`flex-grow py-3 rounded-xl text-[8px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${activeSignal === 'cloud' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white dark:bg-slate-900 text-blue-400 border border-blue-100'}`}
                             >
                                 <Cloud className="w-3 h-3" /> Production Cloud
                             </button>
                             <button 
                                 type="button"
                                 onClick={() => toggleSignal('local')}
-                                className={`flex-grow py-3 rounded-xl text-[8px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${activeSignal === 'local' ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' : 'bg-white text-slate-400 border border-slate-200'}`}
+                                className={`flex-grow py-3 rounded-xl text-[8px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${activeSignal === 'local' ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' : 'bg-white dark:bg-slate-900 text-slate-400 border border-slate-200 dark:border-slate-700'}`}
                             >
                                 <Terminal className="w-3 h-3" /> Local Link
                             </button>
                         </div>
                         {activeSignal === 'local' && (
-                            <div className="mt-2 p-2 bg-white rounded-xl border border-blue-100 flex items-center gap-3">
+                            <div className="mt-2 p-2 bg-white dark:bg-slate-900 rounded-xl border border-blue-100 flex items-center gap-3">
                                 <span className="text-[8px] font-black text-blue-600 uppercase whitespace-nowrap">Local IP:</span>
                                 <input 
-                                    className="bg-transparent border-0 p-0 w-full focus:ring-0 text-[10px] font-black text-slate-700 font-mono"
+                                    className="bg-transparent border-0 p-0 w-full focus:ring-0 text-[10px] font-black text-slate-700 dark:text-slate-300 font-mono"
                                     value={localIp}
                                     onChange={(e) => setLocalIp(e.target.value)}
                                     placeholder="e.g. 192.168.1.10"
@@ -112,11 +112,11 @@ const AdminLogin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-800 flex flex-col font-sans">
             <div className="pt-12 px-6">
                 <button 
                     onClick={() => navigate('/lodge')}
-                    className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm border border-slate-100"
+                    className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-slate-400 shadow-sm border border-slate-100 dark:border-slate-800"
                 >
                     <ArrowLeft className="w-5 h-5" />
                 </button>
@@ -131,18 +131,18 @@ const AdminLogin = () => {
                     <Shield className="w-10 h-10" />
                 </motion.div>
                 
-                <h1 className="text-4xl font-black text-slate-900 mb-2 italic tracking-tight">Lodge Manager <span className="text-blue-600">Secure.</span></h1>
+                <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-2 italic tracking-tight">Lodge Manager <span className="text-blue-600">Secure.</span></h1>
                 <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-12">Lodge Management Command Protocol</p>
 
                 <form onSubmit={handleLogin} className="w-full space-y-4">
                     <SignalSwitcher />
                     <div className="space-y-1">
-                        <div className="p-4 bg-white rounded-2xl border border-slate-100 flex items-center gap-4 focus-within:border-blue-500 transition-all shadow-sm">
+                        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-4 focus-within:border-blue-500 transition-all shadow-sm">
                             <Mail className="w-5 h-5 text-slate-400" />
                             <input 
                                 type="text"
                                 placeholder="Lodge Manager ID / Email"
-                                className="bg-transparent border-0 p-0 w-full focus:ring-0 text-slate-900 font-bold placeholder:text-slate-300"
+                                className="bg-transparent border-0 p-0 w-full focus:ring-0 text-slate-900 dark:text-white font-bold placeholder:text-slate-300"
                                 value={formData.email}
                                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                                 required
@@ -151,12 +151,12 @@ const AdminLogin = () => {
                     </div>
 
                     <div className="space-y-1">
-                        <div className="p-4 bg-white rounded-2xl border border-slate-100 flex items-center gap-4 focus-within:border-blue-500 transition-all shadow-sm">
+                        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-4 focus-within:border-blue-500 transition-all shadow-sm">
                             <Lock className="w-5 h-5 text-slate-400" />
                             <input 
                                 type="password"
                                 placeholder="Access Password"
-                                className="bg-transparent border-0 p-0 w-full focus:ring-0 text-slate-900 font-bold placeholder:text-slate-300"
+                                className="bg-transparent border-0 p-0 w-full focus:ring-0 text-slate-900 dark:text-white font-bold placeholder:text-slate-300"
                                 value={formData.password}
                                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                                 required

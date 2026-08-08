@@ -66,7 +66,7 @@ const TenantLogin = () => {
             <div className="pt-12 px-6 flex items-center justify-between">
                 <button 
                     onClick={() => step === 1 ? navigate('/lodge') : setStep(1)}
-                    className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm border border-slate-100"
+                    className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-slate-400 shadow-sm border border-slate-100 dark:border-slate-800"
                 >
                     <ArrowLeft className="w-6 h-6" />
                 </button>
@@ -87,8 +87,8 @@ const TenantLogin = () => {
                             className="space-y-8"
                         >
                             <div className="space-y-2 text-center sm:text-left">
-                                <h1 className="text-3xl font-black text-slate-800 font-poppins">Identify Room</h1>
-                                <p className="text-slate-500 font-medium">Select your allocated room number to verify access.</p>
+                                <h1 className="text-3xl font-black text-slate-800 dark:text-slate-200 font-poppins">Identify Room</h1>
+                                <p className="text-slate-500 dark:text-slate-400 font-medium">Select your allocated room number to verify access.</p>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4">
@@ -96,14 +96,14 @@ const TenantLogin = () => {
                                     <button
                                         key={room.id}
                                         onClick={() => handleRoomSelect(room)}
-                                        className="group relative flex items-center justify-between p-6 rounded-3xl border-2 bg-white border-slate-100 hover:border-[#2D5BE3] shadow-lg shadow-slate-200/50 hover:shadow-xl transition-all active:scale-95"
+                                        className="group relative flex items-center justify-between p-6 rounded-3xl border-2 bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-[#2D5BE3] shadow-lg shadow-slate-200/50 hover:shadow-xl transition-all active:scale-95"
                                     >
                                         <div className="flex items-center gap-4">
                                             <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-blue-50 text-[#2D5BE3]">
                                                 <DoorOpen className="w-7 h-7" />
                                             </div>
                                             <div className="text-left">
-                                                <p className="text-xl font-black text-slate-800 font-poppins">Room {room.number}</p>
+                                                <p className="text-xl font-black text-slate-800 dark:text-slate-200 font-poppins">Room {room.number}</p>
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Verify Secure Key</p>
                                             </div>
                                         </div>
@@ -124,7 +124,7 @@ const TenantLogin = () => {
                                 {loading ? <Loader2 className="w-8 h-8 animate-spin" /> : <Key className="w-8 h-8" />}
                             </div>
                             
-                            <h2 className="text-2xl font-black text-slate-800 mb-1 font-poppins">Room {selectedRoom?.number}</h2>
+                            <h2 className="text-2xl font-black text-slate-800 dark:text-slate-200 mb-1 font-poppins">Room {selectedRoom?.number}</h2>
                             <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-10 text-center">Enter the Temporary PIN provided by the Administrator</p>
 
                             {/* PIN Display */}
@@ -135,7 +135,7 @@ const TenantLogin = () => {
                                         className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center transition-all ${
                                             pin.length > i 
                                             ? 'border-[#2D5BE3] bg-blue-50' 
-                                            : 'border-slate-100 bg-white'
+                                            : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900'
                                         } ${error ? 'border-red-500 bg-red-50 animate-shake' : ''}`}
                                     >
                                         {pin.length > i && <div className="w-3 h-3 bg-[#2D5BE3] rounded-full"></div>}
@@ -150,7 +150,7 @@ const TenantLogin = () => {
                                         key={num}
                                         disabled={loading}
                                         onClick={() => addNumber(num.toString())}
-                                        className="w-16 h-16 rounded-full bg-white text-xl font-bold text-slate-700 shadow-sm border border-slate-50 hover:bg-slate-50 active:scale-90 transition-all disabled:opacity-50"
+                                        className="w-16 h-16 rounded-full bg-white dark:bg-slate-900 text-xl font-bold text-slate-700 dark:text-slate-300 shadow-sm border border-slate-50 hover:bg-slate-50 dark:bg-slate-800 active:scale-90 transition-all disabled:opacity-50"
                                     >
                                         {num}
                                     </button>
@@ -158,7 +158,7 @@ const TenantLogin = () => {
                                 <button disabled={loading} onClick={() => setPin('')} className="w-16 h-16 flex items-center justify-center text-slate-400 transition-opacity">
                                     <Hash className="w-5 h-5" />
                                 </button>
-                                <button disabled={loading} onClick={() => addNumber('0')} className="w-16 h-16 rounded-full bg-white text-xl font-bold text-slate-700 shadow-sm border border-slate-50 active:scale-90 transition-all">0</button>
+                                <button disabled={loading} onClick={() => addNumber('0')} className="w-16 h-16 rounded-full bg-white dark:bg-slate-900 text-xl font-bold text-slate-700 dark:text-slate-300 shadow-sm border border-slate-50 active:scale-90 transition-all">0</button>
                                 <button disabled={loading} onClick={deleteLast} className="w-16 h-16 flex items-center justify-center text-slate-400 active:scale-90 transition-all">
                                     <ArrowLeft className="w-6 h-6"/>
                                 </button>
@@ -189,7 +189,7 @@ const TenantLogin = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center"
+                        className="fixed inset-0 bg-white dark:bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center"
                     >
                         <div className="w-12 h-12 bg-[#2D5BE3] rounded-full flex items-center justify-center shadow-2xl animate-bounce">
                             <ShieldCheck className="w-6 h-6 text-white" />

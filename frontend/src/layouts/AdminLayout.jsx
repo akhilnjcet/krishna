@@ -44,11 +44,11 @@ const SIDEBAR_ITEMS = [
 
 /* ── Shared Sidebar Content ─────────────────────────────────────── */
 const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-900 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800">
         {/* Logo Section */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center gap-3 flex-shrink-0">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-700 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-800 dark:bg-slate-900/50 flex flex-col items-center gap-3 flex-shrink-0">
             <Link to="/" onClick={onNavClick} className="flex flex-col items-center gap-3 group">
-                <div className="bg-white p-2 rounded-2xl shadow-lg group-hover:scale-105 transition-transform border border-slate-100 dark:border-transparent">
+                <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-lg group-hover:scale-105 transition-transform border border-slate-100 dark:border-slate-800 dark:border-transparent">
                     <p className="text-blue-600 font-black text-xl">K</p>
                 </div>
                 <div className="text-center">
@@ -60,7 +60,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
 
         {/* Navigation Section */}
         <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-hide">
-            <p className="px-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-600 mb-3">Enterprise Control</p>
+            <p className="px-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-600 dark:text-slate-400 mb-3">Enterprise Control</p>
             {SIDEBAR_ITEMS.map(item => {
                 const active = location.pathname === item.path;
                 return (
@@ -69,10 +69,10 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                         to={item.path}
                         onClick={onNavClick}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-semibold transition-all ${
-                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-900 dark:hover:text-white'
+                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80 hover:text-slate-900 dark:text-white dark:hover:bg-slate-900 dark:hover:text-white'
                         }`}
                     >
-                        <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
+                        <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`} />
                         <span className="truncate">{item.name}</span>
                     </Link>
                 );
@@ -80,11 +80,11 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
         </nav>
 
         {/* Footer / Account Section */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-3 flex-shrink-0">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 dark:bg-slate-900/50 space-y-3 flex-shrink-0">
             <Link 
                 to="/admin/profile" 
                 onClick={onNavClick} 
-                className="flex items-center gap-3 px-3 py-2.5 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-250 dark:hover:bg-slate-800/60 transition-colors rounded-2xl border border-slate-200 dark:border-slate-800/50 group"
+                className="flex items-center gap-3 px-3 py-2.5 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-250 dark:hover:bg-slate-800/60 transition-colors rounded-2xl border border-slate-200 dark:border-slate-700 dark:border-slate-800/50 group"
             >
                 <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xs shadow-lg group-hover:scale-110 transition-transform">
                     {user?.name?.charAt(0)?.toUpperCase()}
@@ -97,7 +97,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
             
             <button 
                 onClick={onLogout} 
-                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-rose-500/50 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-450 text-slate-500 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all group"
+                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:border-slate-800 hover:border-rose-500/50 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-450 text-slate-500 dark:text-slate-400 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all group"
             >
                 <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 Logout Session
@@ -408,7 +408,7 @@ const AdminLayout = () => {
     return (
         <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex font-sans overflow-x-hidden transition-colors duration-250">
             {/* ── Desktop Sidebar ─────────────────────── */}
-            <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-slate-950 text-slate-800 dark:text-white z-40 border-r border-slate-200 dark:border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
+            <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-40 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
                 {desktopOpen && <SidebarContent location={location} user={user} onNavClick={() => { }} onLogout={handleLogout} />}
             </aside>
 
@@ -416,9 +416,9 @@ const AdminLayout = () => {
             {mobileOpen && (
                 <div className="fixed inset-0 z-[60] md:hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
-                    <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-950 text-slate-800 dark:text-white z-[70] flex flex-col border-r border-slate-200 dark:border-slate-800 shadow-2xl ${SIDEBAR_W} transition-transform`}>
+                    <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-[70] flex flex-col border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl ${SIDEBAR_W} transition-transform`}>
                         <div className="absolute top-4 right-4 z-[80]">
-                            <button onClick={closeMobile} className="p-2 text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800/80 backdrop-blur rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
+                            <button onClick={closeMobile} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800/80 backdrop-blur rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 ">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -433,14 +433,14 @@ const AdminLayout = () => {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}
-                            className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all border border-white/10"
+                            className="p-2 bg-white dark:bg-slate-900/10 rounded-xl text-white hover:bg-white dark:bg-slate-900/20 transition-all border border-white/10"
                             title="Toggle Menu"
                         >
                             <Menu className="w-6 h-6" />
                         </button>
                         <button
                             onClick={() => navigate(-1)}
-                            className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all border border-white/10 flex items-center justify-center"
+                            className="p-2 bg-white dark:bg-slate-900/10 rounded-xl text-white hover:bg-white dark:bg-slate-900/20 transition-all border border-white/10 flex items-center justify-center"
                             title="Go Back"
                         >
                             <ChevronLeft className="w-6 h-6" />
@@ -454,7 +454,7 @@ const AdminLayout = () => {
                         <ThemeToggle darkNavbar={true} />
                         <button 
                             onClick={() => setShowDropdown(prev => !prev)}
-                            className="relative p-2 text-blue-100 hover:bg-white/10 rounded-xl transition-all"
+                            className="relative p-2 text-blue-100 hover:bg-white dark:bg-slate-900/10 rounded-xl transition-all"
                         >
                             <Bell className="w-5 h-5" />
                             {unreadCount > 0 && (
@@ -466,8 +466,8 @@ const AdminLayout = () => {
 
                         {/* Bell Dropdown */}
                         {showDropdown && (
-                            <div className="absolute right-0 top-12 w-80 bg-white dark:bg-dark-surface rounded-2xl shadow-2xl border border-slate-100 dark:border-dark-border py-4 z-50 text-slate-800 animate-in fade-in slide-in-from-top-3 duration-200">
-                                <div className="px-4 pb-3 border-b border-slate-100 dark:border-dark-border flex justify-between items-center">
+                            <div className="absolute right-0 top-12 w-80 bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 dark:border-dark-border py-4 z-50 text-slate-800 dark:text-slate-200 animate-in fade-in slide-in-from-top-3 duration-200">
+                                <div className="px-4 pb-3 border-b border-slate-100 dark:border-slate-800 dark:border-dark-border flex justify-between items-center">
                                     <span className="text-xs font-black uppercase tracking-wider text-slate-400">Recent Alerts</span>
                                     {unreadCount > 0 && (
                                         <span className="bg-blue-50 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded-full">
@@ -485,12 +485,12 @@ const AdminLayout = () => {
                                             <div 
                                                 key={n._id} 
                                                 onClick={() => { setShowDropdown(false); navigate('/admin/notifications'); }}
-                                                className={`px-4 py-3 hover:bg-slate-50 dark:hover:bg-dark-bg cursor-pointer transition-all ${!n.isRead ? 'bg-blue-50/20' : ''}`}
+                                                className={`px-4 py-3 hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-dark-bg cursor-pointer transition-all ${!n.isRead ? 'bg-blue-50/20' : ''}`}
                                             >
-                                                <p className="text-xs font-bold text-slate-800 dark:text-dark-text flex items-center gap-1.5">
+                                                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 dark:text-dark-text flex items-center gap-1.5">
                                                     <span>{n.title}</span>
                                                 </p>
-                                                <p className="text-[10px] font-bold text-slate-500 dark:text-dark-muted mt-0.5">Project: {n.projectName}</p>
+                                                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-dark-muted mt-0.5">Project: {n.projectName}</p>
                                                 {n.reason && <p className="text-[9px] font-semibold text-amber-600 mt-0.5">Reason: {n.reason}</p>}
                                                 <p className="text-[9px] text-slate-400 mt-1">
                                                     {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -499,7 +499,7 @@ const AdminLayout = () => {
                                         ))
                                     )}
                                 </div>
-                                <div className="px-4 pt-3 border-t border-slate-100 dark:border-dark-border text-center">
+                                <div className="px-4 pt-3 border-t border-slate-100 dark:border-slate-800 dark:border-dark-border text-center">
                                     <Link 
                                         to="/admin/notifications" 
                                         onClick={() => setShowDropdown(false)}
@@ -513,7 +513,7 @@ const AdminLayout = () => {
 
                         <div className="flex items-center gap-2">
                             <p className="text-sm font-bold text-white hidden sm:block truncate max-w-[100px]">{user?.name || user?.user?.name || "Admin"}</p>
-                            <div className="w-8 h-8 bg-white/20 rounded-xl border border-white/20 flex items-center justify-center text-white">
+                            <div className="w-8 h-8 bg-white dark:bg-slate-900/20 rounded-xl border border-white/20 flex items-center justify-center text-white">
                                 <User className="w-4 h-4" />
                             </div>
                         </div>
@@ -534,7 +534,7 @@ const AdminLayout = () => {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 20, scale: 0.95 }}
                             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                            className="fixed bottom-6 right-6 z-[9999] w-96 bg-white dark:bg-dark-surface rounded-3xl shadow-2xl border-4 border-brand-950 p-6 flex items-start gap-4 cursor-pointer text-slate-800"
+                            className="fixed bottom-6 right-6 z-[9999] w-96 bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl shadow-2xl border-4 border-brand-950 p-6 flex items-start gap-4 cursor-pointer text-slate-800 dark:text-slate-200"
                             onClick={() => {
                                 setToast(t => ({ ...t, show: false }));
                                 navigate('/admin/notifications');
@@ -549,10 +549,10 @@ const AdminLayout = () => {
                                     <span className="text-[9px] text-slate-400 font-bold">{toast.timestamp}</span>
                                 </div>
                                 <h4 className="font-bold text-sm text-[#111827] dark:text-dark-text mt-1">{toast.title}</h4>
-                                <p className="text-xs text-slate-600 dark:text-dark-muted mt-1 leading-relaxed">
-                                    Project: <span className="font-bold text-slate-800 dark:text-dark-text">{toast.projectName}</span>
+                                <p className="text-xs text-slate-600 dark:text-slate-400 dark:text-dark-muted mt-1 leading-relaxed">
+                                    Project: <span className="font-bold text-slate-800 dark:text-slate-200 dark:text-dark-text">{toast.projectName}</span>
                                 </p>
-                                <p className="text-xs text-slate-500 mt-0.5">Updated By: {toast.updatedBy}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Updated By: {toast.updatedBy}</p>
                                 {toast.reason && (
                                     <div className="mt-2.5 p-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 rounded-xl text-[10px] text-amber-800 dark:text-amber-200">
                                         <span className="font-bold">Reason:</span> {toast.reason}
@@ -565,7 +565,7 @@ const AdminLayout = () => {
                                     e.stopPropagation();
                                     setToast(t => ({ ...t, show: false }));
                                 }}
-                                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 flex-shrink-0"
+                                className="p-1 text-slate-400 hover:text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-50 dark:bg-slate-800 flex-shrink-0"
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -581,7 +581,7 @@ const AdminLayout = () => {
                             className="fixed bottom-24 left-6 z-[9998] bg-rose-600 text-white px-6 py-4 rounded-3xl shadow-2xl border-4 border-white flex flex-col sm:flex-row items-center gap-4 animate-bounce"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-white text-rose-600 rounded-full flex items-center justify-center font-black animate-pulse">
+                                <div className="w-8 h-8 bg-white dark:bg-slate-900 text-rose-600 rounded-full flex items-center justify-center font-black animate-pulse">
                                     🚨
                                 </div>
                                 <div>
@@ -592,7 +592,7 @@ const AdminLayout = () => {
                             <div className="flex gap-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
                                 <button 
                                     onClick={() => setIsMuted(prev => !prev)}
-                                    className="bg-white text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap"
+                                    className="bg-white dark:bg-slate-900 text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap"
                                 >
                                     {isMuted ? '🔇 Unmute' : '🔊 Mute Siren'}
                                 </button>
@@ -613,7 +613,7 @@ const AdminLayout = () => {
                                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className={`w-full max-w-lg bg-white dark:bg-dark-surface rounded-3xl shadow-2xl border-t-8 p-8 ${
+                                className={`w-full max-w-lg bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl shadow-2xl border-t-8 p-8 ${
                                     activePopupAlert.priority === 'Critical' ? 'border-red-600' :
                                     activePopupAlert.priority === 'High' ? 'border-orange-500' :
                                     activePopupAlert.priority === 'Medium' ? 'border-yellow-400' :
@@ -640,18 +640,18 @@ const AdminLayout = () => {
                                         }`}>
                                             {activePopupAlert.priority} Emergency Alert
                                         </span>
-                                        <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-dark-text mt-1">{activePopupAlert.title}</h3>
+                                        <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white dark:text-dark-text mt-1">{activePopupAlert.title}</h3>
                                     </div>
                                 </div>
 
-                                <div className="space-y-4 bg-slate-50 dark:bg-dark-bg p-5 rounded-2xl border border-slate-100 dark:border-dark-border mb-6">
+                                <div className="space-y-4 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg p-5 rounded-2xl border border-slate-100 dark:border-slate-800 dark:border-dark-border mb-6">
                                     <div className="flex justify-between text-xs">
                                         <span className="text-slate-400 font-bold uppercase tracking-wider">Project:</span>
-                                        <span className="font-extrabold text-slate-800 dark:text-dark-text">{activePopupAlert.projectName}</span>
+                                        <span className="font-extrabold text-slate-800 dark:text-slate-200 dark:text-dark-text">{activePopupAlert.projectName}</span>
                                     </div>
                                     <div className="flex justify-between text-xs">
                                         <span className="text-slate-400 font-bold uppercase tracking-wider">Reported By:</span>
-                                        <span className="font-extrabold text-slate-800 dark:text-dark-text">{activePopupAlert.updatedBy?.name || 'Staff User'}</span>
+                                        <span className="font-extrabold text-slate-800 dark:text-slate-200 dark:text-dark-text">{activePopupAlert.updatedBy?.name || 'Staff User'}</span>
                                     </div>
                                     {activePopupAlert.reason && (
                                         <div className="flex justify-between text-xs">
@@ -660,9 +660,9 @@ const AdminLayout = () => {
                                         </div>
                                     )}
                                     {activePopupAlert.remarks && (
-                                        <div className="border-t border-slate-200/50 dark:border-dark-border/50 pt-3">
+                                        <div className="border-t border-slate-200 dark:border-slate-700/50 dark:border-dark-border/50 pt-3">
                                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Remarks:</p>
-                                            <p className="text-xs text-slate-600 dark:text-dark-muted font-medium italic">"{activePopupAlert.remarks}"</p>
+                                            <p className="text-xs text-slate-600 dark:text-slate-400 dark:text-dark-muted font-medium italic">"{activePopupAlert.remarks}"</p>
                                         </div>
                                     )}
                                 </div>
@@ -672,7 +672,7 @@ const AdminLayout = () => {
                                         onClick={() => {
                                             setActivePopupAlert(null);
                                         }}
-                                        className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+                                        className="px-5 py-3 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
                                     >
                                         Dismiss
                                     </button>
@@ -700,7 +700,7 @@ const AdminLayout = () => {
                                         className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-white shadow-lg transition-all ${
                                             activePopupAlert.priority === 'Critical' ? 'bg-red-600 hover:bg-red-500 shadow-red-500/20' :
                                             activePopupAlert.priority === 'High' ? 'bg-orange-50 hover:bg-orange-400 shadow-orange-500/20' :
-                                            activePopupAlert.priority === 'Medium' ? 'bg-yellow-50 hover:bg-yellow-400 text-slate-900 shadow-yellow-500/20' :
+                                            activePopupAlert.priority === 'Medium' ? 'bg-yellow-50 hover:bg-yellow-400 text-slate-900 dark:text-white shadow-yellow-500/20' :
                                             'bg-blue-600 hover:bg-blue-500 shadow-blue-500/20'
                                         }`}
                                     >

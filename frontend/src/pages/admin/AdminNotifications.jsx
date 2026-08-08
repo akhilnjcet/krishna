@@ -196,14 +196,14 @@ const AdminNotifications = () => {
             case 'Resolved':
                 return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
             default:
-                return 'bg-slate-100 text-slate-700 border border-slate-200';
+                return 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
         }
     };
 
     return (
         <div className="space-y-10 animate-in fade-in duration-500 pb-20">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-dark-border">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800 dark:border-dark-border">
                 <div>
                     <h1 className="text-4xl font-bold text-[#111827] dark:text-dark-text tracking-tight font-poppins">
                         Alert Center <span className="text-[#2563EB]">Dashboard</span>
@@ -215,7 +215,7 @@ const AdminNotifications = () => {
                 <div className="flex flex-wrap items-center gap-3">
                     <button 
                         onClick={handleMarkAllAsRead} 
-                        className="px-5 py-2.5 bg-white border border-[#E2E8F0] dark:border-dark-border dark:bg-dark-surface rounded-xl text-sm font-bold text-[#111827] dark:text-dark-text hover:bg-slate-50 dark:hover:bg-dark-bg transition-all flex items-center gap-2 shadow-sm"
+                        className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-dark-border dark:bg-dark-surface rounded-xl text-sm font-bold text-[#111827] dark:text-dark-text hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-dark-bg transition-all flex items-center gap-2 shadow-sm"
                     >
                         <Check className="w-4 h-4" /> Mark All as Read
                     </button>
@@ -304,8 +304,8 @@ const AdminNotifications = () => {
             </div>
 
             {/* Filter Bar */}
-            <div className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm space-y-6">
-                <h3 className="text-sm font-bold text-slate-800 dark:text-dark-text uppercase tracking-widest flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm space-y-6">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 dark:text-dark-text uppercase tracking-widest flex items-center gap-2">
                     <Filter className="w-4 h-4 text-[#2563EB]" /> Filter Alert Logs
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -315,7 +315,7 @@ const AdminNotifications = () => {
                             name="projectId"
                             value={filters.projectId}
                             onChange={handleFilterChange}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl text-xs font-bold text-slate-700 dark:text-dark-text outline-none focus:border-[#2563EB]"
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 dark:text-dark-text outline-none focus:border-[#2563EB]"
                         >
                             <option value="">All Projects</option>
                             {projects.map(p => (
@@ -330,7 +330,7 @@ const AdminNotifications = () => {
                             name="updatedBy"
                             value={filters.updatedBy}
                             onChange={handleFilterChange}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl text-xs font-bold text-slate-700 dark:text-dark-text outline-none focus:border-[#2563EB]"
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 dark:text-dark-text outline-none focus:border-[#2563EB]"
                         >
                             <option value="">All Staff</option>
                             {staffList.map(s => (
@@ -345,7 +345,7 @@ const AdminNotifications = () => {
                             name="type"
                             value={filters.type}
                             onChange={handleFilterChange}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl text-xs font-bold text-slate-700 dark:text-dark-text outline-none focus:border-[#2563EB]"
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 dark:text-dark-text outline-none focus:border-[#2563EB]"
                         >
                             <option value="">All Types</option>
                             <option value="In Progress">In Progress</option>
@@ -362,7 +362,7 @@ const AdminNotifications = () => {
                             name="isRead"
                             value={filters.isRead}
                             onChange={handleFilterChange}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl text-xs font-bold text-slate-700 dark:text-dark-text outline-none focus:border-[#2563EB]"
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 dark:text-dark-text outline-none focus:border-[#2563EB]"
                         >
                             <option value="">All</option>
                             <option value="false">Unread Only</option>
@@ -377,7 +377,7 @@ const AdminNotifications = () => {
                             name="startDate"
                             value={filters.startDate}
                             onChange={handleFilterChange}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl text-xs font-bold text-slate-700 dark:text-dark-text outline-none focus:border-[#2563EB]"
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 dark:text-dark-text outline-none focus:border-[#2563EB]"
                         />
                     </div>
 
@@ -388,7 +388,7 @@ const AdminNotifications = () => {
                             name="endDate"
                             value={filters.endDate}
                             onChange={handleFilterChange}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl text-xs font-bold text-slate-700 dark:text-dark-text outline-none focus:border-[#2563EB]"
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 dark:text-dark-text outline-none focus:border-[#2563EB]"
                         />
                     </div>
                 </div>
@@ -405,7 +405,7 @@ const AdminNotifications = () => {
             </div>
 
             {/* List / Table */}
-            <div className="bg-white dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm overflow-hidden">
                 {loading ? (
                     <div className="p-24 flex flex-col items-center justify-center gap-3">
                         <div className="w-10 h-10 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin"></div>
@@ -414,14 +414,14 @@ const AdminNotifications = () => {
                 ) : notifications.length === 0 ? (
                     <div className="p-24 text-center">
                         <Bell className="w-12 h-12 text-slate-200 dark:text-dark-border mx-auto mb-4" />
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-dark-text mb-1">No Alerts Logged</h3>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 dark:text-dark-text mb-1">No Alerts Logged</h3>
                         <p className="text-sm text-slate-400 dark:text-dark-muted">No notifications matching selected filters found.</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse text-left">
                             <thead>
-                                <tr className="bg-slate-50 dark:bg-dark-bg border-b border-[#E2E8F0] dark:border-dark-border text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                                <tr className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border-b border-[#E2E8F0] dark:border-dark-border text-[10px] font-black uppercase text-slate-400 tracking-wider">
                                     <th className="p-6">Priority / Type</th>
                                     <th className="p-6">Project Name</th>
                                     <th className="p-6">Reported By</th>
@@ -437,7 +437,7 @@ const AdminNotifications = () => {
                                     return (
                                         <tr 
                                             key={n._id}
-                                            className={`hover:bg-slate-50/50 dark:hover:bg-blue-900/5 transition-all ${bg} ${
+                                            className={`hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-blue-900/5 transition-all ${bg} ${
                                                 !n.isRead ? 'font-medium' : ''
                                             }`}
                                         >
@@ -452,12 +452,12 @@ const AdminNotifications = () => {
                                                 </div>
                                             </td>
                                             <td className="p-6">
-                                                <div className="font-bold text-slate-800 dark:text-dark-text">{n.projectName}</div>
+                                                <div className="font-bold text-slate-800 dark:text-slate-200 dark:text-dark-text">{n.projectName}</div>
                                                 <div className="text-[10px] text-slate-400 mt-0.5">{n.title}</div>
                                             </td>
-                                            <td className="p-6 text-slate-700 dark:text-dark-text font-semibold">
+                                            <td className="p-6 text-slate-700 dark:text-slate-300 dark:text-dark-text font-semibold">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-dark-bg text-[#2563EB] flex items-center justify-center font-bold text-xs uppercase border border-[#E2E8F0] dark:border-dark-border">
+                                                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800/80 dark:bg-dark-bg text-[#2563EB] flex items-center justify-center font-bold text-xs uppercase border border-[#E2E8F0] dark:border-dark-border">
                                                         {n.updatedBy?.name?.charAt(0) || 'U'}
                                                     </div>
                                                     <div>
@@ -468,10 +468,10 @@ const AdminNotifications = () => {
                                             </td>
                                             <td className="p-6">
                                                 <div className="text-xs"><span className="text-slate-400 font-bold">Reason:</span> <span className="font-bold text-amber-600 dark:text-amber-400">{n.reason || 'N/A'}</span></div>
-                                                <div className="text-xs text-slate-500 mt-1 max-w-xs line-clamp-2"><span className="text-slate-400 font-bold">Remarks:</span> {n.remarks || '—'}</div>
+                                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs line-clamp-2"><span className="text-slate-400 font-bold">Remarks:</span> {n.remarks || '—'}</div>
                                             </td>
                                             <td className="p-6 text-xs font-bold whitespace-nowrap">
-                                                <div className="text-slate-500 dark:text-dark-muted flex items-center gap-1">
+                                                <div className="text-slate-500 dark:text-slate-400 dark:text-dark-muted flex items-center gap-1">
                                                     <Calendar className="w-3.5 h-3.5 text-slate-400" />
                                                     {new Date(n.createdAt).toLocaleDateString()}
                                                 </div>
@@ -485,12 +485,12 @@ const AdminNotifications = () => {
                                                         {n.status}
                                                     </span>
                                                     {n.status === 'Acknowledged' && (
-                                                        <div className="text-[9px] text-slate-500 mt-0.5">
+                                                        <div className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
                                                             Ack by: <span className="font-bold">{n.acknowledgedBy?.name}</span>
                                                         </div>
                                                     )}
                                                     {n.status === 'Resolved' && (
-                                                        <div className="text-[9px] text-slate-500 mt-0.5">
+                                                        <div className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
                                                             Res by: <span className="font-bold">{n.resolvedBy?.name}</span>
                                                             {n.resolutionNotes && <p className="italic text-slate-400 line-clamp-1">"{n.resolutionNotes}"</p>}
                                                         </div>
@@ -521,7 +521,7 @@ const AdminNotifications = () => {
                                                         onClick={() => handleMarkAsRead(n._id, n.isRead)}
                                                         className={`p-2 rounded-lg transition-all ${
                                                             n.isRead 
-                                                                ? 'text-slate-300 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-dark-bg' 
+                                                                ? 'text-slate-300 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80 dark:hover:bg-dark-bg' 
                                                                 : 'text-[#2563EB] bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100'
                                                         }`}
                                                         title={n.isRead ? "Mark as Unread" : "Mark as Read"}
@@ -542,8 +542,8 @@ const AdminNotifications = () => {
             {/* Acknowledge Dialog Modal */}
             {ackModal.show && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-                    <div className="w-full max-w-md bg-white dark:bg-dark-surface rounded-3xl shadow-2xl p-6 border border-slate-100 dark:border-dark-border">
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-dark-text mb-4">Acknowledge Incident Alert</h3>
+                    <div className="w-full max-w-md bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl shadow-2xl p-6 border border-slate-100 dark:border-slate-800 dark:border-dark-border">
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 dark:text-dark-text mb-4">Acknowledge Incident Alert</h3>
                         <form onSubmit={handleAcknowledgeSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 dark:text-dark-muted uppercase mb-2">Acknowledge Remarks / Notes</label>
@@ -551,7 +551,7 @@ const AdminNotifications = () => {
                                     rows="3"
                                     required
                                     placeholder="Provide immediate action steps or comments..."
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl text-sm font-semibold outline-none focus:border-[#2563EB]"
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-xl text-sm font-semibold outline-none focus:border-[#2563EB]"
                                     value={ackModal.remarks}
                                     onChange={e => setAckModal({ ...ackModal, remarks: e.target.value })}
                                 />
@@ -560,7 +560,7 @@ const AdminNotifications = () => {
                                 <button 
                                     type="button"
                                     onClick={() => setAckModal({ show: false, id: null, remarks: '' })}
-                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
                                 >
                                     Cancel
                                 </button>
@@ -579,8 +579,8 @@ const AdminNotifications = () => {
             {/* Resolve Dialog Modal */}
             {resolveModal.show && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-                    <div className="w-full max-w-md bg-white dark:bg-dark-surface rounded-3xl shadow-2xl p-6 border border-slate-100 dark:border-dark-border">
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-dark-text mb-4">Resolve Incident Alert</h3>
+                    <div className="w-full max-w-md bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl shadow-2xl p-6 border border-slate-100 dark:border-slate-800 dark:border-dark-border">
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 dark:text-dark-text mb-4">Resolve Incident Alert</h3>
                         <form onSubmit={handleResolveSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 dark:text-dark-muted uppercase mb-2">Incident Resolution Notes</label>
@@ -588,7 +588,7 @@ const AdminNotifications = () => {
                                     rows="4"
                                     required
                                     placeholder="Explain how the blocker was resolved and how work was resumed..."
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl text-sm font-semibold outline-none focus:border-[#2563EB]"
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-xl text-sm font-semibold outline-none focus:border-[#2563EB]"
                                     value={resolveModal.notes}
                                     onChange={e => setResolveModal({ ...resolveModal, notes: e.target.value })}
                                 />
@@ -597,7 +597,7 @@ const AdminNotifications = () => {
                                 <button 
                                     type="button"
                                     onClick={() => setResolveModal({ show: false, id: null, notes: '' })}
-                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
                                 >
                                     Cancel
                                 </button>
