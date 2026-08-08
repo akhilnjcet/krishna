@@ -295,7 +295,7 @@ export const detectFaceAndLiveness = async (videoRef, canvasRef) => {
 
     // 5. Blur quality check
     const blurriness = checkBlurriness(mainCtx, box, width, height);
-    if (blurriness < 18) {
+    if (blurriness < 5) {
         return { invalid: true, reason: 'Face is blurry. Hold still.', blurriness, luminance: frameLuminance };
     }
 
