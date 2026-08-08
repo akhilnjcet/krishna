@@ -146,7 +146,7 @@ const StaffFinance = () => {
         if (s === 'pending' || s === 'unpaid' || s === 'partially_paid') return 'bg-amber-100 text-amber-800 border-amber-300';
         if (s === 'failed') return 'bg-rose-100 text-rose-800 border-rose-300';
         if (s === 'cancelled') return 'bg-slate-200 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-600';
-        return 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+        return 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
     };
 
     // Calendar Calculations
@@ -249,7 +249,7 @@ const StaffFinance = () => {
 
                     {/* Salary History Table */}
                     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
-                        <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/30">
+                        <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30/30 dark:bg-slate-800/30">
                             <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                                 <History className="w-5 h-5 text-indigo-600" /> Payout History
                             </h3>
@@ -258,7 +258,7 @@ const StaffFinance = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-slate-50/50 dark:bg-slate-800/50 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                    <tr className="bg-slate-50/50/50 dark:bg-slate-800/50 text-[10px] font-black uppercase tracking-widest text-slate-400">
                                         <th className="px-6 py-4">Month / Cycle</th>
                                         <th className="px-6 py-4">Base Salary</th>
                                         <th className="px-6 py-4">OT Pay</th>
@@ -279,7 +279,7 @@ const StaffFinance = () => {
                                         const deductions   = (sal.deductions || 0) + (sal.advanceRecovery || 0);
                                         const isCurrentMonth = sal.month === (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })();
                                         return (
-                                            <tr key={sal._id} className={`hover:bg-slate-50/50 dark:bg-slate-800/50 transition group ${isCurrentMonth ? 'bg-indigo-50/30' : ''}`}>
+                                            <tr key={sal._id} className={`hover:bg-slate-50/50/50 dark:bg-slate-800/50 transition group ${isCurrentMonth ? 'bg-indigo-50/30' : ''}`}>
                                                 <td className="px-6 py-5">
                                                     <div>
                                                         <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{sal.month}</span>
@@ -362,7 +362,7 @@ const StaffFinance = () => {
                                 </div>
                                 <button 
                                     onClick={() => setSelectedSlipForView(null)}
-                                    className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80 transition"
+                                    className="p-2 rounded-xl text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80 transition"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
@@ -554,7 +554,7 @@ const StaffFinance = () => {
                     </div>
 
                     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
-                        <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/30">
+                        <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30/30 dark:bg-slate-800/30">
                             <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                                 <Clock className="w-5 h-5 text-indigo-600" /> Overtime Logging Summary
                             </h3>
@@ -566,7 +566,7 @@ const StaffFinance = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse text-xs">
                                 <thead>
-                                    <tr className="bg-slate-50/50 dark:bg-slate-800/50 font-black text-[10px] text-slate-400 uppercase tracking-widest">
+                                    <tr className="bg-slate-50/50/50 dark:bg-slate-800/50 font-black text-[10px] text-slate-400 uppercase tracking-widest">
                                         <th className="px-6 py-4">Date</th>
                                         <th className="px-6 py-4">Hours Logged</th>
                                         <th className="px-6 py-4">Rate Per Hour</th>
@@ -582,7 +582,7 @@ const StaffFinance = () => {
                                             </td>
                                         </tr>
                                     ) : otRecords.length > 0 ? otRecords.map(ot => (
-                                        <tr key={ot._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
+                                        <tr key={ot._id} className="hover:bg-slate-50/50/50 dark:bg-slate-800/50 transition">
                                             <td className="px-6 py-5 font-bold">{ot.date}</td>
                                             <td className="px-6 py-5 font-bold text-slate-700 dark:text-slate-300">{ot.hours} hrs</td>
                                             <td className="px-6 py-5 text-slate-500 dark:text-slate-400">₹ {ot.ratePerHour}</td>

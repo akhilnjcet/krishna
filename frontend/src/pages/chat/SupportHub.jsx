@@ -159,7 +159,7 @@ const SupportHub = () => {
                         <button 
                             onClick={() => setChatType('support')}
                             className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
-                                chatType === 'support' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400'
+                                chatType === 'support' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-400'
                             }`}
                         >
                             Customer Support
@@ -167,7 +167,7 @@ const SupportHub = () => {
                         <button 
                             onClick={() => setChatType('staff-reference')}
                             className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
-                                chatType === 'staff-reference' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400'
+                                chatType === 'staff-reference' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-400'
                             }`}
                         >
                             Staff Project Ref
@@ -227,14 +227,14 @@ const SupportHub = () => {
                             <div className="relative z-10">
                                 <div className="flex items-center justify-between mb-8">
                                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl shadow-inner ${
-                                        ticket.status === 'approved' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400'
+                                        ticket.status === 'approved' ? 'bg-indigo-600 text-white' : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-400'
                                     }`}>
                                         {ticket.projectTitle?.charAt(0).toUpperCase()}
                                     </div>
                                     <span className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] border-2 ${
                                         ticket.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-500' :
                                         ticket.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-500' :
-                                        'bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border-slate-400'
+                                        'bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border-slate-400'
                                     }`}>
                                         {ticket.status}
                                     </span>
@@ -296,7 +296,7 @@ const SupportHub = () => {
                                         </div>
                                     )
                                 ) : ticket.status === 'closed' && (
-                                    <div className="flex-1 bg-slate-100 dark:bg-slate-800/80 text-slate-400 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 border-2 border-slate-300 dark:border-slate-600 italic">
+                                    <div className="flex-1 bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 border-2 border-slate-300 dark:border-slate-600 italic">
                                         <CheckCircle className="w-5 h-5" /> Resolved • {ticket.closedAt ? new Date(ticket.closedAt.toDate()).toLocaleDateString() : 'Historical'}
                                     </div>
                                 )}
@@ -309,7 +309,7 @@ const SupportHub = () => {
                             onClick={() => setView('verify')}
                             className="bg-white dark:bg-slate-900 p-10 rounded-[3rem] border-4 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-600 hover:bg-indigo-50/50 transition-all flex flex-col items-center justify-center text-center group min-h-[400px] active:scale-98"
                         >
-                            <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800/80 text-slate-400 rounded-full flex items-center justify-center mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all scale-110 shadow-xl group-hover:shadow-indigo-200">
+                            <div className="w-24 h-24 bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 rounded-full flex items-center justify-center mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all scale-110 shadow-xl group-hover:shadow-indigo-200">
                                 <Plus className="w-12 h-12" />
                             </div>
                             <h4 className="text-lg font-black text-slate-400 group-hover:text-indigo-600 uppercase tracking-[0.3em]">

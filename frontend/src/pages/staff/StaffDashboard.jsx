@@ -42,10 +42,10 @@ const StaffDashboard = () => {
             
             {/* High-Contrast Impact Banner */}
             <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] dark:from-[#0B1222] dark:to-[#1E3A8A] rounded-[2.5rem] p-6 md:p-10 relative overflow-hidden text-white shadow-2xl shadow-blue-900/20 group transition-all duration-500">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 dark:bg-slate-900/5 rounded-full blur-3xl -mr-40 -mt-40 group-hover:scale-110 transition-transform duration-1000"></div>
+                <div className="absolute top-0 right-0 w-96 h-96 bg-white/5/5 dark:bg-slate-900/5 rounded-full blur-3xl -mr-40 -mt-40 group-hover:scale-110 transition-transform duration-1000"></div>
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                     <div className="space-y-6">
-                        <div className="inline-flex items-center gap-3 bg-white/10 dark:bg-slate-900/10 dark:bg-white/5 dark:bg-slate-900/5 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] border border-white/10 ring-1 ring-white/10">
+                        <div className="inline-flex items-center gap-3 bg-white/10/10 dark:bg-slate-900/10 dark:bg-white/5/5 dark:bg-slate-900/5 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] border border-white/10 ring-1 ring-white/10">
                             <span className="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span>
                             Operational Unit: Active
                         </div>
@@ -72,7 +72,7 @@ const StaffDashboard = () => {
                             </button>
                             <button 
                                 onClick={() => navigate('/staff/progress')}
-                                className="bg-white/10 dark:bg-slate-900/10 hover:bg-white/20 dark:bg-slate-900/20 backdrop-blur-md border border-white/20 text-white px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 transition-all"
+                                className="bg-white/10/10 dark:bg-slate-900/10 hover:bg-white/20/20 dark:bg-slate-900/20 backdrop-blur-md border border-white/20 text-white px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 transition-all"
                             >
                                 <Plus className="w-5 h-5" /> Log Daily Update
                             </button>
@@ -93,7 +93,7 @@ const StaffDashboard = () => {
                         className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-8 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-2xl hover:shadow-blue-500/5 hover:border-blue-200 dark:hover:border-blue-800 transition-all cursor-pointer group relative overflow-hidden"
                     >
                         <div className="flex justify-between items-start mb-6">
-                            <div className={`w-12 h-12 bg-${stat.color}-50 dark:bg-blue-950/30 text-${stat.color}-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                            <div className={`w-12 h-12 bg-${stat.color}-50/30 dark:bg-blue-950/30 text-${stat.color}-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
                                 <stat.icon className="w-6 h-6" />
                             </div>
                             <button className="text-slate-300 dark:text-dark-muted group-hover:text-[#2563EB] p-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all">
@@ -119,7 +119,7 @@ const StaffDashboard = () => {
                 <div className="lg:col-span-8 bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border p-6 md:p-10 shadow-sm relative overflow-hidden">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 text-[#2563EB] rounded-2xl">
+                            <div className="p-3 bg-blue-50/30 dark:bg-blue-950/30 text-[#2563EB] rounded-2xl">
                                 <LayoutDashboard className="w-6 h-6" />
                             </div>
                             <div>

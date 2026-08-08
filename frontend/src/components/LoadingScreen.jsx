@@ -40,7 +40,7 @@ const LoadingScreen = () => {
                 className="mt-12 flex flex-col items-center gap-3"
             >
                 <span className="text-white font-black tracking-[0.5em] uppercase text-[10px]">Initializing System</span>
-                <div className="w-48 h-1 bg-white/10 dark:bg-slate-900/10 rounded-full overflow-hidden">
+                <div className="w-48 h-1 bg-white/10/10 dark:bg-slate-900/10 rounded-full overflow-hidden">
                     <motion.div 
                         initial={{ x: "-100%" }}
                         animate={{ x: "100%" }}

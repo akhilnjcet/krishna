@@ -67,7 +67,7 @@ const AdminInvoices = () => {
                 <button
                     onClick={() => setActiveSubTab('ledger')}
                     className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
-                        activeSubTab === 'ledger' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80'
+                        activeSubTab === 'ledger' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80'
                     }`}
                 >
                     Accounts Receivable Ledger
@@ -75,7 +75,7 @@ const AdminInvoices = () => {
                 <button
                     onClick={() => setActiveSubTab('builder')}
                     className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
-                        activeSubTab === 'builder' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80'
+                        activeSubTab === 'builder' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80'
                     }`}
                 >
                     Interactive Invoice Studio
@@ -83,7 +83,7 @@ const AdminInvoices = () => {
                 <button
                     onClick={() => setActiveSubTab('labour-transport')}
                     className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
-                        activeSubTab === 'labour-transport' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80'
+                        activeSubTab === 'labour-transport' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80'
                     }`}
                 >
                     Labour & Goods Transport Bills
@@ -186,7 +186,7 @@ const AdminInvoices = () => {
                                             ) : (
                                                 <button 
                                                     onClick={() => handleUpdateStatus(inv._id, 'unpaid')}
-                                                    className="bg-slate-100 dark:bg-slate-800/80 text-slate-400 p-2 rounded-xl transition"
+                                                    className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 p-2 rounded-xl transition"
                                                     title="Revert to Unpaid"
                                                 >
                                                     <RotateCcw className="w-4 h-4" />

@@ -60,7 +60,7 @@ const StaffLogin = () => {
         <div className="min-h-screen bg-[#F8FAFC] dark:bg-dark-bg flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-500 font-sans">
             
             {/* Background elements */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 dark:bg-blue-600/5 rounded-full blur-[100px] -mr-64 -mt-64"></div>
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5/5 dark:bg-blue-600/5 rounded-full blur-[100px] -mr-64 -mt-64"></div>
             
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -70,7 +70,7 @@ const StaffLogin = () => {
                 <div className="bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] p-10 text-white relative">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
                     <div className="relative z-10 flex flex-col items-center text-center">
-                        <div className="w-16 h-16 bg-white dark:bg-slate-900 /10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 border border-white/20">
+                        <div className="w-16 h-16 bg-white/10/10 dark:bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 border border-white/20">
                             <ShieldCheck className="w-8 h-8 text-blue-200" />
                         </div>
                         <h1 className="text-3xl font-bold font-poppins">Staff Authentication</h1>
@@ -155,7 +155,7 @@ const StaffLogin = () => {
                                 </div>
 
                                 {error && (
-                                    <div className="bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 p-4 rounded-2xl flex items-center gap-3">
+                                    <div className="bg-rose-50/10 dark:bg-rose-900/10 border border-rose-100/30 dark:border-rose-900/30 p-4 rounded-2xl flex items-center gap-3">
                                         <Info className="w-5 h-5 text-rose-500 flex-shrink-0" />
                                         <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">{error}</p>
                                     </div>
@@ -181,7 +181,7 @@ const StaffLogin = () => {
                             >
                                 <FaceCapture onCapture={handleFaceLogin} loading={loading} />
                                 {error && (
-                                    <div className="mt-6 bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 p-4 rounded-2xl flex items-center gap-3 w-full">
+                                    <div className="mt-6 bg-rose-50/10 dark:bg-rose-900/10 border border-rose-100/30 dark:border-rose-900/30 p-4 rounded-2xl flex items-center gap-3 w-full">
                                         <Info className="w-5 h-5 text-rose-500 flex-shrink-0" />
                                         <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">{error}</p>
                                     </div>

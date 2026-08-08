@@ -54,7 +54,7 @@ const FloatingContact = () => {
             icon: <Mail className="w-5 h-5" />, 
             label: 'Technical Mail', 
             link: links.email.startsWith('mailto:') ? links.email : `mailto:${links.email}`, 
-            color: 'bg-slate-100 dark:bg-slate-800/80 ',
+            color: 'bg-slate-100/80 dark:bg-slate-800/80 ',
             textColor: 'text-slate-900 dark:text-white '
         }
     ];

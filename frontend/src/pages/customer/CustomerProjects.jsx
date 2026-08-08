@@ -149,7 +149,7 @@ const CustomerProjects = () => {
             case 'stopped':
                 return 'bg-rose-100 text-rose-800 border-rose-200';
             default:
-                return 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+                return 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
         }
     };
 
@@ -168,7 +168,7 @@ const CustomerProjects = () => {
         <div className="space-y-10 animate-in fade-in duration-500">
             {/* Header banner */}
             <div className="bg-gradient-to-r from-slate-900 to-indigo-950 p-8 rounded-[2.5rem] border-b-8 border-indigo-500 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 dark:bg-slate-900/5 rounded-full blur-3xl -mr-40 -mt-40 pointer-events-none"></div>
+                <div className="absolute top-0 right-0 w-80 h-80 bg-white/5/5 dark:bg-slate-900/5 rounded-full blur-3xl -mr-40 -mt-40 pointer-events-none"></div>
                 <div className="relative z-10">
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-2">Secure Link Uplink</div>
                     <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-white font-poppins">
@@ -197,7 +197,7 @@ const CustomerProjects = () => {
                                     className={`w-full text-left p-5 rounded-2xl border-2 transition-all flex items-center justify-between group ${
                                         selectedProject?._id === project._id
                                             ? 'border-indigo-600 bg-indigo-50/30'
-                                            : 'border-transparent bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/70 dark:bg-slate-800/80'
+                                            : 'border-transparent bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/70/80 dark:bg-slate-800/80'
                                     }`}
                                 >
                                     <div className="min-w-0 flex items-center gap-4">
@@ -303,7 +303,7 @@ const CustomerProjects = () => {
 
                                     {/* Progress bar */}
                                     <div className="space-y-2">
-                                        <div className="h-3 bg-slate-100 dark:bg-slate-800/80 w-full rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
+                                        <div className="h-3 bg-slate-100/80 dark:bg-slate-800/80 w-full rounded-full overflow-hidden border border-slate-200/50/50 dark:border-slate-700/50">
                                             <div 
                                                 className="h-full bg-indigo-600 shadow-[0_0_10px_rgba(79,70,229,0.3)] transition-all duration-1000" 
                                                 style={{ width: `${selectedProject.progress}%` }}
@@ -437,7 +437,7 @@ const CustomerProjects = () => {
                                                         </tr>
                                                     ) : (
                                                         allPayments.filter(p => p.projectId === selectedProject._id || p.projectId?._id === selectedProject._id).map(p => (
-                                                            <tr key={p._id} className="text-xs hover:bg-slate-50/50 dark:bg-slate-800/50 transition-colors">
+                                                            <tr key={p._id} className="text-xs hover:bg-slate-50/50/50 dark:bg-slate-800/50 transition-colors">
                                                                 <td className="p-3 font-bold">
                                                                     <div>{p.referenceId || 'N/A'}</div>
                                                                     <div className="text-[7px] text-slate-400 mt-0.5">{p.name}</div>
@@ -446,7 +446,7 @@ const CustomerProjects = () => {
                                                                     {new Date(p.paymentDate || p.createdAt).toLocaleDateString()}
                                                                 </td>
                                                                 <td className="p-3">
-                                                                    <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800/80 rounded text-[8px] font-black uppercase">{p.method}</span>
+                                                                    <span className="px-1.5 py-0.5 bg-slate-100/80 dark:bg-slate-800/80 rounded text-[8px] font-black uppercase">{p.method}</span>
                                                                 </td>
                                                                 <td className="p-3 font-black text-slate-800 dark:text-slate-200">
                                                                     ₹ {p.amount?.toLocaleString()}
@@ -483,7 +483,7 @@ const CustomerProjects = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {selectedProject.assignedStaff && selectedProject.assignedStaff.length > 0 ? (
                                             selectedProject.assignedStaff.map((staff) => (
-                                                <div key={staff._id} className="bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-3xl p-5 hover:bg-slate-100/50 dark:bg-slate-800/80 transition-colors flex items-start gap-4">
+                                                <div key={staff._id} className="bg-slate-50 dark:bg-slate-800 border border-slate-200/60/60 dark:border-slate-700/60 rounded-3xl p-5 hover:bg-slate-100/50/80 dark:bg-slate-800/80 transition-colors flex items-start gap-4">
                                                     <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg border border-indigo-200 flex-shrink-0">
                                                         {staff.profilePhoto ? (
                                                             <img src={getDirectImageUrl(staff.profilePhoto)} alt={staff.name} className="w-full h-full object-cover rounded-2xl" />
@@ -581,7 +581,7 @@ const CustomerProjects = () => {
                                                 </div>
                                             </div>
                                             <div className="flex gap-3">
-                                                <button type="button" onClick={() => setShowAdditionalWorkForm(false)} className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black text-[10px] uppercase rounded-xl border-none cursor-pointer transition">Cancel</button>
+                                                <button type="button" onClick={() => setShowAdditionalWorkForm(false)} className="flex-1 py-2.5 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black text-[10px] uppercase rounded-xl border-none cursor-pointer transition">Cancel</button>
                                                 <button type="submit" disabled={submittingWork} className="flex-[2] py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 border-none cursor-pointer transition disabled:opacity-50">
                                                     {submittingWork ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                                                     Submit Request
@@ -609,7 +609,7 @@ const CustomerProjects = () => {
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-50">
                                                     {(selectedProject.additionalWork || []).map(w => (
-                                                        <tr key={w._id} className="text-xs hover:bg-slate-50/50 dark:bg-slate-800/50 transition-colors">
+                                                        <tr key={w._id} className="text-xs hover:bg-slate-50/50/50 dark:bg-slate-800/50 transition-colors">
                                                             <td className="p-3">
                                                                 <p className="font-black text-slate-800 dark:text-slate-200 uppercase">{w.title}</p>
                                                                 {w.description && <p className="text-[9px] text-slate-400 font-semibold mt-0.5">{w.description}</p>}
@@ -720,7 +720,7 @@ const CustomerProjects = () => {
                         >
                             <button 
                                 onClick={() => setShowPaymentModal(false)} 
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full border-none bg-transparent cursor-pointer"
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100/80 dark:bg-slate-800/80 rounded-full border-none bg-transparent cursor-pointer"
                             >
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
@@ -804,7 +804,7 @@ const CustomerProjects = () => {
                                     <button 
                                         type="button"
                                         onClick={() => setShowPaymentModal(false)}
-                                        className="flex-1 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
+                                        className="flex-1 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
                                     >
                                         Cancel
                                     </button>

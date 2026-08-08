@@ -211,7 +211,7 @@ const Quotations = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-slate-800/80 p-4 md:p-8 font-sans">
+        <div className="min-h-screen bg-slate-100/80 dark:bg-slate-800/80 p-4 md:p-8 font-sans">
             {/* Toast Notification */}
             <AnimatePresence>
                 {(saveState === 'saved' || saveState === 'error') && toastMsg && (
@@ -250,7 +250,7 @@ const Quotations = () => {
                         disabled={saveState === 'saving'}
                         className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg transition border ${
                             saveState === 'saving'
-                                ? 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 border-slate-200 dark:border-slate-700 cursor-wait'
+                                ? 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 border-slate-200 dark:border-slate-700 cursor-wait'
                                 : saveState === 'saved'
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                 : saveState === 'error'
@@ -532,7 +532,7 @@ const Quotations = () => {
                                     key={t}
                                     onClick={() => setTheme(t)}
                                     className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition ${
-                                        theme === t ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800/80'
+                                        theme === t ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100/80 dark:bg-slate-800/80'
                                     }`}
                                 >
                                     {t}
@@ -599,7 +599,7 @@ const Quotations = () => {
                                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
                                         <div className="flex items-center gap-4 flex-wrap">
                                             {brandingSettings.company_logo && (
-                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white/90 dark:bg-slate-900/90 p-1 rounded-xl shadow-md" />
+                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white/90/90 dark:bg-slate-900/90 p-1 rounded-xl shadow-md" />
                                             )}
                                             <div>
                                                 <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
@@ -607,7 +607,7 @@ const Quotations = () => {
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
-                                            <span className="bg-white/20 dark:bg-slate-900/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
+                                            <span className="bg-white/20/20 dark:bg-slate-900/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
                                                 QUOTATION
                                             </span>
                                             <p className="text-sm font-black">{quotationNumber}</p>
@@ -698,7 +698,7 @@ const Quotations = () => {
                                         {items.map((item, index) => {
                                             const lineTotal = (parseFloat(item.rate || 0) * parseFloat(item.quantity || 0));
                                             return (
-                                                <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
+                                                <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50/50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
                                                     <td className="p-3 font-bold text-slate-400">{index + 1}</td>
                                                     <td className="p-3">
                                                         <span className="font-bold text-slate-900 dark:text-white block">{item.name || 'Scope Item'}</span>

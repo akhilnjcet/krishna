@@ -228,10 +228,8 @@ export const detectFaceAndLiveness = async (videoRef, canvasRef) => {
 
     const frameLuminance = checkLuminance(mainCtx, null, width, height);
 
-    // Apply real-time low-light enhancement if lighting is dim
-    const processElement = frameLuminance < 60
-        ? createEnhancedOffscreenCanvas(video, frameLuminance)
-        : video;
+    // Use the raw video feed for detection (Avoids heavy pixel manipulation on main thread)
+    const processElement = video;
 
     // Detect all faces in image to enforce single-face constraint
     const allDetections = await faceapi.detectAllFaces(processElement)

@@ -245,22 +245,22 @@ const StaffTasks = () => {
     // Style Helpers
     const getPriorityStyles = (priority) => {
         switch (priority) {
-            case 'Critical': return { border: 'border-l-rose-600', text: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20' };
-            case 'High': return { border: 'border-l-orange-500', text: 'text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20' };
-            case 'Medium': return { border: 'border-l-amber-500', text: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20' };
+            case 'Critical': return { border: 'border-l-rose-600', text: 'text-rose-600 dark:text-rose-400 bg-rose-50/20 dark:bg-rose-950/20' };
+            case 'High': return { border: 'border-l-orange-500', text: 'text-orange-500 dark:text-orange-400 bg-orange-50/20 dark:bg-orange-950/20' };
+            case 'Medium': return { border: 'border-l-amber-500', text: 'text-amber-600 dark:text-amber-400 bg-amber-50/20 dark:bg-amber-950/20' };
             case 'Low':
-            default: return { border: 'border-l-blue-500', text: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20' };
+            default: return { border: 'border-l-blue-500', text: 'text-blue-600 dark:text-blue-400 bg-blue-50/20 dark:bg-blue-950/20' };
         }
     };
 
     const getStatusStyles = (status) => {
         switch (status) {
-            case 'Pending': return 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 dark:bg-dark-bg dark:text-slate-300 dark:border-dark-border';
-            case 'In Progress': return 'bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-950/50';
-            case 'Delayed': return 'bg-amber-100 text-amber-700 border border-amber-200 animate-pulse dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-950/50';
-            case 'Completed': return 'bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-950/50';
-            case 'Cancelled': return 'bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-950/50';
-            default: return 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
+            case 'Pending': return 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 dark:bg-dark-bg dark:text-slate-300 dark:border-dark-border';
+            case 'In Progress': return 'bg-blue-100 text-blue-700 border border-blue-200/20 dark:bg-blue-950/20 dark:text-blue-400/50 dark:border-blue-950/50';
+            case 'Delayed': return 'bg-amber-100 text-amber-700 border border-amber-200 animate-pulse/20 dark:bg-amber-950/20 dark:text-amber-400/50 dark:border-amber-950/50';
+            case 'Completed': return 'bg-emerald-100 text-emerald-700 border border-emerald-200/20 dark:bg-emerald-950/20 dark:text-emerald-400/50 dark:border-emerald-950/50';
+            case 'Cancelled': return 'bg-rose-100 text-rose-700 border border-rose-200/20 dark:bg-rose-950/20 dark:text-rose-400/50 dark:border-rose-950/50';
+            default: return 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
         }
     };
 
@@ -303,23 +303,23 @@ const StaffTasks = () => {
 
             {/* Metrics Dashboard */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                <div className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-surface/40 p-4 border border-slate-200/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
+                <div className="bg-slate-50 dark:bg-slate-800/40 dark:bg-dark-surface/40 p-4 border border-slate-200/60/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Total Assigned</p>
                     <p className="text-2xl font-black text-slate-800 dark:text-slate-200 dark:text-white mt-1">{totalCount}</p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-surface/40 p-4 border border-slate-200/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
+                <div className="bg-slate-50 dark:bg-slate-800/40 dark:bg-dark-surface/40 p-4 border border-slate-200/60/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Pending</p>
                     <p className="text-2xl font-black text-slate-700 dark:text-slate-300 mt-1">{pendingCount}</p>
                 </div>
-                <div className="bg-blue-50 dark:bg-blue-950/20 p-4 border border-blue-100 dark:border-blue-950/50 rounded-2xl">
+                <div className="bg-blue-50/20 dark:bg-blue-950/20 p-4 border border-blue-100/50 dark:border-blue-950/50 rounded-2xl">
                     <p className="text-blue-500 text-[10px] font-black uppercase tracking-wider">In Progress</p>
                     <p className="text-2xl font-black text-blue-700 dark:text-blue-400 mt-1">{inProgressCount}</p>
                 </div>
-                <div className="bg-amber-50 dark:bg-amber-950/20 p-4 border border-amber-100 dark:border-amber-950/50 rounded-2xl">
+                <div className="bg-amber-50/20 dark:bg-amber-950/20 p-4 border border-amber-100/50 dark:border-amber-950/50 rounded-2xl">
                     <p className="text-amber-500 text-[10px] font-black uppercase tracking-wider">Delayed</p>
                     <p className="text-2xl font-black text-amber-700 dark:text-amber-400 mt-1">{delayedCount}</p>
                 </div>
-                <div className="bg-emerald-50 dark:bg-emerald-950/20 p-4 border border-emerald-100 dark:border-emerald-950/50 rounded-2xl">
+                <div className="bg-emerald-50/20 dark:bg-emerald-950/20 p-4 border border-emerald-100/50 dark:border-emerald-950/50 rounded-2xl">
                     <p className="text-emerald-500 text-[10px] font-black uppercase tracking-wider">Completed</p>
                     <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1">{completedCount}</p>
                 </div>
@@ -349,7 +349,7 @@ const StaffTasks = () => {
                                     className={`flex items-center justify-between gap-3 px-4 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap lg:w-full ${
                                         activeTab === tab.name
                                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                            : 'bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg/60 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 dark:hover:text-white border border-transparent'
+                                            : 'bg-slate-50 dark:bg-slate-800/60 dark:bg-dark-bg/60 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 dark:hover:text-white border border-transparent'
                                     }`}
                                 >
                                     <span>{tab.name}</span>
@@ -454,7 +454,7 @@ const StaffTasks = () => {
                                             </p>
 
                                             {/* Meta data row */}
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-5 border-t border-b border-slate-50 dark:border-dark-border/40 text-xs font-bold text-slate-500 dark:text-slate-400 mb-6">
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-5 border-t border-b border-slate-50/40 dark:border-dark-border/40 text-xs font-bold text-slate-500 dark:text-slate-400 mb-6">
                                                 <div>
                                                     <span className="text-[9px] text-slate-400 uppercase tracking-widest block mb-1">Start Date</span>
                                                     <span className="text-slate-700 dark:text-slate-300 dark:text-white flex items-center gap-1.5">
@@ -491,7 +491,7 @@ const StaffTasks = () => {
                                                     <span className="text-slate-400 uppercase tracking-wider text-[10px]">Work Completion Progress</span>
                                                     <span className="text-blue-600 dark:text-blue-400">{task.progressPercentage}%</span>
                                                 </div>
-                                                <div className="h-2.5 bg-slate-100 dark:bg-slate-800/80 dark:bg-dark-bg w-full rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50 dark:border-transparent">
+                                                <div className="h-2.5 bg-slate-100/80 dark:bg-slate-800/80 dark:bg-dark-bg w-full rounded-full overflow-hidden border border-slate-200/50/50 dark:border-slate-700/50 dark:border-transparent">
                                                     <div 
                                                         className={`h-full transition-all duration-500 ${
                                                             task.status === 'Delayed' ? 'bg-amber-500' :
@@ -504,7 +504,7 @@ const StaffTasks = () => {
 
                                             {/* File attachments from Admin */}
                                             {task.attachments && task.attachments.length > 0 && (
-                                                <div className="mb-6 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 dark:border-dark-border/40">
+                                                <div className="mb-6 bg-slate-50 dark:bg-slate-800/40 dark:bg-dark-bg/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/40 dark:border-dark-border/40">
                                                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 flex items-center gap-1.5">
                                                         <Paperclip className="w-3.5 h-3.5" /> Reference Attachments ({task.attachments.length})
                                                     </p>
@@ -574,7 +574,7 @@ const StaffTasks = () => {
                                                         initial={{ opacity: 0, height: 0 }}
                                                         animate={{ opacity: 1, height: 'auto' }}
                                                         exit={{ opacity: 0, height: 0 }}
-                                                        className="overflow-hidden mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 dark:border-dark-border/60 space-y-6"
+                                                        className="overflow-hidden mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/60 dark:border-dark-border/60 space-y-6"
                                                     >
                                                         {/* Work Notes Timeline */}
                                                         <div className="space-y-3">
@@ -593,7 +593,7 @@ const StaffTasks = () => {
                                                                                 <span>•</span>
                                                                                 <span>{new Date(note.createdAt).toLocaleString()}</span>
                                                                             </div>
-                                                                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg/30 p-3 rounded-2xl border border-slate-100/50 dark:border-slate-800/50 dark:border-transparent inline-block">
+                                                                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/30 dark:bg-dark-bg/30 p-3 rounded-2xl border border-slate-100/50/50 dark:border-slate-800/50 dark:border-transparent inline-block">
                                                                                 {note.note}
                                                                             </p>
                                                                         </div>
@@ -606,7 +606,7 @@ const StaffTasks = () => {
 
                                                         {/* Log new update section (only if editable status) */}
                                                         {task.status !== 'Completed' && task.status !== 'Cancelled' && task.status !== 'Pending' && (
-                                                            <div className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg/20 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 dark:border-dark-border/40 space-y-6">
+                                                            <div className="bg-slate-50 dark:bg-slate-800/20 dark:bg-dark-bg/20 p-6 rounded-3xl border border-slate-100 dark:border-slate-800/40 dark:border-dark-border/40 space-y-6">
                                                                 <div className="flex items-center gap-2 border-b dark:border-dark-border pb-3">
                                                                     <div className="w-2 h-2 rounded-full bg-blue-600"></div>
                                                                     <h4 className="text-xs font-black uppercase text-slate-800 dark:text-slate-200 dark:text-white tracking-wider">Log Real-Time Work Progress</h4>
@@ -679,7 +679,7 @@ const StaffTasks = () => {
 
                                                                         {/* Uploading Spinner */}
                                                                         {uploading && (
-                                                                            <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center">
+                                                                            <div className="w-16 h-16 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 flex items-center justify-center">
                                                                                 <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
                                                                             </div>
                                                                         )}
@@ -744,7 +744,7 @@ const StaffTasks = () => {
                             className="bg-white dark:bg-slate-900 dark:bg-dark-surface w-full max-w-lg rounded-[2.5rem] shadow-2xl relative z-10 border border-slate-100 dark:border-slate-800 dark:border-dark-border overflow-hidden"
                         >
                             <div className="bg-amber-500 p-8 text-white flex items-center gap-3">
-                                <div className="p-3 bg-white/20 dark:bg-slate-900/20 rounded-2xl text-white">
+                                <div className="p-3 bg-white/20/20 dark:bg-slate-900/20 rounded-2xl text-white">
                                     <AlertTriangle className="w-6 h-6 animate-bounce" />
                                 </div>
                                 <div>

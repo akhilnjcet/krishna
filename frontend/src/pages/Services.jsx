@@ -97,9 +97,9 @@ const Services = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, margin: "-100px" }}
                             transition={{ duration: 0.8 }}
-                            className={`flex flex-col lg:flex-row bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 /60 rounded-[3rem] overflow-hidden shadow-xl shadow-slate-100/50 group transition-all duration-500 ${isHighlighted ? 'border-blue-500 bg-blue-50/10 shadow-[0_0_50px_rgba(37,99,235,0.06)]' : ''}`}
+                            className={`flex flex-col lg:flex-row bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/60 rounded-[3rem] overflow-hidden shadow-xl shadow-slate-100/50 group transition-all duration-500 ${isHighlighted ? 'border-blue-500 bg-blue-50/10 shadow-[0_0_50px_rgba(37,99,235,0.06)]' : ''}`}
                         >
-                            <div className="w-full lg:w-1/2 h-80 lg:h-auto relative overflow-hidden bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center">
+                            <div className="w-full lg:w-1/2 h-80 lg:h-auto relative overflow-hidden bg-slate-100/80 dark:bg-slate-800/80 flex items-center justify-center">
                                 {/* LOADER FOR EACH IMAGE */}
                                 <div className="absolute animate-pulse text-blue-500/20 font-black text-[10px] uppercase tracking-[0.5em]">Establishing Connection...</div>
                                 <img 
@@ -158,7 +158,7 @@ const Services = () => {
                                         to={`/quote?service=${service.id}`} 
                                         className="group/btn relative inline-flex items-center gap-4 bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-slate-900 transition-all overflow-hidden active:scale-95 shadow-xl"
                                     >
-                                        <div className="absolute inset-0 bg-white dark:bg-slate-900 /20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700"></div>
+                                        <div className="absolute inset-0 bg-white/20/20 dark:bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700"></div>
                                         Request Deployment Specs
                                         <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
                                     </Link>

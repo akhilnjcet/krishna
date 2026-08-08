@@ -61,7 +61,7 @@ const ComplaintSystem = () => {
                 <div className="relative z-10 flex items-center gap-4">
                     <button 
                         onClick={() => navigate(-1)}
-                        className="w-9 h-9 bg-white/10 dark:bg-slate-900/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
+                        className="w-9 h-9 bg-white/10/10 dark:bg-slate-900/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </button>
@@ -84,7 +84,7 @@ const ComplaintSystem = () => {
                                     className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
                                         selectedType === type.label 
                                         ? 'border-[#2D5BE3] bg-blue-50' 
-                                        : 'border-slate-50 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:bg-slate-800/80'
+                                        : 'border-slate-50 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/80 dark:bg-slate-800/80'
                                     }`}
                                 >
                                     <div className={`w-8 h-8 ${type.bg} ${type.color} rounded-lg flex items-center justify-center`}>

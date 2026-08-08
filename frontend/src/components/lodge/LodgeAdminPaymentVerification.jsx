@@ -321,7 +321,7 @@ export default function LodgeAdminPaymentVerification() {
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700 dark:text-slate-300">
                 {payments.map(p => (
-                  <tr key={p._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50">
+                  <tr key={p._id} className="hover:bg-slate-50/50/50 dark:bg-slate-800/50">
                     <td className="p-3 font-bold text-slate-900 dark:text-white">
                       {p.tenantName || p.customerId?.name || 'Tenant'} (Room #{p.roomId?.roomNumber || '101'})
                     </td>
@@ -551,7 +551,7 @@ export default function LodgeAdminPaymentVerification() {
           <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="font-black text-sm text-slate-900 dark:text-white">Uploaded Screenshot Proof</h3>
-              <button onClick={() => setProofModal(null)} className="p-1.5 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl transition">
+              <button onClick={() => setProofModal(null)} className="p-1.5 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl transition">
                 <XCircle className="w-5 h-5" />
               </button>
             </div>

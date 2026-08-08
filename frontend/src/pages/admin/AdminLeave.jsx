@@ -45,7 +45,7 @@ const AdminLeave = () => {
                     <h1 className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Staff Absence Log</h1>
                 </div>
                 <div className="flex gap-4 overflow-x-auto">
-                    <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 flex-shrink-0">
+                    <div className="flex bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 flex-shrink-0">
                         {['', 'pending', 'approved', 'rejected'].map((s) => (
                             <button
                                 key={s}
@@ -65,7 +65,7 @@ const AdminLeave = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-50/50 dark:bg-slate-800/50 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest border-b border-slate-100 dark:border-slate-800">
+                            <tr className="bg-slate-50/50/50 dark:bg-slate-800/50 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest border-b border-slate-100 dark:border-slate-800">
                                 <th className="p-8">Staff Member</th>
                                 <th className="p-8">Requested Period</th>
                                 <th className="p-8">Reason / Vindication</th>

@@ -93,7 +93,7 @@ const PrivacyPolicy = () => {
                     <div>
                         <button 
                             onClick={() => navigate(-1)}
-                            className="p-2 bg-white/5 dark:bg-slate-900/5 rounded-xl text-slate-400 mb-6 border border-white/5"
+                            className="p-2 bg-white/5/5 dark:bg-slate-900/5 rounded-xl text-slate-400 mb-6 border border-white/5"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </button>

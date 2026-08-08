@@ -124,7 +124,7 @@ const FaceCapture = ({ onCapture, loading }) => {
         let currentFrames = [];
         let lastAnalysisTime = 0;
         let blinkVerified = false;
-        const ANALYSIS_INTERVAL = 500; // Slower 500ms cycle to prevent mobile lagging
+        const ANALYSIS_INTERVAL = 150; // Fast 150ms cycle to catch blinks
 
         const scanLoop = async () => {
             if (!scanActiveRef.current) return;

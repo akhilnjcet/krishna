@@ -36,7 +36,7 @@ const Footer = () => {
     }, []);
 
     return (
-        <footer className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-sans border-t-[12px] border-brand-accent transition-all duration-300">
+        <footer className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-sans border-t-[12px] border-brand-accent transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
 

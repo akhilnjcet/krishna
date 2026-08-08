@@ -141,7 +141,7 @@ const AdminPortfolio = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-slate-50/50 dark:bg-slate-800/50 min-h-screen font-sans">
+        <div className="p-4 md:p-8 space-y-8 bg-slate-50/50/50 dark:bg-slate-800/50 min-h-screen font-sans">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-4xl font-black text-slate-900 dark:text-white flex items-center gap-3 italic">
@@ -191,7 +191,7 @@ const AdminPortfolio = () => {
                             className="bg-white dark:bg-slate-900 rounded-[2.5rem] border-4 border-slate-900 shadow-custom-heavy overflow-hidden flex flex-col md:flex-row"
                         >
                             {/* Project Image Panel */}
-                            <div className="md:w-1/2 bg-slate-100 dark:bg-slate-800/80 relative group min-h-[300px]">
+                            <div className="md:w-1/2 bg-slate-100/80 dark:bg-slate-800/80 relative group min-h-[300px]">
                                 {project.images && project.images.length > 0 ? (
                                     <div className="absolute inset-0">
                                         <DriveImage src={project.images[0].url} className="w-full h-full" alt={project.title} />
@@ -389,7 +389,7 @@ const AdminPortfolio = () => {
                         >
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-2xl font-black uppercase italic tracking-tighter">Connect Drive Link</h3>
-                                <button onClick={() => setShowLinkModal(false)} className="p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-xl transition"><X className="w-6 h-6" /></button>
+                                <button onClick={() => setShowLinkModal(false)} className="p-2 hover:bg-slate-100/80 dark:bg-slate-800/80 rounded-xl transition"><X className="w-6 h-6" /></button>
                             </div>
                             
                             <div className="space-y-6">

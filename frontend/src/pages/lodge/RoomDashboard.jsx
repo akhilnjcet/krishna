@@ -112,7 +112,7 @@ const RoomDashboard = () => {
                     <div className="flex items-center gap-3">
                         <button 
                             onClick={() => navigate('/lodge')}
-                            className="w-8 h-8 bg-white/10 dark:bg-slate-900/10 rounded-lg flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
+                            className="w-8 h-8 bg-white/10/10 dark:bg-slate-900/10 rounded-lg flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
                         >
                             <ArrowLeft className="w-4 h-4" />
                         </button>
@@ -123,7 +123,7 @@ const RoomDashboard = () => {
                     </div>
                     <button 
                         onClick={generateReceipt}
-                        className="w-10 h-10 bg-white/10 dark:bg-slate-900/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10 active:scale-95 transition-all"
+                        className="w-10 h-10 bg-white/10/10 dark:bg-slate-900/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10 active:scale-95 transition-all"
                         title="Download Stay Record"
                     >
                         <Download className="w-5 h-5" />

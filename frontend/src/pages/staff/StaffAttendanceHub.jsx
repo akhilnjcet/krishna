@@ -143,7 +143,7 @@ const StaffAttendanceHub = () => {
             case 'Holiday':
                 return 'bg-blue-100 text-blue-800 border-blue-300';
             default:
-                return 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+                return 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
         }
     };
 
@@ -295,7 +295,7 @@ const StaffAttendanceHub = () => {
             {/* ATTENDANCE HISTORY TABLE & CONTROLS */}
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm space-y-4">
                 {/* Search & Filter Bar */}
-                <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/50">
+                <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50/50 dark:bg-slate-800/50">
                     <div className="flex items-center gap-3 flex-1">
                         <div className="relative flex-1 max-w-xs">
                             <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
@@ -363,7 +363,7 @@ const StaffAttendanceHub = () => {
                                 </tr>
                             ) : paginatedLogs.length > 0 ? (
                                 paginatedLogs.map((log) => (
-                                    <tr key={log._id || log.date} className="hover:bg-slate-50/60 dark:bg-slate-800/60 transition">
+                                    <tr key={log._id || log.date} className="hover:bg-slate-50/60/60 dark:bg-slate-800/60 transition">
                                         <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                                             {log.date}
                                         </td>
@@ -406,20 +406,20 @@ const StaffAttendanceHub = () => {
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                    <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-800/30">
+                    <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-50/30/30 dark:bg-slate-800/30">
                         <span>Page {currentPage} of {totalPages}</span>
                         <div className="flex items-center gap-2">
                             <button
                                 disabled={currentPage === 1}
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
+                                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100/80 dark:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
                             >
                                 <ArrowLeft className="w-4 h-4" />
                             </button>
                             <button
                                 disabled={currentPage === totalPages}
                                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
+                                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100/80 dark:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
                             >
                                 <ArrowRight className="w-4 h-4" />
                             </button>
@@ -451,7 +451,7 @@ const StaffAttendanceHub = () => {
                                 </div>
                                 <button 
                                     onClick={() => setReportModalOpen(false)}
-                                    className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80 transition"
+                                    className="p-2 rounded-xl text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80 transition"
                                 >
                                     ✕
                                 </button>

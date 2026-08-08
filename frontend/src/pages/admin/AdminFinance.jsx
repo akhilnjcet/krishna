@@ -595,7 +595,7 @@ const AdminFinance = () => {
                         {/* TRANSACTION INJECTION PORT (EXPENSE / INCOME) */}
                         <div className="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-8 rounded-[3rem] shadow-2xl h-fit">
                             {/* Toggle Switch */}
-                            <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl mb-6 border border-slate-200 dark:border-slate-700">
+                            <div className="flex bg-slate-100/80 dark:bg-slate-800/80 p-1.5 rounded-2xl mb-6 border border-slate-200 dark:border-slate-700">
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -702,7 +702,7 @@ const AdminFinance = () => {
                                 <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic flex items-center gap-3">
                                     <PieChart className="text-indigo-600" /> Financial Audit Log
                                 </h3>
-                                <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <div className="flex bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
                                     <button
                                         onClick={() => setLedgerFilter('all')}
                                         className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${
@@ -832,7 +832,7 @@ const AdminFinance = () => {
                                         const statusText = record ? (record.paymentStatus ?? 'DRAFT') : 'DRAFT';
 
                                         return (
-                                            <tr key={staff._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
+                                            <tr key={staff._id} className="hover:bg-slate-50/50/50 dark:bg-slate-800/50 transition">
                                                 <td className="px-6 py-5">
                                                     <div>
                                                         <p className="font-extrabold text-slate-900 dark:text-white text-sm leading-tight">{staff.name}</p>
@@ -863,7 +863,7 @@ const AdminFinance = () => {
                                                 <td className="px-6 py-5">
                                                     <span className={`inline-flex px-2.5 py-1 rounded-lg font-black uppercase tracking-wider text-[9px] ${
                                                         statusText === 'paid' ? 'bg-emerald-50 text-emerald-700' : 
-                                                        statusText === 'partially_paid' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300'
+                                                        statusText === 'partially_paid' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300'
                                                     }`}>
                                                         {statusText}
                                                     </span>
@@ -893,7 +893,7 @@ const AdminFinance = () => {
                                                                 });
                                                                 setShowEditStaffModal(true);
                                                             }}
-                                                            className="p-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-lg transition"
+                                                            className="p-2 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-lg transition"
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </button>
@@ -923,7 +923,7 @@ const AdminFinance = () => {
                                                         <button 
                                                             title="View Payment History"
                                                             onClick={() => handleOpenHistoryModal(staff, record)}
-                                                            className="p-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg transition"
+                                                            className="p-2 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg transition"
                                                         >
                                                             <Activity className="w-4 h-4" />
                                                         </button>
@@ -993,7 +993,7 @@ const AdminFinance = () => {
                                     ) : otRecords.map(ot => {
                                         const staff = ot.staffId || {};
                                         return (
-                                            <tr key={ot._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
+                                            <tr key={ot._id} className="hover:bg-slate-50/50/50 dark:bg-slate-800/50 transition">
                                                 <td className="px-6 py-5">
                                                     <div>
                                                         <p className="font-extrabold text-slate-900 dark:text-white text-sm leading-tight">{staff.name || 'Unknown'}</p>
@@ -1044,7 +1044,7 @@ const AdminFinance = () => {
                                                                 });
                                                                 setShowOtModal(true);
                                                             }}
-                                                            className="p-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-lg transition"
+                                                            className="p-2 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-lg transition"
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </button>
@@ -1076,7 +1076,7 @@ const AdminFinance = () => {
                             exit={{ scale: 0.95, opacity: 0 }}
                             className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
                         >
-                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50/50 dark:bg-slate-800/50 flex items-center justify-between">
                                 <div>
                                     <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase">Edit Financial Parameters</h3>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Configure payroll base rates and recurring modifier parameters for {selectedStaffForEdit?.name}.</p>
@@ -1256,7 +1256,7 @@ const AdminFinance = () => {
                             exit={{ scale: 0.95, opacity: 0 }}
                             className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
                         >
-                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50/50 dark:bg-slate-800/50 flex items-center justify-between">
                                 <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">{editingOt ? 'Edit' : 'Log'} Overtime Hours</h3>
                                 <button onClick={() => setShowOtModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
                                     <X className="w-5 h-5 text-slate-400" />
@@ -1268,7 +1268,7 @@ const AdminFinance = () => {
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Staff Employee</label>
                                         {editingOt ? (
-                                            <div className="bg-slate-100 dark:bg-slate-800/80 p-3.5 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs">
+                                            <div className="bg-slate-100/80 dark:bg-slate-800/80 p-3.5 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs">
                                                 {editingOt.staffId?.name}
                                             </div>
                                         ) : (
@@ -1288,7 +1288,7 @@ const AdminFinance = () => {
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Service Date</label>
                                         {editingOt ? (
-                                            <div className="bg-slate-100 dark:bg-slate-800/80 p-3.5 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs">
+                                            <div className="bg-slate-100/80 dark:bg-slate-800/80 p-3.5 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs">
                                                 {editingOt.date}
                                             </div>
                                         ) : (
@@ -1349,7 +1349,7 @@ const AdminFinance = () => {
                             exit={{ scale: 0.95, opacity: 0 }}
                             className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-8"
                         >
-                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50/50 dark:bg-slate-800/50 flex items-center justify-between">
                                 <div>
                                     <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase">Salary Payout Dashboard</h3>
                                     <p className="text-xs text-slate-400 font-semibold mt-0.5">Staff Profile: {paymentForm.staffName} • Cycle: {paymentForm.month}</p>
@@ -1504,7 +1504,7 @@ const AdminFinance = () => {
                                         <button 
                                             type="button" 
                                             onClick={() => setShowPaymentModal(false)}
-                                            className="px-6 py-4 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-xl font-bold uppercase tracking-wider text-xs"
+                                            className="px-6 py-4 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-xl font-bold uppercase tracking-wider text-xs"
                                         >
                                             Close
                                         </button>
@@ -1581,7 +1581,7 @@ const AdminFinance = () => {
                                     <button 
                                         type="button"
                                         onClick={() => setShowOverpaymentWarning(false)}
-                                        className="bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black uppercase tracking-wider text-xs py-4 rounded-xl transition active:scale-95 text-center"
+                                        className="bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black uppercase tracking-wider text-xs py-4 rounded-xl transition active:scale-95 text-center"
                                     >
                                         No, Edit Amount
                                     </button>
@@ -1611,7 +1611,7 @@ const AdminFinance = () => {
                             exit={{ scale: 0.95, opacity: 0 }}
                             className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
                         >
-                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50/50 dark:bg-slate-800/50 flex items-center justify-between">
                                 <div>
                                     <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Payment Ledger History</h3>
                                     <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{historyStaffName} • Cycle: {selectedMonth}</p>
@@ -1639,7 +1639,7 @@ const AdminFinance = () => {
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
                                             {historyList.map((tx, idx) => (
-                                                <tr key={tx._id || idx} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
+                                                <tr key={tx._id || idx} className="hover:bg-slate-50/50/50 dark:bg-slate-800/50 transition">
                                                     <td className="px-4 py-3 font-medium text-slate-500 dark:text-slate-400">
                                                         {new Date(tx.createdAt).toLocaleString()}
                                                     </td>

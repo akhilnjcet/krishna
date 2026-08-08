@@ -209,7 +209,7 @@ const Projects = () => {
                                         className="group cursor-pointer relative"
                                         onClick={() => setSelectedProject(project)}
                                     >
-                                        <div className="relative aspect-[10/11] overflow-hidden rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 /60 shadow-lg group-hover:border-blue-300 group-hover:shadow-2xl transition-all duration-500">
+                                        <div className="relative aspect-[10/11] overflow-hidden rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/60 shadow-lg group-hover:border-blue-300 group-hover:shadow-2xl transition-all duration-500">
                                             <div className="absolute inset-0 z-10 pointer-events-none border-[12px] border-white/0 group-hover:border-white/5 transition-all duration-500"></div>
                                             
                                             {project.images && project.images.length > 0 ? (
@@ -298,7 +298,7 @@ const Projects = () => {
                                     {selectedProject.images?.length > 1 && (
                                         <div className="absolute bottom-6 left-6 flex gap-1 z-20">
                                             {selectedProject.images.map((_, i) => (
-                                                <div key={i} className="w-12 h-1 bg-white dark:bg-slate-900 /15 rounded-full overflow-hidden">
+                                                <div key={i} className="w-12 h-1 bg-white/15/15 dark:bg-white/15 rounded-full overflow-hidden">
                                                     <motion.div 
                                                         animate={{ x: [-50, 50] }} 
                                                         transition={{ duration: 3, repeat: Infinity }}
@@ -357,7 +357,7 @@ const Projects = () => {
                                             className="group block w-full bg-blue-600 text-white py-4 sm:py-6 px-10 text-center text-[10px] font-black uppercase tracking-[0.5em] transition-all hover:bg-slate-900 active:scale-95 rounded-2xl shadow-xl shadow-blue-100 relative overflow-hidden"
                                         >
                                             <motion.div 
-                                                className="absolute inset-0 bg-white dark:bg-slate-900 /20 -translate-x-full group-hover:translate-x-full transition-transform duration-700"
+                                                className="absolute inset-0 bg-white/20/20 dark:bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700"
                                             />
                                             Secure Consultation
                                         </Link>

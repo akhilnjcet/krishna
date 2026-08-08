@@ -168,7 +168,7 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                     <div className="flex justify-center py-4">
                         {cardSide === 'front' && (
                             <div className="w-[300px] h-[480px] bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col justify-between relative overflow-hidden text-slate-800 dark:text-slate-200">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-100 dark:bg-slate-800/80 rounded-full blur-3xl pointer-events-none" />
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-100/80 dark:bg-slate-800/80 rounded-full blur-3xl pointer-events-none" />
                                 
                                 {/* Front Header */}
                                 <div className="flex items-center gap-3 border-b border-slate-950 pb-3">
@@ -190,7 +190,7 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                                     <h3 className="font-extrabold text-sm text-slate-950 uppercase tracking-tight">{staff.name}</h3>
                                     <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">{staff.designation || 'Staff Member'}</p>
                                     
-                                    <span className="inline-block px-3 py-0.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-full text-[9px] font-mono text-slate-700 dark:text-slate-300 font-bold mb-4">
+                                    <span className="inline-block px-3 py-0.5 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-full text-[9px] font-mono text-slate-700 dark:text-slate-300 font-bold mb-4">
                                         ID: {staff.staff_id || 'KEW-000'}
                                     </span>
 

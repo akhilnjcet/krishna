@@ -78,7 +78,7 @@ const AdminAnalytics = () => {
                                 {loading ? '...' : stats.totalVisits.toLocaleString()}
                             </h3>
                         </div>
-                        <div className="p-3 bg-white/20 dark:bg-slate-900/20 rounded-xl backdrop-blur-sm">
+                        <div className="p-3 bg-white/20/20 dark:bg-slate-900/20 rounded-xl backdrop-blur-sm">
                             <Users className="w-8 h-8 text-white" />
                         </div>
                     </div>
@@ -92,7 +92,7 @@ const AdminAnalytics = () => {
                                 {loading ? '...' : todayVisits.toLocaleString()}
                             </h3>
                         </div>
-                        <div className="p-3 bg-white/20 dark:bg-slate-900/20 rounded-xl backdrop-blur-sm">
+                        <div className="p-3 bg-white/20/20 dark:bg-slate-900/20 rounded-xl backdrop-blur-sm">
                             <Calendar className="w-8 h-8 text-white" />
                         </div>
                     </div>

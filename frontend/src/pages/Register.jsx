@@ -57,8 +57,8 @@ const Register = () => {
         <div className="min-h-screen bg-[#F8FAFC] dark:bg-dark-bg flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-500 font-sans">
             
             {/* Background Accents */}
-            <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-blue-500/5 dark:bg-blue-600/5 rounded-full blur-[100px] -ml-40 -mt-40"></div>
-            <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-emerald-500/5 dark:bg-emerald-600/5 rounded-full blur-[100px] -mr-40 -mb-40"></div>
+            <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-blue-500/5/5 dark:bg-blue-600/5 rounded-full blur-[100px] -ml-40 -mt-40"></div>
+            <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-emerald-500/5/5 dark:bg-emerald-600/5 rounded-full blur-[100px] -mr-40 -mb-40"></div>
 
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -81,7 +81,7 @@ const Register = () => {
                             
                             <div className="space-y-6">
                                 <div className="flex items-start gap-4">
-                                    <div className="mt-1 p-2 bg-white dark:bg-slate-900 /10 rounded-lg">
+                                    <div className="mt-1 p-2 bg-white/10/10 dark:bg-white/10 rounded-lg">
                                         <Activity className="w-5 h-5 text-emerald-400" />
                                     </div>
                                     <div>
@@ -90,7 +90,7 @@ const Register = () => {
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
-                                    <div className="mt-1 p-2 bg-white dark:bg-slate-900 /10 rounded-lg">
+                                    <div className="mt-1 p-2 bg-white/10/10 dark:bg-white/10 rounded-lg">
                                         <Rocket className="w-5 h-5 text-emerald-400" />
                                     </div>
                                     <div>
@@ -102,7 +102,7 @@ const Register = () => {
                         </div>
 
                         <div className="relative z-10 pt-10">
-                            <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest bg-white dark:bg-slate-900 /10 p-4 rounded-2xl border border-white/10">
+                            <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest bg-white/10/10 dark:bg-white/10 p-4 rounded-2xl border border-white/10">
                                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
                                 Verified Client Workspace Security
                             </div>
@@ -121,7 +121,7 @@ const Register = () => {
                                 <motion.div 
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
-                                    className="bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 p-4 rounded-2xl mb-8 flex items-center gap-3"
+                                    className="bg-rose-50/10 dark:bg-rose-900/10 border border-rose-100/30 dark:border-rose-900/30 p-4 rounded-2xl mb-8 flex items-center gap-3"
                                 >
                                     <Info className="w-5 h-5 text-rose-500 flex-shrink-0" />
                                     <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">{error}</p>

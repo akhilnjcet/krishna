@@ -210,7 +210,7 @@ export default function LodgeCustomerDashboard() {
                             className={`flex items-center gap-2 md:gap-4 px-4 py-2.5 md:px-6 md:py-4 rounded-xl md:rounded-2xl font-bold whitespace-nowrap transition-all ${
                                 activeTab === tab.id 
                                 ? 'bg-indigo-600 text-white shadow-lg md:shadow-xl md:shadow-indigo-600/30' 
-                                : 'text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-800/50 md:bg-transparent hover:bg-slate-50 dark:bg-slate-800'
+                                : 'text-slate-500 dark:text-slate-400 bg-slate-50/50/50 dark:bg-slate-800/50 md:bg-transparent hover:bg-slate-50 dark:bg-slate-800'
                             }`}
                         >
                             <tab.icon className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === tab.id ? 'text-white' : 'text-slate-400'}`} />
@@ -355,7 +355,7 @@ export default function LodgeCustomerDashboard() {
                                 <div key={w._id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all group">
                                     <div className="h-64 relative bg-slate-200 overflow-hidden">
                                         <img src={w.lodgeId?.images?.[0] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945'} alt={w.lodgeId?.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                                        <button onClick={() => handleToggleWishlist(w.lodgeId?._id)} className="absolute top-6 right-6 p-4 bg-white/90 dark:bg-slate-900/90 text-red-500 rounded-2xl shadow-xl backdrop-blur-md">
+                                        <button onClick={() => handleToggleWishlist(w.lodgeId?._id)} className="absolute top-6 right-6 p-4 bg-white/90/90 dark:bg-slate-900/90 text-red-500 rounded-2xl shadow-xl backdrop-blur-md">
                                             <Heart className="w-6 h-6 fill-current" />
                                         </button>
                                     </div>

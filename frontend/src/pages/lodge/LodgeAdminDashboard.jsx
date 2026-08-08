@@ -396,7 +396,7 @@ const LodgeAdminDashboard = () => {
                     <div className="flex items-center gap-4">
                         <button 
                             onClick={() => navigate('/admin')}
-                            className="p-3 bg-white/5 dark:bg-slate-900/5 rounded-2xl hover:bg-white/10 dark:bg-slate-900/10 transition-all text-slate-400"
+                            className="p-3 bg-white/5/5 dark:bg-slate-900/5 rounded-2xl hover:bg-white/10/10 dark:bg-slate-900/10 transition-all text-slate-400"
                             title="Return to Main Portal"
                         >
                             <ArrowLeft className="w-5 h-5" />
@@ -419,14 +419,14 @@ const LodgeAdminDashboard = () => {
                         </button>
                         <button 
                             onClick={() => navigate('/lodge')}
-                            className="px-4 py-3 bg-white/5 dark:bg-slate-900/5 hover:bg-white/10 dark:bg-slate-900/10 text-slate-300 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+                            className="px-4 py-3 bg-white/5/5 dark:bg-slate-900/5 hover:bg-white/10/10 dark:bg-slate-900/10 text-slate-300 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
                             title="Lodge Home"
                         >
                             Lodge Home
                         </button>
                         <button 
                             onClick={() => { logoutAdmin(); useAuthStore.getState().logout(); navigate('/lodge/admin-login'); }}
-                            className="p-3 bg-white/5 dark:bg-slate-900/5 rounded-2xl hover:bg-white/10 dark:bg-slate-900/10 transition-all text-slate-400"
+                            className="p-3 bg-white/5/5 dark:bg-slate-900/5 rounded-2xl hover:bg-white/10/10 dark:bg-slate-900/10 transition-all text-slate-400"
                             title="Logout Portal"
                         >
                             <LogOut className="w-5 h-5" />
@@ -443,7 +443,7 @@ const LodgeAdminDashboard = () => {
                             className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm whitespace-nowrap transition-all ${
                                 activeTab === tab.id 
                                 ? 'bg-[#2D5BE3] text-white shadow-lg shadow-blue-500/20' 
-                                : 'bg-white/5 dark:bg-slate-900/5 text-slate-400 hover:bg-white/10 dark:bg-slate-900/10'
+                                : 'bg-white/5/5 dark:bg-slate-900/5 text-slate-400 hover:bg-white/10/10 dark:bg-slate-900/10'
                             }`}
                         >
                             <tab.icon className="w-4 h-4" />
@@ -506,7 +506,7 @@ const LodgeAdminDashboard = () => {
                                                 <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
                                                     booking.bookingStatus === 'booked' ? 'bg-blue-50 text-blue-600' :
                                                     booking.bookingStatus === 'checked-in' ? 'bg-emerald-50 text-emerald-600' :
-                                                    'bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400'
+                                                    'bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400'
                                                 }`}>
                                                     {booking.bookingStatus || 'Active'}
                                                 </span>
@@ -576,7 +576,7 @@ const LodgeAdminDashboard = () => {
                                         <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                                             booking.bookingStatus === 'booked' ? 'bg-blue-50 text-blue-600' :
                                             booking.bookingStatus === 'checked-in' ? 'bg-emerald-50 text-emerald-600' :
-                                            'bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400'
+                                            'bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400'
                                         }`}>
                                             {booking.bookingStatus}
                                         </div>
@@ -706,7 +706,7 @@ const LodgeAdminDashboard = () => {
                                                 const rnt = prompt('Edit Rent:', room.rent);
                                                 if (no && rnt) editRoomDetails(room.id, no, rnt);
                                             }}
-                                            className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl hover:bg-slate-100 dark:bg-slate-800/80" title="Edit Configuration"
+                                            className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl hover:bg-slate-100/80 dark:bg-slate-800/80" title="Edit Configuration"
                                         >
                                             <Edit3 className="w-5 h-5" />
                                         </button>
@@ -793,7 +793,7 @@ const LodgeAdminDashboard = () => {
                                             {activeRoom ? (
                                                 <button 
                                                     onClick={() => { setSelectedCustomer(customer); setIsCustomerModalOpen(true); }}
-                                                    className="flex-grow py-3 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 dark:bg-slate-800/80 transition-all"
+                                                    className="flex-grow py-3 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100/80 dark:bg-slate-800/80 transition-all"
                                                 >
                                                     View Profile
                                                 </button>
@@ -808,7 +808,7 @@ const LodgeAdminDashboard = () => {
                                             
                                             <button 
                                                 onClick={() => { setSelectedCustomer(customer); setIsCustomerModalOpen(true); }}
-                                                className="w-12 h-12 flex items-center justify-center bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl hover:bg-slate-100 dark:bg-slate-800/80 transition-all"
+                                                className="w-12 h-12 flex items-center justify-center bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl hover:bg-slate-100/80 dark:bg-slate-800/80 transition-all"
                                             >
                                                 <Settings className="w-5 h-5" />
                                             </button>
@@ -1087,7 +1087,7 @@ const LodgeAdminDashboard = () => {
                                 <div key={comp.id} className={`bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm ${comp.resolved ? 'opacity-50' : ''}`}>
                                     <div className="flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${comp.resolved ? 'bg-slate-100 dark:bg-slate-800/80 text-slate-400' : 'bg-rose-50 text-rose-600'}`}>
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${comp.resolved ? 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-400' : 'bg-rose-50 text-rose-600'}`}>
                                                 <AlertTriangle className="w-5 h-5" />
                                             </div>
                                             <div>

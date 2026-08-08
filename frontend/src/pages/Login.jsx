@@ -107,7 +107,7 @@ const Login = () => {
                     </div>
 
                     <div className="p-10 md:p-12">
-                        <div className="flex gap-4 mb-10 bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl">
+                        <div className="flex gap-4 mb-10 bg-slate-100/80 dark:bg-slate-800/80 p-1.5 rounded-2xl">
                             <button 
                                 onClick={() => { setLoginMode('identity'); setOtpSent(false); }}
                                 className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${loginMode === 'identity' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-400'}`}

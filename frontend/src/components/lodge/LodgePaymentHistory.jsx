@@ -76,7 +76,7 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
               className={`px-3 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all ${
                 statusFilter === st
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                  : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
               }`}
             >
               {st === 'ALL' ? 'All Transactions' : st === 'VERIFIED' ? 'Verified' : st === 'WAITING' ? 'Pending' : 'Rejected'}
@@ -154,7 +154,7 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
                 <div className="flex flex-wrap gap-1.5 text-[11px]">
                   <span className="text-slate-400 font-bold mr-1">Includes:</span>
                   {p.additionalCharges.map((chg, i) => (
-                    <span key={i} className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-md font-semibold">
+                    <span key={i} className="px-2.5 py-0.5 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-md font-semibold">
                       {chg.name}: ₹{chg.amount}
                     </span>
                   ))}

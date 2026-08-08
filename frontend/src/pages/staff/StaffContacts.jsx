@@ -106,7 +106,7 @@ const StaffContacts = () => {
                             </div>
 
                             <div className="space-y-4 mb-8">
-                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group-hover:bg-white dark:bg-slate-900 transition-colors">
+                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group-hover:bg-white dark:bg-slate-900 transition-colors">
                                     <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-indigo-600 border border-slate-50">
                                         <Mail className="w-4 h-4" />
                                     </div>
@@ -116,7 +116,7 @@ const StaffContacts = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group-hover:bg-white dark:bg-slate-900 transition-colors">
+                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group-hover:bg-white dark:bg-slate-900 transition-colors">
                                     <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-emerald-600 border border-slate-50">
                                         <Phone className="w-4 h-4" />
                                     </div>

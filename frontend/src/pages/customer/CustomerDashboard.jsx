@@ -151,7 +151,7 @@ const CustomerDashboard = () => {
                     { label: 'Project Equity', value: `${Math.round(finance?.balancePercentage || 0)}%`, icon: TrendingUp, color: 'amber' }
                 ].map((item, i) => (
                     <div key={i} className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group">
-                        <div className={`w-12 h-12 bg-blue-50 dark:bg-blue-950/30 text-blue-600 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                        <div className={`w-12 h-12 bg-blue-50/30 dark:bg-blue-950/30 text-blue-600 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
                             <item.icon className="w-6 h-6" />
                         </div>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280] dark:text-dark-muted mb-1">{item.label}</p>
@@ -172,7 +172,7 @@ const CustomerDashboard = () => {
                         </p>
                         <h4 className="text-xl font-bold font-poppins mb-1">Book a Residency Suite</h4>
                         <p className="text-[10px] opacity-70 font-medium italic">Premium check-ins for site visits</p>
-                        <div className="mt-6 flex items-center gap-2 text-[9px] font-black uppercase tracking-widest bg-white/10 dark:bg-slate-900/10 w-fit px-4 py-2 rounded-xl backdrop-blur-md group-hover:bg-white/20 dark:bg-slate-900/20 transition-all">
+                        <div className="mt-6 flex items-center gap-2 text-[9px] font-black uppercase tracking-widest bg-white/10/10 dark:bg-slate-900/10 w-fit px-4 py-2 rounded-xl backdrop-blur-md group-hover:bg-white/20/20 dark:bg-slate-900/20 transition-all">
                             Open Lodge CRM <ChevronRight className="w-4 h-4" />
                         </div>
                     </div>
@@ -297,7 +297,7 @@ const CustomerDashboard = () => {
                     <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm p-8 overflow-hidden relative">
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-lg font-bold text-[#111827] dark:text-dark-text">Active Work Units</h3>
-                            <div className="px-3 py-1 bg-blue-50 dark:bg-blue-950/30 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-wider">{projects.length} Total</div>
+                            <div className="px-3 py-1 bg-blue-50/30 dark:bg-blue-950/30 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-wider">{projects.length} Total</div>
                         </div>
 
                         <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
@@ -307,8 +307,8 @@ const CustomerDashboard = () => {
                                     onClick={() => handleProjectSelect(project._id)}
                                     className={`w-full text-left p-5 rounded-2xl border-2 transition-all group flex items-center justify-between ${
                                         selectedProject?._id === project._id 
-                                        ? 'border-[#2563EB] bg-blue-50/50 dark:bg-blue-900/20' 
-                                        : 'border-transparent bg-[#F8FAFC] dark:bg-dark-bg hover:bg-slate-100 dark:bg-slate-800/80 dark:hover:bg-blue-900/10'
+                                        ? 'border-[#2563EB] bg-blue-50/50/20 dark:bg-blue-900/20' 
+                                        : 'border-transparent bg-[#F8FAFC] dark:bg-dark-bg hover:bg-slate-100/80 dark:bg-slate-800/80 dark:hover:bg-blue-900/10'
                                     }`}
                                 >
                                     <div className="flex items-center gap-4">
@@ -345,7 +345,7 @@ const CustomerDashboard = () => {
                         <>
                             {/* Hero Card for Selected Project */}
                             <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] dark:from-[#0B1222] dark:to-[#1E3A8A] rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden ring-1 ring-white/10 transition-all duration-500">
-                                <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 dark:bg-slate-900/5 rounded-full blur-3xl -mr-40 -mt-40"></div>
+                                <div className="absolute top-0 right-0 w-80 h-80 bg-white/5/5 dark:bg-slate-900/5 rounded-full blur-3xl -mr-40 -mt-40"></div>
                                 <div className="relative z-10">
                                     <div className="flex flex-wrap items-center gap-3 mb-8">
                                         <span className="bg-yellow-400 text-blue-900 text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-widest shadow-lg">Live Operation</span>
@@ -359,11 +359,11 @@ const CustomerDashboard = () => {
                                                 <span>Work Progress</span>
                                                 <span className="text-yellow-300 font-black">{selectedProject.progress}% Solid</span>
                                             </div>
-                                            <div className="h-2 bg-white/10 dark:bg-slate-900/10 rounded-full overflow-hidden">
+                                            <div className="h-2 bg-white/10/10 dark:bg-slate-900/10 rounded-full overflow-hidden">
                                                 <div className="h-full bg-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]" style={{ width: `${selectedProject.progress}%` }}></div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-4 bg-white/10 dark:bg-slate-900/10 dark:bg-white/5 dark:bg-slate-900/5 p-5 rounded-3xl border border-white/10 backdrop-blur-md">
+                                        <div className="flex items-center gap-4 bg-white/10/10 dark:bg-slate-900/10 dark:bg-white/5/5 dark:bg-slate-900/5 p-5 rounded-3xl border border-white/10 backdrop-blur-md">
                                             <Clock className="w-8 h-8 text-blue-200" />
                                             <div>
                                                 <p className="text-[10px] font-bold uppercase tracking-widest text-blue-200 opacity-80">Timeline Milestone</p>
@@ -378,7 +378,7 @@ const CustomerDashboard = () => {
                             <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border shadow-sm p-10">
                                 <div className="flex items-center justify-between mb-10">
                                     <h3 className="text-2xl font-bold text-[#111827] dark:text-dark-text font-poppins flex items-center gap-4">
-                                        <div className="p-2.5 bg-blue-50 dark:bg-blue-950/30 text-blue-600 rounded-xl">
+                                        <div className="p-2.5 bg-blue-50/30 dark:bg-blue-950/30 text-blue-600 rounded-xl">
                                             <Activity className="w-6 h-6" />
                                         </div>
                                         Activity Logistics
@@ -395,7 +395,7 @@ const CustomerDashboard = () => {
                                         {updates.map((update) => (
                                             <div 
                                                 key={update._id}
-                                                className="bg-[#F8FAFC]/50 dark:bg-dark-bg/50 p-8 rounded-3xl border border-[#E2E8F0] dark:border-dark-border relative hover:bg-white dark:bg-slate-900 dark:hover:bg-dark-surface hover:border-blue-100 dark:hover:border-blue-900/20 hover:shadow-xl hover:shadow-blue-500/5 transition-all group"
+                                                className="bg-[#F8FAFC]/50/50 dark:bg-dark-bg/50 p-8 rounded-3xl border border-[#E2E8F0] dark:border-dark-border relative hover:bg-white dark:bg-slate-900 dark:hover:bg-dark-surface hover:border-blue-100 dark:hover:border-blue-900/20 hover:shadow-xl hover:shadow-blue-500/5 transition-all group"
                                             >
                                                 <div className="absolute top-1/2 -left-[51px] w-5 h-5 bg-white dark:bg-slate-900 dark:bg-dark-surface border-4 border-blue-500 rounded-full group-hover:scale-125 transition-transform" />
                                                 
@@ -410,7 +410,7 @@ const CustomerDashboard = () => {
                                                         </div>
                                                     </div>
                                                     <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border-2 ${
-                                                        update.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/10 dark:border-emerald-900/30' : 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/10 dark:border-blue-900/30'
+                                                        update.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100/10 dark:bg-emerald-900/10 dark:border-emerald-900/30' : 'bg-blue-50 text-blue-600 border-blue-100/10 dark:bg-blue-900/10 dark:border-blue-900/30'
                                                     }`}>
                                                         {update.status}
                                                     </span>
@@ -431,7 +431,7 @@ const CustomerDashboard = () => {
                                             </div>
                                         ))}
                                         {updates.length === 0 && (
-                                            <div className="py-20 text-center bg-slate-50/50 dark:bg-slate-800/50 dark:bg-dark-bg/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 dark:border-dark-border">
+                                            <div className="py-20 text-center bg-slate-50/50/50 dark:bg-slate-800/50 dark:bg-dark-bg/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 dark:border-dark-border">
                                                 <AlertTriangle className="w-12 h-12 text-slate-300 dark:text-dark-muted mx-auto mb-4 opacity-50" />
                                                 <p className="text-xs font-bold text-slate-400 dark:text-dark-muted uppercase tracking-widest italic">Waiting for initial field report sequence...</p>
                                             </div>

@@ -46,7 +46,7 @@ const AdminProgress = () => {
     });
 
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-slate-50/50 dark:bg-slate-800/50 min-h-screen font-sans">
+        <div className="p-4 md:p-8 space-y-8 bg-slate-50/50/50 dark:bg-slate-800/50 min-h-screen font-sans">
             {/* Header section with Stats */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
@@ -110,7 +110,7 @@ const AdminProgress = () => {
                                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                                         <div>
                                             <div className="flex items-center gap-3 mb-1">
-                                                <span className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700">Log #{report._id.substring(18)}</span>
+                                                <span className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700">Log #{report._id.substring(18)}</span>
                                                 <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">{report.projectId?.title || 'Unknown Project'}</h3>
                                             </div>
                                             <div className="flex items-center gap-4 text-[10px] font-black tracking-widest uppercase text-slate-400">
@@ -125,7 +125,7 @@ const AdminProgress = () => {
                                                 <div className="text-[10px] font-black uppercase text-slate-400 mb-1">Completion</div>
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-2xl font-black text-slate-900 dark:text-white">{report.progressPercentage}%</span>
-                                                    <div className="w-24 h-2 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                                                    <div className="w-24 h-2 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
                                                         <div className="h-full bg-indigo-600" style={{ width: `${report.progressPercentage}%` }}></div>
                                                     </div>
                                                 </div>
@@ -133,7 +133,7 @@ const AdminProgress = () => {
                                             <div className="flex gap-2">
                                                 <button 
                                                     onClick={() => setExpandedId(expandedId === report._id ? null : report._id)}
-                                                    className="p-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-900 hover:text-white transition-all border-2 border-slate-950 shadow-sm"
+                                                    className="p-2 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-900 hover:text-white transition-all border-2 border-slate-950 shadow-sm"
                                                 >
                                                     {expandedId === report._id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                                                 </button>

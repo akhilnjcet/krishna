@@ -158,31 +158,31 @@ const AdminNotifications = () => {
         const isEscalated = priority === 'Critical' && status === 'Active' && ((new Date() - new Date(createdAt)) / 60000) > 5;
         if (isEscalated) {
             return {
-                bg: 'bg-red-500/10 dark:bg-red-950/20 animate-pulse border-l-8 border-l-red-600',
+                bg: 'bg-red-500/10/20 dark:bg-red-950/20 animate-pulse border-l-8 border-l-red-600',
                 badge: 'bg-red-600 text-white'
             };
         }
         switch (priority) {
             case 'Critical':
                 return {
-                    bg: 'bg-red-50/30 dark:bg-red-950/5 border-l-4 border-l-red-600',
-                    badge: 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300'
+                    bg: 'bg-red-50/30/5 dark:bg-red-950/5 border-l-4 border-l-red-600',
+                    badge: 'bg-red-100 text-red-700/50 dark:bg-red-950/50 dark:text-red-300'
                 };
             case 'High':
                 return {
-                    bg: 'bg-orange-50/30 dark:bg-orange-950/5 border-l-4 border-l-orange-500',
-                    badge: 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300'
+                    bg: 'bg-orange-50/30/5 dark:bg-orange-950/5 border-l-4 border-l-orange-500',
+                    badge: 'bg-orange-100 text-orange-700/50 dark:bg-orange-950/50 dark:text-orange-300'
                 };
             case 'Medium':
                 return {
-                    bg: 'bg-yellow-50/30 dark:bg-yellow-950/5 border-l-4 border-l-yellow-500',
-                    badge: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-300'
+                    bg: 'bg-yellow-50/30/5 dark:bg-yellow-950/5 border-l-4 border-l-yellow-500',
+                    badge: 'bg-yellow-100 text-yellow-800/50 dark:bg-yellow-950/50 dark:text-yellow-300'
                 };
             case 'Low':
             default:
                 return {
-                    bg: 'bg-blue-50/30 dark:bg-blue-950/5 border-l-4 border-l-blue-500',
-                    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300'
+                    bg: 'bg-blue-50/30/5 dark:bg-blue-950/5 border-l-4 border-l-blue-500',
+                    badge: 'bg-blue-100 text-blue-700/50 dark:bg-blue-950/50 dark:text-blue-300'
                 };
         }
     };
@@ -196,7 +196,7 @@ const AdminNotifications = () => {
             case 'Resolved':
                 return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
             default:
-                return 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
+                return 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
         }
     };
 
@@ -231,7 +231,7 @@ const AdminNotifications = () => {
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
                 {/* Critical Alerts */}
-                <div className="bg-red-50/50 dark:bg-red-950/15 border-2 border-red-100 dark:border-red-950 p-5 rounded-3xl flex flex-col justify-between shadow-sm">
+                <div className="bg-red-50/50/15 dark:bg-red-950/15 border-2 border-red-100 dark:border-red-950 p-5 rounded-3xl flex flex-col justify-between shadow-sm">
                     <div className="flex justify-between items-center mb-3">
                         <span className="text-[10px] font-black uppercase text-red-500 tracking-wider">Critical Alerts</span>
                         <div className="bg-red-500/10 p-2 rounded-xl"><ShieldAlert className="w-5 h-5 text-red-600" /></div>
@@ -243,7 +243,7 @@ const AdminNotifications = () => {
                 </div>
 
                 {/* Active Alerts */}
-                <div className="bg-blue-50/50 dark:bg-blue-950/15 border-2 border-blue-100 dark:border-blue-950 p-5 rounded-3xl flex flex-col justify-between shadow-sm">
+                <div className="bg-blue-50/50/15 dark:bg-blue-950/15 border-2 border-blue-100 dark:border-blue-950 p-5 rounded-3xl flex flex-col justify-between shadow-sm">
                     <div className="flex justify-between items-center mb-3">
                         <span className="text-[10px] font-black uppercase text-blue-500 tracking-wider">Active Alerts</span>
                         <div className="bg-blue-500/10 p-2 rounded-xl"><Activity className="w-5 h-5 text-blue-600" /></div>
@@ -255,7 +255,7 @@ const AdminNotifications = () => {
                 </div>
 
                 {/* Acknowledged */}
-                <div className="bg-amber-50/50 dark:bg-amber-950/15 border-2 border-amber-100 dark:border-amber-950 p-5 rounded-3xl flex flex-col justify-between shadow-sm">
+                <div className="bg-amber-50/50/15 dark:bg-amber-950/15 border-2 border-amber-100 dark:border-amber-950 p-5 rounded-3xl flex flex-col justify-between shadow-sm">
                     <div className="flex justify-between items-center mb-3">
                         <span className="text-[10px] font-black uppercase text-amber-500 tracking-wider">Acknowledged</span>
                         <div className="bg-amber-500/10 p-2 rounded-xl"><Check className="w-5 h-5 text-amber-600" /></div>
@@ -267,7 +267,7 @@ const AdminNotifications = () => {
                 </div>
 
                 {/* Resolved */}
-                <div className="bg-emerald-50/50 dark:bg-emerald-950/15 border-2 border-emerald-100 dark:border-emerald-950 p-5 rounded-3xl flex flex-col justify-between shadow-sm">
+                <div className="bg-emerald-50/50/15 dark:bg-emerald-950/15 border-2 border-emerald-100 dark:border-emerald-950 p-5 rounded-3xl flex flex-col justify-between shadow-sm">
                     <div className="flex justify-between items-center mb-3">
                         <span className="text-[10px] font-black uppercase text-emerald-500 tracking-wider">Resolved</span>
                         <div className="bg-emerald-500/10 p-2 rounded-xl"><CheckCircle2 className="w-5 h-5 text-emerald-600" /></div>
@@ -279,7 +279,7 @@ const AdminNotifications = () => {
                 </div>
 
                 {/* Today's Incidents */}
-                <div className="bg-indigo-50/50 dark:bg-indigo-950/15 border-2 border-indigo-100 dark:border-indigo-950 p-5 rounded-3xl flex flex-col justify-between shadow-sm">
+                <div className="bg-indigo-50/50/15 dark:bg-indigo-950/15 border-2 border-indigo-100 dark:border-indigo-950 p-5 rounded-3xl flex flex-col justify-between shadow-sm">
                     <div className="flex justify-between items-center mb-3">
                         <span className="text-[10px] font-black uppercase text-indigo-500 tracking-wider">Today's Total</span>
                         <div className="bg-indigo-500/10 p-2 rounded-xl"><Calendar className="w-5 h-5 text-indigo-600" /></div>
@@ -291,7 +291,7 @@ const AdminNotifications = () => {
                 </div>
 
                 {/* Unread Alerts */}
-                <div className="bg-yellow-50/50 dark:bg-yellow-950/15 border-2 border-yellow-100 dark:border-yellow-950 p-5 rounded-3xl flex flex-col justify-between shadow-sm">
+                <div className="bg-yellow-50/50/15 dark:bg-yellow-950/15 border-2 border-yellow-100 dark:border-yellow-950 p-5 rounded-3xl flex flex-col justify-between shadow-sm">
                     <div className="flex justify-between items-center mb-3">
                         <span className="text-[10px] font-black uppercase text-yellow-600 tracking-wider">Unread Inbox</span>
                         <div className="bg-yellow-500/10 p-2 rounded-xl"><Bell className="w-5 h-5 text-yellow-600" /></div>
@@ -437,7 +437,7 @@ const AdminNotifications = () => {
                                     return (
                                         <tr 
                                             key={n._id}
-                                            className={`hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-blue-900/5 transition-all ${bg} ${
+                                            className={`hover:bg-slate-50/50/50 dark:bg-slate-800/50 dark:hover:bg-blue-900/5 transition-all ${bg} ${
                                                 !n.isRead ? 'font-medium' : ''
                                             }`}
                                         >
@@ -457,7 +457,7 @@ const AdminNotifications = () => {
                                             </td>
                                             <td className="p-6 text-slate-700 dark:text-slate-300 dark:text-dark-text font-semibold">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800/80 dark:bg-dark-bg text-[#2563EB] flex items-center justify-center font-bold text-xs uppercase border border-[#E2E8F0] dark:border-dark-border">
+                                                    <div className="w-8 h-8 rounded-full bg-slate-100/80 dark:bg-slate-800/80 dark:bg-dark-bg text-[#2563EB] flex items-center justify-center font-bold text-xs uppercase border border-[#E2E8F0] dark:border-dark-border">
                                                         {n.updatedBy?.name?.charAt(0) || 'U'}
                                                     </div>
                                                     <div>
@@ -521,8 +521,8 @@ const AdminNotifications = () => {
                                                         onClick={() => handleMarkAsRead(n._id, n.isRead)}
                                                         className={`p-2 rounded-lg transition-all ${
                                                             n.isRead 
-                                                                ? 'text-slate-300 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80 dark:hover:bg-dark-bg' 
-                                                                : 'text-[#2563EB] bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100'
+                                                                ? 'text-slate-300 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80 dark:hover:bg-dark-bg' 
+                                                                : 'text-[#2563EB] bg-blue-50/20 dark:bg-blue-950/20 hover:bg-blue-100'
                                                         }`}
                                                         title={n.isRead ? "Mark as Unread" : "Mark as Read"}
                                                     >
@@ -560,7 +560,7 @@ const AdminNotifications = () => {
                                 <button 
                                     type="button"
                                     onClick={() => setAckModal({ show: false, id: null, remarks: '' })}
-                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
+                                    className="px-4 py-2 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
                                 >
                                     Cancel
                                 </button>
@@ -597,7 +597,7 @@ const AdminNotifications = () => {
                                 <button 
                                     type="button"
                                     onClick={() => setResolveModal({ show: false, id: null, notes: '' })}
-                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
+                                    className="px-4 py-2 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
                                 >
                                     Cancel
                                 </button>

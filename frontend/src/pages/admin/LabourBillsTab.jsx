@@ -159,7 +159,7 @@ const LabourBillsTab = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-slate-800/80 p-4 md:p-8 font-sans">
+        <div className="min-h-screen bg-slate-100/80 dark:bg-slate-800/80 p-4 md:p-8 font-sans">
             {/* Toolbar */}
             <div className="no-print bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -249,7 +249,7 @@ const LabourBillsTab = () => {
                             <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                 <Truck className="w-4 h-4 text-indigo-500" /> Logistics & Transit Tracking
                             </h2>
-                            <span className="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded">Smart Auto-Hide if Empty</span>
+                            <span className="text-[9px] font-bold text-slate-400 bg-slate-100/80 dark:bg-slate-800/80 px-2 py-0.5 rounded">Smart Auto-Hide if Empty</span>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
@@ -533,7 +533,7 @@ const LabourBillsTab = () => {
                                         key={t}
                                         onClick={() => setTheme(t)}
                                         className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition ${
-                                            theme === t ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800/80'
+                                            theme === t ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100/80 dark:bg-slate-800/80'
                                         }`}
                                     >
                                         {t}
@@ -583,7 +583,7 @@ const LabourBillsTab = () => {
                                             <p className="text-xs opacity-90 font-medium">Labour Billing & Goods Transport Logistical Voucher</p>
                                         </div>
                                         <div className="text-left sm:text-right">
-                                            <span className="bg-white/20 dark:bg-slate-900/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
+                                            <span className="bg-white/20/20 dark:bg-slate-900/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
                                                 TRANSPORT & LABOUR BILL
                                             </span>
                                             <p className="text-sm font-black">{billNumber}</p>
@@ -695,7 +695,7 @@ const LabourBillsTab = () => {
                                 </div>
                                 <table className="w-full text-left border-collapse">
                                     <thead>
-                                        <tr className="text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                                        <tr className="text-[10px] font-black uppercase tracking-wider bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
                                             <th className="p-3">#</th>
                                             <th className="p-3">Work Description</th>
                                             <th className="p-3 text-center">Labourers</th>
@@ -708,7 +708,7 @@ const LabourBillsTab = () => {
                                         {labourRows.map((row, index) => {
                                             const lineTotal = (parseFloat(row.labourersCount || 0) * parseFloat(row.workingDays || 0) * parseFloat(row.dailyRate || 0));
                                             return (
-                                                <tr key={row.id} className={index % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
+                                                <tr key={row.id} className={index % 2 === 1 ? 'bg-slate-50/50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
                                                     <td className="p-3 font-bold text-slate-400">{index + 1}</td>
                                                     <td className="p-3 font-bold text-slate-900 dark:text-white">{row.workDescription || 'Labour Work'}</td>
                                                     <td className="p-3 text-center font-bold">{row.labourersCount}</td>
@@ -733,37 +733,37 @@ const LabourBillsTab = () => {
                                     </div>
                                     <div className="p-4 bg-slate-50 dark:bg-slate-800 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                                         {loadingCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
+                                            <div className="flex justify-between border-b border-slate-200/60/60 dark:border-slate-700/60 pb-1">
                                                 <span className="text-slate-500 dark:text-slate-400 font-medium">Loading:</span>
                                                 <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(loadingCharges)}</span>
                                             </div>
                                         )}
                                         {unloadingCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
+                                            <div className="flex justify-between border-b border-slate-200/60/60 dark:border-slate-700/60 pb-1">
                                                 <span className="text-slate-500 dark:text-slate-400 font-medium">Unloading:</span>
                                                 <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(unloadingCharges)}</span>
                                             </div>
                                         )}
                                         {handlingCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
+                                            <div className="flex justify-between border-b border-slate-200/60/60 dark:border-slate-700/60 pb-1">
                                                 <span className="text-slate-500 dark:text-slate-400 font-medium">Handling:</span>
                                                 <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(handlingCharges)}</span>
                                             </div>
                                         )}
                                         {packingCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
+                                            <div className="flex justify-between border-b border-slate-200/60/60 dark:border-slate-700/60 pb-1">
                                                 <span className="text-slate-500 dark:text-slate-400 font-medium">Packing:</span>
                                                 <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(packingCharges)}</span>
                                             </div>
                                         )}
                                         {overtimeCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
+                                            <div className="flex justify-between border-b border-slate-200/60/60 dark:border-slate-700/60 pb-1">
                                                 <span className="text-slate-500 dark:text-slate-400 font-medium">Overtime:</span>
                                                 <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(overtimeCharges)}</span>
                                             </div>
                                         )}
                                         {additionalFreightCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
+                                            <div className="flex justify-between border-b border-slate-200/60/60 dark:border-slate-700/60 pb-1">
                                                 <span className="text-slate-500 dark:text-slate-400 font-medium">Addl. Freight:</span>
                                                 <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(additionalFreightCharges)}</span>
                                             </div>

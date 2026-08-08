@@ -321,7 +321,7 @@ const DocumentHistory = () => {
 
                     <div className="space-y-1">
                         <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider pl-1">Items Per Page</label>
-                        <div className="bg-slate-100 dark:bg-slate-800/80 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center border border-slate-200 dark:border-slate-700">
+                        <div className="bg-slate-100/80 dark:bg-slate-800/80 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center border border-slate-200 dark:border-slate-700">
                             Total Records: {total}
                         </div>
                     </div>
@@ -360,7 +360,7 @@ const DocumentHistory = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr className="bg-slate-50/70 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-700 font-black text-[10px] text-slate-400 uppercase tracking-widest">
+                            <tr className="bg-slate-50/70/70 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-700 font-black text-[10px] text-slate-400 uppercase tracking-widest">
                                 <th className="px-6 py-4">Document Details</th>
                                 <th className="px-6 py-4">Client / Project</th>
                                 <th className="px-6 py-4">Financial metrics</th>
@@ -378,7 +378,7 @@ const DocumentHistory = () => {
                                     </td>
                                 </tr>
                             ) : documents.length > 0 ? documents.map(doc => (
-                                <tr key={doc._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
+                                <tr key={doc._id} className="hover:bg-slate-50/50/50 dark:bg-slate-800/50 transition">
                                     <td className="px-6 py-5">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
@@ -400,7 +400,7 @@ const DocumentHistory = () => {
                                         {doc.totalAmount > 0 ? `₹ ${doc.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : 'N/A'}
                                     </td>
                                     <td className="px-6 py-5 text-center">
-                                        <span className="bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[10px] px-2.5 py-1 rounded-full font-black">
+                                        <span className="bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[10px] px-2.5 py-1 rounded-full font-black">
                                             v{doc.version}
                                         </span>
                                     </td>
@@ -413,7 +413,7 @@ const DocumentHistory = () => {
                                             doc.status === 'Expired' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
                                             doc.status === 'Pending' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
                                             doc.status === 'Printed' ? 'bg-teal-50 text-teal-600 border border-teal-100' :
-                                            'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                                            'bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                                         }`}>
                                             {doc.status}
                                         </span>
@@ -422,7 +422,7 @@ const DocumentHistory = () => {
                                         <div className="flex items-center justify-end gap-2">
                                             <button 
                                                 onClick={() => handleViewDetail(doc)}
-                                                className="p-2 hover:bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 rounded-xl transition"
+                                                className="p-2 hover:bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 rounded-xl transition"
                                                 title="View Version log"
                                             >
                                                 <Eye className="w-4.5 h-4.5" />
@@ -430,7 +430,7 @@ const DocumentHistory = () => {
                                             {doc.pdfData && (
                                                 <button 
                                                     onClick={() => handleDownloadPDF(doc.documentNumber, doc.pdfData)}
-                                                    className="p-2 hover:bg-slate-100 dark:bg-slate-800/80 text-indigo-600 rounded-xl transition"
+                                                    className="p-2 hover:bg-slate-100/80 dark:bg-slate-800/80 text-indigo-600 rounded-xl transition"
                                                     title="Download PDF"
                                                 >
                                                     <Download className="w-4.5 h-4.5" />
@@ -448,7 +448,7 @@ const DocumentHistory = () => {
                                             )}
                                             <button 
                                                 onClick={() => handleDuplicate(doc)}
-                                                className="p-2 hover:bg-slate-100 dark:bg-slate-800/80 text-teal-600 rounded-xl transition"
+                                                className="p-2 hover:bg-slate-100/80 dark:bg-slate-800/80 text-teal-600 rounded-xl transition"
                                                 title="Duplicate to Studio"
                                             >
                                                 <Copy className="w-4.5 h-4.5" />
@@ -469,7 +469,7 @@ const DocumentHistory = () => {
 
                 {/* Pagination Footer */}
                 {pages > 1 && (
-                    <div className="bg-slate-50/50 dark:bg-slate-800/50 p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <div className="bg-slate-50/50/50 dark:bg-slate-800/50 p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
                         <button 
                             disabled={page === 1}
                             onClick={() => setPage(prev => Math.max(1, prev - 1))}
@@ -564,7 +564,7 @@ const DocumentHistory = () => {
                                                         </button>
                                                         <button 
                                                             onClick={() => handlePrintPDF(selectedDocDetail.pdfData)}
-                                                            className="w-full flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition"
+                                                            className="w-full flex items-center justify-center gap-2 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition"
                                                         >
                                                             <Printer className="w-4 h-4" /> Print / Save
                                                         </button>
@@ -635,7 +635,7 @@ const DocumentHistory = () => {
                                             ) : (
                                                 <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
                                                     {selectedDocDetail.versions.map((ver, idx) => (
-                                                        <div key={idx} className="bg-slate-50/55 dark:bg-slate-800/55 p-4 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col gap-3">
+                                                        <div key={idx} className="bg-slate-50/55/55 dark:bg-slate-800/55 p-4 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col gap-3">
                                                             <div className="flex justify-between items-center">
                                                                 <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-black">
                                                                     Version {ver.version}

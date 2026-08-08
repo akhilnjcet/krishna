@@ -25,7 +25,7 @@ const Navbar = () => {
     ];
 
     return (
-        <nav className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 transition-all dark:bg-slate-900/80 dark:border-slate-800">
+        <nav className="sticky top-0 z-50 bg-white/80/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 transition-all/80 dark:bg-slate-900/80 dark:border-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-20">
 
@@ -95,7 +95,7 @@ const Navbar = () => {
                                         logout();
                                         navigate('/login', { replace: true });
                                     }}
-                                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-7 py-3 text-sm font-bold rounded-2xl transition-all duration-300 flex items-center gap-2 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-7 py-3 text-sm font-bold rounded-2xl transition-all duration-300 flex items-center gap-2/20 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
                                 >
                                     Log Out
                                 </button>

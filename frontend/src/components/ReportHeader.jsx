@@ -58,7 +58,7 @@ const ReportHeader = ({ title, subtitle, data, columns, specializedReport }) => 
                         {generating ? 'Compiling...' : 'Download PDF Report'}
                     </button>
                     
-                    <button className="p-4 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-2xl hover:bg-slate-100 dark:bg-slate-800/80 transition-colors border border-slate-200 dark:border-slate-700">
+                    <button className="p-4 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-2xl hover:bg-slate-100/80 dark:bg-slate-800/80 transition-colors border border-slate-200 dark:border-slate-700">
                         <Share2 className="w-4 h-4" />
                     </button>
                 </div>

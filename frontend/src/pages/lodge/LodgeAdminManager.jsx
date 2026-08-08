@@ -541,7 +541,7 @@ export default function LodgeAdminManager() {
     <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
          <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-             <button onClick={() => window.history.back()} className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl hover:bg-slate-100 dark:bg-slate-800/80 transition-colors shadow-sm" title="Go Back">
+             <button onClick={() => window.history.back()} className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl hover:bg-slate-100/80 dark:bg-slate-800/80 transition-colors shadow-sm" title="Go Back">
                  <ArrowLeft className="w-5 h-5"/>
              </button>
              <h1 className="text-xl sm:text-3xl font-bold flex items-center text-gray-800 tracking-tight">
@@ -563,7 +563,7 @@ export default function LodgeAdminManager() {
                  <Edit3 className="w-5 h-5"/>
              </button>
          </div>
-         <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-4 py-2 rounded-xl self-start sm:self-auto">System Status: Optimal</div>
+         <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100/80 dark:bg-slate-800/80 px-4 py-2 rounded-xl self-start sm:self-auto">System Status: Optimal</div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto mb-8 border-b border-gray-200 pb-2 custom-scrollbar">
@@ -599,7 +599,7 @@ export default function LodgeAdminManager() {
                       <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6"><Building className="w-6 h-6"/></div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Occupancy Rate</p>
                       <h4 className="text-3xl font-black text-slate-900 dark:text-white font-poppins">{stats.occupancyRate}%</h4>
-                      <div className="w-full bg-slate-100 dark:bg-slate-800/80 h-1.5 rounded-full mt-4 overflow-hidden"><div className="bg-amber-500 h-full" style={{width: `${stats.occupancyRate}%`}}></div></div>
+                      <div className="w-full bg-slate-100/80 dark:bg-slate-800/80 h-1.5 rounded-full mt-4 overflow-hidden"><div className="bg-amber-500 h-full" style={{width: `${stats.occupancyRate}%`}}></div></div>
                   </div>
                   <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border shadow-sm group hover:shadow-xl transition-all">
                       <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6"><Users className="w-6 h-6"/></div>
@@ -822,7 +822,7 @@ export default function LodgeAdminManager() {
              )}
 
               {/* Search & Status Filters Bar */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 mb-6">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/60/60 dark:border-slate-700/60 mb-6">
                  <div className="relative flex-grow">
                     <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                     <input 
@@ -846,7 +846,7 @@ export default function LodgeAdminManager() {
                           className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${
                              statusFilter === st 
                              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' 
-                             : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800/80'
+                             : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100/80 dark:bg-slate-800/80'
                           }`}
                        >
                           {st}
@@ -942,7 +942,7 @@ export default function LodgeAdminManager() {
                                            <button 
                                                type="button"
                                                onClick={() => setActiveGalleryRoom(r)}
-                                               className="w-12 h-12 border bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 rounded-xl flex items-center justify-center font-black active:scale-95 transition-all shadow-sm text-[9px] uppercase tracking-widest"
+                                               className="w-12 h-12 border bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 rounded-xl flex items-center justify-center font-black active:scale-95 transition-all shadow-sm text-[9px] uppercase tracking-widest"
                                            >
                                                View
                                            </button>

@@ -113,7 +113,7 @@ const VerificationFlow = ({ onComplete }) => {
                                     }`}
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className={`p-3 rounded-2xl ${selectedProject?._id === p._id ? 'bg-white dark:bg-slate-900 text-indigo-600' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400'}`}>
+                                        <div className={`p-3 rounded-2xl ${selectedProject?._id === p._id ? 'bg-white dark:bg-slate-900 text-indigo-600' : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-400'}`}>
                                             <Project className="w-5 h-5" />
                                         </div>
                                         <div>
@@ -135,7 +135,7 @@ const VerificationFlow = ({ onComplete }) => {
                         <button 
                             disabled={!selectedProject}
                             onClick={() => setStep(2)}
-                            className="w-full bg-indigo-600 disabled:bg-slate-100 dark:bg-slate-800/80 text-white disabled:text-slate-400 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 group shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700"
+                            className="w-full bg-indigo-600 disabled:bg-slate-100/80 dark:bg-slate-800/80 text-white disabled:text-slate-400 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 group shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700"
                         >
                             Confirm Selection <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </button>

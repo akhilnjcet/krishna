@@ -124,19 +124,19 @@ const AdminUsers = () => {
     const getRoleBadge = (role) => {
         switch (role) {
             case 'admin':
-                return 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50';
+                return 'bg-rose-50/20 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-100/50 dark:border-rose-900/50';
             case 'staff':
-                return 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50';
+                return 'bg-indigo-50/20 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-indigo-900/50';
             case 'customer':
             default:
-                return 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50';
+                return 'bg-emerald-50/20 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-900/50';
         }
     };
 
     const getStatusBadge = (status) => {
         return status === 'active' 
-            ? 'bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400' 
-            : 'bg-slate-100 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 dark:bg-slate-800/50 dark:text-slate-400';
+            ? 'bg-green-100 text-green-800/30 dark:bg-green-950/30 dark:text-green-400' 
+            : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200/50 dark:bg-slate-800/50 dark:text-slate-400';
     };
 
     return (
@@ -221,7 +221,7 @@ const AdminUsers = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="border-b border-slate-100 dark:border-slate-800 dark:border-dark-border text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-dark-bg/30">
+                                    <tr className="border-b border-slate-100 dark:border-slate-800 dark:border-dark-border text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50/50/50 dark:bg-slate-800/50 dark:bg-dark-bg/30">
                                         <th className="py-4 px-6">User / Account</th>
                                         <th className="py-4 px-6">System Role</th>
                                         <th className="py-4 px-6">Designation / Staff Details</th>
@@ -232,7 +232,7 @@ const AdminUsers = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-dark-border">
                                     {users.map((user) => (
-                                        <tr key={user._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-dark-bg/25 transition-colors">
+                                        <tr key={user._id} className="hover:bg-slate-50/50/50 dark:bg-slate-800/50 dark:hover:bg-dark-bg/25 transition-colors">
                                             <td className="py-5 px-6">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-xl bg-[#2563EB] flex items-center justify-center text-white font-black text-sm uppercase">
@@ -391,7 +391,7 @@ const AdminUsers = () => {
                             className="bg-white dark:bg-slate-900 dark:bg-dark-surface border border-[#E2E8F0] dark:border-dark-border rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl relative my-8"
                         >
                             {/* Modal Header */}
-                            <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 dark:border-dark-border flex justify-between items-center bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg/25">
+                            <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 dark:border-dark-border flex justify-between items-center bg-slate-50 dark:bg-slate-800/25 dark:bg-dark-bg/25">
                                 <div>
                                     <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic">
                                         {showAddModal ? "Register System User" : "Modify User Account"}
@@ -402,7 +402,7 @@ const AdminUsers = () => {
                                 </div>
                                 <button 
                                     onClick={() => { setShowAddModal(false); setShowEditModal(false); resetForm(); }}
-                                    className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:bg-slate-800/80 dark:hover:bg-dark-bg rounded-xl transition-all"
+                                    className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:bg-slate-800/80 dark:hover:bg-dark-bg rounded-xl transition-all"
                                 >
                                     <X className="w-6 h-6" />
                                 </button>
@@ -556,7 +556,7 @@ const AdminUsers = () => {
                                 )}
 
                                 {/* Form Action Buttons */}
-                                <div className="border-t border-slate-100 dark:border-slate-800 dark:border-dark-border pt-6 flex justify-end gap-4 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg/25 p-6 -mx-8 -mb-8">
+                                <div className="border-t border-slate-100 dark:border-slate-800 dark:border-dark-border pt-6 flex justify-end gap-4 bg-slate-50 dark:bg-slate-800/25 dark:bg-dark-bg/25 p-6 -mx-8 -mb-8">
                                     <button 
                                         type="button"
                                         onClick={() => { setShowAddModal(false); setShowEditModal(false); resetForm(); }}

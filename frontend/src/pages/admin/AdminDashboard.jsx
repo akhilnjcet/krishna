@@ -155,10 +155,10 @@ const AdminDashboard = () => {
                             className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group cursor-pointer relative overflow-hidden"
                         >
                             <div className="flex justify-between items-start mb-4">
-                                <div className={`w-10 h-10 bg-${item.color}-50 dark:bg-blue-950/30 text-${item.color}-600 rounded-xl flex items-center justify-center`}>
+                                <div className={`w-10 h-10 bg-${item.color}-50/30 dark:bg-blue-950/30 text-${item.color}-600 rounded-xl flex items-center justify-center`}>
                                     <item.icon className="w-5 h-5" />
                                 </div>
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-${item.color}-50 dark:bg-blue-950/20 text-${item.color}-600`}>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-${item.color}-50/20 dark:bg-blue-950/20 text-${item.color}-600`}>
                                     Status
                                 </span>
                             </div>
@@ -175,7 +175,7 @@ const AdminDashboard = () => {
                 <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm p-8 md:p-10">
                     <div className="flex items-center justify-between mb-10">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl text-blue-600">
+                            <div className="p-3 bg-blue-50/30 dark:bg-blue-950/30 rounded-2xl text-blue-600">
                                 <TrendingUp className="w-6 h-6" />
                             </div>
                             <div>
@@ -225,7 +225,7 @@ const AdminDashboard = () => {
                 <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm p-8 md:p-10">
                     <div className="flex items-center justify-between mb-10">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-rose-50 dark:bg-rose-950/20 rounded-2xl text-rose-600">
+                            <div className="p-3 bg-rose-50/20 dark:bg-rose-950/20 rounded-2xl text-rose-600">
                                 <AlertCircle className="w-6 h-6" />
                             </div>
                             <div>
@@ -298,7 +298,7 @@ const AdminDashboard = () => {
                                 Biometric verification is active across all terminals. 3 unregistered attempts blocked today.
                             </p>
                             <div className="space-y-4">
-                                <div className="h-1.5 bg-white/10 dark:bg-slate-900/10 rounded-full overflow-hidden">
+                                <div className="h-1.5 bg-white/10/10 dark:bg-slate-900/10 rounded-full overflow-hidden">
                                      <div className="h-full bg-blue-500 w-[92%] shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
                                 </div>
                                 <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
@@ -343,7 +343,7 @@ const AdminDashboard = () => {
                                             <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
                                                 q.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                                                 q.status === 'Pending' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                                                'bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                                                'bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                                             }`}>{q.status}</span>
                                         </div>
                                     </div>

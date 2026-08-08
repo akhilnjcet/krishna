@@ -842,7 +842,7 @@ const LodgeBillingManager = () => {
                                 </select>
                             </div>
                             <div className="flex items-end">
-                                <div className="bg-slate-100 dark:bg-slate-800/80 p-2.5 rounded-xl w-full text-center text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] border border-slate-200 dark:border-slate-700">
+                                <div className="bg-slate-100/80 dark:bg-slate-800/80 p-2.5 rounded-xl w-full text-center text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] border border-slate-200 dark:border-slate-700">
                                     Matches: {sortedRooms.length}
                                 </div>
                             </div>
@@ -851,7 +851,7 @@ const LodgeBillingManager = () => {
 
                     {/* Live Room Billing Status Grid / Table */}
                     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50/50 dark:bg-slate-800/50">
                             <h3 className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-tight">Live Room Billing Registry</h3>
                         </div>
 
@@ -872,7 +872,7 @@ const LodgeBillingManager = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300">
                                     {sortedRooms.map(room => (
-                                        <tr key={room._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
+                                        <tr key={room._id} className="hover:bg-slate-50/50/50 dark:bg-slate-800/50 transition">
                                             <td className="px-6 py-4">
                                                 <p className="font-bold text-slate-900 dark:text-white">Room {room.number}</p>
                                                 <p className="text-[9px] uppercase font-black text-slate-400 mt-0.5">{room.type}</p>
@@ -908,7 +908,7 @@ const LodgeBillingManager = () => {
                                                     room.paymentBadge === 'Paid' || room.paymentBadge === 'Advance Paid' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                                                     room.paymentBadge === 'Upcoming' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
                                                     room.paymentBadge === 'Overdue' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-                                                    'bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400'
+                                                    'bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400'
                                                 }`}>
                                                     {room.paymentBadge}
                                                 </span>
@@ -917,7 +917,7 @@ const LodgeBillingManager = () => {
                                                 <div className="flex justify-end gap-1.5">
                                                     <button 
                                                         onClick={() => setSelectedRoomDetail(room)}
-                                                        className="p-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:bg-slate-800/80 rounded-lg text-slate-500 dark:text-slate-400 transition"
+                                                        className="p-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/80 dark:bg-slate-800/80 rounded-lg text-slate-500 dark:text-slate-400 transition"
                                                         title="View Details"
                                                     >
                                                         <Eye className="w-4 h-4" />
@@ -1111,7 +1111,7 @@ const LodgeBillingManager = () => {
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 font-medium text-slate-700 dark:text-slate-300">
                                         {filteredVerifications.map((v) => (
-                                            <tr key={v._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
+                                            <tr key={v._id} className="hover:bg-slate-50/50/50 dark:bg-slate-800/50 transition">
                                                 <td className="px-6 py-4">
                                                     <p className="font-black text-slate-900 dark:text-white">{v.tenantName || v.name || v.customerId?.name || 'Unknown Guest'}</p>
                                                     <p className="text-[10px] text-slate-400">Room ID: {v.roomId?._id || v.roomId || 'N/A'}</p>
@@ -1177,7 +1177,7 @@ const LodgeBillingManager = () => {
                                 </table>
                             </div>
                             {filteredVerifications.length === 0 && (
-                                <div className="text-center py-20 text-slate-400 font-bold uppercase text-xs tracking-widest italic bg-slate-50/50 dark:bg-slate-800/50">
+                                <div className="text-center py-20 text-slate-400 font-bold uppercase text-xs tracking-widest italic bg-slate-50/50/50 dark:bg-slate-800/50">
                                     {loadingVerifications ? 'Fetching latest verification telemetry...' : 'No verifications pending match.'}
                                 </div>
                             )}
@@ -1239,7 +1239,7 @@ const LodgeBillingManager = () => {
                             </div>
 
                             {/* Step Indicator */}
-                            <div className="bg-slate-100 dark:bg-slate-800/80 p-4 border-b flex justify-around text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 print:hidden">
+                            <div className="bg-slate-100/80 dark:bg-slate-800/80 p-4 border-b flex justify-around text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 print:hidden">
                                 {[
                                     { step: 1, label: 'Room & Rent' },
                                     { step: 2, label: 'Charges & Taxes' },
@@ -1667,7 +1667,7 @@ const LodgeBillingManager = () => {
                                             {/* Summary Table Mock */}
                                             <table className="w-full text-left border-collapse mb-6">
                                                 <thead>
-                                                    <tr className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 uppercase text-[9px] tracking-wider">
+                                                    <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 uppercase text-[9px] tracking-wider">
                                                         <th className="p-3 rounded-l-xl">Description</th>
                                                         <th className="p-3 text-right rounded-r-xl">Amount (INR)</th>
                                                     </tr>
@@ -1738,7 +1738,7 @@ const LodgeBillingManager = () => {
                                             <button
                                                 type="button"
                                                 onClick={handlePrintPreview}
-                                                className="px-5 py-3 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 border rounded-xl font-bold uppercase flex items-center gap-1.5"
+                                                className="px-5 py-3 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 border rounded-xl font-bold uppercase flex items-center gap-1.5"
                                             >
                                                 <Printer className="w-4.5 h-4.5" /> Print Invoice
                                             </button>
@@ -1810,7 +1810,7 @@ const LodgeBillingManager = () => {
                                 <div className="flex gap-3 justify-end pt-4 border-t">
                                     <button 
                                         onClick={() => setSelectedRoomDetail(null)}
-                                        className="px-6 py-3 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 rounded-xl font-bold uppercase"
+                                        className="px-6 py-3 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 rounded-xl font-bold uppercase"
                                     >
                                         Close Details
                                     </button>

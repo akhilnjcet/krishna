@@ -277,7 +277,7 @@ const AdminReports = () => {
 
             {/* Data Grid view */}
             <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50/50 dark:bg-slate-800/50">
                     <h3 className="font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
                         📋 Dynamic Data Grid
                     </h3>
@@ -286,7 +286,7 @@ const AdminReports = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr className="bg-slate-100/50 dark:bg-slate-800/80 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest">
+                            <tr className="bg-slate-100/50/80 dark:bg-slate-800/80 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest">
                                 {reportSchema.columns.map((col, idx) => (
                                     <th key={idx} className="p-5">{col}</th>
                                 ))}

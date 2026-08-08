@@ -520,7 +520,7 @@ const AdminProjects = () => {
                                         <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${
                                             prj.status === 'completed' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                                             prj.status === 'in-progress' ? 'bg-indigo-100 text-indigo-700 border-indigo-200' :
-                                            'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                                            'bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                                         }`}>
                                             {prj.status}
                                         </span>
@@ -546,7 +546,7 @@ const AdminProjects = () => {
                                                 setEditAssignedStaff(prj.assignedStaff.map(s => s._id || s));
                                                 setShowStaffModal(true);
                                             }}
-                                            className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 p-2 rounded-xl hover:bg-indigo-600 hover:text-white transition"
+                                            className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 p-2 rounded-xl hover:bg-indigo-600 hover:text-white transition"
                                             title="Manage Assigned Staff"
                                         >
                                             <Briefcase className="w-4 h-4" />
@@ -673,7 +673,7 @@ const AdminProjects = () => {
                                                 </div>
                                             </td>
                                             <td className="p-6">
-                                                <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase rounded-lg">{p.method}</span>
+                                                <span className="px-2 py-1 bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase rounded-lg">{p.method}</span>
                                             </td>
                                             <td className="p-6">
                                                 <div className="flex justify-center">
@@ -737,7 +737,7 @@ const AdminProjects = () => {
                             animate={{ scale: 1, y: 0, opacity: 1 }}
                             className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
                         >
-                            <button onClick={() => setShowNotifyModal(false)} className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full">
+                            <button onClick={() => setShowNotifyModal(false)} className="absolute right-8 top-8 p-2 hover:bg-slate-100/80 dark:bg-slate-800/80 rounded-full">
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
 
@@ -787,7 +787,7 @@ const AdminProjects = () => {
                             animate={{ scale: 1, opacity: 1 }}
                             className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-[2.5rem] shadow-2xl p-10 relative"
                         >
-                            <button onClick={() => setShowModal(false)} className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full">
+                            <button onClick={() => setShowModal(false)} className="absolute right-8 top-8 p-2 hover:bg-slate-100/80 dark:bg-slate-800/80 rounded-full">
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
 
@@ -835,7 +835,7 @@ const AdminProjects = () => {
                                         {staffList.map(staff => {
                                             const checked = formData.assignedStaff.includes(staff._id);
                                             return (
-                                                <label key={staff._id} className="flex items-center gap-3 cursor-pointer hover:bg-slate-100 dark:bg-slate-800/80 p-2 rounded-lg transition-colors">
+                                                <label key={staff._id} className="flex items-center gap-3 cursor-pointer hover:bg-slate-100/80 dark:bg-slate-800/80 p-2 rounded-lg transition-colors">
                                                     <input 
                                                         type="checkbox"
                                                         checked={checked}
@@ -877,7 +877,7 @@ const AdminProjects = () => {
                                     setShowStaffModal(false);
                                     setSelectedProject(null);
                                 }} 
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full"
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100/80 dark:bg-slate-800/80 rounded-full"
                             >
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
@@ -892,7 +892,7 @@ const AdminProjects = () => {
                                         {staffList.map(staff => {
                                             const checked = editAssignedStaff.includes(staff._id);
                                             return (
-                                                <label key={staff._id} className="flex items-center gap-3 cursor-pointer hover:bg-slate-100 dark:bg-slate-800/80 p-2 rounded-lg transition-colors">
+                                                <label key={staff._id} className="flex items-center gap-3 cursor-pointer hover:bg-slate-100/80 dark:bg-slate-800/80 p-2 rounded-lg transition-colors">
                                                     <input 
                                                         type="checkbox"
                                                         checked={checked}
@@ -935,7 +935,7 @@ const AdminProjects = () => {
                                     setShowTimelineModal(false);
                                     setSelectedProject(null);
                                 }} 
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full"
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100/80 dark:bg-slate-800/80 rounded-full"
                             >
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
@@ -1060,7 +1060,7 @@ const AdminProjects = () => {
                                             setShowTimelineModal(false);
                                             setSelectedProject(null);
                                         }}
-                                        className="flex-1 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
+                                        className="flex-1 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
                                     >
                                         Cancel
                                     </button>
@@ -1089,7 +1089,7 @@ const AdminProjects = () => {
                         >
                             <button 
                                 onClick={() => setRejectModal({ show: false, paymentId: null, reason: '' })} 
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full border-none bg-transparent cursor-pointer"
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100/80 dark:bg-slate-800/80 rounded-full border-none bg-transparent cursor-pointer"
                             >
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
@@ -1126,7 +1126,7 @@ const AdminProjects = () => {
                                     <button 
                                         type="button"
                                         onClick={() => setRejectModal({ show: false, paymentId: null, reason: '' })}
-                                        className="flex-1 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
+                                        className="flex-1 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black py-4 rounded-2xl text-xs uppercase tracking-widest transition border-none cursor-pointer"
                                     >
                                         Cancel
                                     </button>
@@ -1159,7 +1159,7 @@ const AdminProjects = () => {
                                     setShowRemittanceModal(false);
                                     setSelectedProject(null);
                                 }} 
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full border-none bg-transparent cursor-pointer"
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100/80 dark:bg-slate-800/80 rounded-full border-none bg-transparent cursor-pointer"
                             >
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
@@ -1177,7 +1177,7 @@ const AdminProjects = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-5">
                                 {/* Left Side: Ledger Settings */}
                                 <div className="lg:col-span-6 space-y-4">
-                                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 space-y-3">
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/60/60 dark:border-slate-700/60 space-y-3">
                                         <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Project Ledger Settings</h3>
                                         
                                         <form onSubmit={handleUpdateLedger} className="space-y-4">
@@ -1272,7 +1272,7 @@ const AdminProjects = () => {
 
                                 {/* Right Side: Record Manual Payment */}
                                 <div className="lg:col-span-6 space-y-4">
-                                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 space-y-3">
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/60/60 dark:border-slate-700/60 space-y-3">
                                         <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Record Manual / Cash Payment</h3>
                                         
                                         <form onSubmit={handleRecordManualPayment} className="space-y-4">
@@ -1342,11 +1342,11 @@ const AdminProjects = () => {
                             <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
                                 <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">Project Transactions Audit History</h3>
                                 
-                                <div className="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                <div className="bg-slate-50/50/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                                     <div className="overflow-x-auto max-h-48 overflow-y-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
-                                                <tr className="bg-slate-100 dark:bg-slate-800/80 text-[8px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                                                <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-[8px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-200 dark:border-slate-700">
                                                     <th className="p-4">Payment Info</th>
                                                     <th className="p-4">Amount</th>
                                                     <th className="p-4">Method / UTR</th>
@@ -1440,7 +1440,7 @@ const AdminProjects = () => {
                         >
                             <button
                                 onClick={() => { setShowAdditionalWorkModal(false); setAdditionalWorkProject(null); }}
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full border-none bg-transparent cursor-pointer"
+                                className="absolute right-8 top-8 p-2 hover:bg-slate-100/80 dark:bg-slate-800/80 rounded-full border-none bg-transparent cursor-pointer"
                             >
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
@@ -1549,7 +1549,7 @@ const AdminProjects = () => {
                                                                 <button
                                                                     disabled={updatingWorkId === w._id}
                                                                     onClick={() => handleDeleteWork(w._id)}
-                                                                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase rounded-xl hover:bg-rose-50 hover:text-rose-600 transition disabled:opacity-50 border-none cursor-pointer flex items-center gap-1"
+                                                                    className="px-3 py-1.5 bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase rounded-xl hover:bg-rose-50 hover:text-rose-600 transition disabled:opacity-50 border-none cursor-pointer flex items-center gap-1"
                                                                 >
                                                                     {updatingWorkId === w._id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Trash2 className="w-2.5 h-2.5" />}
                                                                     Delete

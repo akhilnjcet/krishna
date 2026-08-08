@@ -36,7 +36,7 @@ export default function DriveImage({ src, alt, className }) {
     };
 
     return (
-        <div className={`relative ${className} bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center border rounded-xl overflow-hidden`}>
+        <div className={`relative ${className} bg-slate-100/80 dark:bg-slate-800/80 flex items-center justify-center border rounded-xl overflow-hidden`}>
             {loading && !error && (
                 <div className="absolute inset-0 flex items-center justify-center bg-slate-50 dark:bg-slate-800">
                     <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>

@@ -182,7 +182,7 @@ const CustomerPayments = () => {
                                         type="number" required
                                         value={formData.amount}
                                         onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                                        className="w-full bg-white/5 dark:bg-slate-900/5 border border-white/10 p-5 rounded-2xl text-xl font-black text-blue-400 placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                        className="w-full bg-white/5/5 dark:bg-slate-900/5 border border-white/10 p-5 rounded-2xl text-xl font-black text-blue-400 placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
                                         placeholder="0.00"
                                     />
                                 </div>
@@ -191,7 +191,7 @@ const CustomerPayments = () => {
                                     <button 
                                         type="button"
                                         onClick={() => setFormData({...formData, method: 'upi'})}
-                                        className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${formData.method === 'upi' ? 'bg-blue-600 border-blue-400 text-white' : 'bg-white/5 dark:bg-slate-900/5 border-white/10 text-slate-400 hover:bg-white/10 dark:bg-slate-900/10'}`}
+                                        className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${formData.method === 'upi' ? 'bg-blue-600 border-blue-400 text-white' : 'bg-white/5/5 dark:bg-slate-900/5 border-white/10 text-slate-400 hover:bg-white/10/10 dark:bg-slate-900/10'}`}
                                     >
                                         <QrCode className="w-6 h-6" />
                                         <span className="text-[9px] font-black uppercase tracking-widest">UPI Portal</span>
@@ -199,7 +199,7 @@ const CustomerPayments = () => {
                                     <button 
                                         type="button"
                                         onClick={() => setFormData({...formData, method: 'bank_transfer'})}
-                                        className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${formData.method === 'bank_transfer' ? 'bg-blue-600 border-blue-400 text-white' : 'bg-white/5 dark:bg-slate-900/5 border-white/10 text-slate-400 hover:bg-white/10 dark:bg-slate-900/10'}`}
+                                        className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${formData.method === 'bank_transfer' ? 'bg-blue-600 border-blue-400 text-white' : 'bg-white/5/5 dark:bg-slate-900/5 border-white/10 text-slate-400 hover:bg-white/10/10 dark:bg-slate-900/10'}`}
                                     >
                                         <Building className="w-6 h-6" />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Bank Node</span>
@@ -235,9 +235,9 @@ const CustomerPayments = () => {
                                                     </button>
                                                     
                                                     <div className="flex items-center justify-center gap-4">
-                                                        <div className="h-[1px] bg-slate-100 dark:bg-slate-800/80 flex-1" />
+                                                        <div className="h-[1px] bg-slate-100/80 dark:bg-slate-800/80 flex-1" />
                                                         <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">OR</span>
-                                                        <div className="h-[1px] bg-slate-100 dark:bg-slate-800/80 flex-1" />
+                                                        <div className="h-[1px] bg-slate-100/80 dark:bg-slate-800/80 flex-1" />
                                                     </div>
 
                                                     <button 
@@ -274,7 +274,7 @@ const CustomerPayments = () => {
                                             required
                                             value={formData.name}
                                             onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                            className="w-full bg-white/5 dark:bg-slate-900/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                            className="w-full bg-white/5/5 dark:bg-slate-900/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
                                             placeholder="e.g. Initial Deposit, Weld Phase 2"
                                         />
                                     </div>
@@ -286,7 +286,7 @@ const CustomerPayments = () => {
                                                 required
                                                 value={formData.referenceId}
                                                 onChange={(e) => setFormData({...formData, referenceId: e.target.value})}
-                                                className="w-full bg-white/5 dark:bg-slate-900/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                                className="w-full bg-white/5/5 dark:bg-slate-900/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
                                                 placeholder="Enter UPI Ref / Bank UTR"
                                             />
                                         </div>
@@ -296,7 +296,7 @@ const CustomerPayments = () => {
                                                 type="date" required
                                                 value={formData.paymentDate}
                                                 onChange={(e) => setFormData({...formData, paymentDate: e.target.value})}
-                                                className="w-full bg-white/5 dark:bg-slate-900/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                                className="w-full bg-white/5/5 dark:bg-slate-900/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
                                             />
                                         </div>
                                     </div>
@@ -307,7 +307,7 @@ const CustomerPayments = () => {
                                             required
                                             value={formData.notes}
                                             onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                                            className="w-full bg-white/5 dark:bg-slate-900/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                            className="w-full bg-white/5/5 dark:bg-slate-900/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
                                             placeholder="Enter reference details or description..."
                                             rows="3"
                                         />
@@ -389,7 +389,7 @@ const CustomerPayments = () => {
                                         </tr>
                                     ) : (
                                         payments.map((p) => (
-                                            <tr key={p._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition-colors group">
+                                            <tr key={p._id} className="hover:bg-slate-50/50/50 dark:bg-slate-800/50 transition-colors group">
                                                 <td className="px-6 py-6">
                                                     <p className="text-xs font-black text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">#{p._id.slice(-8).toUpperCase()}</p>
                                                     <p className="text-[9px] font-bold text-slate-400 mt-1">{new Date(p.createdAt).toLocaleDateString()}</p>

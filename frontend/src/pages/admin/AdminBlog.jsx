@@ -127,7 +127,7 @@ const AdminBlog = () => {
                             placeholder="FILTER INTEL..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="bg-white/5 dark:bg-slate-900/5 border border-white/10 rounded-xl py-4 pl-12 pr-6 text-[10px] font-black uppercase tracking-widest focus:border-brand-accent outline-none transition-all w-full md:w-64"
+                            className="bg-white/5/5 dark:bg-slate-900/5 border border-white/10 rounded-xl py-4 pl-12 pr-6 text-[10px] font-black uppercase tracking-widest focus:border-brand-accent outline-none transition-all w-full md:w-64"
                         />
                     </div>
                     <button 
@@ -182,7 +182,7 @@ const AdminBlog = () => {
                                 <div className="flex gap-2">
                                     <button 
                                         onClick={() => handleOpenModal(blog)}
-                                        className="p-3 bg-white/5 dark:bg-slate-900/5 text-gray-400 hover:text-white hover:bg-white/10 dark:bg-slate-900/10 rounded-lg transition-all"
+                                        className="p-3 bg-white/5/5 dark:bg-slate-900/5 text-gray-400 hover:text-white hover:bg-white/10/10 dark:bg-slate-900/10 rounded-lg transition-all"
                                     >
                                         <Edit3 className="w-4 h-4" />
                                     </button>
@@ -225,7 +225,7 @@ const AdminBlog = () => {
                                     </h2>
                                     <p className="text-[9px] font-black text-gray-600 uppercase tracking-[0.4em] mt-2">Field Data Entry Interface v6.0</p>
                                 </div>
-                                <button onClick={() => setModalOpen(false)} className="p-4 bg-white/5 dark:bg-slate-900/5 rounded-full hover:bg-white/10 dark:bg-slate-900/10 text-gray-500 hover:text-white transition-all">
+                                <button onClick={() => setModalOpen(false)} className="p-4 bg-white/5/5 dark:bg-slate-900/5 rounded-full hover:bg-white/10/10 dark:bg-slate-900/10 text-gray-500 hover:text-white transition-all">
                                     <X className="w-6 h-6" />
                                 </button>
                             </div>

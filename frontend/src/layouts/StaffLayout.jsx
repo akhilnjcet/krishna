@@ -31,7 +31,7 @@ const navItems = [
 const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800">
         {/* Header */}
-        <div className="h-16 flex items-center px-5 border-b border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 dark:bg-slate-900/50 gap-3 flex-shrink-0">
+        <div className="h-16 flex items-center px-5 border-b border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50 gap-3 flex-shrink-0">
             <Link to="/" onClick={onNavClick} className="flex items-center gap-3 group">
                 <img src="/logo512.png" alt="Staff" className="w-9 h-9 rounded-xl object-contain shadow-lg group-hover:scale-105 transition-transform" />
                 <div className="flex flex-col">
@@ -51,7 +51,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                         to={item.path}
                         onClick={onNavClick}
                         className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all ${
-                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80 hover:text-slate-900 dark:text-white dark:hover:bg-slate-900 dark:hover:text-white'
+                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80 hover:text-slate-900 dark:text-white dark:hover:bg-slate-900 dark:hover:text-white'
                         }`}
                     >
                         <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`} />
@@ -62,7 +62,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 dark:bg-slate-900/50 space-y-3 flex-shrink-0">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50 space-y-3 flex-shrink-0">
             <Link to="/staff/profile" onClick={onNavClick} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded-xl transition-colors group">
                 <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 group-hover:scale-110 transition-transform">
                     {user?.name?.charAt(0)?.toUpperCase()}
@@ -142,9 +142,9 @@ const StaffLayout = () => {
                 <div className="fixed inset-0 z-[60] md:hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
                     <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-[70] flex flex-col border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl ${SIDEBAR_W} transition-transform`}>
-                        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 dark:bg-slate-900/50">
+                        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50">
                             <h2 className="text-sm font-black uppercase tracking-widest text-[#2563EB]">Staff Menu</h2>
-                            <button onClick={closeMobile} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800/80 dark:bg-slate-800 rounded-2xl z-10">
+                            <button onClick={closeMobile} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 rounded-2xl z-10">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -159,14 +159,14 @@ const StaffLayout = () => {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}
-                            className="p-2 bg-white/10 dark:bg-slate-900/10 rounded-xl text-white hover:bg-white/20 dark:bg-slate-900/20 transition-all border border-white/10"
+                            className="p-2 bg-white/10/10 dark:bg-slate-900/10 rounded-xl text-white hover:bg-white/20/20 dark:bg-slate-900/20 transition-all border border-white/10"
                             title="Toggle Menu"
                         >
                             <Menu className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => navigate(-1)}
-                            className="p-2 bg-white/10 dark:bg-slate-900/10 rounded-xl text-white hover:bg-white/20 dark:bg-slate-900/20 transition-all border border-white/10 flex items-center justify-center"
+                            className="p-2 bg-white/10/10 dark:bg-slate-900/10 rounded-xl text-white hover:bg-white/20/20 dark:bg-slate-900/20 transition-all border border-white/10 flex items-center justify-center"
                             title="Go Back"
                         >
                             <ChevronLeft className="w-5 h-5" />
@@ -177,13 +177,13 @@ const StaffLayout = () => {
                     </div>
                     <div className="flex items-center gap-2">
                         <ThemeToggle darkNavbar={true} />
-                        <button className="relative p-2 text-blue-100 hover:bg-white/10 dark:bg-slate-900/10 rounded-xl transition-all">
+                        <button className="relative p-2 text-blue-100 hover:bg-white/10/10 dark:bg-slate-900/10 rounded-xl transition-all">
                             <Bell className="w-5 h-5" />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full border-2 border-blue-700" />
                         </button>
                         <div className="flex items-center gap-2 pl-1">
                             <p className="text-sm font-bold text-white hidden sm:block truncate max-w-[100px]">{user?.name}</p>
-                            <div className="w-8 h-8 bg-white/20 dark:bg-slate-900/20 rounded-xl border border-white/20 flex items-center justify-center text-white">
+                            <div className="w-8 h-8 bg-white/20/20 dark:bg-slate-900/20 rounded-xl border border-white/20 flex items-center justify-center text-white">
                                 <User className="w-4 h-4" />
                             </div>
                         </div>
@@ -242,7 +242,7 @@ const StaffLayout = () => {
                             <div className="flex gap-2 justify-end">
                                 <button 
                                     onClick={() => setTaskPopup({ show: false, task: null })}
-                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
+                                    className="px-4 py-2 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
                                 >
                                     Dismiss
                                 </button>

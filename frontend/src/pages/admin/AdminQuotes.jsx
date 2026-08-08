@@ -75,7 +75,7 @@ const AdminQuotes = () => {
                 <button
                     onClick={() => setActiveSubTab('log')}
                     className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
-                        activeSubTab === 'log' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80'
+                        activeSubTab === 'log' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80'
                     }`}
                 >
                     Inbound Quotes Log
@@ -83,7 +83,7 @@ const AdminQuotes = () => {
                 <button
                     onClick={() => setActiveSubTab('studio')}
                     className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
-                        activeSubTab === 'studio' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800/80'
+                        activeSubTab === 'studio' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80'
                     }`}
                 >
                     Interactive Quotation Studio
@@ -216,7 +216,7 @@ const AdminQuotes = () => {
                                     {quote.status === 'new' && (
                                         <button 
                                             onClick={() => handleUpdateStatus(quote._id, 'reviewed')}
-                                            className="flex-1 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest text-xs py-4 rounded-2xl transition"
+                                            className="flex-1 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest text-xs py-4 rounded-2xl transition"
                                         >
                                             Mark Reviewed
                                         </button>
@@ -249,7 +249,7 @@ const AdminQuotes = () => {
                                     </h3>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Refining Inbound Data Log</p>
                                 </div>
-                                <button onClick={() => setEditingQuote(null)} className="p-3 bg-white/5 dark:bg-slate-900/5 hover:bg-white/10 dark:bg-slate-900/10 text-white rounded-2xl transition">
+                                <button onClick={() => setEditingQuote(null)} className="p-3 bg-white/5/5 dark:bg-slate-900/5 hover:bg-white/10/10 dark:bg-slate-900/10 text-white rounded-2xl transition">
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
