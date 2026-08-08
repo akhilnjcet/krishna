@@ -68,7 +68,8 @@ const AdminStaff = () => {
         overtimeRate: 0,
         bonusAmount: 0,
         advanceAmount: 0,
-        deductionAmount: 0
+        deductionAmount: 0,
+        profilePhoto: ''
     });
 
     const fetchStaff = useCallback(async () => {
@@ -127,7 +128,8 @@ const AdminStaff = () => {
             ifsc_code: '', base_salary: '',
             joiningDate: new Date().toISOString().split('T')[0],
             address: '', emergencyContact: '', salaryType: 'Monthly',
-            overtimeRate: 0, bonusAmount: 0, advanceAmount: 0, deductionAmount: 0
+            overtimeRate: 0, bonusAmount: 0, advanceAmount: 0, deductionAmount: 0,
+            profilePhoto: ''
         });
         setSelectedStaff(null);
     };
@@ -457,7 +459,8 @@ const AdminStaff = () => {
                                                         overtimeRate: member.overtimeRate || 0,
                                                         bonusAmount: member.bonusAmount || 0,
                                                         advanceAmount: member.advanceAmount || 0,
-                                                        deductionAmount: member.deductionAmount || 0
+                                                        deductionAmount: member.deductionAmount || 0,
+                                                        profilePhoto: member.profilePhoto || ''
                                                     });
                                                     setShowEditModal(true); 
                                                 }}
@@ -558,6 +561,44 @@ const AdminStaff = () => {
                                 {/* --- Profile Parameters Section --- */}
                                 <div className="md:col-span-2 pt-6 border-t border-slate-100 mt-4">
                                     <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-4">Profile Parameters</h4>
+                                </div>
+                                <div className="md:col-span-2 space-y-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <label className="text-sm font-bold text-slate-700 uppercase tracking-wider block">Profile Photo (JPG / PNG / Google Drive Link)</label>
+                                    
+                                    <div className="flex flex-col sm:flex-row gap-4 items-center">
+                                        <div className="w-20 h-20 rounded-full border border-slate-200 overflow-hidden bg-white flex-shrink-0 flex items-center justify-center">
+                                            {formData.profilePhoto ? (
+                                                <img src={formData.profilePhoto} alt="Preview" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Users className="w-8 h-8 text-slate-300" />
+                                            )}
+                                        </div>
+
+                                        <div className="flex-1 w-full space-y-2">
+                                            <input 
+                                                type="file" 
+                                                accept="image/png, image/jpeg, image/jpg" 
+                                                className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                                                onChange={(e) => {
+                                                    const file = e.target.files[0];
+                                                    if (file) {
+                                                        const reader = new FileReader();
+                                                        reader.onloadend = () => {
+                                                            setFormData({ ...formData, profilePhoto: reader.result });
+                                                        };
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                }}
+                                            />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Or paste direct image URL / Google Drive link" 
+                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500/20 outline-none transition" 
+                                                value={formData.profilePhoto || ''} 
+                                                onChange={e => setFormData({...formData, profilePhoto: e.target.value})} 
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600 ml-1 uppercase tracking-wider">Joining Date</label>

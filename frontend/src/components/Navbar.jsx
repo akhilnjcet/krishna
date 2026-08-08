@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
+import ThemeToggle from './ThemeToggle';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -24,7 +25,7 @@ const Navbar = () => {
     ];
 
     return (
-        <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 transition-all">
+        <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 transition-all dark:bg-slate-900/80 dark:border-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-20">
 
@@ -33,7 +34,7 @@ const Navbar = () => {
                             {location.pathname !== '/' && (
                                 <button
                                     onClick={() => navigate(-1)}
-                                    className="p-2.5 bg-slate-50 text-primary hover:bg-blue-50 hover:text-cta rounded-xl transition-all duration-300 border border-slate-100 flex items-center justify-center"
+                                    className="p-2.5 bg-slate-50 text-primary hover:bg-blue-50 hover:text-cta rounded-xl transition-all duration-300 border border-slate-100 flex items-center justify-center dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
                                     title="Go Back"
                                 >
                                     <ChevronLeft className="w-6 h-6" />
@@ -43,7 +44,7 @@ const Navbar = () => {
                                 <img 
                                     src="/logo512.png" 
                                     alt="Krishna Engineering Works" 
-                                    className="h-16 w-auto object-contain rounded-xl shadow-lg shadow-blue-100 group-hover:scale-105 transition-transform duration-300"
+                                    className="h-16 w-auto object-contain rounded-xl shadow-lg shadow-blue-100 group-hover:scale-105 transition-transform duration-300 dark:shadow-none"
                                 />
                             </Link>
                         </div>
@@ -58,8 +59,8 @@ const Navbar = () => {
                                             key={link.name}
                                             to={link.path}
                                             className={`text-sm font-semibold tracking-tight px-5 py-2.5 rounded-xl transition-all duration-300 ${isActive
-                                                    ? 'bg-blue-50 text-cta'
-                                                    : 'text-textMain/80 hover:bg-slate-50 hover:text-primary'
+                                                    ? 'bg-blue-50 text-cta dark:bg-slate-850 dark:text-blue-400'
+                                                    : 'text-textMain/80 hover:bg-slate-50 hover:text-primary dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
                                                 }`}
                                         >
                                             {link.name}
@@ -71,17 +72,18 @@ const Navbar = () => {
 
                         {/* Desktop Cta */}
                         <div className="hidden md:flex items-center gap-4">
+                            <ThemeToggle />
                             {!isAuthenticated ? (
                                 <>
                                     <Link
                                         to="/login"
-                                        className="text-textMain/70 hover:text-primary text-xs font-bold uppercase tracking-widest transition-colors px-4"
+                                        className="text-textMain/70 hover:text-primary text-xs font-bold uppercase tracking-widest transition-colors px-4 dark:text-slate-300 dark:hover:text-white"
                                     >
                                         Member Access
                                     </Link>
                                     <Link
                                         to="/register"
-                                        className="bg-cta hover:bg-ctaHover text-white px-7 py-3 text-sm font-bold rounded-2xl shadow-xl shadow-blue-100 hover:shadow-blue-200 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
+                                        className="bg-cta hover:bg-ctaHover text-white px-7 py-3 text-sm font-bold rounded-2xl shadow-xl shadow-blue-100 hover:shadow-blue-200 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 dark:shadow-none"
                                     >
                                         Get Started
                                     </Link>
@@ -93,7 +95,7 @@ const Navbar = () => {
                                         logout();
                                         navigate('/login', { replace: true });
                                     }}
-                                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-7 py-3 text-sm font-bold rounded-2xl transition-all duration-300 flex items-center gap-2"
+                                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-7 py-3 text-sm font-bold rounded-2xl transition-all duration-300 flex items-center gap-2 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
                                 >
                                     Log Out
                                 </button>
@@ -101,10 +103,11 @@ const Navbar = () => {
                         </div>
 
                         {/* Mobile menu button */}
-                        <div className="md:hidden flex items-center">
+                        <div className="md:hidden flex items-center gap-3">
+                            <ThemeToggle />
                             <button
                                 onClick={() => setIsOpen(!isOpen)}
-                                className="p-2 text-primary hover:text-cta focus:outline-none"
+                                className="p-2 text-primary hover:text-cta focus:outline-none dark:text-slate-300"
                             >
                                 <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     {isOpen ? (

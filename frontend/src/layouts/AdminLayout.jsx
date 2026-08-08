@@ -11,6 +11,7 @@ import useAuthStore from '../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSocket } from '../utils/socket';
 import api from '../services/api';
+import ThemeToggle from '../components/ThemeToggle';
 
 const SIDEBAR_W = 'w-[280px]';
 
@@ -43,23 +44,23 @@ const SIDEBAR_ITEMS = [
 
 /* ── Shared Sidebar Content ─────────────────────────────────────── */
 const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
-    <div className="flex flex-col h-full bg-[#0F172A]">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800">
         {/* Logo Section */}
-        <div className="p-6 border-b border-slate-800 bg-[#0B1222] flex flex-col items-center gap-3 flex-shrink-0">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center gap-3 flex-shrink-0">
             <Link to="/" onClick={onNavClick} className="flex flex-col items-center gap-3 group">
-                <div className="bg-white p-2 rounded-2xl shadow-lg group-hover:scale-105 transition-transform">
+                <div className="bg-white p-2 rounded-2xl shadow-lg group-hover:scale-105 transition-transform border border-slate-100 dark:border-transparent">
                     <p className="text-blue-600 font-black text-xl">K</p>
                 </div>
                 <div className="text-center">
-                    <p className="text-lg font-black text-white font-poppins tracking-tighter">KRISHNA ENGG</p>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-blue-500 mt-1 opacity-80 italic">Admin Terminal</p>
+                    <p className="text-lg font-black text-slate-900 dark:text-white font-poppins tracking-tighter">KRISHNA ENGG</p>
+                    <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-500 mt-1 opacity-80 italic">Admin Terminal</p>
                 </div>
             </Link>
         </div>
 
         {/* Navigation Section */}
         <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-hide">
-            <p className="px-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-600 mb-3">Enterprise Control</p>
+            <p className="px-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-600 mb-3">Enterprise Control</p>
             {SIDEBAR_ITEMS.map(item => {
                 const active = location.pathname === item.path;
                 return (
@@ -68,10 +69,10 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                         to={item.path}
                         onClick={onNavClick}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-semibold transition-all ${
-                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-900 dark:hover:text-white'
                         }`}
                     >
-                        <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
+                        <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
                         <span className="truncate">{item.name}</span>
                     </Link>
                 );
@@ -79,24 +80,24 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
         </nav>
 
         {/* Footer / Account Section */}
-        <div className="p-4 border-t border-slate-800 bg-[#0B1222] space-y-3 flex-shrink-0">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-3 flex-shrink-0">
             <Link 
                 to="/admin/profile" 
                 onClick={onNavClick} 
-                className="flex items-center gap-3 px-3 py-2.5 bg-slate-800/40 hover:bg-slate-800/60 transition-colors rounded-2xl border border-slate-800/50 group"
+                className="flex items-center gap-3 px-3 py-2.5 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-250 dark:hover:bg-slate-800/60 transition-colors rounded-2xl border border-slate-200 dark:border-slate-800/50 group"
             >
                 <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xs shadow-lg group-hover:scale-110 transition-transform">
                     {user?.name?.charAt(0)?.toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                    <p className="text-sm font-bold text-white truncate leading-none mb-1 group-hover:text-blue-400 transition-colors">{user?.name || "Administrator"}</p>
-                    <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest leading-none">System Root</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate leading-none mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-450 transition-colors">{user?.name || "Administrator"}</p>
+                    <p className="text-[10px] text-blue-600 dark:text-blue-500 font-black uppercase tracking-widest leading-none">System Root</p>
                 </div>
             </Link>
             
             <button 
                 onClick={onLogout} 
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 border border-slate-800 hover:border-rose-500/50 hover:bg-rose-500/10 hover:text-rose-400 text-slate-500 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all group"
+                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-rose-500/50 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-450 text-slate-500 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all group"
             >
                 <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 Logout Session
@@ -405,9 +406,9 @@ const AdminLayout = () => {
     const closeMobile = () => setMobileOpen(false);
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex font-sans overflow-x-hidden">
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex font-sans overflow-x-hidden transition-colors duration-250">
             {/* ── Desktop Sidebar ─────────────────────── */}
-            <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-[#0F172A] text-white z-40 border-r border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
+            <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-slate-950 text-slate-800 dark:text-white z-40 border-r border-slate-200 dark:border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
                 {desktopOpen && <SidebarContent location={location} user={user} onNavClick={() => { }} onLogout={handleLogout} />}
             </aside>
 
@@ -415,9 +416,9 @@ const AdminLayout = () => {
             {mobileOpen && (
                 <div className="fixed inset-0 z-[60] md:hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
-                    <aside className={`fixed top-0 left-0 h-full bg-[#0F172A] text-white z-[70] flex flex-col border-r border-slate-800 shadow-2xl ${SIDEBAR_W} transition-transform`}>
+                    <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-950 text-slate-800 dark:text-white z-[70] flex flex-col border-r border-slate-200 dark:border-slate-800 shadow-2xl ${SIDEBAR_W} transition-transform`}>
                         <div className="absolute top-4 right-4 z-[80]">
-                            <button onClick={closeMobile} className="p-2 text-slate-400 hover:text-white bg-slate-800/80 backdrop-blur rounded-xl shadow-lg border border-slate-700">
+                            <button onClick={closeMobile} className="p-2 text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800/80 backdrop-blur rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -428,7 +429,7 @@ const AdminLayout = () => {
 
             {/* ── Main Content ────────────────────────── */}
             <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-[280px]' : 'md:ml-0'}`}>
-                <header className="sticky top-0 z-30 min-h-16 py-2 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-4 md:px-6 flex flex-wrap items-center justify-between gap-2 shadow-lg">
+                <header className="sticky top-0 z-30 min-h-16 py-2 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-4 md:px-6 flex flex-wrap items-center justify-between gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}
@@ -450,6 +451,7 @@ const AdminLayout = () => {
                     </div>
 
                     <div className="flex items-center gap-2 relative">
+                        <ThemeToggle darkNavbar={true} />
                         <button 
                             onClick={() => setShowDropdown(prev => !prev)}
                             className="relative p-2 text-blue-100 hover:bg-white/10 rounded-xl transition-all"

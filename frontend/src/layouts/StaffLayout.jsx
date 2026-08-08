@@ -9,6 +9,7 @@ import useAuthStore from '../stores/authStore';
 import { getSocket } from '../utils/socket';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import ThemeToggle from '../components/ThemeToggle';
 
 const SIDEBAR_W = 'w-64';
 
@@ -28,14 +29,14 @@ const navItems = [
 
 /* ── Shared Sidebar Content ─────────────────────────────────────── */
 const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800">
         {/* Header */}
-        <div className="h-16 flex items-center px-5 border-b border-slate-800 bg-[#0B1222] gap-3 flex-shrink-0">
+        <div className="h-16 flex items-center px-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 gap-3 flex-shrink-0">
             <Link to="/" onClick={onNavClick} className="flex items-center gap-3 group">
                 <img src="/logo512.png" alt="Staff" className="w-9 h-9 rounded-xl object-contain shadow-lg group-hover:scale-105 transition-transform" />
                 <div className="flex flex-col">
-                    <span className="text-base font-black text-white font-poppins tracking-tight leading-none">Krishna Staff</span>
-                    <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-blue-400 mt-0.5">Field Logistics</span>
+                    <span className="text-base font-black text-slate-900 dark:text-white font-poppins tracking-tight leading-none">Krishna Staff</span>
+                    <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-405 mt-0.5">Field Logistics</span>
                 </div>
             </Link>
         </div>
@@ -50,10 +51,10 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                         to={item.path}
                         onClick={onNavClick}
                         className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all ${
-                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-900 dark:hover:text-white'
                         }`}
                     >
-                        <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
+                        <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
                         <span className="truncate">{item.name}</span>
                     </Link>
                 );
@@ -61,17 +62,17 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800 bg-[#0B1222] space-y-3 flex-shrink-0">
-            <Link to="/staff/profile" onClick={onNavClick} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-800 rounded-xl transition-colors group">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-3 flex-shrink-0">
+            <Link to="/staff/profile" onClick={onNavClick} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded-xl transition-colors group">
                 <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 group-hover:scale-110 transition-transform">
                     {user?.name?.charAt(0)?.toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{user?.name}</p>
-                    <p className="text-[9px] text-blue-400 font-bold uppercase tracking-wider">Edit Profile (WA)</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.name}</p>
+                    <p className="text-[9px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">Edit Profile (WA)</p>
                 </div>
             </Link>
-            <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-rose-600/20 hover:text-rose-400 text-slate-400 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all">
+            <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-600/20 text-slate-500 dark:text-slate-400 py-3 rounded-xl text-xs font-bold uppercase tracking-widest border border-slate-200 dark:border-slate-700 transition-all">
                 <LogOut className="w-4 h-4" /> Logout
             </button>
         </div>
@@ -130,9 +131,9 @@ const StaffLayout = () => {
     const closeMobile = () => setMobileOpen(false);
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex font-sans overflow-x-hidden">
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex font-sans overflow-x-hidden transition-colors duration-250">
             {/* ── Desktop Sidebar ─────────────────────── */}
-            <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-[#0F172A] text-white z-40 border-r border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
+            <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-slate-950 text-slate-800 dark:text-white z-40 border-r border-slate-200 dark:border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
                 {desktopOpen && <SidebarContent location={location} user={user} onNavClick={() => { }} onLogout={handleLogout} />}
             </aside>
 
@@ -140,10 +141,10 @@ const StaffLayout = () => {
             {mobileOpen && (
                 <div className="fixed inset-0 z-[60] md:hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
-                    <aside className={`fixed top-0 left-0 h-full bg-[#0F172A] text-white z-[70] flex flex-col border-r border-slate-800 shadow-2xl ${SIDEBAR_W} transition-transform`}>
-                        <div className="flex items-center justify-between p-4 border-b border-slate-800">
+                    <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-950 text-slate-800 dark:text-white z-[70] flex flex-col border-r border-slate-200 dark:border-slate-800 shadow-2xl ${SIDEBAR_W} transition-transform`}>
+                        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
                             <h2 className="text-sm font-black uppercase tracking-widest text-[#2563EB]">Staff Menu</h2>
-                            <button onClick={closeMobile} className="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-2xl z-10">
+                            <button onClick={closeMobile} className="p-2 text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800 rounded-2xl z-10">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -154,7 +155,7 @@ const StaffLayout = () => {
 
             {/* ── Main Content ────────────────────────── */}
             <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-64' : 'md:ml-0'}`}>
-                <header className="sticky top-0 z-30 min-h-16 py-2 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-4 md:px-6 flex flex-wrap items-center justify-between gap-2 shadow-lg">
+                <header className="sticky top-0 z-30 min-h-16 py-2 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-4 md:px-6 flex flex-wrap items-center justify-between gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}
@@ -175,6 +176,7 @@ const StaffLayout = () => {
                         </h1>
                     </div>
                     <div className="flex items-center gap-2">
+                        <ThemeToggle darkNavbar={true} />
                         <button className="relative p-2 text-blue-100 hover:bg-white/10 rounded-xl transition-all">
                             <Bell className="w-5 h-5" />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full border-2 border-blue-700" />
