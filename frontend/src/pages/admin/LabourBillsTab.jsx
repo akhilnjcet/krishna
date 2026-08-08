@@ -583,7 +583,7 @@ const LabourBillsTab = () => {
                                             <p className="text-xs opacity-90 font-medium">Labour Billing & Goods Transport Logistical Voucher</p>
                                         </div>
                                         <div className="text-left sm:text-right">
-                                            <span className="bg-white dark:bg-slate-900/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
+                                            <span className="bg-white/20 dark:bg-slate-900/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
                                                 TRANSPORT & LABOUR BILL
                                             </span>
                                             <p className="text-sm font-black">{billNumber}</p>
@@ -708,7 +708,7 @@ const LabourBillsTab = () => {
                                         {labourRows.map((row, index) => {
                                             const lineTotal = (parseFloat(row.labourersCount || 0) * parseFloat(row.workingDays || 0) * parseFloat(row.dailyRate || 0));
                                             return (
-                                                <tr key={row.id} className={index % 2 === 1 ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
+                                                <tr key={row.id} className={index % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
                                                     <td className="p-3 font-bold text-slate-400">{index + 1}</td>
                                                     <td className="p-3 font-bold text-slate-900 dark:text-white">{row.workDescription || 'Labour Work'}</td>
                                                     <td className="p-3 text-center font-bold">{row.labourersCount}</td>
@@ -733,37 +733,37 @@ const LabourBillsTab = () => {
                                     </div>
                                     <div className="p-4 bg-slate-50 dark:bg-slate-800 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                                         {loadingCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/60 pb-1">
+                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
                                                 <span className="text-slate-500 dark:text-slate-400 font-medium">Loading:</span>
                                                 <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(loadingCharges)}</span>
                                             </div>
                                         )}
                                         {unloadingCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/60 pb-1">
+                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
                                                 <span className="text-slate-500 dark:text-slate-400 font-medium">Unloading:</span>
                                                 <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(unloadingCharges)}</span>
                                             </div>
                                         )}
                                         {handlingCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/60 pb-1">
+                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
                                                 <span className="text-slate-500 dark:text-slate-400 font-medium">Handling:</span>
                                                 <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(handlingCharges)}</span>
                                             </div>
                                         )}
                                         {packingCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/60 pb-1">
+                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
                                                 <span className="text-slate-500 dark:text-slate-400 font-medium">Packing:</span>
                                                 <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(packingCharges)}</span>
                                             </div>
                                         )}
                                         {overtimeCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/60 pb-1">
+                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
                                                 <span className="text-slate-500 dark:text-slate-400 font-medium">Overtime:</span>
                                                 <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(overtimeCharges)}</span>
                                             </div>
                                         )}
                                         {additionalFreightCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/60 pb-1">
+                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
                                                 <span className="text-slate-500 dark:text-slate-400 font-medium">Addl. Freight:</span>
                                                 <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(additionalFreightCharges)}</span>
                                             </div>

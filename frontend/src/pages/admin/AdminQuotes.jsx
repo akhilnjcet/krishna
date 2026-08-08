@@ -249,7 +249,7 @@ const AdminQuotes = () => {
                                     </h3>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Refining Inbound Data Log</p>
                                 </div>
-                                <button onClick={() => setEditingQuote(null)} className="p-3 bg-white dark:bg-slate-900/5 hover:bg-white dark:bg-slate-900/10 text-white rounded-2xl transition">
+                                <button onClick={() => setEditingQuote(null)} className="p-3 bg-white/5 dark:bg-slate-900/5 hover:bg-white/10 dark:bg-slate-900/10 text-white rounded-2xl transition">
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>

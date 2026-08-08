@@ -141,7 +141,7 @@ const AdminPortfolio = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-slate-50 dark:bg-slate-800/50 min-h-screen font-sans">
+        <div className="p-4 md:p-8 space-y-8 bg-slate-50/50 dark:bg-slate-800/50 min-h-screen font-sans">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-4xl font-black text-slate-900 dark:text-white flex items-center gap-3 italic">

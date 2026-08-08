@@ -599,7 +599,7 @@ const Quotations = () => {
                                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
                                         <div className="flex items-center gap-4 flex-wrap">
                                             {brandingSettings.company_logo && (
-                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900/90 p-1 rounded-xl shadow-md" />
+                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white/90 dark:bg-slate-900/90 p-1 rounded-xl shadow-md" />
                                             )}
                                             <div>
                                                 <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
@@ -607,7 +607,7 @@ const Quotations = () => {
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
-                                            <span className="bg-white dark:bg-slate-900/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
+                                            <span className="bg-white/20 dark:bg-slate-900/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
                                                 QUOTATION
                                             </span>
                                             <p className="text-sm font-black">{quotationNumber}</p>
@@ -698,7 +698,7 @@ const Quotations = () => {
                                         {items.map((item, index) => {
                                             const lineTotal = (parseFloat(item.rate || 0) * parseFloat(item.quantity || 0));
                                             return (
-                                                <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
+                                                <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
                                                     <td className="p-3 font-bold text-slate-400">{index + 1}</td>
                                                     <td className="p-3">
                                                         <span className="font-bold text-slate-900 dark:text-white block">{item.name || 'Scope Item'}</span>

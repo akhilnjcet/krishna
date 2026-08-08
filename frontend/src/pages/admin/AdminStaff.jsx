@@ -333,7 +333,7 @@ const AdminStaff = () => {
                 <div className="min-w-[800px] md:min-w-full">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-left">
+                            <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-left">
                                 <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">ID / Name</th>
                                 <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Department / Role</th>
                                 <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Contact</th>
@@ -495,7 +495,7 @@ const AdminStaff = () => {
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
                             className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
                         >
-                            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+                            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
                                 <div>
                                     <h2 className="text-2xl font-black text-slate-900 dark:text-white">{showEditModal ? 'Update' : 'Register'} Staff</h2>
                                     <p className="text-slate-500 dark:text-slate-400 font-medium">Capture profile details for the system.</p>
@@ -735,7 +735,7 @@ const AdminStaff = () => {
                             </div>
                             
                             <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60">
+                                <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
                                     <p className="text-slate-500 dark:text-slate-400 font-medium">Total Earned: <span className="font-extrabold text-slate-900 dark:text-white">₹{attendanceSummary.totalEarnedSalary?.toLocaleString()}</span></p>
                                     <p className="text-slate-500 dark:text-slate-400 font-medium">Already Paid: <span className="font-extrabold text-slate-900 dark:text-white">₹{attendanceSummary.salaryAlreadyPaid?.toLocaleString()}</span></p>
                                     <p className="text-slate-500 dark:text-slate-400 font-medium">Advance Paid: <span className="font-extrabold text-slate-900 dark:text-white">₹{attendanceSummary.salaryAdvance?.toLocaleString()}</span></p>

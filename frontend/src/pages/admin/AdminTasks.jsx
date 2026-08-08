@@ -358,11 +358,11 @@ const AdminTasks = () => {
 
             {/* Metrics Dashboard */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                <div className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-surface/40 p-4 border border-slate-200 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
+                <div className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-surface/40 p-4 border border-slate-200/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Total Tasks</p>
                     <p className="text-2xl font-black text-slate-800 dark:text-slate-200 dark:text-white mt-1">{stats.total}</p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-surface/40 p-4 border border-slate-200 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
+                <div className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-surface/40 p-4 border border-slate-200/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Pending</p>
                     <p className="text-2xl font-black text-slate-700 dark:text-slate-300 mt-1">{stats.pending}</p>
                 </div>
@@ -382,7 +382,7 @@ const AdminTasks = () => {
                     <p className="text-rose-500 text-[10px] font-black uppercase tracking-wider">Overdue</p>
                     <p className="text-2xl font-black text-rose-700 dark:text-rose-400 mt-1">{stats.overdue}</p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-surface/40 p-4 border border-slate-200 dark:border-slate-700/60 dark:border-dark-border rounded-2xl col-span-2 sm:col-span-1">
+                <div className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-surface/40 p-4 border border-slate-200/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl col-span-2 sm:col-span-1">
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Cancelled</p>
                     <p className="text-2xl font-black text-slate-500 dark:text-slate-400 mt-1">{stats.cancelled}</p>
                 </div>
@@ -453,7 +453,7 @@ const AdminTasks = () => {
                                 key={colStatus}
                                 onDragOver={(e) => e.preventDefault()}
                                 onDrop={(e) => handleDrop(e, colStatus)}
-                                className="bg-slate-100 dark:bg-slate-800/80/60 dark:bg-dark-surface/10 rounded-3xl p-5 border border-slate-200 dark:border-slate-700/50 dark:border-dark-border/40 flex flex-col min-h-[500px]"
+                                className="bg-slate-100/60 dark:bg-slate-800/80 dark:bg-dark-surface/10 rounded-3xl p-5 border border-slate-200/50 dark:border-slate-700/50 dark:border-dark-border/40 flex flex-col min-h-[500px]"
                             >
                                 <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-200 dark:border-slate-700 dark:border-dark-border">
                                     <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-200 dark:text-white flex items-center gap-2 uppercase tracking-wide">
@@ -586,7 +586,7 @@ const AdminTasks = () => {
                                                 : 0;
 
                                             return (
-                                                <tr key={s._id} className="hover:bg-slate-50 dark:bg-slate-800/50">
+                                                <tr key={s._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50">
                                                     <td className="p-4 font-bold">{s.name}</td>
                                                     <td className="p-4">{staffTasks.length}</td>
                                                     <td className="p-4 text-emerald-600 font-bold">{completed}</td>
@@ -626,7 +626,7 @@ const AdminTasks = () => {
                                     </thead>
                                     <tbody className="divide-y font-medium text-slate-700 dark:text-slate-300 dark:text-dark-text">
                                         {tasks.map(t => (
-                                            <tr key={t._id} className="hover:bg-slate-50 dark:bg-slate-800/50">
+                                            <tr key={t._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50">
                                                 <td className="p-4 font-bold">{t.title}</td>
                                                 <td className="p-4">
                                                     <div className="flex flex-wrap gap-1">
@@ -675,7 +675,7 @@ const AdminTasks = () => {
                                                 : 0;
 
                                             return (
-                                                <tr key={p._id} className="hover:bg-slate-50 dark:bg-slate-800/50">
+                                                <tr key={p._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50">
                                                     <td className="p-4 font-bold">{p.title}</td>
                                                     <td className="p-4">{projTasks.length}</td>
                                                     <td className="p-4 text-emerald-600 font-bold">{completed}</td>
@@ -707,7 +707,7 @@ const AdminTasks = () => {
                                     </thead>
                                     <tbody className="divide-y font-medium text-slate-700 dark:text-slate-300 dark:text-dark-text">
                                         {tasks.filter(t => t.status === 'Delayed').map(t => (
-                                            <tr key={t._id} className="hover:bg-slate-50 dark:bg-slate-800/50 bg-amber-50/20">
+                                            <tr key={t._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 bg-amber-50/20">
                                                 <td className="p-4 font-bold text-amber-800 dark:text-amber-300">{t.title}</td>
                                                 <td className="p-4 font-bold text-slate-800 dark:text-slate-200">{t.projectName}</td>
                                                 <td className="p-4 font-bold text-amber-700">{t.delayReason || 'Unspecified'}</td>

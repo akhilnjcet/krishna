@@ -832,7 +832,7 @@ const AdminFinance = () => {
                                         const statusText = record ? (record.paymentStatus ?? 'DRAFT') : 'DRAFT';
 
                                         return (
-                                            <tr key={staff._id} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
+                                            <tr key={staff._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
                                                 <td className="px-6 py-5">
                                                     <div>
                                                         <p className="font-extrabold text-slate-900 dark:text-white text-sm leading-tight">{staff.name}</p>
@@ -993,7 +993,7 @@ const AdminFinance = () => {
                                     ) : otRecords.map(ot => {
                                         const staff = ot.staffId || {};
                                         return (
-                                            <tr key={ot._id} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
+                                            <tr key={ot._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
                                                 <td className="px-6 py-5">
                                                     <div>
                                                         <p className="font-extrabold text-slate-900 dark:text-white text-sm leading-tight">{staff.name || 'Unknown'}</p>
@@ -1076,7 +1076,7 @@ const AdminFinance = () => {
                             exit={{ scale: 0.95, opacity: 0 }}
                             className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
                         >
-                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
                                 <div>
                                     <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase">Edit Financial Parameters</h3>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Configure payroll base rates and recurring modifier parameters for {selectedStaffForEdit?.name}.</p>
@@ -1256,7 +1256,7 @@ const AdminFinance = () => {
                             exit={{ scale: 0.95, opacity: 0 }}
                             className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
                         >
-                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
                                 <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">{editingOt ? 'Edit' : 'Log'} Overtime Hours</h3>
                                 <button onClick={() => setShowOtModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition">
                                     <X className="w-5 h-5 text-slate-400" />
@@ -1349,7 +1349,7 @@ const AdminFinance = () => {
                             exit={{ scale: 0.95, opacity: 0 }}
                             className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-8"
                         >
-                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
                                 <div>
                                     <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase">Salary Payout Dashboard</h3>
                                     <p className="text-xs text-slate-400 font-semibold mt-0.5">Staff Profile: {paymentForm.staffName} • Cycle: {paymentForm.month}</p>
@@ -1611,7 +1611,7 @@ const AdminFinance = () => {
                             exit={{ scale: 0.95, opacity: 0 }}
                             className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
                         >
-                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
                                 <div>
                                     <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Payment Ledger History</h3>
                                     <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{historyStaffName} • Cycle: {selectedMonth}</p>
@@ -1639,7 +1639,7 @@ const AdminFinance = () => {
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
                                             {historyList.map((tx, idx) => (
-                                                <tr key={tx._id || idx} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
+                                                <tr key={tx._id || idx} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
                                                     <td className="px-4 py-3 font-medium text-slate-500 dark:text-slate-400">
                                                         {new Date(tx.createdAt).toLocaleString()}
                                                     </td>

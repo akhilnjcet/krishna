@@ -144,7 +144,7 @@ const PaymentSystem = () => {
                 <div className="relative z-10 flex items-center gap-4">
                     <button 
                         onClick={() => showQR ? setShowQR(false) : navigate(-1)}
-                        className="w-9 h-9 bg-white dark:bg-slate-900/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
+                        className="w-9 h-9 bg-white/10 dark:bg-slate-900/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </button>
@@ -271,7 +271,7 @@ const PaymentSystem = () => {
 
             {/* Loading Overlay */}
             {processing && (
-                <div className="fixed inset-0 bg-white dark:bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+                <div className="fixed inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
                     <div className="w-12 h-12 border-4 border-[#2D5BE3] border-t-transparent rounded-full animate-spin mb-4"></div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] animate-pulse">Establishing Secure link...</p>
                 </div>

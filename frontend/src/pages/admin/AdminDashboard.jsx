@@ -298,7 +298,7 @@ const AdminDashboard = () => {
                                 Biometric verification is active across all terminals. 3 unregistered attempts blocked today.
                             </p>
                             <div className="space-y-4">
-                                <div className="h-1.5 bg-white dark:bg-slate-900/10 rounded-full overflow-hidden">
+                                <div className="h-1.5 bg-white/10 dark:bg-slate-900/10 rounded-full overflow-hidden">
                                      <div className="h-full bg-blue-500 w-[92%] shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
                                 </div>
                                 <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">

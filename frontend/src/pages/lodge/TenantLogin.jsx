@@ -189,7 +189,7 @@ const TenantLogin = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-white dark:bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center"
+                        className="fixed inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center"
                     >
                         <div className="w-12 h-12 bg-[#2D5BE3] rounded-full flex items-center justify-center shadow-2xl animate-bounce">
                             <ShieldCheck className="w-6 h-6 text-white" />

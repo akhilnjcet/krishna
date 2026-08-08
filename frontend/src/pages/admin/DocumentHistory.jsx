@@ -360,7 +360,7 @@ const DocumentHistory = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-700 font-black text-[10px] text-slate-400 uppercase tracking-widest">
+                            <tr className="bg-slate-50/70 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-700 font-black text-[10px] text-slate-400 uppercase tracking-widest">
                                 <th className="px-6 py-4">Document Details</th>
                                 <th className="px-6 py-4">Client / Project</th>
                                 <th className="px-6 py-4">Financial metrics</th>
@@ -378,7 +378,7 @@ const DocumentHistory = () => {
                                     </td>
                                 </tr>
                             ) : documents.length > 0 ? documents.map(doc => (
-                                <tr key={doc._id} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
+                                <tr key={doc._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
                                     <td className="px-6 py-5">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
@@ -469,7 +469,7 @@ const DocumentHistory = () => {
 
                 {/* Pagination Footer */}
                 {pages > 1 && (
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <div className="bg-slate-50/50 dark:bg-slate-800/50 p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
                         <button 
                             disabled={page === 1}
                             onClick={() => setPage(prev => Math.max(1, prev - 1))}
@@ -635,7 +635,7 @@ const DocumentHistory = () => {
                                             ) : (
                                                 <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
                                                     {selectedDocDetail.versions.map((ver, idx) => (
-                                                        <div key={idx} className="bg-slate-50 dark:bg-slate-800/55 p-4 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col gap-3">
+                                                        <div key={idx} className="bg-slate-50/55 dark:bg-slate-800/55 p-4 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col gap-3">
                                                             <div className="flex justify-between items-center">
                                                                 <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-black">
                                                                     Version {ver.version}

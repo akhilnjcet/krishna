@@ -160,7 +160,7 @@ const CustomerQuotes = () => {
                             </div>
 
                             {quote.status !== 'accepted' && (
-                                <div className="absolute inset-0 bg-white dark:bg-slate-900/40 backdrop-blur-[1px] pointer-events-none flex items-center justify-center">
+                                <div className="absolute inset-0 bg-white/40 dark:bg-slate-900/40 backdrop-blur-[1px] pointer-events-none flex items-center justify-center">
                                     <div className="bg-brand-950 text-brand-accent px-6 py-2 font-black uppercase tracking-widest text-[10px] rotate-12 shadow-2xl">
                                         RESTRICTED / AWAITING APPROVAL
                                     </div>

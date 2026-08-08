@@ -221,7 +221,7 @@ const AdminUsers = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="border-b border-slate-100 dark:border-slate-800 dark:border-dark-border text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50 dark:bg-slate-800/50 dark:bg-dark-bg/30">
+                                    <tr className="border-b border-slate-100 dark:border-slate-800 dark:border-dark-border text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-dark-bg/30">
                                         <th className="py-4 px-6">User / Account</th>
                                         <th className="py-4 px-6">System Role</th>
                                         <th className="py-4 px-6">Designation / Staff Details</th>
@@ -232,7 +232,7 @@ const AdminUsers = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-dark-border">
                                     {users.map((user) => (
-                                        <tr key={user._id} className="hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-dark-bg/25 transition-colors">
+                                        <tr key={user._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-dark-bg/25 transition-colors">
                                             <td className="py-5 px-6">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-xl bg-[#2563EB] flex items-center justify-center text-white font-black text-sm uppercase">

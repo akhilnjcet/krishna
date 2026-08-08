@@ -1177,7 +1177,7 @@ const AdminProjects = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-5">
                                 {/* Left Side: Ledger Settings */}
                                 <div className="lg:col-span-6 space-y-4">
-                                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-3">
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 space-y-3">
                                         <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Project Ledger Settings</h3>
                                         
                                         <form onSubmit={handleUpdateLedger} className="space-y-4">
@@ -1272,7 +1272,7 @@ const AdminProjects = () => {
 
                                 {/* Right Side: Record Manual Payment */}
                                 <div className="lg:col-span-6 space-y-4">
-                                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-3">
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 space-y-3">
                                         <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Record Manual / Cash Payment</h3>
                                         
                                         <form onSubmit={handleRecordManualPayment} className="space-y-4">
@@ -1342,7 +1342,7 @@ const AdminProjects = () => {
                             <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
                                 <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">Project Transactions Audit History</h3>
                                 
-                                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                <div className="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                                     <div className="overflow-x-auto max-h-48 overflow-y-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>

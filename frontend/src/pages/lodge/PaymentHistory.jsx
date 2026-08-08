@@ -25,11 +25,11 @@ const PaymentHistory = () => {
         <div className="min-h-screen bg-[#F8FAFC]">
             {/* Header */}
             <div className="bg-[#2D5BE3] pt-12 pb-20 px-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white dark:bg-slate-900/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 dark:bg-slate-900/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
                 <div className="relative z-10 flex items-center gap-4">
                     <button 
                         onClick={() => navigate(-1)}
-                        className="w-10 h-10 bg-white dark:bg-slate-900/20 rounded-xl flex items-center justify-center text-white backdrop-blur-md"
+                        className="w-10 h-10 bg-white/20 dark:bg-slate-900/20 rounded-xl flex items-center justify-center text-white backdrop-blur-md"
                     >
                         <ArrowLeft className="w-6 h-6" />
                     </button>

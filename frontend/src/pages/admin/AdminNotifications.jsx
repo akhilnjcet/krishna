@@ -437,7 +437,7 @@ const AdminNotifications = () => {
                                     return (
                                         <tr 
                                             key={n._id}
-                                            className={`hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-blue-900/5 transition-all ${bg} ${
+                                            className={`hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-blue-900/5 transition-all ${bg} ${
                                                 !n.isRead ? 'font-medium' : ''
                                             }`}
                                         >

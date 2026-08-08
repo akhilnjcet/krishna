@@ -119,7 +119,7 @@ const FaceCapture = ({ onCapture, loading }) => {
         let currentFrames = [];
         let lastAnalysisTime = 0;
         let blinkVerified = false;
-        const ANALYSIS_INTERVAL = 120; // Fast 120ms cycle
+        const ANALYSIS_INTERVAL = 500; // Slower 500ms cycle to prevent mobile lagging
 
         const scanLoop = async () => {
             if (!scanActiveRef.current) return;
@@ -144,7 +144,7 @@ const FaceCapture = ({ onCapture, loading }) => {
                     } else if (result.multipleFaces) {
                         setMessage('MULTIPLE FACES DETECTED. PLEASE ENSURE ONLY ONE FACE IS IN FRAME.');
                     } else if (result.noFace) {
-                        if (result.luminance < 40) {
+                        if (result.luminance < 20) {
                             setMessage('LIGHTING IS TOO LOW. PLEASE MOVE TO A BRIGHTER AREA.');
                         } else {
                             setMessage('NO FACE DETECTED. POSITION YOUR FACE IN FRAME.');

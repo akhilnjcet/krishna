@@ -159,14 +159,14 @@ const StaffLayout = () => {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}
-                            className="p-2 bg-white dark:bg-slate-900/10 rounded-xl text-white hover:bg-white dark:bg-slate-900/20 transition-all border border-white/10"
+                            className="p-2 bg-white/10 dark:bg-slate-900/10 rounded-xl text-white hover:bg-white/20 dark:bg-slate-900/20 transition-all border border-white/10"
                             title="Toggle Menu"
                         >
                             <Menu className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => navigate(-1)}
-                            className="p-2 bg-white dark:bg-slate-900/10 rounded-xl text-white hover:bg-white dark:bg-slate-900/20 transition-all border border-white/10 flex items-center justify-center"
+                            className="p-2 bg-white/10 dark:bg-slate-900/10 rounded-xl text-white hover:bg-white/20 dark:bg-slate-900/20 transition-all border border-white/10 flex items-center justify-center"
                             title="Go Back"
                         >
                             <ChevronLeft className="w-5 h-5" />
@@ -177,13 +177,13 @@ const StaffLayout = () => {
                     </div>
                     <div className="flex items-center gap-2">
                         <ThemeToggle darkNavbar={true} />
-                        <button className="relative p-2 text-blue-100 hover:bg-white dark:bg-slate-900/10 rounded-xl transition-all">
+                        <button className="relative p-2 text-blue-100 hover:bg-white/10 dark:bg-slate-900/10 rounded-xl transition-all">
                             <Bell className="w-5 h-5" />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full border-2 border-blue-700" />
                         </button>
                         <div className="flex items-center gap-2 pl-1">
                             <p className="text-sm font-bold text-white hidden sm:block truncate max-w-[100px]">{user?.name}</p>
-                            <div className="w-8 h-8 bg-white dark:bg-slate-900/20 rounded-xl border border-white/20 flex items-center justify-center text-white">
+                            <div className="w-8 h-8 bg-white/20 dark:bg-slate-900/20 rounded-xl border border-white/20 flex items-center justify-center text-white">
                                 <User className="w-4 h-4" />
                             </div>
                         </div>

@@ -252,7 +252,7 @@ export const detectFaceAndLiveness = async (videoRef, canvasRef) => {
     }
 
     if (allDetections.length === 0) {
-        if (frameLuminance < 40) {
+        if (frameLuminance < 20) {
             return { invalid: true, reason: 'Lighting is too low. Please move to a brighter area.', luminance: frameLuminance };
         }
         return { noFace: true, luminance: frameLuminance };
@@ -269,7 +269,7 @@ export const detectFaceAndLiveness = async (videoRef, canvasRef) => {
 
     // 1. Low light check on face area
     const faceLuminance = checkLuminance(mainCtx, box, width, height);
-    if (faceLuminance < 40) {
+    if (faceLuminance < 20) {
         return { invalid: true, reason: 'Lighting is too low. Please move to a brighter area.', luminance: faceLuminance };
     }
 

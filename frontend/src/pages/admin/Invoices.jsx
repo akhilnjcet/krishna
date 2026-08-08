@@ -395,7 +395,7 @@ const Invoices = () => {
 
                         <div className="space-y-4">
                             {items.map((item, idx) => (
-                                <div key={item.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-3 relative group">
+                                <div key={item.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3 relative group">
                                     <div className="flex justify-between items-center">
                                         <span className="text-[10px] font-black uppercase text-indigo-500 tracking-wider">Item #{idx + 1}</span>
                                         {items.length > 1 && (
@@ -593,7 +593,7 @@ const Invoices = () => {
                                         <div className="flex items-center gap-4 flex-wrap">
                                             {showLogo && (
                                                 brandingSettings.company_logo ? (
-                                                    <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900/90 p-1 rounded-xl mb-3 shadow-md" />
+                                                    <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white/90 dark:bg-slate-900/90 p-1 rounded-xl mb-3 shadow-md" />
                                                 ) : (
                                                     <div className="w-12 h-12 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl font-black text-2xl flex items-center justify-center mb-3 shadow-md">
                                                         K
@@ -606,7 +606,7 @@ const Invoices = () => {
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
-                                            <span className="inline-block bg-white dark:bg-slate-900/20 backdrop-blur px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-2">
+                                            <span className="inline-block bg-white/20 dark:bg-slate-900/20 backdrop-blur px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-2">
                                                 TAX INVOICE
                                             </span>
                                             <p className="text-sm font-black">{invoiceNumber}</p>
@@ -674,7 +674,7 @@ const Invoices = () => {
                             )}
 
                             {/* Client & Status Section */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 bg-slate-50 dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 bg-slate-50/80 dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-100 dark:border-slate-800">
                                 <div>
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">BILLED TO CUSTOMER:</span>
                                     <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase">{customerName || 'Valued Customer / Client'}</h3>
@@ -724,7 +724,7 @@ const Invoices = () => {
                                         {items.map((item, index) => {
                                             const lineTotal = (parseFloat(item.price || 0) * parseFloat(item.quantity || 0));
                                             return (
-                                                <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
+                                                <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
                                                     <td className="p-3 font-bold text-slate-400">{index + 1}</td>
                                                     <td className="p-3 font-bold text-slate-900 dark:text-white">{item.description || 'Custom Line Item'}</td>
                                                     <td className="p-3 text-right font-bold" style={{ letterSpacing: 'normal' }}>{formatCurrencyINR(item.price || 0)}</td>

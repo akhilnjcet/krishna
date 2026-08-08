@@ -321,7 +321,7 @@ export default function LodgeAdminPaymentVerification() {
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700 dark:text-slate-300">
                 {payments.map(p => (
-                  <tr key={p._id} className="hover:bg-slate-50 dark:bg-slate-800/50">
+                  <tr key={p._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50">
                     <td className="p-3 font-bold text-slate-900 dark:text-white">
                       {p.tenantName || p.customerId?.name || 'Tenant'} (Room #{p.roomId?.roomNumber || '101'})
                     </td>

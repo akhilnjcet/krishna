@@ -851,7 +851,7 @@ const LodgeBillingManager = () => {
 
                     {/* Live Room Billing Status Grid / Table */}
                     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
                             <h3 className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-tight">Live Room Billing Registry</h3>
                         </div>
 
@@ -872,7 +872,7 @@ const LodgeBillingManager = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300">
                                     {sortedRooms.map(room => (
-                                        <tr key={room._id} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
+                                        <tr key={room._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
                                             <td className="px-6 py-4">
                                                 <p className="font-bold text-slate-900 dark:text-white">Room {room.number}</p>
                                                 <p className="text-[9px] uppercase font-black text-slate-400 mt-0.5">{room.type}</p>
@@ -1111,7 +1111,7 @@ const LodgeBillingManager = () => {
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 font-medium text-slate-700 dark:text-slate-300">
                                         {filteredVerifications.map((v) => (
-                                            <tr key={v._id} className="hover:bg-slate-50 dark:bg-slate-800/50 transition">
+                                            <tr key={v._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
                                                 <td className="px-6 py-4">
                                                     <p className="font-black text-slate-900 dark:text-white">{v.tenantName || v.name || v.customerId?.name || 'Unknown Guest'}</p>
                                                     <p className="text-[10px] text-slate-400">Room ID: {v.roomId?._id || v.roomId || 'N/A'}</p>
@@ -1177,7 +1177,7 @@ const LodgeBillingManager = () => {
                                 </table>
                             </div>
                             {filteredVerifications.length === 0 && (
-                                <div className="text-center py-20 text-slate-400 font-bold uppercase text-xs tracking-widest italic bg-slate-50 dark:bg-slate-800/50">
+                                <div className="text-center py-20 text-slate-400 font-bold uppercase text-xs tracking-widest italic bg-slate-50/50 dark:bg-slate-800/50">
                                     {loadingVerifications ? 'Fetching latest verification telemetry...' : 'No verifications pending match.'}
                                 </div>
                             )}

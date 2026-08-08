@@ -61,7 +61,7 @@ const ComplaintSystem = () => {
                 <div className="relative z-10 flex items-center gap-4">
                     <button 
                         onClick={() => navigate(-1)}
-                        className="w-9 h-9 bg-white dark:bg-slate-900/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
+                        className="w-9 h-9 bg-white/10 dark:bg-slate-900/10 rounded-xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10"
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </button>

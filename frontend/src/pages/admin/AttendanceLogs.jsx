@@ -430,7 +430,7 @@ const AttendanceLogs = () => {
                                         const staffGrid = calendarGrid[staff._id] || {};
                                         
                                         return (
-                                            <tr key={staff._id} className="hover:bg-slate-50 dark:bg-slate-800/60 transition-colors">
+                                            <tr key={staff._id} className="hover:bg-slate-50/60 dark:bg-slate-800/60 transition-colors">
                                                 <td className="px-6 py-4 bg-white dark:bg-slate-900 sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
                                                     <div>
                                                         <p className="font-extrabold text-slate-900 dark:text-white leading-tight">{staff.name}</p>
@@ -507,7 +507,7 @@ const AttendanceLogs = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full border-collapse text-left">
                                 <thead>
-                                    <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                                    <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                                         <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Staff Details</th>
                                         <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">IN / OUT Times</th>
                                         <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Duration</th>

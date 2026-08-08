@@ -127,7 +127,7 @@ const AdminBlog = () => {
                             placeholder="FILTER INTEL..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="bg-white dark:bg-slate-900/5 border border-white/10 rounded-xl py-4 pl-12 pr-6 text-[10px] font-black uppercase tracking-widest focus:border-brand-accent outline-none transition-all w-full md:w-64"
+                            className="bg-white/5 dark:bg-slate-900/5 border border-white/10 rounded-xl py-4 pl-12 pr-6 text-[10px] font-black uppercase tracking-widest focus:border-brand-accent outline-none transition-all w-full md:w-64"
                         />
                     </div>
                     <button 
@@ -146,7 +146,7 @@ const AdminBlog = () => {
                         key={blog._id}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="group bg-white dark:bg-slate-900/[0.02] border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-brand-accent/20 transition-all backdrop-blur-3xl flex flex-col"
+                        className="group bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-brand-accent/20 transition-all backdrop-blur-3xl flex flex-col"
                     >
                         <div className="relative h-64 overflow-hidden">
                             <img 
@@ -182,7 +182,7 @@ const AdminBlog = () => {
                                 <div className="flex gap-2">
                                     <button 
                                         onClick={() => handleOpenModal(blog)}
-                                        className="p-3 bg-white dark:bg-slate-900/5 text-gray-400 hover:text-white hover:bg-white dark:bg-slate-900/10 rounded-lg transition-all"
+                                        className="p-3 bg-white/5 dark:bg-slate-900/5 text-gray-400 hover:text-white hover:bg-white/10 dark:bg-slate-900/10 rounded-lg transition-all"
                                     >
                                         <Edit3 className="w-4 h-4" />
                                     </button>
@@ -217,7 +217,7 @@ const AdminBlog = () => {
                             exit={{ scale: 0.95, opacity: 0 }}
                             className="relative w-full max-w-4xl bg-[#0c0c0e] border border-white/5 rounded-[3rem] shadow-2xl overflow-hidden overflow-y-auto max-h-[90vh]"
                         >
-                            <div className="p-10 border-b border-white/5 flex justify-between items-center bg-white dark:bg-slate-900/[0.01]">
+                            <div className="p-10 border-b border-white/5 flex justify-between items-center bg-white/[0.01] dark:bg-slate-900/[0.01]">
                                 <div>
                                     <h2 className="text-3xl font-black uppercase tracking-tighter italic text-white flex items-center gap-4">
                                         <Radio className="w-6 h-6 text-brand-accent animate-pulse" /> 
@@ -225,7 +225,7 @@ const AdminBlog = () => {
                                     </h2>
                                     <p className="text-[9px] font-black text-gray-600 uppercase tracking-[0.4em] mt-2">Field Data Entry Interface v6.0</p>
                                 </div>
-                                <button onClick={() => setModalOpen(false)} className="p-4 bg-white dark:bg-slate-900/5 rounded-full hover:bg-white dark:bg-slate-900/10 text-gray-500 hover:text-white transition-all">
+                                <button onClick={() => setModalOpen(false)} className="p-4 bg-white/5 dark:bg-slate-900/5 rounded-full hover:bg-white/10 dark:bg-slate-900/10 text-gray-500 hover:text-white transition-all">
                                     <X className="w-6 h-6" />
                                 </button>
                             </div>
