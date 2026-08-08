@@ -18,9 +18,14 @@ const FaceCapture = ({ onCapture, loading }) => {
     const [capturedFrames, setCapturedFrames] = useState([]);
     const [finalDescriptor, setFinalDescriptor] = useState(null);
     const [metrics, setMetrics] = useState({ luminance: 120, blurriness: 50, distance: 'good' });
+    const [facingMode, setFacingMode] = useState('user');
     const streamRef = useRef(null);
     const scanActiveRef = useRef(false);
     const isInitializingRef = useRef(false);
+
+    const toggleCamera = () => {
+        setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+    };
 
     const stopVideo = () => {
         scanActiveRef.current = false;
@@ -39,7 +44,7 @@ const FaceCapture = ({ onCapture, loading }) => {
         return () => {
             stopVideo();
         };
-    }, []);
+    }, [facingMode]);
 
     const startVideo = async () => {
         if (isInitializingRef.current) return;
@@ -57,7 +62,7 @@ const FaceCapture = ({ onCapture, loading }) => {
                 video: { 
                     width: { ideal: 1280, min: 640 }, 
                     height: { ideal: 720, min: 480 }, 
-                    facingMode: 'user' 
+                    facingMode: facingMode 
                 } 
             });
             
@@ -144,7 +149,7 @@ const FaceCapture = ({ onCapture, loading }) => {
                     } else if (result.multipleFaces) {
                         setMessage('MULTIPLE FACES DETECTED. PLEASE ENSURE ONLY ONE FACE IS IN FRAME.');
                     } else if (result.noFace) {
-                        if (result.luminance < 20) {
+                        if (result.luminance < 10) {
                             setMessage('LIGHTING IS TOO LOW. PLEASE MOVE TO A BRIGHTER AREA.');
                         } else {
                             setMessage('NO FACE DETECTED. POSITION YOUR FACE IN FRAME.');
@@ -196,19 +201,25 @@ const FaceCapture = ({ onCapture, loading }) => {
     return (
         <div className="w-full flex flex-col items-center gap-4 md:gap-8 py-2 md:py-4">
             
-            <div className="relative w-full aspect-video md:aspect-[4/3] max-w-md bg-slate-950 rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-4 border-indigo-500/30 group">
+            <div className="relative w-full aspect-[3/4] sm:aspect-square md:aspect-[4/3] max-w-lg bg-slate-950 rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-4 border-indigo-500/30 group">
                 
                 {/* Real-time Quality Meters */}
+                {/* Real-time Quality Meters */}
                 {status === 'scanning' && (
-                    <div className="absolute top-4 left-4 right-4 z-30 flex justify-between gap-2 px-3 py-1.5 bg-slate-900/80 backdrop-blur-md rounded-xl text-[9px] font-bold text-white border border-slate-700/50">
-                        <div className="flex items-center gap-1">
-                            <Sun className={`w-3 h-3 ${metrics.luminance < 40 ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}`} />
-                            <span>Light: {metrics.luminance < 40 ? 'Low' : 'Good'}</span>
+                    <div className="absolute top-4 left-4 right-4 z-30 flex justify-between gap-2">
+                        <div className="flex gap-2 px-3 py-1.5 bg-slate-900/80 backdrop-blur-md rounded-xl text-[9px] font-bold text-white border border-slate-700/50 flex-1 justify-between">
+                            <div className="flex items-center gap-1">
+                                <Sun className={`w-3 h-3 ${metrics.luminance < 10 ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}`} />
+                                <span>Light: {metrics.luminance < 10 ? 'Low' : 'Good'}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <Maximize2 className="w-3 h-3 text-cyan-400" />
+                                <span>Dist: {metrics.distance === 'too_far' ? 'Move Closer' : metrics.distance === 'too_close' ? 'Step Back' : 'Optimal'}</span>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <Maximize2 className="w-3 h-3 text-cyan-400" />
-                            <span>Dist: {metrics.distance === 'too_far' ? 'Move Closer' : metrics.distance === 'too_close' ? 'Step Back' : 'Optimal'}</span>
-                        </div>
+                        <button onClick={toggleCamera} className="px-3 py-1.5 bg-slate-900/80 hover:bg-slate-800 transition-colors backdrop-blur-md rounded-xl border border-slate-700/50 text-white flex items-center justify-center shrink-0">
+                            <RefreshCw className="w-4 h-4 text-indigo-400" />
+                        </button>
                     </div>
                 )}
 
@@ -217,7 +228,7 @@ const FaceCapture = ({ onCapture, loading }) => {
                     {status === 'scanning' && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center">
                              <div className={`w-64 h-80 border-2 rounded-[50%] transition-colors duration-300 flex items-center justify-center ${
-                                 metrics.luminance < 40 ? 'border-amber-400/80 shadow-[0_0_20px_rgba(251,191,36,0.3)]' : 'border-emerald-400/70 shadow-[0_0_25px_rgba(52,211,153,0.3)]'
+                                 metrics.luminance < 10 ? 'border-amber-400/80 shadow-[0_0_20px_rgba(251,191,36,0.3)]' : 'border-emerald-400/70 shadow-[0_0_25px_rgba(52,211,153,0.3)]'
                              }`}>
                                  <div className="w-60 h-76 border border-dashed border-white/20 rounded-[50%] animate-spin-slow"></div>
                              </div>

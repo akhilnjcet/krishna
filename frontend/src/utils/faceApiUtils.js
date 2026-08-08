@@ -252,7 +252,7 @@ export const detectFaceAndLiveness = async (videoRef, canvasRef) => {
     }
 
     if (allDetections.length === 0) {
-        if (frameLuminance < 20) {
+        if (frameLuminance < 10) {
             return { invalid: true, reason: 'Lighting is too low. Please move to a brighter area.', luminance: frameLuminance };
         }
         return { noFace: true, luminance: frameLuminance };
@@ -267,42 +267,41 @@ export const detectFaceAndLiveness = async (videoRef, canvasRef) => {
     const score = detection.detection.score;
     const landmarks = detection.landmarks;
 
-    // 1. Low light check on face area
-    const faceLuminance = checkLuminance(mainCtx, box, width, height);
-    if (faceLuminance < 20) {
-        return { invalid: true, reason: 'Lighting is too low. Please move to a brighter area.', luminance: faceLuminance };
+    // 1. Low light check on overall frame (do not use face box because skin tone or close proximity artificially lowers light score)
+    if (frameLuminance < 10) {
+        return { invalid: true, reason: 'Lighting is too low. Please move to a brighter area.', luminance: frameLuminance };
     }
 
     // 2. Distance check (box width relative to video width)
     const relativeWidth = box.width / width;
     if (relativeWidth < 0.18) {
-        return { invalid: true, reason: 'Move closer to the camera.', distanceStatus: 'too_far', luminance: faceLuminance };
+        return { invalid: true, reason: 'Move closer to the camera.', distanceStatus: 'too_far', luminance: frameLuminance };
     }
     if (relativeWidth > 0.65) {
-        return { invalid: true, reason: 'Move further back from the camera.', distanceStatus: 'too_close', luminance: faceLuminance };
+        return { invalid: true, reason: 'Move further back from the camera.', distanceStatus: 'too_close', luminance: frameLuminance };
     }
 
     // 3. Facing straight check
     const isStraight = checkFacingStraight(landmarks);
     if (!isStraight) {
-        return { invalid: true, reason: 'Please look straight at the camera.', luminance: faceLuminance };
+        return { invalid: true, reason: 'Please look straight at the camera.', luminance: frameLuminance };
     }
 
     // 4. Frame boundary clipping check
     const isFullyVisible = checkBoundsAndClipping(box, width, height);
     if (!isFullyVisible) {
-        return { invalid: true, reason: 'Center your face fully within the frame.', luminance: faceLuminance };
+        return { invalid: true, reason: 'Center your face fully within the frame.', luminance: frameLuminance };
     }
 
     // 5. Blur quality check
     const blurriness = checkBlurriness(mainCtx, box, width, height);
     if (blurriness < 18) {
-        return { invalid: true, reason: 'Face is blurry. Hold still.', blurriness, luminance: faceLuminance };
+        return { invalid: true, reason: 'Face is blurry. Hold still.', blurriness, luminance: frameLuminance };
     }
 
     // 6. Occlusion & detection confidence check
     if (score < 0.65) {
-        return { invalid: true, reason: 'Low detection confidence. Remove occlusion (mask/sunglasses).', luminance: faceLuminance };
+        return { invalid: true, reason: 'Low detection confidence. Remove occlusion (mask/sunglasses).', luminance: frameLuminance };
     }
 
     // 7. Liveness blink check
@@ -313,7 +312,7 @@ export const detectFaceAndLiveness = async (videoRef, canvasRef) => {
         isBlinking,
         isFacingStraight: isStraight,
         score,
-        luminance: faceLuminance,
+        luminance: frameLuminance,
         blurriness,
         descriptor: Array.from(detection.descriptor)
     };
