@@ -5,6 +5,7 @@ import {
     Building2, Phone, Mail, User, Calendar, MapPin, AlertCircle 
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { getDirectImageUrl } from '../utils/imageUtils';
 
 const StaffIdCardModal = ({ staff, onClose }) => {
     const [cardSide, setCardSide] = useState('front'); // 'front', 'back', 'both'
@@ -28,7 +29,7 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                 </div>
                 <div class="card-body">
                     <div class="photo-container">
-                        <img src="${staff.profilePhoto || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200'}" class="photo" />
+                        <img src="${getDirectImageUrl(staff.profilePhoto) || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200'}" class="photo" />
                     </div>
                     <div class="details">
                         <div class="name">${(staff.name || 'EMPLOYEE NAME').toUpperCase()}</div>
@@ -181,7 +182,7 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                                 <div className="text-center my-auto">
                                     <div className="relative w-24 h-24 mx-auto mb-3 rounded-full border-2 border-slate-950 p-1 shadow-md">
                                         <img 
-                                            src={staff.profilePhoto || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200'} 
+                                            src={getDirectImageUrl(staff.profilePhoto) || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200'} 
                                             alt={staff.name}
                                             className="w-full h-full object-cover rounded-full"
                                         />

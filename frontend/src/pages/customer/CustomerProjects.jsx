@@ -7,6 +7,7 @@ import {
     MapPin, Users, IndianRupee, Wallet, CheckCircle, XCircle, Plus, X, Wrench, Send
 } from 'lucide-react';
 import { getSocket } from '../../utils/socket';
+import { getDirectImageUrl } from '../../utils/imageUtils';
 
 const CustomerProjects = () => {
     const [projects, setProjects] = useState([]);
@@ -485,7 +486,7 @@ const CustomerProjects = () => {
                                                 <div key={staff._id} className="bg-slate-50 border border-slate-200/60 rounded-3xl p-5 hover:bg-slate-100/50 transition-colors flex items-start gap-4">
                                                     <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg border border-indigo-200 flex-shrink-0">
                                                         {staff.profilePhoto ? (
-                                                            <img src={staff.profilePhoto} alt={staff.name} className="w-full h-full object-cover rounded-2xl" />
+                                                            <img src={getDirectImageUrl(staff.profilePhoto)} alt={staff.name} className="w-full h-full object-cover rounded-2xl" />
                                                         ) : (
                                                             staff.name.charAt(0).toUpperCase()
                                                         )}

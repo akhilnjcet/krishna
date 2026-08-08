@@ -28,7 +28,7 @@ export const getDirectImageUrl = (url) => {
     if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
         let fileId = '';
         
-        // Match /file/d/ID/view
+        // Match /file/d/ID/view or /file/d/ID
         const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
         if (fileIdMatch && fileIdMatch[1]) {
             fileId = fileIdMatch[1];
@@ -41,8 +41,7 @@ export const getDirectImageUrl = (url) => {
         }
 
         if (fileId) {
-            // Direct export view link as requested by requirement 6
-            return `https://drive.google.com/uc?export=view&id=${fileId}`;
+            return `https://lh3.googleusercontent.com/d/${fileId}`;
         }
     }
 

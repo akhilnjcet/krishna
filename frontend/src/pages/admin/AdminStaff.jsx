@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { generateGeneralReportPDF } from '../../services/pdfService';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getDirectImageUrl } from '../../utils/imageUtils';
 
 const AdminStaff = () => {
     const [staff, setStaff] = useState([]);
@@ -568,7 +569,7 @@ const AdminStaff = () => {
                                     <div className="flex flex-col sm:flex-row gap-4 items-center">
                                         <div className="w-20 h-20 rounded-full border border-slate-200 overflow-hidden bg-white flex-shrink-0 flex items-center justify-center">
                                             {formData.profilePhoto ? (
-                                                <img src={formData.profilePhoto} alt="Preview" className="w-full h-full object-cover" />
+                                                <img src={getDirectImageUrl(formData.profilePhoto)} alt="Preview" className="w-full h-full object-cover" />
                                             ) : (
                                                 <Users className="w-8 h-8 text-slate-300" />
                                             )}
@@ -595,7 +596,15 @@ const AdminStaff = () => {
                                                 placeholder="Or paste direct image URL / Google Drive link" 
                                                 className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500/20 outline-none transition" 
                                                 value={formData.profilePhoto || ''} 
-                                                onChange={e => setFormData({...formData, profilePhoto: e.target.value})} 
+                                                onChange={e => {
+                                                    const rawVal = e.target.value;
+                                                    const formatted = getDirectImageUrl(rawVal);
+                                                    setFormData({...formData, profilePhoto: formatted});
+                                                }}
+                                                onBlur={e => {
+                                                    const formatted = getDirectImageUrl(e.target.value);
+                                                    setFormData({...formData, profilePhoto: formatted});
+                                                }}
                                             />
                                         </div>
                                     </div>
