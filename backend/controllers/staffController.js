@@ -173,6 +173,9 @@ exports.deleteStaff = async (req, res) => {
         const staff = await User.findOne({ _id: req.params.id, role: 'staff' });
         if (!staff) return res.status(404).json({ message: 'Staff member not found' });
 
+        // Clean up face biometrics associated with this staff
+        await FaceData.deleteMany({ userId: staff._id });
+
         await staff.deleteOne();
         res.json({ message: 'Staff member removed successfully' });
     } catch (error) {
@@ -211,14 +214,30 @@ exports.registerFace = async (req, res) => {
             });
         }
 
-        // 2. Prevent duplicate registrations: Check if the same face already exists for another employee
+        // 2. Fetch all valid existing users to verify ownership and purge orphaned biometric records from deleted staff
+        const existingUsers = await User.find({}).select('_id name full_name staff_id');
+        const existingUserMap = new Map(existingUsers.map(u => [u._id.toString(), u]));
+
+        // Purge any orphaned FaceData records whose user was previously deleted
         const allFaceData = await FaceData.find({});
         for (const record of allFaceData) {
-            if (record.userId && record.userId.toString() !== userId.toString()) {
+            if (!record.userId || !existingUserMap.has(record.userId.toString())) {
+                await FaceData.deleteOne({ _id: record._id }).catch(() => {});
+            }
+        }
+
+        // 3. Prevent duplicate registrations: Check if the same face already exists for another active employee
+        for (const record of allFaceData) {
+            if (!record.userId || !existingUserMap.has(record.userId.toString())) {
+                continue; // Orphaned record from deleted staff, pruned & skipped
+            }
+            if (record.userId.toString() !== userId.toString()) {
                 const distance = getEuclideanDistance(descriptor, record.faceEmbedding);
                 if (distance < 0.42) {
+                    const matchedUser = existingUserMap.get(record.userId.toString());
+                    const employeeName = matchedUser?.name || matchedUser?.full_name || 'another employee';
                     return res.status(400).json({ 
-                        message: 'Duplicate face detected. This face is already registered to another employee.' 
+                        message: `Duplicate face detected. This face is already registered to ${employeeName}.` 
                     });
                 }
             }
@@ -231,17 +250,19 @@ exports.registerFace = async (req, res) => {
         for (const otherUser of usersWithDescriptor) {
             const distance = getEuclideanDistance(descriptor, otherUser.faceDescriptor);
             if (distance < 0.42) {
+                const employeeName = otherUser.name || otherUser.full_name || 'another employee';
                 return res.status(400).json({ 
-                    message: 'Duplicate face detected. This face is already registered to another employee.' 
+                    message: `Duplicate face detected. This face is already registered to ${employeeName}.` 
                 });
             }
         }
 
-        // 3. Store only face embedding vector in FaceData collection
-        await FaceData.create({
-            userId: userId,
-            faceEmbedding: descriptor
-        });
+        // 4. Store face embedding vector in FaceData collection (upsert safe)
+        await FaceData.findOneAndUpdate(
+            { userId: userId },
+            { userId: userId, faceEmbedding: descriptor },
+            { upsert: true, new: true }
+        );
 
         staff.faceDescriptor = descriptor;
         await staff.save();
@@ -264,6 +285,23 @@ exports.deleteFaceData = async (req, res) => {
         }
 
         res.json({ message: 'Face data removed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.cleanupBiometrics = async (req, res) => {
+    try {
+        const existingUsers = await User.find({}).select('_id');
+        const existingUserIds = existingUsers.map(u => u._id);
+        
+        // Remove FaceData for non-existent users
+        const deleteResult = await FaceData.deleteMany({ userId: { $nin: existingUserIds } });
+
+        res.json({ 
+            success: true, 
+            message: `Cleaned up ${deleteResult.deletedCount || 0} orphaned biometric records.` 
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -5,7 +5,7 @@ import StaffIdCardModal from '../../components/StaffIdCardModal';
 import { 
   Users, UserPlus, Search, Filter, Mail, Phone, Briefcase, 
   Trash2, Edit, Camera, X, Check, Loader2, AlertCircle, ChevronRight,
-  Banknote, BadgeIndianRupee, Download, CreditCard
+  Banknote, BadgeIndianRupee, Download, CreditCard, RefreshCw
 } from 'lucide-react';
 import { generateGeneralReportPDF } from '../../services/pdfService';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -170,6 +170,19 @@ const AdminStaff = () => {
         } catch (err) {
             console.error(err);
             alert("Failed to remove face data.");
+        }
+    };
+
+    const handleCleanupBiometrics = async () => {
+        try {
+            setLoading(true);
+            const res = await api.post('/staff/cleanup-biometrics');
+            alert(res.data?.message || "Biometric records cleaned up successfully.");
+        } catch (err) {
+            console.error(err);
+            alert("Failed to clean up biometric records.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -706,12 +719,23 @@ const AdminStaff = () => {
                                 buttonText="Scan and Save Descriptor"
                             />
                             
-                            <button 
-                                onClick={() => setShowFaceModal(false)}
-                                className="mt-8 text-slate-400 font-bold hover:text-slate-600 dark:text-slate-400 transition uppercase tracking-widest text-xs py-2"
-                            >
-                                Cancel Process
-                            </button>
+                            <div className="flex items-center gap-4 mt-8">
+                                <button 
+                                    onClick={handleCleanupBiometrics}
+                                    type="button"
+                                    className="text-xs font-bold text-amber-500 hover:text-amber-600 transition flex items-center gap-1.5"
+                                    title="Purge orphaned biometric records from previously deleted staff"
+                                >
+                                    <RefreshCw className="w-3.5 h-3.5" /> Clean Orphaned Biometrics
+                                </button>
+                                <span className="text-slate-300 dark:text-slate-700">|</span>
+                                <button 
+                                    onClick={() => setShowFaceModal(false)}
+                                    className="text-slate-400 font-bold hover:text-slate-600 dark:text-slate-400 transition uppercase tracking-widest text-xs py-2"
+                                >
+                                    Cancel Process
+                                </button>
+                            </div>
                         </motion.div>
                     </div>
                 )}
