@@ -131,9 +131,16 @@ const Footer = () => {
             </div>
 
             {/* Heavy bottom bar */}
-            <div className="bg-slate-200 py-6">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center md:text-left">
-                    <p>&copy; {new Date().getFullYear()} {settings.footer_copyright}</p>
+            <div className="bg-slate-200 dark:bg-slate-900 py-6 border-t border-slate-300 dark:border-slate-800">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center md:text-left gap-4">
+                    <div>
+                        <p>&copy; {new Date().getFullYear()} {settings.footer_copyright}</p>
+                        <p className="mt-2 text-[10px] tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold">
+                            POWERED BY <span className="font-black text-indigo-600 dark:text-indigo-400 tracking-wider">ZINGRONIX IT SOLUTIONS</span>
+                            <span className="mx-2 text-slate-400 dark:text-slate-600 font-normal">•</span>
+                            <span className="font-bold text-slate-600 dark:text-slate-300 tracking-widest">A KRISHNA GROUP CONCERN</span>
+                        </p>
+                    </div>
                     <div className="flex space-x-6 mt-4 md:mt-0">
                         <Link to="/privacy" className="hover:text-primary transition">Privacy Spec</Link>
                         <Link to="/terms" className="hover:text-primary transition">Terms of Service</Link>

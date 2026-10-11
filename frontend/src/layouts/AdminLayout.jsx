@@ -102,6 +102,15 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                 <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 Logout Session
             </button>
+
+            <div className="pt-1 text-center">
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                    POWERED BY <span className="text-indigo-600 dark:text-indigo-400">ZINGRONIX IT SOLUTIONS</span>
+                </p>
+                <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400/80 dark:text-slate-600">
+                    A KRISHNA GROUP CONCERN
+                </p>
+            </div>
         </div>
     </div>
 );
