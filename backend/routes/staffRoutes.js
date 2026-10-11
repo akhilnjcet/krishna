@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getStaff, addStaff, updateStaff, deleteStaff, registerFace, getStaffById, deleteFaceData, cleanupBiometrics } = require('../controllers/staffController');
+const { getStaff, addStaff, updateStaff, deleteStaff, registerFace, getStaffById, deleteFaceData, cleanupBiometrics, resetAllBiometrics } = require('../controllers/staffController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.get('/', protect, admin, getStaff);
@@ -9,6 +9,7 @@ router.post('/', protect, admin, addStaff);
 router.put('/:id', protect, admin, updateStaff);
 router.delete('/:id', protect, admin, deleteStaff);
 router.post('/cleanup-biometrics', protect, admin, cleanupBiometrics);
+router.post('/reset-all-biometrics', protect, admin, resetAllBiometrics);
 router.post('/:id/register-face', protect, admin, registerFace);
 router.delete('/:id/face', protect, admin, deleteFaceData);
 

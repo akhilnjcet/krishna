@@ -154,8 +154,27 @@ const AdminStaff = () => {
             setShowFaceModal(false);
             fetchStaff();
         } catch (err) {
-            const msg = err.response?.data?.message || "Failed to register face.";
-            alert(msg);
+            const data = err.response?.data;
+            const msg = data?.message || "Failed to register face.";
+            
+            if (data?.duplicate || err.response?.status === 409 || msg.includes("Duplicate face detected")) {
+                const confirmReassign = window.confirm(
+                    `${msg}\n\nWould you like to force-reassign and link this face to ${selectedStaff.name}?`
+                );
+                if (confirmReassign) {
+                    try {
+                        await api.post(`/staff/${selectedStaff._id}/register-face`, { descriptor, force: true });
+                        alert(`Face successfully linked to ${selectedStaff.name}!`);
+                        setShowFaceModal(false);
+                        fetchStaff();
+                        return;
+                    } catch (forceErr) {
+                        alert(forceErr.response?.data?.message || "Failed to force reassign face.");
+                    }
+                }
+            } else {
+                alert(msg);
+            }
         } finally {
             setLoading(false);
         }
@@ -181,6 +200,21 @@ const AdminStaff = () => {
         } catch (err) {
             console.error(err);
             alert("Failed to clean up biometric records.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResetAllBiometrics = async () => {
+        if (!window.confirm("WARNING: This will clear all biometric face registrations across the entire system. Are you sure you want to reset all faces?")) return;
+        try {
+            setLoading(true);
+            const res = await api.post('/staff/reset-all-biometrics');
+            alert(res.data?.message || "All biometrics reset successfully.");
+            fetchStaff();
+        } catch (err) {
+            console.error(err);
+            alert("Failed to reset biometrics.");
         } finally {
             setLoading(false);
         }
@@ -719,14 +753,23 @@ const AdminStaff = () => {
                                 buttonText="Scan and Save Descriptor"
                             />
                             
-                            <div className="flex items-center gap-4 mt-8">
+                            <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
                                 <button 
                                     onClick={handleCleanupBiometrics}
                                     type="button"
                                     className="text-xs font-bold text-amber-500 hover:text-amber-600 transition flex items-center gap-1.5"
-                                    title="Purge orphaned biometric records from previously deleted staff"
+                                    title="Check registered faces and remove ghosts"
                                 >
-                                    <RefreshCw className="w-3.5 h-3.5" /> Clean Orphaned Biometrics
+                                    <RefreshCw className="w-3.5 h-3.5" /> Check / Clean Biometrics
+                                </button>
+                                <span className="text-slate-300 dark:text-slate-700">|</span>
+                                <button 
+                                    onClick={handleResetAllBiometrics}
+                                    type="button"
+                                    className="text-xs font-bold text-rose-500 hover:text-rose-600 transition flex items-center gap-1.5"
+                                    title="Wipe all registered faces if duplicate persists"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" /> Reset All Faces
                                 </button>
                                 <span className="text-slate-300 dark:text-slate-700">|</span>
                                 <button 
