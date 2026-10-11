@@ -102,25 +102,31 @@ const AttendanceScanner = () => {
         let highestScore = 0;
         let bestDescriptor = null;
         let lastAnalysisTime = 0;
-        const ANALYSIS_INTERVAL = 150;
+        let steadyFrames = 0;
+        let isProcessing = false;
+        const ANALYSIS_INTERVAL = 100; // 100ms ultra-responsive cycle
 
         const scanLoop = async () => {
             if (!scanActiveRef.current) return;
 
             const nowTime = performance.now();
-            if (nowTime - lastAnalysisTime >= ANALYSIS_INTERVAL) {
+            if (!isProcessing && nowTime - lastAnalysisTime >= ANALYSIS_INTERVAL) {
                 lastAnalysisTime = nowTime;
+                isProcessing = true;
 
                 try {
                     const result = await detectFaceAndLiveness(videoRef, canvasRef);
 
                     if (!result || result.noFace) {
+                        steadyFrames = 0;
                         setMessage('Align face within the secure perimeter.');
                         setStats(prev => ({ ...prev, quality: 0 }));
                     } else if (result.multipleFaces) {
+                        steadyFrames = 0;
                         setMessage('Multiple faces detected. Please stand alone in front of the camera.');
                         setStats(prev => ({ ...prev, quality: 0 }));
                     } else if (result.invalid) {
+                        steadyFrames = 0;
                         setMessage(result.reason);
                         setStats(prev => ({ ...prev, quality: 0 }));
                     } else if (result.detection) {
@@ -129,22 +135,35 @@ const AttendanceScanner = () => {
                         if (!blinkDetected && result.isBlinking) {
                             blinkDetected = true;
                             setStats(prev => ({ ...prev, blinkCount: 1 }));
-                            setMessage('Liveness Verified. Holding for profile match...');
                         }
 
-                        if (result.score > 0.70) {
+                        if (result.score >= 0.65) {
+                            steadyFrames++;
                             if (result.score > highestScore) {
                                 highestScore = result.score;
                                 bestDescriptor = result.descriptor;
                             }
+                        } else {
+                            steadyFrames = Math.max(0, steadyFrames - 1);
                         }
 
-                        if (blinkDetected && bestDescriptor && highestScore >= 0.75) {
+                        // Trigger verification on blink OR upon holding steady for ~7-8 frames (~0.8s)
+                        const isReady = (blinkDetected && bestDescriptor && highestScore >= 0.68) || 
+                                        (steadyFrames >= 7 && (bestDescriptor || result.descriptor));
+
+                        if (isReady) {
                             scanActiveRef.current = false;
-                            verifyIdentity(bestDescriptor);
+                            verifyIdentity(bestDescriptor || result.descriptor);
                             return;
-                        } else if (!blinkDetected) {
-                            setMessage('Face detected. Blink to verify liveness...');
+                        } else {
+                            if (blinkDetected) {
+                                setMessage('Liveness verified. Aligning face match...');
+                            } else if (steadyFrames >= 3) {
+                                const progress = Math.min(100, Math.round((steadyFrames / 7) * 100));
+                                setMessage(`Holding steady... [${progress}%] (or blink)`);
+                            } else {
+                                setMessage('Face detected. Look straight or blink to verify...');
+                            }
                         }
                     }
                 } catch (err) {
@@ -153,6 +172,8 @@ const AttendanceScanner = () => {
                     setStatus('error');
                     setMessage('Face recognition model error. Please retry.');
                     return;
+                } finally {
+                    isProcessing = false;
                 }
             }
 

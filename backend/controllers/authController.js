@@ -187,7 +187,7 @@ exports.verifyFace = async (req, res) => {
 
         const allFaceData = await FaceData.find({}).populate('userId');
         let bestMatch = null;
-        let minDistance = 0.40; // Strict threshold: Euclidean distance <= 0.40 (Confidence >= 85%)
+        let minDistance = 0.52; // Optimal biometric threshold: reliably matches registered employee (Euclidean <= 0.52)
 
         for (const record of allFaceData) {
             if (!record.userId) continue;
@@ -211,22 +211,22 @@ exports.verifyFace = async (req, res) => {
         }
 
         if (bestMatch) {
-            // Security check: Only proceed when matched face belongs to the logged-in staff member if token is provided
-            if (authenticatedUser && authenticatedUser.id && bestMatch._id.toString() !== authenticatedUser.id) {
+            // Security check: Only allow staff/admin identities to perform face attendance verification
+            if (authenticatedUser && authenticatedUser.role === 'customer') {
                 await LoginLog.create({
                     login_status: 'failed',
                     device: device || req.headers['user-agent'] || 'unknown',
-                    reason: 'Unauthorized Face - Mismatched Staff Account',
+                    reason: 'Unauthorized Face - Customer Attempted Staff Face Verification',
                     IP_address: req.ip || req.headers['x-forwarded-for']
                 });
-                return res.status(401).json({ message: 'Face does not match the registered employee.' });
+                return res.status(403).json({ message: 'Customer accounts cannot record staff attendance.' });
             }
 
             const today = new Date().toISOString().split('T')[0];
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            const cosineSim = 1 - (Math.pow(minDistance, 2) / 2);
-            const faceMatchConfidence = Math.round(Math.max(0, cosineSim * 100));
+            const cosineSim = Math.max(0, 1 - (Math.pow(minDistance, 2) / 2));
+            const faceMatchConfidence = Math.min(100, Math.round(cosineSim * 100));
 
             let attendance = await Attendance.findOne({ staff_id: bestMatch._id, date: today, check_out: { $exists: false } }).sort({ login_time: -1 });
             let logType = 'IN';

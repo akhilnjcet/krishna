@@ -60,8 +60,8 @@ const FaceCapture = ({ onCapture, loading }) => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { 
-                    width: { ideal: 1280, min: 640 }, 
-                    height: { ideal: 720, min: 480 }, 
+                    width: { ideal: 640 }, 
+                    height: { ideal: 480 }, 
                     facingMode: facingMode 
                 } 
             });
@@ -124,14 +124,17 @@ const FaceCapture = ({ onCapture, loading }) => {
         let currentFrames = [];
         let lastAnalysisTime = 0;
         let blinkVerified = false;
-        const ANALYSIS_INTERVAL = 150; // Fast 150ms cycle to catch blinks
+        let steadyFrames = 0;
+        let isProcessing = false;
+        const ANALYSIS_INTERVAL = 120; // 120ms responsive cycle
 
         const scanLoop = async () => {
             if (!scanActiveRef.current) return;
 
             const nowTime = performance.now();
-            if (nowTime - lastAnalysisTime >= ANALYSIS_INTERVAL) {
+            if (!isProcessing && nowTime - lastAnalysisTime >= ANALYSIS_INTERVAL) {
                 lastAnalysisTime = nowTime;
+                isProcessing = true;
 
                 try {
                     const result = await detectFaceAndLiveness(videoRef, canvasRef);
@@ -145,30 +148,43 @@ const FaceCapture = ({ onCapture, loading }) => {
                     }
 
                     if (!result) {
+                        steadyFrames = 0;
                         setMessage('ALIGN FACE WITHIN SCENE ANALYZER');
                     } else if (result.multipleFaces) {
+                        steadyFrames = 0;
                         setMessage('MULTIPLE FACES DETECTED. PLEASE ENSURE ONLY ONE FACE IS IN FRAME.');
                     } else if (result.noFace) {
-                        if (result.luminance < 10) {
+                        steadyFrames = 0;
+                        if (result.luminance < 8) {
                             setMessage('LIGHTING IS TOO LOW. PLEASE MOVE TO A BRIGHTER AREA.');
                         } else {
                             setMessage('NO FACE DETECTED. POSITION YOUR FACE IN FRAME.');
                         }
                     } else if (result.invalid) {
+                        steadyFrames = 0;
                         setMessage(result.reason.toUpperCase());
                     } else if (result.detection) {
                         if (result.isBlinking) {
                             blinkVerified = true;
                         }
 
-                        if (!blinkVerified) {
-                            setMessage('PERFORM ONE CLEAR BLINK FOR LIVENESS CHECK');
+                        if (result.score >= 0.65) {
+                            steadyFrames++;
+                        } else {
+                            steadyFrames = Math.max(0, steadyFrames - 1);
+                        }
+
+                        // Liveness confirmed via blink OR steady hold for 6+ frames (~0.7s)
+                        const livenessOk = blinkVerified || steadyFrames >= 6;
+
+                        if (!livenessOk) {
+                            setMessage('LOOK STRAIGHT AT CAMERA OR BLINK ONCE');
                         } else {
                             setMessage(`CAPTURING BIOMETRIC SAMPLE [${currentFrames.length + 1}/${TARGET_SAMPLES}]...`);
                             currentFrames.push(result.descriptor);
                             setCapturedFrames([...currentFrames]);
 
-                            await new Promise(resolve => setTimeout(resolve, 150));
+                            await new Promise(resolve => setTimeout(resolve, 100));
 
                             if (currentFrames.length >= TARGET_SAMPLES) {
                                 scanActiveRef.current = false;
@@ -189,6 +205,8 @@ const FaceCapture = ({ onCapture, loading }) => {
                     setStatus('error');
                     setMessage('Face capture error. Please retry.');
                     return;
+                } finally {
+                    isProcessing = false;
                 }
             }
 

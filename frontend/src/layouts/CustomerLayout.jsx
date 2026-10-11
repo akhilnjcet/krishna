@@ -21,12 +21,21 @@ const navItems = [
 ];
 
 /* ── Shared Sidebar Content ─────────────────────────────────────── */
-const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-900 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800">
+const SidebarContent = ({ location, user, onNavClick, onLogout, onClose }) => (
+    <div className="flex flex-col h-full h-[100dvh] max-h-[100dvh] bg-white dark:bg-slate-900 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800">
         {/* Logo */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50 flex flex-col items-center gap-3 flex-shrink-0">
+        <div className="p-5 border-b border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50 flex flex-col items-center gap-3 flex-shrink-0 relative">
+            {onClose && (
+                <button 
+                    onClick={onClose} 
+                    className="absolute top-4 right-4 p-2 text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white bg-slate-200/60 dark:bg-slate-800 rounded-xl transition-all md:hidden"
+                    title="Close Menu"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+            )}
             <Link to="/" onClick={onNavClick} className="flex flex-col items-center gap-3 group">
-                <img src="/logo512.png" alt="Client Portal" className="w-14 h-14 rounded-2xl object-contain shadow-lg group-hover:scale-105 transition-transform" />
+                <img src="/logo512.png" alt="Client Portal" className="w-12 h-12 rounded-2xl object-contain shadow-lg group-hover:scale-105 transition-transform" />
                 <div className="text-center">
                     <p className="text-base font-black text-slate-900 dark:text-white font-poppins tracking-tight leading-none">Krishna Engineering</p>
                     <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400 mt-1">Client Portal</p>
@@ -35,8 +44,8 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
-            <p className="px-3 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-600 dark:text-slate-400 mb-3">Client Services</p>
+        <nav className="flex-1 min-h-0 px-3 py-4 space-y-1 overflow-y-auto">
+            <p className="px-3 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-600 dark:text-slate-400 mb-2">Client Services</p>
             {navItems.map(item => {
                 const active = location.pathname === item.path;
                 return (
@@ -44,7 +53,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                         key={item.name}
                         to={item.path}
                         onClick={onNavClick}
-                        className={`flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-semibold transition-all ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80 hover:text-slate-900 dark:text-white dark:hover:bg-slate-900 dark:hover:text-white'
+                        className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80 hover:text-slate-900 dark:text-white dark:hover:bg-slate-900 dark:hover:text-white'
                             }`}
                     >
                         <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`} />
@@ -58,7 +67,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                     href={import.meta.env.VITE_LODGE_BOOKING_URL}
                     target="_blank" 
                     rel="noreferrer"
-                    className="flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-semibold transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 mt-4 hover:bg-emerald-500"
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 mt-3 hover:bg-emerald-500"
                 >
                     <Home className="w-5 h-5 flex-shrink-0 text-white" />
                     <span className="truncate">Book Your Room</span>
@@ -66,7 +75,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
             ) : (
                 <Link 
                     to="/lodge"
-                    className="flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-semibold transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 mt-4 hover:bg-emerald-500"
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 mt-3 hover:bg-emerald-500"
                 >
                     <Home className="w-5 h-5 flex-shrink-0 text-white" />
                     <span className="truncate">Book Your Room</span>
@@ -75,17 +84,20 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50 space-y-3 flex-shrink-0">
-            <Link to="/customer/profile" onClick={onNavClick} className="flex items-center gap-3 p-3 bg-slate-250/50 dark:bg-slate-800/50 hover:bg-slate-300 dark:hover:bg-slate-700/50 rounded-xl transition-colors group">
+        <div className="p-4 pb-6 border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50 space-y-3 flex-shrink-0">
+            <Link to="/customer/profile" onClick={onNavClick} className="flex items-center gap-3 p-2.5 bg-slate-200/50 dark:bg-slate-800/50 hover:bg-slate-300 dark:hover:bg-slate-700/50 rounded-xl transition-colors group">
                 <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 group-hover:scale-110 transition-transform">
                     {user?.name?.charAt(0)?.toUpperCase()}
                 </div>
                 <div className="min-w-0">
                     <p className="text-sm font-bold text-slate-950 dark:text-white truncate">{user?.name}</p>
-                    <p className="text-[9px] text-blue-600 dark:text-blue-405 font-bold uppercase tracking-wider">Edit Profile (WA)</p>
+                    <p className="text-[9px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">Edit Profile (WA)</p>
                 </div>
             </Link>
-            <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-900 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-600/20 text-slate-500 dark:text-slate-400 py-3 rounded-xl text-xs font-bold uppercase tracking-widest border border-slate-200 dark:border-slate-700 transition-all">
+            <button 
+                onClick={onLogout} 
+                className="w-full flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/30 dark:hover:bg-rose-900/40 dark:text-rose-400 py-3 rounded-xl text-xs font-bold uppercase tracking-widest border border-rose-200 dark:border-rose-900/50 transition-all shadow-sm"
+            >
                 <LogOut className="w-4 h-4" /> Log Out
             </button>
         </div>
@@ -130,14 +142,8 @@ const CustomerLayout = () => {
             {mobileOpen && (
                 <div className="fixed inset-0 z-[60] md:hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
-                    <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-[70] flex flex-col border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl ${SIDEBAR_W}`}>
-                        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50">
-                            <h2 className="text-sm font-black uppercase tracking-widest text-[#2563EB]">Client Menu</h2>
-                            <button onClick={closeMobile} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 rounded-xl z-10">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <SidebarContent location={location} user={user} onNavClick={closeMobile} onLogout={handleLogout} />
+                    <aside className={`fixed top-0 left-0 h-full h-[100dvh] max-h-[100dvh] bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-[70] flex flex-col border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl ${SIDEBAR_W}`}>
+                        <SidebarContent location={location} user={user} onNavClick={closeMobile} onLogout={handleLogout} onClose={closeMobile} />
                     </aside>
                 </div>
             )}
@@ -169,20 +175,28 @@ const CustomerLayout = () => {
 
                     <div className="flex items-center gap-2">
                         <ThemeToggle darkNavbar={true} />
-                        <button className="relative p-2 text-blue-100 hover:bg-white/10/10 dark:bg-slate-900/10 rounded-xl transition-all">
+                        <button className="relative p-2 text-blue-100 hover:bg-white/10 dark:bg-slate-900/10 rounded-xl transition-all">
                             <Bell className="w-5 h-5" />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full border-2 border-blue-700" />
                         </button>
-                        <Link to="/customer/support" className="hidden sm:flex items-center gap-1.5 p-2 text-blue-100 hover:bg-white/10/10 dark:bg-slate-900/10 rounded-xl transition-all">
+                        <Link to="/customer/support" className="hidden sm:flex items-center gap-1.5 p-2 text-blue-100 hover:bg-white/10 dark:bg-slate-900/10 rounded-xl transition-all">
                             <HelpCircle className="w-5 h-5" />
                             <span className="text-xs font-bold uppercase tracking-wider hidden md:inline">Support</span>
                         </Link>
                         <div className="flex items-center gap-2">
                             <p className="text-sm font-bold text-white hidden sm:block truncate max-w-[100px]">{user?.name}</p>
-                            <div className="w-8 h-8 bg-white/20/20 dark:bg-slate-900/20 rounded-xl border border-white/20 flex items-center justify-center text-white text-sm font-bold">
+                            <div className="w-8 h-8 bg-white/20 dark:bg-slate-900/20 rounded-xl border border-white/20 flex items-center justify-center text-white text-sm font-bold">
                                 {user?.name?.charAt(0)?.toUpperCase() || <User className="w-4 h-4" />}
                             </div>
                         </div>
+                        <button
+                            onClick={handleLogout}
+                            className="p-2 text-white/90 hover:text-white bg-white/10 hover:bg-rose-500/80 rounded-xl transition-all border border-white/10 ml-1 flex items-center gap-1.5"
+                            title="Log Out"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            <span className="text-xs font-bold hidden sm:inline">Logout</span>
+                        </button>
                     </div>
                 </header>
 
