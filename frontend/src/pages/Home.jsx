@@ -302,8 +302,8 @@ const Home = () => {
                                     <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform relative z-10" />
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                                 </Link>
-                                 <a href={(settings.floating_phone || settings.footer_phone || '+918594030186').startsWith('tel:') ? (settings.floating_phone || settings.footer_phone || '+918594030186') : `tel:${(settings.floating_phone || settings.footer_phone || '+918594030186').replace(/\s+/g, '')}`} className="px-8 py-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600 flex items-center gap-3 transition-all hover:-translate-y-1 text-base shadow-sm">
-                                    <Phone className="w-5 h-5 text-blue-600" />
+                                 <a href={(settings.floating_phone || settings.footer_phone || '+918594030186').startsWith('tel:') ? (settings.floating_phone || settings.footer_phone || '+918594030186') : `tel:${(settings.floating_phone || settings.footer_phone || '+918594030186').replace(/\s+/g, '')}`} className="px-8 py-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 flex items-center gap-3 transition-all hover:-translate-y-1 text-base shadow-sm">
+                                    <Phone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                     Speak with Experts
                                 </a>
                             </motion.div>

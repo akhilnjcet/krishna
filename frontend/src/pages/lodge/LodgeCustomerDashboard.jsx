@@ -221,13 +221,13 @@ export default function LodgeCustomerDashboard() {
 
                 {/* Back / Logout Buttons (visible on desktop) */}
                 <div className="hidden md:flex flex-col gap-2 mt-auto pt-8 border-t border-slate-100 dark:border-slate-800">
-                    <button onClick={() => navigate('/lodge')} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-800 transition-all text-sm">
+                    <button onClick={() => navigate('/lodge')} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:text-white transition-all text-sm">
                         <ArrowLeft className="w-4.5 h-4.5" /> Lodge Home
                     </button>
-                    <button onClick={() => navigate('/')} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-800 transition-all text-sm">
+                    <button onClick={() => navigate('/')} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:text-white transition-all text-sm">
                         <ArrowLeft className="w-4.5 h-4.5" /> Main Home
                     </button>
-                    <button onClick={() => { useAuthStore.getState().logout(); navigate('/login'); }} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-red-500 hover:bg-red-50 transition-all text-sm">
+                    <button onClick={() => { useAuthStore.getState().logout(); navigate('/login'); }} className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all text-sm">
                         <LogOut className="w-4.5 h-4.5" /> Logout Portal
                     </button>
                 </div>

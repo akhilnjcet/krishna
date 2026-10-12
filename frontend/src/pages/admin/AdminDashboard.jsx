@@ -118,8 +118,11 @@ const AdminDashboard = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button onClick={fetchDashboardData} className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-[#E2E8F0] rounded-xl text-sm font-bold text-[#111827] hover:bg-[#F8FAFC] transition-all flex items-center gap-2 shadow-sm">
-                        <Activity className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                    <button 
+                        onClick={fetchDashboardData} 
+                        className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center gap-2 shadow-sm"
+                    >
+                        <Activity className={`w-4 h-4 text-blue-600 dark:text-blue-400 ${loading ? 'animate-spin' : ''}`} />
                         Refresh Data
                     </button>
                     <button 
