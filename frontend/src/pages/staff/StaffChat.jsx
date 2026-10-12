@@ -32,7 +32,7 @@ const StaffChat = () => {
         <div className="h-[calc(100vh-160px)] flex flex-col md:flex-row bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-2xl shadow-indigo-100">
             
             {/* Sidebar: Chat List */}
-            <aside className="w-full md:w-80 border-r border-slate-100 dark:border-slate-800 flex flex-col bg-slate-50/30/30 dark:bg-slate-800/30">
+            <aside className="w-full md:w-80 border-r border-slate-100 dark:border-slate-800 flex flex-col bg-slate-50/30 dark:bg-slate-800/30">
                 <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
                     <h2 className="text-xl font-extrabold text-slate-800 dark:text-slate-200 tracking-tight">Messages</h2>
                     <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Operational Support</p>
@@ -52,7 +52,7 @@ const StaffChat = () => {
                         </div>
                     </div>
                     {/* Mock Second Chat */}
-                    <div className="p-4 rounded-2xl hover:bg-white dark:bg-slate-900 hover:shadow-sm border border-transparent hover:border-slate-100 dark:border-slate-800 flex items-center gap-3 cursor-pointer opacity-50 grayscale transition-all">
+                    <div className="p-4 rounded-2xl hover:bg-white/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white hover:shadow-sm border border-transparent hover:border-slate-100 dark:border-slate-800 flex items-center gap-3 cursor-pointer opacity-50 grayscale transition-all">
                          <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center text-slate-400 border border-slate-200 dark:border-slate-700">
                             <User className="w-6 h-6" />
                          </div>
@@ -81,7 +81,7 @@ const StaffChat = () => {
                 </header>
 
                 {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/20/20 dark:bg-slate-800/20">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/20 dark:bg-slate-800/20">
                     <div className="text-center mb-8">
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800">Today, Feb 20</span>
                     </div>
@@ -140,7 +140,7 @@ const StaffChat = () => {
                             className={`p-3 rounded-2xl flex items-center justify-center transition-all shadow-lg ${
                                 message.trim() 
                                 ? 'bg-indigo-600 text-white shadow-indigo-200 active:scale-95' 
-                                : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-300'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-300'
                             }`}
                         >
                             <Send className="w-5 h-5" />

@@ -90,7 +90,7 @@ const Quote = () => {
                             
                             <a 
                                 href="/register"
-                                className="inline-block bg-brand-accent hover:bg-white dark:bg-slate-900 text-brand-950 font-black uppercase tracking-widest text-xs py-4 px-10 transition-all rounded-sm border-2 border-brand-950 shadow-[4px_4px_0_0_#000]"
+                                className="inline-block bg-brand-accent hover:bg-white/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white text-brand-950 font-black uppercase tracking-widest text-xs py-4 px-10 transition-all rounded-sm border-2 border-brand-950 shadow-[4px_4px_0_0_#000]"
                             >
                                 Initialize Account for Quote Delivery →
                             </a>

@@ -273,7 +273,7 @@ const StaffProgress = () => {
                             </button>
                             <button 
                                 onClick={() => setShowForm(true)}
-                                className="bg-brand-accent text-brand-950 px-6 py-3 font-black uppercase tracking-widest text-xs flex items-center gap-2 border-2 border-white hover:bg-white dark:bg-slate-900 transition-all shadow-custom"
+                                className="bg-brand-accent text-brand-950 px-6 py-3 font-black uppercase tracking-widest text-xs flex items-center gap-2 border-2 border-white hover:bg-white/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all shadow-custom"
                             >
                                 <Plus className="w-4 h-4" /> New Update
                             </button>

@@ -62,7 +62,7 @@ const UPIFallback = ({ upiData }) => {
           <span className="text-[10px] font-black font-mono text-slate-400 lowercase italic truncate flex-1">{upiData.pa}</span>
           <button 
             onClick={handleCopyVPA}
-            className={`px-6 py-4 rounded-xl flex items-center gap-2 transition-all active:scale-95 ${copied ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-white dark:bg-slate-900 hover:text-blue-600'}`}
+            className={`px-6 py-4 rounded-xl flex items-center gap-2 transition-all active:scale-95 ${copied ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-500'}`}
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             <span className="text-[9px] font-black uppercase tracking-widest">{copied ? 'ID Copied' : 'Copy ID'}</span>

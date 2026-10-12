@@ -255,12 +255,12 @@ const StaffTasks = () => {
 
     const getStatusStyles = (status) => {
         switch (status) {
-            case 'Pending': return 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 dark:bg-dark-bg dark:text-slate-300 dark:border-dark-border';
+            case 'Pending': return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 dark:bg-dark-bg dark:text-slate-300 dark:border-dark-border';
             case 'In Progress': return 'bg-blue-100 text-blue-700 border border-blue-200/20 dark:bg-blue-950/20 dark:text-blue-400/50 dark:border-blue-950/50';
             case 'Delayed': return 'bg-amber-100 text-amber-700 border border-amber-200 animate-pulse/20 dark:bg-amber-950/20 dark:text-amber-400/50 dark:border-amber-950/50';
             case 'Completed': return 'bg-emerald-100 text-emerald-700 border border-emerald-200/20 dark:bg-emerald-950/20 dark:text-emerald-400/50 dark:border-emerald-950/50';
             case 'Cancelled': return 'bg-rose-100 text-rose-700 border border-rose-200/20 dark:bg-rose-950/20 dark:text-rose-400/50 dark:border-rose-950/50';
-            default: return 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
+            default: return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
         }
     };
 
@@ -303,11 +303,11 @@ const StaffTasks = () => {
 
             {/* Metrics Dashboard */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                <div className="bg-slate-50 dark:bg-slate-800/40 dark:bg-dark-surface/40 p-4 border border-slate-200/60/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
+                <div className="bg-slate-50 dark:bg-slate-800/40 dark:bg-dark-surface/40 p-4 border border-slate-200/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Total Assigned</p>
                     <p className="text-2xl font-black text-slate-800 dark:text-slate-200 dark:text-white mt-1">{totalCount}</p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800/40 dark:bg-dark-surface/40 p-4 border border-slate-200/60/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
+                <div className="bg-slate-50 dark:bg-slate-800/40 dark:bg-dark-surface/40 p-4 border border-slate-200/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Pending</p>
                     <p className="text-2xl font-black text-slate-700 dark:text-slate-300 mt-1">{pendingCount}</p>
                 </div>
@@ -491,7 +491,7 @@ const StaffTasks = () => {
                                                     <span className="text-slate-400 uppercase tracking-wider text-[10px]">Work Completion Progress</span>
                                                     <span className="text-blue-600 dark:text-blue-400">{task.progressPercentage}%</span>
                                                 </div>
-                                                <div className="h-2.5 bg-slate-100/80 dark:bg-slate-800/80 dark:bg-dark-bg w-full rounded-full overflow-hidden border border-slate-200/50/50 dark:border-slate-700/50 dark:border-transparent">
+                                                <div className="h-2.5 bg-slate-100 dark:bg-slate-800 dark:bg-dark-bg w-full rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50 dark:border-transparent">
                                                     <div 
                                                         className={`h-full transition-all duration-500 ${
                                                             task.status === 'Delayed' ? 'bg-amber-500' :
@@ -679,7 +679,7 @@ const StaffTasks = () => {
 
                                                                         {/* Uploading Spinner */}
                                                                         {uploading && (
-                                                                            <div className="w-16 h-16 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 flex items-center justify-center">
+                                                                            <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                                                                                 <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
                                                                             </div>
                                                                         )}
@@ -744,7 +744,7 @@ const StaffTasks = () => {
                             className="bg-white dark:bg-slate-900 dark:bg-dark-surface w-full max-w-lg rounded-[2.5rem] shadow-2xl relative z-10 border border-slate-100 dark:border-slate-800 dark:border-dark-border overflow-hidden"
                         >
                             <div className="bg-amber-500 p-8 text-white flex items-center gap-3">
-                                <div className="p-3 bg-white/20/20 dark:bg-slate-900/20 rounded-2xl text-white">
+                                <div className="p-3 bg-white/20 dark:bg-slate-800/70 rounded-2xl text-white">
                                     <AlertTriangle className="w-6 h-6 animate-bounce" />
                                 </div>
                                 <div>

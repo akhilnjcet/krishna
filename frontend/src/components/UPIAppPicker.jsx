@@ -90,7 +90,7 @@ const UPIAppPicker = ({ isOpen, onClose, upiData, onFallbackTriggered }) => {
                   key={app.id}
                   onClick={() => handleLaunch(app)}
                   disabled={isOpening}
-                  className="group relative bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 p-6 rounded-[2rem] flex flex-col items-center gap-3 hover:bg-white dark:bg-slate-900 hover:border-blue-500 hover:shadow-xl transition-all active:scale-95 disabled:opacity-50"
+                  className="group relative bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 p-6 rounded-[2rem] flex flex-col items-center gap-3 hover:bg-white/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white hover:border-blue-500 hover:shadow-xl transition-all active:scale-95 disabled:opacity-50"
                 >
                   <div 
                     className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform"
@@ -118,7 +118,7 @@ const UPIAppPicker = ({ isOpen, onClose, upiData, onFallbackTriggered }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-white/90/90 dark:bg-slate-900/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center"
+                className="absolute inset-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center"
               >
                 <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-6" />
                 <h4 className="text-lg font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">Activating App</h4>

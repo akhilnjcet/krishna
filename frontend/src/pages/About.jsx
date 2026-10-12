@@ -65,7 +65,7 @@ const About = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1 }}
                     >
-                        <div className="inline-flex items-center gap-4 bg-white/90/90 dark:bg-white/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 px-8 py-3 rounded-full mb-10 shadow-sm">
+                        <div className="inline-flex items-center gap-4 bg-white/90 dark:bg-white/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 px-8 py-3 rounded-full mb-10 shadow-sm">
                             <span className="w-3 h-3 rounded-full bg-blue-600 animate-pulse"></span>
                             <span className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-500 dark:text-slate-400 italic">Established 1999 // REINFORCED</span>
                         </div>

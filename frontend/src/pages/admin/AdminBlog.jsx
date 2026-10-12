@@ -127,12 +127,12 @@ const AdminBlog = () => {
                             placeholder="FILTER INTEL..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="bg-white/5/5 dark:bg-slate-900/5 border border-white/10 rounded-xl py-4 pl-12 pr-6 text-[10px] font-black uppercase tracking-widest focus:border-brand-accent outline-none transition-all w-full md:w-64"
+                            className="bg-white/5 dark:bg-slate-800/30 border border-white/10 rounded-xl py-4 pl-12 pr-6 text-[10px] font-black uppercase tracking-widest focus:border-brand-accent outline-none transition-all w-full md:w-64"
                         />
                     </div>
                     <button 
                         onClick={() => handleOpenModal()}
-                        className="p-4 bg-brand-accent text-black rounded-xl hover:bg-white dark:bg-slate-900 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,180,0,0.3)]"
+                        className="p-4 bg-brand-accent text-black rounded-xl hover:bg-white/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 shadow-[0_0_20px_rgba(255,180,0,0.3)]"
                     >
                         <Plus className="w-6 h-6" />
                     </button>
@@ -182,7 +182,7 @@ const AdminBlog = () => {
                                 <div className="flex gap-2">
                                     <button 
                                         onClick={() => handleOpenModal(blog)}
-                                        className="p-3 bg-white/5/5 dark:bg-slate-900/5 text-gray-400 hover:text-white hover:bg-white/10/10 dark:bg-slate-900/10 rounded-lg transition-all"
+                                        className="p-3 bg-white/5 dark:bg-slate-800/30 text-gray-400 hover:text-white hover:bg-white/10 dark:bg-slate-800/50 rounded-lg transition-all"
                                     >
                                         <Edit3 className="w-4 h-4" />
                                     </button>
@@ -225,7 +225,7 @@ const AdminBlog = () => {
                                     </h2>
                                     <p className="text-[9px] font-black text-gray-600 uppercase tracking-[0.4em] mt-2">Field Data Entry Interface v6.0</p>
                                 </div>
-                                <button onClick={() => setModalOpen(false)} className="p-4 bg-white/5/5 dark:bg-slate-900/5 rounded-full hover:bg-white/10/10 dark:bg-slate-900/10 text-gray-500 hover:text-white transition-all">
+                                <button onClick={() => setModalOpen(false)} className="p-4 bg-white/5 dark:bg-slate-800/30 rounded-full hover:bg-white/10 dark:bg-slate-800/50 text-gray-500 hover:text-white transition-all">
                                     <X className="w-6 h-6" />
                                 </button>
                             </div>
@@ -312,7 +312,7 @@ const AdminBlog = () => {
 
                                 <button 
                                     disabled={saving}
-                                    className="w-full py-6 bg-brand-accent text-black font-black uppercase tracking-[0.5em] text-[10px] rounded-2xl hover:bg-white dark:bg-slate-900 active:scale-95 transition-all shadow-2xl disabled:opacity-50"
+                                    className="w-full py-6 bg-brand-accent text-black font-black uppercase tracking-[0.5em] text-[10px] rounded-2xl hover:bg-white/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white active:scale-95 transition-all shadow-2xl disabled:opacity-50"
                                 >
                                     {saving ? 'UPLOADING DATA...' : 'COMMIT ARCHIVE'}
                                 </button>

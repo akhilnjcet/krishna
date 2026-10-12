@@ -521,7 +521,7 @@ const Home = () => {
                                             e.preventDefault();
                                             setActiveProjectIdx(idx);
                                         }}
-                                        className={`h-2 rounded-full transition-all duration-300 ${idx === activeProjectIdx ? 'bg-blue-500 w-6' : 'bg-white/40/40 dark:bg-white/40 w-2'}`}
+                                        className={`h-2 rounded-full transition-all duration-300 ${idx === activeProjectIdx ? 'bg-blue-500 w-6' : 'bg-white/40 dark:bg-white/40 w-2'}`}
                                     />
                                 ))}
                             </div>
@@ -610,7 +610,7 @@ const Home = () => {
                     6. CTA BANNER                          
                     ════════════════════════════════════════ */}
                 <section className="py-24 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 relative overflow-hidden">
-                    <motion.div animate={{ x: [0, 60, 0] }} transition={{ duration: 12, repeat: Infinity }} className="absolute -top-1/2 -left-1/4 w-[600px] h-[600px] bg-white/5/5 dark:bg-white/5 rounded-full blur-[80px] pointer-events-none" />
+                    <motion.div animate={{ x: [0, 60, 0] }} transition={{ duration: 12, repeat: Infinity }} className="absolute -top-1/2 -left-1/4 w-[600px] h-[600px] bg-white/5 dark:bg-white/5 rounded-full blur-[80px] pointer-events-none" />
                     <motion.div animate={{ x: [0, -60, 0] }} transition={{ duration: 10, repeat: Infinity }} className="absolute -bottom-1/2 -right-1/4 w-[600px] h-[600px] bg-indigo-800/40 rounded-full blur-[80px] pointer-events-none" />
                     <div className="max-w-5xl mx-auto px-6 text-center relative">
                         <motion.h2 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
@@ -629,7 +629,7 @@ const Home = () => {
                             <Link to="/quote" className="group px-10 py-5 bg-white dark:bg-slate-900 text-blue-700 font-black rounded-2xl hover:-translate-y-2 transition-all shadow-2xl text-lg flex items-center gap-3">
                                 Get Free Quote <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
                             </Link>
-                            <a href={`tel:${settings.footer_phone}`} className="px-10 py-5 bg-white/10/10 dark:bg-white/10 hover:bg-white/20/20 dark:bg-white/20 text-white font-black rounded-2xl border border-white/20 hover:-translate-y-2 transition-all text-lg flex items-center gap-3">
+                            <a href={`tel:${settings.footer_phone}`} className="px-10 py-5 bg-white/10 dark:bg-white/10 hover:bg-white/20 dark:bg-white/20 text-white font-black rounded-2xl border border-white/20 hover:-translate-y-2 transition-all text-lg flex items-center gap-3">
                                 <Phone className="w-5 h-5" /> {settings.footer_phone}
                             </a>
                         </motion.div>

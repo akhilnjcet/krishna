@@ -298,7 +298,7 @@ const AdminDashboard = () => {
                                 Biometric verification is active across all terminals. 3 unregistered attempts blocked today.
                             </p>
                             <div className="space-y-4">
-                                <div className="h-1.5 bg-white/10/10 dark:bg-slate-900/10 rounded-full overflow-hidden">
+                                <div className="h-1.5 bg-white/10 dark:bg-slate-800/50 rounded-full overflow-hidden">
                                      <div className="h-full bg-blue-500 w-[92%] shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
                                 </div>
                                 <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
@@ -343,7 +343,7 @@ const AdminDashboard = () => {
                                             <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
                                                 q.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                                                 q.status === 'Pending' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                                                'bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                                                'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                                             }`}>{q.status}</span>
                                         </div>
                                     </div>

@@ -196,7 +196,7 @@ const AdminNotifications = () => {
             case 'Resolved':
                 return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
             default:
-                return 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
+                return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
         }
     };
 
@@ -437,7 +437,7 @@ const AdminNotifications = () => {
                                     return (
                                         <tr 
                                             key={n._id}
-                                            className={`hover:bg-slate-50/50/50 dark:bg-slate-800/50 dark:hover:bg-blue-900/5 transition-all ${bg} ${
+                                            className={`hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-blue-900/5 transition-all ${bg} ${
                                                 !n.isRead ? 'font-medium' : ''
                                             }`}
                                         >
@@ -457,7 +457,7 @@ const AdminNotifications = () => {
                                             </td>
                                             <td className="p-6 text-slate-700 dark:text-slate-300 dark:text-dark-text font-semibold">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded-full bg-slate-100/80 dark:bg-slate-800/80 dark:bg-dark-bg text-[#2563EB] flex items-center justify-center font-bold text-xs uppercase border border-[#E2E8F0] dark:border-dark-border">
+                                                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 dark:bg-dark-bg text-[#2563EB] flex items-center justify-center font-bold text-xs uppercase border border-[#E2E8F0] dark:border-dark-border">
                                                         {n.updatedBy?.name?.charAt(0) || 'U'}
                                                     </div>
                                                     <div>
@@ -521,7 +521,7 @@ const AdminNotifications = () => {
                                                         onClick={() => handleMarkAsRead(n._id, n.isRead)}
                                                         className={`p-2 rounded-lg transition-all ${
                                                             n.isRead 
-                                                                ? 'text-slate-300 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80 dark:hover:bg-dark-bg' 
+                                                                ? 'text-slate-300 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-dark-bg' 
                                                                 : 'text-[#2563EB] bg-blue-50/20 dark:bg-blue-950/20 hover:bg-blue-100'
                                                         }`}
                                                         title={n.isRead ? "Mark as Unread" : "Mark as Read"}
@@ -560,7 +560,7 @@ const AdminNotifications = () => {
                                 <button 
                                     type="button"
                                     onClick={() => setAckModal({ show: false, id: null, remarks: '' })}
-                                    className="px-4 py-2 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
+                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
                                 >
                                     Cancel
                                 </button>
@@ -597,7 +597,7 @@ const AdminNotifications = () => {
                                 <button 
                                     type="button"
                                     onClick={() => setResolveModal({ show: false, id: null, notes: '' })}
-                                    className="px-4 py-2 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
+                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
                                 >
                                     Cancel
                                 </button>

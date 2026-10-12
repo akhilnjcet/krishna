@@ -127,7 +127,7 @@ const Blog = () => {
                         </p>
                         <button 
                             onClick={fetchPosts}
-                            className="inline-flex items-center gap-4 bg-brand-accent text-brand-950 px-10 py-5 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white dark:bg-slate-900 transition-all active:scale-95 shadow-2xl"
+                            className="inline-flex items-center gap-4 bg-brand-accent text-brand-950 px-10 py-5 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 shadow-2xl"
                         >
                             <RefreshCw className="w-4 h-4" /> Force Sync Matrix
                         </button>
@@ -184,10 +184,8 @@ const Blog = () => {
                                             
                                             <p className="text-gray-500 mb-10 font-bold uppercase tracking-tight text-sm leading-relaxed line-clamp-3">
                                                 {post.excerpt || (post.content || '').substring(0, 150) + '...'}
-                                            </p>
-
-                                            <div className="mt-auto">
-                                                <button className="group/btn relative inline-flex items-center gap-4 bg-white/5/5 dark:bg-white/5 text-white px-8 py-4 rounded-xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white dark:bg-slate-900 hover:text-black transition-all active:scale-95 overflow-hidden shadow-xl border border-white/5">
+                                            </p>                                             <div className="mt-auto">
+                                                <button className="group/btn relative inline-flex items-center gap-4 bg-white/5 dark:bg-white/5 text-white px-8 py-4 rounded-xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-brand-accent hover:text-black transition-all active:scale-95 overflow-hidden shadow-xl border border-white/5">
                                                     <div className="absolute inset-x-0 bottom-0 h-1 bg-brand-accent translate-y-full group-hover/btn:translate-y-0 transition-transform"></div>
                                                     Access Full Intel <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform text-brand-accent" />
                                                 </button>
@@ -218,8 +216,8 @@ const Blog = () => {
                                     <h3 className="text-2xl font-black uppercase tracking-tighter italic leading-none mb-4">INTEL UPLINK</h3>
                                     <p className="text-[9px] font-black uppercase tracking-widest leading-tight mb-8 opacity-60">Subscriber-only structural bulletins deployed weekly.</p>
                                     <div className="space-y-3">
-                                        <input type="email" placeholder="UPLINK EMAIL..." className="w-full bg-white/20/20 dark:bg-white/20 border-2 border-transparent focus:border-brand-950 placeholder:text-brand-950/40 p-5 rounded-xl text-[10px] font-black outline-none italic" />
-                                        <button className="w-full bg-brand-950 text-brand-accent font-black uppercase tracking-[0.4em] py-5 rounded-xl text-[10px] hover:bg-white dark:bg-slate-900 hover:text-black transition-all">Initiate Uplink</button>
+                                        <input type="email" placeholder="UPLINK EMAIL..." className="w-full bg-white/20 dark:bg-white/20 border-2 border-transparent focus:border-brand-950 placeholder:text-brand-950/40 p-5 rounded-xl text-[10px] font-black outline-none italic" />
+                                        <button className="w-full bg-brand-950 text-brand-accent font-black uppercase tracking-[0.4em] py-5 rounded-xl text-[10px] hover:bg-white hover:text-black transition-all">Initiate Uplink</button>
                                     </div>
                                 </div>
                             </div>

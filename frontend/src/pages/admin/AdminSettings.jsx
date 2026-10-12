@@ -193,7 +193,7 @@ const AdminSettings = () => {
                     </div>
                 </div>
                 {status && (
-                    <div className="px-3 py-1 bg-white/5/5 dark:bg-slate-900/5 border border-white/10 rounded-full text-[8px] font-black text-brand-accent uppercase tracking-widest">
+                    <div className="px-3 py-1 bg-white/5 dark:bg-slate-800/30 border border-white/10 rounded-full text-[8px] font-black text-brand-accent uppercase tracking-widest">
                         {status}
                     </div>
                 )}
@@ -224,7 +224,7 @@ const AdminSettings = () => {
                     <button 
                         onClick={handleSave}
                         disabled={saving}
-                        className="group relative px-12 py-5 bg-brand-accent text-black font-black uppercase tracking-[0.3em] text-[10px] flex items-center gap-4 hover:bg-white dark:bg-slate-900 transition-all active:scale-95 rounded-xl shadow-[0_0_30px_rgba(255,180,0,0.2)]"
+                        className="group relative px-12 py-5 bg-brand-accent text-black font-black uppercase tracking-[0.3em] text-[10px] flex items-center gap-4 hover:bg-white/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 rounded-xl shadow-[0_0_30px_rgba(255,180,0,0.2)]"
                     >
                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : success ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                         {saving ? 'Syncing...' : success ? 'Config Updated' : 'Push Deployment'}
@@ -615,7 +615,7 @@ const AdminSettings = () => {
                                         type="range" min="0.1" max="1.0" step="0.1" 
                                         value={settings.faceThreshold}
                                         onChange={(e) => updateField('faceThreshold', parseFloat(e.target.value))}
-                                        className="w-full h-1 bg-white/10/10 dark:bg-slate-900/10 rounded-full appearance-none cursor-pointer accent-brand-accent"
+                                        className="w-full h-1 bg-white/10 dark:bg-slate-800/50 rounded-full appearance-none cursor-pointer accent-brand-accent"
                                     />
                                 </div>
                                 <div className="p-6 bg-white/[0.01] dark:bg-slate-900/[0.01] border border-white/5 rounded-2xl flex items-center justify-between group-hover:bg-brand-accent/[0.02] transition-colors">
@@ -625,7 +625,7 @@ const AdminSettings = () => {
                                     </div>
                                     <button 
                                         onClick={() => updateField('allowRegistration', !settings.allowRegistration)}
-                                        className={`w-12 h-6 rounded-full transition-all relative ${settings.allowRegistration ? 'bg-brand-accent' : 'bg-white/10/10 dark:bg-slate-900/10'}`}
+                                        className={`w-12 h-6 rounded-full transition-all relative ${settings.allowRegistration ? 'bg-brand-accent' : 'bg-white/10 dark:bg-slate-800/50'}`}
                                     >
                                         <div className={`absolute top-1 w-4 h-4 bg-white dark:bg-slate-900 rounded-full transition-all ${settings.allowRegistration ? 'left-7' : 'left-1'}`}></div>
                                     </button>

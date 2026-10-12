@@ -136,7 +136,7 @@ const AdminUsers = () => {
     const getStatusBadge = (status) => {
         return status === 'active' 
             ? 'bg-green-100 text-green-800/30 dark:bg-green-950/30 dark:text-green-400' 
-            : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200/50 dark:bg-slate-800/50 dark:text-slate-400';
+            : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200/50 dark:bg-slate-800/50 dark:text-slate-400';
     };
 
     return (
@@ -221,7 +221,7 @@ const AdminUsers = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="border-b border-slate-100 dark:border-slate-800 dark:border-dark-border text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50/50/50 dark:bg-slate-800/50 dark:bg-dark-bg/30">
+                                    <tr className="border-b border-slate-100 dark:border-slate-800 dark:border-dark-border text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-dark-bg/30">
                                         <th className="py-4 px-6">User / Account</th>
                                         <th className="py-4 px-6">System Role</th>
                                         <th className="py-4 px-6">Designation / Staff Details</th>
@@ -232,7 +232,7 @@ const AdminUsers = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-dark-border">
                                     {users.map((user) => (
-                                        <tr key={user._id} className="hover:bg-slate-50/50/50 dark:bg-slate-800/50 dark:hover:bg-dark-bg/25 transition-colors">
+                                        <tr key={user._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-dark-bg/25 transition-colors">
                                             <td className="py-5 px-6">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-xl bg-[#2563EB] flex items-center justify-center text-white font-black text-sm uppercase">
@@ -402,7 +402,7 @@ const AdminUsers = () => {
                                 </div>
                                 <button 
                                     onClick={() => { setShowAddModal(false); setShowEditModal(false); resetForm(); }}
-                                    className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:bg-slate-800/80 dark:hover:bg-dark-bg rounded-xl transition-all"
+                                    className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-dark-bg rounded-xl transition-all"
                                 >
                                     <X className="w-6 h-6" />
                                 </button>

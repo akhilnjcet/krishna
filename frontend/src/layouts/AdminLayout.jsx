@@ -70,7 +70,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                         to={item.path}
                         onClick={onNavClick}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-semibold transition-all ${
-                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:bg-slate-800/80 hover:text-slate-900 dark:text-white dark:hover:bg-slate-900 dark:hover:text-white'
+                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 hover:text-slate-900 dark:text-white dark:hover:bg-slate-900 dark:hover:text-white'
                         }`}
                     >
                         <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`} />
@@ -85,7 +85,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
             <Link 
                 to="/admin/profile" 
                 onClick={onNavClick} 
-                className="flex items-center gap-3 px-3 py-2.5 bg-slate-200/50/40 dark:bg-slate-800/40 hover:bg-slate-250 dark:hover:bg-slate-800/60 transition-colors rounded-2xl border border-slate-200 dark:border-slate-700/50 dark:border-slate-800/50 group"
+                className="flex items-center gap-3 px-3 py-2.5 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-250 dark:hover:bg-slate-800/60 transition-colors rounded-2xl border border-slate-200 dark:border-slate-700/50 dark:border-slate-800/50 group"
             >
                 <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xs shadow-lg group-hover:scale-110 transition-transform">
                     {user?.name?.charAt(0)?.toUpperCase()}
@@ -428,7 +428,7 @@ const AdminLayout = () => {
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
                     <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-[70] flex flex-col border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl ${SIDEBAR_W} transition-transform`}>
                         <div className="absolute top-4 right-4 z-[80]">
-                            <button onClick={closeMobile} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 ">
+                            <button onClick={closeMobile} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800 backdrop-blur rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 ">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -443,14 +443,14 @@ const AdminLayout = () => {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}
-                            className="p-2 bg-white/10/10 dark:bg-slate-900/10 rounded-xl text-white hover:bg-white/20/20 dark:bg-slate-900/20 transition-all border border-white/10"
+                            className="p-2 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:bg-slate-800/70 transition-all border border-white/10"
                             title="Toggle Menu"
                         >
                             <Menu className="w-6 h-6" />
                         </button>
                         <button
                             onClick={() => navigate(-1)}
-                            className="p-2 bg-white/10/10 dark:bg-slate-900/10 rounded-xl text-white hover:bg-white/20/20 dark:bg-slate-900/20 transition-all border border-white/10 flex items-center justify-center"
+                            className="p-2 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:bg-slate-800/70 transition-all border border-white/10 flex items-center justify-center"
                             title="Go Back"
                         >
                             <ChevronLeft className="w-6 h-6" />
@@ -464,7 +464,7 @@ const AdminLayout = () => {
                         <ThemeToggle darkNavbar={true} />
                         <button 
                             onClick={() => setShowDropdown(prev => !prev)}
-                            className="relative p-2 text-blue-100 hover:bg-white/10/10 dark:bg-slate-900/10 rounded-xl transition-all"
+                            className="relative p-2 text-blue-100 hover:bg-white/10 dark:bg-slate-800/50 rounded-xl transition-all"
                         >
                             <Bell className="w-5 h-5" />
                             {unreadCount > 0 && (
@@ -523,7 +523,7 @@ const AdminLayout = () => {
 
                         <div className="flex items-center gap-2">
                             <p className="text-sm font-bold text-white hidden sm:block truncate max-w-[100px]">{user?.name || user?.user?.name || "Admin"}</p>
-                            <div className="w-8 h-8 bg-white/20/20 dark:bg-slate-900/20 rounded-xl border border-white/20 flex items-center justify-center text-white">
+                            <div className="w-8 h-8 bg-white/20 dark:bg-slate-800/70 rounded-xl border border-white/20 flex items-center justify-center text-white">
                                 <User className="w-4 h-4" />
                             </div>
                         </div>
@@ -670,7 +670,7 @@ const AdminLayout = () => {
                                         </div>
                                     )}
                                     {activePopupAlert.remarks && (
-                                        <div className="border-t border-slate-200/50/50 dark:border-slate-700/50 dark:border-dark-border/50 pt-3">
+                                        <div className="border-t border-slate-200/50 dark:border-slate-700/50 dark:border-dark-border/50 pt-3">
                                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Remarks:</p>
                                             <p className="text-xs text-slate-600 dark:text-slate-400 dark:text-dark-muted font-medium italic">"{activePopupAlert.remarks}"</p>
                                         </div>
@@ -682,7 +682,7 @@ const AdminLayout = () => {
                                         onClick={() => {
                                             setActivePopupAlert(null);
                                         }}
-                                        className="px-5 py-3 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
+                                        className="px-5 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
                                     >
                                         Dismiss
                                     </button>

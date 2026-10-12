@@ -88,7 +88,7 @@ const PolicyViewer = ({ defaultType = 'privacy' }) => {
 
                     <div className="flex items-center gap-3">
                         {/* Tab Switcher */}
-                        <div className="bg-slate-200/80 dark:bg-slate-800/80 p-1 rounded-2xl flex gap-1">
+                        <div className="bg-slate-200 dark:bg-slate-800 p-1 rounded-2xl flex gap-1">
                             <button
                                 onClick={() => setPolicyType('privacy')}
                                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${

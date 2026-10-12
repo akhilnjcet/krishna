@@ -216,7 +216,7 @@ const AdminLegalPolicies = () => {
             </div>
 
             {/* Top Navigation Tabs */}
-            <div className="flex flex-wrap gap-2 p-2 bg-slate-900/60 dark:bg-slate-900/80 rounded-2xl border border-slate-800">
+            <div className="flex flex-wrap gap-2 p-2 bg-slate-900/60 dark:bg-slate-800/80 rounded-2xl border border-slate-800">
                 <button
                     onClick={() => setActiveTab('overview')}
                     className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${

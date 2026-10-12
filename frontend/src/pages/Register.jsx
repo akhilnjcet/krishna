@@ -104,7 +104,7 @@ const Register = () => {
                             
                             <div className="space-y-6">
                                 <div className="flex items-start gap-4">
-                                    <div className="mt-1 p-2 bg-white/10/10 dark:bg-white/10 rounded-lg">
+                                    <div className="mt-1 p-2 bg-white/10 dark:bg-white/10 rounded-lg">
                                         <Activity className="w-5 h-5 text-emerald-400" />
                                     </div>
                                     <div>
@@ -113,7 +113,7 @@ const Register = () => {
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
-                                    <div className="mt-1 p-2 bg-white/10/10 dark:bg-white/10 rounded-lg">
+                                    <div className="mt-1 p-2 bg-white/10 dark:bg-white/10 rounded-lg">
                                         <Rocket className="w-5 h-5 text-emerald-400" />
                                     </div>
                                     <div>
@@ -125,7 +125,7 @@ const Register = () => {
                         </div>
 
                         <div className="relative z-10 pt-10">
-                            <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest bg-white/10/10 dark:bg-white/10 p-4 rounded-2xl border border-white/10">
+                            <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest bg-white/10 dark:bg-white/10 p-4 rounded-2xl border border-white/10">
                                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
                                 Verified Client Workspace Security
                             </div>

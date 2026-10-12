@@ -70,7 +70,7 @@ const StaffLogin = () => {
                 <div className="bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] p-10 text-white relative">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
                     <div className="relative z-10 flex flex-col items-center text-center">
-                        <div className="w-16 h-16 bg-white/10/10 dark:bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 border border-white/20">
+                        <div className="w-16 h-16 bg-white/10 dark:bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 border border-white/20">
                             <ShieldCheck className="w-8 h-8 text-blue-200" />
                         </div>
                         <h1 className="text-3xl font-bold font-poppins">Staff Authentication</h1>
