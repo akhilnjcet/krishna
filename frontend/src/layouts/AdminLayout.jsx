@@ -5,7 +5,8 @@ import {
     BarChart3, Users, ClipboardList, BadgeIndianRupee, MessageSquare,
     Calculator, Receipt, TrendingUp, Settings, LogOut, Menu, X, Bell,
     Search, HelpCircle, ChevronRight, User, Filter, LayoutGrid, Activity,
-    Clock, AlertCircle, Radio, MessageCircle, ChevronLeft, CheckSquare, Truck
+    Clock, AlertCircle, Radio, MessageCircle, ChevronLeft, CheckSquare, Truck,
+    ShieldCheck
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,7 +39,7 @@ const SIDEBAR_ITEMS = [
     { name: 'Applications',    path: '/admin/applications', icon: LayoutGrid },
     { name: 'Analytics Hub',   path: '/admin/analytics',    icon: BarChart3 },
     { name: 'WhatsApp Relay',  path: '/admin/whatsapp',     icon: Radio },
-    { name: 'Lodge Manager',   path: '/admin/lodge-manager',icon: BookOpen },
+    { name: 'Legal & Privacy',  path: '/admin/legal-policies', icon: ShieldCheck },
     { name: 'System Core',     path: '/admin/settings',     icon: Settings },
 ];
 

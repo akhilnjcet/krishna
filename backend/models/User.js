@@ -41,7 +41,21 @@ const userSchema = new mongoose.Schema({
 
     // Email OTP Auth Fields
     resetOTP: { type: String },
-    otpExpiry: { type: Date }
+    otpExpiry: { type: Date },
+
+    // Policy & Terms Acceptance Tracking
+    policyAcceptedAt: { type: Date },
+    policyVersionAccepted: { type: String, default: '1.0' },
+    termsAccepted: { type: Boolean, default: false },
+    privacyAcknowledged: { type: Boolean, default: false },
+
+    // Privacy & Account Lifecycle
+    deletionStatus: { 
+        type: String, 
+        enum: ['none', 'pending', 'anonymized', 'deleted'], 
+        default: 'none' 
+    },
+    deletionRequestedAt: { type: Date }
 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -30,11 +30,23 @@ const getEuclideanDistance = (desc1, desc2) => {
 
 exports.register = async (req, res) => {
     try {
-        const { staff_id, name, email, username, password, role, department, designation, phone } = req.body;
+        const { staff_id, name, email, username, password, role, department, designation, phone, termsAccepted, policyVersion } = req.body;
+        
+        // Backend validation: Acceptance of Terms of Service & Privacy Policy is mandatory
+        if (termsAccepted !== true && termsAccepted !== 'true') {
+            return res.status(400).json({ 
+                message: 'You must read and agree to the Terms of Service and acknowledge the Privacy Policy before creating an account.' 
+            });
+        }
+
         const normalizedEmail = (email || '').trim().toLowerCase();
         const normalizedUsername = (username || email || '').trim().toLowerCase();
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
+        
+        const acceptedVersion = (policyVersion || '1.0').trim();
+        const acceptanceTimestamp = new Date();
+
         const user = await User.create({
             staff_id, 
             name, 
@@ -44,8 +56,29 @@ exports.register = async (req, res) => {
             role: role || 'customer', 
             department, 
             designation, 
-            phone
+            phone,
+            termsAccepted: true,
+            privacyAcknowledged: true,
+            policyAcceptedAt: acceptanceTimestamp,
+            policyVersionAccepted: acceptedVersion
         });
+
+        // Record persistent Policy Acceptance audit entry
+        try {
+            const PolicyAcceptance = require('../models/PolicyAcceptance');
+            await PolicyAcceptance.create({
+                userId: user._id,
+                userEmail: normalizedEmail,
+                userName: name || normalizedUsername,
+                policyType: 'both',
+                policyVersion: acceptedVersion,
+                acceptedAt: acceptanceTimestamp,
+                ipAddress: req.ip || req.connection?.remoteAddress || '',
+                userAgent: req.get('User-Agent') || ''
+            });
+        } catch (auditErr) {
+            console.error('Policy acceptance record log error:', auditErr.message);
+        }
 
         // Send Welcome Email (Non-blocking)
         if (email) {

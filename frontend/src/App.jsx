@@ -22,6 +22,9 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import StaffLogin from './pages/StaffLogin';
 import LegalPage from './pages/LegalPage';
+import PolicyViewer from './pages/PolicyViewer';
+
+const AdminLegalPolicies = lazy(() => import('./pages/admin/AdminLegalPolicies'));
 
 // Layouts (Lazy loaded on demand)
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
@@ -380,8 +383,10 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/staff-login" element={<StaffLogin />} />
-            <Route path="/terms" element={<LegalPage type="terms" />} />
-            <Route path="/privacy" element={<LegalPage type="privacy" />} />
+            <Route path="/terms-of-service" element={<PolicyViewer defaultType="terms" />} />
+            <Route path="/privacy-policy" element={<PolicyViewer defaultType="privacy" />} />
+            <Route path="/terms" element={<PolicyViewer defaultType="terms" />} />
+            <Route path="/privacy" element={<PolicyViewer defaultType="privacy" />} />
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
@@ -413,6 +418,7 @@ const App = () => {
               <Route path="quotations-studio" element={<Quotations />} />
               <Route path="labour-bills" element={<LabourBillsTab />} />
               <Route path="document-history" element={<DocumentHistory />} />
+              <Route path="legal-policies" element={<AdminLegalPolicies />} />
             </Route>
 
             {/* Staff Routes */}

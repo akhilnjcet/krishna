@@ -49,19 +49,27 @@ const AdminSettings = () => {
         about_content: 'Krishna Engineering Works has been at the forefront of heavy structural fabrication and industrial roofing for over two decades. Our mission is to provide unyielding integrity in every weld and truss we complete.',
         about_image: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=1200'
     });
+    const [policySummary, setPolicySummary] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [success, setSuccess] = useState(false);
 
     const fetchSettings = useCallback(async () => {
         try {
-            const res = await api.get('/settings');
+            const [res, policyRes] = await Promise.all([
+                api.get('/settings').catch(() => ({ data: [] })),
+                api.get('/policies/summary').catch(() => ({ data: null }))
+            ]);
+
             if (res.data && res.data.length > 0) {
                 const settingsObj = {};
                 res.data.forEach(s => {
                     settingsObj[s.key] = s.value;
                 });
                 setSettings(prev => ({ ...prev, ...settingsObj }));
+            }
+            if (policyRes.data?.success) {
+                setPolicySummary(policyRes.data.data);
             }
         } catch (err) {
             console.error("Failed to fetch settings:", err);
@@ -752,36 +760,108 @@ const AdminSettings = () => {
                             </div>
                         </section>
 
-                        <section className="p-6 md:p-10 bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-red-500/20 transition-all">
-                            <ModuleHeader icon={Shield} title="Legal Configuration (ToS & Copyright)" status="Compliance" />
+                        <section className="p-6 md:p-10 bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-blue-500/20 transition-all">
+                            <ModuleHeader icon={Shield} title="Legal & Privacy Governance" status="Audit-Ready" />
+                            
+                            {/* Live Policy Telemetry Cards */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                <div className="p-6 bg-black/40 border border-white/10 rounded-2xl relative">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Privacy Policy</span>
+                                        <span className="text-xs font-mono font-bold text-white">v{policySummary?.privacy?.version || '1.0'}</span>
+                                    </div>
+                                    <p className="text-xs text-gray-400 mb-4 line-clamp-2">
+                                        {policySummary?.privacy?.title || 'Data protection and telemetry transparency standards.'}
+                                    </p>
+                                    <div className="text-[11px] text-gray-500 space-y-1 mb-4 border-t border-white/5 pt-3">
+                                        <div>Effective: <span className="text-gray-300 font-medium">{policySummary?.privacy?.effectiveDate ? new Date(policySummary.privacy.effectiveDate).toLocaleDateString() : 'Active'}</span></div>
+                                        <div>Last Updated: <span className="text-gray-300 font-medium">{policySummary?.privacy?.lastUpdated ? new Date(policySummary.privacy.lastUpdated).toLocaleDateString() : 'Current'}</span></div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <a 
+                                            href="#/privacy-policy" 
+                                            target="_blank" 
+                                            rel="noreferrer"
+                                            className="flex-1 py-2 text-center bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            View Public Page
+                                        </a>
+                                        <a 
+                                            href="#/admin/legal-policies" 
+                                            className="px-4 py-2 bg-blue-600/30 hover:bg-blue-600 text-blue-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            Manage
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 bg-black/40 border border-white/10 rounded-2xl relative">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Terms of Service</span>
+                                        <span className="text-xs font-mono font-bold text-white">v{policySummary?.terms?.version || '1.0'}</span>
+                                    </div>
+                                    <p className="text-xs text-gray-400 mb-4 line-clamp-2">
+                                        {policySummary?.terms?.title || 'Operating rules, client agreements, and software usage terms.'}
+                                    </p>
+                                    <div className="text-[11px] text-gray-500 space-y-1 mb-4 border-t border-white/5 pt-3">
+                                        <div>Effective: <span className="text-gray-300 font-medium">{policySummary?.terms?.effectiveDate ? new Date(policySummary.terms.effectiveDate).toLocaleDateString() : 'Active'}</span></div>
+                                        <div>Last Updated: <span className="text-gray-300 font-medium">{policySummary?.terms?.lastUpdated ? new Date(policySummary.terms.lastUpdated).toLocaleDateString() : 'Current'}</span></div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <a 
+                                            href="#/terms-of-service" 
+                                            target="_blank" 
+                                            rel="noreferrer"
+                                            className="flex-1 py-2 text-center bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            View Public Page
+                                        </a>
+                                        <a 
+                                            href="#/admin/legal-policies" 
+                                            className="px-4 py-2 bg-blue-600/30 hover:bg-blue-600 text-blue-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            Manage
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Data Protection & Privacy Contact */}
+                            <div className="p-6 bg-black/30 border border-white/5 rounded-2xl mb-8 space-y-4">
+                                <h4 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
+                                    <Shield className="w-4 h-4 text-emerald-400" />
+                                    Data Protection Officer & Privacy Inquiries
+                                </h4>
+                                <p className="text-xs text-gray-400">
+                                    Users may request access, corrections, or permanent account deletion by submitting requests through their Profile settings or writing directly to our privacy desk:
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+                                    <div className="p-3 bg-white/5 rounded-xl">
+                                        <div className="text-[9px] uppercase font-bold text-gray-500 font-sans">Compliance Email</div>
+                                        <div className="text-white font-medium truncate">{policySummary?.dpoContact?.email || 'privacy@krishnaengg.com'}</div>
+                                    </div>
+                                    <div className="p-3 bg-white/5 rounded-xl">
+                                        <div className="text-[9px] uppercase font-bold text-gray-500 font-sans">Helpline / WhatsApp</div>
+                                        <div className="text-white font-medium">{policySummary?.dpoContact?.phone || '+91 9447940835'}</div>
+                                    </div>
+                                    <div className="p-3 bg-white/5 rounded-xl">
+                                        <div className="text-[9px] uppercase font-bold text-gray-500 font-sans">Response SLA</div>
+                                        <div className="text-emerald-400 font-medium">Within 30 Calendar Days</div>
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-blue-950/30 border border-blue-900/40 rounded-xl text-[11px] text-blue-300">
+                                    <strong>Statutory Data Retention Notice:</strong> Krishna ERP retains tax invoices, GST billing records, and labour financial ledgers for statutory retention periods even upon account termination.
+                                </div>
+                            </div>
+
                             <div className="space-y-8">
                                 <div className="space-y-3">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Copyright Text Footer</label>
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Copyright Footer Notice</label>
                                     <input 
                                         value={settings.footer_copyright}
                                         onChange={(e) => updateField('footer_copyright', e.target.value)}
                                         className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-bold text-gray-400 outline-none"
                                     />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                    <div className="space-y-3">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Terms of Service Content</label>
-                                        <textarea 
-                                            rows={8}
-                                            value={settings.footer_tos}
-                                            onChange={(e) => updateField('footer_tos', e.target.value)}
-                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-2xl p-6 text-sm font-medium text-gray-400 focus:border-red-500/40 outline-none leading-relaxed"
-                                        />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Privacy Policy Content</label>
-                                        <textarea 
-                                            rows={8}
-                                            value={settings.footer_privacy}
-                                            onChange={(e) => updateField('footer_privacy', e.target.value)}
-                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-2xl p-6 text-sm font-medium text-gray-400 focus:border-red-500/40 outline-none leading-relaxed"
-                                        />
-                                    </div>
                                 </div>
                             </div>
                         </section>

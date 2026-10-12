@@ -232,11 +232,30 @@ const Login = () => {
                                 )}
                             </button>
                         </form>
+
+                        {/* Public Policy Links */}
+                        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
+                            <div className="flex items-center justify-center gap-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                <Link 
+                                    to="/privacy-policy" 
+                                    className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
+                                >
+                                    Privacy Policy
+                                </Link>
+                                <span className="text-slate-300 dark:text-slate-600">|</span>
+                                <Link 
+                                    to="/terms-of-service" 
+                                    className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
+                                >
+                                    Terms of Service
+                                </Link>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <p className="fixed bottom-10 text-[8px] font-bold text-slate-300 uppercase tracking-[0.5em]">System Cloud Node: SECURE-01</p>
+            <p className="fixed bottom-4 text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.5em]">System Cloud Node: SECURE-01</p>
         </div>
     );
 };

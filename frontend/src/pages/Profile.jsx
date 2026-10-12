@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, Phone, Save, Loader2, ShieldAlert, Cpu, Battery, Smartphone } from 'lucide-react';
+import { 
+    User, Phone, Save, Loader2, ShieldAlert, Cpu, Battery, Smartphone,
+    Download, AlertTriangle, ShieldCheck, Clock, FileText, CheckCircle2,
+    RefreshCw, X, Send
+} from 'lucide-react';
 import { Device } from '@capacitor/device';
 import api from '../services/api';
 import useAuthStore from '../stores/authStore';
@@ -12,10 +16,89 @@ const Profile = () => {
     const [message, setMessage] = useState('');
     const [deviceInfo, setDeviceInfo] = useState(null);
 
+    // Privacy & Data Requests state
+    const [myRequests, setMyRequests] = useState([]);
+    const [loadingRequests, setLoadingRequests] = useState(false);
+    const [exportingData, setExportingData] = useState(false);
+    const [requestModalOpen, setRequestModalOpen] = useState(false);
+    const [modalRequestType, setModalRequestType] = useState('data_access'); // 'data_access' | 'data_correction' | 'account_deletion'
+    const [requestDescription, setRequestDescription] = useState('');
+    const [submittingRequest, setSubmittingRequest] = useState(false);
+    const [privacyNotice, setPrivacyNotice] = useState(null);
+
     useEffect(() => {
         fetchProfile();
         fetchDeviceInfo();
+        fetchMyRequests();
     }, []);
+
+    const fetchMyRequests = async () => {
+        setLoadingRequests(true);
+        try {
+            const res = await api.get('/policies/privacy-requests/my');
+            if (res.data?.success) {
+                setMyRequests(res.data.data || []);
+            }
+        } catch (err) {
+            console.error("Failed to load privacy requests", err);
+        } finally {
+            setLoadingRequests(false);
+        }
+    };
+
+    const handleExportPersonalData = async () => {
+        setExportingData(true);
+        setPrivacyNotice(null);
+        try {
+            const res = await api.get('/policies/privacy-requests/export-my-data');
+            if (res.data?.success) {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(res.data.data, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `krishna-erp-personal-data-${new Date().toISOString().split('T')[0]}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                setPrivacyNotice({ type: 'success', text: 'Personal data archive generated and downloaded successfully.' });
+                fetchMyRequests();
+            } else {
+                setPrivacyNotice({ type: 'error', text: res.data?.message || 'Data export failed.' });
+            }
+        } catch (err) {
+            setPrivacyNotice({ type: 'error', text: err.response?.data?.message || 'Failed to download personal data archive.' });
+        } finally {
+            setExportingData(false);
+        }
+    };
+
+    const handleOpenSubmitModal = (type) => {
+        setModalRequestType(type);
+        setRequestDescription('');
+        setRequestModalOpen(true);
+    };
+
+    const handleSubmitPrivacyRequest = async (e) => {
+        e.preventDefault();
+        setSubmittingRequest(true);
+        setPrivacyNotice(null);
+        try {
+            const res = await api.post('/policies/privacy-requests/submit', {
+                requestType: modalRequestType,
+                description: requestDescription
+            });
+            if (res.data?.success) {
+                setPrivacyNotice({ type: 'success', text: 'Privacy request recorded. Our compliance officer will process your filing.' });
+                setRequestModalOpen(false);
+                fetchMyRequests();
+            } else {
+                setPrivacyNotice({ type: 'error', text: res.data?.message || 'Submission failed.' });
+            }
+        } catch (err) {
+            setPrivacyNotice({ type: 'error', text: err.response?.data?.message || 'Failed to submit privacy request.' });
+        } finally {
+            setSubmittingRequest(false);
+        }
+    };
 
     const fetchDeviceInfo = async () => {
         try {
@@ -192,26 +275,256 @@ const Profile = () => {
                 </a>
             </div>
 
-            {/* Compliance Danger Zone - REQUIRED for Store Approval */}
-            <div className="bg-rose-50 p-8 rounded-[3rem] border border-rose-100/50">
-                 <div className="flex items-center gap-3 text-rose-500 font-black uppercase tracking-[0.4em] text-[10px] mb-6">
-                    <ShieldAlert className="w-4 h-4" /> Compliance Data Control
+            {/* Privacy & Statutory Data Requests Section */}
+            <div className="bg-slate-900/60 dark:bg-slate-900 border border-slate-800 p-8 rounded-[3rem] shadow-xl space-y-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+                    <div>
+                        <div className="flex items-center gap-2 text-emerald-400 font-black uppercase tracking-[0.3em] text-[10px] mb-2">
+                            <ShieldCheck className="w-4 h-4" /> Privacy & Data Requests
+                        </div>
+                        <h3 className="text-2xl font-black text-white italic tracking-tight">Your Data, Rights & Privacy Control</h3>
+                        <p className="text-xs text-slate-400 mt-1">
+                            In accordance with applicable data protection laws, you retain rights to inspect, rectify, or request the deletion of personal information stored in Krishna ERP.
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={handleExportPersonalData}
+                            disabled={exportingData}
+                            className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2"
+                        >
+                            {exportingData ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            Download Personal Data (JSON)
+                        </button>
+                    </div>
                 </div>
-                <h3 className="text-xl font-black text-rose-900 uppercase tracking-tighter italic mb-4">Right to Deletion</h3>
-                <p className="text-xs font-bold text-rose-800/70 mb-8 leading-relaxed">
-                    In accordance with data protection regulations, you have the right to request the permanent deletion of your account and all associated telemetry. Once processed, this action is irreversible.
-                </p>
-                <button 
-                    onClick={() => {
-                        if(window.confirm("CONFIRM DATA DELETION: Do you wish to permanently remove your Krishna ERP account and all historical residency data? This request will be sent to the administrator for immediate processing.")) {
-                            alert("Request Dispatched: Our data compliance lead will process this within 24 hours. You will be notified via WhatsApp.");
-                        }
-                    }}
-                    className="w-full py-4 bg-white dark:bg-slate-900 border-2 border-rose-200 text-rose-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-600 hover:text-white transition-all shadow-xl shadow-rose-900/5"
-                >
-                    Signaling Account Termination
-                </button>
+
+                {privacyNotice && (
+                    <div className={`p-4 rounded-2xl text-xs font-bold flex items-center justify-between ${
+                        privacyNotice.type === 'success' 
+                            ? 'bg-emerald-950/80 border border-emerald-500/30 text-emerald-200' 
+                            : 'bg-rose-950/80 border border-rose-500/30 text-rose-200'
+                    }`}>
+                        <span>{privacyNotice.text}</span>
+                        <button onClick={() => setPrivacyNotice(null)} className="opacity-60 hover:opacity-100">
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Request Actions Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-6 bg-slate-950/60 border border-slate-800/80 rounded-2xl flex flex-col justify-between">
+                        <div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400 block mb-1">Right to Access</span>
+                            <h4 className="text-sm font-black text-white mb-2">Request Personal Data</h4>
+                            <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                                Request a verified extraction report of personal telemetry and audit records associated with your account.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => handleOpenSubmitModal('data_access')}
+                            className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                        >
+                            File Access Request
+                        </button>
+                    </div>
+
+                    <div className="p-6 bg-slate-950/60 border border-slate-800/80 rounded-2xl flex flex-col justify-between">
+                        <div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block mb-1">Right to Rectify</span>
+                            <h4 className="text-sm font-black text-white mb-2">Request Data Correction</h4>
+                            <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                                Submit a formal correction notice for inaccurate identity attributes or employment records.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => handleOpenSubmitModal('data_correction')}
+                            className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                        >
+                            File Correction Request
+                        </button>
+                    </div>
+
+                    <div className="p-6 bg-rose-950/20 border border-rose-900/30 rounded-2xl flex flex-col justify-between">
+                        <div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-rose-400 block mb-1">Right to Erasure</span>
+                            <h4 className="text-sm font-black text-rose-200 mb-2">Request Account Deletion</h4>
+                            <p className="text-xs text-rose-300/70 leading-relaxed mb-4">
+                                Permanent erasure of credentials. Shared tax invoices and transaction logs will be preserved according to statutory regulations.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => handleOpenSubmitModal('account_deletion')}
+                            className="w-full py-2.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                        >
+                            Request Deletion
+                        </button>
+                    </div>
+                </div>
+
+                {/* My Requests Telemetry Table */}
+                <div className="pt-4 border-t border-slate-800/80">
+                    <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-xs font-black uppercase tracking-widest text-white flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-blue-400" />
+                            Request History & Tracking Status
+                        </h4>
+                        <button
+                            type="button"
+                            onClick={fetchMyRequests}
+                            disabled={loadingRequests}
+                            className="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-bold"
+                        >
+                            <RefreshCw className={`w-3 h-3 ${loadingRequests ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                            <thead>
+                                <tr className="border-b border-slate-800 text-slate-400 font-black uppercase tracking-widest text-[9px]">
+                                    <th className="pb-3 px-3">Type</th>
+                                    <th className="pb-3 px-3">Submitted Date</th>
+                                    <th className="pb-3 px-3">Details / Response</th>
+                                    <th className="pb-3 px-3 text-right">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-800/50 text-slate-300">
+                                {myRequests.map(r => (
+                                    <tr key={r._id} className="hover:bg-white/[0.01]">
+                                        <td className="py-3 px-3 font-bold text-white uppercase text-[10px]">
+                                            {r.requestType === 'account_deletion' ? 'Account Deletion' :
+                                             r.requestType === 'data_access' ? 'Personal Data Copy' : 'Data Correction'}
+                                        </td>
+                                        <td className="py-3 px-3 text-slate-400">
+                                            {r.submittedAt ? new Date(r.submittedAt).toLocaleDateString() : 'N/A'}
+                                        </td>
+                                        <td className="py-3 px-3 max-w-xs truncate text-slate-300">
+                                            {r.resolutionNote ? (
+                                                <span className="text-emerald-300 font-medium">Response: {r.resolutionNote}</span>
+                                            ) : (
+                                                r.description || 'Request recorded in queue.'
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-3 text-right">
+                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                                r.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                                                r.status === 'Approved' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                                                r.status === 'Rejected' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' :
+                                                r.status === 'Under Review' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                                                'bg-slate-800 text-slate-400 border-slate-700'
+                                            }`}>
+                                                {r.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {myRequests.length === 0 && (
+                                    <tr>
+                                        <td colSpan="4" className="py-6 text-center text-slate-500 text-xs">
+                                            No privacy requests filed. Your account is in good standing with baseline consent.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
+
+            {/* REQUEST SUBMISSION MODAL */}
+            {requestModalOpen && (
+                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-lg w-full space-y-6 shadow-2xl">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-blue-400 text-xs font-black uppercase tracking-widest">
+                                <ShieldCheck className="w-4 h-4" />
+                                Submit Statutory Privacy Request
+                            </div>
+                            <button onClick={() => setRequestModalOpen(false)} className="text-slate-400 hover:text-white">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmitPrivacyRequest} className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                                    Request Category
+                                </label>
+                                <select
+                                    value={modalRequestType}
+                                    onChange={(e) => setModalRequestType(e.target.value)}
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-blue-500"
+                                >
+                                    <option value="data_access">Request Copy of Personal Data</option>
+                                    <option value="data_correction">Request Data Rectification / Correction</option>
+                                    <option value="account_deletion">Request Account Deletion & Erasure</option>
+                                </select>
+                            </div>
+
+                            {modalRequestType === 'account_deletion' && (
+                                <div className="p-4 bg-rose-950/40 border border-rose-900/40 rounded-2xl text-[11px] text-rose-300 space-y-2">
+                                    <div className="font-bold flex items-center gap-2">
+                                        <AlertTriangle className="w-4 h-4 text-rose-400" />
+                                        Important Consequences of Account Deletion:
+                                    </div>
+                                    <ul className="list-disc pl-5 space-y-1 text-rose-300/80">
+                                        <li>You should export or download any business records or quotes before continuing.</li>
+                                        <li>Tax invoices, statutory GST filings, and business financial transactions will <strong>not</strong> be deleted as they must legally be retained under corporate financial law.</li>
+                                        <li>Your user account will be permanently anonymized and login access terminated once processed.</li>
+                                    </ul>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                                    Description / Specific Information Requested *
+                                </label>
+                                <textarea
+                                    rows={4}
+                                    required
+                                    value={requestDescription}
+                                    onChange={(e) => setRequestDescription(e.target.value)}
+                                    placeholder={
+                                        modalRequestType === 'data_correction' 
+                                            ? "Specify the incorrect information and provide the corrected values..." 
+                                            : modalRequestType === 'account_deletion'
+                                            ? "Please confirm why you are requesting account closure..."
+                                            : "Specify any specific data segments you require..."
+                                    }
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs outline-none focus:border-blue-500 leading-relaxed"
+                                />
+                            </div>
+
+                            <div className="flex gap-4 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setRequestModalOpen(false)}
+                                    disabled={submittingRequest}
+                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submittingRequest}
+                                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2"
+                                >
+                                    {submittingRequest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                    Submit Request
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

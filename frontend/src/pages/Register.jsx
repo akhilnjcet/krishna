@@ -13,11 +13,25 @@ const Register = () => {
         password: '',
         confirmPassword: ''
     });
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [termsError, setTermsError] = useState(false);
+    const [policyVersion, setPolicyVersion] = useState('1.0');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
     const { login, isAuthenticated, user } = useAuthStore();
+
+    useEffect(() => {
+        // Fetch current policy version from backend summary
+        api.get('/policies/public-summary')
+            .then(res => {
+                if (res.data?.terms?.version) {
+                    setPolicyVersion(res.data.terms.version);
+                }
+            })
+            .catch(() => {});
+    }, []);
 
     useEffect(() => {
         if (isAuthenticated && user) {
@@ -29,12 +43,19 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setTermsError(false);
+
+        if (!agreedToTerms) {
+            setTermsError(true);
+            return setError("You must read and agree to the Terms of Service and acknowledge the Privacy Policy to register.");
+        }
+
         if (formData.password !== formData.confirmPassword) {
             return setError("Passwords do not match. Integrity check failed.");
         }
 
         setLoading(true);
-        setError('');
 
         try {
             const response = await api.post('/auth/register', {
@@ -42,7 +63,9 @@ const Register = () => {
                 email: formData.email,
                 phone: formData.mobile,
                 password: formData.password,
-                role: 'customer'
+                role: 'customer',
+                termsAccepted: true,
+                policyVersion: policyVersion || '1.0'
             });
             login(response.data.user, response.data.token);
             navigate('/customer');
@@ -215,11 +238,61 @@ const Register = () => {
                                 </div>
                             </div>
 
-                            <div className="md:col-span-2 pt-4">
+                            {/* Mandatory Terms of Service & Privacy Policy Consent */}
+                            <div className="md:col-span-2 pt-2">
+                                <div className={`p-4 rounded-2xl border transition-all ${
+                                    termsError 
+                                        ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-300 dark:border-rose-800' 
+                                        : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60'
+                                }`}>
+                                    <label className="flex items-start gap-3 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            id="terms-checkbox"
+                                            checked={agreedToTerms}
+                                            onChange={(e) => {
+                                                setAgreedToTerms(e.target.checked);
+                                                if (e.target.checked) setTermsError(false);
+                                            }}
+                                            className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 dark:border-slate-600 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-relaxed">
+                                            I have read and agree to the{' '}
+                                            <a 
+                                                href="#/terms-of-service" 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 dark:text-blue-400 font-bold underline hover:text-blue-700 inline-flex items-center gap-0.5"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                Terms of Service
+                                            </a>{' '}
+                                            and acknowledge the{' '}
+                                            <a 
+                                                href="#/privacy-policy" 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 dark:text-blue-400 font-bold underline hover:text-blue-700 inline-flex items-center gap-0.5"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                Privacy Policy
+                                            </a>{' '}
+                                            of Krishna ERP.
+                                        </span>
+                                    </label>
+                                    {termsError && (
+                                        <p className="mt-2 text-[11px] font-bold text-rose-600 dark:text-rose-400 ml-7">
+                                            Please check the box above to accept the Terms of Service and Privacy Policy to proceed.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="md:col-span-2 pt-2">
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full py-5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-2xl font-bold text-sm shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+                                    className="w-full py-5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-2xl font-bold text-sm shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
                                 >
                                     {loading ? (
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
