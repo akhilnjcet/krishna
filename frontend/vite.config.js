@@ -29,6 +29,7 @@ export default defineConfig({
           'motion': ['framer-motion'],
           'icons': ['lucide-react'],
           'face-api': ['face-api.js'],
+          'pdf-vendor': ['jspdf', 'jspdf-autotable'],
         }
       }
     }

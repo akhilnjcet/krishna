@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
     Phone, MessageCircle, MapPin, CheckCircle,
@@ -58,7 +58,7 @@ const WordReveal = ({ text, className }) => {
     );
 };
 
-/* ─── Animated Counter ───────────────────────────────────────────── */
+/* ─── Animated Counter (60fps rAF Optimized) ─────────────────────── */
 const AnimatedCounter = ({ target, suffix }) => {
     const [count, setCount] = useState(0);
     const ref = useRef(null);
@@ -67,7 +67,7 @@ const AnimatedCounter = ({ target, suffix }) => {
     useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => { if (entry.isIntersecting && !started) setStarted(true); },
-            { threshold: 0.5 }
+            { threshold: 0.3 }
         );
         if (ref.current) observer.observe(ref.current);
         return () => observer.disconnect();
@@ -75,25 +75,40 @@ const AnimatedCounter = ({ target, suffix }) => {
 
     useEffect(() => {
         if (!started) return;
-        const cleanTarget = target.replace(/,/g, '');
+        const cleanTarget = (target || '0').toString().replace(/,/g, '');
         const num = parseFloat(cleanTarget);
         if (isNaN(num)) {
             setCount(0);
             return;
         }
-        let start = 0;
-        const duration = 1500;
-        const stepsCount = duration / 16;
-        const step = num / stepsCount;
-        const timer = setInterval(() => {
-            start += step;
-            if (start >= num) { setCount(num); clearInterval(timer); }
-            else setCount(start);
-        }, 16);
-        return () => clearInterval(timer);
+
+        let animationFrameId;
+        const startTime = performance.now();
+        const duration = 1200;
+
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease-out cubic: 1 - (1 - progress)^3
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const currentVal = easeOut * num;
+
+            setCount(currentVal);
+
+            if (progress < 1) {
+                animationFrameId = requestAnimationFrame(animate);
+            } else {
+                setCount(num);
+            }
+        };
+
+        animationFrameId = requestAnimationFrame(animate);
+        return () => {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        };
     }, [started, target]);
 
-    const cleanTarget = target.replace(/,/g, '');
+    const cleanTarget = (target || '0').toString().replace(/,/g, '');
     const isFloat = cleanTarget.includes('.');
     const decimalPlaces = isFloat ? cleanTarget.split('.')[1].length : 0;
     const formattedCount = count.toLocaleString(undefined, {
@@ -112,7 +127,6 @@ const AnimatedCounter = ({ target, suffix }) => {
 const Home = () => {
     const [projects, setProjects] = useState([]);
     const [activeProjectIdx, setActiveProjectIdx] = useState(0);
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const heroRef = useRef(null);
 
     const [settings, setSettings] = useState({
@@ -133,12 +147,32 @@ const Home = () => {
     const heroY = useTransform(scrollY, [0, 600], [0, 180]);
     const smoothHeroY = useSpring(heroY, { stiffness: 80, damping: 20 });
 
-    /* Mouse parallax on hero */
+    /* Hardware accelerated mouse parallax without React re-renders */
+    const mouseX = useMotionValue(0);
+    const mouseY = useMotionValue(0);
+    const smoothMouseX = useSpring(mouseX, { stiffness: 50, damping: 20 });
+    const smoothMouseY = useSpring(mouseY, { stiffness: 50, damping: 20 });
+    const orb1X = useTransform(smoothMouseX, val => val * 35);
+    const orb1Y = useTransform(smoothMouseY, val => val * 25);
+    const orb2X = useTransform(smoothMouseX, val => val * -25);
+    const orb2Y = useTransform(smoothMouseY, val => val * 20);
+
     useEffect(() => {
-        const handler = (e) => setMousePos({ x: e.clientX / window.innerWidth - 0.5, y: e.clientY / window.innerHeight - 0.5 });
-        window.addEventListener('mousemove', handler);
-        return () => window.removeEventListener('mousemove', handler);
-    }, []);
+        let rafId = null;
+        const handler = (e) => {
+            if (rafId) return;
+            rafId = requestAnimationFrame(() => {
+                mouseX.set(e.clientX / window.innerWidth - 0.5);
+                mouseY.set(e.clientY / window.innerHeight - 0.5);
+                rafId = null;
+            });
+        };
+        window.addEventListener('mousemove', handler, { passive: true });
+        return () => {
+            window.removeEventListener('mousemove', handler);
+            if (rafId) cancelAnimationFrame(rafId);
+        };
+    }, [mouseX, mouseY]);
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -153,11 +187,7 @@ const Home = () => {
                     setSettings(prev => ({ ...prev, ...map }));
                 }
                 if (projectsRes.status === 'fulfilled' && projectsRes.value?.data) {
-                    const expandedProjects = await Promise.all(projectsRes.value.data.map(async p => ({
-                        ...p,
-                        images: await expandGoogleDriveFolders(p.images || [])
-                    })));
-                    setProjects(expandedProjects);
+                    setProjects(projectsRes.value.data);
                 }
             } catch (e) { console.error('Fetch error', e); }
         };
@@ -194,40 +224,25 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     1. HERO SECTION — Immersive Animated 
                     ════════════════════════════════════════ */}
-                <section ref={heroRef} className="relative min-h-screen flex items-center bg-white dark:bg-slate-900 overflow-hidden">
-                    {/* Dynamic animated gradient bg */}
-                    <motion.div
-                        animate={{ background: [
-                            'radial-gradient(ellipse at 20% 50%, rgba(37,99,235,0.06) 0%, transparent 60%)',
-                            'radial-gradient(ellipse at 80% 50%, rgba(59,130,246,0.08) 0%, transparent 60%)',
-                            'radial-gradient(ellipse at 20% 50%, rgba(37,99,235,0.06) 0%, transparent 60%)',
-                        ]}}
-                        transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-                        className="absolute inset-0"
-                    />
+                <section ref={heroRef} className="relative min-h-[90vh] flex flex-col justify-center bg-white dark:bg-slate-900 overflow-hidden">
+                    {/* Ambient top gradient */}
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(37,99,235,0.08),transparent_60%)] pointer-events-none" />
 
                     {/* Large background wordmark */}
                     <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none">
-                        <motion.span
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 0.04 }}
-                            transition={{ delay: 2 }}
-                            className="text-[22vw] font-black text-blue-900/10 uppercase tracking-tighter leading-none"
-                        >
+                        <span className="text-[22vw] font-black text-blue-900/[0.03] uppercase tracking-tighter leading-none">
                             KEW
-                        </motion.span>
+                        </span>
                     </div>
 
-                    {/* Floating orbs — mouse parallax */}
+                    {/* Floating orbs — GPU hardware accelerated */}
                     <motion.div
-                        animate={{ x: mousePos.x * 60, y: mousePos.y * 40 }}
-                        transition={{ type: 'spring', stiffness: 40, damping: 15 }}
-                        className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-blue-300/20 rounded-full blur-[120px] pointer-events-none"
+                        style={{ x: orb1X, y: orb1Y }}
+                        className="absolute top-1/3 right-1/4 w-[380px] h-[380px] bg-blue-300/15 rounded-full blur-[50px] pointer-events-none will-change-transform"
                     />
                     <motion.div
-                        animate={{ x: mousePos.x * -40, y: mousePos.y * 30 }}
-                        transition={{ type: 'spring', stiffness: 40, damping: 15 }}
-                        className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-indigo-200/20 rounded-full blur-[100px] pointer-events-none"
+                        style={{ x: orb2X, y: orb2Y }}
+                        className="absolute bottom-1/4 left-1/4 w-[320px] h-[320px] bg-indigo-200/15 rounded-full blur-[40px] pointer-events-none will-change-transform"
                     />
 
                     {/* Grid overlay */}
@@ -239,12 +254,12 @@ const Home = () => {
                     </motion.div>
 
                     {/* Hero content */}
-                    <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-8 py-28">
+                    <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-8 pt-24 pb-12 md:pt-28 md:pb-16">
                         <motion.div initial="hidden" animate="visible" variants={stagger} className="max-w-5xl">
 
                             {/* Badge */}
                             <motion.div variants={fadeUp} custom={0}
-                                className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-blue-50/80 border border-blue-100 backdrop-blur-sm mb-12"
+                                className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-blue-50/80 border border-blue-100 backdrop-blur-sm mb-8 md:mb-10"
                             >
                                 <motion.span
                                     animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
@@ -257,8 +272,8 @@ const Home = () => {
                             </motion.div>
 
                             {/* Animated headline */}
-                            <motion.div variants={stagger} className="mb-8">
-                                <div className="text-[clamp(3rem,8vw,6.5rem)] font-black text-slate-900 dark:text-white leading-[0.95] tracking-[-0.03em] font-poppins">
+                            <motion.div variants={stagger} className="mb-6 md:mb-8">
+                                <div className="text-[clamp(2.8rem,7vw,6rem)] font-black text-slate-900 dark:text-white leading-[0.98] tracking-[-0.03em] font-poppins">
                                     <WordReveal text="Precision" className="block" />
                                     <span className="block overflow-hidden">
                                         <motion.span
@@ -274,31 +289,27 @@ const Home = () => {
                             </motion.div>
 
                             <motion.p variants={fadeUp} custom={5}
-                                className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-14 max-w-2xl leading-relaxed font-medium"
+                                className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-10 md:mb-12 max-w-2xl leading-relaxed font-medium"
                             >
                                 Kerala's premier industrial fabrication & welding specialists.
                                 Over two decades of precision engineering — delivered on-time, every time.
                             </motion.p>
 
                             {/* CTA Buttons */}
-                            <motion.div variants={fadeUp} custom={6} className="flex flex-wrap gap-5 mb-24">
+                            <motion.div variants={fadeUp} custom={6} className="flex flex-wrap gap-4 md:gap-5 mb-14 md:mb-16">
                                 <Link to="/quote" className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl text-base flex items-center gap-3 overflow-hidden shadow-[0_0_40px_rgba(37,99,235,0.2)] transition-all hover:shadow-[0_0_60px_rgba(37,99,235,0.4)] hover:-translate-y-1">
                                     <span className="relative z-10">Start Your Project</span>
                                     <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform relative z-10" />
-                                    {/* shimmer sweep */}
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                                 </Link>
                                  <a href={(settings.floating_phone || settings.footer_phone || '+918594030186').startsWith('tel:') ? (settings.floating_phone || settings.footer_phone || '+918594030186') : `tel:${(settings.floating_phone || settings.footer_phone || '+918594030186').replace(/\s+/g, '')}`} className="px-8 py-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600 flex items-center gap-3 transition-all hover:-translate-y-1 text-base shadow-sm">
-                                    <motion.span animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                                        <Phone className="w-5 h-5 text-blue-600" />
-                                    </motion.span>
+                                    <Phone className="w-5 h-5 text-blue-600" />
                                     Speak with Experts
                                 </a>
                             </motion.div>
 
-                            {/* ── PERFORMANCE METRICS ── 
-                                Glassmorphism cards with animated counters */}
-                            <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-10 border-t border-slate-200 dark:border-slate-700 ">
+                            {/* ── PERFORMANCE METRICS ── */}
+                            <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-8 border-t border-slate-200 dark:border-slate-700 ">
                                 {[
                                     { label: 'Projects Completed', value: (settings.stat_projects || '1200+').replace(/[^0-9,.]/g, ''), suffix: (settings.stat_projects || '1200+').replace(/[0-9,. ]/g, '') || '+', icon: <Layers className="w-7 h-7" />, color: 'from-blue-50/50 to-white', glow: 'shadow-blue-100/40', border: 'border-blue-100', iconColor: 'text-blue-600', bgIcon: 'bg-blue-50' },
                                     { label: 'Happy Clients', value: (settings.stat_clients || '450+').replace(/[^0-9,.]/g, ''), suffix: (settings.stat_clients || '450+').replace(/[0-9,. ]/g, '') || '+', icon: <Users className="w-7 h-7" />, color: 'from-cyan-50/50 to-white', glow: 'shadow-cyan-100/40', border: 'border-cyan-100', iconColor: 'text-cyan-600', bgIcon: 'bg-cyan-50' },
@@ -309,51 +320,41 @@ const Home = () => {
                                         key={i}
                                         variants={scaleIn}
                                         custom={i}
-                                        whileHover={{ y: -10, scale: 1.03 }}
-                                        className={`relative p-6 rounded-3xl bg-gradient-to-br ${stat.color} border ${stat.border} shadow-xl ${stat.glow} overflow-hidden cursor-default group`}
+                                        whileHover={{ y: -8, scale: 1.02 }}
+                                        className={`relative p-5 md:p-6 rounded-3xl bg-gradient-to-br ${stat.color} border ${stat.border} shadow-lg ${stat.glow} overflow-hidden cursor-default group`}
                                     >
-                                        {/* Background shine on hover */}
                                         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-slate-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                                        <div className={`w-12 h-12 ${stat.bgIcon} rounded-2xl flex items-center justify-center mb-4 ${stat.iconColor} group-hover:scale-110 transition-transform`}>{stat.icon}</div>
-                                        <div className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">
+                                        <div className={`w-11 h-11 md:w-12 md:h-12 ${stat.bgIcon} rounded-2xl flex items-center justify-center mb-3 md:mb-4 ${stat.iconColor} group-hover:scale-110 transition-transform`}>{stat.icon}</div>
+                                        <div className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter mb-1.5 md:mb-2">
                                             <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                                         </div>
                                         <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-600 dark:text-slate-400 transition-colors">
                                             {stat.label}
                                         </div>
-                                        {/* Bottom accent line */}
                                         <div className={`absolute bottom-0 left-0 h-0.5 ${stat.iconColor} bg-current w-0 group-hover:w-full transition-all duration-700`} />
                                     </motion.div>
                                 ))}
                             </motion.div>
                         </motion.div>
-                    </div>
 
-                    {/* scroll indicator */}
-                    <motion.div
-                        animate={{ y: [0, 10, 0] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-400/50"
-                    >
-                        <span className="text-[9px] font-black uppercase tracking-[0.4em]">Scroll</span>
-                        <div className="w-5 h-9 rounded-full border border-slate-300 dark:border-slate-600 flex justify-center pt-1.5">
-                            <motion.div animate={{ y: [0, 12, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-1 h-2 bg-slate-400 rounded-full" />
-                        </div>
-                    </motion.div>
+                        {/* Subtle scroll indicator */}
+                        <motion.div
+                            animate={{ y: [0, 6, 0] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                            className="hidden md:flex flex-col items-center gap-1.5 text-slate-400/50 pt-8"
+                        >
+                            <span className="text-[9px] font-black uppercase tracking-[0.4em]">Scroll</span>
+                            <div className="w-4 h-7 rounded-full border border-slate-300 dark:border-slate-600 flex justify-center pt-1">
+                                <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-1 h-1.5 bg-slate-400 rounded-full" />
+                            </div>
+                        </motion.div>
+                    </div>
                 </section>
-
-                {/* Banner Ad Placement */}
-                {/* Banner Ad Placement */}
-                <div className="bg-slate-50 dark:bg-slate-800 pt-12 pb-6 border-b border-slate-200 dark:border-slate-700 ">
-                    <div className="max-w-7xl mx-auto px-6">
-                        <AdBanner adSlot="7234567890" adFormat="horizontal" />
-                    </div>
-                </div>
 
                 {/* ════════════════════════════════════════
                     2. ABOUT SECTION — Cinematic reveal   
                     ════════════════════════════════════════ */}
-                <section id="about" className="py-36 bg-slate-50/50 dark:bg-slate-900/50 relative overflow-hidden">
+                <section id="about" className="py-16 md:py-24 bg-slate-50/50 dark:bg-slate-900/50 relative overflow-hidden border-t border-slate-100 dark:border-slate-800">
                     {/* Ambient glow */}
                     <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-100/30 rounded-full blur-[150px] pointer-events-none -translate-x-1/2 -translate-y-1/2 opacity-40" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -417,13 +418,13 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     3. SERVICES — 3D Perspective Cards     
                     ════════════════════════════════════════ */}
-                <section id="services" className="py-36 bg-white dark:bg-slate-900 relative overflow-hidden">
+                <section id="services" className="py-16 md:py-24 bg-white dark:bg-slate-900 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-50 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/3 pointer-events-none opacity-60" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
-                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-24">
+                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12 md:mb-16">
                             <motion.p variants={fadeUp} custom={0} className="text-blue-500 font-black uppercase tracking-[0.4em] text-xs mb-4">What We Do</motion.p>
-                            <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter mb-6">End-to-End Metal Solutions</motion.h2>
-                            <motion.p variants={fadeUp} custom={2} className="text-slate-500 dark:text-slate-400 text-xl max-w-2xl mx-auto font-medium">
+                            <motion.h2 variants={fadeUp} custom={1} className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter mb-4">End-to-End Metal Solutions</motion.h2>
+                            <motion.p variants={fadeUp} custom={2} className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto font-medium">
                                 World-class engineering services tailored for industrial and residential needs.
                             </motion.p>
                         </motion.div>
@@ -463,9 +464,9 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     4. PORTFOLIO / GALLERY — animated grid 
                     ════════════════════════════════════════ */}
-                <section id="portfolio" className="py-36 bg-slate-50 dark:bg-slate-800 overflow-hidden border-y border-slate-200/50 dark:border-slate-700/50">
+                <section id="portfolio" className="py-16 md:py-24 bg-slate-50 dark:bg-slate-800 overflow-hidden border-y border-slate-200/50 dark:border-slate-700/50">
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
-                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="flex flex-col md:flex-row md:items-end justify-between mb-10 md:mb-12 gap-6">
                             <div>
                                 <motion.p variants={fadeUp} custom={0} className="text-blue-600 font-black uppercase tracking-[0.4em] text-xs mb-3">Our Work</motion.p>
                                 <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">Recent Projects</motion.h2>
@@ -531,13 +532,13 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     5. PROFESSIONAL TRUST & REPUTATION SECTION
                     ════════════════════════════════════════ */}
-                <section className="py-36 bg-white dark:bg-slate-900 relative overflow-hidden">
+                <section className="py-16 md:py-24 bg-white dark:bg-slate-900 relative overflow-hidden">
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-50 rounded-full blur-[100px] pointer-events-none opacity-60" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
                         {/* Header */}
-                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-24">
+                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12 md:mb-16">
                             <motion.p variants={fadeUp} custom={0} className="text-blue-500 font-black uppercase tracking-[0.4em] text-xs mb-4">Reputation & Trust</motion.p>
-                            <motion.h2 variants={fadeUp} custom={1} className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter mb-4">Uncompromising Quality & Standards</motion.h2>
+                            <motion.h2 variants={fadeUp} custom={1} className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter mb-4">Uncompromising Quality & Standards</motion.h2>
                             <motion.p variants={fadeUp} custom={2} className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto font-medium">
                                 Trusted by industrial and residential clients across Kerala. Certified expertise and a proven track record.
                             </motion.p>
@@ -638,7 +639,7 @@ const Home = () => {
                 {/* ════════════════════════════════════════
                     7. CONTACT SECTION                     
                     ════════════════════════════════════════ */}
-                <section id="contact" className="py-36 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 overflow-hidden border-t border-slate-200/50 dark:border-slate-700/50">
+                <section id="contact" className="py-16 md:py-24 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 overflow-hidden border-t border-slate-200/50 dark:border-slate-700/50">
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
                             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>

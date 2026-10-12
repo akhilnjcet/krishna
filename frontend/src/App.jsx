@@ -5,7 +5,7 @@ import { Network } from '@capacitor/network';
 
 import { Capacitor } from '@capacitor/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { loadFaceModels } from './utils/faceApiLoader';
+import { Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, useNavigate, Link } from 'react-router-dom';
 import { AlertTriangle, WifiOff } from 'lucide-react';
 import api from './services/api';
@@ -23,85 +23,85 @@ import ForgotPassword from './pages/ForgotPassword';
 import StaffLogin from './pages/StaffLogin';
 import LegalPage from './pages/LegalPage';
 
-// Layouts
-import AdminLayout from './layouts/AdminLayout';
-import CustomerLayout from './layouts/CustomerLayout';
-import StaffLayout from './layouts/StaffLayout';
+// Layouts (Lazy loaded on demand)
+const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
+const CustomerLayout = lazy(() => import('./layouts/CustomerLayout'));
+const StaffLayout = lazy(() => import('./layouts/StaffLayout'));
 
-// Admin Pages
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProjects from './pages/admin/AdminProjects';
-import AdminPortfolio from './pages/admin/AdminPortfolio';
-import AdminQuotes from './pages/admin/AdminQuotes';
-import AdminStaff from './pages/admin/AdminStaff';
-import AdminInvoices from './pages/admin/AdminInvoices';
-import AttendanceLogs from './pages/admin/AttendanceLogs';
-import AdminReports from './pages/admin/AdminReports';
-import AdminLeave from './pages/admin/AdminLeave';
-import AdminSettings from './pages/admin/AdminSettings';
-import AdminFinance from './pages/admin/AdminFinance';
-import AdminProgress from './pages/admin/AdminProgress';
-import AdminBlog from './pages/admin/AdminBlog';
-import AdminAIChat from './pages/admin/AdminAIChat';
-import AdminApplications from './pages/admin/AdminApplications';
-import AdminAnalytics from './pages/admin/AdminAnalytics';
-import AdminWhatsApp from './pages/admin/AdminWhatsApp';
-import AdminNotifications from './pages/admin/AdminNotifications';
-import AdminTasks from './pages/admin/AdminTasks';
-import AdminUsers from './pages/admin/AdminUsers';
-import Invoices from './pages/admin/Invoices';
-import Quotations from './pages/admin/Quotations';
-import LabourBillsTab from './pages/admin/LabourBillsTab';
-import DocumentHistory from './pages/admin/DocumentHistory';
+// Admin Pages (Lazy loaded on demand)
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminProjects = lazy(() => import('./pages/admin/AdminProjects'));
+const AdminPortfolio = lazy(() => import('./pages/admin/AdminPortfolio'));
+const AdminQuotes = lazy(() => import('./pages/admin/AdminQuotes'));
+const AdminStaff = lazy(() => import('./pages/admin/AdminStaff'));
+const AdminInvoices = lazy(() => import('./pages/admin/AdminInvoices'));
+const AttendanceLogs = lazy(() => import('./pages/admin/AttendanceLogs'));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
+const AdminLeave = lazy(() => import('./pages/admin/AdminLeave'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminFinance = lazy(() => import('./pages/admin/AdminFinance'));
+const AdminProgress = lazy(() => import('./pages/admin/AdminProgress'));
+const AdminBlog = lazy(() => import('./pages/admin/AdminBlog'));
+const AdminAIChat = lazy(() => import('./pages/admin/AdminAIChat'));
+const AdminApplications = lazy(() => import('./pages/admin/AdminApplications'));
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
+const AdminWhatsApp = lazy(() => import('./pages/admin/AdminWhatsApp'));
+const AdminNotifications = lazy(() => import('./pages/admin/AdminNotifications'));
+const AdminTasks = lazy(() => import('./pages/admin/AdminTasks'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const Invoices = lazy(() => import('./pages/admin/Invoices'));
+const Quotations = lazy(() => import('./pages/admin/Quotations'));
+const LabourBillsTab = lazy(() => import('./pages/admin/LabourBillsTab'));
+const DocumentHistory = lazy(() => import('./pages/admin/DocumentHistory'));
 
-// Staff Pages
-import StaffDashboard from './pages/staff/StaffDashboard';
-import StaffTasks from './pages/staff/StaffTasks';
-import StaffLeave from './pages/staff/StaffLeave';
-import StaffFinance from './pages/staff/StaffFinance';
-import StaffProgress from './pages/staff/StaffProgress';
-import AttendanceScanner from './pages/staff/AttendanceScanner';
-import StaffTimesheets from './pages/staff/StaffTimesheets';
-import StaffContacts from './pages/staff/StaffContacts';
-import StaffApplications from './pages/staff/StaffApplications';
-import StaffAttendanceHub from './pages/staff/StaffAttendanceHub';
+// Staff Pages (Lazy loaded on demand)
+const StaffDashboard = lazy(() => import('./pages/staff/StaffDashboard'));
+const StaffTasks = lazy(() => import('./pages/staff/StaffTasks'));
+const StaffLeave = lazy(() => import('./pages/staff/StaffLeave'));
+const StaffFinance = lazy(() => import('./pages/staff/StaffFinance'));
+const StaffProgress = lazy(() => import('./pages/staff/StaffProgress'));
+const AttendanceScanner = lazy(() => import('./pages/staff/AttendanceScanner'));
+const StaffTimesheets = lazy(() => import('./pages/staff/StaffTimesheets'));
+const StaffContacts = lazy(() => import('./pages/staff/StaffContacts'));
+const StaffApplications = lazy(() => import('./pages/staff/StaffApplications'));
+const StaffAttendanceHub = lazy(() => import('./pages/staff/StaffAttendanceHub'));
 
-// Customer Pages
-import CustomerDashboard from './pages/customer/CustomerDashboard';
-import CustomerQuotes from './pages/customer/CustomerQuotes';
-import InvoiceView from './pages/customer/InvoiceView';
-import CustomerPayments from './pages/customer/CustomerPayments';
-import CustomerProjects from './pages/customer/CustomerProjects';
+// Customer Pages (Lazy loaded on demand)
+const CustomerDashboard = lazy(() => import('./pages/customer/CustomerDashboard'));
+const CustomerQuotes = lazy(() => import('./pages/customer/CustomerQuotes'));
+const InvoiceView = lazy(() => import('./pages/customer/InvoiceView'));
+const CustomerPayments = lazy(() => import('./pages/customer/CustomerPayments'));
+const CustomerProjects = lazy(() => import('./pages/customer/CustomerProjects'));
 
 // Components
 import AIChatWidget from './components/AIChatWidget';
 import PermissionGuard from './components/PermissionGuard';
-import Profile from './pages/Profile';
+const Profile = lazy(() => import('./pages/Profile'));
 
 import useAuthStore from './stores/authStore';
 
 // Chat
-import SupportHub from './pages/chat/SupportHub';
-import ChatRequestsManager from './pages/chat/ChatRequestsManager';
+const SupportHub = lazy(() => import('./pages/chat/SupportHub'));
+const ChatRequestsManager = lazy(() => import('./pages/chat/ChatRequestsManager'));
 
-// Lodge & Building Manager
-import LodgeHome from './pages/lodge/LodgeHome';
-import RoomSelection from './pages/lodge/RoomSelection';
-import RoomDashboard from './pages/lodge/RoomDashboard';
-import ComplaintSystem from './pages/lodge/ComplaintSystem';
-import PaymentSystem from './pages/lodge/PaymentSystem';
-import PaymentHistory from './pages/lodge/PaymentHistory';
-import AdminLogin from './pages/lodge/AdminLogin';
-import LodgeAdminDashboard from './pages/lodge/LodgeAdminDashboard';
-import LodgeAdminManager from './pages/lodge/LodgeAdminManager';
-import TenantLogin from './pages/lodge/TenantLogin';
-import LodgeBooking from './pages/lodge/LodgeBooking';
-import LodgeSearch from './pages/lodge/LodgeSearch';
-import LodgeDetail from './pages/lodge/LodgeDetail';
-import LodgeCustomerDashboard from './pages/lodge/LodgeCustomerDashboard';
-import PrivacyPolicyPage from './pages/lodge/PrivacyPolicyPage';
-import LodgeBillingManager from './pages/lodge/LodgeBillingManager';
-import BookingVerify from './pages/lodge/BookingVerify';
+// Lodge & Building Manager (Lazy loaded on demand)
+const LodgeHome = lazy(() => import('./pages/lodge/LodgeHome'));
+const RoomSelection = lazy(() => import('./pages/lodge/RoomSelection'));
+const RoomDashboard = lazy(() => import('./pages/lodge/RoomDashboard'));
+const ComplaintSystem = lazy(() => import('./pages/lodge/ComplaintSystem'));
+const PaymentSystem = lazy(() => import('./pages/lodge/PaymentSystem'));
+const PaymentHistory = lazy(() => import('./pages/lodge/PaymentHistory'));
+const AdminLogin = lazy(() => import('./pages/lodge/AdminLogin'));
+const LodgeAdminDashboard = lazy(() => import('./pages/lodge/LodgeAdminDashboard'));
+const LodgeAdminManager = lazy(() => import('./pages/lodge/LodgeAdminManager'));
+const TenantLogin = lazy(() => import('./pages/lodge/TenantLogin'));
+const LodgeBooking = lazy(() => import('./pages/lodge/LodgeBooking'));
+const LodgeSearch = lazy(() => import('./pages/lodge/LodgeSearch'));
+const LodgeDetail = lazy(() => import('./pages/lodge/LodgeDetail'));
+const LodgeCustomerDashboard = lazy(() => import('./pages/lodge/LodgeCustomerDashboard'));
+const PrivacyPolicyPage = lazy(() => import('./pages/lodge/PrivacyPolicyPage'));
+const LodgeBillingManager = lazy(() => import('./pages/lodge/LodgeBillingManager'));
+const BookingVerify = lazy(() => import('./pages/lodge/BookingVerify'));
 
 import useLodgeStore from './stores/lodgeStore';
 import { notificationService } from './services/notificationService';
@@ -209,8 +209,6 @@ const Layout = ({ children }) => {
       };
       trackVisit();
       hasTrackedVisit.current = true;
-      // Pre-load face models for attendance and registration
-      loadFaceModels();
     }
   }, []);
 
@@ -365,7 +363,12 @@ const App = () => {
           <PermissionGuard>
             <Layout>
               <SecurityWrapper>
-                <Routes>
+                <Suspense fallback={
+                  <div className="flex items-center justify-center min-h-[60vh]">
+                    <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                }>
+                  <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/engineering" element={<Home />} />
             <Route path="/about" element={<About />} />
@@ -474,7 +477,8 @@ const App = () => {
               </div>
             } />
             </Routes>
-          </SecurityWrapper>
+          </Suspense>
+        </SecurityWrapper>
         </Layout>
       </PermissionGuard>
     </Router>

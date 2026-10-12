@@ -28,15 +28,17 @@ const AdBanner = ({
         }
     }, []);
 
+    if (!adSlot) return null;
+
     // Placeholder check during local development
-    const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
     return (
-        <div className={`ad-container w-full overflow-hidden my-4 ${className} ${isLocalhost ? 'bg-gray-100 flex items-center justify-center border border-dashed border-gray-300 min-h-[100px]' : ''}`}>
+        <div className={`ad-container w-full overflow-hidden ${className}`}>
             {isLocalhost && (
-                <span className="text-gray-400 text-sm font-medium">
-                    Google AdSense Banner (AdSlot: {adSlot || "None"}) <br/> Note: Ads don't show on localhost.
-                </span>
+                <div className="py-2 text-center text-gray-400 text-xs">
+                    [AdSense Slot: {adSlot}]
+                </div>
             )}
             <ins 
                 className="adsbygoogle"
