@@ -439,91 +439,102 @@ const AdminLayout = () => {
 
             {/* ── Main Content ────────────────────────── */}
             <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-[280px]' : 'md:ml-0'}`}>
-                <header className="sticky top-0 z-30 min-h-16 py-2 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-4 md:px-6 flex flex-wrap items-center justify-between gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
-                    <div className="flex items-center gap-3">
+                <header className="sticky top-0 z-30 h-16 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-3 sm:px-4 md:px-6 flex items-center justify-between gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
+                    <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}
-                            className="p-2 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:bg-slate-800/70 transition-all border border-white/10"
+                            className="p-2 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:hover:bg-slate-800/70 transition-all border border-white/10 shrink-0"
                             title="Toggle Menu"
                         >
-                            <Menu className="w-6 h-6" />
+                            <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
                         </button>
                         <button
                             onClick={() => navigate(-1)}
-                            className="p-2 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:bg-slate-800/70 transition-all border border-white/10 flex items-center justify-center"
+                            className="p-2 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:hover:bg-slate-800/70 transition-all border border-white/10 flex items-center justify-center shrink-0"
                             title="Go Back"
                         >
-                            <ChevronLeft className="w-6 h-6" />
+                            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                         </button>
-                        <h1 className="text-base md:text-lg font-bold text-white tracking-tight truncate max-w-[150px] md:max-w-[200px]">
+                        <h1 className="text-sm sm:text-base md:text-lg font-bold text-white tracking-tight truncate max-w-[130px] sm:max-w-[200px] md:max-w-xs">
                             {SIDEBAR_ITEMS.find(i => i.path === location.pathname)?.name || 'Admin Terminal'}
                         </h1>
                     </div>
 
-                    <div className="flex items-center gap-2 relative">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         <ThemeToggle darkNavbar={true} />
-                        <button 
-                            onClick={() => setShowDropdown(prev => !prev)}
-                            className="relative p-2 text-blue-100 hover:bg-white/10 dark:bg-slate-800/50 rounded-xl transition-all"
-                        >
-                            <Bell className="w-5 h-5" />
-                            {unreadCount > 0 && (
-                                <span className="absolute top-1 right-1 bg-yellow-400 text-blue-900 text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-blue-700 animate-pulse">
-                                    {unreadCount}
-                                </span>
-                            )}
-                        </button>
 
-                        {/* Bell Dropdown */}
-                        {showDropdown && (
-                            <div className="absolute right-0 top-12 w-80 bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 dark:border-dark-border py-4 z-50 text-slate-800 dark:text-slate-200 animate-in fade-in slide-in-from-top-3 duration-200">
-                                <div className="px-4 pb-3 border-b border-slate-100 dark:border-slate-800 dark:border-dark-border flex justify-between items-center">
-                                    <span className="text-xs font-black uppercase tracking-wider text-slate-400">Recent Alerts</span>
-                                    {unreadCount > 0 && (
-                                        <span className="bg-blue-50 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded-full">
-                                            {unreadCount} New
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-dark-border">
-                                    {notifications.length === 0 ? (
-                                        <div className="px-4 py-8 text-center text-xs text-slate-400 font-bold uppercase tracking-wider">
-                                            No notifications
+                        {/* Notification Bell with Dropdown */}
+                        <div className="relative">
+                            <button 
+                                onClick={() => setShowDropdown(prev => !prev)}
+                                className="relative p-2 text-blue-100 hover:bg-white/10 dark:hover:bg-slate-800/50 rounded-xl transition-all"
+                                title="Notifications"
+                            >
+                                <Bell className="w-5 h-5" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-1 right-1 bg-yellow-400 text-blue-900 text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-blue-700 animate-pulse">
+                                        {unreadCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* Bell Dropdown */}
+                            {showDropdown && (
+                                <>
+                                    <div 
+                                        className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[1px]" 
+                                        onClick={() => setShowDropdown(false)} 
+                                    />
+                                    <div className="fixed left-3 right-3 sm:left-auto sm:right-0 top-16 sm:top-12 sm:w-80 bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 dark:border-dark-border py-4 z-50 text-slate-800 dark:text-slate-200 animate-in fade-in slide-in-from-top-3 duration-200 flex flex-col max-h-[calc(100vh-5rem)] sm:max-h-[500px]">
+                                        <div className="px-4 pb-3 border-b border-slate-100 dark:border-slate-800 dark:border-dark-border flex justify-between items-center">
+                                            <span className="text-xs font-black uppercase tracking-wider text-slate-400">Recent Alerts</span>
+                                            {unreadCount > 0 && (
+                                                <span className="bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-[9px] font-black px-2 py-0.5 rounded-full">
+                                                    {unreadCount} New
+                                                </span>
+                                            )}
                                         </div>
-                                    ) : (
-                                        notifications.slice(0, 5).map(n => (
-                                            <div 
-                                                key={n._id} 
-                                                onClick={() => { setShowDropdown(false); navigate('/admin/notifications'); }}
-                                                className={`px-4 py-3 hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-dark-bg cursor-pointer transition-all ${!n.isRead ? 'bg-blue-50/20' : ''}`}
+                                        <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                                            {notifications.length === 0 ? (
+                                                <div className="px-4 py-8 text-center text-xs text-slate-400 font-bold uppercase tracking-wider">
+                                                    No notifications
+                                                </div>
+                                            ) : (
+                                                notifications.slice(0, 5).map(n => (
+                                                    <div 
+                                                        key={n._id} 
+                                                        onClick={() => { setShowDropdown(false); navigate('/admin/notifications'); }}
+                                                        className={`px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-all ${!n.isRead ? 'bg-blue-50/30 dark:bg-blue-950/30' : ''}`}
+                                                    >
+                                                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                                            <span>{n.title}</span>
+                                                        </p>
+                                                        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Project: {n.projectName}</p>
+                                                        {n.reason && <p className="text-[9px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5">Reason: {n.reason}</p>}
+                                                        <p className="text-[9px] text-slate-400 mt-1">
+                                                            {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </p>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                        <div className="px-4 pt-3 border-t border-slate-100 dark:border-slate-800 dark:border-dark-border text-center">
+                                            <Link 
+                                                to="/admin/notifications" 
+                                                onClick={() => setShowDropdown(false)}
+                                                className="text-xs font-bold text-[#2563EB] dark:text-blue-400 hover:underline uppercase tracking-wider"
                                             >
-                                                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 dark:text-dark-text flex items-center gap-1.5">
-                                                    <span>{n.title}</span>
-                                                </p>
-                                                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-dark-muted mt-0.5">Project: {n.projectName}</p>
-                                                {n.reason && <p className="text-[9px] font-semibold text-amber-600 mt-0.5">Reason: {n.reason}</p>}
-                                                <p className="text-[9px] text-slate-400 mt-1">
-                                                    {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </p>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                                <div className="px-4 pt-3 border-t border-slate-100 dark:border-slate-800 dark:border-dark-border text-center">
-                                    <Link 
-                                        to="/admin/notifications" 
-                                        onClick={() => setShowDropdown(false)}
-                                        className="text-xs font-bold text-[#2563EB] hover:underline uppercase tracking-wider"
-                                    >
-                                        View All
-                                    </Link>
-                                </div>
-                            </div>
-                        )}
+                                                View All
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
 
                         <div className="flex items-center gap-2">
                             <p className="text-sm font-bold text-white hidden sm:block truncate max-w-[100px]">{user?.name || user?.user?.name || "Admin"}</p>
-                            <div className="w-8 h-8 bg-white/20 dark:bg-slate-800/70 rounded-xl border border-white/20 flex items-center justify-center text-white">
+                            <div className="w-8 h-8 bg-white/20 dark:bg-slate-800/70 rounded-xl border border-white/20 flex items-center justify-center text-white shrink-0">
                                 <User className="w-4 h-4" />
                             </div>
                         </div>
@@ -544,7 +555,7 @@ const AdminLayout = () => {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 20, scale: 0.95 }}
                             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                            className="fixed bottom-6 right-6 z-[9999] w-96 bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl shadow-2xl border-4 border-brand-950 p-6 flex items-start gap-4 cursor-pointer text-slate-800 dark:text-slate-200"
+                            className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:w-96 z-[9999] bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl shadow-2xl border-4 border-brand-950 p-4 sm:p-6 flex items-start gap-4 cursor-pointer text-slate-800 dark:text-slate-200"
                             onClick={() => {
                                 setToast(t => ({ ...t, show: false }));
                                 navigate('/admin/notifications');
