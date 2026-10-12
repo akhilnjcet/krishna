@@ -216,7 +216,7 @@ const AdminSettings = () => {
                         <div className="flex items-center gap-3 text-brand-accent font-black text-[10px] uppercase tracking-[0.4em] mb-4">
                             <Terminal className="w-4 h-4" /> Root Config Interface v5.1
                         </div>
-                        <h1 className="text-6xl md:text-7xl font-black uppercase tracking-tighter leading-none italic">
+                        <h1 className="text-3xl sm:text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none italic">
                             SYSTEM <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-white">DIRECTIVES.</span>
                         </h1>
                     </div>

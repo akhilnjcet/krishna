@@ -1627,7 +1627,8 @@ const AdminFinance = () => {
                                         No transaction logs recorded for this payroll cycle.
                                     </div>
                                 ) : (
-                                    <table className="w-full border-collapse text-left text-xs">
+                                    <div className="overflow-x-auto w-full">
+                                        <table className="w-full border-collapse text-left text-xs min-w-[500px]">
                                         <thead>
                                             <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
                                                 <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Date & Time</th>
@@ -1666,6 +1667,7 @@ const AdminFinance = () => {
                                             ))}
                                         </tbody>
                                     </table>
+                                    </div>
                                 )}
                             </div>
                         </motion.div>

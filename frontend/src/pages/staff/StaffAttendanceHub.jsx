@@ -484,8 +484,8 @@ const StaffAttendanceHub = () => {
                             </div>
 
                             {/* Preview Table */}
-                            <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden text-xs max-h-60 overflow-y-auto">
-                                <table className="w-full text-left border-collapse">
+                            <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden text-xs max-h-60 overflow-y-auto overflow-x-auto">
+                                <table className="w-full text-left border-collapse min-w-[340px]">
                                     <thead>
                                         <tr className="bg-slate-900 text-white font-black uppercase text-[10px]">
                                             <th className="p-2.5">Date</th>

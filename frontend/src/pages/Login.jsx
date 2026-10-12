@@ -85,14 +85,14 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 relative overflow-hidden font-sans">
+        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
             {/* Background Accents */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -mr-48 -mt-48"></div>
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -ml-48 -mb-48"></div>
 
             <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl relative z-10 overflow-hidden">
                 <div className="grid grid-cols-1 md:grid-cols-2">
-                    <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] p-12 text-white flex flex-col justify-between relative overflow-hidden">
+                    <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] p-8 sm:p-12 text-white flex flex-col justify-between relative overflow-hidden">
                         <div className="absolute inset-0 opacity-10">
                             <Activity className="w-48 h-48 absolute -bottom-10 -right-10 rotate-12" />
                         </div>
@@ -106,7 +106,7 @@ const Login = () => {
                         </div>
                     </div>
 
-                    <div className="p-10 md:p-12">
+                    <div className="p-6 sm:p-10 md:p-12">
                         <div className="flex gap-4 mb-10 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
                             <button 
                                 onClick={() => { setLoginMode('identity'); setOtpSent(false); }}

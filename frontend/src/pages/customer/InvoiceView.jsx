@@ -86,8 +86,8 @@ const InvoiceView = () => {
                         </div>
 
                         {/* Line Items */}
-                        <div className="mb-12 border-t-4 border-brand-950">
-                            <table className="w-full text-left">
+                        <div className="mb-12 border-t-4 border-brand-950 overflow-x-auto">
+                            <table className="w-full text-left min-w-[320px]">
                                 <thead>
                                     <tr className="border-b-4 border-brand-950 bg-brand-50">
                                         <th className="py-4 px-2 text-[10px] font-black uppercase tracking-widest text-brand-950">Description of Goods/Services</th>

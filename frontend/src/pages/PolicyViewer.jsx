@@ -78,20 +78,20 @@ const PolicyViewer = ({ defaultType = 'privacy' }) => {
             <div className="max-w-4xl mx-auto">
                 
                 {/* Top Action Bar (No-Print) */}
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-8 no-print">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-8 no-print">
                     <button
                         onClick={() => navigate(-1)}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs uppercase tracking-wider shadow-sm transition-all hover:-translate-x-1"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs uppercase tracking-wider shadow-sm transition-all hover:-translate-x-1"
                     >
                         <ArrowLeft className="w-4 h-4" /> Back
                     </button>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 justify-between sm:justify-end">
                         {/* Tab Switcher */}
-                        <div className="bg-slate-200 dark:bg-slate-800 p-1 rounded-2xl flex gap-1">
+                        <div className="bg-slate-200 dark:bg-slate-800 p-1 rounded-2xl flex gap-1 flex-1 sm:flex-initial">
                             <button
                                 onClick={() => setPolicyType('privacy')}
-                                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                                className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all text-center ${
                                     policyType === 'privacy' 
                                         ? 'bg-blue-600 text-white shadow-md' 
                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -101,20 +101,20 @@ const PolicyViewer = ({ defaultType = 'privacy' }) => {
                             </button>
                             <button
                                 onClick={() => setPolicyType('terms')}
-                                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                                className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all text-center ${
                                     policyType === 'terms' 
                                         ? 'bg-blue-600 text-white shadow-md' 
                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                 }`}
                             >
-                                Terms of Service
+                                Terms
                             </button>
                         </div>
 
                         {/* Print Button */}
                         <button
                             onClick={handlePrint}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold text-xs uppercase tracking-wider shadow-sm transition-all"
+                            className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold text-xs uppercase tracking-wider shadow-sm transition-all"
                             title="Print Document"
                         >
                             <Printer className="w-4 h-4" /> Print

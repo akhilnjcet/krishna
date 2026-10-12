@@ -133,7 +133,7 @@ const Register = () => {
                     </div>
 
                     {/* Right: Registration Form */}
-                    <div className="p-10 lg:p-14 order-1 lg:order-2">
+                    <div className="p-6 sm:p-10 lg:p-14 order-1 lg:order-2">
                         <div className="mb-10">
                             <h3 className="text-2xl font-bold text-[#111827] dark:text-dark-text font-poppins">Account Initialization</h3>
                             <p className="text-[#6B7280] dark:text-dark-muted text-sm font-medium mt-1">Start your industrial partnership today.</p>
