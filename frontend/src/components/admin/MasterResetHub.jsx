@@ -675,9 +675,18 @@ const MasterResetHub = () => {
                             </div>
 
                             {executionError && (
-                                <div className="p-4 bg-rose-950/50 border border-rose-500/40 rounded-xl text-rose-300 text-xs flex items-center gap-2">
-                                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                                    <span>{executionError}</span>
+                                <div className="p-4 bg-rose-950/50 border border-rose-500/40 rounded-xl text-rose-300 text-xs space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+                                        <span className="font-semibold">{executionError}</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleStartResetFlow}
+                                        className="w-full py-2.5 px-4 bg-rose-600/30 hover:bg-rose-600 border border-rose-500/50 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                                    >
+                                        <RefreshCw className="w-3.5 h-3.5" /> Restart Verification & Request Fresh OTP
+                                    </button>
                                 </div>
                             )}
 

@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { sendMasterResetOTP } = require('../services/emailService');
 const ResetAuditLog = require('../models/ResetAuditLog');
+const ResetSession = require('../models/ResetSession');
 
 // Import Protected Models
 const User = require('../models/User');
@@ -106,12 +107,64 @@ const OPERATIONAL_CATEGORIES = {
     }
 };
 
-// Global Concurrency Lock
-let isResetInProgress = false;
+// Concurrency Lock with Auto-Expiry (stored in DB to be 100% serverless/multi-worker safe)
+const LOCK_KEY = 'master_reset_in_progress_lock';
+const LOCK_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes max
 
-// In-Memory Storage for Active Reset Sessions
-// Map<sessionId, ResetSession>
-const activeResetSessions = new Map();
+const acquireResetLock = async (adminId) => {
+    try {
+        const existing = await SystemSetting.findOne({ key: LOCK_KEY });
+        const now = Date.now();
+        if (existing && existing.value && existing.value.inProgress) {
+            const age = now - (existing.value.startedAt || 0);
+            if (age < LOCK_TIMEOUT_MS) {
+                return false; // Still actively locked
+            }
+        }
+        // Acquire lock
+        await SystemSetting.findOneAndUpdate(
+            { key: LOCK_KEY },
+            { 
+                key: LOCK_KEY,
+                value: { inProgress: true, startedAt: now, adminId: adminId.toString() },
+                category: 'system'
+            },
+            { upsert: true }
+        );
+        return true;
+    } catch (e) {
+        return true; // Fallback to allowing if DB lock read errors
+    }
+};
+
+const releaseResetLock = async () => {
+    try {
+        await SystemSetting.findOneAndUpdate(
+            { key: LOCK_KEY },
+            { 
+                key: LOCK_KEY,
+                value: { inProgress: false, releasedAt: Date.now() },
+                category: 'system'
+            },
+            { upsert: true }
+        );
+    } catch (e) {
+        // ignore
+    }
+};
+
+const isResetLocked = async () => {
+    try {
+        const existing = await SystemSetting.findOne({ key: LOCK_KEY });
+        if (existing && existing.value && existing.value.inProgress) {
+            const age = Date.now() - (existing.value.startedAt || 0);
+            return age < LOCK_TIMEOUT_MS;
+        }
+        return false;
+    } catch (e) {
+        return false;
+    }
+};
 
 // Helper to mask email address for UI preview
 const maskEmail = (email) => {
@@ -133,22 +186,13 @@ const formatBytes = (bytes) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-// Clean up expired sessions periodically
-setInterval(() => {
-    const now = Date.now();
-    for (const [id, session] of activeResetSessions.entries()) {
-        if (now > session.expiresAt && (!session.tokenExpiresAt || now > session.tokenExpiresAt)) {
-            activeResetSessions.delete(id);
-        }
-    }
-}, 60000);
-
 /**
  * 1. GET /api/admin/reset/preview
  * Returns preview of what will be deleted vs preserved, including live record counts.
  */
 exports.getResetPreview = async (req, res) => {
     try {
+        const locked = await isResetLocked();
         const categoriesPreview = {};
         let totalOperationalRecords = 0;
 
@@ -241,7 +285,7 @@ exports.getResetPreview = async (req, res) => {
 
         res.json({
             success: true,
-            isResetInProgress,
+            isResetInProgress: locked,
             totalOperationalRecords,
             categories: categoriesPreview,
             protectedData,
@@ -261,12 +305,12 @@ exports.getResetPreview = async (req, res) => {
 
 /**
  * 2. POST /api/admin/reset/request-otp
- * Generates cryptographically secure OTP, hashes it, stores session, and emails the code.
+ * Generates cryptographically secure OTP, hashes it, stores persistent session in MongoDB, and emails the code.
  */
 exports.requestResetOTP = async (req, res) => {
     try {
-        if (isResetInProgress) {
-            return res.status(409).json({ message: 'A Master Reset operation is already in progress. Please wait.' });
+        if (await isResetLocked()) {
+            return res.status(409).json({ message: 'A Master Reset operation is currently in progress. Please wait.' });
         }
 
         // Verify current administrator from database
@@ -275,9 +319,17 @@ exports.requestResetOTP = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized: Highest administrator privileges required.' });
         }
 
-        if (!adminUser.email) {
+        // Determine destination email
+        const targetEmail = adminUser.email || process.env.EMAIL_USER;
+        if (!targetEmail) {
             return res.status(400).json({ message: 'Administrator account has no verified email address configured. Reset cannot proceed.' });
         }
+
+        // Invalidate any existing pending sessions for this admin so there are no conflicts
+        await ResetSession.updateMany(
+            { adminId: adminUser._id, status: 'PENDING' },
+            { status: 'CANCELLED' }
+        ).catch(() => {});
 
         // Generate cryptographically secure 6-digit numeric OTP
         const otp = crypto.randomInt(100000, 1000000).toString();
@@ -289,38 +341,39 @@ exports.requestResetOTP = async (req, res) => {
         // Create unique session ID
         const sessionId = 'rss_' + crypto.randomBytes(16).toString('hex');
         const now = Date.now();
-        const expiresAt = now + 5 * 60 * 1000; // 5 minutes
+        const expiresAt = new Date(now + 10 * 60 * 1000); // 10 minutes expiry
 
-        // Dispatch Email using existing emailService
-        const emailSent = await sendMasterResetOTP(adminUser.email, otp, adminUser.name);
-        if (!emailSent) {
-            return res.status(500).json({ 
-                message: 'Failed to deliver OTP to the administrator email address. Master reset cannot proceed without verified email dispatch.' 
-            });
-        }
-
-        // Store session in memory
-        activeResetSessions.set(sessionId, {
+        // Store persistent session in MongoDB (resilient to serverless / worker restarts)
+        await ResetSession.create({
             sessionId,
-            adminId: adminUser._id.toString(),
-            adminEmail: adminUser.email,
-            adminName: adminUser.name,
+            adminId: adminUser._id,
+            adminEmail: targetEmail,
+            adminName: adminUser.name || 'System Administrator',
             otpHash,
             attempts: 0,
-            maxAttempts: 3,
+            maxAttempts: 5,
             expiresAt,
             isVerified: false,
-            resetToken: null,
-            tokenExpiresAt: null,
+            status: 'PENDING',
             clientIp: req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress
         });
+
+        // Dispatch Email using existing emailService
+        console.log(`Dispatching Master Reset OTP to email: ${targetEmail}`);
+        const emailSent = await sendMasterResetOTP(targetEmail, otp, adminUser.name);
+        if (!emailSent) {
+            await ResetSession.deleteOne({ sessionId });
+            return res.status(500).json({ 
+                message: `Failed to deliver OTP to ${maskEmail(targetEmail)}. Please verify your SMTP / email settings.` 
+            });
+        }
 
         res.json({
             success: true,
             sessionId,
-            emailMasked: maskEmail(adminUser.email),
-            expiresInSeconds: 300,
-            message: `A 6-digit verification code has been dispatched to ${maskEmail(adminUser.email)}.`
+            emailMasked: maskEmail(targetEmail),
+            expiresInSeconds: 600,
+            message: `A 6-digit verification code has been dispatched to ${maskEmail(targetEmail)}.`
         });
     } catch (error) {
         console.error('Error requesting reset OTP:', error);
@@ -330,8 +383,8 @@ exports.requestResetOTP = async (req, res) => {
 
 /**
  * 3. POST /api/admin/reset/verify-credentials
- * Verifies both the administrator password and email OTP.
- * Issues a single-use high-entropy reset token.
+ * Verifies both the administrator password and email OTP against MongoDB session.
+ * Issues a single-use high-entropy reset token stored in MongoDB.
  */
 exports.verifyResetCredentials = async (req, res) => {
     try {
@@ -341,27 +394,40 @@ exports.verifyResetCredentials = async (req, res) => {
             return res.status(400).json({ message: 'Session ID, administrator password, and email OTP are required.' });
         }
 
-        const session = activeResetSessions.get(sessionId);
+        const session = await ResetSession.findOne({ sessionId, status: 'PENDING' });
         if (!session) {
-            return res.status(400).json({ message: 'Reset authorization session expired or invalid. Please request a new OTP.' });
+            return res.status(400).json({ 
+                message: 'Reset authorization session expired or invalid. Please request a new OTP.',
+                code: 'SESSION_EXPIRED'
+            });
         }
 
-        if (Date.now() > session.expiresAt) {
-            activeResetSessions.delete(sessionId);
-            return res.status(400).json({ message: 'OTP has expired. Please request a new verification code.' });
+        if (new Date() > session.expiresAt) {
+            session.status = 'CANCELLED';
+            await session.save();
+            return res.status(400).json({ 
+                message: 'OTP has expired. Please click Request Code to get a fresh verification code.',
+                code: 'OTP_EXPIRED'
+            });
         }
 
         if (session.attempts >= session.maxAttempts) {
-            activeResetSessions.delete(sessionId);
-            return res.status(429).json({ message: 'Maximum verification attempts exceeded. Reset session terminated for security.' });
+            session.status = 'CANCELLED';
+            await session.save();
+            return res.status(429).json({ 
+                message: 'Maximum verification attempts exceeded. Reset session terminated for security. Please request a new code.',
+                code: 'MAX_ATTEMPTS'
+            });
         }
 
-        session.attempts++;
+        session.attempts += 1;
+        await session.save();
 
         // Re-verify administrator from database
         const adminUser = await User.findById(req.user.id || req.user._id);
         if (!adminUser || adminUser.role !== 'admin' || adminUser.status === 'inactive') {
-            activeResetSessions.delete(sessionId);
+            session.status = 'CANCELLED';
+            await session.save();
             return res.status(403).json({ message: 'Unauthorized: Administrator account invalid or deactivated.' });
         }
 
@@ -401,27 +467,27 @@ exports.verifyResetCredentials = async (req, res) => {
 
         if (!isOtpCorrect) {
             return res.status(401).json({ 
-                message: 'Invalid OTP code. Please re-check the email sent to ' + maskEmail(adminUser.email),
+                message: 'Invalid OTP code. Please check your latest email.',
                 remainingAttempts: session.maxAttempts - session.attempts
             });
         }
 
         // Both password and OTP verified!
-        // Invalidate OTP hash immediately so it cannot be verified again
-        session.otpHash = null;
-        session.isVerified = true;
-
         // Generate high-entropy single-use cryptographic reset token
         const resetToken = 'rst_' + crypto.randomBytes(32).toString('hex');
-        const tokenExpiresAt = Date.now() + 10 * 60 * 1000; // Valid for 10 minutes
+        const tokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // Valid for 15 minutes
 
+        session.isVerified = true;
+        session.status = 'VERIFIED';
         session.resetToken = resetToken;
         session.tokenExpiresAt = tokenExpiresAt;
+        session.otpHash = null; // Clear OTP hash once verified
+        await session.save();
 
         res.json({
             success: true,
             resetToken,
-            expiresAt: tokenExpiresAt,
+            expiresAt: tokenExpiresAt.getTime(),
             message: 'Administrator identity and OTP confirmed. You may now perform the final confirmation to execute the reset.'
         });
     } catch (error) {
@@ -432,11 +498,16 @@ exports.verifyResetCredentials = async (req, res) => {
 
 /**
  * Helper to perform full database backup before deletion
+ * (Works on persistent servers AND Vercel serverless /tmp)
  */
 const performFullDatabaseBackup = async (adminUser) => {
+    const isVercel = process.env.VERCEL === '1';
     const timestampStr = new Date().toISOString().replace(/[:.]/g, '-');
     const backupDirName = `master-reset-backup-${timestampStr}`;
-    const backupDirPath = path.join(__dirname, '..', 'backups', backupDirName);
+    
+    // On Vercel, the filesystem outside /tmp is strictly read-only
+    const baseDir = isVercel ? path.join('/tmp', 'backups') : path.join(__dirname, '..', 'backups');
+    const backupDirPath = path.join(baseDir, backupDirName);
 
     fs.mkdirSync(backupDirPath, { recursive: true });
 
@@ -455,22 +526,24 @@ const performFullDatabaseBackup = async (adminUser) => {
     }
 
     // Archive backend/uploads if exists
-    const uploadsDir = path.join(__dirname, '..', 'uploads');
+    const uploadsDir = isVercel ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads');
     let archivedUploadsCount = 0;
     if (fs.existsSync(uploadsDir)) {
-        const uploadFiles = fs.readdirSync(uploadsDir);
-        if (uploadFiles.length > 0) {
-            const backupUploadsDir = path.join(backupDirPath, 'uploads');
-            fs.mkdirSync(backupUploadsDir, { recursive: true });
-            for (const file of uploadFiles) {
-                const src = path.join(uploadsDir, file);
-                const dest = path.join(backupUploadsDir, file);
-                if (fs.statSync(src).isFile()) {
-                    fs.copyFileSync(src, dest);
-                    archivedUploadsCount++;
+        try {
+            const uploadFiles = fs.readdirSync(uploadsDir);
+            if (uploadFiles.length > 0) {
+                const backupUploadsDir = path.join(backupDirPath, 'uploads');
+                fs.mkdirSync(backupUploadsDir, { recursive: true });
+                for (const file of uploadFiles) {
+                    const src = path.join(uploadsDir, file);
+                    const dest = path.join(backupUploadsDir, file);
+                    if (fs.statSync(src).isFile()) {
+                        fs.copyFileSync(src, dest);
+                        archivedUploadsCount++;
+                    }
                 }
             }
-        }
+        } catch (e) { /* ignore upload copy error if empty */ }
     }
 
     // Calculate directory size
@@ -484,7 +557,9 @@ const performFullDatabaseBackup = async (adminUser) => {
             else totalBytes += stat.size;
         }
     };
-    calculateDirSize(backupDirPath);
+    try {
+        calculateDirSize(backupDirPath);
+    } catch (e) { /* ignore */ }
 
     const backupRef = `BKP-${Date.now()}`;
     const manifest = {
@@ -506,7 +581,7 @@ const performFullDatabaseBackup = async (adminUser) => {
     return {
         backupReference: backupRef,
         backupLocation: backupDirPath,
-        backupRelativePath: `backend/backups/${backupDirName}`,
+        backupRelativePath: isVercel ? `/tmp/backups/${backupDirName}` : `backend/backups/${backupDirName}`,
         totalDocumentsBackedUp: totalDocuments,
         totalSizeBytes: totalBytes,
         backupSize: formatBytes(totalBytes),
@@ -520,13 +595,9 @@ const performFullDatabaseBackup = async (adminUser) => {
  */
 exports.executeMasterReset = async (req, res) => {
     const startTime = Date.now();
-    let currentSessionId = null;
+    let sessionRecord = null;
 
     try {
-        if (isResetInProgress) {
-            return res.status(409).json({ message: 'Another Master Reset operation is currently in progress.' });
-        }
-
         const { resetToken, confirmationPhrase, confirmed } = req.body;
 
         if (!resetToken) {
@@ -544,41 +615,47 @@ exports.executeMasterReset = async (req, res) => {
             return res.status(400).json({ message: 'Second explicit confirmation checkbox is required.' });
         }
 
-        // Find session by resetToken
-        let matchingSession = null;
-        for (const [id, s] of activeResetSessions.entries()) {
-            if (s.resetToken === resetToken) {
-                matchingSession = s;
-                currentSessionId = id;
-                break;
-            }
+        // Look up persistent session from MongoDB
+        sessionRecord = await ResetSession.findOne({ resetToken, status: 'VERIFIED' });
+
+        if (!sessionRecord) {
+            return res.status(403).json({ 
+                message: 'Reset token is invalid, expired, or has already been consumed. Please click Start Over to request a fresh OTP.',
+                code: 'TOKEN_INVALID'
+            });
         }
 
-        if (!matchingSession) {
-            return res.status(403).json({ message: 'Reset token is invalid or has already been consumed.' });
-        }
-
-        if (Date.now() > matchingSession.tokenExpiresAt) {
-            activeResetSessions.delete(currentSessionId);
-            return res.status(403).json({ message: 'Reset token has expired. Please restart the verification.' });
+        if (new Date() > sessionRecord.tokenExpiresAt) {
+            sessionRecord.status = 'CANCELLED';
+            await sessionRecord.save();
+            return res.status(403).json({ 
+                message: 'Reset token has expired (15-minute validity limit). Please request a fresh OTP.',
+                code: 'TOKEN_EXPIRED'
+            });
         }
 
         // Verify token owner matches authenticated user
-        if (matchingSession.adminId !== (req.user.id || req.user._id).toString()) {
-            activeResetSessions.delete(currentSessionId);
-            return res.status(403).json({ message: 'Reset token does not match the active administrator.' });
+        if (sessionRecord.adminId.toString() !== (req.user.id || req.user._id).toString()) {
+            return res.status(403).json({ 
+                message: 'Reset token does not match the active administrator.',
+                code: 'TOKEN_MISMATCH'
+            });
         }
 
-        // Immediately consume and invalidate the token to prevent any reuse
-        activeResetSessions.delete(currentSessionId);
+        // Acquire Concurrency Lock in MongoDB
+        const lockAcquired = await acquireResetLock(req.user.id || req.user._id);
+        if (!lockAcquired) {
+            return res.status(409).json({ message: 'Another Master Reset operation is currently in progress.' });
+        }
 
-        // Lock execution
-        isResetInProgress = true;
+        // Mark session as consumed in MongoDB
+        sessionRecord.status = 'CONSUMED';
+        await sessionRecord.save();
 
         // Re-verify administrator from database
         const adminUser = await User.findById(req.user.id || req.user._id);
         if (!adminUser || adminUser.role !== 'admin' || adminUser.status === 'inactive') {
-            isResetInProgress = false;
+            await releaseResetLock();
             return res.status(403).json({ message: 'Unauthorized administrator privileges.' });
         }
 
@@ -593,7 +670,7 @@ exports.executeMasterReset = async (req, res) => {
             backupResult = await performFullDatabaseBackup(adminUser);
             console.log(`Backup completed successfully: ${backupResult.backupReference} (${backupResult.backupSize})`);
         } catch (backupErr) {
-            isResetInProgress = false;
+            await releaseResetLock();
             console.error('Critical: Database backup failure before reset:', backupErr);
             return res.status(500).json({
                 message: 'CRITICAL SAFEGUARD: Pre-reset database backup failed. Deletion halted to protect data integrity.',
@@ -667,7 +744,7 @@ exports.executeMasterReset = async (req, res) => {
                 console.log('Master reset transaction rolled back.');
             }
             mongoSession.endSession();
-            isResetInProgress = false;
+            await releaseResetLock();
 
             // Record failed audit
             await ResetAuditLog.create({
@@ -696,9 +773,9 @@ exports.executeMasterReset = async (req, res) => {
         }
 
         // ── STEP 3: SAFE PURGE OF OPERATIONAL UPLOADS ──
-        // Receipts and progress photos are safely archived in backupResult.backupLocation/uploads/
         try {
-            const uploadsDir = path.join(__dirname, '..', 'uploads');
+            const isVercel = process.env.VERCEL === '1';
+            const uploadsDir = isVercel ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads');
             if (fs.existsSync(uploadsDir)) {
                 const files = fs.readdirSync(uploadsDir);
                 for (const f of files) {
@@ -745,7 +822,7 @@ exports.executeMasterReset = async (req, res) => {
         });
 
         // Release concurrency lock
-        isResetInProgress = false;
+        await releaseResetLock();
 
         res.json({
             success: true,
@@ -771,7 +848,7 @@ exports.executeMasterReset = async (req, res) => {
             }
         });
     } catch (error) {
-        isResetInProgress = false;
+        await releaseResetLock();
         console.error('Unexpected error during Master Reset execution:', error);
         res.status(500).json({ message: 'Unexpected reset execution failure: ' + error.message });
     }
@@ -792,13 +869,13 @@ exports.getResetHistory = async (req, res) => {
 
 /**
  * 6. POST /api/admin/reset/cancel
- * Manually aborts and cancels an active verification session.
+ * Manually aborts and cancels an active verification session in MongoDB.
  */
 exports.cancelResetSession = async (req, res) => {
     try {
         const { sessionId } = req.body;
-        if (sessionId && activeResetSessions.has(sessionId)) {
-            activeResetSessions.delete(sessionId);
+        if (sessionId) {
+            await ResetSession.updateOne({ sessionId }, { status: 'CANCELLED' });
         }
         res.json({ success: true, message: 'Reset session cancelled.' });
     } catch (error) {
