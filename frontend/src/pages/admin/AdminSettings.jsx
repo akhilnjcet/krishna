@@ -1,14 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Shield, Lock, Server, Save, Loader2, Check,
     MapPin, Phone, Mail, Globe, Share2, AlignLeft, 
     Terminal, Cpu, Radio, Activity, Zap, TrendingUp,
-    BarChart3, Info, ImageIcon, FileText, Building, CreditCard
+    BarChart3, Info, ImageIcon, FileText, Building, CreditCard,
+    RotateCcw, Sliders, ShieldAlert, AlertTriangle
 } from 'lucide-react';
 import api from '../../services/api';
+import MasterResetHub from '../../components/admin/MasterResetHub';
 
 const AdminSettings = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') === 'reset' ? 'reset' : 'directives';
+    const setActiveTab = (tab) => {
+        setSearchParams(tab === 'directives' ? {} : { tab });
+    };
+
     const [settings, setSettings] = useState({
         systemName: 'Krishna Engineering ERP',
         ownerEmail: 'admin@krishnaengg.com',
@@ -211,7 +220,7 @@ const AdminSettings = () => {
 
             <div className="max-w-7xl mx-auto relative z-10">
                 
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-12">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-8">
                     <div>
                         <div className="flex items-center gap-3 text-brand-accent font-black text-[10px] uppercase tracking-[0.4em] mb-4">
                             <Terminal className="w-4 h-4" /> Root Config Interface v5.1
@@ -221,18 +230,55 @@ const AdminSettings = () => {
                         </h1>
                     </div>
                     
-                    <button 
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="group relative px-12 py-5 bg-brand-accent text-black font-black uppercase tracking-[0.3em] text-[10px] flex items-center gap-4 hover:bg-white/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 rounded-xl shadow-[0_0_30px_rgba(255,180,0,0.2)]"
+                    {activeTab === 'directives' && (
+                        <button 
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="group relative px-12 py-5 bg-brand-accent text-black font-black uppercase tracking-[0.3em] text-[10px] flex items-center gap-4 hover:bg-white/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 rounded-xl shadow-[0_0_30px_rgba(255,180,0,0.2)]"
+                        >
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : success ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                            {saving ? 'Syncing...' : success ? 'Config Updated' : 'Push Deployment'}
+                        </button>
+                    )}
+                </div>
+
+                {/* ── SYSTEM CORE TAB NAVIGATOR ── */}
+                <div className="flex flex-wrap items-center gap-3 p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl mb-10 w-fit backdrop-blur-xl">
+                    <button
+                        onClick={() => setActiveTab('directives')}
+                        className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                            activeTab === 'directives'
+                                ? 'bg-brand-accent text-black shadow-lg shadow-amber-500/20'
+                                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                        }`}
                     >
-                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : success ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                        {saving ? 'Syncing...' : success ? 'Config Updated' : 'Push Deployment'}
+                        <Sliders className="w-4 h-4" />
+                        System Directives & Branding
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('reset')}
+                        className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                            activeTab === 'reset'
+                                ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30'
+                                : 'text-slate-400 hover:text-rose-400 hover:bg-white/5'
+                        }`}
+                    >
+                        <RotateCcw className={`w-4 h-4 ${activeTab === 'reset' ? 'text-white' : 'text-rose-400'}`} />
+                        Master Reset & Fresh Start
+                        <span className="ml-1 px-2 py-0.5 bg-rose-500/20 border border-rose-500/30 text-rose-300 rounded-full text-[9px] font-bold uppercase">
+                            Danger Zone
+                        </span>
                     </button>
                 </div>
 
-                {/* ── COMPANY BRANDING & DIGITAL SIGNATURE SECTION ── */}
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 mb-12">
+                {activeTab === 'reset' && (
+                    <MasterResetHub />
+                )}
+
+                {activeTab === 'directives' && (
+                    <>
+                        {/* ── COMPANY BRANDING & DIGITAL SIGNATURE SECTION ── */}
+                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 mb-12">
                     <section className="xl:col-span-12 p-8 md:p-10 bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[2.5rem] backdrop-blur-3xl relative overflow-hidden group hover:border-amber-500/20 transition-all">
                         <ModuleHeader icon={ImageIcon} title="Company Branding & Digital Signature Management" status="PDF & Web" />
                         
@@ -867,6 +913,8 @@ const AdminSettings = () => {
                         </section>
                     </div>
                 </div>
+                    </>
+                )}
             </div>
         </div>
     );

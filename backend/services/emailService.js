@@ -164,10 +164,42 @@ Valid for 5 minutes. Please enter this code on the login portal to verify your a
     }
 };
 
+const sendMasterResetOTP = async (email, otp, name) => {
+    try {
+        const transporter = createTransporter();
+        const mailOptions = {
+            from: `"Krishna Engineering Works Security" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: '🚨 CRITICAL: Master Reset Authorization OTP - Krishna ERP',
+            text: `Hello ${name || 'System Administrator'},
+
+A request has been initiated to perform a MASTER RESET / FRESH START on Krishna ERP.
+This action will permanently purge all test and operational business data.
+
+Your Master Reset Authorization OTP is: ${otp}
+
+Security Directives:
+• This code is valid for 5 minutes only.
+• It is strictly single-use and bound to this pending reset request.
+• If you DID NOT initiate this request, take immediate action to secure your account.
+
+– Krishna ERP Security & Governance Desk`
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Master reset authorization email successfully dispatched: ' + (info.messageId || 'Delivered'));
+        return true;
+    } catch (error) {
+        console.error('Error dispatching master reset OTP email:', error.message);
+        return false;
+    }
+};
+
 module.exports = {
     sendWelcomeEmail,
     sendPasswordResetOTP,
     sendLoginOTP,
+    sendMasterResetOTP,
     sendLoginNotification,
     sendSignoutNotification,
     sendPasswordChangeConfirmation,

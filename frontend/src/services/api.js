@@ -36,7 +36,11 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         // Only redirect to login if the error is 401 AND we are not currently trying to log in or verify face
-        if (error.response?.status === 401 && !error.config.url.includes('/auth/login') && !error.config.url.includes('/auth/verify-face')) {
+        if (error.response?.status === 401 && 
+            !error.config.url.includes('/auth/login') && 
+            !error.config.url.includes('/auth/verify-face') &&
+            !error.config.url.includes('/admin/reset')
+        ) {
             useAuthStore.getState().logout();
             window.location.href = '/login';
         }
