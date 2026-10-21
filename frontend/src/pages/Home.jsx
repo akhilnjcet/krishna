@@ -259,14 +259,14 @@ const Home = () => {
 
                             {/* Badge */}
                             <motion.div variants={fadeUp} custom={0}
-                                className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-blue-50/80 border border-blue-100 backdrop-blur-sm mb-8 md:mb-10"
+                                className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-blue-50/80 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800/50 backdrop-blur-sm mb-8 md:mb-10 shadow-sm"
                             >
                                 <motion.span
                                     animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
                                     transition={{ duration: 2, repeat: Infinity }}
-                                    className="w-2 h-2 rounded-full bg-blue-600"
+                                    className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400"
                                 />
-                                <span className="text-blue-700 text-xs font-black uppercase tracking-[0.3em]">
+                                <span className="text-blue-700 dark:text-blue-300 text-xs font-black uppercase tracking-[0.3em]">
                                     Established 1999 · Certified Excellence
                                 </span>
                             </motion.div>
@@ -279,7 +279,7 @@ const Home = () => {
                                         <motion.span
                                             variants={fadeUp}
                                             custom={2}
-                                            className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-cta to-blue-600"
+                                            className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-cta to-blue-600 dark:from-blue-400 dark:via-cyan-300 dark:to-blue-400"
                                         >
                                             Engineering
                                         </motion.span>
@@ -309,26 +309,66 @@ const Home = () => {
                             </motion.div>
 
                             {/* ── PERFORMANCE METRICS ── */}
-                            <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-8 border-t border-slate-200 dark:border-slate-700 ">
+                            <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-8 border-t border-slate-200/80 dark:border-slate-800">
                                 {[
-                                    { label: 'Projects Completed', value: (settings.stat_projects || '1200+').replace(/[^0-9,.]/g, ''), suffix: (settings.stat_projects || '1200+').replace(/[0-9,. ]/g, '') || '+', icon: <Layers className="w-7 h-7" />, color: 'from-blue-50/50 to-white', glow: 'shadow-blue-100/40', border: 'border-blue-100', iconColor: 'text-blue-600', bgIcon: 'bg-blue-50' },
-                                    { label: 'Happy Clients', value: (settings.stat_clients || '450+').replace(/[^0-9,.]/g, ''), suffix: (settings.stat_clients || '450+').replace(/[0-9,. ]/g, '') || '+', icon: <Users className="w-7 h-7" />, color: 'from-cyan-50/50 to-white', glow: 'shadow-cyan-100/40', border: 'border-cyan-100', iconColor: 'text-cyan-600', bgIcon: 'bg-cyan-50' },
-                                    { label: 'Years Experience', value: (settings.stat_years || '25+').replace(/[^0-9.]/g, ''), suffix: (settings.stat_years || '25+').replace(/[0-9. ]/g, '') || '+', icon: <Award className="w-7 h-7" />, color: 'from-yellow-50/50 to-white', glow: 'shadow-yellow-100/40', border: 'border-yellow-100', iconColor: 'text-yellow-600', bgIcon: 'bg-yellow-50' },
-                                    { label: 'Client Satisfaction', value: (settings.stat_satisfaction || '99%').replace(/[^0-9.]/g, ''), suffix: (settings.stat_satisfaction || '99%').replace(/[0-9. ]/g, '') || '%', icon: <Shield className="w-7 h-7" />, color: 'from-green-50/50 to-white', glow: 'shadow-green-100/40', border: 'border-green-100', iconColor: 'text-green-600', bgIcon: 'bg-green-50' },
+                                    { 
+                                        label: 'Projects Completed', 
+                                        value: (settings.stat_projects || '1200+').replace(/[^0-9,.]/g, ''), 
+                                        suffix: (settings.stat_projects || '1200+').replace(/[0-9,. ]/g, '') || '+', 
+                                        icon: <Layers className="w-6 h-6 md:w-7 md:h-7" />, 
+                                        color: 'from-blue-50/70 to-white dark:from-blue-950/40 dark:to-slate-900/90', 
+                                        glow: 'shadow-blue-100/40 dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)]', 
+                                        border: 'border-blue-100/80 dark:border-blue-900/50 dark:hover:border-blue-700/60', 
+                                        iconColor: 'text-blue-600 dark:text-blue-400', 
+                                        bgIcon: 'bg-blue-50 dark:bg-blue-950/70 border border-blue-100/80 dark:border-blue-800/40' 
+                                    },
+                                    { 
+                                        label: 'Happy Clients', 
+                                        value: (settings.stat_clients || '450+').replace(/[^0-9,.]/g, ''), 
+                                        suffix: (settings.stat_clients || '450+').replace(/[0-9,. ]/g, '') || '+', 
+                                        icon: <Users className="w-6 h-6 md:w-7 md:h-7" />, 
+                                        color: 'from-cyan-50/70 to-white dark:from-cyan-950/40 dark:to-slate-900/90', 
+                                        glow: 'shadow-cyan-100/40 dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)]', 
+                                        border: 'border-cyan-100/80 dark:border-cyan-900/50 dark:hover:border-cyan-700/60', 
+                                        iconColor: 'text-cyan-600 dark:text-cyan-400', 
+                                        bgIcon: 'bg-cyan-50 dark:bg-cyan-950/70 border border-cyan-100/80 dark:border-cyan-800/40' 
+                                    },
+                                    { 
+                                        label: 'Years Experience', 
+                                        value: (settings.stat_years || '25+').replace(/[^0-9.]/g, ''), 
+                                        suffix: (settings.stat_years || '25+').replace(/[0-9. ]/g, '') || '+', 
+                                        icon: <Award className="w-6 h-6 md:w-7 md:h-7" />, 
+                                        color: 'from-amber-50/70 to-white dark:from-amber-950/40 dark:to-slate-900/90', 
+                                        glow: 'shadow-amber-100/40 dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)]', 
+                                        border: 'border-amber-100/80 dark:border-amber-900/50 dark:hover:border-amber-700/60', 
+                                        iconColor: 'text-amber-600 dark:text-amber-400', 
+                                        bgIcon: 'bg-amber-50 dark:bg-amber-950/70 border border-amber-100/80 dark:border-amber-800/40' 
+                                    },
+                                    { 
+                                        label: 'Client Satisfaction', 
+                                        value: (settings.stat_satisfaction || '99%').replace(/[^0-9.]/g, ''), 
+                                        suffix: (settings.stat_satisfaction || '99%').replace(/[0-9. ]/g, '') || '%', 
+                                        icon: <Shield className="w-6 h-6 md:w-7 md:h-7" />, 
+                                        color: 'from-emerald-50/70 to-white dark:from-emerald-950/40 dark:to-slate-900/90', 
+                                        glow: 'shadow-emerald-100/40 dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)]', 
+                                        border: 'border-emerald-100/80 dark:border-emerald-900/50 dark:hover:border-emerald-700/60', 
+                                        iconColor: 'text-emerald-600 dark:text-emerald-400', 
+                                        bgIcon: 'bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-100/80 dark:border-emerald-800/40' 
+                                    },
                                 ].map((stat, i) => (
                                     <motion.div
                                         key={i}
                                         variants={scaleIn}
                                         custom={i}
                                         whileHover={{ y: -8, scale: 1.02 }}
-                                        className={`relative p-5 md:p-6 rounded-3xl bg-gradient-to-br ${stat.color} border ${stat.border} shadow-lg ${stat.glow} overflow-hidden cursor-default group`}
+                                        className={`relative p-5 md:p-6 rounded-3xl bg-gradient-to-br ${stat.color} border ${stat.border} shadow-lg ${stat.glow} backdrop-blur-md overflow-hidden cursor-default group transition-all duration-300`}
                                     >
-                                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-slate-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                                        <div className={`w-11 h-11 md:w-12 md:h-12 ${stat.bgIcon} rounded-2xl flex items-center justify-center mb-3 md:mb-4 ${stat.iconColor} group-hover:scale-110 transition-transform`}>{stat.icon}</div>
-                                        <div className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter mb-1.5 md:mb-2">
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 dark:via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+                                        <div className={`w-11 h-11 md:w-12 md:h-12 ${stat.bgIcon} rounded-2xl flex items-center justify-center mb-3 md:mb-4 ${stat.iconColor} group-hover:scale-110 transition-transform shadow-sm`}>{stat.icon}</div>
+                                        <div className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter mb-1.5 md:mb-2 drop-shadow-sm">
                                             <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                                         </div>
-                                        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-600 dark:text-slate-400 transition-colors">
+                                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">
                                             {stat.label}
                                         </div>
                                         <div className={`absolute bottom-0 left-0 h-0.5 ${stat.iconColor} bg-current w-0 group-hover:w-full transition-all duration-700`} />
@@ -341,11 +381,11 @@ const Home = () => {
                         <motion.div
                             animate={{ y: [0, 6, 0] }}
                             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                            className="hidden md:flex flex-col items-center gap-1.5 text-slate-400/50 pt-8"
+                            className="hidden md:flex flex-col items-center gap-1.5 text-slate-400/50 dark:text-slate-500 pt-8"
                         >
                             <span className="text-[9px] font-black uppercase tracking-[0.4em]">Scroll</span>
-                            <div className="w-4 h-7 rounded-full border border-slate-300 dark:border-slate-600 flex justify-center pt-1">
-                                <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-1 h-1.5 bg-slate-400 rounded-full" />
+                            <div className="w-4 h-7 rounded-full border border-slate-300 dark:border-slate-700 flex justify-center pt-1">
+                                <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-1 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full" />
                             </div>
                         </motion.div>
                     </div>
@@ -356,7 +396,7 @@ const Home = () => {
                     ════════════════════════════════════════ */}
                 <section id="about" className="py-16 md:py-24 bg-slate-50/50 dark:bg-slate-900/50 relative overflow-hidden border-t border-slate-100 dark:border-slate-800">
                     {/* Ambient glow */}
-                    <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-100/30 rounded-full blur-[150px] pointer-events-none -translate-x-1/2 -translate-y-1/2 opacity-40" />
+                    <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-100/30 dark:bg-blue-950/20 rounded-full blur-[150px] pointer-events-none -translate-x-1/2 -translate-y-1/2 opacity-40" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
                             {/* Text */}
@@ -364,7 +404,7 @@ const Home = () => {
                                 initial="hidden" whileInView="visible"
                                 viewport={{ once: true, margin: "-80px" }} variants={stagger}
                             >
-                                <motion.p variants={fadeUp} custom={0} className="text-blue-600 font-black uppercase tracking-[0.4em] text-xs mb-5">Our Story</motion.p>
+                                <motion.p variants={fadeUp} custom={0} className="text-blue-600 dark:text-blue-400 font-black uppercase tracking-[0.4em] text-xs mb-5">Our Story</motion.p>
                                 <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white leading-tight tracking-tighter mb-8 font-poppins">
                                     {settings.about_title}
                                 </motion.h2>
@@ -374,8 +414,8 @@ const Home = () => {
                                 <motion.div variants={fadeUp} custom={3} className="space-y-5">
                                     {['Experienced Steel Works', 'On-Site Mobile Fabrication Units', '25+ Year Track Record of Delivery', 'Transparent, Competitive Pricing'].map((item, i) => (
                                         <div key={i} className="flex items-center gap-4">
-                                            <div className="w-6 h-6 rounded-full bg-blue-50 border border-blue-200/50 flex items-center justify-center flex-shrink-0">
-                                                <CheckCircle className="w-3.5 h-3.5 text-blue-600" />
+                                            <div className="w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/50 dark:border-blue-800/50 flex items-center justify-center flex-shrink-0">
+                                                <CheckCircle className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                                             </div>
                                             <span className="text-slate-700 dark:text-slate-300 font-semibold">{item}</span>
                                         </div>
@@ -419,7 +459,7 @@ const Home = () => {
                     3. SERVICES — 3D Perspective Cards     
                     ════════════════════════════════════════ */}
                 <section id="services" className="py-16 md:py-24 bg-white dark:bg-slate-900 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-50 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/3 pointer-events-none opacity-60" />
+                    <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-50 dark:bg-blue-950/20 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/3 pointer-events-none opacity-60" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12 md:mb-16">
                             <motion.p variants={fadeUp} custom={0} className="text-blue-500 font-black uppercase tracking-[0.4em] text-xs mb-4">What We Do</motion.p>
@@ -433,10 +473,10 @@ const Home = () => {
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
                         >
                             {[
-                                { title: 'Steel Fabrication', icon: <Settings className="w-8 h-8" />, desc: 'Heavy structural steel for industrial frameworks, sheds, and construction.', color: 'bg-blue-50 text-blue-600', border: 'border-blue-100', glow: 'hover:shadow-blue-100' },
-                                { title: 'Welding Services', icon: <Zap className="w-8 h-8" />, desc: 'Precision TIG & MIG welding by certified pros for high-durability joins.', color: 'bg-yellow-50 text-yellow-600', border: 'border-yellow-100', glow: 'hover:shadow-yellow-100' },
-                                { title: 'Gate & Grill Works', icon: <Shield className="w-8 h-8" />, desc: 'Custom residential gates, rolling shutters, and security grills.', color: 'bg-green-50 text-green-600', border: 'border-green-100', glow: 'hover:shadow-green-100' },
-                                { title: 'Industrial Projects', icon: <Wrench className="w-8 h-8" />, desc: 'Factory maintenance, machinery repair, and high-pressure pipeline welding.', color: 'bg-violet-50 text-violet-600', border: 'border-violet-100', glow: 'hover:shadow-violet-100' },
+                                { title: 'Steel Fabrication', icon: <Settings className="w-8 h-8" />, desc: 'Heavy structural steel for industrial frameworks, sheds, and construction.', color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400', border: 'border-blue-100 dark:border-slate-800 dark:hover:border-blue-700/60', glow: 'shadow-blue-100/40 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]' },
+                                { title: 'Welding Services', icon: <Zap className="w-8 h-8" />, desc: 'Precision TIG & MIG welding by certified pros for high-durability joins.', color: 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400', border: 'border-amber-100 dark:border-slate-800 dark:hover:border-amber-700/60', glow: 'shadow-amber-100/40 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]' },
+                                { title: 'Gate & Grill Works', icon: <Shield className="w-8 h-8" />, desc: 'Custom residential gates, rolling shutters, and security grills.', color: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400', border: 'border-emerald-100 dark:border-slate-800 dark:hover:border-emerald-700/60', glow: 'shadow-emerald-100/40 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]' },
+                                { title: 'Industrial Projects', icon: <Wrench className="w-8 h-8" />, desc: 'Factory maintenance, machinery repair, and high-pressure pipeline welding.', color: 'bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400', border: 'border-violet-100 dark:border-slate-800 dark:hover:border-violet-700/60', glow: 'shadow-violet-100/40 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]' },
                             ].map((svc, i) => (
                                 <motion.div
                                     key={i}
@@ -446,12 +486,12 @@ const Home = () => {
                                     style={{ perspective: 800 }}
                                     className={`group p-10 bg-white dark:bg-slate-900 rounded-[2.5rem] border ${svc.border} shadow-xl ${svc.glow} hover:shadow-2xl transition-all duration-500 flex flex-col items-start`}
                                 >
-                                    <div className={`w-20 h-20 ${svc.color} rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-700 shadow-sm`}>
+                                    <div className={`w-20 h-20 ${svc.color} rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-700 shadow-sm border border-slate-100/60 dark:border-slate-800`}>
                                         {svc.icon}
                                     </div>
                                     <h3 className="text-xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">{svc.title}</h3>
                                     <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-semibold flex-1">{svc.desc}</p>
-                                    <div className="mt-8 flex items-center gap-2 text-blue-600 font-bold text-sm group-hover:gap-4 transition-all">
+                                    <div className="mt-8 flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm group-hover:gap-4 transition-all">
                                         <span>Learn More</span>
                                         <ArrowRight className="w-4 h-4" />
                                     </div>
@@ -533,7 +573,7 @@ const Home = () => {
                     5. PROFESSIONAL TRUST & REPUTATION SECTION
                     ════════════════════════════════════════ */}
                 <section className="py-16 md:py-24 bg-white dark:bg-slate-900 relative overflow-hidden">
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-50 rounded-full blur-[100px] pointer-events-none opacity-60" />
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-50 dark:bg-blue-950/20 rounded-full blur-[100px] pointer-events-none opacity-60" />
                     <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
                         {/* Header */}
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12 md:mb-16">
@@ -548,7 +588,7 @@ const Home = () => {
                             {/* Left Side: Core Trust Badges */}
                             <motion.div 
                                 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}
-                                className="lg:col-span-5 bg-gradient-to-br from-slate-50 to-blue-50/20 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-10 shadow-xl shadow-slate-100/50"
+                                className="lg:col-span-5 bg-gradient-to-br from-slate-50 to-blue-50/20 dark:from-slate-900 dark:to-slate-950 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-10 shadow-xl shadow-slate-100/50 dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
                             >
                                 <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-8 tracking-tight border-l-4 border-blue-600 pl-4">Our Quality Guarantees</h3>
                                 <div className="space-y-6">
@@ -561,7 +601,7 @@ const Home = () => {
                                         { text: '✅ Customer Satisfaction Focused', desc: 'Dedicated support lines and transparent quoting.' },
                                     ].map((badge, idx) => (
                                         <motion.div key={idx} variants={fadeUp} className="flex gap-4 items-start">
-                                            <div className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0" />
+                                            <div className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 mt-2 shrink-0" />
                                             <div>
                                                 <h4 className="font-bold text-slate-900 dark:text-white text-sm">{badge.text}</h4>
                                                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{badge.desc}</p>
@@ -577,27 +617,27 @@ const Home = () => {
                                 className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6"
                             >
                                 {[
-                                    { title: '⭐ 4.8+ Google Rating', desc: '4.8+ Rated on Google Business Profile', sub: 'Verified Client Reviews', icon: <Star className="w-8 h-8 text-yellow-500 fill-current" />, color: 'from-yellow-50/50 to-white', border: 'border-yellow-100', shadow: 'shadow-yellow-100/30' },
-                                    { title: `🏗️ ${settings.stat_projects || '22,500+'} Projects Completed`, desc: 'Successfully executed fabrication and erection projects.', sub: 'Industrial & Residential', icon: <Layers className="w-8 h-8 text-blue-600" />, color: 'from-blue-50/50 to-white', border: 'border-blue-100', shadow: 'shadow-blue-100/30' },
-                                    { title: `👷 ${settings.stat_clients || '5,000+'} Happy Clients`, desc: 'Active customers across industrial factories & residential sectors.', sub: '100% Retained Service contracts', icon: <Users className="w-8 h-8 text-cyan-600" />, color: 'from-cyan-50/50 to-white', border: 'border-cyan-100', shadow: 'shadow-cyan-100/30' },
-                                    { title: '📍 Services Across Kerala', desc: 'Statewide logistics and on-site mobile fabrication units.', sub: 'All 14 Districts Covered', icon: <MapPin className="w-8 h-8 text-emerald-600" />, color: 'from-emerald-50/50 to-white', border: 'border-emerald-100', shadow: 'shadow-emerald-100/30' },
-                                    { title: '⏱️ On-Time Delivery Commitment', desc: 'Rigid adherence to contract timelines and scheduled handovers.', sub: 'Zero Project Overruns', icon: <Clock className="w-8 h-8 text-indigo-600" />, color: 'from-indigo-50/50 to-white', border: 'border-indigo-100', shadow: 'shadow-indigo-100/30' },
+                                    { title: '⭐ 4.8+ Google Rating', desc: '4.8+ Rated on Google Business Profile', sub: 'Verified Client Reviews', icon: <Star className="w-8 h-8 text-amber-500 fill-current" />, color: 'from-amber-50/50 to-white dark:from-amber-950/30 dark:to-slate-900/90', border: 'border-amber-100 dark:border-amber-900/40', shadow: 'shadow-amber-100/30 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]' },
+                                    { title: `🏗️ ${settings.stat_projects || '22,500+'} Projects Completed`, desc: 'Successfully executed fabrication and erection projects.', sub: 'Industrial & Residential', icon: <Layers className="w-8 h-8 text-blue-600 dark:text-blue-400" />, color: 'from-blue-50/50 to-white dark:from-blue-950/30 dark:to-slate-900/90', border: 'border-blue-100 dark:border-blue-900/40', shadow: 'shadow-blue-100/30 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]' },
+                                    { title: `👷 ${settings.stat_clients || '5,000+'} Happy Clients`, desc: 'Active customers across industrial factories & residential sectors.', sub: '100% Retained Service contracts', icon: <Users className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />, color: 'from-cyan-50/50 to-white dark:from-cyan-950/30 dark:to-slate-900/90', border: 'border-cyan-100 dark:border-cyan-900/40', shadow: 'shadow-cyan-100/30 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]' },
+                                    { title: '📍 Services Across Kerala', desc: 'Statewide logistics and on-site mobile fabrication units.', sub: 'All 14 Districts Covered', icon: <MapPin className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />, color: 'from-emerald-50/50 to-white dark:from-emerald-950/30 dark:to-slate-900/90', border: 'border-emerald-100 dark:border-emerald-900/40', shadow: 'shadow-emerald-100/30 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]' },
+                                    { title: '⏱️ On-Time Delivery Commitment', desc: 'Rigid adherence to contract timelines and scheduled handovers.', sub: 'Zero Project Overruns', icon: <Clock className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />, color: 'from-indigo-50/50 to-white dark:from-indigo-950/30 dark:to-slate-900/90', border: 'border-indigo-100 dark:border-indigo-900/40', shadow: 'shadow-indigo-100/30 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]' },
                                 ].map((card, idx) => (
                                     <motion.div 
                                         key={idx}
                                         variants={scaleIn}
                                         custom={idx}
                                         whileHover={{ y: -8, scale: 1.02 }}
-                                        className={`p-8 bg-gradient-to-br ${card.color} border ${card.border} rounded-[2.5rem] shadow-xl ${card.shadow} flex flex-col items-start transition-all cursor-default group ${idx === 4 ? 'sm:col-span-2' : ''}`}
+                                        className={`p-8 bg-gradient-to-br ${card.color} border ${card.border} rounded-[2.5rem] shadow-xl ${card.shadow} flex flex-col items-start transition-all cursor-default group backdrop-blur-md ${idx === 4 ? 'sm:col-span-2' : ''}`}
                                     >
-                                        <div className="w-14 h-14 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center shadow-md border border-slate-50 mb-6 group-hover:scale-110 transition-transform">
+                                        <div className="w-14 h-14 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-md border border-slate-100 dark:border-slate-700/60 mb-6 group-hover:scale-110 transition-transform">
                                             {card.icon}
                                         </div>
                                         <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2">{card.title}</h4>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed flex-grow">{card.desc}</p>
-                                        <div className="w-full border-t border-slate-100/50 dark:border-slate-800/50 pt-4 mt-6 flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold leading-relaxed flex-grow">{card.desc}</p>
+                                        <div className="w-full border-t border-slate-200/50 dark:border-slate-800/80 pt-4 mt-6 flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
                                             <span>{card.sub}</span>
-                                            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-600">Verified ✓</span>
+                                            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-600 dark:text-blue-400">Verified ✓</span>
                                         </div>
                                     </motion.div>
                                 ))}
