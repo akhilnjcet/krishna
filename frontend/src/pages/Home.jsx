@@ -392,13 +392,13 @@ const Home = () => {
                                 <motion.div whileHover={{ scale: 1.03, rotate: -1 }} transition={{ type: 'spring', stiffness: 200 }}
                                     className="absolute top-0 left-0 right-16 h-[380px] rounded-[3rem] overflow-hidden shadow-[0_25px_50px_rgba(15,23,42,0.15)]"
                                 >
-                                    <img src="https://images.unsplash.com/photo-1542626991-cbc4e32524cc?w=700&h=500&fit=crop" alt="Welding" className="w-full h-full object-cover" />
+                                    <img src="/images/story-welding-fabrication.jpg" alt="Welding & Heavy Structural Fabrication" className="w-full h-full object-cover object-center" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
                                 </motion.div>
                                 <motion.div whileHover={{ scale: 1.03, rotate: 1 }} transition={{ type: 'spring', stiffness: 200 }}
                                     className="absolute bottom-0 right-0 left-16 h-[280px] rounded-[3rem] overflow-hidden shadow-[0_25px_50px_rgba(15,23,42,0.15)] border border-slate-100 dark:border-slate-800 "
                                 >
-                                    <img src="https://images.unsplash.com/photo-1502444330042-d1a1ddf9bb5b?w=700&h=400&fit=crop" alt="Fabrication" className="w-full h-full object-cover" />
+                                    <img src="/images/story-structural-erection.jpg" alt="Heavy Structural Truss Erection" className="w-full h-full object-cover object-center" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
                                 </motion.div>
                                 {/* Floating stat badge */}
