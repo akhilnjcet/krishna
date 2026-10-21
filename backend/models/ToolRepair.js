@@ -33,7 +33,7 @@ const toolRepairSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Pending', 'In Workshop', 'Under Repair', 'Repaired', 'Total loss'],
+        enum: ['Pending', 'In Workshop', 'Under Repair', 'In Progress', 'Repaired', 'Total loss', 'Total Loss'],
         default: 'Pending',
         index: true
     },
@@ -43,7 +43,7 @@ const toolRepairSchema = new mongoose.Schema({
     },
     outcome: {
         type: String,
-        enum: ['Pending', 'Repaired', 'Total loss'],
+        enum: ['Pending', 'Repaired', 'Total loss', 'Total Loss'],
         default: 'Pending',
         index: true
     },
@@ -53,20 +53,7 @@ const toolRepairSchema = new mongoose.Schema({
     resolutionNotes: {
         type: String,
         default: ''
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     }
-});
-
-toolRepairSchema.pre('save', function (next) {
-    this.updatedAt = Date.now();
-    next();
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('ToolRepair', toolRepairSchema);

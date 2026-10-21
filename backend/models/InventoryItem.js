@@ -124,21 +124,7 @@ const inventoryItemSchema = new mongoose.Schema({
         reference: { type: String }, // e.g. PO number, Project ID
         performedBy: { type: String },
         date: { type: Date, default: Date.now }
-    }],
-
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
-});
-
-inventoryItemSchema.pre('save', function (next) {
-    this.updatedAt = Date.now();
-    next();
-});
+    }]
+}, { timestamps: true });
 
 module.exports = mongoose.model('InventoryItem', inventoryItemSchema);

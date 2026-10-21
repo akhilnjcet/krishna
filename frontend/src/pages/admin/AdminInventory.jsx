@@ -204,7 +204,7 @@ const AdminInventory = () => {
             if (modalItemType === 'tool') fetchTools();
             else fetchMaterials();
         } catch (err) {
-            alert(err.response?.data?.message || 'Error saving item');
+            alert(err.response?.data?.error ? `${err.response.data.message}: ${err.response.data.error}` : (err.response?.data?.message || 'Error saving item'));
         }
     };
 
