@@ -100,7 +100,7 @@ exports.getDocuments = async (req, res) => {
             // Staff can only view documents they created or are authorized to view
             query.$or = [
                 { createdBy: req.user.id },
-                { documentType: { $in: ['General Report', 'Attendance Report', 'Labour Bill'] } }
+                { documentType: { $in: ['General Report', 'Attendance Report', 'Labour Bill', 'Transport Bill', 'Rental Bill'] } }
             ];
         }
 
@@ -114,6 +114,8 @@ exports.getDocuments = async (req, res) => {
             else if (category === 'Estimates') query.documentType = 'Estimate';
             else if (category === 'Invoices') query.documentType = 'Invoice';
             else if (category === 'Labour Bills') query.documentType = 'Labour Bill';
+            else if (category === 'Transport Bills') query.documentType = 'Transport Bill';
+            else if (category === 'Rental Bills') query.documentType = 'Rental Bill';
             else if (category === 'Salary Slips') query.documentType = 'Salary Slip';
             else if (category === 'Reports') query.documentType = { $in: ['Attendance Report', 'Project Report', 'General Report', 'Expense Report'] };
             else if (category === 'Receipts') query.documentType = 'Payment Receipt';

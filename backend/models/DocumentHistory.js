@@ -13,7 +13,7 @@ const documentHistorySchema = new mongoose.Schema({
         type: String, 
         required: true, 
         enum: [
-            'Quotation', 'Estimate', 'Invoice', 'Labour Bill', 'Salary Slip',
+            'Quotation', 'Estimate', 'Invoice', 'Labour Bill', 'Transport Bill', 'Rental Bill', 'Salary Slip',
             'Attendance Report', 'Purchase Bill', 'Expense Report', 'Payment Receipt',
             'Project Report', 'General Report',
             'Lodge Rent Bill', 'Booking Confirmation', 'Advance Payment'

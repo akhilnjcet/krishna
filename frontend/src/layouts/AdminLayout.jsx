@@ -6,7 +6,7 @@ import {
     Calculator, Receipt, TrendingUp, Settings, LogOut, Menu, X, Bell,
     Search, HelpCircle, ChevronRight, User, Filter, LayoutGrid, Activity,
     Clock, AlertCircle, Radio, MessageCircle, ChevronLeft, CheckSquare, Truck,
-    ShieldCheck
+    ShieldCheck, KeyRound
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,6 +31,7 @@ const SIDEBAR_ITEMS = [
     { name: 'Financial Hub',   path: '/admin/finance',      icon: BadgeIndianRupee },
     { name: 'Invoice Studio',  path: '/admin/invoices-studio', icon: Receipt },
     { name: 'Labour & Freight Bills', path: '/admin/labour-bills', icon: Truck },
+    { name: 'Equipment Rental Studio', path: '/admin/rental-bills', icon: KeyRound },
     { name: 'Document History', path: '/admin/document-history', icon: FileText },
     { name: 'Project Timeline', path: '/admin/progress',     icon: Activity },
     { name: 'Intelligence Feed', path: '/admin/blog',        icon: BookOpen },

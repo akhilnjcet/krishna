@@ -185,7 +185,8 @@ const DocumentHistory = () => {
             let targetPath = '';
             if (doc.documentType === 'Invoice') targetPath = '/admin/invoices-studio';
             else if (doc.documentType === 'Quotation') targetPath = '/admin/quotations-studio';
-            else if (doc.documentType === 'Labour Bill') targetPath = '/admin/labour-bills';
+            else if (doc.documentType === 'Labour Bill' || doc.documentType === 'Transport Bill') targetPath = '/admin/labour-bills';
+            else if (doc.documentType === 'Rental Bill') targetPath = '/admin/rental-bills';
             
             if (targetPath) {
                 window.location.hash = targetPath;
@@ -233,7 +234,7 @@ const DocumentHistory = () => {
 
             {/* Quick Categories Bar */}
             <div className="flex flex-wrap gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 w-fit">
-                {['All', 'Quotations', 'Estimates', 'Invoices', 'Labour Bills', 'Salary Slips', 'Reports', 'Receipts'].map(cat => (
+                {['All', 'Quotations', 'Estimates', 'Invoices', 'Labour Bills', 'Transport Bills', 'Rental Bills', 'Salary Slips', 'Reports', 'Receipts'].map(cat => (
                     <button
                         key={cat}
                         onClick={() => { setCategory(cat); setPage(1); }}

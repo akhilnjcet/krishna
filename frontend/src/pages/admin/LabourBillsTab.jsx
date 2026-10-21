@@ -1,58 +1,90 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Printer, Save, Plus, Trash2, Truck, Users, Calendar, Hash, FileText, 
-    Palette, CheckCircle, ShieldCheck, DollarSign, MapPin, Package, Clock
+    Palette, CheckCircle, ShieldCheck, DollarSign, MapPin, Package, Clock,
+    Copy, RotateCcw, History, Search, X, UserCheck, Compass, Phone, ArrowRight
 } from 'lucide-react';
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
 import { formatCurrencyINR } from '../../utils/pdfHelpers';
 
+const generateBillNumber = (mode) => {
+    const prefix = mode === 'transport' ? 'TR' : mode === 'combined' ? 'LT' : 'LB';
+    return `${prefix}-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+};
+
 const LabourBillsTab = () => {
-    // Logistics & Transit Tracking
+    // Mode: 'labour' | 'transport' | 'combined'
+    const [billMode, setBillMode] = useState('combined');
+
+    // Number & Dates
+    const [billNumber, setBillNumber] = useState(generateBillNumber('combined'));
+    const [billDate, setBillDate] = useState(new Date().toISOString().split('T')[0]);
+
+    // Client & Site Info
+    const [clientName, setClientName] = useState('Apex Structural Infra Ltd');
+    const [clientAddress, setClientAddress] = useState('Plot 45, Port Trust Area, Kochi');
+    const [clientPhone, setClientPhone] = useState('+91 98470 12345');
+    const [clientGstin, setClientGstin] = useState('32AAACA5678B1Z2');
+    const [siteLocation, setSiteLocation] = useState('Kochi Industrial Port Project Site');
+    const [siteSupervisor, setSiteSupervisor] = useState('Ramesh Kumar (Site Engineer)');
+
+    // Logistics & Transit Details (for Transport / Combined Mode)
     const [vehicleNumber, setVehicleNumber] = useState('KL-09-AB-4589');
     const [lrGrNumber, setLrGrNumber] = useState('LR-88902');
-    const [origin, setOrigin] = useState('Palakkad Works Yard');
-    const [destination, setDestination] = useState('Kochi Industrial Project Site');
-    const [goodsDescription, setGoodsDescription] = useState('Heavy Steel Girders & Fabrication Trusses');
+    const [origin, setOrigin] = useState('Palakkad Works Yard, Thiruvazhiyode');
+    const [destination, setDestination] = useState('Kochi Port Trust Yard, Ernakulam');
+    const [goodsDescription, setGoodsDescription] = useState('Heavy Steel Girders & Fabricated PEB Trusses');
+    const [driverName, setDriverName] = useState('M. Vijayan');
+    const [driverPhone, setDriverPhone] = useState('+91 94471 88990');
     const [loadingDate, setLoadingDate] = useState(new Date().toISOString().split('T')[0]);
     const [unloadingDate, setUnloadingDate] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
 
-    // Bill Number & Metadata
-    const [billNumber, setBillNumber] = useState(`LB-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
-    const [billDate, setBillDate] = useState(new Date().toISOString().split('T')[0]);
-    const [clientName, setClientName] = useState('Apex Structural Infra Ltd');
-    const [clientAddress, setClientAddress] = useState('Plot 45, Port Trust Area, Kochi');
-
-    // Dynamic Labour Charge Matrix
+    // Dynamic Labour Row Matrix
     const [labourRows, setLabourRows] = useState([
-        { id: 1, workDescription: 'Site Assembly & Fitting Labor', labourersCount: 6, workingDays: 5, dailyRate: 950 },
-        { id: 2, workDescription: 'High-Elevation Structural Welders', labourersCount: 3, workingDays: 4, dailyRate: 1400 }
+        { id: 1, workDescription: 'Site Assembly & Fitting Labor (Senior Fabricator Crew)', unit: 'Shifts', labourersCount: 6, workingDays: 5, dailyRate: 950 },
+        { id: 2, workDescription: 'High-Elevation Structural Certified Welders (MIG / ARC)', unit: 'Days', labourersCount: 3, workingDays: 4, dailyRate: 1400 },
+        { id: 3, workDescription: 'Riggers & Mobile Crane Alignment Helpers', unit: 'Days', labourersCount: 4, workingDays: 3, dailyRate: 750 }
     ]);
 
-    // Extra Charges Input Fields
+    // Dedicated Ancillary / Freight Charges
+    const [baseFreightCharges, setBaseFreightCharges] = useState(14500);
     const [loadingCharges, setLoadingCharges] = useState(2500);
     const [unloadingCharges, setUnloadingCharges] = useState(2500);
     const [handlingCharges, setHandlingCharges] = useState(1500);
     const [packingCharges, setPackingCharges] = useState(1200);
     const [overtimeCharges, setOvertimeCharges] = useState(3000);
-    const [additionalFreightCharges, setAdditionalFreightCharges] = useState(4500);
+    const [detentionCharges, setDetentionCharges] = useState(0);
+
+    // Advance Payment & Discount
+    const [advancePaid, setAdvancePaid] = useState(10000);
+    const [discountAmount, setDiscountAmount] = useState(0);
 
     // Tax & Financials
     const [taxPercentage, setTaxPercentage] = useState(18);
     const [taxDetails, setTaxDetails] = useState('CGST 9% + SGST 9%');
+    const [isTaxExempt, setIsTaxExempt] = useState(false);
 
     // Customizable Payment Options & Footer
-    const [footerText, setFooterText] = useState('Powered by Krishna ERP');
+    const [footerText, setFooterText] = useState('Krishna Engineering Works — Official Operations & Logistics Voucher');
     const [paymentOptions, setPaymentOptions] = useState('Bank Transfer: State Bank of India | A/C: 34567890123 | IFSC: SBIN0001234 | UPI: krishnaengg@sbi');
 
     // Theme & Styling
     const [theme, setTheme] = useState('Classic'); // Classic, Modern, Minimalist
     const [themeColor, setThemeColor] = useState('#4f46e5');
 
+    // Modals & History
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [savedBills, setSavedBills] = useState([]);
+    const [loadingHistory, setLoadingHistory] = useState(false);
+
     // Public Branding Settings
     const [brandingSettings, setBrandingSettings] = useState({});
-    React.useEffect(() => {
+    const [savingHistory, setSavingHistory] = useState(false);
+    const [saveMessage, setSaveMessage] = useState('');
+
+    useEffect(() => {
         fetch('/api/settings/public')
             .then(res => res.ok ? res.json() : [])
             .then(data => {
@@ -63,13 +95,36 @@ const LabourBillsTab = () => {
                 setBrandingSettings(map);
             })
             .catch(err => console.warn('Public settings fetch failed', err));
+        checkDuplicatedDoc();
     }, []);
 
-    // Dynamic Labour Row Handlers
+    const checkDuplicatedDoc = () => {
+        try {
+            const type = localStorage.getItem('duplicated_doc_type');
+            const dataStr = localStorage.getItem('duplicated_doc_data');
+            if ((type === 'Labour Bill' || type === 'Transport Bill') && dataStr) {
+                const parsed = JSON.parse(dataStr);
+                applyBillData(parsed, true);
+                localStorage.removeItem('duplicated_doc_type');
+                localStorage.removeItem('duplicated_doc_data');
+                setSaveMessage('✓ Cloned bill loaded into studio.');
+                setTimeout(() => setSaveMessage(''), 4000);
+            }
+        } catch (e) {
+            console.warn('Duplication check error:', e);
+        }
+    };
+
+    const handleModeSwitch = (newMode) => {
+        setBillMode(newMode);
+        setBillNumber(generateBillNumber(newMode));
+    };
+
+    // Labour Row Handlers
     const handleAddLabourRow = () => {
         setLabourRows(prev => [
             ...prev,
-            { id: Date.now(), workDescription: '', labourersCount: 1, workingDays: 1, dailyRate: 0 }
+            { id: Date.now(), workDescription: '', unit: 'Days', labourersCount: 1, workingDays: 1, dailyRate: 0 }
         ]);
     };
 
@@ -87,36 +142,121 @@ const LabourBillsTab = () => {
         }));
     };
 
-    // Calculations
-    const labourTotal = labourRows.reduce((sum, r) => {
+    // Financial Computations
+    const labourTotal = (billMode === 'transport') ? 0 : labourRows.reduce((sum, r) => {
         const lineTotal = (parseFloat(r.labourersCount || 0) * parseFloat(r.workingDays || 0) * parseFloat(r.dailyRate || 0));
         return sum + lineTotal;
     }, 0);
+
+    const logisticsTotal = (billMode === 'labour') ? 0 : (
+        parseFloat(baseFreightCharges || 0) +
+        parseFloat(detentionCharges || 0)
+    );
 
     const extraChargesTotal = 
         parseFloat(loadingCharges || 0) +
         parseFloat(unloadingCharges || 0) +
         parseFloat(handlingCharges || 0) +
         parseFloat(packingCharges || 0) +
-        parseFloat(overtimeCharges || 0) +
-        parseFloat(additionalFreightCharges || 0);
+        parseFloat(overtimeCharges || 0);
 
-    const subtotal = labourTotal + extraChargesTotal;
-    const taxAmount = subtotal * (parseFloat(taxPercentage || 0) / 100);
-    const grandTotal = subtotal + taxAmount;
+    const grossSubtotal = labourTotal + logisticsTotal + extraChargesTotal;
+    const numDiscount = parseFloat(discountAmount || 0);
+    const taxableSubtotal = Math.max(0, grossSubtotal - numDiscount);
+    const effectiveTaxRate = isTaxExempt ? 0 : parseFloat(taxPercentage || 0);
+    const taxAmount = (taxableSubtotal * effectiveTaxRate) / 100;
+    const grandTotal = taxableSubtotal + taxAmount;
+    const numAdvance = parseFloat(advancePaid || 0);
+    const balancePending = Math.max(0, grandTotal - numAdvance);
+
     const grandTotalInWords = numberToIndianRupees(grandTotal);
+    const balanceInWords = numberToIndianRupees(balancePending);
 
-    // Smart Field Visibility check
-    const hasLogisticsData = Boolean(
-        vehicleNumber?.trim() || 
-        lrGrNumber?.trim() || 
-        origin?.trim() || 
-        destination?.trim() ||
-        goodsDescription?.trim()
-    );
+    const handleDuplicateBill = () => {
+        setBillNumber(generateBillNumber(billMode));
+        setBillDate(new Date().toISOString().split('T')[0]);
+        setSaveMessage('✓ Duplicated with a new bill registration number.');
+        setTimeout(() => setSaveMessage(''), 3000);
+    };
 
-    const [savingHistory, setSavingHistory] = useState(false);
-    const [saveMessage, setSaveMessage] = useState('');
+    const handleResetBill = () => {
+        if (!window.confirm('Reset this bill and start fresh?')) return;
+        setBillNumber(generateBillNumber(billMode));
+        setBillDate(new Date().toISOString().split('T')[0]);
+        setClientName('');
+        setClientAddress('');
+        setClientPhone('');
+        setSiteLocation('');
+        setSiteSupervisor('');
+        setLabourRows([{ id: Date.now(), workDescription: '', unit: 'Days', labourersCount: 1, workingDays: 1, dailyRate: 0 }]);
+        setBaseFreightCharges(0);
+        setLoadingCharges(0);
+        setUnloadingCharges(0);
+        setHandlingCharges(0);
+        setPackingCharges(0);
+        setOvertimeCharges(0);
+        setDetentionCharges(0);
+        setAdvancePaid(0);
+        setDiscountAmount(0);
+        setSaveMessage('✓ Bill studio reset.');
+        setTimeout(() => setSaveMessage(''), 3000);
+    };
+
+    const handleOpenHistoryModal = async () => {
+        setShowHistoryModal(true);
+        setLoadingHistory(true);
+        try {
+            const cat = billMode === 'transport' ? 'Transport Bills' : 'Labour Bills';
+            const res = await api.get('/document-history', { params: { category: cat, limit: 20 } });
+            setSavedBills(res.data.documents || []);
+        } catch (e) {
+            console.error('Failed to load bill history:', e);
+        } finally {
+            setLoadingHistory(false);
+        }
+    };
+
+    const applyBillData = (data, isClone = false) => {
+        if (!data) return;
+        if (!isClone) {
+            setBillNumber(data.billNumber || generateBillNumber(billMode));
+            setBillDate(data.billDate || new Date().toISOString().split('T')[0]);
+        } else {
+            setBillNumber(generateBillNumber(data.billMode || billMode));
+            setBillDate(new Date().toISOString().split('T')[0]);
+        }
+        if (data.billMode) setBillMode(data.billMode);
+        setClientName(data.clientName || '');
+        setClientAddress(data.clientAddress || '');
+        setClientPhone(data.clientPhone || '');
+        setClientGstin(data.clientGstin || '');
+        setSiteLocation(data.siteLocation || '');
+        setSiteSupervisor(data.siteSupervisor || '');
+        setVehicleNumber(data.vehicleNumber || '');
+        setLrGrNumber(data.lrGrNumber || '');
+        setOrigin(data.origin || '');
+        setDestination(data.destination || '');
+        setGoodsDescription(data.goodsDescription || '');
+        setDriverName(data.driverName || '');
+        setDriverPhone(data.driverPhone || '');
+        setLoadingDate(data.loadingDate || new Date().toISOString().split('T')[0]);
+        setUnloadingDate(data.unloadingDate || new Date().toISOString().split('T')[0]);
+        if (Array.isArray(data.labourRows) && data.labourRows.length > 0) setLabourRows(data.labourRows);
+        if (data.baseFreightCharges !== undefined) setBaseFreightCharges(data.baseFreightCharges);
+        if (data.loadingCharges !== undefined) setLoadingCharges(data.loadingCharges);
+        if (data.unloadingCharges !== undefined) setUnloadingCharges(data.unloadingCharges);
+        if (data.handlingCharges !== undefined) setHandlingCharges(data.handlingCharges);
+        if (data.packingCharges !== undefined) setPackingCharges(data.packingCharges);
+        if (data.overtimeCharges !== undefined) setOvertimeCharges(data.overtimeCharges);
+        if (data.detentionCharges !== undefined) setDetentionCharges(data.detentionCharges);
+        if (data.advancePaid !== undefined) setAdvancePaid(data.advancePaid);
+        if (data.discountAmount !== undefined) setDiscountAmount(data.discountAmount);
+        if (data.taxPercentage !== undefined) setTaxPercentage(data.taxPercentage);
+        if (data.isTaxExempt !== undefined) setIsTaxExempt(data.isTaxExempt);
+        if (data.theme) setTheme(data.theme);
+        if (data.themeColor) setThemeColor(data.themeColor);
+        setShowHistoryModal(false);
+    };
 
     const handleSaveToHistory = async (autoSilent = false) => {
         if (!billNumber) {
@@ -125,26 +265,32 @@ const LabourBillsTab = () => {
         }
         setSavingHistory(true);
         try {
+            const documentType = billMode === 'transport' ? 'Transport Bill' : 'Labour Bill';
             const payload = {
-                documentType: 'Labour Bill',
+                documentType,
                 documentNumber: billNumber,
                 totalAmount: grandTotal,
-                status: 'Saved',
+                status: balancePending === 0 ? 'Paid' : numAdvance > 0 ? 'Partially Paid' : 'Pending',
                 data: {
+                    billMode,
                     vehicleNumber, lrGrNumber, origin, destination, goodsDescription,
-                    loadingDate, unloadingDate, billNumber, billDate, clientName, clientAddress,
-                    labourRows, loadingCharges, unloadingCharges, handlingCharges, packingCharges,
-                    overtimeCharges, additionalFreightCharges, taxPercentage, taxDetails, footerText,
-                    paymentOptions, theme, themeColor, grandTotal
+                    driverName, driverPhone, loadingDate, unloadingDate, 
+                    billNumber, billDate, clientName, clientAddress, clientPhone, clientGstin,
+                    siteLocation, siteSupervisor, labourRows,
+                    baseFreightCharges, loadingCharges, unloadingCharges, handlingCharges, packingCharges,
+                    overtimeCharges, detentionCharges, advancePaid: numAdvance, discountAmount: numDiscount,
+                    balancePending, taxPercentage, effectiveTaxRate, isTaxExempt, taxDetails, footerText,
+                    paymentOptions, theme, themeColor, grossSubtotal, taxableSubtotal, taxAmount, grandTotal,
+                    grandTotalInWords, balanceInWords
                 }
             };
             const res = await api.post('/document-history/save', payload);
             if (!autoSilent) {
-                setSaveMessage(`✅ Labour Bill #${billNumber} saved to Document History successfully (Version ${res.data.document?.version || 1}).`);
+                setSaveMessage(`✅ ${documentType} #${billNumber} saved to Document History (Version ${res.data.document?.version || 1}).`);
                 setTimeout(() => setSaveMessage(''), 4000);
             }
         } catch (err) {
-            console.error('Failed to save labour bill history:', err);
+            console.error('Failed to save bill history:', err);
             if (!autoSilent) {
                 alert(err.response?.data?.message || 'Failed to save bill to Document History.');
             }
@@ -159,50 +305,114 @@ const LabourBillsTab = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-slate-800 p-4 md:p-8 font-sans">
-            {/* Toolbar */}
-            <div className="no-print bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="min-h-screen bg-slate-100 dark:bg-slate-950 p-4 md:p-8 font-sans">
+            {/* Header Toolbar */}
+            <div className="no-print bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl mb-8 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                 <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1 flex items-center gap-2">
-                        <Truck className="w-4 h-4" /> Operations & Freight Suite
+                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-1 flex items-center gap-2">
+                        <Truck className="w-4 h-4" /> Workforce & Transport Operations
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Labour & Goods Transport Bills</h1>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
+                        Labour & Transport Billing Engine
+                    </h1>
                     {saveMessage && (
-                        <div className="mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 animate-in fade-in">
+                        <div className="mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 inline-block">
                             {saveMessage}
                         </div>
                     )}
                 </div>
 
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex flex-wrap items-center gap-2.5">
+                    {/* Duplicate */}
+                    <button
+                        onClick={handleDuplicateBill}
+                        className="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition"
+                        title="Duplicate as new bill"
+                    >
+                        <Copy className="w-4 h-4" /> Duplicate
+                    </button>
+
+                    {/* Reset */}
+                    <button
+                        onClick={handleResetBill}
+                        className="bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-rose-600 border border-slate-200 dark:border-slate-700 hover:bg-rose-50 px-3 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition"
+                    >
+                        <RotateCcw className="w-4 h-4" /> New
+                    </button>
+
+                    {/* Load History */}
+                    <button
+                        onClick={handleOpenHistoryModal}
+                        className="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition"
+                    >
+                        <History className="w-4 h-4" /> Load Saved
+                    </button>
+
+                    {/* Save Button */}
                     <button
                         onClick={() => handleSaveToHistory(false)}
                         disabled={savingHistory}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition disabled:opacity-50"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
                     >
-                        <Save className="w-4 h-4" /> {savingHistory ? 'Saving...' : 'Save to History'}
+                        <Save className="w-4 h-4" /> {savingHistory ? 'Saving...' : 'Save'}
                     </button>
+
+                    {/* Print Button */}
                     <button
                         onClick={handlePrint}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg transition"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
                     >
-                        <Printer className="w-4 h-4" /> Print / Export Bill
+                        <Printer className="w-4 h-4" /> Print / Export
                     </button>
                 </div>
             </div>
 
-            {/* Studio Grid */}
+            {/* Mode Switcher Tabs */}
+            <div className="no-print bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md mb-8 flex flex-wrap gap-2 w-fit">
+                <button
+                    onClick={() => handleModeSwitch('labour')}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition ${
+                        billMode === 'labour' 
+                            ? 'bg-indigo-600 text-white shadow-md' 
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                >
+                    <Users className="w-4 h-4" /> 1. Labour & Contractor Bill
+                </button>
+                <button
+                    onClick={() => handleModeSwitch('transport')}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition ${
+                        billMode === 'transport' 
+                            ? 'bg-indigo-600 text-white shadow-md' 
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                >
+                    <Truck className="w-4 h-4" /> 2. Transport & Logistics (LR Bill)
+                </button>
+                <button
+                    onClick={() => handleModeSwitch('combined')}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition ${
+                        billMode === 'combined' 
+                            ? 'bg-indigo-600 text-white shadow-md' 
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                >
+                    <Package className="w-4 h-4" /> 3. Combined Labour + Freight Bill
+                </button>
+            </div>
+
+            {/* Studio Workspace */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* LEFT: Controls & Input Forms */}
                 <div className="no-print lg:col-span-5 space-y-6">
                     {/* Bill Header Meta */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
                         <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                             <Hash className="w-4 h-4 text-indigo-500" /> Bill Identifier & Client
                         </h2>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Bill Number</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Bill Registration No</label>
                                 <input
                                     type="text"
                                     value={billNumber}
@@ -227,7 +437,7 @@ const LabourBillsTab = () => {
                                 type="text"
                                 value={clientName}
                                 onChange={(e) => setClientName(e.target.value)}
-                                placeholder="Client Firm"
+                                placeholder="Client or Contracting Organization"
                                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                             />
                         </div>
@@ -237,121 +447,209 @@ const LabourBillsTab = () => {
                                 type="text"
                                 value={clientAddress}
                                 onChange={(e) => setClientAddress(e.target.value)}
-                                placeholder="Site or Billing Address"
+                                placeholder="Site or Office Address"
                                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                             />
                         </div>
-                    </div>
-
-                    {/* Logistics & Transit Tracking */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
-                        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                <Truck className="w-4 h-4 text-indigo-500" /> Logistics & Transit Tracking
-                            </h2>
-                            <span className="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">Smart Auto-Hide if Empty</span>
-                        </div>
-
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Vehicle Number</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Client Phone</label>
                                 <input
                                     type="text"
-                                    value={vehicleNumber}
-                                    onChange={(e) => setVehicleNumber(e.target.value)}
-                                    placeholder="KL-00-XX-0000"
+                                    value={clientPhone}
+                                    onChange={(e) => setClientPhone(e.target.value)}
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">LR / GR Number</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Client GSTIN</label>
                                 <input
                                     type="text"
-                                    value={lrGrNumber}
-                                    onChange={(e) => setLrGrNumber(e.target.value)}
-                                    placeholder="LR-12345"
+                                    value={clientGstin}
+                                    onChange={(e) => setClientGstin(e.target.value)}
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        {/* Supervisor & Site Tracking */}
+                        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Origin</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Job / Site Location</label>
                                 <input
                                     type="text"
-                                    value={origin}
-                                    onChange={(e) => setOrigin(e.target.value)}
-                                    placeholder="Source Yard"
+                                    value={siteLocation}
+                                    onChange={(e) => setSiteLocation(e.target.value)}
+                                    placeholder="e.g. Kochi Industrial Park"
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Destination</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Site Supervisor Name</label>
                                 <input
                                     type="text"
-                                    value={destination}
-                                    onChange={(e) => setDestination(e.target.value)}
-                                    placeholder="Site Destination"
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Goods Description</label>
-                            <input
-                                type="text"
-                                value={goodsDescription}
-                                onChange={(e) => setGoodsDescription(e.target.value)}
-                                placeholder="Description of transported material"
-                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Loading Date</label>
-                                <input
-                                    type="date"
-                                    value={loadingDate}
-                                    onChange={(e) => setLoadingDate(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Unloading Date</label>
-                                <input
-                                    type="date"
-                                    value={unloadingDate}
-                                    onChange={(e) => setUnloadingDate(e.target.value)}
+                                    value={siteSupervisor}
+                                    onChange={(e) => setSiteSupervisor(e.target.value)}
+                                    placeholder="Supervisor Name"
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    {/* Dynamic Labour Charge Matrix */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
-                        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                <Users className="w-4 h-4 text-indigo-500" /> Dynamic Labour Charge Matrix
-                            </h2>
-                            <button
-                                onClick={handleAddLabourRow}
-                                className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
-                            >
-                                <Plus className="w-3.5 h-3.5" /> Add Labour Row
-                            </button>
-                        </div>
+                    {/* Logistics & Transit Tracking (shown in Transport or Combined mode) */}
+                    {(billMode === 'transport' || billMode === 'combined') && (
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
+                            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                                <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                    <Truck className="w-4 h-4 text-indigo-500" /> Logistics & Vehicle Transit Details
+                                </h2>
+                            </div>
 
-                        <div className="space-y-4">
-                            {labourRows.map((row, idx) => {
-                                const lineTotal = (parseFloat(row.labourersCount || 0) * parseFloat(row.workingDays || 0) * parseFloat(row.dailyRate || 0));
-                                return (
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Vehicle / Lorry Number</label>
+                                    <input
+                                        type="text"
+                                        value={vehicleNumber}
+                                        onChange={(e) => setVehicleNumber(e.target.value)}
+                                        placeholder="KL-09-AB-1234"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">LR / GR Number</label>
+                                    <input
+                                        type="text"
+                                        value={lrGrNumber}
+                                        onChange={(e) => setLrGrNumber(e.target.value)}
+                                        placeholder="LR-XXXXX"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Origin City / Yard</label>
+                                    <input
+                                        type="text"
+                                        value={origin}
+                                        onChange={(e) => setOrigin(e.target.value)}
+                                        placeholder="Origin"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Destination Location</label>
+                                    <input
+                                        type="text"
+                                        value={destination}
+                                        onChange={(e) => setDestination(e.target.value)}
+                                        placeholder="Destination"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Driver Name</label>
+                                    <input
+                                        type="text"
+                                        value={driverName}
+                                        onChange={(e) => setDriverName(e.target.value)}
+                                        placeholder="Driver Full Name"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Driver Contact Phone</label>
+                                    <input
+                                        type="text"
+                                        value={driverPhone}
+                                        onChange={(e) => setDriverPhone(e.target.value)}
+                                        placeholder="Phone"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Loading Date</label>
+                                    <input
+                                        type="date"
+                                        value={loadingDate}
+                                        onChange={(e) => setLoadingDate(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Unloading / Delivery Date</label>
+                                    <input
+                                        type="date"
+                                        value={unloadingDate}
+                                        onChange={(e) => setUnloadingDate(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Consignment / Goods Description</label>
+                                <textarea
+                                    rows="2"
+                                    value={goodsDescription}
+                                    onChange={(e) => setGoodsDescription(e.target.value)}
+                                    placeholder="Description of cargo, weights, dimensions"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none resize-none"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Base Freight Charge (₹)</label>
+                                    <input
+                                        type="number"
+                                        value={baseFreightCharges}
+                                        onChange={(e) => setBaseFreightCharges(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Detention Charges (₹)</label>
+                                    <input
+                                        type="number"
+                                        value={detentionCharges}
+                                        onChange={(e) => setDetentionCharges(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Workforce & Dynamic Labour Charges (shown in Labour or Combined mode) */}
+                    {(billMode === 'labour' || billMode === 'combined') && (
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
+                            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                                <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-indigo-500" /> Dynamic Labour Charge Matrix
+                                </h2>
+                                <button
+                                    onClick={handleAddLabourRow}
+                                    className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> Add Task
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                {labourRows.map((row, idx) => (
                                     <div key={row.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[10px] font-black uppercase text-indigo-600">Labour Matrix Row #{idx + 1}</span>
+                                            <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">Crew Row #{idx + 1}</span>
                                             {labourRows.length > 1 && (
                                                 <button
                                                     onClick={() => handleRemoveLabourRow(row.id)}
@@ -363,19 +661,33 @@ const LabourBillsTab = () => {
                                         </div>
 
                                         <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Work Description</label>
+                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Description of Work</label>
                                             <input
                                                 type="text"
                                                 value={row.workDescription}
                                                 onChange={(e) => handleLabourRowChange(row.id, 'workDescription', e.target.value)}
-                                                placeholder="e.g. Fabrication Assembly Labor"
+                                                placeholder="e.g. Masons, Certified Structural Welders, Erection Riggers"
                                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
                                         </div>
 
-                                        <div className="grid grid-cols-3 gap-2">
+                                        <div className="grid grid-cols-4 gap-2">
                                             <div>
-                                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Labourers</label>
+                                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Unit</label>
+                                                <select
+                                                    value={row.unit || 'Days'}
+                                                    onChange={(e) => handleLabourRowChange(row.id, 'unit', e.target.value)}
+                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-1.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                >
+                                                    <option value="Days">Days</option>
+                                                    <option value="Shifts">Shifts</option>
+                                                    <option value="Hours">Hours</option>
+                                                    <option value="Units">Units</option>
+                                                    <option value="Trips">Trips</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Labour Count</label>
                                                 <input
                                                     type="number"
                                                     value={row.labourersCount}
@@ -384,7 +696,7 @@ const LabourBillsTab = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Working Days</label>
+                                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Duration</label>
                                                 <input
                                                     type="number"
                                                     value={row.workingDays}
@@ -393,7 +705,7 @@ const LabourBillsTab = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Daily Rate (₹)</label>
+                                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Rate / Person (₹)</label>
                                                 <input
                                                     type="number"
                                                     value={row.dailyRate}
@@ -402,25 +714,20 @@ const LabourBillsTab = () => {
                                                 />
                                             </div>
                                         </div>
-
-                                        <div className="text-right text-[11px] font-black text-slate-700 dark:text-slate-300 pt-1">
-                                            Line Total: ₹ {lineTotal.toLocaleString('en-IN')}
-                                        </div>
                                     </div>
-                                );
-                            })}
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
-                    {/* Extra Charges Input Fields */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
+                    {/* Dedicated Charge Categorization */}
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
                         <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-                            <Package className="w-4 h-4 text-indigo-500" /> Extra Charges Breakdown
+                            <Package className="w-4 h-4 text-indigo-500" /> Handling & Ancillary Operations Charges
                         </h2>
-
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Loading Charges (₹)</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Loading Crew Charges (₹)</label>
                                 <input
                                     type="number"
                                     value={loadingCharges}
@@ -429,7 +736,7 @@ const LabourBillsTab = () => {
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Unloading Charges (₹)</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Unloading Crew Charges (₹)</label>
                                 <input
                                     type="number"
                                     value={unloadingCharges}
@@ -437,112 +744,110 @@ const LabourBillsTab = () => {
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 pt-1">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Handling Charges (₹)</label>
+                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Handling / Rigging (₹)</label>
                                 <input
                                     type="number"
                                     value={handlingCharges}
                                     onChange={(e) => setHandlingCharges(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Packing Charges (₹)</label>
+                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Packing / Strapping (₹)</label>
                                 <input
                                     type="number"
                                     value={packingCharges}
                                     onChange={(e) => setPackingCharges(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Overtime Charges (₹)</label>
+                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Overtime Charges (₹)</label>
                                 <input
                                     type="number"
                                     value={overtimeCharges}
                                     onChange={(e) => setOvertimeCharges(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Additional Freight (₹)</label>
-                                <input
-                                    type="number"
-                                    value={additionalFreightCharges}
-                                    onChange={(e) => setAdditionalFreightCharges(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    {/* Tax & Footer Customization */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-4">
+                    {/* Advance, Discounts & Tax Compliance */}
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
                         <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-                            <Palette className="w-4 h-4 text-indigo-500" /> Taxes, Payment Options & Footer
+                            <DollarSign className="w-4 h-4 text-indigo-500" /> Advance Deductions & Tax Compliance
                         </h2>
-
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Tax Percentage (%)</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Advance Received (₹)</label>
                                 <input
                                     type="number"
-                                    value={taxPercentage}
-                                    onChange={(e) => setTaxPercentage(e.target.value)}
+                                    value={advancePaid}
+                                    onChange={(e) => setAdvancePaid(e.target.value)}
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Tax Details Label</label>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Discount Deduction (₹)</label>
                                 <input
-                                    type="text"
-                                    value={taxDetails}
-                                    onChange={(e) => setTaxDetails(e.target.value)}
-                                    placeholder="CGST 9% + SGST 9%"
+                                    type="number"
+                                    value={discountAmount}
+                                    onChange={(e) => setDiscountAmount(e.target.value)}
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
                         </div>
 
-                        <div>
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Customizable Payment Options</label>
-                            <input
-                                type="text"
-                                value={paymentOptions}
-                                onChange={(e) => setPaymentOptions(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Customizable Footer Text</label>
-                            <input
-                                type="text"
-                                value={footerText}
-                                onChange={(e) => setFooterText(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                            />
-                        </div>
-
-                        {/* Theme Picker */}
-                        <div className="pt-2">
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-2">Theme Style</label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {['Classic', 'Modern', 'Minimalist'].map(t => (
-                                    <button
-                                        key={t}
-                                        onClick={() => setTheme(t)}
-                                        className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition ${
-                                            theme === t ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800'
-                                        }`}
+                        <div className="flex items-center justify-between pt-2">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={isTaxExempt}
+                                    onChange={(e) => setIsTaxExempt(e.target.checked)}
+                                    className="rounded border-slate-300 text-indigo-600"
+                                />
+                                Tax Exempt / Nil Rate
+                            </label>
+                            {!isTaxExempt && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black uppercase text-slate-400">GST %:</span>
+                                    <select
+                                        value={taxPercentage}
+                                        onChange={(e) => setTaxPercentage(e.target.value)}
+                                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold text-slate-800 dark:text-slate-200"
                                     >
-                                        {t}
-                                    </button>
-                                ))}
-                            </div>
+                                        <option value="5">5% (Goods Transport Agency)</option>
+                                        <option value="12">12%</option>
+                                        <option value="18">18% (Standard Service)</option>
+                                    </select>
+                                </div>
+                            )}
                         </div>
+                    </div>
 
-                        <div className="flex items-center gap-3 pt-1">
+                    {/* Theme & Styling */}
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
+                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                            <Palette className="w-4 h-4 text-indigo-500" /> Themes & Branding
+                        </h2>
+                        <div className="grid grid-cols-3 gap-2">
+                            {['Classic', 'Modern', 'Minimalist'].map(t => (
+                                <button
+                                    key={t}
+                                    onClick={() => setTheme(t)}
+                                    className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition ${
+                                        theme === t ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                                    }`}
+                                >
+                                    {t}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-3 pt-2">
                             <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Theme Color:</label>
                             <input
                                 type="color"
@@ -554,21 +859,19 @@ const LabourBillsTab = () => {
                     </div>
                 </div>
 
-                {/* RIGHT: Real-time Live Document Preview */}
+                {/* RIGHT: Live Printable Document Preview */}
                 <div className="lg:col-span-7">
                     <div className="sticky top-6">
-                        {/* Live Badge */}
                         <div className="no-print flex items-center justify-between bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800">
                             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400">
                                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                Live Labour & Goods Transport Bill Preview
+                                Live Print Document: {billMode === 'transport' ? 'Transport / LR Bill' : billMode === 'labour' ? 'Labour & Contractor Bill' : 'Combined Labour & Freight'}
                             </div>
-                            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Instant Rendering</span>
+                            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{theme}</span>
                         </div>
 
-                        {/* Bill Document */}
                         <div 
-                            className="print-document-container bg-white dark:bg-slate-900 p-8 md:p-12 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-sans"
+                            className="print-document-container bg-white dark:bg-slate-900 p-8 md:p-12 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans"
                             style={{ '--theme-color': themeColor }}
                         >
                             {/* Header */}
@@ -578,264 +881,356 @@ const LabourBillsTab = () => {
                                     style={{ backgroundColor: themeColor }}
                                 >
                                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
-                                        <div>
-                                            <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
-                                            <p className="text-xs opacity-90 font-medium">Labour Billing & Goods Transport Logistical Voucher</p>
+                                        <div className="flex items-center gap-4 flex-wrap">
+                                            {brandingSettings.company_logo && (
+                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white p-1 rounded-xl shadow-md" />
+                                            )}
+                                            <div>
+                                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
+                                                <p className="text-xs opacity-90 font-medium">Workforce Assembly, Erection & Transport Logistics Division</p>
+                                            </div>
                                         </div>
                                         <div className="text-left sm:text-right">
-                                            <span className="bg-white/20 dark:bg-slate-800/70 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
-                                                TRANSPORT & LABOUR BILL
+                                            <span className="bg-white/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
+                                                {billMode === 'transport' ? 'TRANSPORT BILL / LR' : billMode === 'labour' ? 'LABOUR BILL' : 'LABOUR & FREIGHT VOUCHER'}
                                             </span>
                                             <p className="text-sm font-black">{billNumber}</p>
                                             <p className="text-xs opacity-80">Date: {billDate}</p>
                                         </div>
                                     </div>
                                 </div>
-                            ) : theme === 'Minimalist' ? (
-                                <div className="border-b-2 border-slate-900 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0">
-                                    <div>
-                                        <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white company-name">KRISHNA ENGINEERING WORKS</h1>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Logistics & Heavy Fabrication Work Force Division</p>
-                                    </div>
-                                    <div className="text-left sm:text-right">
-                                        <h2 className="text-2xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>LABOUR & TRANSPORT BILL</h2>
-                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{billNumber}</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">Date: {billDate}</p>
-                                    </div>
-                                </div>
                             ) : (
-                                /* Classic Theme */
+                                /* Classic / Minimalist Header */
                                 <div className="border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
-                                    <div>
-                                        <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">Combined Labour Billing & Transport Logistics Module</p>
-                                        <p className="text-[11px] text-slate-400 font-medium mt-0.5 whitespace-pre-wrap break-all">
-                                            Phone: {brandingSettings?.company_phone || brandingSettings?.footer_phone || '+91 9447940835'} | Email: {brandingSettings?.company_email || brandingSettings?.footer_email || 'contact@krishnaengg.com'}
-                                        </p>
+                                    <div className="flex items-center gap-4 flex-wrap">
+                                        {brandingSettings.company_logo && (
+                                            <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900 rounded-xl shadow p-1" />
+                                        )}
+                                        <div>
+                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                            <p className="text-xs text-slate-500">Site Assembly Crew, Structural Welders & Heavy Logistics</p>
+                                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                                                Yard: Industrial Area Thiruvazhiyode, Palakkad | Ph: +91 9447940835
+                                            </p>
+                                        </div>
                                     </div>
                                     <div className="text-left sm:text-right">
                                         <span 
-                                            className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm cost-badge"
+                                            className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm"
                                             style={{ backgroundColor: themeColor }}
                                         >
-                                            LABOUR & FREIGHT BILL
+                                            {billMode === 'transport' ? 'GOODS FREIGHT RECEIPT' : billMode === 'labour' ? 'LABOUR CHARGES BILL' : 'LABOUR & TRANSPORT INVOICE'}
                                         </span>
                                         <p className="text-xs font-black text-slate-900 dark:text-white">{billNumber}</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">Date: {billDate}</p>
+                                        <p className="text-xs text-slate-500">Date: {billDate}</p>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Client & Contractor Info */}
-                            <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-6 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
+                            {/* Client & Site Meta Grid */}
+                            <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">BILL ISSUED TO:</span>
-                                    <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase">{clientName || 'Valued Client'}</h3>
-                                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-wrap">{clientAddress}</p>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">CLIENT / CONTRACTOR:</span>
+                                    <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase">{clientName}</h3>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{clientAddress}</p>
+                                    {clientPhone && <p className="text-xs text-slate-600 dark:text-slate-400">Ph: {clientPhone}</p>}
+                                    {clientGstin && <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">GSTIN: {clientGstin}</p>}
                                 </div>
-                                <div className="text-left sm:text-right">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">BILL NUMBER:</span>
-                                    <span className="text-sm font-black text-slate-900 dark:text-white">{billNumber}</span>
+                                <div>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">SITE OPERATIONS:</span>
+                                    <p className="text-xs font-bold text-slate-900 dark:text-white">Location: {siteLocation || 'Project Site'}</p>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400">Supervisor: {siteSupervisor || 'Works Incharge'}</p>
                                 </div>
                             </div>
 
-                            {/* Smart Field Visibility: Logistics & Transit Block */}
-                            {hasLogisticsData && (
-                                <div className="mb-8 p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-3">
-                                    <div className="flex items-center gap-2 text-indigo-600 border-b border-indigo-100 pb-2">
-                                        <Truck className="w-4 h-4" />
-                                        <span className="text-xs font-black uppercase tracking-wider">Logistics & Transit Details</span>
+                            {/* Logistics Metadata Box (if applicable) */}
+                            {(billMode === 'transport' || billMode === 'combined') && (
+                                <div className="bg-indigo-50/50 dark:bg-indigo-950/30 p-5 rounded-2xl border border-indigo-100 dark:border-indigo-900/60 mb-8">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-700 dark:text-indigo-400 mb-2 flex items-center gap-1.5">
+                                        <Truck className="w-3.5 h-3.5" /> Logistics & Vehicle Transit Record (Lorry Receipt)
                                     </div>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
-                                        {vehicleNumber && (
-                                            <div>
-                                                <span className="text-[9px] font-black uppercase text-slate-400 block">Vehicle Number</span>
-                                                <span className="font-bold text-slate-800 dark:text-slate-200">{vehicleNumber}</span>
-                                            </div>
-                                        )}
-                                        {lrGrNumber && (
-                                            <div>
-                                                <span className="text-[9px] font-black uppercase text-slate-400 block">LR / GR Number</span>
-                                                <span className="font-bold text-slate-800 dark:text-slate-200">{lrGrNumber}</span>
-                                            </div>
-                                        )}
-                                        {goodsDescription && (
-                                            <div>
-                                                <span className="text-[9px] font-black uppercase text-slate-400 block">Goods Description</span>
-                                                <span className="font-bold text-slate-800 dark:text-slate-200">{goodsDescription}</span>
-                                            </div>
-                                        )}
-                                        {origin && (
-                                            <div>
-                                                <span className="text-[9px] font-black uppercase text-slate-400 block">Origin</span>
-                                                <span className="font-bold text-slate-800 dark:text-slate-200">{origin}</span>
-                                            </div>
-                                        )}
-                                        {destination && (
-                                            <div>
-                                                <span className="text-[9px] font-black uppercase text-slate-400 block">Destination</span>
-                                                <span className="font-bold text-slate-800 dark:text-slate-200">{destination}</span>
-                                            </div>
-                                        )}
-                                        {(loadingDate || unloadingDate) && (
-                                            <div>
-                                                <span className="text-[9px] font-black uppercase text-slate-400 block">Transit Dates</span>
-                                                <span className="font-bold text-slate-800 dark:text-slate-200">{loadingDate} to {unloadingDate}</span>
-                                            </div>
-                                        )}
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                        <div>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase block">Vehicle No</span>
+                                            <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{vehicleNumber}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase block">LR / GR No</span>
+                                            <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{lrGrNumber}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase block">Loading Date</span>
+                                            <span className="font-medium text-slate-700 dark:text-slate-300">{loadingDate}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase block">Unloading Date</span>
+                                            <span className="font-medium text-slate-700 dark:text-slate-300">{unloadingDate}</span>
+                                        </div>
                                     </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mt-3 pt-3 border-t border-indigo-100 dark:border-indigo-900/60">
+                                        <div>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase block">Route Transit</span>
+                                            <span className="font-bold text-slate-800 dark:text-slate-200">{origin} <ArrowRight className="inline w-3 h-3 text-indigo-500" /> {destination}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase block">Driver Details</span>
+                                            <span className="font-bold text-slate-800 dark:text-slate-200">{driverName} ({driverPhone})</span>
+                                        </div>
+                                    </div>
+                                    {goodsDescription && (
+                                        <div className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase block">Consignment Description</span>
+                                            {goodsDescription}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
-                            {/* Dynamic Labour Charge Matrix Table */}
-                            <div className="mb-6 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                                <div className="p-3 bg-slate-900 text-white text-xs font-black uppercase tracking-wider flex justify-between items-center">
-                                    <span>Dynamic Labour Charge Matrix</span>
-                                    <span>Subtotal: ₹ {labourTotal.toLocaleString('en-IN')}</span>
+                            {/* Labour Table */}
+                            {(billMode === 'labour' || billMode === 'combined') && (
+                                <div className="mb-6 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="text-[10px] font-black uppercase tracking-wider text-white" style={{ backgroundColor: themeColor }}>
+                                                <th className="p-3">#</th>
+                                                <th className="p-3">Workforce Crew & Description</th>
+                                                <th className="p-3 text-center">Unit</th>
+                                                <th className="p-3 text-center">Headcount</th>
+                                                <th className="p-3 text-center">Duration</th>
+                                                <th className="p-3 text-right">Daily Rate</th>
+                                                <th className="p-3 text-right">Total (₹)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-xs font-medium text-slate-800 dark:text-slate-200 divide-y divide-slate-100 dark:divide-slate-800">
+                                            {labourRows.map((r, i) => {
+                                                const total = (parseFloat(r.labourersCount || 0) * parseFloat(r.workingDays || 0) * parseFloat(r.dailyRate || 0));
+                                                return (
+                                                    <tr key={r.id} className={i % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
+                                                        <td className="p-3 font-bold text-slate-400">{i + 1}</td>
+                                                        <td className="p-3 font-bold text-slate-900 dark:text-white">{r.workDescription || 'Labour Crew'}</td>
+                                                        <td className="p-3 text-center text-slate-500">{r.unit}</td>
+                                                        <td className="p-3 text-center font-bold">{r.labourersCount}</td>
+                                                        <td className="p-3 text-center font-bold">{r.workingDays}</td>
+                                                        <td className="p-3 text-right">{formatCurrencyINR(r.dailyRate || 0)}</td>
+                                                        <td className="p-3 text-right font-black text-slate-900 dark:text-white">{formatCurrencyINR(total)}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </div>
+                            )}
+
+                            {/* Ancillary & Logistics Charge Breakdown Table */}
+                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
-                                        <tr className="text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-                                            <th className="p-3">#</th>
-                                            <th className="p-3">Work Description</th>
-                                            <th className="p-3 text-center">Labourers</th>
-                                            <th className="p-3 text-center">Working Days</th>
-                                            <th className="p-3 text-right">Daily Rate</th>
-                                            <th className="p-3 text-right">Line Total</th>
+                                        <tr className="text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                            <th className="p-2.5">Charge Category / Operations Scope</th>
+                                            <th className="p-2.5 text-right">Amount (₹)</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="text-xs font-medium text-slate-800 dark:text-slate-200 divide-y divide-slate-100">
-                                        {labourRows.map((row, index) => {
-                                            const lineTotal = (parseFloat(row.labourersCount || 0) * parseFloat(row.workingDays || 0) * parseFloat(row.dailyRate || 0));
-                                            return (
-                                                <tr key={row.id} className={index % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
-                                                    <td className="p-3 font-bold text-slate-400">{index + 1}</td>
-                                                    <td className="p-3 font-bold text-slate-900 dark:text-white">{row.workDescription || 'Labour Work'}</td>
-                                                    <td className="p-3 text-center font-bold">{row.labourersCount}</td>
-                                                    <td className="p-3 text-center text-slate-600 dark:text-slate-400">{row.workingDays}</td>
-                                                    <td className="p-3 text-right font-bold" style={{ letterSpacing: 'normal' }}>{formatCurrencyINR(row.dailyRate || 0)}</td>
-                                                    <td className="p-3 text-right font-black text-slate-900 dark:text-white" style={{ letterSpacing: 'normal' }}>
-                                                        {formatCurrencyINR(lineTotal)}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
+                                    <tbody className="text-xs font-medium text-slate-700 dark:text-slate-300 divide-y divide-slate-100 dark:divide-slate-800">
+                                        {(billMode === 'transport' || billMode === 'combined') && baseFreightCharges > 0 && (
+                                            <tr>
+                                                <td className="p-2.5">Base Freight Transit Charge ({origin} to {destination})</td>
+                                                <td className="p-2.5 text-right font-bold">{formatCurrencyINR(baseFreightCharges)}</td>
+                                            </tr>
+                                        )}
+                                        {loadingCharges > 0 && (
+                                            <tr>
+                                                <td className="p-2.5">Loading & Yard Rigging Charges</td>
+                                                <td className="p-2.5 text-right font-bold">{formatCurrencyINR(loadingCharges)}</td>
+                                            </tr>
+                                        )}
+                                        {unloadingCharges > 0 && (
+                                            <tr>
+                                                <td className="p-2.5">Site Unloading & Placement Charges</td>
+                                                <td className="p-2.5 text-right font-bold">{formatCurrencyINR(unloadingCharges)}</td>
+                                            </tr>
+                                        )}
+                                        {handlingCharges > 0 && (
+                                            <tr>
+                                                <td className="p-2.5">Handling, Alignment & Crane Rigging Services</td>
+                                                <td className="p-2.5 text-right font-bold">{formatCurrencyINR(handlingCharges)}</td>
+                                            </tr>
+                                        )}
+                                        {packingCharges > 0 && (
+                                            <tr>
+                                                <td className="p-2.5">Heavy Packing & Webbing Strapping Charges</td>
+                                                <td className="p-2.5 text-right font-bold">{formatCurrencyINR(packingCharges)}</td>
+                                            </tr>
+                                        )}
+                                        {overtimeCharges > 0 && (
+                                            <tr>
+                                                <td className="p-2.5">Site Overtime / Extended Shift Charges</td>
+                                                <td className="p-2.5 text-right font-bold">{formatCurrencyINR(overtimeCharges)}</td>
+                                            </tr>
+                                        )}
+                                        {detentionCharges > 0 && (
+                                            <tr>
+                                                <td className="p-2.5">Vehicle Detention / Halting Charges</td>
+                                                <td className="p-2.5 text-right font-bold">{formatCurrencyINR(detentionCharges)}</td>
+                                            </tr>
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
 
-                            {/* Extra Charges Table */}
-                            {extraChargesTotal > 0 && (
-                                <div className="mb-8 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700" style={{ letterSpacing: 'normal' }}>
-                                    <div className="p-3 bg-slate-800 text-white text-xs font-black uppercase tracking-wider flex justify-between items-center">
-                                        <span>Extra Logistics & Handling Charges</span>
-                                        <span>Total: {formatCurrencyINR(extraChargesTotal)}</span>
+                            {/* Financial Summary & Balance Pending */}
+                            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6">
+                                <div className="flex-1 space-y-2 text-xs">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">REMARKS & PAYMENT INSTRUCTIONS:</span>
+                                    <p className="text-[11px] text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 leading-relaxed">
+                                        {paymentOptions}
+                                    </p>
+                                    <div className="text-[10px] text-slate-500 italic pt-1">
+                                        Total in Words: {grandTotalInWords}
                                     </div>
-                                    <div className="p-4 bg-slate-50 dark:bg-slate-800 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                                        {loadingCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
-                                                <span className="text-slate-500 dark:text-slate-400 font-medium">Loading:</span>
-                                                <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(loadingCharges)}</span>
-                                            </div>
-                                        )}
-                                        {unloadingCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
-                                                <span className="text-slate-500 dark:text-slate-400 font-medium">Unloading:</span>
-                                                <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(unloadingCharges)}</span>
-                                            </div>
-                                        )}
-                                        {handlingCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
-                                                <span className="text-slate-500 dark:text-slate-400 font-medium">Handling:</span>
-                                                <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(handlingCharges)}</span>
-                                            </div>
-                                        )}
-                                        {packingCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
-                                                <span className="text-slate-500 dark:text-slate-400 font-medium">Packing:</span>
-                                                <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(packingCharges)}</span>
-                                            </div>
-                                        )}
-                                        {overtimeCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
-                                                <span className="text-slate-500 dark:text-slate-400 font-medium">Overtime:</span>
-                                                <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(overtimeCharges)}</span>
-                                            </div>
-                                        )}
-                                        {additionalFreightCharges > 0 && (
-                                            <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1">
-                                                <span className="text-slate-500 dark:text-slate-400 font-medium">Addl. Freight:</span>
-                                                <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(additionalFreightCharges)}</span>
-                                            </div>
-                                        )}
+                                </div>
+
+                                <div className="w-full sm:w-72 space-y-2 text-xs">
+                                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                                        <span className="font-bold text-slate-500">Gross Total:</span>
+                                        <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(grossSubtotal)}</span>
                                     </div>
+
+                                    {numDiscount > 0 && (
+                                        <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-rose-600 font-bold">
+                                            <span>Discount Deduction:</span>
+                                            <span>-{formatCurrencyINR(numDiscount)}</span>
+                                        </div>
+                                    )}
+
+                                    {!isTaxExempt && taxAmount > 0 && (
+                                        <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-slate-600">
+                                            <span>Tax / GST ({taxPercentage}%):</span>
+                                            <span className="font-bold">{formatCurrencyINR(taxAmount)}</span>
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-between py-2 text-base font-black text-slate-900 dark:text-white border-t-2 border-slate-900 dark:border-slate-100 pt-2">
+                                        <span>Grand Bill Total:</span>
+                                        <span style={{ color: themeColor }}>{formatCurrencyINR(grandTotal)}</span>
+                                    </div>
+
+                                    {numAdvance > 0 && (
+                                        <div className="flex justify-between py-1 text-emerald-600 font-bold border-b border-slate-100 dark:border-slate-800">
+                                            <span>Advance Received:</span>
+                                            <span>-{formatCurrencyINR(numAdvance)}</span>
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-between py-1.5 text-sm font-black text-rose-600 bg-rose-50 dark:bg-rose-950/40 p-2 rounded-xl">
+                                        <span>Balance Pending:</span>
+                                        <span>{formatCurrencyINR(balancePending)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Signatures */}
+                            <div className="grid grid-cols-2 gap-8 pt-4">
+                                <div className="text-left border-t border-slate-300 dark:border-slate-600 pt-3">
+                                    <p className="text-xs font-black uppercase text-slate-900 dark:text-white">Supervisor / Driver Handover</p>
+                                    <p className="text-[10px] text-slate-400">Name: {siteSupervisor || driverName}</p>
+                                </div>
+                                <div className="text-right border-t border-slate-300 dark:border-slate-600 pt-3">
+                                    <p className="text-xs font-black uppercase text-slate-900 dark:text-white">Authorized Signatory / Verification</p>
+                                    <p className="text-[10px] text-slate-400">Krishna Engineering Works</p>
+                                </div>
+                            </div>
+
+                            {footerText && (
+                                <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 text-center text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                                    {footerText}
                                 </div>
                             )}
-
-                            {/* Summary & Rupee Words */}
-                            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6">
-                                <div className="flex-1 space-y-4">
-                                    <div>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">GRAND TOTAL IN RUPEE WORDS:</span>
-                                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-800 italic">
-                                            "{grandTotalInWords}"
-                                        </p>
-                                    </div>
-
-                                    {paymentOptions && (
-                                        <div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">PAYMENT OPTIONS & BANK DETAILS:</span>
-                                            <p className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-800 font-mono font-medium">
-                                                {paymentOptions}
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="w-full sm:w-64 space-y-2 text-xs" style={{ letterSpacing: 'normal' }}>
-                                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                                        <span className="font-bold text-slate-500 dark:text-slate-400">Labour Matrix Total:</span>
-                                        <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(labourTotal)}</span>
-                                    </div>
-                                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                                        <span className="font-bold text-slate-500 dark:text-slate-400">Extra Charges Total:</span>
-                                        <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(extraChargesTotal)}</span>
-                                    </div>
-                                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                                        <span className="font-bold text-slate-500 dark:text-slate-400">Subtotal:</span>
-                                        <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(subtotal)}</span>
-                                    </div>
-                                    {showTax && (
-                                        <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                                            <span>Estimated Tax ({taxPercentage}%):</span>
-                                            <span>{formatCurrencyINR(taxAmount)}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between py-2 text-base font-black text-slate-900 dark:text-white border-t-2 border-slate-900 pt-2">
-                                        <span>Grand Total:</span>
-                                        <span style={{ color: themeColor, letterSpacing: 'normal' }}>{formatCurrencyINR(grandTotal)}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Footer Banner & Signature */}
-                            <div className="flex justify-between items-end pt-4">
-                                <div>
-                                    {footerText && (
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                            {footerText}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="text-right border-t border-slate-300 dark:border-slate-600 pt-3 w-48">
-                                    <p className="text-xs font-black uppercase text-slate-900 dark:text-white">Transport & Labour Supervisor</p>
-                                    <p className="text-[10px] text-slate-400 font-medium">Krishna Engineering Works</p>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Load History Modal */}
+            <AnimatePresence>
+                {showHistoryModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[300] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0.95 }}
+                            className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 max-h-[85vh] flex flex-col"
+                        >
+                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                                <div>
+                                    <h3 className="text-base font-black uppercase text-slate-900 dark:text-white flex items-center gap-2">
+                                        <History className="w-4 h-4 text-indigo-500" /> Saved Labour & Transport Bills
+                                    </h3>
+                                    <p className="text-xs text-slate-500">Pick any previously saved bill to load or duplicate.</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowHistoryModal(false)}
+                                    className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                                {loadingHistory ? (
+                                    <div className="p-8 text-center text-xs font-bold text-slate-400">Loading saved bills...</div>
+                                ) : savedBills.length === 0 ? (
+                                    <div className="p-8 text-center text-xs font-bold text-slate-400">No saved bills found in history.</div>
+                                ) : (
+                                    savedBills.map(doc => (
+                                        <div
+                                            key={doc._id}
+                                            className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/70 rounded-2xl flex items-center justify-between gap-4"
+                                        >
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-black text-indigo-600 dark:text-indigo-400">{doc.documentNumber}</span>
+                                                    <span className="text-[10px] font-bold text-slate-400">
+                                                        {new Date(doc.createdAt).toLocaleDateString()}
+                                                    </span>
+                                                    <span className="text-[9px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 font-bold uppercase">
+                                                        {doc.documentType}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs font-bold text-slate-900 dark:text-white mt-0.5">
+                                                    {doc.data?.clientName || 'Unnamed Client'}
+                                                </p>
+                                                <p className="text-[10px] text-slate-500">
+                                                    Total: {formatCurrencyINR(doc.totalAmount || 0)}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => applyBillData(doc.data, false)}
+                                                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-indigo-700 transition"
+                                                >
+                                                    Open
+                                                </button>
+                                                <button
+                                                    onClick={() => applyBillData(doc.data, true)}
+                                                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition"
+                                                    title="Clone as new"
+                                                >
+                                                    Clone
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

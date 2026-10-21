@@ -55,6 +55,7 @@ const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 const Invoices = lazy(() => import('./pages/admin/Invoices'));
 const Quotations = lazy(() => import('./pages/admin/Quotations'));
 const LabourBillsTab = lazy(() => import('./pages/admin/LabourBillsTab'));
+const RentalBills = lazy(() => import('./pages/admin/RentalBills'));
 const DocumentHistory = lazy(() => import('./pages/admin/DocumentHistory'));
 
 // Staff Pages (Lazy loaded on demand)
@@ -417,6 +418,7 @@ const App = () => {
               <Route path="invoices-studio" element={<Invoices />} />
               <Route path="quotations-studio" element={<Quotations />} />
               <Route path="labour-bills" element={<LabourBillsTab />} />
+              <Route path="rental-bills" element={<RentalBills />} />
               <Route path="document-history" element={<DocumentHistory />} />
               <Route path="legal-policies" element={<AdminLegalPolicies />} />
             </Route>
