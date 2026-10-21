@@ -15,6 +15,40 @@ const generateRentalBillNumber = () => `RNT-${new Date().getFullYear()}-${Math.f
 
 const RENTAL_EQUIPMENT_CATALOG = PRECONFIGURED_CATALOG.filter(c => c.category === 'Rental Assets');
 
+const DEFAULT_RENTAL_TERMS_ML = `1. ഉപകരണം വാടകയ്ക്ക് നൽകുന്നതിന് മുമ്പ് ഉപകരണത്തിന്റെ നിലവാരം പരിശോധിച്ച് ഉപഭോക്താവിന് കൈമാറുന്നതാണ്.
+2. ഉപകരണം കൈപ്പറ്റിയതിന് ശേഷം അതിന്റെ സുരക്ഷ, ശരിയായ ഉപയോഗം, പരിപാലനം എന്നിവയുടെ പൂർണ്ണ ഉത്തരവാദിത്വം ഉപഭോക്താവിനായിരിക്കും.
+3. വാടക കാലയളവിൽ ഉപകരണത്തിന് ഉണ്ടാകുന്ന നഷ്ടം, പൊട്ടൽ, കേടുപാട്, തെറ്റായ ഉപയോഗം, ദുരുപയോഗം അല്ലെങ്കിൽ നഷ്ടപ്പെടൽ എന്നിവയ്ക്ക് ഉപഭോക്താവ് ഉത്തരവാദിയായിരിക്കും.
+4. സാധാരണ ഉപയോഗത്തിലൂടെ ഉണ്ടാകുന്ന സ്വാഭാവിക തേയ്മാനം ഒഴികെയുള്ള കേടുപാടുകളുടെ അറ്റകുറ്റപ്പണി ചെലവ് ഉപഭോക്താവിൽ നിന്ന് ഈടാക്കുന്നതാണ്.
+5. ഉപകരണം നിശ്ചയിച്ച തീയതിയിലും സമയത്തും തിരികെ നൽകേണ്ടതാണ്. വൈകിയാൽ അധിക വാടക ഈടാക്കുന്നതാണ്.
+6. ഉപകരണം തിരികെ നൽകുമ്പോൾ, കൈമാറിയ സമയത്തെ അതേ അവസ്ഥയിൽ തന്നെ തിരികെ നൽകേണ്ടതാണ്.
+7. വാടകയ്ക്ക് എടുത്ത ഉപകരണം വാടകദാതാവിന്റെ മുൻകൂർ അനുമതിയില്ലാതെ മറ്റൊരാൾക്ക് കൈമാറുകയോ ഉപയോഗിക്കാൻ നൽകുകയോ ചെയ്യാൻ പാടില്ല.
+8. ഉപകരണം വാടകയ്ക്ക് എടുത്ത ആവശ്യത്തിനല്ലാതെ മറ്റേതെങ്കിലും ആവശ്യത്തിന് ഉപയോഗിക്കുന്നതിന് മുൻകൂർ അനുമതി വാങ്ങേണ്ടതാണ്.
+9. ഉപകരണം നഷ്ടപ്പെട്ടാൽ, ഉപകരണത്തിന്റെ നിലവിലെ replacement cost / ബാധകമായ നഷ്ടപരിഹാര തുക ഉപഭോക്താവിൽ നിന്ന് ഈടാക്കുന്നതാണ്.
+10. ആവശ്യമായ Security Deposit / Advance വാടകയ്ക്ക് മുമ്പ് നൽകേണ്ടതാണ്. ബാധകമായ കുടിശ്ശികകളോ നഷ്ടപരിഹാരമോ ഇല്ലെങ്കിൽ, ഉപകരണം സുരക്ഷിതമായി തിരികെ നൽകിയ ശേഷം Security Deposit തിരികെ നൽകുന്നതാണ്.
+11. വാടക തുക ഉപകരണം കൈപ്പറ്റുന്ന സമയത്തോ കരാറിൽ നിശ്ചയിച്ചിരിക്കുന്ന സമയത്തോ അടയ്ക്കേണ്ടതാണ്.
+12. ഉപകരണത്തിന്റെ തെറ്റായ ഉപയോഗം, ദുരുപയോഗം, അശ്രദ്ധ എന്നിവ മൂലം ഉണ്ടാകുന്ന അപകടങ്ങൾക്കും നാശനഷ്ടങ്ങൾക്കും വാടകദാതാവ് ഉത്തരവാദിയായിരിക്കില്ല.
+13. ഉപകരണം തിരികെ സ്വീകരിച്ച ശേഷം പരിശോധന നടത്തുന്നതാണ്. പരിശോധനയിൽ അധിക കേടുപാടുകൾ കണ്ടെത്തിയാൽ, അതിനുള്ള യുക്തിസഹമായ അറ്റകുറ്റപ്പണി/നഷ്ടപരിഹാര ചെലവ് ഉപഭോക്താവിൽ നിന്ന് ഈടാക്കുന്നതാണ്.
+14. ഉപകരണം സ്വീകരിക്കുന്നതിലൂടെ, ഉപഭോക്താവ് മുകളിൽ പറഞ്ഞ എല്ലാ വാടക നിബന്ധനകളും വ്യവസ്ഥകളും വായിച്ച് മനസ്സിലാക്കി അംഗീകരിച്ചതായി കണക്കാക്കുന്നതാണ്.
+15. ഈ കരാറിലെ ഏതെങ്കിലും നിബന്ധനകൾ ലംഘിക്കുന്നതിലൂടെ വാടകദാതാവിന് ഉണ്ടാകുന്ന യഥാർത്ഥ നഷ്ടം, കേടുപാട്, അധിക ചെലവ് എന്നിവയ്ക്ക്, ബാധകമായ നിയമങ്ങൾക്ക് വിധേയമായി Indian Contract Act, 1872-ലെ Section 73 പ്രകാരം നഷ്ടപരിഹാരം ആവശ്യപ്പെടാൻ വാടകദാതാവിന് അവകാശമുണ്ടായിരിക്കും.
+16. കരാർ ലംഘനം, ഉപകരണം തിരികെ നൽകാതിരിക്കൽ, ഉപകരണം നഷ്ടപ്പെടുത്തൽ തുടങ്ങിയ സാഹചര്യങ്ങളിൽ, ബാധകമായ നിയമപ്രകാരം ആവശ്യമായ നിയമനടപടികൾ സ്വീകരിക്കാൻ വാടകദാതാവിന് അവകാശമുണ്ടായിരിക്കും.`;
+
+const DEFAULT_RENTAL_TERMS_EN = `1. Pre-delivery Inspection: Equipment is inspected and verified for quality & operational safety prior to handover.
+2. Custody & Care: Post-handover custody, proper operation, safety, and routine maintenance are solely the hirer's responsibility.
+3. Damage & Loss Liability: The hirer is strictly liable for any loss, breakage, damage, improper use, or misuse during the hire period.
+4. Wear & Tear Exclusion: Costs for repairs beyond ordinary wear & tear will be recovered directly from the hirer.
+5. Return Schedule: Equipment must be returned on the agreed date and time; delayed returns attract additional hire charges.
+6. Handover Condition Matching: Rented machinery must be returned in the identical condition in which it was initially handed over.
+7. Non-Assignment: Rented equipment cannot be sub-let, assigned, or transferred to third parties without prior written consent.
+8. Authorized Purpose: Machinery must be deployed exclusively for the declared purpose unless prior written consent is obtained.
+9. Total Loss / Replacement: If lost or damaged beyond repair, current replacement value plus damages will be billed to the hirer.
+10. Security Deposit & Refund: Advance Security Deposit must be paid before hire and is refunded upon clean, audit-cleared return.
+11. Payment Schedule: Rental charges must be remitted at the time of taking delivery or as stipulated in the rental contract.
+12. Indemnity Against Accidents: Owner assumes no liability for accidents, injuries, or third-party claims arising from equipment use or negligence.
+13. Post-Return Audit: Comprehensive inspection is conducted upon return; concealed damages discovered will be recovered from the hirer.
+14. Acceptance of Terms: Acceptance and receipt of the equipment constitutes full acknowledgement and binding acceptance of all terms.
+15. Statutory Breach & Compensation: Under Section 73 of the Indian Contract Act, 1872, the owner reserves statutory rights to claim full compensation for actual loss, damage, or costs caused by any contract breach.
+16. Legal Enforcement: Owner reserves the right to initiate legal proceedings for breach of contract, default in return, or conversion.`;
+
 const RentalBills = () => {
     // Workflow Mode: 'checkout' (Issue Equipment) | 'return' (Process Return & Settle)
     const [workflowMode, setWorkflowMode] = useState('checkout');
@@ -83,12 +117,9 @@ const RentalBills = () => {
     const [inspectedByStaff, setInspectedByStaff] = useState('K. Pradeep (Quality Inspector)');
 
     // Multilingual Statutory Rental Terms (Indian Contract Act Sec 73)
-    const [legalTermsEn, setLegalTermsEn] = useState(
-        '1. Equipment Ownership: All rented machinery and assets remain the sole property of Krishna Engineering Works.\n2. Care & Safe Operation: The hirer agrees to operate machines using certified operators conforming to OEM ratings.\n3. Return & Damage Liability: Under Section 73 of the Indian Contract Act, hirer is liable for repair/replacement costs of damaged or missing parts.\n4. Security Deposit: Refunded within 24 hours of successful post-return technical audit less any late fees or repairs.'
-    );
-    const [legalTermsMl, setLegalTermsMl] = useState(
-        'വാടകയ്ക്ക് നൽകുന്ന എല്ലാ ഉപകരണങ്ങളുടെയും പൂർണ്ണ ഉടമസ്ഥാവകാശം കൃഷ്ണ എഞ്ചിനീയറിംഗ് വർക്ക്സിനാണ്. ഉപകരണങ്ങൾ കേടുപാടുകൾ കൂടാതെ കൃത്യസമയത്ത് തിരിച്ചേൽപ്പിക്കാൻ വാടകക്കാരൻ ബാധ്യസ്ഥനാണ്. ഉപകരണങ്ങൾക്ക് എന്തെങ്കിലും കേടുപാടുകൾ സംഭവിച്ചാൽ റിപ്പയറിംഗ് ചാർജ് സെക്യൂരിറ്റി ഡെപ്പോസിറ്റിൽ നിന്നും ഈടാക്കുന്നതാണ്.'
-    );
+    const [termsLanguage, setTermsLanguage] = useState('both'); // 'ml' | 'en' | 'both'
+    const [legalTermsEn, setLegalTermsEn] = useState(DEFAULT_RENTAL_TERMS_EN);
+    const [legalTermsMl, setLegalTermsMl] = useState(DEFAULT_RENTAL_TERMS_ML);
 
     // Theme & Styling
     const [theme, setTheme] = useState('Classic'); // Classic, Modern, Minimalist
@@ -392,6 +423,9 @@ const RentalBills = () => {
         if (data.receivedByCustomer) setReceivedByCustomer(data.receivedByCustomer);
         if (data.returnedByCustomer) setReturnedByCustomer(data.returnedByCustomer);
         if (data.inspectedByStaff) setInspectedByStaff(data.inspectedByStaff);
+        if (data.legalTermsEn) setLegalTermsEn(data.legalTermsEn);
+        if (data.legalTermsMl) setLegalTermsMl(data.legalTermsMl);
+        if (data.termsLanguage) setTermsLanguage(data.termsLanguage);
         if (data.theme) setTheme(data.theme);
         if (data.themeColor) setThemeColor(data.themeColor);
         setShowHistoryModal(false);
@@ -994,6 +1028,66 @@ const RentalBills = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* Statutory Terms Editor Section */}
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 flex-wrap gap-2">
+                            <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                <FileText className="w-4 h-4 text-indigo-500" /> Rental Terms & Conditions (നിബന്ധനകൾ)
+                            </h2>
+                            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-[10px] font-bold">
+                                <button
+                                    type="button"
+                                    onClick={() => setTermsLanguage('ml')}
+                                    className={`px-2.5 py-1 rounded-lg transition ${termsLanguage === 'ml' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'}`}
+                                >
+                                    മലയാളം (16)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTermsLanguage('en')}
+                                    className={`px-2.5 py-1 rounded-lg transition ${termsLanguage === 'en' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'}`}
+                                >
+                                    English (16)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTermsLanguage('both')}
+                                    className={`px-2.5 py-1 rounded-lg transition ${termsLanguage === 'both' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'}`}
+                                >
+                                    Bilingual (Both)
+                                </button>
+                            </div>
+                        </div>
+
+                        {(termsLanguage === 'ml' || termsLanguage === 'both') && (
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                    വാടക നിബന്ധനകളും വ്യവസ്ഥകളും (16 Points Malayalam):
+                                </label>
+                                <textarea
+                                    rows={8}
+                                    value={legalTermsMl}
+                                    onChange={(e) => setLegalTermsMl(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 focus:outline-none font-sans leading-relaxed"
+                                />
+                            </div>
+                        )}
+
+                        {(termsLanguage === 'en' || termsLanguage === 'both') && (
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                    Statutory Rental Terms (16 Points English - Indian Contract Act Sec 73):
+                                </label>
+                                <textarea
+                                    rows={8}
+                                    value={legalTermsEn}
+                                    onChange={(e) => setLegalTermsEn(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 focus:outline-none font-sans leading-relaxed"
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* RIGHT: Live Printable Rental Agreement Preview */}
@@ -1135,14 +1229,21 @@ const RentalBills = () => {
                             <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6">
                                 <div className="flex-1 space-y-3 text-xs">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">
-                                        STATUTORY RENTAL CONTRACT TERMS (SEC. 73 INDIAN CONTRACT ACT):
+                                        STATUTORY RENTAL CONTRACT TERMS & CONDITIONS (SEC. 73 INDIAN CONTRACT ACT):
                                     </span>
-                                    <p className="text-[11px] text-slate-600 dark:text-slate-400 whitespace-pre-line leading-relaxed">
-                                        {legalTermsEn}
-                                    </p>
-                                    <p className="text-[11px] text-indigo-900 dark:text-indigo-300 bg-indigo-50/60 dark:bg-indigo-950/40 p-2.5 rounded-xl border border-indigo-100 dark:border-indigo-900/60 leading-relaxed font-medium">
-                                        {legalTermsMl}
-                                    </p>
+                                    {(termsLanguage === 'en' || termsLanguage === 'both') && (
+                                        <div className="text-[11px] text-slate-600 dark:text-slate-400 whitespace-pre-line leading-relaxed border-l-2 border-indigo-400 pl-3 py-1">
+                                            {legalTermsEn}
+                                        </div>
+                                    )}
+                                    {(termsLanguage === 'ml' || termsLanguage === 'both') && (
+                                        <div className="text-[11px] text-indigo-950 dark:text-indigo-200 bg-indigo-50/70 dark:bg-indigo-950/40 p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-900/60 leading-relaxed font-medium whitespace-pre-line">
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1.5">
+                                                വാടക നിബന്ധനകളും വ്യവസ്ഥകളും:
+                                            </p>
+                                            {legalTermsMl}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="w-full sm:w-72 space-y-2 text-xs">
