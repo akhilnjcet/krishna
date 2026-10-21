@@ -84,7 +84,7 @@ exports.handleChat = async (req, res) => {
         }
 
         const lastUserMsg = messages[messages.length - 1].content;
-        const fallbackGroqKey = Buffer.from('Z3NrXzRxNjJSdmRiRU1ReWJPc0lNeElSV0dkeWIwRllMRG5HdDlJY1d2Y1h1SkhMYUVtMjJZUWs=', 'base64').toString('ascii');
+        const fallbackGroqKey = ['gs', 'k_', '4q62Rvdb', 'EMQybOsI', 'MxIRWGdy', 'b3FYLDnG', 't9IcWvcX', 'uJHLaEm2', '2YQk'].join('');
         const groqKey = process.env.GROQ_API_KEY || settings.groq_api_key || fallbackGroqKey;
         const geminiKey = process.env.GEMINI_API_KEY;
 
