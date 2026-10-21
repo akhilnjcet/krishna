@@ -3,7 +3,7 @@ import api from '../../services/api';
 import { Bot, Save, Trash2, Plus, Users, MessageSquare, ToggleLeft, ToggleRight, Settings, Activity, Phone, Mail, Globe, Clock, Building } from 'lucide-react';
 
 const AdminAIChat = () => {
-    const [settings, setSettings] = useState({ isAiEnabled: 'true', aiWorkMode: 'online', aiPrompt: '' });
+    const [settings, setSettings] = useState({ isAiEnabled: 'true', aiWorkMode: 'online', aiPrompt: '', groq_api_key: '' });
     const [faqs, setFaqs] = useState([]);
     const [leads, setLeads] = useState([]);
     
@@ -80,7 +80,8 @@ const AdminAIChat = () => {
             setSettings({
                 isAiEnabled: fetchedSettings.isAiEnabled || 'true',
                 aiWorkMode: fetchedSettings.aiWorkMode || 'online',
-                aiPrompt: fetchedSettings.aiPrompt || 'You are a helpful assistant for Krishna Engineering...'
+                aiPrompt: fetchedSettings.aiPrompt || 'You are a helpful assistant for Krishna Engineering...',
+                groq_api_key: fetchedSettings.groq_api_key || ''
             });
 
             setLeads(leadsRes.data);
@@ -195,6 +196,25 @@ const AdminAIChat = () => {
                         </div>
 
                         <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                                    <span>Groq API Key (Ultra-Fast & Smooth)</span>
+                                    <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 font-bold lowercase underline">
+                                        get free key at console.groq.com ↗
+                                    </a>
+                                </label>
+                                <input 
+                                    type="password"
+                                    value={settings.groq_api_key || ''}
+                                    placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                                    onChange={e => setSettings({ ...settings, groq_api_key: e.target.value })}
+                                    className="w-full border-4 border-slate-200 dark:border-slate-700 p-4 rounded-2xl font-mono text-xs outline-none focus:border-cyan-600 transition bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                                />
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                                    Recommended: Groq powers LLaMA-3.3-70B with sub-second response times and high rate limits.
+                                </p>
+                            </div>
+
                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">System Identity Prompt</label>
                             <textarea 
                                 rows={6}
@@ -213,13 +233,13 @@ const AdminAIChat = () => {
                                         } else if (res.data.reply.includes("FULLY OPERATIONAL")) {
                                             alert("✅ Systems Nominal:\n\n" + res.data.reply);
                                         } else {
-                                            alert("ℹ️ Offline Protocol Active:\n\n" + res.data.reply);
+                                            alert("ℹ️ Notification:\n\n" + res.data.reply);
                                         }
                                     } catch (err) {
                                         alert("❌ Neural Critical Failure:\n\n" + (err.response?.data?.error || err.message));
                                     }
                                 }}
-                                className="w-full py-3 border-4 border-indigo-600/30 text-indigo-600 font-black rounded-xl hover:bg-indigo-50 transition uppercase text-[10px] tracking-widest"
+                                className="w-full py-3 border-4 border-cyan-600/30 text-cyan-700 dark:text-cyan-400 font-black rounded-xl hover:bg-cyan-50 dark:hover:bg-cyan-950/30 transition uppercase text-[10px] tracking-widest"
                             >
                                 <Activity className="w-3 h-3 inline mr-2" /> Verify Neural Heartbeat
                             </button>
@@ -232,12 +252,12 @@ const AdminAIChat = () => {
                             <Save className="w-4 h-4" /> Save Core Configuration
                         </button>
 
-                        <div className="mt-8 p-4 bg-blue-50 border-2 border-blue-200 rounded-2xl border-dashed">
-                            <h4 className="text-[10px] font-black uppercase text-blue-600 mb-2 flex items-center gap-2">
-                                <Bot className="w-3 h-3" /> Pro Tip: Intelligent Free Tier
+                        <div className="mt-8 p-4 bg-cyan-50 dark:bg-cyan-950/20 border-2 border-cyan-200 dark:border-cyan-800 rounded-2xl border-dashed">
+                            <h4 className="text-[10px] font-black uppercase text-cyan-600 dark:text-cyan-400 mb-2 flex items-center gap-2">
+                                <Bot className="w-3 h-3" /> Pro Tip: Ultra-Smooth Free AI with Groq
                             </h4>
                             <p className="text-[9px] font-bold text-slate-600 dark:text-slate-400 leading-relaxed uppercase">
-                                To use AI for <span className="text-blue-600 underline font-black">FREE</span>, get a Gemini API Key from <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" className="text-indigo-600 font-bold underline">Google AI Studio</a> and add <code className="bg-white dark:bg-slate-900 px-1">GEMINI_API_KEY</code> to your .env.
+                                For instant AI with zero delays, get a free key from <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-cyan-600 font-bold underline">console.groq.com</a>. Paste it above or add <code className="bg-white dark:bg-slate-900 px-1">GROQ_API_KEY</code> to your backend <code className="bg-white dark:bg-slate-900 px-1">.env</code>.
                             </p>
                         </div>
                     </div>
@@ -483,13 +503,15 @@ const AdminAIChat = () => {
                                         <td className="p-4 text-xs font-medium text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed max-w-md">{log.botReply}</td>
                                         <td className="p-4 text-right">
                                             <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                                log.providerUsed === 'gemini' 
+                                                log.providerUsed === 'groq'
+                                                    ? 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800'
+                                                    : log.providerUsed === 'gemini' 
                                                     ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' 
                                                     : log.providerUsed === 'faq_rule' 
                                                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                                                     : 'bg-amber-50 text-amber-700 border border-amber-200'
                                             }`}>
-                                                {log.providerUsed === 'gemini' ? 'Gemini Neural AI' : log.providerUsed === 'faq_rule' ? 'FAQ Knowledge Base' : 'Intent Rule Engine'}
+                                                {log.providerUsed === 'groq' ? 'Groq LLaMA-3.3' : log.providerUsed === 'gemini' ? 'Gemini Neural AI' : log.providerUsed === 'faq_rule' ? 'FAQ Knowledge Base' : 'Intent Rule Engine'}
                                             </span>
                                         </td>
                                     </tr>

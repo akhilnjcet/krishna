@@ -59,7 +59,7 @@ exports.handleChat = async (req, res) => {
         // 1. Fetch System Settings & Admin Chatbot Contact Settings
         const [settingsRaw, contactSettings, faqs] = await Promise.all([
             SystemSetting.find({
-                key: { $in: ['isAiEnabled', 'aiWorkMode', 'aiPrompt', 'footer_phone', 'floating_whatsapp', 'company_name', 'company_address', 'company_email'] }
+                key: { $in: ['isAiEnabled', 'aiWorkMode', 'aiPrompt', 'groq_api_key', 'footer_phone', 'floating_whatsapp', 'company_name', 'company_address', 'company_email'] }
             }),
             ChatbotContactSetting.findOne(),
             FAQ.find()
@@ -84,13 +84,42 @@ exports.handleChat = async (req, res) => {
         }
 
         const lastUserMsg = messages[messages.length - 1].content;
+        const groqKey = process.env.GROQ_API_KEY || settings.groq_api_key;
+        const geminiKey = process.env.GEMINI_API_KEY;
 
         // Diagnostic Ping for Admin verification
         if (lastUserMsg === 'SYSTEM_DIAGNOSTIC_PING') {
-            const geminiKey = process.env.GEMINI_API_KEY;
-            if (settings.aiWorkMode === 'offline') return res.json({ reply: "SYSTEM ONLINE [OFFLINE MODE: Rule-based FAQ Fallback Active]" });
-            if (!geminiKey) return res.json({ reply: "SYSTEM PARTIAL ONLINE [ONLINE MODE: Gemini API Key missing, routing to Smart FAQ Fallback]" });
-            return res.json({ reply: "SYSTEM FULLY OPERATIONAL [ONLINE MODE: AI Agent Neural Engine connected successfully]" });
+            if (settings.aiWorkMode === 'offline') {
+                return res.json({ reply: "SYSTEM ONLINE [OFFLINE MODE: Rule-based FAQ Fallback Active]" });
+            }
+            if (groqKey) {
+                try {
+                    const testRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${groqKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: 'qwen/qwen3.8-27b',
+                            messages: [{ role: 'user', content: 'Say operational' }],
+                            max_tokens: 10
+                        })
+                    });
+                    const testData = await testRes.json();
+                    if (testData.choices?.[0]?.message?.content) {
+                        return res.json({ reply: "SYSTEM FULLY OPERATIONAL [ONLINE MODE: Groq High-Speed AI Engine (Qwen 3.8 / GPT-OSS) connected successfully]" });
+                    } else {
+                        return res.json({ reply: `SYSTEM WARNING [ONLINE MODE: Groq API Error - ${testData.error?.message || 'Invalid Response'}]` });
+                    }
+                } catch (e) {
+                    return res.json({ reply: `SYSTEM WARNING [ONLINE MODE: Groq Network Error - ${e.message}]` });
+                }
+            }
+            if (geminiKey) {
+                return res.json({ reply: "SYSTEM PARTIAL ONLINE [ONLINE MODE: Gemini Key detected, but Groq recommended for smooth zero-latency operation]" });
+            }
+            return res.json({ reply: "SYSTEM PARTIAL ONLINE [ONLINE MODE: No AI Key detected, routing to Smart Rule-based FAQ Fallback]" });
         }
 
         let botReply = '';
@@ -118,9 +147,63 @@ exports.handleChat = async (req, res) => {
             const customPromptHeader = settings.aiPrompt ? `${settings.aiPrompt}\n\n` : '';
             const fullSystemInstruction = `${customPromptHeader}${knowledgeBasePrompt}`;
 
-            const geminiKey = process.env.GEMINI_API_KEY;
+            // PRIMARY: High-Speed Groq Engine (qwen/qwen3.8-27b / openai/gpt-oss-20b)
+            if (groqKey && !botReply) {
+                try {
+                    const groqMessages = [
+                        { role: 'system', content: fullSystemInstruction },
+                        ...messages.map(m => ({
+                            role: m.role === 'model' || m.role === 'assistant' ? 'assistant' : 'user',
+                            content: m.content
+                        }))
+                    ];
 
-            if (geminiKey) {
+                    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${groqKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: 'qwen/qwen3.8-27b',
+                            messages: groqMessages,
+                            temperature: 0.6,
+                            max_tokens: 450
+                        })
+                    });
+
+                    const groqData = await groqRes.json();
+                    if (groqData.choices?.[0]?.message?.content) {
+                        botReply = groqData.choices[0].message.content.trim();
+                        providerUsed = 'groq';
+                    } else if (groqData.error) {
+                        console.warn("⚠️ Groq Primary (qwen/qwen3.8-27b) Error:", groqData.error.message, "- trying instant fallback");
+                        const instantRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${groqKey}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                model: 'openai/gpt-oss-20b',
+                                messages: groqMessages,
+                                temperature: 0.6,
+                                max_tokens: 450
+                            })
+                        });
+                        const instantData = await instantRes.json();
+                        if (instantData.choices?.[0]?.message?.content) {
+                            botReply = instantData.choices[0].message.content.trim();
+                            providerUsed = 'groq';
+                        }
+                    }
+                } catch (groqErr) {
+                    console.error("Groq Connectivity Error:", groqErr.message);
+                }
+            }
+
+            // SECONDARY: Gemini Fallback (if Groq not set or unavailable)
+            if (!botReply && geminiKey) {
                 try {
                     const geminiHistory = messages.map(m => ({
                         role: m.role === 'assistant' ? 'model' : 'user',
@@ -128,7 +211,7 @@ exports.handleChat = async (req, res) => {
                     }));
 
                     const geminiRes = await fetch(
-                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
                         {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -145,10 +228,8 @@ exports.handleChat = async (req, res) => {
                     if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
                         botReply = data.candidates[0].content.parts[0].text;
                         providerUsed = 'gemini';
-                    } else if (data.error?.code === 429) {
-                        console.warn("⚠️ Gemini quota limit — using smart rule fallback.");
                     } else if (data.error) {
-                        console.error("Gemini API Error:", data.error);
+                        console.error("Gemini API Error:", data.error.message || data.error);
                     }
                 } catch (geminiErr) {
                     console.error("Gemini Connectivity Error:", geminiErr.message);
@@ -177,7 +258,7 @@ exports.handleChat = async (req, res) => {
         // 5. Persist Chat Log asynchronously
         ChatLog.create({
             userId: req.user ? req.user.id : undefined,
-            visitorIp: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
+            visitorIp: req.ip || req.headers?.['x-forwarded-for'] || '127.0.0.1',
             userMessage: lastUserMsg,
             botReply,
             providerUsed
