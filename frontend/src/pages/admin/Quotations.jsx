@@ -10,7 +10,9 @@ import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
 import { formatCurrencyINR } from '../../utils/pdfHelpers';
-import { PRECONFIGURED_CATALOG, computeBillFinancials } from '../../utils/combinedBillHelper';
+import { PRECONFIGURED_CATALOG, computeBillFinancials, computeItemSectionMeta, calculateBillTotals, synchronizeItemSections } from '../../utils/combinedBillHelper';
+import CombinedBillTableBody from '../../components/CombinedBillTable';
+import EstimationEntryTable from '../../components/EstimationEntryTable';
 
 const generateQuotationNumber = () => `QTN-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -35,9 +37,10 @@ const Quotations = () => {
     // Line Items & Combined Sections
     const [isCombinedMode, setIsCombinedMode] = useState(false);
     const [items, setItems] = useState([
-        { id: 1, type: 'Item', name: 'Industrial Heavy Truss Fabrication', description: 'Custom engineered ISMB steel truss structure for factory roof', rate: 120000, quantity: 1, unit: 'Units', sectionName: 'Roofing Structure Package' },
-        { id: 2, type: 'Service', name: 'On-site Erection & Installation Labor', description: 'Crane operations and high-elevation alignment work', rate: 25000, quantity: 1, unit: 'Job', sectionName: 'Roofing Structure Package' }
+        { id: 1, type: 'Item', name: 'Industrial Heavy Truss Fabrication', description: 'Custom engineered ISMB steel truss structure for factory roof', price: 120000, rate: 120000, quantity: 1, unit: 'Units', isCombined: false },
+        { id: 2, type: 'Service', name: 'On-site Erection & Installation Labor', description: 'Crane operations and high-elevation alignment work', price: 25000, rate: 25000, quantity: 1, unit: 'Job', isCombined: false }
     ]);
+    const [combinedTotals, setCombinedTotals] = useState({});
 
     // Discount & Financials
     const [discountType, setDiscountType] = useState('none'); // 'none' | 'percent' | 'fixed'
@@ -150,33 +153,81 @@ const Quotations = () => {
         }
     };
 
-    const handleAddItem = (sectionName = '') => {
+    const handleUpdateItem = (index, field, value) => {
+        setItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], [field]: value };
+            if (field === 'price') next[index].rate = value;
+            if (field === 'rate') next[index].price = value;
+            if (field === 'description') next[index].name = value;
+            if (field === 'name') next[index].description = value;
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleAddItem = () => {
         setItems(prev => [
             ...prev,
-            { 
-                id: Date.now() + Math.random(), 
-                type: 'Item', 
-                name: '', 
-                description: '', 
-                rate: 0, 
-                quantity: 1, 
-                unit: 'Units',
-                sectionName: isCombinedMode ? (sectionName || 'General Section') : ''
-            }
+            { id: Date.now() + Math.random(), name: '', description: '', price: 0, rate: 0, quantity: 1, unit: 'Units', isCombined: false }
         ]);
     };
 
-    const handleRemoveItem = (id) => {
-        if (items.length <= 1) return;
-        setItems(prev => prev.filter(item => item.id !== id));
+    const handleAddNewCombinedSection = () => {
+        const secId = `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        setCombinedTotals(prev => ({ ...prev, [secId]: 0 }));
+        setItems(prev => [
+            ...prev,
+            { id: Date.now() + Math.random(), name: '', description: '', price: 0, rate: 0, quantity: 1, unit: 'Units', isCombined: true, isCombinedMode: true, combinedSectionId: secId, isNewSectionStart: true }
+        ]);
     };
 
-    const handleItemChange = (id, field, value) => {
-        setItems(prev => prev.map(item => {
-            if (item.id === id) {
-                return { ...item, [field]: value };
-            }
-            return item;
+    const handleRemoveItem = (index) => {
+        setItems(prev => {
+            const next = prev.filter((_, i) => i !== index);
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleToggleCombine = (index, checked) => {
+        setItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], isCombined: checked, isCombinedMode: checked };
+            const sync = synchronizeItemSections(next);
+            sync.forEach(item => {
+                if ((item.isCombined || item.isCombinedMode) && item.combinedSectionId && combinedTotals[item.combinedSectionId] === undefined) {
+                    setCombinedTotals(c => ({ ...c, [item.combinedSectionId]: 0 }));
+                }
+            });
+            return sync;
+        });
+    };
+
+    const handleSplitSection = (index) => {
+        setItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], isNewSectionStart: true, combinedSectionId: `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}` };
+            const sync = synchronizeItemSections(next);
+            sync.forEach(item => {
+                if ((item.isCombined || item.isCombinedMode) && item.combinedSectionId && combinedTotals[item.combinedSectionId] === undefined) {
+                    setCombinedTotals(c => ({ ...c, [item.combinedSectionId]: 0 }));
+                }
+            });
+            return sync;
+        });
+    };
+
+    const handleMergeSection = (index) => {
+        setItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], isNewSectionStart: false };
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleCombinedTotalChange = (sectionId, value) => {
+        setCombinedTotals(prev => ({
+            ...prev,
+            [sectionId]: parseFloat(value) || 0
         }));
     };
 
@@ -189,10 +240,11 @@ const Quotations = () => {
                 type: catItem.category === 'Fabrication & Labor' ? 'Service' : 'Item',
                 name: catItem.name,
                 description: catItem.description,
+                price: catItem.price,
                 rate: catItem.price,
                 quantity: 1,
                 unit: catItem.unit,
-                sectionName: isCombinedMode ? 'General Section' : ''
+                isCombined: false
             }
         ]);
         setShowCatalogModal(false);
@@ -200,13 +252,23 @@ const Quotations = () => {
     };
 
     // Financial Calculation with combined helper
-    const financials = computeBillFinancials({
+    const totals = calculateBillTotals(
         items,
+        combinedTotals,
+        showTax,
         discountType,
         discountValue,
-        taxPercentage,
-        showTax
-    });
+        taxPercentage
+    );
+
+    const financials = {
+        subtotal: totals.subTotal,
+        discountAmount: totals.discountAmount,
+        taxableAmount: totals.taxableAmount,
+        taxAmount: totals.taxAmount,
+        grandTotal: totals.totalAmount,
+        amountInWords: numberToIndianRupees(totals.totalAmount)
+    };
 
     const showToast = (msg, type = 'saved') => {
         setToastMsg(msg);
@@ -275,10 +337,11 @@ const Quotations = () => {
         setSelectedCustomerId(data.selectedCustomerId || '');
         if (Array.isArray(data.items) && data.items.length > 0) {
             setItems(data.items);
-            if (data.items.some(i => i.sectionName)) {
+            if (data.items.some(i => i.sectionName || i.isCombined || i.isCombinedMode)) {
                 setIsCombinedMode(true);
             }
         }
+        if (data.combinedTotals) setCombinedTotals(data.combinedTotals);
         if (data.discountType) setDiscountType(data.discountType);
         if (data.discountValue !== undefined) setDiscountValue(data.discountValue);
         if (data.taxPercentage !== undefined) setTaxPercentage(data.taxPercentage);
@@ -305,7 +368,7 @@ const Quotations = () => {
             showToast('Please enter a Client Name before saving.', 'error');
             return false;
         }
-        if (items.length === 0 || items.every(i => !i.name.trim())) {
+        if (items.length === 0 || items.every(i => !((i.name || i.description || '').trim()))) {
             showToast('Add at least one line item before saving.', 'error');
             return false;
         }
@@ -331,6 +394,7 @@ const Quotations = () => {
                     selectedCustomerId,
                     isCombinedMode,
                     items,
+                    combinedTotals,
                     discountType,
                     discountValue,
                     discountAmount: financials.discountAmount,
@@ -380,17 +444,7 @@ const Quotations = () => {
         window.print();
     };
 
-    // Group items for combined mode preview
-    const groupedItems = React.useMemo(() => {
-        if (!isCombinedMode) return null;
-        const groups = {};
-        items.forEach(item => {
-            const sec = (item.sectionName || 'General Items').trim();
-            if (!groups[sec]) groups[sec] = [];
-            groups[sec].push(item);
-        });
-        return groups;
-    }, [items, isCombinedMode]);
+
 
     return (
         <div className="min-h-screen bg-slate-100 dark:bg-slate-950 p-4 md:p-8 font-sans">
@@ -593,161 +647,33 @@ const Quotations = () => {
                         </div>
                     </div>
 
-                    {/* Mode Toggle & Column Controls */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                <Layers className="w-4 h-4 text-indigo-500" /> Estimation Mode
-                            </span>
-                            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-                                <button
-                                    onClick={() => setIsCombinedMode(false)}
-                                    className={`px-3 py-1 text-xs font-bold rounded-lg transition ${!isCombinedMode ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400'}`}
-                                >
-                                    Standard Line Items
-                                </button>
-                                <button
-                                    onClick={() => setIsCombinedMode(true)}
-                                    className={`px-3 py-1 text-xs font-bold rounded-lg transition ${isCombinedMode ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400'}`}
-                                >
-                                    Combined Bundles
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Granular Column Toggles */}
-                        <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2">Print Column Visibility</span>
-                            <div className="grid grid-cols-2 gap-3">
-                                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={showUnitPrice}
-                                        onChange={(e) => setShowUnitPrice(e.target.checked)}
-                                        className="rounded border-slate-300 text-indigo-600"
-                                    />
-                                    Unit Price Column
-                                </label>
-                                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={showQuantity}
-                                        onChange={(e) => setShowQuantity(e.target.checked)}
-                                        className="rounded border-slate-300 text-indigo-600"
-                                    />
-                                    Quantity Column
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Line Items & Bundles */}
+                    {/* Estimation Line Items & Combined Sections Entry Table */}
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
                         <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
                             <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                <Layers className="w-4 h-4 text-indigo-500" /> Items & Scope of Work ({items.length})
+                                <Layers className="w-4 h-4 text-indigo-500" /> Estimation Line Items ({items.length})
                             </h2>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => handleAddItem()}
-                                    className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
-                                >
-                                    <Plus className="w-3.5 h-3.5" /> Add Row
-                                </button>
-                            </div>
+                            <span className="text-[10px] font-bold text-slate-400">
+                                {items.filter(i => i.isCombined || i.isCombinedMode).length > 0 ? '✓ Combined billing active' : 'Standard line items'}
+                            </span>
                         </div>
 
-                        <div className="space-y-4">
-                            {items.map((item, idx) => (
-                                <div key={item.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">#{idx + 1}</span>
-                                            <select
-                                                value={item.type || 'Item'}
-                                                onChange={(e) => handleItemChange(item.id, 'type', e.target.value)}
-                                                className="text-[10px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md px-1.5 py-0.5"
-                                            >
-                                                <option value="Item">Item / Steel</option>
-                                                <option value="Service">Service / Erection</option>
-                                                <option value="Custom">Custom Scope</option>
-                                            </select>
-                                        </div>
-                                        {items.length > 1 && (
-                                            <button
-                                                onClick={() => handleRemoveItem(item.id)}
-                                                className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 p-1 rounded-lg transition"
-                                                title="Remove item"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {/* Combined Mode Section Title */}
-                                    {isCombinedMode && (
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Bundle / Section Name</label>
-                                            <input
-                                                type="text"
-                                                value={item.sectionName || ''}
-                                                onChange={(e) => handleItemChange(item.id, 'sectionName', e.target.value)}
-                                                placeholder="e.g. Roofing Structure Package, Civil Pedestal Work"
-                                                className="w-full bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-xl px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 focus:outline-none mb-1"
-                                            />
-                                        </div>
-                                    )}
-
-                                    <div>
-                                        <input
-                                            type="text"
-                                            value={item.name}
-                                            onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
-                                            placeholder="Item / Service Title"
-                                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none mb-2"
-                                        />
-                                        <textarea
-                                            rows="2"
-                                            value={item.description}
-                                            onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                                            placeholder="Detailed specification, grade of steel, sheet gauge, welding method..."
-                                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 focus:outline-none resize-none"
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Rate (₹)</label>
-                                            <input
-                                                type="number"
-                                                value={item.rate}
-                                                onChange={(e) => handleItemChange(item.id, 'rate', e.target.value)}
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Quantity</label>
-                                            <input
-                                                type="number"
-                                                value={item.quantity}
-                                                onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Unit</label>
-                                            <input
-                                                type="text"
-                                                value={item.unit}
-                                                onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)}
-                                                placeholder="Units/Kg/Sq.Ft"
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <EstimationEntryTable
+                            items={items}
+                            combinedTotals={combinedTotals}
+                            enableUnitPrice={showUnitPrice}
+                            onToggleEnableUnitPrice={setShowUnitPrice}
+                            enableQuantity={showQuantity}
+                            onToggleEnableQuantity={setShowQuantity}
+                            onUpdateItem={handleUpdateItem}
+                            onAddItem={handleAddItem}
+                            onAddNewCombinedSection={handleAddNewCombinedSection}
+                            onRemoveItem={handleRemoveItem}
+                            onToggleCombine={handleToggleCombine}
+                            onSplitSection={handleSplitSection}
+                            onMergeSection={handleMergeSection}
+                            onCombinedTotalChange={handleCombinedTotalChange}
+                        />
                     </div>
 
                     {/* Financial Calculations & Discounts */}
@@ -1082,85 +1008,22 @@ const Quotations = () => {
                                             className="text-[10px] font-black uppercase tracking-wider text-white"
                                             style={{ backgroundColor: themeColor }}
                                         >
-                                            <th className="p-3">#</th>
-                                            <th className="p-3">Item / Service & Description</th>
-                                            {showUnitPrice && <th className="p-3 text-right">Unit Rate</th>}
+                                            <th className="p-3 w-12 text-left">Sr.</th>
+                                            <th className="p-3 text-left">Item / Service & Description</th>
                                             {showQuantity && <th className="p-3 text-center">Qty</th>}
-                                            <th className="p-3 text-center">Unit</th>
-                                            <th className="p-3 text-right">Total (₹)</th>
+                                            {showUnitPrice && <th className="p-3 text-right">Unit Rate</th>}
+                                            <th className="p-3 text-right">Total</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="text-xs font-medium text-slate-800 dark:text-slate-200 divide-y divide-slate-100 dark:divide-slate-800">
-                                        {isCombinedMode && groupedItems ? (
-                                            Object.entries(groupedItems).map(([secTitle, secItems], secIdx) => {
-                                                const secTotal = secItems.reduce((acc, item) => acc + (parseFloat(item.rate || 0) * parseFloat(item.quantity || 0)), 0);
-                                                return (
-                                                    <React.Fragment key={secTitle}>
-                                                        <tr className="bg-indigo-50/80 dark:bg-indigo-950/40 border-y border-indigo-100 dark:border-indigo-900">
-                                                            <td colSpan={2} className="p-2.5 font-black uppercase text-[11px] text-indigo-900 dark:text-indigo-200">
-                                                                📦 Section #{secIdx + 1}: {secTitle}
-                                                            </td>
-                                                            {showUnitPrice && <td className="p-2.5"></td>}
-                                                            {showQuantity && <td className="p-2.5"></td>}
-                                                            <td className="p-2.5 text-center text-[10px] uppercase font-bold text-indigo-600 dark:text-indigo-400">Bundle Subtotal</td>
-                                                            <td className="p-2.5 text-right font-black text-indigo-950 dark:text-indigo-200">
-                                                                {formatCurrencyINR(secTotal)}
-                                                            </td>
-                                                        </tr>
-                                                        {secItems.map((item, itemIdx) => {
-                                                            const lineTotal = (parseFloat(item.rate || 0) * parseFloat(item.quantity || 0));
-                                                            return (
-                                                                <tr key={item.id} className="bg-white dark:bg-slate-900">
-                                                                    <td className="p-3 font-bold text-slate-400 pl-6">{itemIdx + 1}</td>
-                                                                    <td className="p-3">
-                                                                        <span className="font-bold text-slate-900 dark:text-white block">{item.name || 'Scope Item'}</span>
-                                                                        {item.description && (
-                                                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 whitespace-pre-line">{item.description}</p>
-                                                                        )}
-                                                                    </td>
-                                                                    {showUnitPrice && (
-                                                                        <td className="p-3 text-right font-bold">{formatCurrencyINR(item.rate || 0)}</td>
-                                                                    )}
-                                                                    {showQuantity && (
-                                                                        <td className="p-3 text-center font-bold">{item.quantity}</td>
-                                                                    )}
-                                                                    <td className="p-3 text-center text-slate-500 dark:text-slate-400">{item.unit}</td>
-                                                                    <td className="p-3 text-right font-black text-slate-900 dark:text-white">
-                                                                        {formatCurrencyINR(lineTotal)}
-                                                                    </td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </React.Fragment>
-                                                );
-                                            })
-                                        ) : (
-                                            items.map((item, index) => {
-                                                const lineTotal = (parseFloat(item.rate || 0) * parseFloat(item.quantity || 0));
-                                                return (
-                                                    <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
-                                                        <td className="p-3 font-bold text-slate-400">{index + 1}</td>
-                                                        <td className="p-3">
-                                                            <span className="font-bold text-slate-900 dark:text-white block">{item.name || 'Scope Item'}</span>
-                                                            {item.description && (
-                                                                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 whitespace-pre-line">{item.description}</p>
-                                                            )}
-                                                        </td>
-                                                        {showUnitPrice && (
-                                                            <td className="p-3 text-right font-bold">{formatCurrencyINR(item.rate || 0)}</td>
-                                                        )}
-                                                        {showQuantity && (
-                                                            <td className="p-3 text-center font-bold">{item.quantity}</td>
-                                                        )}
-                                                        <td className="p-3 text-center text-slate-500 dark:text-slate-400">{item.unit}</td>
-                                                        <td className="p-3 text-right font-black text-slate-900 dark:text-white">
-                                                            {formatCurrencyINR(lineTotal)}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })
-                                        )}
-                                    </tbody>
+                                    <CombinedBillTableBody
+                                        items={items}
+                                        combinedTotals={combinedTotals}
+                                        theme={theme.toLowerCase()}
+                                        tableBorderColor="#e2e8f0"
+                                        textColor={theme === 'Minimalist' ? '#0f172a' : 'inherit'}
+                                        enableUnitPrice={showUnitPrice}
+                                        enableQuantity={showQuantity}
+                                    />
                                 </table>
                             </div>
 

@@ -8,7 +8,8 @@ import {
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
 import { formatCurrencyINR } from '../../utils/pdfHelpers';
-import { PRECONFIGURED_CATALOG } from '../../utils/combinedBillHelper';
+import { PRECONFIGURED_CATALOG, computeItemSectionMeta, synchronizeItemSections } from '../../utils/combinedBillHelper';
+import { CurlyBraceTotal } from '../../components/CombinedBillTable';
 
 const generateRentalBillNumber = () => `RNT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -33,6 +34,10 @@ const RentalBills = () => {
     const [customerGstin, setCustomerGstin] = useState('32AAACM1234F1Z9');
     const [siteLocation, setSiteLocation] = useState('Pillar 412 Alignment Site');
 
+    // Column Visibility Toggles
+    const [showQuantity, setShowQuantity] = useState(true);
+    const [showUnitPrice, setShowUnitPrice] = useState(true);
+
     // Rented Items / Assets
     const [rentedItems, setRentedItems] = useState([
         {
@@ -45,7 +50,8 @@ const RentalBills = () => {
             duration: 7,
             checkoutCondition: 'Excellent (Serviced & Tested)',
             returnCondition: 'Normal Wear (Clean)',
-            remarks: 'Supplied with 30m heavy copper welding cables & earth clamp'
+            remarks: 'Supplied with 30m heavy copper welding cables & earth clamp',
+            isCombined: false
         },
         {
             id: 2,
@@ -57,9 +63,11 @@ const RentalBills = () => {
             duration: 7,
             checkoutCondition: 'Good - Calibrated',
             returnCondition: 'Normal Wear',
-            remarks: 'Includes 18mm & 24mm annular cutters'
+            remarks: 'Includes 18mm & 24mm annular cutters',
+            isCombined: false
         }
     ]);
+    const [combinedTotals, setCombinedTotals] = useState({});
 
     // Financial Protection Settings
     const [securityDeposit, setSecurityDeposit] = useState(15000);
@@ -157,7 +165,7 @@ const RentalBills = () => {
         setRentedItems(prev => [
             ...prev,
             {
-                id: Date.now(),
+                id: Date.now() + Math.random(),
                 itemName: '',
                 itemNo: '',
                 rateType: 'Day',
@@ -166,22 +174,92 @@ const RentalBills = () => {
                 duration: 1,
                 checkoutCondition: 'Good',
                 returnCondition: 'Normal Wear',
-                remarks: ''
+                remarks: '',
+                isCombined: false
             }
         ]);
     };
 
-    const handleRemoveItem = (id) => {
-        if (rentedItems.length <= 1) return;
-        setRentedItems(prev => prev.filter(i => i.id !== id));
+    const handleAddNewCombinedSection = () => {
+        const secId = `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        setCombinedTotals(prev => ({ ...prev, [secId]: 0 }));
+        setRentedItems(prev => [
+            ...prev,
+            {
+                id: Date.now() + Math.random(),
+                itemName: '',
+                itemNo: '',
+                rateType: 'Day',
+                rate: 0,
+                quantity: 1,
+                duration: 1,
+                checkoutCondition: 'Good',
+                returnCondition: 'Normal Wear',
+                remarks: '',
+                isCombined: true,
+                isCombinedMode: true,
+                combinedSectionId: secId,
+                isNewSectionStart: true
+            }
+        ]);
     };
 
-    const handleItemChange = (id, field, value) => {
-        setRentedItems(prev => prev.map(item => {
-            if (item.id === id) {
-                return { ...item, [field]: value };
-            }
-            return item;
+    const handleRemoveItem = (index) => {
+        if (rentedItems.length <= 1) return;
+        setRentedItems(prev => {
+            const next = prev.filter((_, i) => i !== index);
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleItemChange = (index, field, value) => {
+        setRentedItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], [field]: value };
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleToggleCombine = (index, checked) => {
+        setRentedItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], isCombined: checked, isCombinedMode: checked };
+            const sync = synchronizeItemSections(next);
+            sync.forEach(item => {
+                if ((item.isCombined || item.isCombinedMode) && item.combinedSectionId && combinedTotals[item.combinedSectionId] === undefined) {
+                    setCombinedTotals(c => ({ ...c, [item.combinedSectionId]: 0 }));
+                }
+            });
+            return sync;
+        });
+    };
+
+    const handleSplitSection = (index) => {
+        setRentedItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], isNewSectionStart: true, combinedSectionId: `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}` };
+            const sync = synchronizeItemSections(next);
+            sync.forEach(item => {
+                if ((item.isCombined || item.isCombinedMode) && item.combinedSectionId && combinedTotals[item.combinedSectionId] === undefined) {
+                    setCombinedTotals(c => ({ ...c, [item.combinedSectionId]: 0 }));
+                }
+            });
+            return sync;
+        });
+    };
+
+    const handleMergeSection = (index) => {
+        setRentedItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], isNewSectionStart: false };
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleCombinedTotalChange = (sectionId, value) => {
+        setCombinedTotals(prev => ({
+            ...prev,
+            [sectionId]: parseFloat(value) || 0
         }));
     };
 
@@ -189,7 +267,7 @@ const RentalBills = () => {
         setRentedItems(prev => [
             ...prev,
             {
-                id: Date.now(),
+                id: Date.now() + Math.random(),
                 itemName: catItem.name,
                 itemNo: `AST-${Math.floor(100 + Math.random() * 900)}`,
                 rateType: catItem.unit === 'Weeks' ? 'Week' : 'Day',
@@ -198,7 +276,8 @@ const RentalBills = () => {
                 duration: 7,
                 checkoutCondition: 'Tested & Operational',
                 returnCondition: 'Pending Return',
-                remarks: catItem.description
+                remarks: catItem.description,
+                isCombined: false
             }
         ]);
         setShowCatalogModal(false);
@@ -207,7 +286,20 @@ const RentalBills = () => {
     };
 
     // Calculation logic
-    const rentalSubtotal = rentedItems.reduce((acc, item) => {
+    const rentalMeta = computeItemSectionMeta(
+        rentedItems.map(item => ({
+            ...item,
+            price: item.rate,
+            quantity: item.duration,
+            total: (parseFloat(item.rate || 0) * parseFloat(item.duration || 1) * parseFloat(item.quantity || 1))
+        })),
+        combinedTotals
+    );
+
+    const rentalSubtotal = rentalMeta.reduce((acc, item) => {
+        if (item.isCombined) {
+            return item.isSectionStart ? acc + Number(item.combinedAmount || 0) : acc;
+        }
         const lineTotal = (parseFloat(item.rate || 0) * parseFloat(item.duration || 1) * parseFloat(item.quantity || 1));
         return acc + lineTotal;
     }, 0);
@@ -288,6 +380,9 @@ const RentalBills = () => {
         setCustomerGstin(data.customerGstin || '');
         setSiteLocation(data.siteLocation || '');
         if (Array.isArray(data.rentedItems)) setRentedItems(data.rentedItems);
+        if (data.combinedTotals) setCombinedTotals(data.combinedTotals);
+        if (data.showQuantity !== undefined) setShowQuantity(data.showQuantity);
+        if (data.showUnitPrice !== undefined) setShowUnitPrice(data.showUnitPrice);
         if (data.securityDeposit !== undefined) setSecurityDeposit(data.securityDeposit);
         if (data.lateFeePerDay !== undefined) setLateFeePerDay(data.lateFeePerDay);
         if (data.damageCharge !== undefined) setDamageCharge(data.damageCharge);
@@ -318,7 +413,8 @@ const RentalBills = () => {
                     workflowMode,
                     billNumber, issueDate, expectedReturnDate, actualReturnDate,
                     customerName, customerAddress, customerPhone, customerGstin, siteLocation,
-                    rentedItems, securityDeposit, lateFeePerDay, computedLateFees, daysOverdue,
+                    rentedItems, combinedTotals, showQuantity, showUnitPrice,
+                    securityDeposit, lateFeePerDay, computedLateFees, daysOverdue,
                     damageCharge, lossCharge, damageRemarks,
                     issuedByStaff, receivedByCustomer, returnedByCustomer, inspectedByStaff,
                     legalTermsEn, legalTermsMl, theme, themeColor,
@@ -573,26 +669,63 @@ const RentalBills = () => {
 
                     {/* Rented Equipment / Machinery Table */}
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
-                        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                <Wrench className="w-4 h-4 text-indigo-500" /> Rented Machinery & Assets ({rentedItems.length})
-                            </h2>
-                            <button
-                                onClick={handleAddItem}
-                                className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
-                            >
-                                <Plus className="w-3.5 h-3.5" /> Add Asset
-                            </button>
+                        <div className="flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-100 dark:border-slate-800 pb-3 gap-3">
+                            <div>
+                                <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                    <Wrench className="w-4 h-4 text-indigo-500" /> Rented Machinery & Assets ({rentedItems.length})
+                                </h2>
+                                <div className="flex items-center gap-4 mt-2">
+                                    <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={showQuantity}
+                                            onChange={(e) => setShowQuantity(e.target.checked)}
+                                            className="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5"
+                                        />
+                                        Duration / Period
+                                    </label>
+                                    <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={showUnitPrice}
+                                            onChange={(e) => setShowUnitPrice(e.target.checked)}
+                                            className="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5"
+                                        />
+                                        Model / Rate
+                                    </label>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handleAddItem}
+                                    className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> Add Asset
+                                </button>
+                                <button
+                                    onClick={handleAddNewCombinedSection}
+                                    className="bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 hover:bg-amber-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition border border-amber-200 dark:border-amber-800"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> Add Combined Package
+                                </button>
+                            </div>
                         </div>
 
                         <div className="space-y-4">
-                            {rentedItems.map((item, idx) => (
+                            {rentalMeta.map((item, idx) => (
                                 <div key={item.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">Machine #{idx + 1}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">Machine #{idx + 1}</span>
+                                            {item.isCombined && (
+                                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 border border-amber-200">
+                                                    Package Item
+                                                </span>
+                                            )}
+                                        </div>
                                         {rentedItems.length > 1 && (
                                             <button
-                                                onClick={() => handleRemoveItem(item.id)}
+                                                onClick={() => handleRemoveItem(idx)}
                                                 className="text-rose-500 hover:bg-rose-50 p-1 rounded-lg transition"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -606,7 +739,7 @@ const RentalBills = () => {
                                             <input
                                                 type="text"
                                                 value={item.itemName}
-                                                onChange={(e) => handleItemChange(item.id, 'itemName', e.target.value)}
+                                                onChange={(e) => handleItemChange(idx, 'itemName', e.target.value)}
                                                 placeholder="e.g. 400A Diesel Generator"
                                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
@@ -616,7 +749,7 @@ const RentalBills = () => {
                                             <input
                                                 type="text"
                                                 value={item.itemNo}
-                                                onChange={(e) => handleItemChange(item.id, 'itemNo', e.target.value)}
+                                                onChange={(e) => handleItemChange(idx, 'itemNo', e.target.value)}
                                                 placeholder="AST-001"
                                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
@@ -628,7 +761,7 @@ const RentalBills = () => {
                                             <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Pricing Model</label>
                                             <select
                                                 value={item.rateType}
-                                                onChange={(e) => handleItemChange(item.id, 'rateType', e.target.value)}
+                                                onChange={(e) => handleItemChange(idx, 'rateType', e.target.value)}
                                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-1.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             >
                                                 <option value="Hour">Hour</option>
@@ -643,8 +776,13 @@ const RentalBills = () => {
                                             <input
                                                 type="number"
                                                 value={item.rate}
-                                                onChange={(e) => handleItemChange(item.id, 'rate', e.target.value)}
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                onChange={(e) => handleItemChange(idx, 'rate', e.target.value)}
+                                                disabled={item.isCombined}
+                                                className={`w-full border rounded-xl px-2 py-1.5 text-xs font-bold focus:outline-none ${
+                                                    item.isCombined
+                                                        ? 'bg-slate-100 dark:bg-slate-800 border-dashed text-slate-400'
+                                                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
+                                                }`}
                                             />
                                         </div>
                                         <div>
@@ -652,7 +790,7 @@ const RentalBills = () => {
                                             <input
                                                 type="number"
                                                 value={item.duration}
-                                                onChange={(e) => handleItemChange(item.id, 'duration', e.target.value)}
+                                                onChange={(e) => handleItemChange(idx, 'duration', e.target.value)}
                                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
                                         </div>
@@ -661,10 +799,56 @@ const RentalBills = () => {
                                             <input
                                                 type="number"
                                                 value={item.quantity}
-                                                onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
+                                                onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
                                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
                                         </div>
+                                    </div>
+
+                                    {/* Combined Section Controls */}
+                                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-amber-50/40 dark:bg-amber-950/20 p-2.5 rounded-xl">
+                                        <label className="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-300 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={Boolean(item.isCombined)}
+                                                onChange={(e) => handleToggleCombine(idx, e.target.checked)}
+                                                className="w-4 h-4 rounded text-amber-600"
+                                            />
+                                            Combine into package
+                                        </label>
+
+                                        {item.isCombined && item.isSectionStart && (
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200">
+                                                    Spans {item.sectionRowCount} item{item.sectionRowCount > 1 ? 's' : ''}
+                                                </span>
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">₹</span>
+                                                    <input
+                                                        type="number"
+                                                        value={combinedTotals[item.sectionId] ?? ''}
+                                                        onChange={(e) => handleCombinedTotalChange(item.sectionId, e.target.value)}
+                                                        placeholder="Package Amount"
+                                                        className="w-28 bg-white dark:bg-slate-900 border-2 border-emerald-400 dark:border-emerald-600 rounded-lg px-2 py-1 text-xs font-black text-emerald-700 dark:text-emerald-300 text-right focus:outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {item.isCombined && item.isSectionFollower && (
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                                                    ↳ Bundled into package above
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSplitSection(idx)}
+                                                    className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-1 rounded-lg"
+                                                >
+                                                    Split Section
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Condition Logs */}
@@ -893,27 +1077,53 @@ const RentalBills = () => {
                                             <th className="p-3">#</th>
                                             <th className="p-3">Asset / Machinery Name</th>
                                             <th className="p-3 text-center">Asset No</th>
-                                            <th className="p-3 text-center">Model / Rate</th>
-                                            <th className="p-3 text-center">Duration</th>
+                                            {showUnitPrice && <th className="p-3 text-center">Model / Rate</th>}
+                                            {showQuantity && <th className="p-3 text-center">Duration</th>}
                                             <th className="p-3">Handover Condition</th>
                                             <th className="p-3 text-right">Rent Total (₹)</th>
                                         </tr>
                                     </thead>
                                     <tbody className="text-xs font-medium text-slate-800 dark:text-slate-200 divide-y divide-slate-100 dark:divide-slate-800">
-                                        {rentedItems.map((item, idx) => {
+                                        {rentalMeta.map((item, idx) => {
                                             const total = (parseFloat(item.rate || 0) * parseFloat(item.duration || 1) * parseFloat(item.quantity || 1));
                                             return (
-                                                <tr key={item.id} className={idx % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
+                                                <tr key={item.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
                                                     <td className="p-3 font-bold text-slate-400">{idx + 1}</td>
                                                     <td className="p-3 font-bold text-slate-900 dark:text-white">
                                                         {item.itemName}
                                                         {item.remarks && <p className="text-[11px] text-slate-500 font-normal">{item.remarks}</p>}
                                                     </td>
                                                     <td className="p-3 text-center font-mono font-bold text-indigo-600 dark:text-indigo-400">{item.itemNo}</td>
-                                                    <td className="p-3 text-center">{formatCurrencyINR(item.rate)}/{item.rateType}</td>
-                                                    <td className="p-3 text-center font-bold">{item.duration} {item.rateType}s</td>
+                                                    {showUnitPrice && (
+                                                        <td className="p-3 text-center">
+                                                            {item.isCombined ? '—' : `${formatCurrencyINR(item.rate)}/${item.rateType}`}
+                                                        </td>
+                                                    )}
+                                                    {showQuantity && (
+                                                        <td className="p-3 text-center font-bold">
+                                                            {item.duration} {item.rateType}s
+                                                        </td>
+                                                    )}
                                                     <td className="p-3 text-[11px] text-slate-600 dark:text-slate-400">{item.checkoutCondition}</td>
-                                                    <td className="p-3 text-right font-black text-slate-900 dark:text-white">{formatCurrencyINR(total)}</td>
+                                                    {item.isCombined ? (
+                                                        item.isSectionStart ? (
+                                                            <td 
+                                                                rowSpan={item.sectionRowCount}
+                                                                className="p-2 text-right"
+                                                                style={{ verticalAlign: 'middle', background: 'transparent' }}
+                                                            >
+                                                                <CurlyBraceTotal 
+                                                                    amount={item.combinedAmount} 
+                                                                    rowCount={item.sectionRowCount} 
+                                                                    textColor={themeColor} 
+                                                                />
+                                                            </td>
+                                                        ) : null
+                                                    ) : (
+                                                        <td className="p-3 text-right font-black text-slate-900 dark:text-white">
+                                                            {formatCurrencyINR(total)}
+                                                        </td>
+                                                    )}
                                                 </tr>
                                             );
                                         })}

@@ -9,8 +9,10 @@ import {
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
 import { formatCurrencyINR } from '../../utils/pdfHelpers';
-import { PRECONFIGURED_CATALOG, computeBillFinancials } from '../../utils/combinedBillHelper';
+import { PRECONFIGURED_CATALOG, computeBillFinancials, computeItemSectionMeta, calculateBillTotals, synchronizeItemSections } from '../../utils/combinedBillHelper';
 import { buildUPILink } from '../../utils/upiUtils';
+import CombinedBillTableBody from '../../components/CombinedBillTable';
+import EstimationEntryTable from '../../components/EstimationEntryTable';
 
 const generateInvoiceNumber = () => `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -34,8 +36,9 @@ const Invoices = () => {
     // Combined Billing Mode & Items
     const [isCombinedMode, setIsCombinedMode] = useState(false);
     const [items, setItems] = useState([
-        { id: 1, description: 'Steel Structural I-Beam 150x75', price: 4600, quantity: 2, unit: 'Kg', taxRate: 18, sectionName: 'Structural Framing' }
+        { id: 1, description: 'Steel Structural I-Beam 150x75', price: 4600, quantity: 2, unit: 'Kg', taxRate: 18, isCombined: false }
     ]);
+    const [combinedTotals, setCombinedTotals] = useState({});
 
     // Payment Tracking & Statuses (Unpaid, Partially Paid, Paid, Overdue)
     const [status, setStatus] = useState('Unpaid');
@@ -148,32 +151,77 @@ const Invoices = () => {
         }
     };
 
-    const handleAddItem = (sectionName = '') => {
+    const handleUpdateItem = (index, field, value) => {
+        setItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], [field]: value };
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleAddItem = () => {
         setItems(prev => [
             ...prev,
-            { 
-                id: Date.now() + Math.random(), 
-                description: '', 
-                price: 0, 
-                quantity: 1, 
-                unit: 'Units', 
-                taxRate: 18,
-                sectionName: isCombinedMode ? (sectionName || 'General Section') : ''
-            }
+            { id: Date.now() + Math.random(), description: '', price: 0, quantity: 1, unit: 'Units', isCombined: false }
         ]);
     };
 
-    const handleRemoveItem = (id) => {
-        if (items.length <= 1) return;
-        setItems(prev => prev.filter(item => item.id !== id));
+    const handleAddNewCombinedSection = () => {
+        const secId = `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        setCombinedTotals(prev => ({ ...prev, [secId]: 0 }));
+        setItems(prev => [
+            ...prev,
+            { id: Date.now() + Math.random(), description: '', price: 0, quantity: 1, unit: 'Units', isCombined: true, isCombinedMode: true, combinedSectionId: secId, isNewSectionStart: true }
+        ]);
     };
 
-    const handleItemChange = (id, field, value) => {
-        setItems(prev => prev.map(item => {
-            if (item.id === id) {
-                return { ...item, [field]: value };
-            }
-            return item;
+    const handleRemoveItem = (index) => {
+        setItems(prev => {
+            const next = prev.filter((_, i) => i !== index);
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleToggleCombine = (index, checked) => {
+        setItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], isCombined: checked, isCombinedMode: checked };
+            const sync = synchronizeItemSections(next);
+            sync.forEach(item => {
+                if ((item.isCombined || item.isCombinedMode) && item.combinedSectionId && combinedTotals[item.combinedSectionId] === undefined) {
+                    setCombinedTotals(c => ({ ...c, [item.combinedSectionId]: 0 }));
+                }
+            });
+            return sync;
+        });
+    };
+
+    const handleSplitSection = (index) => {
+        setItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], isNewSectionStart: true, combinedSectionId: `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}` };
+            const sync = synchronizeItemSections(next);
+            sync.forEach(item => {
+                if ((item.isCombined || item.isCombinedMode) && item.combinedSectionId && combinedTotals[item.combinedSectionId] === undefined) {
+                    setCombinedTotals(c => ({ ...c, [item.combinedSectionId]: 0 }));
+                }
+            });
+            return sync;
+        });
+    };
+
+    const handleMergeSection = (index) => {
+        setItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], isNewSectionStart: false };
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleCombinedTotalChange = (sectionId, val) => {
+        setCombinedTotals(prev => ({
+            ...prev,
+            [sectionId]: val
         }));
     };
 
@@ -187,7 +235,7 @@ const Invoices = () => {
                 quantity: 1,
                 unit: catItem.unit,
                 taxRate: catItem.taxRate || 18,
-                sectionName: isCombinedMode ? 'General Section' : ''
+                isCombined: false
             }
         ]);
         setShowCatalogModal(false);
@@ -195,21 +243,30 @@ const Invoices = () => {
         setTimeout(() => setSaveMessage(''), 3000);
     };
 
-    // Financial Calculation with helper
-    const financials = computeBillFinancials({
-        items: items.map(i => ({ ...i, rate: i.price })),
+    // Financial Calculation with combined totals helper
+    const totals = calculateBillTotals(
+        items,
+        combinedTotals,
+        showTax,
         discountType,
         discountValue,
-        taxPercentage,
-        showTax,
-        advancePaid: status === 'Paid' ? 999999999 : (status === 'Partially Paid' ? paidAmount : 0)
-    });
+        taxPercentage
+    );
+
+    const financials = {
+        subtotal: totals.subTotal,
+        discountAmount: totals.discountAmount,
+        taxableAmount: totals.taxableAmount,
+        taxAmount: totals.taxAmount,
+        grandTotal: totals.totalAmount,
+        amountInWords: numberToIndianRupees(totals.totalAmount)
+    };
 
     const calculatedBalanceDue = status === 'Paid' 
         ? 0 
         : status === 'Partially Paid' 
-        ? Math.max(0, financials.grandTotal - parseFloat(paidAmount || 0)) 
-        : financials.grandTotal;
+        ? Math.max(0, totals.totalAmount - parseFloat(paidAmount || 0)) 
+        : totals.totalAmount;
 
     const handleDuplicateInvoice = () => {
         setInvoiceNumber(generateInvoiceNumber());
@@ -235,7 +292,8 @@ const Invoices = () => {
         setPaidAmount(0);
         setDiscountType('none');
         setDiscountValue(0);
-        setItems([{ id: Date.now(), description: '', price: 0, quantity: 1, unit: 'Units', taxRate: 18 }]);
+        setItems([{ id: Date.now(), description: '', price: 0, quantity: 1, unit: 'Units', isCombined: false }]);
+        setCombinedTotals({});
         setSaveMessage('✓ Invoice studio reset.');
         setTimeout(() => setSaveMessage(''), 3000);
     };
@@ -271,7 +329,10 @@ const Invoices = () => {
         setCustomerState(data.customerState || 'Kerala (32)');
         if (Array.isArray(data.items) && data.items.length > 0) {
             setItems(data.items);
-            if (data.items.some(i => i.sectionName)) setIsCombinedMode(true);
+            if (data.items.some(i => i.isCombined || i.isCombinedMode || i.sectionName)) setIsCombinedMode(true);
+        }
+        if (data.combinedTotals) {
+            setCombinedTotals(data.combinedTotals);
         }
         if (data.status) setStatus(data.status);
         if (data.paidAmount !== undefined) setPaidAmount(data.paidAmount);
@@ -309,6 +370,7 @@ const Invoices = () => {
                 customerState,
                 isCombinedMode,
                 items,
+                combinedTotals,
                 status,
                 paidAmount: parseFloat(paidAmount || 0),
                 balanceDue: calculatedBalanceDue,
@@ -607,143 +669,43 @@ const Invoices = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Mode Toggle & Column Controls */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                <Layers className="w-4 h-4 text-indigo-500" /> Billing Mode
-                            </span>
-                            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-                                <button
-                                    onClick={() => setIsCombinedMode(false)}
-                                    className={`px-3 py-1 text-xs font-bold rounded-lg transition ${!isCombinedMode ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400'}`}
-                                >
-                                    Standard Line Items
-                                </button>
-                                <button
-                                    onClick={() => setIsCombinedMode(true)}
-                                    className={`px-3 py-1 text-xs font-bold rounded-lg transition ${isCombinedMode ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400'}`}
-                                >
-                                    Combined Bundles
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Granular Column Toggles */}
-                        <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2">Column Controls</span>
-                            <div className="grid grid-cols-2 gap-3">
-                                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={showUnitPrice}
-                                        onChange={(e) => setShowUnitPrice(e.target.checked)}
-                                        className="rounded border-slate-300 text-indigo-600"
-                                    />
-                                    Unit Price Column
-                                </label>
-                                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={showQuantity}
-                                        onChange={(e) => setShowQuantity(e.target.checked)}
-                                        className="rounded border-slate-300 text-indigo-600"
-                                    />
-                                    Quantity Column
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Line Items */}
+                                  {/* Billed Items & Estimation Table */}
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
                         <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
                             <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                <Layers className="w-4 h-4 text-indigo-500" /> Billed Items & Services ({items.length})
+                                <Layers className="w-4 h-4 text-indigo-500" /> Invoice Entry & Line Items
                             </h2>
-                            <button
-                                onClick={() => handleAddItem()}
-                                className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
-                            >
-                                <Plus className="w-3.5 h-3.5" /> Add Row
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCatalogModal(true)}
+                                    className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
+                                >
+                                    <Tag className="w-3.5 h-3.5" /> Catalog
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="space-y-4">
-                            {items.map((item, idx) => (
-                                <div key={item.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">Item #{idx + 1}</span>
-                                        {items.length > 1 && (
-                                            <button
-                                                onClick={() => handleRemoveItem(item.id)}
-                                                className="text-rose-500 hover:bg-rose-50 p-1 rounded-lg transition"
-                                                title="Remove item"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {isCombinedMode && (
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Section / Bundle Group</label>
-                                            <input
-                                                type="text"
-                                                value={item.sectionName || ''}
-                                                onChange={(e) => handleItemChange(item.id, 'sectionName', e.target.value)}
-                                                placeholder="e.g. Primary Columns, Trusses & Purlins"
-                                                className="w-full bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-xl px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 focus:outline-none mb-1"
-                                            />
-                                        </div>
-                                    )}
-
-                                    <div>
-                                        <input
-                                            type="text"
-                                            value={item.description}
-                                            onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                                            placeholder="Item Name & Technical Description"
-                                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Price (₹)</label>
-                                            <input
-                                                type="number"
-                                                value={item.price}
-                                                onChange={(e) => handleItemChange(item.id, 'price', e.target.value)}
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Qty</label>
-                                            <input
-                                                type="number"
-                                                value={item.quantity}
-                                                onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Unit</label>
-                                            <input
-                                                type="text"
-                                                value={item.unit}
-                                                onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)}
-                                                placeholder="Kg/Metres/Job"
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <EstimationEntryTable
+                            items={items}
+                            combinedTotals={combinedTotals}
+                            products={PRECONFIGURED_CATALOG}
+                            dataListId="invoice-catalog-list"
+                            enableUnitPrice={showUnitPrice}
+                            onToggleEnableUnitPrice={(val) => setShowUnitPrice(val)}
+                            enableQuantity={showQuantity}
+                            onToggleEnableQuantity={(val) => setShowQuantity(val)}
+                            onUpdateItem={handleUpdateItem}
+                            onAddItem={handleAddItem}
+                            onAddNewCombinedSection={handleAddNewCombinedSection}
+                            onRemoveItem={handleRemoveItem}
+                            onToggleCombine={handleToggleCombine}
+                            onSplitSection={handleSplitSection}
+                            onMergeSection={handleMergeSection}
+                            onCombinedTotalChange={handleCombinedTotalChange}
+                        />
                     </div>
+         </div>
 
                     {/* Discounts & Taxes */}
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
@@ -1038,85 +1000,30 @@ const Invoices = () => {
                                 </div>
                             </div>
 
-                            {/* Invoice Table */}
-                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                            {/* Invoice Table with Curly Brace Combined Billing */}
+                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr 
                                             className="text-[10px] font-black uppercase tracking-wider text-white"
                                             style={{ backgroundColor: themeColor }}
                                         >
-                                            <th className="p-3">#</th>
-                                            <th className="p-3">Description of Goods / Services</th>
-                                            {showUnitPrice && <th className="p-3 text-right">Unit Price</th>}
+                                            <th className="p-3 w-12 text-left">Sr.</th>
+                                            <th className="p-3 text-left">Description of Goods / Services</th>
                                             {showQuantity && <th className="p-3 text-center">Qty</th>}
-                                            <th className="p-3 text-center">Unit</th>
-                                            <th className="p-3 text-right">Total (₹)</th>
+                                            {showUnitPrice && <th className="p-3 text-right">Unit Price</th>}
+                                            <th className="p-3 text-right">Total</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="text-xs font-medium text-slate-800 dark:text-slate-200 divide-y divide-slate-100 dark:divide-slate-800">
-                                        {isCombinedMode && groupedItems ? (
-                                            Object.entries(groupedItems).map(([secTitle, secItems], secIdx) => {
-                                                const secTotal = secItems.reduce((acc, item) => acc + (parseFloat(item.price || 0) * parseFloat(item.quantity || 0)), 0);
-                                                return (
-                                                    <React.Fragment key={secTitle}>
-                                                        <tr className="bg-indigo-50/80 dark:bg-indigo-950/40 border-y border-indigo-100 dark:border-indigo-900">
-                                                            <td colSpan={2} className="p-2.5 font-black uppercase text-[11px] text-indigo-900 dark:text-indigo-200">
-                                                                📦 Section #{secIdx + 1}: {secTitle}
-                                                            </td>
-                                                            {showUnitPrice && <td className="p-2.5"></td>}
-                                                            {showQuantity && <td className="p-2.5"></td>}
-                                                            <td className="p-2.5 text-center text-[10px] uppercase font-bold text-indigo-600 dark:text-indigo-400">Section Total</td>
-                                                            <td className="p-2.5 text-right font-black text-indigo-950 dark:text-indigo-200">
-                                                                {formatCurrencyINR(secTotal)}
-                                                            </td>
-                                                        </tr>
-                                                        {secItems.map((item, itemIdx) => {
-                                                            const lineTotal = (parseFloat(item.price || 0) * parseFloat(item.quantity || 0));
-                                                            return (
-                                                                <tr key={item.id} className="bg-white dark:bg-slate-900">
-                                                                    <td className="p-3 font-bold text-slate-400 pl-6">{itemIdx + 1}</td>
-                                                                    <td className="p-3">
-                                                                        <span className="font-bold text-slate-900 dark:text-white block">{item.description || 'Billed Item'}</span>
-                                                                    </td>
-                                                                    {showUnitPrice && (
-                                                                        <td className="p-3 text-right font-bold">{formatCurrencyINR(item.price || 0)}</td>
-                                                                    )}
-                                                                    {showQuantity && (
-                                                                        <td className="p-3 text-center font-bold">{item.quantity}</td>
-                                                                    )}
-                                                                    <td className="p-3 text-center text-slate-500">{item.unit}</td>
-                                                                    <td className="p-3 text-right font-black text-slate-900 dark:text-white">
-                                                                        {formatCurrencyINR(lineTotal)}
-                                                                    </td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </React.Fragment>
-                                                );
-                                            })
-                                        ) : (
-                                            items.map((item, index) => {
-                                                const lineTotal = (parseFloat(item.price || 0) * parseFloat(item.quantity || 0));
-                                                return (
-                                                    <tr key={item.id} className={index % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
-                                                        <td className="p-3 font-bold text-slate-400">{index + 1}</td>
-                                                        <td className="p-3 font-bold text-slate-900 dark:text-white">{item.description || 'Billed Item'}</td>
-                                                        {showUnitPrice && (
-                                                            <td className="p-3 text-right font-bold">{formatCurrencyINR(item.price || 0)}</td>
-                                                        )}
-                                                        {showQuantity && (
-                                                            <td className="p-3 text-center font-bold">{item.quantity}</td>
-                                                        )}
-                                                        <td className="p-3 text-center text-slate-500">{item.unit}</td>
-                                                        <td className="p-3 text-right font-black text-slate-900 dark:text-white">
-                                                            {formatCurrencyINR(lineTotal)}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })
-                                        )}
-                                    </tbody>
+                                    <CombinedBillTableBody
+                                        items={items}
+                                        combinedTotals={combinedTotals}
+                                        theme={theme.toLowerCase()}
+                                        tableBorderColor="#e2e8f0"
+                                        textColor={theme === 'Minimalist' ? '#0f172a' : 'inherit'}
+                                        enableUnitPrice={showUnitPrice}
+                                        enableQuantity={showQuantity}
+                                    />
                                 </table>
                             </div>
 

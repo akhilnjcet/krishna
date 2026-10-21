@@ -8,6 +8,8 @@ import {
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
 import { formatCurrencyINR } from '../../utils/pdfHelpers';
+import { CurlyBraceTotal } from '../../components/CombinedBillTable';
+import { computeItemSectionMeta, synchronizeItemSections } from '../../utils/combinedBillHelper';
 
 const generateBillNumber = (mode) => {
     const prefix = mode === 'transport' ? 'TR' : mode === 'combined' ? 'LT' : 'LB';
@@ -41,12 +43,17 @@ const LabourBillsTab = () => {
     const [loadingDate, setLoadingDate] = useState(new Date().toISOString().split('T')[0]);
     const [unloadingDate, setUnloadingDate] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
 
+    // Column Visibility Toggles
+    const [showQuantity, setShowQuantity] = useState(true);
+    const [showUnitPrice, setShowUnitPrice] = useState(true);
+
     // Dynamic Labour Row Matrix
     const [labourRows, setLabourRows] = useState([
-        { id: 1, workDescription: 'Site Assembly & Fitting Labor (Senior Fabricator Crew)', unit: 'Shifts', labourersCount: 6, workingDays: 5, dailyRate: 950 },
-        { id: 2, workDescription: 'High-Elevation Structural Certified Welders (MIG / ARC)', unit: 'Days', labourersCount: 3, workingDays: 4, dailyRate: 1400 },
-        { id: 3, workDescription: 'Riggers & Mobile Crane Alignment Helpers', unit: 'Days', labourersCount: 4, workingDays: 3, dailyRate: 750 }
+        { id: 1, workDescription: 'Site Assembly & Fitting Labor (Senior Fabricator Crew)', unit: 'Shifts', labourersCount: 6, workingDays: 5, dailyRate: 950, isCombined: false },
+        { id: 2, workDescription: 'High-Elevation Structural Certified Welders (MIG / ARC)', unit: 'Days', labourersCount: 3, workingDays: 4, dailyRate: 1400, isCombined: false },
+        { id: 3, workDescription: 'Riggers & Mobile Crane Alignment Helpers', unit: 'Days', labourersCount: 4, workingDays: 3, dailyRate: 750, isCombined: false }
     ]);
+    const [combinedTotals, setCombinedTotals] = useState({});
 
     // Dedicated Ancillary / Freight Charges
     const [baseFreightCharges, setBaseFreightCharges] = useState(14500);
@@ -124,26 +131,93 @@ const LabourBillsTab = () => {
     const handleAddLabourRow = () => {
         setLabourRows(prev => [
             ...prev,
-            { id: Date.now(), workDescription: '', unit: 'Days', labourersCount: 1, workingDays: 1, dailyRate: 0 }
+            { id: Date.now() + Math.random(), workDescription: '', unit: 'Days', labourersCount: 1, workingDays: 1, dailyRate: 0, price: 0, isCombined: false }
         ]);
     };
 
-    const handleRemoveLabourRow = (id) => {
-        if (labourRows.length <= 1) return;
-        setLabourRows(prev => prev.filter(r => r.id !== id));
+    const handleAddNewCombinedSection = () => {
+        const secId = `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        setCombinedTotals(prev => ({ ...prev, [secId]: 0 }));
+        setLabourRows(prev => [
+            ...prev,
+            { id: Date.now() + Math.random(), workDescription: '', unit: 'Days', labourersCount: 1, workingDays: 1, dailyRate: 0, price: 0, isCombined: true, isCombinedMode: true, combinedSectionId: secId, isNewSectionStart: true }
+        ]);
     };
 
-    const handleLabourRowChange = (id, field, value) => {
-        setLabourRows(prev => prev.map(r => {
-            if (r.id === id) {
-                return { ...r, [field]: value };
-            }
-            return r;
+    const handleRemoveLabourRow = (index) => {
+        if (labourRows.length <= 1) return;
+        setLabourRows(prev => {
+            const next = prev.filter((_, i) => i !== index);
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleLabourRowChange = (index, field, value) => {
+        setLabourRows(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], [field]: value };
+            if (field === 'dailyRate') next[index].price = value;
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleToggleCombine = (index, checked) => {
+        setLabourRows(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], isCombined: checked, isCombinedMode: checked };
+            const sync = synchronizeItemSections(next);
+            sync.forEach(item => {
+                if ((item.isCombined || item.isCombinedMode) && item.combinedSectionId && combinedTotals[item.combinedSectionId] === undefined) {
+                    setCombinedTotals(c => ({ ...c, [item.combinedSectionId]: 0 }));
+                }
+            });
+            return sync;
+        });
+    };
+
+    const handleSplitSection = (index) => {
+        setLabourRows(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], isNewSectionStart: true, combinedSectionId: `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}` };
+            const sync = synchronizeItemSections(next);
+            sync.forEach(item => {
+                if ((item.isCombined || item.isCombinedMode) && item.combinedSectionId && combinedTotals[item.combinedSectionId] === undefined) {
+                    setCombinedTotals(c => ({ ...c, [item.combinedSectionId]: 0 }));
+                }
+            });
+            return sync;
+        });
+    };
+
+    const handleMergeSection = (index) => {
+        setLabourRows(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], isNewSectionStart: false };
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleCombinedTotalChange = (sectionId, value) => {
+        setCombinedTotals(prev => ({
+            ...prev,
+            [sectionId]: parseFloat(value) || 0
         }));
     };
 
     // Financial Computations
-    const labourTotal = (billMode === 'transport') ? 0 : labourRows.reduce((sum, r) => {
+    const labourMeta = computeItemSectionMeta(
+        labourRows.map(r => ({
+            ...r,
+            price: r.dailyRate,
+            total: (parseFloat(r.labourersCount || 0) * parseFloat(r.workingDays || 0) * parseFloat(r.dailyRate || 0))
+        })),
+        combinedTotals
+    );
+
+    const labourTotal = (billMode === 'transport') ? 0 : labourMeta.reduce((sum, r) => {
+        if (r.isCombined) {
+            return r.isSectionStart ? sum + Number(r.combinedAmount || 0) : sum;
+        }
         const lineTotal = (parseFloat(r.labourersCount || 0) * parseFloat(r.workingDays || 0) * parseFloat(r.dailyRate || 0));
         return sum + lineTotal;
     }, 0);
@@ -242,6 +316,9 @@ const LabourBillsTab = () => {
         setLoadingDate(data.loadingDate || new Date().toISOString().split('T')[0]);
         setUnloadingDate(data.unloadingDate || new Date().toISOString().split('T')[0]);
         if (Array.isArray(data.labourRows) && data.labourRows.length > 0) setLabourRows(data.labourRows);
+        if (data.combinedTotals) setCombinedTotals(data.combinedTotals);
+        if (data.showQuantity !== undefined) setShowQuantity(data.showQuantity);
+        if (data.showUnitPrice !== undefined) setShowUnitPrice(data.showUnitPrice);
         if (data.baseFreightCharges !== undefined) setBaseFreightCharges(data.baseFreightCharges);
         if (data.loadingCharges !== undefined) setLoadingCharges(data.loadingCharges);
         if (data.unloadingCharges !== undefined) setUnloadingCharges(data.unloadingCharges);
@@ -276,7 +353,7 @@ const LabourBillsTab = () => {
                     vehicleNumber, lrGrNumber, origin, destination, goodsDescription,
                     driverName, driverPhone, loadingDate, unloadingDate, 
                     billNumber, billDate, clientName, clientAddress, clientPhone, clientGstin,
-                    siteLocation, siteSupervisor, labourRows,
+                    siteLocation, siteSupervisor, labourRows, combinedTotals, showQuantity, showUnitPrice,
                     baseFreightCharges, loadingCharges, unloadingCharges, handlingCharges, packingCharges,
                     overtimeCharges, detentionCharges, advancePaid: numAdvance, discountAmount: numDiscount,
                     balancePending, taxPercentage, effectiveTaxRate, isTaxExempt, taxDetails, footerText,
@@ -633,26 +710,63 @@ const LabourBillsTab = () => {
                     {/* Workforce & Dynamic Labour Charges (shown in Labour or Combined mode) */}
                     {(billMode === 'labour' || billMode === 'combined') && (
                         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
-                            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-                                <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                    <Users className="w-4 h-4 text-indigo-500" /> Dynamic Labour Charge Matrix
-                                </h2>
-                                <button
-                                    onClick={handleAddLabourRow}
-                                    className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
-                                >
-                                    <Plus className="w-3.5 h-3.5" /> Add Task
-                                </button>
+                            <div className="flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-100 dark:border-slate-800 pb-3 gap-3">
+                                <div>
+                                    <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                        <Users className="w-4 h-4 text-indigo-500" /> Dynamic Labour Charge Matrix ({labourRows.length})
+                                    </h2>
+                                    <div className="flex items-center gap-4 mt-2">
+                                        <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={showQuantity}
+                                                onChange={(e) => setShowQuantity(e.target.checked)}
+                                                className="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5"
+                                            />
+                                            Headcount & Duration
+                                        </label>
+                                        <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={showUnitPrice}
+                                                onChange={(e) => setShowUnitPrice(e.target.checked)}
+                                                className="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5"
+                                            />
+                                            Daily Rate
+                                        </label>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handleAddLabourRow}
+                                        className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
+                                    >
+                                        <Plus className="w-3.5 h-3.5" /> Add Task
+                                    </button>
+                                    <button
+                                        onClick={handleAddNewCombinedSection}
+                                        className="bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 hover:bg-amber-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition border border-amber-200 dark:border-amber-800"
+                                    >
+                                        <Plus className="w-3.5 h-3.5" /> Add Combined Section
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="space-y-4">
-                                {labourRows.map((row, idx) => (
+                                {labourMeta.map((row, idx) => (
                                     <div key={row.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">Crew Row #{idx + 1}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">Crew Row #{idx + 1}</span>
+                                                {row.isCombined && (
+                                                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 border border-amber-200">
+                                                        Combined Row
+                                                    </span>
+                                                )}
+                                            </div>
                                             {labourRows.length > 1 && (
                                                 <button
-                                                    onClick={() => handleRemoveLabourRow(row.id)}
+                                                    onClick={() => handleRemoveLabourRow(idx)}
                                                     className="text-rose-500 hover:bg-rose-50 p-1 rounded-lg transition"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -665,7 +779,7 @@ const LabourBillsTab = () => {
                                             <input
                                                 type="text"
                                                 value={row.workDescription}
-                                                onChange={(e) => handleLabourRowChange(row.id, 'workDescription', e.target.value)}
+                                                onChange={(e) => handleLabourRowChange(idx, 'workDescription', e.target.value)}
                                                 placeholder="e.g. Masons, Certified Structural Welders, Erection Riggers"
                                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                             />
@@ -676,7 +790,7 @@ const LabourBillsTab = () => {
                                                 <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Unit</label>
                                                 <select
                                                     value={row.unit || 'Days'}
-                                                    onChange={(e) => handleLabourRowChange(row.id, 'unit', e.target.value)}
+                                                    onChange={(e) => handleLabourRowChange(idx, 'unit', e.target.value)}
                                                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-1.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                                 >
                                                     <option value="Days">Days</option>
@@ -691,7 +805,7 @@ const LabourBillsTab = () => {
                                                 <input
                                                     type="number"
                                                     value={row.labourersCount}
-                                                    onChange={(e) => handleLabourRowChange(row.id, 'labourersCount', e.target.value)}
+                                                    onChange={(e) => handleLabourRowChange(idx, 'labourersCount', e.target.value)}
                                                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                                 />
                                             </div>
@@ -700,7 +814,7 @@ const LabourBillsTab = () => {
                                                 <input
                                                     type="number"
                                                     value={row.workingDays}
-                                                    onChange={(e) => handleLabourRowChange(row.id, 'workingDays', e.target.value)}
+                                                    onChange={(e) => handleLabourRowChange(idx, 'workingDays', e.target.value)}
                                                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                                 />
                                             </div>
@@ -709,10 +823,61 @@ const LabourBillsTab = () => {
                                                 <input
                                                     type="number"
                                                     value={row.dailyRate}
-                                                    onChange={(e) => handleLabourRowChange(row.id, 'dailyRate', e.target.value)}
-                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                    onChange={(e) => handleLabourRowChange(idx, 'dailyRate', e.target.value)}
+                                                    disabled={row.isCombined}
+                                                    className={`w-full border rounded-xl px-2 py-1.5 text-xs font-bold focus:outline-none ${
+                                                        row.isCombined
+                                                            ? 'bg-slate-100 dark:bg-slate-800 border-dashed text-slate-400'
+                                                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
+                                                    }`}
                                                 />
                                             </div>
+                                        </div>
+
+                                        {/* Combined Section Controls */}
+                                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-amber-50/40 dark:bg-amber-950/20 p-2.5 rounded-xl">
+                                            <label className="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-300 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={Boolean(row.isCombined)}
+                                                    onChange={(e) => handleToggleCombine(idx, e.target.checked)}
+                                                    className="w-4 h-4 rounded text-amber-600"
+                                                />
+                                                Combine with other items
+                                            </label>
+
+                                            {row.isCombined && row.isSectionStart && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200">
+                                                        Spans {row.sectionRowCount} item{row.sectionRowCount > 1 ? 's' : ''}
+                                                    </span>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">₹</span>
+                                                        <input
+                                                            type="number"
+                                                            value={combinedTotals[row.sectionId] ?? ''}
+                                                            onChange={(e) => handleCombinedTotalChange(row.sectionId, e.target.value)}
+                                                            placeholder="Combined Total"
+                                                            className="w-28 bg-white dark:bg-slate-900 border-2 border-emerald-400 dark:border-emerald-600 rounded-lg px-2 py-1 text-xs font-black text-emerald-700 dark:text-emerald-300 text-right focus:outline-none"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {row.isCombined && row.isSectionFollower && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                                                        ↳ Bundled into section total above
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleSplitSection(idx)}
+                                                        className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-1 rounded-lg"
+                                                    >
+                                                        Split Section
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -992,27 +1157,49 @@ const LabourBillsTab = () => {
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="text-[10px] font-black uppercase tracking-wider text-white" style={{ backgroundColor: themeColor }}>
-                                                <th className="p-3">#</th>
-                                                <th className="p-3">Workforce Crew & Description</th>
+                                                <th className="p-3 w-12 text-left">#</th>
+                                                <th className="p-3 text-left">Workforce Crew & Description</th>
                                                 <th className="p-3 text-center">Unit</th>
-                                                <th className="p-3 text-center">Headcount</th>
-                                                <th className="p-3 text-center">Duration</th>
-                                                <th className="p-3 text-right">Daily Rate</th>
+                                                {showQuantity && <th className="p-3 text-center">Headcount</th>}
+                                                {showQuantity && <th className="p-3 text-center">Duration</th>}
+                                                {showUnitPrice && <th className="p-3 text-right">Daily Rate</th>}
                                                 <th className="p-3 text-right">Total (₹)</th>
                                             </tr>
                                         </thead>
                                         <tbody className="text-xs font-medium text-slate-800 dark:text-slate-200 divide-y divide-slate-100 dark:divide-slate-800">
-                                            {labourRows.map((r, i) => {
-                                                const total = (parseFloat(r.labourersCount || 0) * parseFloat(r.workingDays || 0) * parseFloat(r.dailyRate || 0));
+                                            {labourMeta.map((r, i) => {
+                                                const lineTotal = (parseFloat(r.labourersCount || 0) * parseFloat(r.workingDays || 0) * parseFloat(r.dailyRate || 0));
                                                 return (
-                                                    <tr key={r.id} className={i % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
+                                                    <tr key={r.id || i} className={i % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
                                                         <td className="p-3 font-bold text-slate-400">{i + 1}</td>
                                                         <td className="p-3 font-bold text-slate-900 dark:text-white">{r.workDescription || 'Labour Crew'}</td>
                                                         <td className="p-3 text-center text-slate-500">{r.unit}</td>
-                                                        <td className="p-3 text-center font-bold">{r.labourersCount}</td>
-                                                        <td className="p-3 text-center font-bold">{r.workingDays}</td>
-                                                        <td className="p-3 text-right">{formatCurrencyINR(r.dailyRate || 0)}</td>
-                                                        <td className="p-3 text-right font-black text-slate-900 dark:text-white">{formatCurrencyINR(total)}</td>
+                                                        {showQuantity && <td className="p-3 text-center font-bold">{r.labourersCount}</td>}
+                                                        {showQuantity && <td className="p-3 text-center font-bold">{r.workingDays}</td>}
+                                                        {showUnitPrice && (
+                                                            <td className="p-3 text-right font-medium">
+                                                                {r.isCombined ? '—' : formatCurrencyINR(r.dailyRate || 0)}
+                                                            </td>
+                                                        )}
+                                                        {r.isCombined ? (
+                                                            r.isSectionStart ? (
+                                                                <td 
+                                                                    rowSpan={r.sectionRowCount}
+                                                                    className="p-2 text-right"
+                                                                    style={{ verticalAlign: 'middle', background: 'transparent' }}
+                                                                >
+                                                                    <CurlyBraceTotal 
+                                                                        amount={r.combinedAmount} 
+                                                                        rowCount={r.sectionRowCount} 
+                                                                        textColor={themeColor} 
+                                                                    />
+                                                                </td>
+                                                            ) : null
+                                                        ) : (
+                                                            <td className="p-3 text-right font-black text-slate-900 dark:text-white">
+                                                                {formatCurrencyINR(lineTotal)}
+                                                            </td>
+                                                        )}
                                                     </tr>
                                                 );
                                             })}

@@ -317,3 +317,217 @@ export function groupItemsBySections(items = []) {
         standaloneItems: unbundled
     };
 }
+
+/**
+ * Computes section metadata for each item in the list.
+ * Identifies consecutive combined items and determines row spans,
+ * section starts, section followers, and combined amounts.
+ */
+export const computeItemSectionMeta = (items = [], combinedTotals = {}) => {
+    if (!Array.isArray(items) || items.length === 0) return [];
+
+    const metaList = [];
+    const totalsObj = combinedTotals instanceof Map ? Object.fromEntries(combinedTotals) : (combinedTotals || {});
+
+    let i = 0;
+    while (i < items.length) {
+        const item = items[i];
+        const isCombined = Boolean(item.isCombinedMode ?? item.isCombined);
+
+        if (!isCombined) {
+            const hasQty = item.quantity !== undefined && item.quantity !== null && item.quantity !== '' && Number(item.quantity) > 0;
+            const qty = hasQty ? Number(item.quantity) : 1;
+            const price = Number(item.price ?? item.rate ?? item.dailyRate ?? 0) || 0;
+            const hasDirectTotal = item.total !== undefined && item.total !== null && item.total !== '';
+            const directTotal = hasDirectTotal ? Number(item.total) : null;
+            const calculatedTotal = price > 0
+                ? (item.autoCalculate !== false ? qty * price : price)
+                : (directTotal !== null ? directTotal : 0);
+
+            metaList.push({
+                ...item,
+                originalIndex: i,
+                isCombined: false,
+                sectionId: null,
+                isSectionStart: false,
+                sectionRowCount: 1,
+                isSectionFollower: false,
+                combinedAmount: null,
+                displayPrice: price > 0 ? price : null,
+                displayTotal: directTotal !== null && price === 0 ? directTotal : calculatedTotal
+            });
+            i++;
+        } else {
+            // Start of a combined section
+            const sectionId = item.combinedSectionId || item.sectionId || `sec-${i}-${Date.now()}`;
+            let rowCount = 1;
+            let j = i + 1;
+
+            while (j < items.length) {
+                const nextItem = items[j];
+                const nextIsCombined = Boolean(nextItem.isCombinedMode ?? nextItem.isCombined);
+                if (!nextIsCombined) break;
+                // If explicitly flagged as a new section start, do not group with this section
+                if (nextItem.isNewSectionStart) break;
+                // If it already has a different defined section ID, keep them distinct
+                const nextSectionId = nextItem.combinedSectionId || nextItem.sectionId;
+                if (nextSectionId && nextSectionId !== sectionId) break;
+                rowCount++;
+                j++;
+            }
+
+            const rawAmount = totalsObj[sectionId] !== undefined ? totalsObj[sectionId] : item.combinedAmount;
+            const combinedAmount = rawAmount !== undefined && rawAmount !== '' ? Number(rawAmount) : 0;
+
+            // Add the first row (the section start with rowSpan)
+            metaList.push({
+                ...item,
+                originalIndex: i,
+                isCombined: true,
+                sectionId: sectionId,
+                isSectionStart: true,
+                sectionRowCount: rowCount,
+                isSectionFollower: false,
+                combinedAmount: combinedAmount,
+                displayPrice: null,
+                displayTotal: null
+            });
+
+            // Add the remaining follower rows (their total cell will be spanned by the first row)
+            for (let k = i + 1; k < j; k++) {
+                metaList.push({
+                    ...items[k],
+                    originalIndex: k,
+                    isCombined: true,
+                    sectionId: sectionId,
+                    isSectionStart: false,
+                    sectionRowCount: 0,
+                    isSectionFollower: true,
+                    combinedAmount: combinedAmount,
+                    displayPrice: null,
+                    displayTotal: null
+                });
+            }
+
+            i = j;
+        }
+    }
+
+    return metaList;
+};
+
+/**
+ * Calculates Grand Total, Subtotal, and Tax according to:
+ * Grand Total = All combined-section amounts + All individual item totals
+ */
+export const calculateBillTotals = (items = [], combinedTotals = {}, showTax = false, discountType = 'none', discountValue = 0, taxPercentage = 18) => {
+    const totalsObj = combinedTotals instanceof Map ? Object.fromEntries(combinedTotals) : (combinedTotals || {});
+
+    // 1. Sum individual uncombined items
+    let individualTotal = 0;
+    (items || []).forEach(item => {
+        const isCombined = Boolean(item.isCombinedMode ?? item.isCombined);
+        if (!isCombined) {
+            const hasQty = item.quantity !== undefined && item.quantity !== null && item.quantity !== '' && Number(item.quantity) > 0;
+            const qty = hasQty ? Number(item.quantity) : 1;
+            const price = Number(item.price ?? item.rate ?? item.dailyRate ?? 0) || 0;
+            const hasDirectTotal = item.total !== undefined && item.total !== null && item.total !== '';
+            const directTotal = hasDirectTotal ? Number(item.total) : null;
+            const itemTotal = price > 0
+                ? (item.autoCalculate !== false ? qty * price : (directTotal !== null ? directTotal : price))
+                : (directTotal !== null ? directTotal : 0);
+
+            individualTotal += itemTotal;
+        }
+    });
+
+    // 2. Sum distinct combined sections that are currently present in items
+    const activeSectionIds = new Set();
+    (items || []).forEach(item => {
+        const isCombined = Boolean(item.isCombinedMode ?? item.isCombined);
+        const secId = item.combinedSectionId || item.sectionId;
+        if (isCombined && secId) {
+            activeSectionIds.add(secId);
+        }
+    });
+
+    let combinedSectionsSum = 0;
+    activeSectionIds.forEach(secId => {
+        const amt = Number(totalsObj[secId]) || 0;
+        combinedSectionsSum += amt;
+    });
+
+    const subTotal = individualTotal + combinedSectionsSum;
+
+    // Discount
+    let discountAmount = 0;
+    const numDisc = parseFloat(discountValue) || 0;
+    if (discountType === 'percent') {
+        discountAmount = (subTotal * Math.min(100, Math.max(0, numDisc))) / 100;
+    } else if (discountType === 'fixed') {
+        discountAmount = Math.min(subTotal, Math.max(0, numDisc));
+    }
+
+    const taxableAmount = Math.max(0, subTotal - discountAmount);
+    const taxRate = parseFloat(taxPercentage) || 0;
+    const taxAmount = showTax ? (taxableAmount * taxRate) / 100 : 0;
+    const totalAmount = taxableAmount + taxAmount;
+
+    return {
+        individualTotal,
+        combinedSectionsSum,
+        subTotal,
+        discountAmount,
+        taxableAmount,
+        taxAmount,
+        totalAmount
+    };
+};
+
+/**
+ * Synchronizes item section IDs and attributes linearly to guarantee
+ * no overlapping sections, orphaned IDs, or duplicate assignments.
+ */
+export const synchronizeItemSections = (items = []) => {
+    const result = [...items];
+    let currentSectionId = null;
+
+    for (let i = 0; i < result.length; i++) {
+        const item = { ...result[i] };
+        const isCombined = Boolean(item.isCombinedMode ?? item.isCombined);
+
+        if (isCombined) {
+            const prevIsCombined = i > 0 && Boolean(result[i - 1].isCombinedMode ?? result[i - 1].isCombined);
+
+            if (!prevIsCombined || item.isNewSectionStart) {
+                currentSectionId = item.combinedSectionId || item.sectionId || `sec-${Date.now()}-${Math.random().toString(36).substr(2, 7)}`;
+                item.combinedSectionId = currentSectionId;
+                item.sectionId = currentSectionId;
+                item.isNewSectionStart = prevIsCombined;
+            } else {
+                item.combinedSectionId = currentSectionId;
+                item.sectionId = currentSectionId;
+                item.isNewSectionStart = false;
+            }
+
+            item.isCombinedMode = true;
+            item.isCombined = true;
+            item.price = item.price !== undefined ? item.price : (item.rate || 0);
+            item.total = 0;
+        } else {
+            currentSectionId = null;
+            item.combinedSectionId = null;
+            item.sectionId = null;
+            item.isCombinedMode = false;
+            item.isCombined = false;
+            item.isNewSectionStart = false;
+            const qty = Number(item.quantity) || 1;
+            const price = Number(item.price ?? item.rate ?? item.dailyRate ?? 0) || 0;
+            item.total = item.autoCalculate !== false ? qty * price : price;
+        }
+
+        result[i] = item;
+    }
+
+    return result;
+};
