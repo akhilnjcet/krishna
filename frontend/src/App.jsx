@@ -317,7 +317,12 @@ const SecurityWrapper = ({ children }) => {
   return <>{children}</>;
 };
 
-const SystemRescue = ({ error, reset }) => (
+const isChunkFetchError = (err) => {
+  const msg = err?.message || '';
+  return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(msg);
+};
+
+const SystemRescue = ({ error, reset, isChunkError }) => (
   <div className="fixed inset-0 bg-[#0A0A0B] z-[9999] flex flex-col items-center justify-center p-8 text-center font-sans overflow-hidden">
     <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -mr-48 -mt-48 animate-pulse"></div>
     <div className="w-16 h-1 bg-blue-600 mb-10 rounded-full"></div>
@@ -325,8 +330,12 @@ const SystemRescue = ({ error, reset }) => (
         <div className="absolute top-0 right-0 p-4 opacity-10">
             <AlertTriangle className="w-24 h-24" />
         </div>
-        <h2 className="text-4xl font-black text-white italic tracking-tighter mb-4">Link Severed.</h2>
-        <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.4em] mb-8">Atmospheric Signal Instability Detected</p>
+        <h2 className="text-4xl font-black text-white italic tracking-tighter mb-4">
+          {isChunkError ? "System Updated." : "Link Severed."}
+        </h2>
+        <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.4em] mb-8">
+          {isChunkError ? "A newer application version has been deployed" : "Atmospheric Signal Instability Detected"}
+        </p>
         <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-left mb-8 max-w-sm">
             <p className="text-[9px] font-bold text-slate-500 uppercase mb-2">Diagnostic Feed:</p>
             <p className="text-[10px] text-white/60 font-medium font-mono truncate">{error?.message || "Unhandled Logic Exception"}</p>
@@ -336,7 +345,7 @@ const SystemRescue = ({ error, reset }) => (
                 onClick={reset}
                 className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-blue-600/30 hover:bg-blue-500 active:scale-95 transition-all"
             >
-                Restablish Connection (Restart)
+                {isChunkError ? "Refresh to Latest Version" : "Re-establish Connection (Restart)"}
             </button>
             <button 
                 onClick={() => { localStorage.clear(); window.location.href = '#/'; window.location.reload(); }}
@@ -353,9 +362,35 @@ const SystemRescue = ({ error, reset }) => (
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null }; }
   static getDerivedStateFromError(error) { return { hasError: true, error }; }
-  componentDidCatch(error, info) { console.error("EMERGENCY INTERCEPT:", error, info); }
+  componentDidCatch(error, info) { 
+    console.error("EMERGENCY INTERCEPT:", error, info);
+    // Auto-reload once if a new deployment removed old hashed chunks
+    if (isChunkFetchError(error)) {
+      const lastReload = sessionStorage.getItem('chunk_error_reload');
+      const now = Date.now();
+      if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+        sessionStorage.setItem('chunk_error_reload', now.toString());
+        window.location.reload();
+      }
+    }
+  }
   render() {
-    if (this.state.hasError) return <SystemRescue error={this.state.error} reset={() => this.setState({ hasError: false })} />;
+    if (this.state.hasError) {
+      const chunkErr = isChunkFetchError(this.state.error);
+      return (
+        <SystemRescue 
+          error={this.state.error} 
+          isChunkError={chunkErr}
+          reset={() => {
+            if (chunkErr) {
+              window.location.reload();
+            } else {
+              this.setState({ hasError: false });
+            }
+          }} 
+        />
+      );
+    }
     return this.props.children;
   }
 }
