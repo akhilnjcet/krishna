@@ -2,6 +2,68 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Send, User, Bot, Loader2, Phone, FileText } from 'lucide-react';
 import api from '../services/api';
+const FormattedChatMessage = ({ content }) => {
+    if (!content) return null;
+
+    const lines = content.split('\n');
+
+    const renderInline = (text) => {
+        const parts = text.split(/(\*\*[^*]+\*\*)/g);
+        return parts.map((part, idx) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                const inner = part.slice(2, -2).trim();
+                return (
+                    <strong key={idx} className="font-extrabold text-slate-900 dark:text-white">
+                        {inner}
+                    </strong>
+                );
+            }
+            // Strip any remaining unwanted *, # marks
+            return part.replace(/[*#]/g, '');
+        });
+    };
+
+    return (
+        <div className="space-y-1.5 leading-relaxed text-xs sm:text-sm">
+            {lines.map((line, idx) => {
+                const trimmed = line.trim();
+                if (!trimmed) {
+                    return <div key={idx} className="h-1" />;
+                }
+
+                // Check for markdown headers like ### or ## or #
+                if (/^#{1,6}\s+/.test(trimmed)) {
+                    const headerText = trimmed.replace(/^#{1,6}\s+/, '').replace(/[*#]/g, '').trim();
+                    return (
+                        <div key={idx} className="font-black text-xs sm:text-sm text-slate-900 dark:text-white mt-2 pt-1 border-b border-slate-200/60 dark:border-slate-800 pb-0.5">
+                            {headerText}
+                        </div>
+                    );
+                }
+
+                // Check for bullet items like * or - or •
+                if (/^[\*\-\•]\s+/.test(trimmed)) {
+                    const bulletBody = trimmed.replace(/^[\*\-\•]\s+/, '');
+                    return (
+                        <div key={idx} className="flex items-start gap-2 pl-1 py-0.5">
+                            <span className="text-blue-500 dark:text-blue-400 font-black flex-shrink-0 mt-0.5 text-xs">•</span>
+                            <div className="flex-1 text-slate-800 dark:text-slate-200">
+                                {renderInline(bulletBody)}
+                            </div>
+                        </div>
+                    );
+                }
+
+                // Regular paragraph line
+                return (
+                    <div key={idx} className="text-slate-800 dark:text-slate-200">
+                        {renderInline(trimmed)}
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
 
 const AIChatWidget = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -253,12 +315,16 @@ const AIChatWidget = () => {
                         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/60 dark:bg-slate-950/50">
                             {messages.map((msg, i) => (
                                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[88%] rounded-2xl px-4 py-3 text-xs sm:text-sm whitespace-pre-line leading-relaxed shadow-xs ${
+                                    <div className={`max-w-[88%] rounded-2xl px-4 py-3 shadow-xs ${
                                         msg.role === 'user' 
-                                            ? 'bg-blue-600 text-white rounded-br-xs' 
-                                            : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-bl-xs'
+                                            ? 'bg-blue-600 text-white rounded-br-xs text-xs sm:text-sm leading-relaxed whitespace-pre-line' 
+                                            : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-bl-xs'
                                     }`}>
-                                        {msg.content}
+                                        {msg.role === 'user' ? (
+                                            msg.content.replace(/[*#]/g, '')
+                                        ) : (
+                                            <FormattedChatMessage content={msg.content} />
+                                        )}
                                     </div>
                                 </div>
                             ))}
