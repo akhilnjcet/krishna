@@ -38,17 +38,17 @@ export const EstimationEntryTable = ({
           background: 'var(--card-bg, rgba(255, 255, 255, 0.03))'
         }}
       >
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '780px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
           <thead>
             <tr style={{ background: 'var(--table-header, #1e293b)', color: '#ffffff' }}>
-              <th style={{ padding: '0.65rem 0.5rem', textAlign: 'center', width: '50px', fontSize: '0.75rem', fontWeight: '800' }}>
-                Sl. No.
+              <th style={{ padding: '0.6rem 0.35rem', textAlign: 'center', width: '38px', fontSize: '0.75rem', fontWeight: '800' }}>
+                #
               </th>
-              <th style={{ padding: '0.65rem 0.75rem', fontSize: '0.75rem', fontWeight: '800' }}>
+              <th style={{ padding: '0.6rem 0.6rem', fontSize: '0.75rem', fontWeight: '800', minWidth: '150px' }}>
                 Item Description
               </th>
-              <th style={{ padding: '0.65rem 0.5rem', textAlign: 'center', width: '150px', fontSize: '0.75rem', fontWeight: '800' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+              <th style={{ padding: '0.6rem 0.35rem', textAlign: 'center', width: '120px', fontSize: '0.75rem', fontWeight: '800' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
                   <span style={{ color: enableQuantity ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>Qty</span>
                   {onToggleEnableQuantity && (
                     <label 
@@ -59,15 +59,15 @@ export const EstimationEntryTable = ({
                         type="checkbox"
                         checked={Boolean(enableQuantity)}
                         onChange={(e) => onToggleEnableQuantity(e.target.checked)}
-                        style={{ width: '14px', height: '14px', cursor: 'pointer', accentColor: '#3B82F6' }}
+                        style={{ width: '13px', height: '13px', cursor: 'pointer', accentColor: '#3B82F6' }}
                       />
                     </label>
                   )}
                 </div>
               </th>
-              <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', width: '160px', fontSize: '0.75rem', fontWeight: '800' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.45rem' }}>
-                  <span style={{ color: enableUnitPrice ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>Unit Price (₹)</span>
+              <th style={{ padding: '0.6rem 0.5rem', textAlign: 'right', width: '110px', fontSize: '0.75rem', fontWeight: '800' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem' }}>
+                  <span style={{ color: enableUnitPrice ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>Rate (₹)</span>
                   {onToggleEnableUnitPrice && (
                     <label 
                       title={enableUnitPrice ? "Unit Price enabled (Click to disable)" : "Unit Price disabled (Click to enable)"}
@@ -77,19 +77,22 @@ export const EstimationEntryTable = ({
                         type="checkbox"
                         checked={Boolean(enableUnitPrice)}
                         onChange={(e) => onToggleEnableUnitPrice(e.target.checked)}
-                        style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#3B82F6' }}
+                        style={{ width: '13px', height: '13px', cursor: 'pointer', accentColor: '#3B82F6' }}
                       />
                     </label>
                   )}
                 </div>
               </th>
-              <th style={{ padding: '0.65rem 0.75rem', textAlign: 'center', width: '180px', fontSize: '0.75rem', fontWeight: '800', background: 'rgba(217, 119, 6, 0.2)', color: '#FBBF24' }}>
-                Combine with other items
+              <th 
+                title="Combine consecutive items into a package with curly brace"
+                style={{ padding: '0.6rem 0.4rem', textAlign: 'center', width: '75px', fontSize: '0.72rem', fontWeight: '800', background: 'rgba(217, 119, 6, 0.2)', color: '#FBBF24' }}
+              >
+                Combine
               </th>
-              <th style={{ padding: '0.65rem 0.75rem', textAlign: 'center', width: '170px', fontSize: '0.75rem', fontWeight: '800', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399' }}>
-                {enableUnitPrice ? 'Combined Amount (₹)' : 'Total Amount (₹)'}
+              <th style={{ padding: '0.6rem 0.4rem', textAlign: 'center', width: '105px', fontSize: '0.72rem', fontWeight: '800', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399' }}>
+                {enableUnitPrice ? 'Package (₹)' : 'Total (₹)'}
               </th>
-              <th style={{ padding: '0.65rem 0.5rem', textAlign: 'center', width: '50px', fontSize: '0.75rem', fontWeight: '800' }}>
+              <th style={{ padding: '0.6rem 0.25rem', textAlign: 'center', width: '36px', fontSize: '0.75rem', fontWeight: '800' }}>
                 &nbsp;
               </th>
             </tr>
@@ -177,12 +180,12 @@ export const EstimationEntryTable = ({
                           </label>
 
                           {meta.hasQuantity !== false ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                               <input
                                 type="number"
                                 min="1"
                                 step="any"
-                                className="w-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-1.5 py-1 text-xs font-bold text-center text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+                                className="w-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-1 py-1 text-xs font-bold text-center text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                 value={meta.quantity ?? ''}
                                 onChange={(e) => onUpdateItem(index, 'quantity', e.target.value)}
                                 placeholder="1"
@@ -191,7 +194,7 @@ export const EstimationEntryTable = ({
                               <select
                                 value={meta.unit || 'Units'}
                                 onChange={(e) => onUpdateItem(index, 'unit', e.target.value)}
-                                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-1 py-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 focus:outline-none"
+                                className="w-14 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-0.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 focus:outline-none"
                                 title="Unit of measurement"
                               >
                                 <option value="Units">Units</option>
@@ -210,13 +213,13 @@ export const EstimationEntryTable = ({
                             <span 
                               style={{ 
                                 display: 'inline-block',
-                                padding: '0.25rem 0.5rem',
+                                padding: '0.2rem 0.4rem',
                                 color: '#94A3B8', 
-                                fontSize: '0.85rem', 
+                                fontSize: '0.8rem', 
                                 fontWeight: 'bold',
                                 border: '1px dashed rgba(148, 163, 184, 0.4)',
                                 borderRadius: '4px',
-                                minWidth: '45px'
+                                minWidth: '35px'
                               }}
                               title="No quantity for this item"
                             >
@@ -228,11 +231,11 @@ export const EstimationEntryTable = ({
                     </td>
 
                     {/* Unit Price (₹) */}
-                    <td style={{ padding: '0.45rem 0.5rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.45rem 0.4rem', textAlign: 'right' }}>
                       {!enableUnitPrice ? (
                         <div 
                           style={{ 
-                            padding: '0.45rem 0.65rem', 
+                            padding: '0.45rem 0.5rem', 
                             background: 'rgba(0, 0, 0, 0.03)', 
                             borderRadius: '6px', 
                             color: '#94A3B8', 
@@ -245,7 +248,7 @@ export const EstimationEntryTable = ({
                           —
                         </div>
                       ) : (
-                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.35rem', width: '100%' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem', width: '100%' }}>
                           <label 
                             title={meta.hasUnitPrice !== false ? "Unit price enabled for this item (Click to disable)" : "Unit price disabled for this item (Click to enable)"}
                             style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', margin: 0 }}
@@ -254,7 +257,7 @@ export const EstimationEntryTable = ({
                               type="checkbox"
                               checked={meta.hasUnitPrice !== false}
                               onChange={(e) => onUpdateItem(index, 'hasUnitPrice', e.target.checked)}
-                              style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#3B82F6' }}
+                              style={{ width: '13px', height: '13px', cursor: 'pointer', accentColor: '#3B82F6' }}
                             />
                           </label>
 
@@ -262,14 +265,14 @@ export const EstimationEntryTable = ({
                             meta.isCombined ? (
                               <div 
                                 style={{ 
-                                  padding: '0.35rem 0.5rem', 
+                                  padding: '0.3rem 0.4rem', 
                                   background: 'rgba(0, 0, 0, 0.02)', 
                                   borderRadius: '6px', 
                                   color: '#94A3B8', 
                                   textAlign: 'center',
-                                  fontSize: '0.85rem',
+                                  fontSize: '0.8rem',
                                   border: '1px dashed rgba(148, 163, 184, 0.4)',
-                                  width: '85px'
+                                  width: '70px'
                                 }}
                                 title="Unit price not required for combined item"
                               >
@@ -280,7 +283,7 @@ export const EstimationEntryTable = ({
                                 type="number"
                                 min="0"
                                 step="any"
-                                className="w-24 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold text-right text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+                                className="w-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-1.5 py-1 text-xs font-bold text-right text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                 value={meta.price ?? meta.rate ?? meta.dailyRate ?? ''}
                                 onChange={(e) => onUpdateItem(index, 'price', e.target.value)}
                                 placeholder="0.00"
@@ -290,13 +293,13 @@ export const EstimationEntryTable = ({
                             <span 
                               style={{ 
                                 display: 'inline-block',
-                                padding: '0.25rem 0.5rem',
+                                padding: '0.2rem 0.4rem',
                                 color: '#94A3B8', 
-                                fontSize: '0.85rem', 
+                                fontSize: '0.8rem', 
                                 fontWeight: 'bold',
                                 border: '1px dashed rgba(148, 163, 184, 0.4)',
                                 borderRadius: '4px',
-                                minWidth: '45px',
+                                minWidth: '35px',
                                 textAlign: 'center'
                               }}
                               title="No unit price for this item"
@@ -385,7 +388,7 @@ export const EstimationEntryTable = ({
                         <td
                           rowSpan={meta.sectionRowCount}
                           style={{
-                            padding: '0.65rem 0.75rem',
+                            padding: '0.45rem 0.35rem',
                             textAlign: 'center',
                             verticalAlign: 'middle',
                             background: 'rgba(16, 185, 129, 0.05)',
@@ -394,33 +397,33 @@ export const EstimationEntryTable = ({
                             position: 'relative'
                           }}
                         >
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}>
                             <input
                               type="number"
                               min="0"
                               step="any"
-                              className="w-28 bg-white dark:bg-slate-900 border-2 border-emerald-500 rounded-xl px-2.5 py-1.5 text-center font-black text-sm text-emerald-600 dark:text-emerald-400 focus:outline-none shadow-sm"
+                              className="w-20 bg-white dark:bg-slate-900 border-2 border-emerald-500 rounded-lg px-1.5 py-1 text-center font-black text-xs text-emerald-600 dark:text-emerald-400 focus:outline-none shadow-sm"
                               placeholder="0.00"
                               required
                               value={combinedTotals[meta.sectionId] ?? ''}
                               onChange={(e) => onCombinedTotalChange(meta.sectionId, e.target.value)}
                             />
                             {meta.sectionRowCount > 1 && (
-                              <span style={{ fontSize: '10px', color: '#64748B', fontWeight: '700' }}>
-                                Spans {meta.sectionRowCount} items
+                              <span style={{ fontSize: '9px', color: '#64748B', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                                Spans {meta.sectionRowCount}
                               </span>
                             )}
                           </div>
                         </td>
                       ) : null /* follower rows covered by rowSpan */
                     ) : (
-                      <td style={{ padding: '0.45rem 0.5rem', textAlign: 'center', color: '#64748B', fontSize: '0.85rem' }}>
+                      <td style={{ padding: '0.45rem 0.35rem', textAlign: 'center', color: '#64748B', fontSize: '0.85rem' }}>
                         {!enableUnitPrice || meta.hasUnitPrice === false ? (
                           <input
                             type="number"
                             min="0"
                             step="any"
-                            className="w-24 bg-white dark:bg-slate-900 border border-emerald-400 rounded-lg px-2 py-1 text-center font-bold text-xs text-emerald-600 dark:text-emerald-400 focus:outline-none mx-auto block"
+                            className="w-20 bg-white dark:bg-slate-900 border border-emerald-400 rounded-lg px-1.5 py-1 text-center font-bold text-xs text-emerald-600 dark:text-emerald-400 focus:outline-none mx-auto block"
                             placeholder="0.00"
                             value={meta.total ?? meta.price ?? ''}
                             onChange={(e) => {

@@ -4,7 +4,8 @@ import {
     Printer, Plus, Trash2, User, Calendar, Hash, FileText, 
     Palette, Clock, CheckCircle, ShieldCheck, DollarSign, Layers,
     Save, History, CheckCircle2, AlertCircle, Copy, RotateCcw, 
-    Search, X, Tag, Percent, Eye, EyeOff, FolderPlus, Split, ArrowRight
+    Search, X, Tag, Percent, Eye, EyeOff, FolderPlus, Split, ArrowRight,
+    Columns, Maximize2, Minimize2
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
@@ -20,6 +21,7 @@ const Quotations = () => {
     const { user } = useAuthStore();
     const [customers, setCustomers] = useState([]);
     const [loadingCustomers, setLoadingCustomers] = useState(false);
+    const [workspaceViewMode, setWorkspaceViewMode] = useState('split'); // 'split' | 'editor' | 'preview'
 
     // Core Estimation Structure
     const [quotationNumber, setQuotationNumber] = useState(generateQuotationNumber());
@@ -530,6 +532,40 @@ const Quotations = () => {
                         <Save className="w-4 h-4" /> Save
                     </button>
 
+                    {/* View Mode Switcher */}
+                    <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <button
+                            type="button"
+                            onClick={() => setWorkspaceViewMode('split')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition ${
+                                workspaceViewMode === 'split' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                            title="Side-by-side view"
+                        >
+                            <Columns className="w-3.5 h-3.5" /> Split
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setWorkspaceViewMode('editor')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition ${
+                                workspaceViewMode === 'editor' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                            title="Full width editor (spacious, no scrolling)"
+                        >
+                            <Maximize2 className="w-3.5 h-3.5" /> Wide Editor
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setWorkspaceViewMode('preview')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition ${
+                                workspaceViewMode === 'preview' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                            title="Preview quotation full screen"
+                        >
+                            <Eye className="w-3.5 h-3.5" /> Preview
+                        </button>
+                    </div>
+
                     {/* Print Button */}
                     <button
                         id="print-quotation-btn"
@@ -544,7 +580,8 @@ const Quotations = () => {
             {/* Main Studio Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* LEFT: Controls & Form */}
-                <div className="no-print lg:col-span-5 space-y-6">
+                {workspaceViewMode !== 'preview' && (
+                    <div className={`no-print space-y-6 ${workspaceViewMode === 'editor' ? 'col-span-12' : 'lg:col-span-7 xl:col-span-7'}`}>
                     {/* Metadata */}
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
                         <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
@@ -653,9 +690,20 @@ const Quotations = () => {
                             <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                 <Layers className="w-4 h-4 text-indigo-500" /> Estimation Line Items ({items.length})
                             </h2>
-                            <span className="text-[10px] font-bold text-slate-400">
-                                {items.filter(i => i.isCombined || i.isCombinedMode).length > 0 ? '✓ Combined billing active' : 'Standard line items'}
-                            </span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setWorkspaceViewMode(workspaceViewMode === 'editor' ? 'split' : 'editor')}
+                                    className="text-slate-500 hover:text-indigo-600 bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
+                                    title={workspaceViewMode === 'editor' ? 'Switch back to split view' : 'Expand editor to full screen width'}
+                                >
+                                    {workspaceViewMode === 'editor' ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                                    {workspaceViewMode === 'editor' ? 'Split View' : 'Wide View'}
+                                </button>
+                                <span className="text-[10px] font-bold text-slate-400">
+                                    {items.filter(i => i.isCombined || i.isCombinedMode).length > 0 ? '✓ Combined billing' : 'Standard items'}
+                                </span>
+                            </div>
                         </div>
 
                         <EstimationEntryTable
@@ -894,9 +942,11 @@ const Quotations = () => {
                         </div>
                     </div>
                 </div>
+            )}
 
-                {/* RIGHT: Real-time Live Document Preview */}
-                <div className="lg:col-span-7">
+            {/* RIGHT: Real-time Live Document Preview */}
+            {workspaceViewMode !== 'editor' && (
+                <div className={workspaceViewMode === 'preview' ? 'col-span-12 max-w-4xl mx-auto' : 'lg:col-span-5 xl:col-span-5'}>
                     <div className="sticky top-6">
                         {/* Live Badge */}
                         <div className="no-print flex items-center justify-between bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800">
@@ -1147,6 +1197,7 @@ const Quotations = () => {
                         </div>
                     </div>
                 </div>
+            )}
             </div>
 
             {/* Catalog Selector Modal */}
