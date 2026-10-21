@@ -169,18 +169,18 @@ const AdminSettings = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center">
+            <div className="min-h-screen bg-slate-50 dark:bg-[#050505] flex flex-col items-center justify-center transition-colors">
                 <div className="relative w-24 h-24 mb-6">
                     <motion.div 
                         animate={{ rotate: 360 }}
                         transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                        className="absolute inset-0 border-t-2 border-brand-accent rounded-full"
+                        className="absolute inset-0 border-t-2 border-blue-600 dark:border-brand-accent rounded-full"
                     />
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <Cpu className="w-10 h-10 text-brand-accent animate-pulse" />
+                        <Cpu className="w-10 h-10 text-blue-600 dark:text-brand-accent animate-pulse" />
                     </div>
                 </div>
-                <p className="text-brand-accent font-black uppercase tracking-[0.5em] text-[10px]">Initializing System Config...</p>
+                <p className="text-blue-600 dark:text-brand-accent font-black uppercase tracking-[0.5em] text-[10px]">Initializing System Config...</p>
             </div>
         );
     }
@@ -188,21 +188,21 @@ const AdminSettings = () => {
     const ModuleHeader = ({ icon: Icon, title, status }) => {
         const ActiveIcon = Icon;
         return (
-            <div className="flex items-center justify-between mb-10 pb-4 border-b border-white/5">
+            <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-200 dark:border-white/5">
                 <div className="flex items-center gap-4">
-                    <div className="p-3 bg-brand-accent text-black rounded-lg skew-x-[-12deg]">
+                    <div className="p-3 bg-blue-600 dark:bg-brand-accent text-white dark:text-black rounded-lg skew-x-[-12deg] shadow-sm">
                         <ActiveIcon className="w-5 h-5" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-black text-white uppercase tracking-tighter italic">{title}</h3>
+                        <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">{title}</h3>
                         <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse"></span>
-                            <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest leading-none">Module Active</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-brand-accent animate-pulse"></span>
+                            <span className="text-[8px] font-black text-slate-500 dark:text-gray-500 uppercase tracking-widest leading-none">Module Active</span>
                         </div>
                     </div>
                 </div>
                 {status && (
-                    <div className="px-3 py-1 bg-white/5 dark:bg-slate-800/30 border border-white/10 rounded-full text-[8px] font-black text-brand-accent uppercase tracking-widest">
+                    <div className="px-3 py-1 bg-blue-50 dark:bg-white/5 border border-blue-200 dark:border-white/10 rounded-full text-[8px] font-black text-blue-600 dark:text-brand-accent uppercase tracking-widest">
                         {status}
                     </div>
                 )}
@@ -211,22 +211,22 @@ const AdminSettings = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white font-sans p-6 md:p-12 mb-20 md:mb-0 selection:bg-brand-accent selection:text-black">
+        <div className="min-h-screen bg-slate-50/80 dark:bg-[#050505] text-slate-900 dark:text-white font-sans p-4 sm:p-6 md:p-10 mb-20 md:mb-0 selection:bg-blue-600 dark:selection:bg-brand-accent selection:text-white dark:selection:text-black transition-colors duration-200 rounded-3xl">
             
             <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px]"></div>
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-accent/5 blur-[120px] rounded-full"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(15,23,42,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(15,23,42,0.03)_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 dark:bg-brand-accent/5 blur-[120px] rounded-full pointer-events-none"></div>
             </div>
 
             <div className="max-w-7xl mx-auto relative z-10">
                 
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-8">
                     <div>
-                        <div className="flex items-center gap-3 text-brand-accent font-black text-[10px] uppercase tracking-[0.4em] mb-4">
+                        <div className="flex items-center gap-3 text-blue-600 dark:text-brand-accent font-black text-[10px] uppercase tracking-[0.4em] mb-4">
                             <Terminal className="w-4 h-4" /> Root Config Interface v5.1
                         </div>
-                        <h1 className="text-3xl sm:text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none italic">
-                            SYSTEM <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-white">DIRECTIVES.</span>
+                        <h1 className="text-3xl sm:text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none italic text-slate-900 dark:text-white">
+                            SYSTEM <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-brand-accent dark:to-white">DIRECTIVES.</span>
                         </h1>
                     </div>
                     
@@ -234,7 +234,7 @@ const AdminSettings = () => {
                         <button 
                             onClick={handleSave}
                             disabled={saving}
-                            className="group relative px-12 py-5 bg-brand-accent text-black font-black uppercase tracking-[0.3em] text-[10px] flex items-center gap-4 hover:bg-white/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 rounded-xl shadow-[0_0_30px_rgba(255,180,0,0.2)]"
+                            className="group relative px-10 py-4 bg-blue-600 dark:bg-brand-accent text-white dark:text-black font-black uppercase tracking-[0.3em] text-[10px] flex items-center gap-4 hover:bg-blue-700 dark:hover:bg-amber-400 transition-all active:scale-95 rounded-xl shadow-lg shadow-blue-600/20 dark:shadow-[0_0_30px_rgba(255,180,0,0.2)]"
                         >
                             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : success ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                             {saving ? 'Syncing...' : success ? 'Config Updated' : 'Push Deployment'}
@@ -243,13 +243,13 @@ const AdminSettings = () => {
                 </div>
 
                 {/* ── SYSTEM CORE TAB NAVIGATOR ── */}
-                <div className="flex flex-wrap items-center gap-3 p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl mb-10 w-fit backdrop-blur-xl">
+                <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-200/70 dark:bg-white/[0.03] border border-slate-300 dark:border-white/10 rounded-2xl mb-10 w-fit backdrop-blur-xl">
                     <button
                         onClick={() => setActiveTab('directives')}
                         className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
                             activeTab === 'directives'
-                                ? 'bg-brand-accent text-black shadow-lg shadow-amber-500/20'
-                                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                ? 'bg-blue-600 dark:bg-brand-accent text-white dark:text-black shadow-md'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/40 dark:hover:bg-white/5'
                         }`}
                     >
                         <Sliders className="w-4 h-4" />
@@ -260,12 +260,12 @@ const AdminSettings = () => {
                         className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
                             activeTab === 'reset'
                                 ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30'
-                                : 'text-slate-400 hover:text-rose-400 hover:bg-white/5'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-300/40 dark:hover:bg-white/5'
                         }`}
                     >
-                        <RotateCcw className={`w-4 h-4 ${activeTab === 'reset' ? 'text-white' : 'text-rose-400'}`} />
+                        <RotateCcw className={`w-4 h-4 ${activeTab === 'reset' ? 'text-white' : 'text-rose-500 dark:text-rose-400'}`} />
                         Master Reset & Fresh Start
-                        <span className="ml-1 px-2 py-0.5 bg-rose-500/20 border border-rose-500/30 text-rose-300 rounded-full text-[9px] font-bold uppercase">
+                        <span className="ml-1 px-2 py-0.5 bg-rose-100 dark:bg-rose-500/20 border border-rose-300 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 rounded-full text-[9px] font-bold uppercase">
                             Danger Zone
                         </span>
                     </button>
@@ -279,18 +279,18 @@ const AdminSettings = () => {
                     <>
                         {/* ── COMPANY BRANDING & DIGITAL SIGNATURE SECTION ── */}
                         <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 mb-12">
-                    <section className="xl:col-span-12 p-8 md:p-10 bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[2.5rem] backdrop-blur-3xl relative overflow-hidden group hover:border-amber-500/20 transition-all">
+                    <section className="xl:col-span-12 p-8 md:p-10 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[2.5rem] shadow-sm dark:shadow-none backdrop-blur-3xl relative overflow-hidden group hover:border-blue-500/30 dark:hover:border-amber-500/20 transition-all">
                         <ModuleHeader icon={ImageIcon} title="Company Branding & Digital Signature Management" status="PDF & Web" />
                         
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                             {/* COMPANY LOGO CARD */}
-                            <div className="lg:col-span-6 bg-black/40 border border-white/10 p-6 rounded-3xl space-y-6">
+                            <div className="lg:col-span-6 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 p-6 rounded-3xl space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <h4 className="text-sm font-black uppercase text-white tracking-wider flex items-center gap-2">
+                                        <h4 className="text-sm font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center gap-2">
                                             <ImageIcon className="w-4 h-4 text-amber-500" /> Company Logo
                                         </h4>
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Formats: PNG, JPG, JPEG, SVG, WEBP (Max 5MB)</p>
+                                        <p className="text-[10px] text-slate-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-0.5">Formats: PNG, JPG, JPEG, SVG, WEBP (Max 5MB)</p>
                                     </div>
                                     {/* Print Toggle */}
                                     <label className="flex items-center gap-2 cursor-pointer">
@@ -300,15 +300,15 @@ const AdminSettings = () => {
                                             onChange={(e) => updateField('show_logo', e.target.checked)}
                                             className="sr-only"
                                         />
-                                        <div className={`w-10 h-6 rounded-full transition-colors p-1 ${settings.show_logo !== false && settings.show_logo !== 'false' ? 'bg-amber-500' : 'bg-gray-800'}`}>
+                                        <div className={`w-10 h-6 rounded-full transition-colors p-1 ${settings.show_logo !== false && settings.show_logo !== 'false' ? 'bg-amber-500' : 'bg-slate-300 dark:bg-gray-800'}`}>
                                             <div className={`w-4 h-4 rounded-full bg-white dark:bg-slate-900 transition-transform ${settings.show_logo !== false && settings.show_logo !== 'false' ? 'translate-x-4' : ''}`} />
                                         </div>
-                                        <span className="text-[9px] font-black uppercase text-gray-400">PDF Logo</span>
+                                        <span className="text-[9px] font-black uppercase text-slate-500 dark:text-gray-400">PDF Logo</span>
                                     </label>
                                 </div>
 
                                 {/* Logo Preview Box */}
-                                <div className="h-40 bg-[#0a0a0c] border border-white/10 rounded-2xl flex items-center justify-center p-4 relative overflow-hidden group">
+                                <div className="h-40 bg-white dark:bg-[#0a0a0c] border border-slate-200 dark:border-white/10 rounded-2xl flex items-center justify-center p-4 relative overflow-hidden group shadow-inner">
                                     {settings.company_logo ? (
                                         <img 
                                             src={settings.company_logo} 
@@ -316,17 +316,17 @@ const AdminSettings = () => {
                                             className="max-h-32 max-w-full object-contain drop-shadow-md"
                                         />
                                     ) : (
-                                        <div className="text-center text-gray-600 space-y-2">
+                                        <div className="text-center text-slate-400 dark:text-gray-600 space-y-2">
                                             <ImageIcon className="w-10 h-10 mx-auto opacity-30" />
                                             <p className="text-[10px] font-black uppercase tracking-widest">No Custom Logo Uploaded</p>
-                                            <p className="text-[9px] text-gray-500">Default brand badge will be rendered on PDFs</p>
+                                            <p className="text-[9px] text-slate-400 dark:text-gray-500">Default brand badge will be rendered on PDFs</p>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Upload / Replace / Delete Controls */}
                                 <div className="flex items-center gap-3">
-                                    <label className="flex-1 bg-amber-500 hover:bg-amber-400 text-black px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer text-center transition flex items-center justify-center gap-2 shadow-lg">
+                                    <label className="flex-1 bg-amber-500 hover:bg-amber-400 text-black px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer text-center transition flex items-center justify-center gap-2 shadow-md">
                                         <ImageIcon className="w-4 h-4" />
                                         {settings.company_logo ? 'Replace Logo' : 'Upload Logo'}
                                         <input 
@@ -340,7 +340,7 @@ const AdminSettings = () => {
                                     {settings.company_logo && (
                                         <button
                                             onClick={() => updateField('company_logo', '')}
-                                            className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition"
+                                            className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 dark:text-rose-400 border border-rose-500/30 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition"
                                             title="Remove Logo"
                                         >
                                             Remove
@@ -350,13 +350,13 @@ const AdminSettings = () => {
                             </div>
 
                             {/* DIGITAL SIGNATURE CARD */}
-                            <div className="lg:col-span-6 bg-black/40 border border-white/10 p-6 rounded-3xl space-y-6">
+                            <div className="lg:col-span-6 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 p-6 rounded-3xl space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <h4 className="text-sm font-black uppercase text-white tracking-wider flex items-center gap-2">
+                                        <h4 className="text-sm font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center gap-2">
                                             <FileText className="w-4 h-4 text-blue-500" /> Digital Signature & Seal
                                         </h4>
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Formats: PNG (Transparent preferred), JPG, WEBP (Max 5MB)</p>
+                                        <p className="text-[10px] text-slate-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-0.5">Formats: PNG (Transparent preferred), JPG, WEBP (Max 5MB)</p>
                                     </div>
                                     {/* Print Toggle */}
                                     <label className="flex items-center gap-2 cursor-pointer">
@@ -366,38 +366,38 @@ const AdminSettings = () => {
                                             onChange={(e) => updateField('show_signature', e.target.checked)}
                                             className="sr-only"
                                         />
-                                        <div className={`w-10 h-6 rounded-full transition-colors p-1 ${settings.show_signature !== false && settings.show_signature !== 'false' ? 'bg-blue-500' : 'bg-gray-800'}`}>
+                                        <div className={`w-10 h-6 rounded-full transition-colors p-1 ${settings.show_signature !== false && settings.show_signature !== 'false' ? 'bg-blue-600' : 'bg-slate-300 dark:bg-gray-800'}`}>
                                             <div className={`w-4 h-4 rounded-full bg-white dark:bg-slate-900 transition-transform ${settings.show_signature !== false && settings.show_signature !== 'false' ? 'translate-x-4' : ''}`} />
                                         </div>
-                                        <span className="text-[9px] font-black uppercase text-gray-400">PDF Signature</span>
+                                        <span className="text-[9px] font-black uppercase text-slate-500 dark:text-gray-400">PDF Signature</span>
                                     </label>
                                 </div>
 
                                 {/* Signature Preview Box */}
-                                <div className="h-40 bg-[#0a0a0c] border border-white/10 rounded-2xl flex items-center justify-center p-4 relative overflow-hidden group">
+                                <div className="h-40 bg-white dark:bg-[#0a0a0c] border border-slate-200 dark:border-white/10 rounded-2xl flex items-center justify-center p-4 relative overflow-hidden group shadow-inner">
                                     {settings.company_signature ? (
                                         <div className="text-center space-y-1">
                                             <img 
                                                 src={settings.company_signature} 
                                                 alt="Digital Signature Preview" 
-                                                className="max-h-24 max-w-full object-contain mx-auto invert brightness-200"
+                                                className="max-h-24 max-w-full object-contain mx-auto dark:invert dark:brightness-200"
                                             />
-                                            <div className="border-t border-gray-700 pt-1 text-[9px] text-gray-400 font-mono uppercase tracking-widest">
+                                            <div className="border-t border-slate-200 dark:border-gray-700 pt-1 text-[9px] text-slate-500 dark:text-gray-400 font-mono uppercase tracking-widest">
                                                 AUTHORIZED SIGNATURE [DIGITAL VERIFIED]
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="text-center text-gray-600 space-y-2">
+                                        <div className="text-center text-slate-400 dark:text-gray-600 space-y-2">
                                             <FileText className="w-10 h-10 mx-auto opacity-30" />
                                             <p className="text-[10px] font-black uppercase tracking-widest">No Digital Signature Uploaded</p>
-                                            <p className="text-[9px] text-gray-500">Standard text seal line will be printed on PDFs</p>
+                                            <p className="text-[9px] text-slate-400 dark:text-gray-500">Standard text seal line will be printed on PDFs</p>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Upload / Replace / Delete Controls */}
                                 <div className="flex items-center gap-3">
-                                    <label className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer text-center transition flex items-center justify-center gap-2 shadow-lg">
+                                    <label className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer text-center transition flex items-center justify-center gap-2 shadow-md">
                                         <FileText className="w-4 h-4" />
                                         {settings.company_signature ? 'Replace Signature' : 'Upload Signature'}
                                         <input 
@@ -411,7 +411,7 @@ const AdminSettings = () => {
                                     {settings.company_signature && (
                                         <button
                                             onClick={() => updateField('company_signature', '')}
-                                            className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition"
+                                            className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 dark:text-rose-400 border border-rose-500/30 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition"
                                             title="Remove Signature"
                                         >
                                             Remove
@@ -421,84 +421,84 @@ const AdminSettings = () => {
                             </div>
 
                             {/* COMPANY OFFICIAL CONTACT & PROFILE DETAILS CARD */}
-                            <div className="lg:col-span-12 bg-black/40 border border-white/10 p-6 md:p-8 rounded-3xl space-y-6">
-                                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                            <div className="lg:col-span-12 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 p-6 md:p-8 rounded-3xl space-y-6">
+                                <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-4">
                                     <div>
-                                        <h4 className="text-base font-black uppercase text-white tracking-wider flex items-center gap-2">
+                                        <h4 className="text-base font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center gap-2">
                                             <Building className="w-5 h-5 text-amber-500" /> Official Corporate Contact Details
                                         </h4>
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">These contact credentials print on Invoices, Quotes, Receipts, and Reports</p>
+                                        <p className="text-[10px] text-slate-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-0.5">These contact credentials print on Invoices, Quotes, Receipts, and Reports</p>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
                                             <Building className="w-3 h-3 text-amber-500" /> Official Company Name
                                         </label>
                                         <input 
                                             value={settings.company_name || 'KRISHNA ENGINEERING WORKS'}
                                             onChange={(e) => updateField('company_name', e.target.value)}
                                             placeholder="e.g. KRISHNA ENGINEERING WORKS"
-                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-white outline-none focus:border-amber-500/50"
+                                            className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-slate-900 dark:text-white outline-none focus:border-amber-500/50 shadow-sm transition-all"
                                         />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
-                                            <Mail className="w-3 h-3 text-blue-400" /> Company Official Contact Email
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
+                                            <Mail className="w-3 h-3 text-blue-500" /> Company Official Contact Email
                                         </label>
                                         <input 
                                             type="email"
                                             value={settings.company_email || settings.footer_email || ''}
                                             onChange={(e) => {
-                                                updateField('company_email', e.target.value);
-                                                updateField('footer_email', e.target.value);
+                                                 updateField('company_email', e.target.value);
+                                                 updateField('footer_email', e.target.value);
                                             }}
                                             placeholder="e.g. contact@krishnaengg.com"
-                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-blue-400 outline-none focus:border-blue-500/50"
+                                            className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-blue-600 dark:text-blue-400 outline-none focus:border-blue-500/50 shadow-sm transition-all"
                                         />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
-                                            <Phone className="w-3 h-3 text-emerald-400" /> Company Official Phone Number
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
+                                            <Phone className="w-3 h-3 text-emerald-500" /> Company Official Phone Number
                                         </label>
                                         <input 
                                             value={settings.company_phone || settings.footer_phone || ''}
                                             onChange={(e) => {
-                                                updateField('company_phone', e.target.value);
-                                                updateField('footer_phone', e.target.value);
+                                                 updateField('company_phone', e.target.value);
+                                                 updateField('footer_phone', e.target.value);
                                             }}
                                             placeholder="e.g. +91 9447940835"
-                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-emerald-400 outline-none focus:border-emerald-500/50"
+                                            className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-emerald-600 dark:text-emerald-400 outline-none focus:border-emerald-500/50 shadow-sm transition-all"
                                         />
                                     </div>
 
                                     <div className="space-y-2 md:col-span-2">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
-                                            <MapPin className="w-3 h-3 text-amber-400" /> Company Registered Address
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
+                                            <MapPin className="w-3 h-3 text-amber-500" /> Company Registered Address
                                         </label>
                                         <input 
                                             value={settings.company_address || settings.footer_address || ''}
                                             onChange={(e) => {
-                                                updateField('company_address', e.target.value);
-                                                updateField('footer_address', e.target.value);
+                                                 updateField('company_address', e.target.value);
+                                                 updateField('footer_address', e.target.value);
                                             }}
                                             placeholder="e.g. Industrial Area Phase 1, Sector 123"
-                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-bold text-gray-200 outline-none focus:border-amber-500/50"
+                                            className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-bold text-slate-800 dark:text-gray-200 outline-none focus:border-amber-500/50 shadow-sm transition-all"
                                         />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
-                                            <FileText className="w-3 h-3 text-indigo-400" /> Corporate GSTIN Number
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
+                                            <FileText className="w-3 h-3 text-indigo-500" /> Corporate GSTIN Number
                                         </label>
                                         <input 
                                             value={settings.company_gstin || ''}
                                             onChange={(e) => updateField('company_gstin', e.target.value)}
                                             placeholder="e.g. 32ABCDE1234F1Z5"
-                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-indigo-400 outline-none focus:border-indigo-500/50"
+                                            className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-indigo-600 dark:text-indigo-400 outline-none focus:border-indigo-500/50 shadow-sm transition-all"
                                         />
                                     </div>
                                 </div>
@@ -508,52 +508,52 @@ const AdminSettings = () => {
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 mb-12">
-                    <section className="xl:col-span-12 p-10 bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-blue-500/20 transition-all">
+                    <section className="xl:col-span-12 p-8 md:p-10 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[2.5rem] shadow-sm dark:shadow-none backdrop-blur-3xl relative overflow-hidden group hover:border-blue-500/30 dark:hover:border-blue-500/20 transition-all">
                         <ModuleHeader icon={Building} title="Commercial Gateway Configuration" status="Official" />
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                            <div className="space-y-3">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Recipient Merchant Name</label>
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400">Recipient Merchant Name</label>
                                 <input 
                                     value={settings.payment_payee_name || ''}
                                     onChange={(e) => updateField('payment_payee_name', e.target.value)}
                                     placeholder="e.g. KRISHNA ENGINEERING"
-                                    className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-amber-500 outline-none focus:border-amber-500/50"
+                                    className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-amber-600 dark:text-amber-500 outline-none focus:border-amber-500/50 shadow-sm transition-all"
                                 />
                             </div>
-                            <div className="space-y-3">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Integrated UPI Address</label>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400">Integrated UPI Address</label>
                                 <input 
                                     value={settings.payment_upi_id || ''}
                                     onChange={(e) => updateField('payment_upi_id', e.target.value)}
                                     placeholder="e.g. 9447940835@okaxis"
-                                    className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-blue-400 outline-none focus:border-blue-500/50"
+                                    className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-blue-600 dark:text-blue-400 outline-none focus:border-blue-500/50 shadow-sm transition-all"
                                 />
                             </div>
-                            <div className="space-y-3">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Bank Institution Name</label>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400">Bank Institution Name</label>
                                 <input 
                                     value={settings.payment_bank_name || ''}
                                     onChange={(e) => updateField('payment_bank_name', e.target.value)}
                                     placeholder="e.g. STATE BANK OF INDIA"
-                                    className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-white outline-none"
+                                    className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-slate-900 dark:text-white outline-none focus:border-blue-500 shadow-sm transition-all"
                                 />
                             </div>
-                            <div className="space-y-3">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Corporate Account No.</label>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400">Corporate Account No.</label>
                                 <input 
                                     value={settings.payment_bank_account || ''}
                                     onChange={(e) => updateField('payment_bank_account', e.target.value)}
                                     placeholder="99887766554433"
-                                    className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-white outline-none"
+                                    className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-slate-900 dark:text-white outline-none focus:border-blue-500 shadow-sm transition-all"
                                 />
                             </div>
-                            <div className="space-y-3">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Institutional IFSC Registry</label>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400">Institutional IFSC Registry</label>
                                 <input 
                                     value={settings.payment_bank_ifsc || ''}
                                     onChange={(e) => updateField('payment_bank_ifsc', e.target.value)}
                                     placeholder="SBIN0001234"
-                                    className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-white outline-none"
+                                    className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-slate-900 dark:text-white outline-none focus:border-blue-500 shadow-sm transition-all"
                                 />
                             </div>
                         </div>
@@ -564,41 +564,41 @@ const AdminSettings = () => {
                     
                     {/* LEFT COLUMN: ABOUT & SAFETY */}
                     <div className="xl:col-span-12 space-y-10">
-                        <section className="p-6 md:p-10 bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-brand-accent/20 transition-all">
+                        <section className="p-6 md:p-10 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[2rem] md:rounded-[2.5rem] shadow-sm dark:shadow-none backdrop-blur-3xl relative overflow-hidden group hover:border-blue-500/30 dark:hover:border-brand-accent/20 transition-all">
                             <ModuleHeader icon={Info} title="Corporate Identity Protocol (About Us)" status="Live" />
                             
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                                <div className="lg:col-span-4 space-y-8">
-                                    <div className="space-y-3">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
-                                            <Terminal className="w-3 h-3 text-brand-accent" /> Headline
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                <div className="lg:col-span-4 space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400 flex items-center gap-2">
+                                            <Terminal className="w-3 h-3 text-blue-600 dark:text-brand-accent" /> Headline
                                         </label>
                                         <input 
                                             value={settings.about_title}
                                             onChange={(e) => updateField('about_title', e.target.value)}
-                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-5 text-sm font-black text-white focus:border-brand-accent outline-none"
+                                            className="w-full bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-brand-accent outline-none shadow-sm transition-all"
                                         />
                                     </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
-                                            <ImageIcon className="w-3 h-3 text-brand-accent" /> Hero Media URL
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400 flex items-center gap-2">
+                                            <ImageIcon className="w-3 h-3 text-blue-600 dark:text-brand-accent" /> Hero Media URL
                                         </label>
                                         <input 
                                             value={settings.about_image}
                                             onChange={(e) => updateField('about_image', e.target.value)}
-                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-5 text-sm font-bold text-blue-500 focus:border-brand-accent outline-none"
+                                            className="w-full bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-bold text-blue-600 dark:text-blue-500 focus:border-blue-500 dark:focus:border-brand-accent outline-none shadow-sm transition-all"
                                         />
                                     </div>
                                 </div>
-                                <div className="lg:col-span-8 space-y-3">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
-                                        <FileText className="w-3 h-3 text-brand-accent" /> Corporate Narrative
+                                <div className="lg:col-span-8 space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400 flex items-center gap-2">
+                                        <FileText className="w-3 h-3 text-blue-600 dark:text-brand-accent" /> Corporate Narrative
                                     </label>
                                     <textarea 
-                                        rows={8}
+                                        rows={6}
                                         value={settings.about_content}
                                         onChange={(e) => updateField('about_content', e.target.value)}
-                                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-8 text-sm font-bold text-gray-400 focus:border-brand-accent outline-none leading-relaxed"
+                                        className="w-full bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 rounded-2xl p-6 text-sm font-bold text-slate-700 dark:text-gray-300 focus:border-blue-500 dark:focus:border-brand-accent outline-none leading-relaxed shadow-sm transition-all"
                                     />
                                 </div>
                             </div>
@@ -606,74 +606,74 @@ const AdminSettings = () => {
                     </div>
 
                     <div className="xl:col-span-4 space-y-10">
-                        <section className="p-8 bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] backdrop-blur-3xl hover:border-brand-accent/20 transition-colors group">
+                        <section className="p-8 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[2rem] shadow-sm dark:shadow-none backdrop-blur-3xl hover:border-blue-500/30 dark:hover:border-brand-accent/20 transition-colors group">
                             <ModuleHeader icon={BarChart3} title="Performance Metrics" status="Dynamic" />
                             
-                            <div className="space-y-6">
+                            <div className="space-y-5">
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Projects Completed</label>
+                                    <label className="text-[9px] font-black uppercase text-slate-600 dark:text-gray-400 tracking-[0.2em]">Projects Completed</label>
                                     <input 
                                         value={settings.stat_projects} 
                                         onChange={(e)=>updateField('stat_projects', e.target.value)}
                                         placeholder="e.g. 1200+"
-                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-brand-accent font-black outline-none focus:border-brand-accent/40"
+                                        className="w-full bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/5 p-4 rounded-xl text-blue-600 dark:text-brand-accent font-black outline-none focus:border-blue-500 dark:focus:border-brand-accent/40 shadow-sm transition-all"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Happy Clients</label>
+                                    <label className="text-[9px] font-black uppercase text-slate-600 dark:text-gray-400 tracking-[0.2em]">Happy Clients</label>
                                     <input 
                                         value={settings.stat_clients} 
                                         onChange={(e)=>updateField('stat_clients', e.target.value)}
                                         placeholder="e.g. 450+"
-                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-cyan-400 font-black outline-none focus:border-brand-accent/40"
+                                        className="w-full bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/5 p-4 rounded-xl text-cyan-600 dark:text-cyan-400 font-black outline-none focus:border-blue-500 dark:focus:border-brand-accent/40 shadow-sm transition-all"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Years Experience</label>
+                                    <label className="text-[9px] font-black uppercase text-slate-600 dark:text-gray-400 tracking-[0.2em]">Years Experience</label>
                                     <input 
                                         value={settings.stat_years} 
                                         onChange={(e)=>updateField('stat_years', e.target.value)}
                                         placeholder="e.g. 25+"
-                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-yellow-400 font-black outline-none focus:border-brand-accent/40"
+                                        className="w-full bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/5 p-4 rounded-xl text-amber-600 dark:text-yellow-400 font-black outline-none focus:border-blue-500 dark:focus:border-brand-accent/40 shadow-sm transition-all"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">Client Satisfaction</label>
+                                    <label className="text-[9px] font-black uppercase text-slate-600 dark:text-gray-400 tracking-[0.2em]">Client Satisfaction</label>
                                     <input 
                                         value={settings.stat_satisfaction} 
                                         onChange={(e)=>updateField('stat_satisfaction', e.target.value)}
                                         placeholder="e.g. 99%"
-                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-green-400 font-black outline-none focus:border-brand-accent/40"
+                                        className="w-full bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/5 p-4 rounded-xl text-emerald-600 dark:text-green-400 font-black outline-none focus:border-blue-500 dark:focus:border-brand-accent/40 shadow-sm transition-all"
                                     />
                                 </div>
                             </div>
                         </section>
 
-                        <section className="p-8 bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] backdrop-blur-3xl hover:border-brand-accent/20 transition-colors group">
+                        <section className="p-8 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-[2rem] shadow-sm backdrop-blur-3xl hover:border-blue-500/30 dark:hover:border-brand-accent/20 transition-all group">
                            <ModuleHeader icon={Shield} title="Identity Protocols" status="Secure" />
                            <div className="space-y-8">
                                 <div className="space-y-3">
-                                    <label className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
+                                    <label className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-gray-500">
                                         Face Variance Logic
-                                        <span className="text-brand-accent font-black">X-{settings.faceThreshold}</span>
+                                        <span className="text-blue-600 dark:text-brand-accent font-black">X-{settings.faceThreshold}</span>
                                     </label>
                                     <input 
                                         type="range" min="0.1" max="1.0" step="0.1" 
                                         value={settings.faceThreshold}
                                         onChange={(e) => updateField('faceThreshold', parseFloat(e.target.value))}
-                                        className="w-full h-1 bg-white/10 dark:bg-slate-800/50 rounded-full appearance-none cursor-pointer accent-brand-accent"
+                                        className="w-full h-1 bg-slate-200 dark:bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-600 dark:accent-brand-accent"
                                     />
                                 </div>
-                                <div className="p-6 bg-white/[0.01] dark:bg-slate-900/[0.01] border border-white/5 rounded-2xl flex items-center justify-between group-hover:bg-brand-accent/[0.02] transition-colors">
+                                <div className="p-6 bg-slate-50 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 rounded-2xl flex items-center justify-between group-hover:bg-blue-50/50 dark:group-hover:bg-brand-accent/[0.02] transition-colors">
                                     <div>
-                                        <h4 className="text-xs font-black uppercase tracking-widest text-white mb-1">Public Pipeline</h4>
-                                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Registration Node</p>
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white mb-1">Public Pipeline</h4>
+                                        <p className="text-[9px] font-bold text-slate-500 dark:text-gray-500 uppercase tracking-wider">Registration Node</p>
                                     </div>
                                     <button 
                                         onClick={() => updateField('allowRegistration', !settings.allowRegistration)}
-                                        className={`w-12 h-6 rounded-full transition-all relative ${settings.allowRegistration ? 'bg-brand-accent' : 'bg-white/10 dark:bg-slate-800/50'}`}
+                                        className={`w-12 h-6 rounded-full transition-all relative ${settings.allowRegistration ? 'bg-blue-600 dark:bg-brand-accent' : 'bg-slate-300 dark:bg-white/10'}`}
                                     >
-                                        <div className={`absolute top-1 w-4 h-4 bg-white dark:bg-slate-900 rounded-full transition-all ${settings.allowRegistration ? 'left-7' : 'left-1'}`}></div>
+                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.allowRegistration ? 'left-7' : 'left-1'}`}></div>
                                     </button>
                                 </div>
                             </div>
@@ -681,25 +681,25 @@ const AdminSettings = () => {
                     </div>
 
                     <div className="xl:col-span-8 space-y-10 font-sans">
-                        <section className="p-6 md:p-10 bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden">
+                        <section className="p-6 md:p-10 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-[2rem] md:rounded-[3rem] shadow-sm backdrop-blur-3xl relative overflow-hidden">
                             <ModuleHeader icon={Radio} title="Comms Node Deployment" status="Global" />
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="space-y-8">
                                     <div className="space-y-3">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-gray-500 flex items-center gap-2">
                                             <AlignLeft className="w-3 h-3" /> Technical Descriptive Footnote
                                         </label>
                                         <textarea 
                                             value={settings.footer_description}
                                             onChange={(e) => updateField('footer_description', e.target.value)}
                                             rows={4}
-                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-2xl p-5 text-sm font-bold text-gray-400 focus:border-brand-accent/50 outline-none transition-all placeholder:text-gray-800"
+                                            className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-2xl p-5 text-sm font-bold text-slate-800 dark:text-gray-400 focus:border-blue-500 dark:focus:border-brand-accent/50 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-gray-800 shadow-sm"
                                         />
                                     </div>
                                     
                                     <div className="space-y-4">
-                                        <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-brand-accent flex items-center gap-2">
+                                        <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-blue-600 dark:text-brand-accent flex items-center gap-2">
                                             <Share2 className="w-3 h-3" /> Social Uplink Frequency
                                         </h4>
                                         <div className="grid grid-cols-3 gap-4">
@@ -708,7 +708,7 @@ const AdminSettings = () => {
                                                     <input 
                                                         value={settings[`social_${social}`] || ''}
                                                         onChange={(e) => updateField(`social_${social}`, e.target.value)}
-                                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-[10px] font-black text-center focus:border-brand-accent/50 outline-none transition-all"
+                                                        className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-[10px] font-black text-center text-slate-800 dark:text-white focus:border-blue-500 dark:focus:border-brand-accent/50 outline-none transition-all shadow-sm"
                                                         placeholder={social.toUpperCase()}
                                                     />
                                                 </div>
@@ -719,34 +719,34 @@ const AdminSettings = () => {
 
                                 <div className="space-y-8">
                                     <div className="space-y-3">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-gray-500 flex items-center gap-2">
                                             <MapPin className="w-3 h-3" /> Operation Headquarters
                                         </label>
                                         <textarea 
                                             value={settings.footer_address}
                                             onChange={(e) => updateField('footer_address', e.target.value)}
                                             rows={2}
-                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-2xl p-5 text-sm font-bold text-gray-400 focus:border-brand-accent/50 outline-none transition-all"
+                                            className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-2xl p-5 text-sm font-bold text-slate-800 dark:text-gray-400 focus:border-blue-500 dark:focus:border-brand-accent/50 outline-none transition-all shadow-sm"
                                         />
                                     </div>
                                     <div className="space-y-4">
                                         <input 
                                             value={settings.footer_phone}
                                             onChange={(e) => updateField('footer_phone', e.target.value)}
-                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-bold text-gray-400 focus:border-brand-accent/50 outline-none transition-all"
+                                            className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-bold text-slate-800 dark:text-gray-400 focus:border-blue-500 dark:focus:border-brand-accent/50 outline-none transition-all shadow-sm"
                                             placeholder="Phone"
                                         />
                                         <input 
                                             value={settings.footer_email}
                                             onChange={(e) => updateField('footer_email', e.target.value)}
-                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-bold text-gray-400 focus:border-brand-accent/50 outline-none transition-all"
+                                            className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-bold text-slate-800 dark:text-gray-400 focus:border-blue-500 dark:focus:border-brand-accent/50 outline-none transition-all shadow-sm"
                                             placeholder="Email"
                                         />
                                         <textarea 
                                             value={settings.map_embed_url}
                                             onChange={(e) => updateField('map_embed_url', e.target.value)}
                                             rows={2}
-                                            className="w-full bg-[#0a0a0c] border border-white/10 rounded-2xl p-4 text-sm font-bold text-gray-400 focus:border-brand-accent/50 outline-none transition-all"
+                                            className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-2xl p-4 text-sm font-bold text-slate-800 dark:text-gray-400 focus:border-blue-500 dark:focus:border-brand-accent/50 outline-none transition-all shadow-sm"
                                             placeholder="Google Maps Embed URL (src parameter)"
                                         />
                                     </div>
@@ -754,117 +754,117 @@ const AdminSettings = () => {
                             </div>
                         </section>
 
-                        <section className="p-6 md:p-10 bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-green-500/20 transition-all">
+                        <section className="p-6 md:p-10 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-[2rem] md:rounded-[3rem] shadow-sm backdrop-blur-3xl relative overflow-hidden group hover:border-emerald-500/30 transition-all">
                             <ModuleHeader icon={Radio} title="Engagement Relay (Floating Links)" status="Active" />
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 <div className="space-y-3">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">WhatsApp Number (91...)</label>
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-gray-500">WhatsApp Number (91...)</label>
                                     <input 
                                         value={settings.floating_whatsapp}
                                         onChange={(e) => updateField('floating_whatsapp', e.target.value)}
-                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-green-500 outline-none focus:border-green-500/50"
+                                        className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-emerald-600 dark:text-green-500 outline-none focus:border-emerald-500 shadow-sm"
                                     />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Call Icon Link (tel:+...)</label>
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-gray-500">Call Icon Link (tel:+...)</label>
                                     <input 
                                         value={settings.floating_phone}
                                         onChange={(e) => updateField('floating_phone', e.target.value)}
-                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-brand-accent outline-none"
+                                        className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-blue-600 dark:text-brand-accent outline-none focus:border-blue-500 shadow-sm"
                                     />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Mail Icon Link (mailto:...)</label>
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-gray-500">Mail Icon Link (mailto:...)</label>
                                     <input 
                                         value={settings.floating_email}
                                         onChange={(e) => updateField('floating_email', e.target.value)}
-                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-blue-400 outline-none"
+                                        className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-indigo-600 dark:text-blue-400 outline-none focus:border-indigo-500 shadow-sm"
                                     />
                                 </div>
                             </div>
                         </section>
 
-                        <section className="p-10 bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl">
+                        <section className="p-10 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-[3rem] shadow-sm backdrop-blur-3xl">
                             <ModuleHeader icon={Globe} title="Environment Identity" status="Instance 01" />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="space-y-3">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">System Alias</label>
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-gray-500">System Alias</label>
                                     <input 
                                         value={settings.systemName}
                                         onChange={(e) => updateField('systemName', e.target.value)}
-                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-brand-accent outline-none"
+                                        className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-blue-600 dark:text-brand-accent outline-none focus:border-blue-500 shadow-sm"
                                     />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Security Override Email</label>
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-gray-500">Security Override Email</label>
                                     <input 
                                         value={settings.ownerEmail}
                                         onChange={(e) => updateField('ownerEmail', e.target.value)}
-                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-black text-gray-500 outline-none"
+                                        className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-slate-700 dark:text-gray-400 outline-none focus:border-blue-500 shadow-sm"
                                     />
                                 </div>
                             </div>
                         </section>
 
-                        <section className="p-6 md:p-10 bg-white/[0.02] dark:bg-slate-900/[0.02] border border-white/5 rounded-[2rem] md:rounded-[3rem] backdrop-blur-3xl relative overflow-hidden group hover:border-blue-500/20 transition-all">
+                        <section className="p-6 md:p-10 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-[2rem] md:rounded-[3rem] shadow-sm backdrop-blur-3xl relative overflow-hidden group hover:border-blue-500/30 transition-all">
                             <ModuleHeader icon={Shield} title="Legal & Privacy Governance" status="Audit-Ready" />
                             
                             {/* Live Policy Telemetry Cards */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                <div className="p-6 bg-black/40 border border-white/10 rounded-2xl relative">
+                                <div className="p-6 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl relative shadow-sm">
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Privacy Policy</span>
-                                        <span className="text-xs font-mono font-bold text-white">v{policySummary?.privacy?.version || '1.0'}</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Privacy Policy</span>
+                                        <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">v{policySummary?.privacy?.version || '1.0'}</span>
                                     </div>
-                                    <p className="text-xs text-gray-400 mb-4 line-clamp-2">
+                                    <p className="text-xs text-slate-600 dark:text-gray-400 mb-4 line-clamp-2">
                                         {policySummary?.privacy?.title || 'Data protection and telemetry transparency standards.'}
                                     </p>
-                                    <div className="text-[11px] text-gray-500 space-y-1 mb-4 border-t border-white/5 pt-3">
-                                        <div>Effective: <span className="text-gray-300 font-medium">{policySummary?.privacy?.effectiveDate ? new Date(policySummary.privacy.effectiveDate).toLocaleDateString() : 'Active'}</span></div>
-                                        <div>Last Updated: <span className="text-gray-300 font-medium">{policySummary?.privacy?.lastUpdated ? new Date(policySummary.privacy.lastUpdated).toLocaleDateString() : 'Current'}</span></div>
+                                    <div className="text-[11px] text-slate-500 dark:text-gray-500 space-y-1 mb-4 border-t border-slate-200 dark:border-white/5 pt-3">
+                                        <div>Effective: <span className="text-slate-800 dark:text-gray-300 font-medium">{policySummary?.privacy?.effectiveDate ? new Date(policySummary.privacy.effectiveDate).toLocaleDateString() : 'Active'}</span></div>
+                                        <div>Last Updated: <span className="text-slate-800 dark:text-gray-300 font-medium">{policySummary?.privacy?.lastUpdated ? new Date(policySummary.privacy.lastUpdated).toLocaleDateString() : 'Current'}</span></div>
                                     </div>
                                     <div className="flex gap-2">
                                         <a 
                                             href="#/privacy-policy" 
                                             target="_blank" 
                                             rel="noreferrer"
-                                            className="flex-1 py-2 text-center bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                            className="flex-1 py-2 text-center bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
                                         >
                                             View Public Page
                                         </a>
                                         <a 
                                             href="#/admin/legal-policies" 
-                                            className="px-4 py-2 bg-blue-600/30 hover:bg-blue-600 text-blue-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                            className="px-4 py-2 bg-blue-600/10 hover:bg-blue-600 text-blue-600 hover:text-white dark:bg-blue-600/30 dark:hover:bg-blue-600 dark:text-blue-300 dark:hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
                                         >
                                             Manage
                                         </a>
                                     </div>
                                 </div>
 
-                                <div className="p-6 bg-black/40 border border-white/10 rounded-2xl relative">
+                                <div className="p-6 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl relative shadow-sm">
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Terms of Service</span>
-                                        <span className="text-xs font-mono font-bold text-white">v{policySummary?.terms?.version || '1.0'}</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">Terms of Service</span>
+                                        <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">v{policySummary?.terms?.version || '1.0'}</span>
                                     </div>
-                                    <p className="text-xs text-gray-400 mb-4 line-clamp-2">
+                                    <p className="text-xs text-slate-600 dark:text-gray-400 mb-4 line-clamp-2">
                                         {policySummary?.terms?.title || 'Operating rules, client agreements, and software usage terms.'}
                                     </p>
-                                    <div className="text-[11px] text-gray-500 space-y-1 mb-4 border-t border-white/5 pt-3">
-                                        <div>Effective: <span className="text-gray-300 font-medium">{policySummary?.terms?.effectiveDate ? new Date(policySummary.terms.effectiveDate).toLocaleDateString() : 'Active'}</span></div>
-                                        <div>Last Updated: <span className="text-gray-300 font-medium">{policySummary?.terms?.lastUpdated ? new Date(policySummary.terms.lastUpdated).toLocaleDateString() : 'Current'}</span></div>
+                                    <div className="text-[11px] text-slate-500 dark:text-gray-500 space-y-1 mb-4 border-t border-slate-200 dark:border-white/5 pt-3">
+                                        <div>Effective: <span className="text-slate-800 dark:text-gray-300 font-medium">{policySummary?.terms?.effectiveDate ? new Date(policySummary.terms.effectiveDate).toLocaleDateString() : 'Active'}</span></div>
+                                        <div>Last Updated: <span className="text-slate-800 dark:text-gray-300 font-medium">{policySummary?.terms?.lastUpdated ? new Date(policySummary.terms.lastUpdated).toLocaleDateString() : 'Current'}</span></div>
                                     </div>
                                     <div className="flex gap-2">
                                         <a 
                                             href="#/terms-of-service" 
                                             target="_blank" 
                                             rel="noreferrer"
-                                            className="flex-1 py-2 text-center bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                            className="flex-1 py-2 text-center bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
                                         >
                                             View Public Page
                                         </a>
                                         <a 
                                             href="#/admin/legal-policies" 
-                                            className="px-4 py-2 bg-blue-600/30 hover:bg-blue-600 text-blue-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                            className="px-4 py-2 bg-blue-600/10 hover:bg-blue-600 text-blue-600 hover:text-white dark:bg-blue-600/30 dark:hover:bg-blue-600 dark:text-blue-300 dark:hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
                                         >
                                             Manage
                                         </a>
@@ -873,40 +873,40 @@ const AdminSettings = () => {
                             </div>
 
                             {/* Data Protection & Privacy Contact */}
-                            <div className="p-6 bg-black/30 border border-white/5 rounded-2xl mb-8 space-y-4">
-                                <h4 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-                                    <Shield className="w-4 h-4 text-emerald-400" />
+                            <div className="p-6 bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded-2xl mb-8 space-y-4 shadow-sm">
+                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                                    <Shield className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                                     Data Protection Officer & Privacy Inquiries
                                 </h4>
-                                <p className="text-xs text-gray-400">
+                                <p className="text-xs text-slate-600 dark:text-gray-400">
                                     Users may request access, corrections, or permanent account deletion by submitting requests through their Profile settings or writing directly to our privacy desk:
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
-                                    <div className="p-3 bg-white/5 rounded-xl">
-                                        <div className="text-[9px] uppercase font-bold text-gray-500 font-sans">Compliance Email</div>
-                                        <div className="text-white font-medium truncate">{policySummary?.dpoContact?.email || 'privacy@krishnaengg.com'}</div>
+                                    <div className="p-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-transparent rounded-xl shadow-xs">
+                                        <div className="text-[9px] uppercase font-bold text-slate-500 dark:text-gray-500 font-sans">Compliance Email</div>
+                                        <div className="text-slate-900 dark:text-white font-medium truncate">{policySummary?.dpoContact?.email || 'privacy@krishnaengg.com'}</div>
                                     </div>
-                                    <div className="p-3 bg-white/5 rounded-xl">
-                                        <div className="text-[9px] uppercase font-bold text-gray-500 font-sans">Helpline / WhatsApp</div>
-                                        <div className="text-white font-medium">{policySummary?.dpoContact?.phone || '+91 9447940835'}</div>
+                                    <div className="p-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-transparent rounded-xl shadow-xs">
+                                        <div className="text-[9px] uppercase font-bold text-slate-500 dark:text-gray-500 font-sans">Helpline / WhatsApp</div>
+                                        <div className="text-slate-900 dark:text-white font-medium">{policySummary?.dpoContact?.phone || '+91 9447940835'}</div>
                                     </div>
-                                    <div className="p-3 bg-white/5 rounded-xl">
-                                        <div className="text-[9px] uppercase font-bold text-gray-500 font-sans">Response SLA</div>
-                                        <div className="text-emerald-400 font-medium">Within 30 Calendar Days</div>
+                                    <div className="p-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-transparent rounded-xl shadow-xs">
+                                        <div className="text-[9px] uppercase font-bold text-slate-500 dark:text-gray-500 font-sans">Response SLA</div>
+                                        <div className="text-emerald-600 dark:text-emerald-400 font-medium">Within 30 Calendar Days</div>
                                     </div>
                                 </div>
-                                <div className="p-4 bg-blue-950/30 border border-blue-900/40 rounded-xl text-[11px] text-blue-300">
+                                <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 rounded-xl text-[11px] text-blue-900 dark:text-blue-300">
                                     <strong>Statutory Data Retention Notice:</strong> Krishna ERP retains tax invoices, GST billing records, and labour financial ledgers for statutory retention periods even upon account termination.
                                 </div>
                             </div>
 
                             <div className="space-y-8">
                                 <div className="space-y-3">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Copyright Footer Notice</label>
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-gray-500">Copyright Footer Notice</label>
                                     <input 
                                         value={settings.footer_copyright}
                                         onChange={(e) => updateField('footer_copyright', e.target.value)}
-                                        className="w-full bg-[#0a0a0c] border border-white/10 rounded-xl p-4 text-sm font-bold text-gray-400 outline-none"
+                                        className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-bold text-slate-800 dark:text-gray-400 outline-none focus:border-blue-500 shadow-sm"
                                     />
                                 </div>
                             </div>

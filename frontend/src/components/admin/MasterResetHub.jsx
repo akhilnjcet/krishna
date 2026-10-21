@@ -309,11 +309,11 @@ const MasterResetHub = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="p-8 bg-black/60 border border-white/10 rounded-3xl overflow-hidden space-y-6"
+                        className="p-8 bg-white dark:bg-black/60 border border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden space-y-6 shadow-sm"
                     >
                         <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
-                                <History className="w-4 h-4 text-amber-400" /> Master Reset Audit Trail
+                            <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                                <History className="w-4 h-4 text-amber-500 dark:text-amber-400" /> Master Reset Audit Trail
                             </h3>
                             <span className="text-[10px] font-mono text-slate-500">Immutable Compliance Logs</span>
                         </div>
@@ -326,7 +326,7 @@ const MasterResetHub = () => {
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-xs font-mono">
                                     <thead>
-                                        <tr className="border-b border-white/10 text-[9px] uppercase tracking-wider text-slate-400">
+                                        <tr className="border-b border-slate-200 dark:border-white/10 text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                             <th className="pb-3">Timestamp</th>
                                             <th className="pb-3">Administrator</th>
                                             <th className="pb-3">Backup Reference</th>
@@ -334,24 +334,24 @@ const MasterResetHub = () => {
                                             <th className="pb-3">Status</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-white/5">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                                         {historyList.map(item => (
-                                            <tr key={item._id} className="hover:bg-white/[0.02]">
-                                                <td className="py-3 text-slate-300">
+                                            <tr key={item._id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
+                                                <td className="py-3 text-slate-700 dark:text-slate-300">
                                                     {new Date(item.executedAt).toLocaleString()}
                                                 </td>
-                                                <td className="py-3 text-slate-300">
+                                                <td className="py-3 text-slate-700 dark:text-slate-300">
                                                     {item.adminName} ({item.adminEmail})
                                                 </td>
-                                                <td className="py-3 text-amber-400 font-bold">
+                                                <td className="py-3 text-amber-600 dark:text-amber-400 font-bold">
                                                     {item.backupReference}
                                                 </td>
-                                                <td className="py-3 text-rose-400 font-bold">
+                                                <td className="py-3 text-rose-600 dark:text-rose-400 font-bold">
                                                     {item.totalRecordsDeleted || 0}
                                                 </td>
                                                 <td className="py-3">
                                                     <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                                        item.outcome === 'SUCCESS' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+                                                        item.outcome === 'SUCCESS' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/20 text-rose-600 dark:text-rose-400'
                                                     }`}>
                                                         {item.outcome}
                                                     </span>
@@ -370,29 +370,29 @@ const MasterResetHub = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 
                 {/* 🔴 AFFECTED OPERATIONAL DATA (DELETED) */}
-                <div className="lg:col-span-7 p-8 bg-white/[0.02] border border-white/5 rounded-3xl space-y-6">
-                    <div className="flex items-center justify-between pb-4 border-b border-white/5">
+                <div className="lg:col-span-7 p-8 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-3xl space-y-6 shadow-sm">
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/5">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl">
+                            <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl">
                                 <AlertOctagon className="w-5 h-5" />
                             </div>
                             <div>
-                                <h3 className="text-sm font-black uppercase text-white tracking-wider flex items-center gap-2">
+                                <h3 className="text-sm font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center gap-2">
                                     Operational & Business Data
                                 </h3>
-                                <p className="text-[10px] text-rose-400 font-bold uppercase tracking-widest">
+                                <p className="text-[10px] text-rose-600 dark:text-rose-400 font-bold uppercase tracking-widest">
                                     Targeted for Permanent Fresh Start Purge
                                 </p>
                             </div>
                         </div>
                         {previewData && (
-                            <span className="px-3 py-1 bg-rose-500/20 text-rose-300 rounded-full font-mono text-xs font-bold">
+                            <span className="px-3 py-1 bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-300 rounded-full font-mono text-xs font-bold">
                                 {previewData.totalOperationalRecords} records
                             </span>
                         )}
                     </div>
 
-                    <p className="text-xs text-slate-400 leading-relaxed">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                         The reset permanently purges test transactions, draft estimates, tenant bookings, staff punch-ins, and activity logs. A complete pre-deletion database backup will be generated first.
                     </p>
 
@@ -408,34 +408,34 @@ const MasterResetHub = () => {
                                 return (
                                     <div 
                                         key={key}
-                                        className="bg-black/40 border border-white/5 hover:border-white/10 rounded-2xl overflow-hidden transition-all"
+                                        className="bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 rounded-2xl overflow-hidden transition-all"
                                     >
                                         <button
                                             onClick={() => setExpandedCategory(isExpanded ? null : key)}
-                                            className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.02]"
+                                            className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-100/60 dark:hover:bg-white/[0.02]"
                                         >
                                             <div className="flex items-center gap-3">
                                                 {isExpanded ? (
-                                                    <ChevronDown className="w-4 h-4 text-amber-400" />
+                                                    <ChevronDown className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                                                 ) : (
-                                                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                                                    <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                                                 )}
                                                 <div>
-                                                    <span className="text-xs font-bold text-white block">{cat.title}</span>
-                                                    <span className="text-[10px] text-slate-400 line-clamp-1">{cat.description}</span>
+                                                    <span className="text-xs font-bold text-slate-900 dark:text-white block">{cat.title}</span>
+                                                    <span className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">{cat.description}</span>
                                                 </div>
                                             </div>
-                                            <span className="px-2.5 py-1 bg-white/5 border border-white/5 rounded-lg text-xs font-mono font-bold text-slate-300">
+                                            <span className="px-2.5 py-1 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg text-xs font-mono font-bold text-slate-700 dark:text-slate-300">
                                                 {cat.totalCount} records
                                             </span>
                                         </button>
 
                                         {isExpanded && (
-                                            <div className="p-4 pt-1 bg-black/60 border-t border-white/5 space-y-2">
+                                            <div className="p-4 pt-1 bg-slate-100/70 dark:bg-black/60 border-t border-slate-200 dark:border-white/5 space-y-2">
                                                 {cat.items.map(subItem => (
-                                                    <div key={subItem.modelName} className="flex items-center justify-between text-xs py-1.5 px-3 rounded-lg bg-white/[0.02]">
-                                                        <span className="text-slate-300">{subItem.label}</span>
-                                                        <span className="font-mono text-amber-400 font-bold">{subItem.count}</span>
+                                                    <div key={subItem.modelName} className="flex items-center justify-between text-xs py-1.5 px-3 rounded-lg bg-white dark:bg-white/[0.02]">
+                                                        <span className="text-slate-700 dark:text-slate-300">{subItem.label}</span>
+                                                        <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">{subItem.count}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -448,27 +448,27 @@ const MasterResetHub = () => {
                 </div>
 
                 {/* 🟢 PROTECTED SYSTEM CORE (PRESERVED) */}
-                <div className="lg:col-span-5 p-8 bg-white/[0.02] border border-white/5 rounded-3xl space-y-6">
-                    <div className="flex items-center justify-between pb-4 border-b border-white/5">
+                <div className="lg:col-span-5 p-8 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-3xl space-y-6 shadow-sm">
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/5">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
+                            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl">
                                 <ShieldCheck className="w-5 h-5" />
                             </div>
                             <div>
-                                <h3 className="text-sm font-black uppercase text-white tracking-wider flex items-center gap-2">
+                                <h3 className="text-sm font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center gap-2">
                                     System Core & Access
                                 </h3>
-                                <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">
+                                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-widest">
                                     Strictly Preserved (Zero Loss)
                                 </p>
                             </div>
                         </div>
-                        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full font-mono text-[10px] font-bold uppercase">
+                        <span className="px-3 py-1 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 rounded-full font-mono text-[10px] font-bold uppercase">
                             Protected
                         </span>
                     </div>
 
-                    <p className="text-xs text-slate-400 leading-relaxed">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                         To guarantee zero downtime and zero lockouts, all administrative credentials, company directives, branding, and account registries are protected.
                     </p>
 
@@ -476,21 +476,21 @@ const MasterResetHub = () => {
                         {previewData?.protectedData?.summary?.map((prot, idx) => (
                             <div 
                                 key={idx}
-                                className="p-3 bg-black/40 border border-emerald-500/10 rounded-xl flex items-center justify-between text-xs"
+                                className="p-3 bg-slate-50 dark:bg-black/40 border border-emerald-500/20 rounded-xl flex items-center justify-between text-xs"
                             >
-                                <div className="flex items-center gap-2 text-slate-300">
-                                    <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                                     <span>{prot.label}</span>
                                 </div>
-                                <span className="font-mono text-xs font-bold text-emerald-400">
+                                <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
                                     {prot.count}
                                 </span>
                             </div>
                         ))}
                     </div>
 
-                    <div className="p-4 bg-emerald-950/20 border border-emerald-500/20 rounded-2xl text-[11px] text-emerald-300 space-y-1">
-                        <strong className="block text-emerald-400">Zero Administrator Lockout Guarantee:</strong>
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl text-[11px] text-emerald-900 dark:text-emerald-300 space-y-1">
+                        <strong className="block text-emerald-700 dark:text-emerald-400">Zero Administrator Lockout Guarantee:</strong>
                         All login passwords, staff roles, authentication states, and company branding logos remain completely preserved after execution.
                     </div>
                 </div>
