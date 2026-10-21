@@ -271,7 +271,7 @@ const AIChatWidget = () => {
                                 <div>
                                     <h3 className="font-black text-sm tracking-wide">Krishna AI Consultant</h3>
                                     <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Groq Agent Active
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Krishna Engineering Active
                                     </p>
                                 </div>
                             </div>
