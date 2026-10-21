@@ -155,3 +155,187 @@ exports.createPaymentIntent = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// ─── CASHFREE PAYMENT GATEWAY INTEGRATION ────────────────────────────
+
+const cashfreeService = require('../services/cashfreeService');
+
+/**
+ * Public/Protected: Get Cashfree Client Configuration
+ */
+exports.getCashfreeConfig = async (req, res) => {
+    try {
+        const creds = await cashfreeService.getCredentials();
+        res.json({
+            enabled: creds.enabled,
+            env: creds.env,
+            isProduction: creds.isProduction,
+            appId: creds.appId ? `${creds.appId.slice(0, 8)}...` : null
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+/**
+ * Protected: Create Cashfree PG Order
+ */
+exports.createCashfreeOrder = async (req, res) => {
+    try {
+        const { amount, orderNote, projectId, quoteId, bookingId, roomId, returnUrl } = req.body;
+        const customer = req.user;
+
+        if (!amount || parseFloat(amount) <= 0) {
+            return res.status(400).json({ message: 'Valid payment amount is required.' });
+        }
+
+        const orderId = `KE_${Date.now()}_${Math.floor(100 + Math.random() * 900)}`;
+
+        const orderResult = await cashfreeService.createOrder({
+            orderId,
+            orderAmount: parseFloat(amount),
+            customerId: customer._id || customer.id,
+            customerName: customer.name || 'Client',
+            customerEmail: customer.email || 'customer@krishnaengg.com',
+            customerPhone: customer.phone || customer.phoneNumber || '9447940835',
+            orderNote: orderNote || 'Online Payment for Krishna Engineering Works',
+            returnUrl
+        });
+
+        // Pre-create pending payment record in DB
+        await Payment.create({
+            customerId: customer._id || customer.id,
+            amount: parseFloat(amount),
+            method: 'cashfree',
+            referenceId: orderId,
+            transactionReference: orderId,
+            paymentDate: new Date(),
+            projectId: projectId || undefined,
+            quoteId: quoteId || undefined,
+            bookingId: bookingId || undefined,
+            roomId: roomId || undefined,
+            tenantName: customer.name,
+            notes: orderNote || 'Cashfree Online Payment',
+            status: 'WAITING_FOR_VERIFICATION'
+        });
+
+        res.status(201).json(orderResult);
+    } catch (err) {
+        console.error('[Cashfree Order Error]:', err.response?.data || err.message);
+        res.status(500).json({ 
+            message: err.response?.data?.message || err.message || 'Unable to generate Cashfree payment order.' 
+        });
+    }
+};
+
+/**
+ * Protected: Verify Cashfree PG Order & Complete Payment
+ */
+exports.verifyCashfreePayment = async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        if (!orderId) {
+            return res.status(400).json({ message: 'Order ID is required for verification.' });
+        }
+
+        const orderData = await cashfreeService.getOrder(orderId);
+        const orderStatus = orderData.order_status; // PAID, ACTIVE, EXPIRED, TERMINATED
+
+        if (orderStatus === 'PAID') {
+            let payment = await Payment.findOne({ referenceId: orderId });
+            
+            if (!payment) {
+                payment = new Payment({
+                    customerId: req.user._id || req.user.id,
+                    amount: parseFloat(orderData.order_amount),
+                    method: 'cashfree',
+                    referenceId: orderId,
+                    transactionReference: orderData.cf_order_id ? String(orderData.cf_order_id) : orderId,
+                    paymentDate: new Date(),
+                    tenantName: req.user.name,
+                    notes: orderData.order_note || 'Cashfree Online Gateway'
+                });
+            }
+
+            payment.status = 'Completed';
+            payment.verifiedByName = 'Cashfree Automated Gateway';
+            payment.verifiedAt = new Date();
+            await payment.save();
+
+            // Recalculate Project Status if linked
+            if (payment.projectId) {
+                const { recalculateProjectPaymentStatus } = require('../utils/projectHelper');
+                await recalculateProjectPaymentStatus(payment.projectId);
+            }
+
+            // Settle Rent Bill if linked to room
+            if (payment.roomId) {
+                const LodgeRentBill = require('../models/LodgeRentBill');
+                await LodgeRentBill.findOneAndUpdate(
+                    { roomId: payment.roomId, userId: payment.customerId, status: 'Due' },
+                    { status: 'Paid', paymentDate: Date.now(), paymentMethod: 'cashfree', transactionId: orderId, outstandingAmount: 0 }
+                );
+            }
+
+            // Socket.IO real-time notification
+            const socketUtil = require('../utils/socket');
+            const io = socketUtil.getIO();
+            if (io) {
+                io.emit('payment-status-changed', payment);
+            }
+
+            return res.json({ 
+                success: true, 
+                message: 'Payment verified and completed successfully.', 
+                payment,
+                order: orderData 
+            });
+        }
+
+        return res.json({ 
+            success: false, 
+            orderStatus, 
+            message: `Order status is currently ${orderStatus}.` 
+        });
+    } catch (err) {
+        console.error('[Cashfree Verification Error]:', err.response?.data || err.message);
+        res.status(500).json({ 
+            message: err.response?.data?.message || err.message || 'Payment verification failed.' 
+        });
+    }
+};
+
+/**
+ * Public: Cashfree Webhook Listener
+ */
+exports.cashfreeWebhook = async (req, res) => {
+    try {
+        const eventData = req.body;
+        console.log('[Cashfree Webhook Received]:', eventData?.type || eventData);
+
+        if (eventData?.type === 'PAYMENT_SUCCESS_WEBHOOK' || eventData?.data?.order?.order_status === 'PAID') {
+            const orderId = eventData?.data?.order?.order_id || eventData?.order_id;
+            if (orderId) {
+                const payment = await Payment.findOne({ referenceId: orderId });
+                if (payment && payment.status !== 'Completed') {
+                    payment.status = 'Completed';
+                    payment.verifiedByName = 'Cashfree Webhook';
+                    payment.verifiedAt = new Date();
+                    await payment.save();
+
+                    const socketUtil = require('../utils/socket');
+                    const io = socketUtil.getIO();
+                    if (io) {
+                        io.emit('payment-status-changed', payment);
+                    }
+                }
+            }
+        }
+
+        res.status(200).json({ status: 'ACK' });
+    } catch (err) {
+        console.error('[Cashfree Webhook Error]:', err.message);
+        res.status(200).json({ status: 'ERROR_RECORDED' });
+    }
+};
+

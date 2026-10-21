@@ -12,6 +12,7 @@ import useAuthStore from '../../stores/authStore';
 import UPIAppPicker from '../../components/UPIAppPicker';
 import UPIFallback from '../../components/UPIFallback';
 import { getSocket } from '../../utils/socket';
+import { initializeCashfree } from '../../utils/cashfreeLoader';
 
 const CustomerPayments = () => {
     const { user } = useAuthStore();
@@ -19,10 +20,13 @@ const CustomerPayments = () => {
     const [settings, setSettings] = useState({});
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [cashfreeLoading, setCashfreeLoading] = useState(false);
+    const [verifyingCashfree, setVerifyingCashfree] = useState(false);
+    const [cashfreeConfig, setCashfreeConfig] = useState({ enabled: true, env: 'sandbox' });
     
     const [formData, setFormData] = useState({
         amount: '',
-        method: 'upi',
+        method: 'cashfree', // 'cashfree' | 'upi' | 'bank_transfer'
         referenceId: '',
         paymentDate: new Date().toISOString().split('T')[0],
         name: '',
@@ -67,11 +71,22 @@ const CustomerPayments = () => {
         };
     }, [user]);
 
+    useEffect(() => {
+        // Check for return redirect from Cashfree (if user paid via redirect mode)
+        const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
+        const searchParams = new URLSearchParams(window.location.search || hashQuery);
+        const cfOrderId = searchParams.get('cf_order_id') || searchParams.get('order_id');
+        if (cfOrderId) {
+            verifyAndCompleteCashfreePayment(cfOrderId);
+        }
+    }, []);
+
     const fetchData = async () => {
         try {
-            const [payRes, setRes] = await Promise.all([
+            const [payRes, setRes, cfRes] = await Promise.all([
                 api.get('/payments/my-payments'),
-                api.get('/settings/public')
+                api.get('/settings/public'),
+                api.get('/payments/cashfree/config').catch(() => ({ data: { enabled: true, env: 'sandbox' } }))
             ]);
             setPayments(payRes.data);
             
@@ -79,6 +94,10 @@ const CustomerPayments = () => {
             const sObj = {};
             setRes.data.forEach(s => sObj[s.key] = s.value);
             setSettings(sObj);
+
+            if (cfRes?.data) {
+                setCashfreeConfig(cfRes.data);
+            }
         } catch (err) {
             console.error(err);
         } finally {
@@ -86,8 +105,73 @@ const CustomerPayments = () => {
         }
     };
 
-    const handleFileChange = (e) => {
-        // Removed proof screenshot handling
+    const verifyAndCompleteCashfreePayment = async (orderId) => {
+        setVerifyingCashfree(true);
+        try {
+            const res = await api.post('/payments/cashfree/verify', { orderId });
+            if (res.data.success) {
+                hapticService.success();
+                alert("Payment Successful! Cashfree verified transaction and recorded in your ledger.");
+                if (res.data.payment) {
+                    generatePaymentReceiptPDF(res.data.payment, user);
+                }
+                fetchData();
+                setFormData(prev => ({ ...prev, amount: '', notes: '', referenceId: '' }));
+            } else {
+                alert(`Cashfree status: ${res.data.orderStatus}. ${res.data.message || ''}`);
+            }
+        } catch (err) {
+            console.error("Cashfree Verification Error:", err);
+            alert("Verification failed: " + (err.response?.data?.message || err.message));
+        } finally {
+            setVerifyingCashfree(false);
+        }
+    };
+
+    const handleCashfreePay = async (e) => {
+        if (e) e.preventDefault();
+        const amt = parseFloat(formData.amount);
+        if (!amt || amt <= 0) {
+            return alert("Please enter a valid payment amount in INR.");
+        }
+
+        setCashfreeLoading(true);
+        try {
+            // 1. Create order on backend
+            const orderRes = await api.post('/payments/cashfree/create-order', {
+                amount: amt,
+                orderNote: formData.notes || formData.name || `Payment from ${user?.name || 'Customer'}`
+            });
+
+            const { paymentSessionId, orderId, environment } = orderRes.data;
+
+            if (!paymentSessionId) {
+                throw new Error("Payment session ID not received from Cashfree.");
+            }
+
+            // 2. Initialize official Cashfree JS SDK
+            const cashfree = await initializeCashfree(environment || cashfreeConfig.env || 'sandbox');
+
+            // 3. Launch Checkout Modal
+            cashfree.checkout({
+                paymentSessionId: paymentSessionId,
+                redirectTarget: "_modal"
+            }).then(async (result) => {
+                if (result.error) {
+                    console.warn("Cashfree checkout error:", result.error);
+                    alert(result.error.message || "Payment cancelled or could not be completed.");
+                }
+                if (result.paymentDetails) {
+                    // Modal completed successfully, verify on backend
+                    await verifyAndCompleteCashfreePayment(orderId);
+                }
+            });
+        } catch (err) {
+            console.error("Cashfree Order Initiation Error:", err);
+            alert("Payment Initiation Error: " + (err.response?.data?.message || err.message || "Could not connect to Cashfree Gateway."));
+        } finally {
+            setCashfreeLoading(false);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -187,24 +271,92 @@ const CustomerPayments = () => {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-3 gap-2">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setFormData({...formData, method: 'cashfree'})}
+                                        className={`p-3 rounded-2xl border-2 flex flex-col items-center gap-1.5 transition-all ${formData.method === 'cashfree' ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg' : 'bg-white/5 dark:bg-slate-800/30 border-white/10 text-slate-400 hover:bg-white/10 dark:bg-slate-800/50'}`}
+                                    >
+                                        <CreditCard className="w-5 h-5 text-emerald-400" />
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-center leading-tight">Cashfree Gateway</span>
+                                    </button>
                                     <button 
                                         type="button"
                                         onClick={() => setFormData({...formData, method: 'upi'})}
-                                        className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${formData.method === 'upi' ? 'bg-blue-600 border-blue-400 text-white' : 'bg-white/5 dark:bg-slate-800/30 border-white/10 text-slate-400 hover:bg-white/10 dark:bg-slate-800/50'}`}
+                                        className={`p-3 rounded-2xl border-2 flex flex-col items-center gap-1.5 transition-all ${formData.method === 'upi' ? 'bg-blue-600 border-blue-400 text-white shadow-lg' : 'bg-white/5 dark:bg-slate-800/30 border-white/10 text-slate-400 hover:bg-white/10 dark:bg-slate-800/50'}`}
                                     >
-                                        <QrCode className="w-6 h-6" />
-                                        <span className="text-[9px] font-black uppercase tracking-widest">UPI Portal</span>
+                                        <QrCode className="w-5 h-5" />
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-center leading-tight">Manual UPI</span>
                                     </button>
                                     <button 
                                         type="button"
                                         onClick={() => setFormData({...formData, method: 'bank_transfer'})}
-                                        className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${formData.method === 'bank_transfer' ? 'bg-blue-600 border-blue-400 text-white' : 'bg-white/5 dark:bg-slate-800/30 border-white/10 text-slate-400 hover:bg-white/10 dark:bg-slate-800/50'}`}
+                                        className={`p-3 rounded-2xl border-2 flex flex-col items-center gap-1.5 transition-all ${formData.method === 'bank_transfer' ? 'bg-blue-600 border-blue-400 text-white shadow-lg' : 'bg-white/5 dark:bg-slate-800/30 border-white/10 text-slate-400 hover:bg-white/10 dark:bg-slate-800/50'}`}
                                     >
-                                        <Building className="w-6 h-6" />
-                                        <span className="text-[9px] font-black uppercase tracking-widest">Bank Node</span>
+                                        <Building className="w-5 h-5" />
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-center leading-tight">Bank Node</span>
                                     </button>
                                 </div>
+
+                                {/* CASHFREE ONLINE CHECKOUT NODE */}
+                                {formData.method === 'cashfree' && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-5"
+                                    >
+                                        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                                            <div>
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
+                                                    <ShieldCheck className="w-4 h-4" /> Official Cashfree Gateway
+                                                </span>
+                                                <p className="text-xs text-white/80 font-bold mt-1">Cards • UPI • 50+ Banks • Wallets</p>
+                                            </div>
+                                            <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl text-[9px] font-black uppercase tracking-wider">
+                                                Instant Verification
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Reference / Note</label>
+                                            <input 
+                                                value={formData.notes}
+                                                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                                                className="w-full bg-white/5 dark:bg-slate-800/30 border border-white/10 p-3.5 rounded-xl text-xs font-bold text-white placeholder:text-white/20 outline-none focus:border-indigo-500 transition-all"
+                                                placeholder="e.g. Project Advance, Invoice Payment"
+                                            />
+                                        </div>
+
+                                        <button 
+                                            type="button"
+                                            onClick={handleCashfreePay}
+                                            disabled={cashfreeLoading || verifyingCashfree || !formData.amount || parseFloat(formData.amount) <= 0}
+                                            className="w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-600 disabled:opacity-50 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-xl shadow-emerald-600/30 active:scale-95 flex items-center justify-center gap-3"
+                                        >
+                                            {cashfreeLoading ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Connecting Cashfree Gateway...
+                                                </>
+                                            ) : verifyingCashfree ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Verifying Remittance...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <ShieldCheck className="w-4 h-4" />
+                                                    Pay ₹{formData.amount || '0.00'} Securely Now
+                                                </>
+                                            )}
+                                        </button>
+
+                                        <div className="grid grid-cols-2 gap-2 text-center text-[8px] font-bold text-slate-400 uppercase tracking-widest pt-1">
+                                            <span className="flex items-center justify-center gap-1">🔒 256-Bit SSL Encrypted</span>
+                                            <span className="flex items-center justify-center gap-1">🛡️ RBI Authorized Gateway</span>
+                                        </div>
+                                    </motion.div>
+                                )}
 
                                 {/* TARGETED INTENT HUB v3.0 - High Resilience */}
                                 {formData.method === 'upi' && formData.amount > 0 && (
@@ -267,61 +419,65 @@ const CustomerPayments = () => {
                                     </div>
                                 )}
 
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Name</label>
-                                        <input 
-                                            required
-                                            value={formData.name}
-                                            onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                            className="w-full bg-white/5 dark:bg-slate-800/30 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
-                                            placeholder="e.g. Initial Deposit, Weld Phase 2"
-                                        />
-                                    </div>
+                                {formData.method !== 'cashfree' && (
+                                    <>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Name</label>
+                                                <input 
+                                                    required
+                                                    value={formData.name}
+                                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                                    className="w-full bg-white/5 dark:bg-slate-800/30 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                                    placeholder="e.g. Initial Deposit, Weld Phase 2"
+                                                />
+                                            </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Transaction ID / UTR Number</label>
-                                            <input 
-                                                required
-                                                value={formData.referenceId}
-                                                onChange={(e) => setFormData({...formData, referenceId: e.target.value})}
-                                                className="w-full bg-white/5 dark:bg-slate-800/30 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
-                                                placeholder="Enter UPI Ref / Bank UTR"
-                                            />
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Transaction ID / UTR Number</label>
+                                                    <input 
+                                                        required
+                                                        value={formData.referenceId}
+                                                        onChange={(e) => setFormData({...formData, referenceId: e.target.value})}
+                                                        className="w-full bg-white/5 dark:bg-slate-800/30 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                                        placeholder="Enter UPI Ref / Bank UTR"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Date</label>
+                                                    <input 
+                                                        type="date" required
+                                                        value={formData.paymentDate}
+                                                        onChange={(e) => setFormData({...formData, paymentDate: e.target.value})}
+                                                        className="w-full bg-white/5 dark:bg-slate-800/30 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Details</label>
+                                                <textarea 
+                                                    required
+                                                    value={formData.notes}
+                                                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                                                    className="w-full bg-white/5 dark:bg-slate-800/30 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
+                                                    placeholder="Enter reference details or description..."
+                                                    rows="3"
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Date</label>
-                                            <input 
-                                                type="date" required
-                                                value={formData.paymentDate}
-                                                onChange={(e) => setFormData({...formData, paymentDate: e.target.value})}
-                                                className="w-full bg-white/5 dark:bg-slate-800/30 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
-                                            />
-                                        </div>
-                                    </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Details</label>
-                                        <textarea 
-                                            required
-                                            value={formData.notes}
-                                            onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                                            className="w-full bg-white/5 dark:bg-slate-800/30 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white placeholder:text-white/10 outline-none focus:border-blue-500 transition-all"
-                                            placeholder="Enter reference details or description..."
-                                            rows="3"
-                                        />
-                                    </div>
-                                </div>
-
-                                <button 
-                                    disabled={submitting}
-                                    type="submit"
-                                    className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-xl shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-3"
-                                >
-                                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                    Submit Transaction Node
-                                </button>
+                                        <button 
+                                            disabled={submitting}
+                                            type="submit"
+                                            className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-xl shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-3"
+                                        >
+                                            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                            Submit Transaction Node
+                                        </button>
+                                    </>
+                                )}
                             </form>
                         </div>
                     </section>

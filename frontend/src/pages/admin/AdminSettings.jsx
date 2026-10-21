@@ -29,6 +29,11 @@ const AdminSettings = () => {
         maintenanceMode: false,
         faceThreshold: 0.6,
         allowRegistration: true,
+        // Cashfree Payment Gateway
+        cashfree_app_id: '',
+        cashfree_secret_key: '',
+        cashfree_mode: 'sandbox',
+        cashfree_enabled: true,
         // Footer & Contact
         footer_description: 'Heavy structural engineering, industrial roofing, and precision fabrication.',
         footer_address: 'Industrial Area Phase 1, Sector 123',
@@ -555,6 +560,69 @@ const AdminSettings = () => {
                                     placeholder="SBIN0001234"
                                     className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-slate-900 dark:text-white outline-none focus:border-blue-500 shadow-sm transition-all"
                                 />
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                {/* CASHFREE PAYMENT GATEWAY SECTION */}
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 mb-12">
+                    <section className="xl:col-span-12 p-8 md:p-10 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[2.5rem] shadow-sm dark:shadow-none backdrop-blur-3xl relative overflow-hidden group hover:border-emerald-500/30 dark:hover:border-emerald-500/20 transition-all">
+                        <ModuleHeader icon={Shield} title="Cashfree Payment Gateway Integration" status={settings.cashfree_enabled ? "Active" : "Disabled"} />
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                            <div className="md:col-span-5 space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400">Cashfree App ID (Client ID)</label>
+                                <input 
+                                    value={settings.cashfree_app_id || ''}
+                                    onChange={(e) => updateField('cashfree_app_id', e.target.value)}
+                                    placeholder="e.g. CF1234567890ABCDEF"
+                                    className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400 outline-none focus:border-emerald-500 shadow-sm transition-all"
+                                />
+                            </div>
+                            <div className="md:col-span-4 space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400">Cashfree Secret Key</label>
+                                <input 
+                                    type="password"
+                                    value={settings.cashfree_secret_key || ''}
+                                    onChange={(e) => updateField('cashfree_secret_key', e.target.value)}
+                                    placeholder="cfsk_ma_prod_..."
+                                    className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 shadow-sm transition-all"
+                                />
+                            </div>
+                            <div className="md:col-span-3 space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400">Gateway Environment Mode</label>
+                                <select 
+                                    value={settings.cashfree_mode || 'sandbox'}
+                                    onChange={(e) => updateField('cashfree_mode', e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-indigo-600 dark:text-indigo-400 outline-none focus:border-emerald-500 shadow-sm transition-all"
+                                >
+                                    <option value="sandbox">Sandbox (Testing / Review)</option>
+                                    <option value="production">Production (Live Payments)</option>
+                                </select>
+                            </div>
+
+                            <div className="md:col-span-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                                <div className="space-y-1">
+                                    <p className="text-xs font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-emerald-500" /> Cashfree Merchant Review Compliance Ready
+                                    </p>
+                                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                                        All mandatory policies (Privacy Policy, Terms of Service, Refund Policy, Shipping Policy, Contact Us) are linked in the website footer and active.
+                                    </p>
+                                </div>
+                                <label className="flex items-center gap-2.5 cursor-pointer shrink-0">
+                                    <input 
+                                        type="checkbox"
+                                        checked={Boolean(settings.cashfree_enabled)}
+                                        onChange={(e) => updateField('cashfree_enabled', e.target.checked)}
+                                        className="sr-only"
+                                    />
+                                    <div className={`w-11 h-6 rounded-full transition-colors p-1 ${settings.cashfree_enabled ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-gray-800'}`}>
+                                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${settings.cashfree_enabled ? 'translate-x-5' : ''}`} />
+                                    </div>
+                                    <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-300">Enable Cashfree</span>
+                                </label>
                             </div>
                         </div>
                     </section>

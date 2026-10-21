@@ -423,6 +423,12 @@ const App = () => {
             <Route path="/privacy-policy" element={<PolicyViewer defaultType="privacy" />} />
             <Route path="/terms" element={<PolicyViewer defaultType="terms" />} />
             <Route path="/privacy" element={<PolicyViewer defaultType="privacy" />} />
+            <Route path="/refund-policy" element={<PolicyViewer defaultType="refund" />} />
+            <Route path="/cancellation-refund-policy" element={<PolicyViewer defaultType="refund" />} />
+            <Route path="/shipping-policy" element={<PolicyViewer defaultType="shipping" />} />
+            <Route path="/delivery-policy" element={<PolicyViewer defaultType="shipping" />} />
+            <Route path="/contact-us" element={<PolicyViewer defaultType="contact" />} />
+            <Route path="/contact" element={<PolicyViewer defaultType="contact" />} />
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>

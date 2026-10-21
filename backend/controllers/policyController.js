@@ -80,40 +80,93 @@ These Terms are governed by and construed in accordance with the laws of India. 
 9. MODIFICATIONS TO TERMS
 We reserve the right to revise these Terms of Service. Registered users will be notified of material changes, and continued usage signifies acceptance of the updated terms.`;
 
+const DEFAULT_REFUND_CONTENT = `CANCELLATION & REFUND POLICY
+
+1. ORDER CANCELLATION
+At Krishna Engineering Works, we understand that project requirements may occasionally change. Because our heavy engineering, structural fabrication, industrial roofing, and truss assemblies are custom manufactured to client architectural specifications, the following cancellation guidelines apply:
+• Standard/Catalog Quotations: Cancellation requests received within 24 hours of advance remittance and prior to raw material procurement or fabrication kickoff will receive a 100% refund of the deposit.
+• Custom Structural Fabrication & Job Work: Once raw steel materials (ISMB beams, plates, purlins, sheets) have been procured, profiled, or cut to custom project dimensions, cancellation will incur a deduction reflecting direct material and labor expenses incurred up to the timestamp of written cancellation notice.
+• Service & Site Erection Works: On-site labor and crane/erection services may be cancelled or rescheduled with a minimum 48-hour prior notice without penalty.
+
+2. REFUND PROCESSING & TIMELINE
+• Mode of Refund: All approved refunds are credited back to the customer's original payment method (Credit/Debit Card, Netbanking, UPI, or Bank Transfer) or via direct NEFT/RTGS to the client's verified commercial bank account.
+• Turnaround Time: Once an official refund or cancellation request is verified and authorized by our management, the refund is initiated within 2 business days and typically reflects in the customer's bank account within 5 to 7 working days, subject to the issuing bank's clearing cycle.
+
+3. DISPUTES & GRIEVANCE REDRESSAL
+If you observe an unexpected charge or have an inquiry regarding a billing transaction:
+• Email: akhilnadiluveettil@gmail.com / contact@krishnaengg.com
+• Phone: +91 9447940835
+• Address: Krishna Engineering Works, Thiruvazhiyode, Sreekrishnapuram, Palakkad, Kerala 679514
+All refund inquiries are formally acknowledged within 24 hours.`;
+
+const DEFAULT_SHIPPING_CONTENT = `SHIPPING & SERVICE DELIVERY POLICY
+
+1. SCOPE OF DELIVERY
+Krishna Engineering Works provides heavy structural steel fabrication, metal roofing sheets, custom engineered trusses, industrial gates, railings, and on-site erection services across Kerala and neighboring regions.
+
+2. DELIVERY MODES & TIMELINES
+• Fabricated Structural Steel & Roofing Materials: Dispatched directly to the client's designated construction site or commercial facility using heavy commercial vehicles (trailers/trucks).
+• Standard Timeline: Custom engineering and fabrication deliverables are dispatched within 7 to 21 business days from order confirmation, structural drawing approval, and advance payment, unless a staggered project milestone delivery schedule is agreed in the contract.
+• On-Site Assembly & Erection: Structural erection teams mobilize to the client location according to the site readiness and approved milestone schedule.
+
+3. INSPECTION & SIGN-OFF
+• Upon material arrival at the delivery site, the customer or authorized site engineer will inspect the goods against the official Delivery Challan / GST Tax Invoice.
+• Immediate discrepancies or transit damage must be endorsed on the physical delivery challan and notified within 24 hours via phone (+91 9447940835) or email (contact@krishnaengg.com).
+
+4. SHIPPING CHARGES
+Shipping, transit freight, and crane loading/unloading charges are transparently itemized in the formal Quotation and Invoice sheets generated through Krishna ERP.`;
+
+const DEFAULT_CONTACT_CONTENT = `CONTACT US & CORPORATE DETAILS
+
+1. REGISTERED BUSINESS ENTITY
+Legal Business Name: Krishna Engineering Works
+Proprietorship / Registered Industrial Unit
+Industry: Heavy Structural Engineering, Steel Fabrication & Industrial Roofing
+
+2. OPERATIONAL & REGISTERED ADDRESS
+Krishna Engineering Works
+Thiruvazhiyode, Sreekrishnapuram,
+Palakkad District, Kerala - 679514, India.
+
+3. CONTACT TELEPHONE & HELPLINE
+• Customer Support & Enquiries: +91 9447940835 / +91 98765 43210
+• WhatsApp Helpline: +91 9447940835
+
+4. ELECTRONIC MAIL ADDRESSES
+• General & Corporate Communications: contact@krishnaengg.com
+• Management & Grievance Officer: akhilnadiluveettil@gmail.com
+• Billing & Remittance Queries: billing@krishnaengg.com
+
+5. BUSINESS OPERATING HOURS
+• Monday through Saturday: 08:30 AM to 06:30 PM (IST)
+• Sunday: Closed (Emergency on-site breakdown support via phone)`;
+
 // Seed initial default policies if none exist
 const ensureInitialPolicies = async () => {
     try {
-        const privacyCount = await Policy.countDocuments({ policyType: 'privacy' });
-        if (privacyCount === 0) {
-            await Policy.create({
-                policyType: 'privacy',
-                version: '1.0',
-                title: 'Krishna ERP Privacy Policy',
-                content: DEFAULT_PRIVACY_CONTENT,
-                summary: 'Initial baseline Privacy Policy establishing biometric safeguards, data usage, and user rights.',
-                effectiveDate: new Date('2026-04-01'),
-                lastUpdated: new Date('2026-04-01'),
-                publishedByName: 'System Master Admin',
-                status: 'published',
-                isCurrent: true
-            });
-        }
+        const seedPolicy = async (type, title, content, summary) => {
+            const count = await Policy.countDocuments({ policyType: type });
+            if (count === 0) {
+                await Policy.create({
+                    policyType: type,
+                    version: '1.0',
+                    title,
+                    content,
+                    summary,
+                    effectiveDate: new Date('2026-04-01'),
+                    lastUpdated: new Date('2026-04-01'),
+                    publishedByName: 'System Master Admin',
+                    status: 'published',
+                    isCurrent: true
+                });
+            }
+        };
 
-        const termsCount = await Policy.countDocuments({ policyType: 'terms' });
-        if (termsCount === 0) {
-            await Policy.create({
-                policyType: 'terms',
-                version: '1.0',
-                title: 'Krishna ERP Terms of Service',
-                content: DEFAULT_TERMS_CONTENT,
-                summary: 'Initial baseline Terms of Service establishing enterprise usage rules, liability, and governance.',
-                effectiveDate: new Date('2026-04-01'),
-                lastUpdated: new Date('2026-04-01'),
-                publishedByName: 'System Master Admin',
-                status: 'published',
-                isCurrent: true
-            });
-        }
+        await seedPolicy('privacy', 'Krishna ERP Privacy Policy', DEFAULT_PRIVACY_CONTENT, 'Initial baseline Privacy Policy establishing biometric safeguards, data usage, and user rights.');
+        await seedPolicy('terms', 'Krishna ERP Terms of Service', DEFAULT_TERMS_CONTENT, 'Initial baseline Terms of Service establishing enterprise usage rules, liability, and governance.');
+        await seedPolicy('refund', 'Krishna Engineering Works Cancellation & Refund Policy', DEFAULT_REFUND_CONTENT, 'Standard cancellation and refund guidelines with 5-7 business day turnaround for merchant compliance.');
+        await seedPolicy('shipping', 'Krishna Engineering Works Shipping & Delivery Policy', DEFAULT_SHIPPING_CONTENT, 'Commercial delivery, transit guidelines, and on-site assembly milestones for fabrication.');
+        await seedPolicy('contact', 'Krishna Engineering Works Corporate Contact & Grievance Directives', DEFAULT_CONTACT_CONTENT, 'Official contact channels, registered physical address, and grievance redressal officer details.');
     } catch (err) {
         console.error('Error ensuring initial policies:', err.message);
     }
@@ -127,8 +180,8 @@ ensureInitialPolicies();
 exports.getCurrentPolicy = async (req, res) => {
     try {
         const { type } = req.params;
-        if (!['privacy', 'terms'].includes(type)) {
-            return res.status(400).json({ message: 'Invalid policy type. Must be privacy or terms.' });
+        if (!['privacy', 'terms', 'refund', 'shipping', 'contact'].includes(type)) {
+            return res.status(400).json({ message: 'Invalid policy type. Must be privacy, terms, refund, shipping, or contact.' });
         }
 
         let policy = await Policy.findOne({ policyType: type, isCurrent: true, status: 'published' });

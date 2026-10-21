@@ -34,10 +34,17 @@ const PolicyViewer = ({ defaultType = 'privacy' }) => {
                     if (fallbackRes.data) {
                         const key = policyType === 'privacy' ? 'footer_privacy' : 'footer_tos';
                         const setting = fallbackRes.data.find(s => s.key === key);
+                        const titles = {
+                            privacy: 'Krishna ERP Privacy Policy',
+                            terms: 'Krishna ERP Terms of Service',
+                            refund: 'Krishna Engineering Works Cancellation & Refund Policy',
+                            shipping: 'Krishna Engineering Works Shipping & Delivery Policy',
+                            contact: 'Krishna Engineering Works Corporate Contact & Grievance Redressal'
+                        };
                         setPolicy({
                             policyType,
                             version: '1.0',
-                            title: policyType === 'privacy' ? 'Krishna ERP Privacy Policy' : 'Krishna ERP Terms of Service',
+                            title: titles[policyType] || 'Company Policy Directive',
                             content: setting?.value || 'Policy content currently updating.',
                             effectiveDate: new Date('2026-04-01'),
                             lastUpdated: new Date('2026-04-01')
@@ -88,26 +95,56 @@ const PolicyViewer = ({ defaultType = 'privacy' }) => {
 
                     <div className="flex items-center gap-2 sm:gap-3 justify-between sm:justify-end">
                         {/* Tab Switcher */}
-                        <div className="bg-slate-200 dark:bg-slate-800 p-1 rounded-2xl flex gap-1 flex-1 sm:flex-initial">
+                        <div className="bg-slate-200 dark:bg-slate-800 p-1 rounded-2xl flex flex-wrap gap-1 flex-1 sm:flex-initial">
                             <button
                                 onClick={() => setPolicyType('privacy')}
-                                className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all text-center ${
+                                className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all text-center ${
                                     policyType === 'privacy' 
                                         ? 'bg-blue-600 text-white shadow-md' 
                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                 }`}
                             >
-                                Privacy Policy
+                                Privacy
                             </button>
                             <button
                                 onClick={() => setPolicyType('terms')}
-                                className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all text-center ${
+                                className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all text-center ${
                                     policyType === 'terms' 
                                         ? 'bg-blue-600 text-white shadow-md' 
                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                 }`}
                             >
                                 Terms
+                            </button>
+                            <button
+                                onClick={() => setPolicyType('refund')}
+                                className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all text-center ${
+                                    policyType === 'refund' 
+                                        ? 'bg-blue-600 text-white shadow-md' 
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                }`}
+                            >
+                                Refund Policy
+                            </button>
+                            <button
+                                onClick={() => setPolicyType('shipping')}
+                                className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all text-center ${
+                                    policyType === 'shipping' 
+                                        ? 'bg-blue-600 text-white shadow-md' 
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                }`}
+                            >
+                                Shipping / Delivery
+                            </button>
+                            <button
+                                onClick={() => setPolicyType('contact')}
+                                className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all text-center ${
+                                    policyType === 'contact' 
+                                        ? 'bg-blue-600 text-white shadow-md' 
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                }`}
+                            >
+                                Contact Us
                             </button>
                         </div>
 

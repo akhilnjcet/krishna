@@ -141,9 +141,12 @@ const Footer = () => {
                             <span className="font-bold text-slate-600 dark:text-slate-300 tracking-widest">A KRISHNA GROUP CONCERN</span>
                         </p>
                     </div>
-                    <div className="flex space-x-6 mt-4 md:mt-0">
+                    <div className="flex flex-wrap justify-center md:justify-end gap-x-6 gap-y-2 mt-4 md:mt-0 text-[11px]">
                         <Link to="/privacy-policy" className="hover:text-primary transition font-bold">Privacy Policy</Link>
                         <Link to="/terms-of-service" className="hover:text-primary transition font-bold">Terms of Service</Link>
+                        <Link to="/refund-policy" className="hover:text-primary transition font-bold">Refund Policy</Link>
+                        <Link to="/shipping-policy" className="hover:text-primary transition font-bold">Shipping Policy</Link>
+                        <Link to="/contact-us" className="hover:text-primary transition font-bold">Contact Us</Link>
                     </div>
                 </div>
             </div>
