@@ -5,7 +5,38 @@ import { Network } from '@capacitor/network';
 
 import { Capacitor } from '@capacitor/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy as reactLazy } from 'react';
+
+// Detect chunk load errors caused by new deployments invalidating old asset hashes
+const isChunkFetchError = (err) => {
+  const msg = (err?.message || '') + ' ' + (err?.stack || '') + ' ' + String(err || '');
+  return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|MIME type of "text\/html"|Loading chunk/i.test(msg);
+};
+
+// Resilient lazy loader: if a new build removed the chunk, force a reload to get latest version seamlessly
+const lazy = (factory) =>
+  reactLazy(async () => {
+    try {
+      return await factory();
+    } catch (error) {
+      if (isChunkFetchError(error)) {
+        const retryKey = `chunk_retry_${window.location.hash || 'app'}`;
+        const alreadyRetried = sessionStorage.getItem(retryKey);
+        if (!alreadyRetried) {
+          sessionStorage.setItem(retryKey, 'true');
+          if ('caches' in window) {
+            try {
+              const cacheNames = await caches.keys();
+              await Promise.all(cacheNames.map((c) => caches.delete(c)));
+            } catch (e) {}
+          }
+          window.location.reload();
+          return new Promise(() => {});
+        }
+      }
+      throw error;
+    }
+  });
 import { HashRouter as Router, Routes, Route, useLocation, useNavigate, Link } from 'react-router-dom';
 import { AlertTriangle, WifiOff } from 'lucide-react';
 import api from './services/api';
@@ -317,59 +348,71 @@ const SecurityWrapper = ({ children }) => {
   return <>{children}</>;
 };
 
-const isChunkFetchError = (err) => {
-  const msg = err?.message || '';
-  return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(msg);
-};
+const SystemRescue = ({ error, isChunkError }) => {
+  const handleReload = () => {
+    try {
+      sessionStorage.clear();
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name));
+        });
+      }
+    } catch (e) {}
+    window.location.reload();
+  };
 
-const SystemRescue = ({ error, reset, isChunkError }) => (
-  <div className="fixed inset-0 bg-[#0A0A0B] z-[9999] flex flex-col items-center justify-center p-8 text-center font-sans overflow-hidden">
-    <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -mr-48 -mt-48 animate-pulse"></div>
-    <div className="w-16 h-1 bg-blue-600 mb-10 rounded-full"></div>
-    <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] backdrop-blur-3xl mb-12 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-            <AlertTriangle className="w-24 h-24" />
-        </div>
-        <h2 className="text-4xl font-black text-white italic tracking-tighter mb-4">
-          {isChunkError ? "System Updated." : "Link Severed."}
-        </h2>
-        <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.4em] mb-8">
-          {isChunkError ? "A newer application version has been deployed" : "Atmospheric Signal Instability Detected"}
-        </p>
-        <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-left mb-8 max-w-sm">
-            <p className="text-[9px] font-bold text-slate-500 uppercase mb-2">Diagnostic Feed:</p>
-            <p className="text-[10px] text-white/60 font-medium font-mono truncate">{error?.message || "Unhandled Logic Exception"}</p>
-        </div>
-        <div className="flex flex-col gap-4">
-            <button 
-                onClick={reset}
-                className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-blue-600/30 hover:bg-blue-500 active:scale-95 transition-all"
-            >
-                {isChunkError ? "Refresh to Latest Version" : "Re-establish Connection (Restart)"}
-            </button>
-            <button 
-                onClick={() => { localStorage.clear(); window.location.href = '#/'; window.location.reload(); }}
-                className="w-full py-4 bg-white/5 text-slate-400 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-white/10 transition-all"
-            >
-                Purge System Memory & Logout
-            </button>
-        </div>
+  return (
+    <div className="fixed inset-0 bg-[#0A0A0B] z-[9999] flex flex-col items-center justify-center p-8 text-center font-sans overflow-hidden">
+      <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -mr-48 -mt-48 animate-pulse"></div>
+      <div className="w-16 h-1 bg-blue-600 mb-10 rounded-full"></div>
+      <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] backdrop-blur-3xl mb-12 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+              <AlertTriangle className="w-24 h-24" />
+          </div>
+          <h2 className="text-4xl font-black text-white italic tracking-tighter mb-4">
+            {isChunkError ? "System Updated." : "Connection Reset Required"}
+          </h2>
+          <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.4em] mb-8">
+            {isChunkError ? "A newer application version has been deployed" : "Session synchronization needed"}
+          </p>
+          <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-left mb-8 max-w-sm">
+              <p className="text-[9px] font-bold text-slate-500 uppercase mb-2">Diagnostic Feed:</p>
+              <p className="text-[10px] text-white/60 font-medium font-mono truncate">{error?.message || "Unhandled Logic Exception"}</p>
+          </div>
+          <div className="flex flex-col gap-4">
+              <button 
+                  onClick={handleReload}
+                  className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-blue-600/30 hover:bg-blue-500 active:scale-95 transition-all cursor-pointer"
+              >
+                  {isChunkError ? "Refresh to Latest Version" : "Restart & Re-establish Connection"}
+              </button>
+              <button 
+                  onClick={() => { localStorage.clear(); sessionStorage.clear(); window.location.href = '#/'; window.location.reload(); }}
+                  className="w-full py-4 bg-white/5 text-slate-400 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-white/10 transition-all cursor-pointer"
+              >
+                  Purge Cache & Re-login
+              </button>
+          </div>
+      </div>
+      <p className="text-[8px] font-bold text-slate-700 uppercase tracking-[0.5em]">Emergency Protocol: REACH-RESTORE v2.1</p>
     </div>
-    <p className="text-[8px] font-bold text-slate-700 uppercase tracking-[0.5em]">Emergency Protocol: REACH-RESTORE v2.0</p>
-  </div>
-);
+  );
+};
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null }; }
   static getDerivedStateFromError(error) { return { hasError: true, error }; }
   componentDidCatch(error, info) { 
     console.error("EMERGENCY INTERCEPT:", error, info);
-    // Auto-reload once if a new deployment removed old hashed chunks
+    // Auto-reload immediately if a new deployment removed old hashed chunks
     if (isChunkFetchError(error)) {
       const lastReload = sessionStorage.getItem('chunk_error_reload');
       const now = Date.now();
-      if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+      if (!lastReload || now - parseInt(lastReload, 10) > 3000) {
         sessionStorage.setItem('chunk_error_reload', now.toString());
+        if ('caches' in window) {
+          caches.keys().then((names) => names.forEach((name) => caches.delete(name)));
+        }
         window.location.reload();
       }
     }
@@ -381,19 +424,13 @@ class ErrorBoundary extends React.Component {
         <SystemRescue 
           error={this.state.error} 
           isChunkError={chunkErr}
-          reset={() => {
-            if (chunkErr) {
-              window.location.reload();
-            } else {
-              this.setState({ hasError: false });
-            }
-          }} 
         />
       );
     }
     return this.props.children;
   }
 }
+
 
 const App = () => {
   return (
