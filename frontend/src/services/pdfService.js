@@ -527,8 +527,8 @@ export const generateInvoicePDF = async (invoice) => {
     if (!invoice) return;
     await getBrandingSettings();
     const doc = new jsPDF();
-    doc.setCharSpace(0);
-    const headerHeight = addHeader(doc, 'Tax Invoice');
+    const isTax = invoice?.showTax !== false && invoice?.data?.showTax !== false;
+    const headerHeight = addHeader(doc, isTax ? 'Tax Invoice' : 'Invoice');
 
     const startY = headerHeight + 10;
     const invNumber = invoice._id ? `INV-${invoice._id.slice(-6).toUpperCase()}` : 'INV-GEN-2026';

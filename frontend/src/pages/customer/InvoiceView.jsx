@@ -44,7 +44,9 @@ const InvoiceView = () => {
                     {/* Invoice Header */}
                     <div className="bg-brand-950 text-white p-8 md:p-12 border-b-8 border-brand-accent flex flex-col md:flex-row justify-between items-start md:items-end">
                         <div className="mb-6 md:mb-0">
-                            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-2">TAX INVOICE</h1>
+                            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-2">
+                                {invoice.showTax === false || invoice.isTaxInvoice === false ? 'INVOICE' : 'TAX INVOICE'}
+                            </h1>
                             <div className="text-brand-accent font-bold tracking-widest">REF: {invoice.id}</div>
                         </div>
                         <div className="text-right w-full md:w-auto">

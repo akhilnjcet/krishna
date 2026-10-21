@@ -459,9 +459,11 @@ const Invoices = () => {
             <div className="no-print bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl mb-8 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-1 flex items-center gap-2">
-                        <FileText className="w-4 h-4" /> GST Invoicing Suite
+                        <FileText className="w-4 h-4" /> {showTax ? 'GST Invoicing Suite' : 'Invoicing Suite'}
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Tax Invoice Studio</h1>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
+                        {showTax ? 'Tax Invoice Studio' : 'Invoice Studio'}
+                    </h1>
                     {saveMessage && (
                         <div className="mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 inline-block">
                             {saveMessage}
@@ -966,7 +968,7 @@ const Invoices = () => {
                         <div className="no-print flex items-center justify-between bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800">
                             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400">
                                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                Live Tax Invoice Preview ({theme})
+                                {showTax ? 'Live Tax Invoice Preview' : 'Live Invoice Preview'} ({theme})
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
@@ -976,7 +978,9 @@ const Invoices = () => {
                                 >
                                     <FileText className="w-3.5 h-3.5" /> Back to Line Items
                                 </button>
-                                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold hidden sm:inline">GST Compliant</span>
+                                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold hidden sm:inline">
+                                    {showTax ? 'GST Compliant' : 'Commercial Bill'}
+                                </span>
                             </div>
                         </div>
 
@@ -997,12 +1001,14 @@ const Invoices = () => {
                                             )}
                                             <div>
                                                 <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
-                                                <p className="text-xs opacity-90 font-medium">Tax Invoice / Supply of Goods & Engineering Services</p>
+                                                <p className="text-xs opacity-90 font-medium">
+                                                    {showTax ? 'Tax Invoice / Supply of Goods & Engineering Services' : 'Invoice / Supply of Goods & Engineering Services'}
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
                                             <span className="bg-white/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
-                                                TAX INVOICE
+                                                {showTax ? 'TAX INVOICE' : 'INVOICE'}
                                             </span>
                                             <p className="text-sm font-black">{invoiceNumber}</p>
                                             <p className="text-xs opacity-80">Date: {invoiceDate}</p>
@@ -1028,7 +1034,9 @@ const Invoices = () => {
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right">
-                                        <h2 className="text-2xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>TAX INVOICE</h2>
+                                        <h2 className="text-2xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>
+                                            {showTax ? 'TAX INVOICE' : 'INVOICE'}
+                                        </h2>
                                         <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{invoiceNumber}</p>
                                         <p className="text-xs text-slate-500">Date: {invoiceDate} | Due: {dueDate}</p>
                                         <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 block mt-0.5">[{status}]</span>
@@ -1054,7 +1062,7 @@ const Invoices = () => {
                                             className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm"
                                             style={{ backgroundColor: themeColor }}
                                         >
-                                            TAX INVOICE
+                                            {showTax ? 'TAX INVOICE' : 'INVOICE'}
                                         </span>
                                         <p className="text-xs font-black text-slate-900 dark:text-white">{invoiceNumber}</p>
                                         <p className="text-xs text-slate-500">Invoice Date: {invoiceDate}</p>
@@ -1227,7 +1235,9 @@ const Invoices = () => {
                                         )}
                                         <div className="flex items-center justify-end gap-1 text-emerald-600 mb-1">
                                             <ShieldCheck className="w-3.5 h-3.5" />
-                                            <span className="text-[9px] font-black uppercase">Verified Tax Invoice</span>
+                                            <span className="text-[9px] font-black uppercase">
+                                                {showTax ? 'Verified Tax Invoice' : 'Verified Commercial Invoice'}
+                                            </span>
                                         </div>
                                         <p className="text-xs font-black uppercase text-slate-900 dark:text-white">Authorized Signatory</p>
                                         <p className="text-[10px] text-slate-400 font-medium">Krishna Engineering Works</p>
