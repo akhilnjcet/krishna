@@ -1,5 +1,5 @@
 const axios = require('axios');
-const Setting = require('../models/Setting');
+const Setting = require('../models/SystemSetting');
 
 /**
  * Cashfree Payment Gateway Service (API version 2023-08-01)
