@@ -19,7 +19,7 @@ const generateInvoiceNumber = () => `INV-${new Date().getFullYear()}-${Math.floo
 const Invoices = () => {
     const [customers, setCustomers] = useState([]);
     const [loadingCustomers, setLoadingCustomers] = useState(false);
-    const [workspaceViewMode, setWorkspaceViewMode] = useState('split'); // 'split' | 'editor' | 'preview'
+    const [workspaceViewMode, setWorkspaceViewMode] = useState('editor'); // 'editor' (default full width) | 'preview' | 'split'
 
     // Form State
     const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber());
@@ -513,37 +513,37 @@ const Invoices = () => {
                         <Save className="w-4 h-4" /> {savingHistory ? 'Saving...' : 'Save'}
                     </button>
 
-                    {/* View Mode Switcher */}
-                    <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200 dark:border-slate-700">
-                        <button
-                            type="button"
-                            onClick={() => setWorkspaceViewMode('split')}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition ${
-                                workspaceViewMode === 'split' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                            }`}
-                            title="Side-by-side view"
-                        >
-                            <Columns className="w-3.5 h-3.5" /> Split
-                        </button>
+                    {/* Primary Tab Switcher */}
+                    <div className="flex items-center bg-slate-200/80 dark:bg-slate-800 p-1 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-inner">
                         <button
                             type="button"
                             onClick={() => setWorkspaceViewMode('editor')}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition ${
-                                workspaceViewMode === 'editor' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition ${
+                                workspaceViewMode === 'editor' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                             }`}
-                            title="Full width editor (spacious, no scrolling)"
+                            title="Full width editor - All columns visible without horizontal scrolling"
                         >
-                            <Maximize2 className="w-3.5 h-3.5" /> Wide Editor
+                            <FileText className="w-3.5 h-3.5" /> 1. Line Item Entry (Full Width)
                         </button>
                         <button
                             type="button"
                             onClick={() => setWorkspaceViewMode('preview')}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition ${
-                                workspaceViewMode === 'preview' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition ${
+                                workspaceViewMode === 'preview' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                             }`}
-                            title="Preview document full screen"
+                            title="Full screen A4 document preview"
                         >
-                            <Eye className="w-3.5 h-3.5" /> Preview
+                            <Eye className="w-3.5 h-3.5" /> 2. Live Preview & Print
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setWorkspaceViewMode('split')}
+                            className={`hidden md:flex px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider items-center gap-1.5 transition ${
+                                workspaceViewMode === 'split' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                            title="Side-by-side view (best on large monitors)"
+                        >
+                            <Columns className="w-3.5 h-3.5" /> Split Screen
                         </button>
                     </div>
 
@@ -714,17 +714,16 @@ const Invoices = () => {
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => setWorkspaceViewMode(workspaceViewMode === 'editor' ? 'split' : 'editor')}
-                                    className="text-slate-500 hover:text-indigo-600 bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
-                                    title={workspaceViewMode === 'editor' ? 'Switch back to split view' : 'Expand editor to full screen width'}
+                                    onClick={() => setWorkspaceViewMode(workspaceViewMode === 'preview' ? 'editor' : 'preview')}
+                                    className="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+                                    title="View generated invoice document"
                                 >
-                                    {workspaceViewMode === 'editor' ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-                                    {workspaceViewMode === 'editor' ? 'Split View' : 'Wide View'}
+                                    <Eye className="w-3.5 h-3.5" /> View Live Preview
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setShowCatalogModal(true)}
-                                    className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
+                                    className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 transition"
                                 >
                                     <Tag className="w-3.5 h-3.5" /> Catalog
                                 </button>
@@ -926,6 +925,37 @@ const Invoices = () => {
                             </label>
                         </div>
                     </div>
+
+                    {/* Bottom Action Bar */}
+                    <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg flex flex-wrap items-center justify-between gap-4">
+                        <div className="text-xs font-bold text-slate-500">
+                            Total: <span className="text-base font-black text-indigo-600 dark:text-indigo-400">{formatCurrencyINR(totals.finalTotal)}</span> ({items.length} items)
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setWorkspaceViewMode('preview')}
+                                className="bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition"
+                            >
+                                <Eye className="w-4 h-4" /> Preview Invoice Document
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handlePrint}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
+                            >
+                                <Printer className="w-4 h-4" /> Print / PDF
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleSaveToHistory(false)}
+                                disabled={savingHistory}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
+                            >
+                                <Save className="w-4 h-4" /> {savingHistory ? 'Saving...' : 'Save Invoice'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -938,7 +968,16 @@ const Invoices = () => {
                                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                                 Live Tax Invoice Preview ({theme})
                             </div>
-                            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">GST Compliant</span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setWorkspaceViewMode('editor')}
+                                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow"
+                                >
+                                    <FileText className="w-3.5 h-3.5" /> Back to Line Items
+                                </button>
+                                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold hidden sm:inline">GST Compliant</span>
+                            </div>
                         </div>
 
                         <div 

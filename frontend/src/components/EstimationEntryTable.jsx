@@ -38,17 +38,17 @@ export const EstimationEntryTable = ({
           background: 'var(--card-bg, rgba(255, 255, 255, 0.03))'
         }}
       >
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: 'var(--table-header, #1e293b)', color: '#ffffff' }}>
-              <th style={{ padding: '0.6rem 0.35rem', textAlign: 'center', width: '38px', fontSize: '0.75rem', fontWeight: '800' }}>
+              <th style={{ padding: '0.6rem 0.25rem', textAlign: 'center', width: '34px', fontSize: '0.75rem', fontWeight: '800' }}>
                 #
               </th>
-              <th style={{ padding: '0.6rem 0.6rem', fontSize: '0.75rem', fontWeight: '800', minWidth: '150px' }}>
+              <th style={{ padding: '0.6rem 0.5rem', fontSize: '0.75rem', fontWeight: '800', minWidth: '120px' }}>
                 Item Description
               </th>
-              <th style={{ padding: '0.6rem 0.35rem', textAlign: 'center', width: '120px', fontSize: '0.75rem', fontWeight: '800' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+              <th style={{ padding: '0.6rem 0.25rem', textAlign: 'center', width: '110px', fontSize: '0.75rem', fontWeight: '800' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}>
                   <span style={{ color: enableQuantity ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>Qty</span>
                   {onToggleEnableQuantity && (
                     <label 
@@ -65,8 +65,8 @@ export const EstimationEntryTable = ({
                   )}
                 </div>
               </th>
-              <th style={{ padding: '0.6rem 0.5rem', textAlign: 'right', width: '110px', fontSize: '0.75rem', fontWeight: '800' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem' }}>
+              <th style={{ padding: '0.6rem 0.35rem', textAlign: 'right', width: '95px', fontSize: '0.75rem', fontWeight: '800' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.2rem' }}>
                   <span style={{ color: enableUnitPrice ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>Rate (₹)</span>
                   {onToggleEnableUnitPrice && (
                     <label 
@@ -85,14 +85,14 @@ export const EstimationEntryTable = ({
               </th>
               <th 
                 title="Combine consecutive items into a package with curly brace"
-                style={{ padding: '0.6rem 0.4rem', textAlign: 'center', width: '75px', fontSize: '0.72rem', fontWeight: '800', background: 'rgba(217, 119, 6, 0.2)', color: '#FBBF24' }}
+                style={{ padding: '0.6rem 0.3rem', textAlign: 'center', width: '68px', fontSize: '0.72rem', fontWeight: '800', background: 'rgba(217, 119, 6, 0.2)', color: '#FBBF24' }}
               >
                 Combine
               </th>
-              <th style={{ padding: '0.6rem 0.4rem', textAlign: 'center', width: '105px', fontSize: '0.72rem', fontWeight: '800', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399' }}>
+              <th style={{ padding: '0.6rem 0.3rem', textAlign: 'center', width: '95px', fontSize: '0.72rem', fontWeight: '800', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399' }}>
                 {enableUnitPrice ? 'Package (₹)' : 'Total (₹)'}
               </th>
-              <th style={{ padding: '0.6rem 0.25rem', textAlign: 'center', width: '36px', fontSize: '0.75rem', fontWeight: '800' }}>
+              <th style={{ padding: '0.6rem 0.2rem', textAlign: 'center', width: '32px', fontSize: '0.75rem', fontWeight: '800' }}>
                 &nbsp;
               </th>
             </tr>
