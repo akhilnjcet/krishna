@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mail, Lock, ShieldCheck, ArrowRight, Activity, Users, Info, Phone, Key, Smartphone, Loader2 } from 'lucide-react';
+import { 
+    User, Lock, Mail, Key, ArrowRight, Eye, EyeOff, 
+    Loader2, AlertCircle, ChevronLeft 
+} from 'lucide-react';
 import api from '../services/api';
 import useAuthStore from '../stores/authStore';
+import ThemeToggle from '../components/ThemeToggle';
 
 const Login = () => {
-    const [loginMode, setLoginMode] = useState('identity'); // 'identity' or 'mail'
+    const [loginMode, setLoginMode] = useState('identity'); // 'identity' (Admin ID) or 'mail' (Mail / OTP)
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
     const [otpSent, setOtpSent] = useState(false);
@@ -85,183 +90,293 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
-            {/* Background Accents */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -mr-48 -mt-48"></div>
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -ml-48 -mb-48"></div>
+        <div className="min-h-screen bg-[#edf2f7] dark:bg-slate-950 flex flex-col justify-between items-center p-4 sm:p-6 md:p-8 font-sans relative overflow-x-hidden transition-colors duration-250">
+            {/* Top Navigation Bar: Back & Theme Toggle */}
+            <div className="w-full max-w-5xl flex items-center justify-between py-2 z-10">
+                <Link
+                    to="/"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#2563EB] dark:text-slate-400 dark:hover:text-blue-400 transition-colors px-2.5 py-1.5 rounded-xl hover:bg-white/60 dark:hover:bg-slate-900"
+                >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Back to Website</span>
+                </Link>
+                <ThemeToggle />
+            </div>
 
-            <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl relative z-10 overflow-hidden">
-                <div className="grid grid-cols-1 md:grid-cols-2">
-                    <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] p-8 sm:p-12 text-white flex flex-col justify-between relative overflow-hidden">
-                        <div className="absolute inset-0 opacity-10">
-                            <Activity className="w-48 h-48 absolute -bottom-10 -right-10 rotate-12" />
+            {/* Centered Modern Login Card */}
+            <main className="w-full max-w-[460px] my-auto py-6 sm:py-8 z-10">
+                <motion.div 
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2rem] border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none p-6 sm:p-10"
+                >
+                    {/* Brand Logo & Name */}
+                    <div className="flex items-center justify-center gap-2.5 mb-6 sm:mb-7">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 flex items-center justify-center p-1.5 shadow-sm flex-shrink-0">
+                            <img 
+                                src="/logo512.png" 
+                                alt="Krishna ERP Logo" 
+                                className="w-full h-full object-contain rounded-md"
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                }}
+                            />
                         </div>
-                        <div className="relative z-10">
-                            <Link to="/" className="flex items-center gap-3 mb-10">
-                                <ShieldCheck className="w-8 h-8" />
-                                <span className="font-bold tracking-tight text-xl uppercase">Krishna <span className="opacity-60 italic">ERP</span></span>
-                            </Link>
-                            <h2 className="text-4xl font-black italic leading-none mb-4 tracking-tighter">Unified <br />Command.</h2>
-                            <p className="text-blue-100 text-xs font-bold uppercase tracking-widest leading-loose">Real-time sync and multi-layered credential protocol active.</p>
-                        </div>
+                        <span className="text-xl sm:text-2xl font-black tracking-tight text-[#0f172a] dark:text-white uppercase font-sans">
+                            KRISHNA <span className="text-[#2563EB]">ERP</span>
+                        </span>
                     </div>
 
-                    <div className="p-6 sm:p-10 md:p-12">
-                        <div className="flex gap-4 mb-10 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
-                            <button 
-                                onClick={() => { setLoginMode('identity'); setOtpSent(false); }}
-                                className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${loginMode === 'identity' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-400'}`}
-                            >
-                                Admin ID
-                            </button>
-                            <button 
-                                onClick={() => setLoginMode('mail')}
-                                className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${loginMode === 'mail' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-400'}`}
-                            >
-                                Mail/OTP
-                            </button>
-                        </div>
+                    {/* Headings */}
+                    <div className="text-center mb-6 sm:mb-7">
+                        <h1 className="text-2xl sm:text-3xl font-black text-[#0f172a] dark:text-white tracking-tight">
+                            Welcome back
+                        </h1>
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
+                            Sign in to your workspace
+                        </p>
+                    </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <AnimatePresence mode="wait">
-                                {loginMode === 'identity' ? (
-                                    <motion.div 
-                                        key="id"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        className="space-y-4"
-                                    >
-                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center gap-4 focus-within:border-blue-500 transition-all">
-                                            <Users className="w-5 h-5 text-slate-400" />
+                    {/* Login Mode Switcher */}
+                    <div className="grid grid-cols-2 p-1.5 bg-[#f1f5f9] dark:bg-slate-800/80 rounded-2xl mb-6 border border-slate-200/60 dark:border-slate-700/60">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setLoginMode('identity');
+                                setOtpSent(false);
+                                setError('');
+                            }}
+                            className={`py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 ${
+                                loginMode === 'identity'
+                                    ? 'bg-[#2563EB] text-white shadow-md shadow-blue-500/25'
+                                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                            }`}
+                        >
+                            ADMIN ID
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setLoginMode('mail');
+                                setError('');
+                            }}
+                            className={`py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 ${
+                                loginMode === 'mail'
+                                    ? 'bg-[#2563EB] text-white shadow-md shadow-blue-500/25'
+                                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                            }`}
+                        >
+                            MAIL / OTP
+                        </button>
+                    </div>
+
+                    {/* Error Notice */}
+                    {error && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="p-3.5 mb-5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-2xl flex items-center gap-2.5 text-xs font-bold text-rose-600 dark:text-rose-400"
+                        >
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <span className="leading-snug">{error}</span>
+                        </motion.div>
+                    )}
+
+                    {/* Form Controls */}
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <AnimatePresence mode="wait">
+                            {loginMode === 'identity' ? (
+                                <motion.div
+                                    key="admin-id-fields"
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 10 }}
+                                    transition={{ duration: 0.18 }}
+                                    className="space-y-3.5"
+                                >
+                                    {/* Admin User ID */}
+                                    <div className="bg-[#f8fafc] dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl px-4 py-3 flex items-center gap-3 focus-within:border-[#2563EB] focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                                        <User className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                                        <input
+                                            type="text"
+                                            required
+                                            id="admin-username"
+                                            name="username"
+                                            autoComplete="username"
+                                            value={identifier}
+                                            onChange={(e) => setIdentifier(e.target.value)}
+                                            placeholder="Admin User ID"
+                                            className="w-full bg-transparent border-0 p-0 text-sm font-semibold text-[#0f172a] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-0"
+                                        />
+                                    </div>
+
+                                    {/* Security Key / Password */}
+                                    <div className="bg-[#f8fafc] dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl px-4 py-3 flex items-center gap-3 focus-within:border-[#2563EB] focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                                        <Lock className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                                        <input
+                                            type={showPassword ? 'text' : 'password'}
+                                            required
+                                            id="admin-password"
+                                            name="password"
+                                            autoComplete="current-password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            placeholder="Security Key"
+                                            className="w-full bg-transparent border-0 p-0 text-sm font-semibold text-[#0f172a] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-0"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors focus:outline-none"
+                                            title={showPassword ? "Hide password" : "Show password"}
+                                            aria-label={showPassword ? "Hide password" : "Show password"}
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="w-4 h-4" />
+                                            ) : (
+                                                <Eye className="w-4 h-4" />
+                                            )}
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="mail-otp-fields"
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    transition={{ duration: 0.18 }}
+                                    className="space-y-3.5"
+                                >
+                                    {/* Registered Email */}
+                                    <div className={`bg-[#f8fafc] dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl px-4 py-3 flex items-center gap-3 transition-all ${
+                                        otpSent ? 'opacity-80' : 'focus-within:border-[#2563EB] focus-within:ring-2 focus-within:ring-blue-500/20'
+                                    }`}>
+                                        <Mail className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                                        <input
+                                            type="email"
+                                            required
+                                            disabled={otpSent}
+                                            id="registered-email"
+                                            name="email"
+                                            autoComplete="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="Registered Email"
+                                            className="w-full bg-transparent border-0 p-0 text-sm font-semibold text-[#0f172a] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-0"
+                                        />
+                                    </div>
+
+                                    {/* 6-Digit OTP */}
+                                    {otpSent && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            className="bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-2xl px-4 py-3 flex items-center gap-3 focus-within:border-[#2563EB] focus-within:ring-2 focus-within:ring-blue-500/20 transition-all"
+                                        >
+                                            <Key className="w-5 h-5 text-[#2563EB] flex-shrink-0" />
                                             <input
                                                 type="text"
                                                 required
-                                                name="username"
-                                                id="username"
-                                                autocomplete="username"
-                                                value={identifier}
-                                                onChange={(e) => setIdentifier(e.target.value)}
-                                                className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-300"
-                                                placeholder="Admin User ID"
+                                                autoFocus
+                                                maxLength={6}
+                                                id="otp-code"
+                                                name="otp"
+                                                value={otp}
+                                                onChange={(e) => setOtp(e.target.value)}
+                                                placeholder="Enter 6-digit OTP"
+                                                className="w-full bg-transparent border-0 p-0 text-sm font-black tracking-widest text-[#2563EB] dark:text-blue-400 placeholder:text-blue-300 dark:placeholder:text-blue-800 focus:outline-none focus:ring-0"
                                             />
-                                        </div>
-                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center gap-4 focus-within:border-blue-500 transition-all">
-                                            <Lock className="w-5 h-5 text-slate-400" />
-                                            <input
-                                                type="password"
-                                                required
-                                                name="password"
-                                                id="password"
-                                                autocomplete="current-password"
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-300"
-                                                placeholder="Security Key"
-                                            />
-                                        </div>
-                                    </motion.div>
-                                ) : (
-                                    <motion.div 
-                                        key="mail"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        className="space-y-4"
-                                    >
-                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center gap-4 focus-within:border-blue-500 transition-all">
-                                            <Mail className="w-5 h-5 text-slate-400" />
-                                            <input
-                                                type="email"
-                                                required
-                                                disabled={otpSent}
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-300"
-                                                placeholder="Registered Email"
-                                            />
-                                        </div>
-                                        {otpSent && (
-                                            <motion.div 
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-4 focus-within:border-blue-500 transition-all"
-                                            >
-                                                <Key className="w-5 h-5 text-blue-500" />
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    autoFocus
-                                                    value={otp}
-                                                    onChange={(e) => setOtp(e.target.value)}
-                                                    className="bg-transparent border-0 w-full p-0 focus:ring-0 text-sm font-black tracking-[0.5em] text-blue-600 placeholder:text-blue-300"
-                                                    placeholder="000000"
-                                                />
-                                            </motion.div>
-                                        )}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                                        </motion.div>
+                                    )}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
-                            <div className="flex items-center justify-between px-1">
-                                <Link to="/forgot-password" size="sm" className="text-[10px] font-extrabold text-slate-300 hover:text-blue-600 uppercase tracking-widest transition-colors">
-                                    Lost Access?
-                                </Link>
-                                <button type="button" onClick={() => otpSent ? setOtpSent(false) : navigate('/register')} className="text-[10px] font-extrabold text-blue-600 hover:underline uppercase tracking-widest transition-colors">
-                                    {otpSent ? "Wrong Email?" : "Register Member"}
+                        {/* Navigation Links Row: Forgot access & Register */}
+                        <div className="flex items-center justify-between pt-1 px-1">
+                            {loginMode === 'mail' && otpSent ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setOtpSent(false);
+                                        setOtp('');
+                                    }}
+                                    className="text-xs sm:text-sm font-bold text-[#2563EB] hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                >
+                                    Wrong email? Resend
                                 </button>
-                            </div>
-
-                            {error && (
-                                <div className="p-3 bg-red-50 text-red-500 rounded-xl flex items-center gap-2 border border-red-100">
-                                    <AlertCircle className="w-4 h-4" />
-                                    <p className="text-[10px] font-extrabold uppercase tracking-tight">{error}</p>
-                                </div>
+                            ) : (
+                                <Link
+                                    to="/forgot-password"
+                                    className="text-xs sm:text-sm font-semibold text-[#2563EB] hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                >
+                                    Forgot access?
+                                </Link>
                             )}
 
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full py-5 bg-[#2563EB] text-white rounded-3xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-blue-500/30 active:scale-95 transition-all flex items-center justify-center gap-3 mt-4"
+                            <Link
+                                to="/register"
+                                className="text-xs sm:text-sm font-semibold text-[#2563EB] hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                             >
-                                {loading ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : (
-                                    <>
-                                        {otpSent ? "Verify & Command" : loginMode === 'mail' ? "Send OTP Code" : "Initial Authorization"}
-                                        <ArrowRight className="w-4 h-4" />
-                                    </>
-                                )}
-                            </button>
-                        </form>
+                                Register
+                            </Link>
+                        </div>
 
-                        {/* Public Policy Links */}
-                        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
-                            <div className="flex items-center justify-center gap-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                <Link 
-                                    to="/privacy-policy" 
-                                    className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
-                                >
-                                    Privacy Policy
-                                </Link>
-                                <span className="text-slate-300 dark:text-slate-600">|</span>
-                                <Link 
-                                    to="/terms-of-service" 
-                                    className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
-                                >
-                                    Terms of Service
-                                </Link>
-                            </div>
+                        {/* Prominent Sign in Button */}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-3.5 sm:py-4 px-6 bg-[#2563EB] hover:bg-[#1d4ed8] active:bg-[#1e40af] disabled:opacity-75 disabled:cursor-wait text-white rounded-2xl font-bold text-sm sm:text-base shadow-lg shadow-blue-500/25 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-5"
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin text-white" />
+                                    <span>Processing...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>
+                                        {otpSent 
+                                            ? "Verify & Sign in" 
+                                            : loginMode === 'mail' 
+                                                ? "Send OTP Code" 
+                                                : "Sign in"}
+                                    </span>
+                                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                                </>
+                            )}
+                        </button>
+                    </form>
+
+                    {/* Privacy Policy & Terms of Service Links */}
+                    <div className="mt-8 pt-5 border-t border-slate-100 dark:border-slate-800 text-center">
+                        <div className="flex items-center justify-center gap-3 text-xs font-medium text-slate-400 dark:text-slate-500">
+                            <Link 
+                                to="/privacy-policy" 
+                                className="hover:text-[#2563EB] dark:hover:text-blue-400 hover:underline transition-colors"
+                            >
+                                Privacy Policy
+                            </Link>
+                            <span className="text-slate-300 dark:text-slate-700">|</span>
+                            <Link 
+                                to="/terms-of-service" 
+                                className="hover:text-[#2563EB] dark:hover:text-blue-400 hover:underline transition-colors"
+                            >
+                                Terms of Service
+                            </Link>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <p className="fixed bottom-4 text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.5em]">System Cloud Node: SECURE-01</p>
+                </motion.div>
+            </main>
+
+            {/* Bottom Security Watermark */}
+            <footer className="w-full text-center py-2 text-[10px] font-bold text-slate-400/80 dark:text-slate-600 uppercase tracking-widest z-10">
+                Krishna Engineering Works · Secure Workspace Protocol
+            </footer>
         </div>
     );
 };
-
-const AlertCircle = ({ className }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-);
 
 export default Login;
