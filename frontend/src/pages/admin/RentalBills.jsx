@@ -477,14 +477,14 @@ const RentalBills = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-slate-950 p-4 md:p-8 font-sans">
+        <div className="min-h-screen bg-slate-100 dark:bg-slate-950 p-2 sm:p-4 md:p-8 font-sans">
             {/* Header Toolbar */}
-            <div className="no-print bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl mb-8 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+            <div className="no-print bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl mb-6 sm:mb-8 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-1 flex items-center gap-2">
                         <KeyRound className="w-4 h-4" /> Asset Management & Equipment Rental Suite
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
                         Equipment Rental Studio
                     </h1>
                     {saveMessage && (
@@ -494,27 +494,27 @@ const RentalBills = () => {
                     )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                     {/* Catalog Picker */}
                     <button
                         onClick={() => setShowCatalogModal(true)}
-                        className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition"
+                        className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition"
                     >
-                        <Wrench className="w-4 h-4" /> Pick Equipment
+                        <Wrench className="w-4 h-4" /> Assets
                     </button>
 
                     {/* Duplicate */}
                     <button
                         onClick={handleDuplicateBill}
-                        className="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition"
+                        className="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition"
                     >
-                        <Copy className="w-4 h-4" /> Duplicate
+                        <Copy className="w-4 h-4" /> Clone
                     </button>
 
                     {/* Reset */}
                     <button
                         onClick={handleResetBill}
-                        className="bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-rose-600 border border-slate-200 dark:border-slate-700 hover:bg-rose-50 px-3 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition"
+                        className="bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-rose-600 border border-slate-200 dark:border-slate-700 hover:bg-rose-50 px-3 py-2 sm:px-3 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition"
                     >
                         <RotateCcw className="w-4 h-4" /> New
                     </button>
@@ -522,16 +522,16 @@ const RentalBills = () => {
                     {/* Load History */}
                     <button
                         onClick={handleOpenHistoryModal}
-                        className="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition"
+                        className="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition"
                     >
-                        <History className="w-4 h-4" /> Load Saved
+                        <History className="w-4 h-4" /> History
                     </button>
 
                     {/* Save Button */}
                     <button
                         onClick={() => handleSaveToHistory(false)}
                         disabled={savingHistory}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
                     >
                         <Save className="w-4 h-4" /> {savingHistory ? 'Saving...' : 'Save'}
                     </button>
@@ -539,7 +539,7 @@ const RentalBills = () => {
                     {/* Print Button */}
                     <button
                         onClick={handlePrint}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
                     >
                         <Printer className="w-4 h-4" /> Print Agreement
                     </button>
@@ -547,26 +547,26 @@ const RentalBills = () => {
             </div>
 
             {/* Workflow Mode Switcher */}
-            <div className="no-print bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md mb-8 flex flex-wrap gap-2 w-fit">
+            <div className="no-print bg-white dark:bg-slate-900 p-1.5 sm:p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md mb-6 sm:mb-8 flex flex-col sm:flex-row gap-1.5 sm:gap-2 w-full sm:w-fit">
                 <button
                     onClick={() => setWorkflowMode('checkout')}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition ${
+                    className={`flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition ${
                         workflowMode === 'checkout' 
                             ? 'bg-indigo-600 text-white shadow-md' 
                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                 >
-                    <KeyRound className="w-4 h-4" /> Phase 1: Check-Out / Equipment Handover
+                    <KeyRound className="w-4 h-4 flex-shrink-0" /> <span>Phase 1: Issue Equipment</span>
                 </button>
                 <button
                     onClick={() => setWorkflowMode('return')}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition ${
+                    className={`flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition ${
                         workflowMode === 'return' 
                             ? 'bg-emerald-600 text-white shadow-md' 
                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                 >
-                    <CheckCircle2 className="w-4 h-4" /> Phase 2: Process Return & Final Settlement
+                    <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> <span>Phase 2: Return & Settle</span>
                 </button>
             </div>
 

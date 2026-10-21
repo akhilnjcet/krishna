@@ -543,7 +543,7 @@ const AdminLayout = () => {
                     </div>
                 </header>
 
-                <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
+                <main className="flex-1 p-2.5 sm:p-4 md:p-8 pb-8 overflow-x-hidden">
                     <div className="max-w-[1500px] mx-auto">
                         <Outlet />
                     </div>

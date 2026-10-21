@@ -393,16 +393,16 @@ const AdminInventory = () => {
                 </div>
 
                 {/* Primary Action Buttons */}
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
                     <button
                         onClick={() => handleOpenCreateItem('tool')}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition active:scale-95"
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition active:scale-95"
                     >
                         <Plus className="w-4 h-4" /> Add New Tool
                     </button>
                     <button
                         onClick={() => handleOpenCreateItem('material')}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition active:scale-95"
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition active:scale-95"
                     >
                         <Plus className="w-4 h-4" /> Add Material / Product
                     </button>
@@ -411,56 +411,56 @@ const AdminInventory = () => {
 
             {/* Quick Metrics Cards */}
             {stats && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                    <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                         <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400 mb-2">
                             <span className="text-[10px] font-black uppercase tracking-widest">Available Tools</span>
                             <Wrench className="w-4 h-4" />
                         </div>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.tools.available}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
+                        <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{stats.tools.available}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 truncate">
                             {stats.tools.assigned} on loan · {stats.tools.inRepair} in repair
                         </p>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                         <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 mb-2">
                             <span className="text-[10px] font-black uppercase tracking-widest">Active Repairs</span>
                             <Hammer className="w-4 h-4" />
                         </div>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.repairs.active}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
+                        <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{stats.repairs.active}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 truncate">
                             Total Spend: {formatCurrencyINR(stats.repairs.totalSpend)}
                         </p>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                         <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 mb-2">
                             <span className="text-[10px] font-black uppercase tracking-widest">Materials / Products</span>
                             <Layers className="w-4 h-4" />
                         </div>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.materials.total}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
+                        <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{stats.materials.total}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 truncate">
                             Categories & Stock lines
                         </p>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                         <div className="flex items-center justify-between text-rose-600 dark:text-rose-400 mb-2">
                             <span className="text-[10px] font-black uppercase tracking-widest">Low Stock Items</span>
                             <AlertTriangle className="w-4 h-4" />
                         </div>
-                        <p className="text-2xl font-black text-rose-600 dark:text-rose-400">{stats.materials.lowStock}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Below reorder threshold</p>
+                        <p className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400">{stats.materials.lowStock}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 truncate">Below reorder threshold</p>
                     </div>
                 </div>
             )}
 
             {/* Navigation Tab Bar */}
-            <div className="flex items-center gap-2 mb-6 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm max-w-fit">
+            <div className="flex items-center gap-2 mb-6 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm w-full overflow-x-auto">
                 <button
                     onClick={() => { setActiveTab('tools'); setSearchQuery(''); }}
-                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition ${
+                    className={`px-4 sm:px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition whitespace-nowrap flex-shrink-0 ${
                         activeTab === 'tools'
                             ? 'bg-indigo-600 text-white shadow-md'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -470,7 +470,7 @@ const AdminInventory = () => {
                 </button>
                 <button
                     onClick={() => { setActiveTab('materials'); setSearchQuery(''); }}
-                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition ${
+                    className={`px-4 sm:px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition whitespace-nowrap flex-shrink-0 ${
                         activeTab === 'materials'
                             ? 'bg-indigo-600 text-white shadow-md'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -480,7 +480,7 @@ const AdminInventory = () => {
                 </button>
                 <button
                     onClick={() => { setActiveTab('repairs'); setSearchQuery(''); }}
-                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition ${
+                    className={`px-4 sm:px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition whitespace-nowrap flex-shrink-0 ${
                         activeTab === 'repairs'
                             ? 'bg-indigo-600 text-white shadow-md'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -491,9 +491,9 @@ const AdminInventory = () => {
             </div>
 
             {/* Search & Filter Toolbar */}
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-3 flex-1 min-w-[280px]">
-                    <div className="relative w-full max-w-md">
+            <div className="bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="relative w-full">
                         <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                         <input
                             type="text"
@@ -522,22 +522,22 @@ const AdminInventory = () => {
                             else if (activeTab === 'materials') fetchMaterials();
                             else fetchRepairs();
                         }}
-                        className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-2 rounded-xl text-xs font-bold"
+                        className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold shrink-0"
                     >
                         Search
                     </button>
                 </div>
 
                 {/* Sub-Filters per tab */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
                     {activeTab === 'tools' && (
-                        <div className="flex items-center gap-1.5 text-xs font-bold">
-                            <span className="text-slate-400 text-[10px] uppercase font-black">Status:</span>
+                        <div className="flex items-center gap-1.5 text-xs font-bold flex-nowrap">
+                            <span className="text-slate-400 text-[10px] uppercase font-black shrink-0">Status:</span>
                             {['All', 'Available', 'Assigned', 'In Repair', 'Total Loss'].map(st => (
                                 <button
                                     key={st}
                                     onClick={() => setToolStatusFilter(st)}
-                                    className={`px-3 py-1.5 rounded-xl transition ${
+                                    className={`px-3 py-1.5 rounded-xl transition whitespace-nowrap shrink-0 ${
                                         toolStatusFilter === st
                                             ? 'bg-indigo-600 text-white'
                                             : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
@@ -550,8 +550,8 @@ const AdminInventory = () => {
                     )}
 
                     {activeTab === 'repairs' && (
-                        <div className="flex items-center gap-1.5 text-xs font-bold">
-                            <span className="text-slate-400 text-[10px] uppercase font-black">Outcome:</span>
+                        <div className="flex items-center gap-1.5 text-xs font-bold flex-nowrap">
+                            <span className="text-slate-400 text-[10px] uppercase font-black shrink-0">Outcome:</span>
                             {['All', 'Pending', 'Repaired', 'Total loss'].map(ot => (
                                 <button
                                     key={ot}
@@ -883,19 +883,20 @@ const AdminInventory = () => {
             )}
 
             {/* ══════════════ MODAL: ADD / EDIT ITEM ══════════════ */}
+            {/* ══════════════ MODAL: ADD / EDIT ITEM ══════════════ */}
             {showItemModal && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
-                            <h2 className="text-base font-black uppercase text-slate-900 dark:text-white">
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 md:p-8 max-h-[92vh] overflow-y-auto">
+                        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
+                            <h2 className="text-sm sm:text-base font-black uppercase text-slate-900 dark:text-white">
                                 {editingItem ? 'Edit Item' : modalItemType === 'tool' ? 'Register New Tool' : 'Add Material / Product'}
                             </h2>
-                            <button onClick={() => setShowItemModal(false)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setShowItemModal(false)} className="text-slate-400 hover:text-slate-600 p-1">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSaveItem} className="space-y-4 text-xs font-bold">
+                        <form onSubmit={handleSaveItem} className="space-y-3 sm:space-y-4 text-xs font-bold">
                             <div>
                                 <label className="block text-slate-500 mb-1">Item Name *</label>
                                 <input
@@ -908,7 +909,7 @@ const AdminInventory = () => {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-slate-500 mb-1">Tool Code / SKU</label>
                                     <input
@@ -933,7 +934,7 @@ const AdminInventory = () => {
 
                             {modalItemType === 'tool' ? (
                                 <>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-slate-500 mb-1">Brand</label>
                                             <input
@@ -955,7 +956,7 @@ const AdminInventory = () => {
                                             />
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-slate-500 mb-1">Purchase Cost (₹)</label>
                                             <input
@@ -982,7 +983,7 @@ const AdminInventory = () => {
                                 </>
                             ) : (
                                 <>
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                         <div>
                                             <label className="block text-slate-500 mb-1">Quantity *</label>
                                             <input
@@ -1036,17 +1037,17 @@ const AdminInventory = () => {
                                 />
                             </div>
 
-                            <div className="pt-2 flex justify-end gap-3">
+                            <div className="pt-2 flex flex-col-reverse sm:flex-row justify-end gap-2.5">
                                 <button
                                     type="button"
                                     onClick={() => setShowItemModal(false)}
-                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 rounded-xl"
+                                    className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 rounded-xl font-bold"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow"
+                                    className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow font-bold"
                                 >
                                     Save Item
                                 </button>
@@ -1058,14 +1059,14 @@ const AdminInventory = () => {
 
             {/* ══════════════ MODAL: ASSIGN TOOL TO STAFF ══════════════ */}
             {showAssignModal && selectedToolForAssign && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 md:p-8">
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 md:p-8">
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
                             <div>
                                 <h2 className="text-base font-black uppercase text-slate-900 dark:text-white">Assign Tool to Staff</h2>
                                 <p className="text-xs text-indigo-600 font-bold">{selectedToolForAssign.name} ({selectedToolForAssign.code})</p>
                             </div>
-                            <button onClick={() => setShowAssignModal(false)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setShowAssignModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -1085,7 +1086,7 @@ const AdminInventory = () => {
                                                 staffName: st ? st.name : ''
                                             });
                                         }}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
                                     >
                                         <option value="">Select registered staff...</option>
                                         {staffList.map(st => (
@@ -1101,7 +1102,7 @@ const AdminInventory = () => {
                                         placeholder="Staff member full name"
                                         value={assignForm.staffName}
                                         onChange={(e) => setAssignForm({ ...assignForm, staffName: e.target.value })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
                                     />
                                 )}
                             </div>
@@ -1113,7 +1114,7 @@ const AdminInventory = () => {
                                     required
                                     value={assignForm.returnByDate}
                                     onChange={(e) => setAssignForm({ ...assignForm, returnByDate: e.target.value })}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
                                 />
                             </div>
 
@@ -1124,21 +1125,21 @@ const AdminInventory = () => {
                                     value={assignForm.purpose}
                                     onChange={(e) => setAssignForm({ ...assignForm, purpose: e.target.value })}
                                     placeholder="e.g. Aluva Site Truss Assembly"
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
                                 />
                             </div>
 
-                            <div className="pt-2 flex justify-end gap-3">
+                            <div className="pt-2 flex flex-col-reverse sm:flex-row justify-end gap-2.5">
                                 <button
                                     type="button"
                                     onClick={() => setShowAssignModal(false)}
-                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 rounded-xl"
+                                    className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow"
+                                    className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow font-bold"
                                 >
                                     Confirm Assignment
                                 </button>
@@ -1150,16 +1151,16 @@ const AdminInventory = () => {
 
             {/* ══════════════ MODAL: RECORD RETURN ══════════════ */}
             {showReturnModal && selectedToolForReturn && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 md:p-8">
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 md:p-8">
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
                             <div>
                                 <h2 className="text-base font-black uppercase text-slate-900 dark:text-white">Record Tool Return</h2>
-                                <p className="text-xs text-indigo-600 font-bold">
+                                <p className="text-xs text-indigo-600 font-bold truncate max-w-[240px]">
                                     {selectedToolForReturn.name} (Held by: {selectedToolForReturn.currentAssignment?.staffName})
                                 </p>
                             </div>
-                            <button onClick={() => setShowReturnModal(false)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setShowReturnModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -1177,7 +1178,7 @@ const AdminInventory = () => {
                                             sendToRepair: cond === 'Needs Repair' || cond === 'Damaged'
                                         });
                                     }}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
                                 >
                                     <option value="Good">Good (Ready for next use)</option>
                                     <option value="Normal Wear">Normal Wear (Clean)</option>
@@ -1198,28 +1199,28 @@ const AdminInventory = () => {
                             </div>
 
                             <div className="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-2xl border border-amber-200 dark:border-amber-900/60">
-                                <label className="flex items-center gap-2 cursor-pointer text-amber-900 dark:text-amber-300">
+                                <label className="flex items-start sm:items-center gap-2 cursor-pointer text-amber-900 dark:text-amber-300">
                                     <input
                                         type="checkbox"
                                         checked={returnForm.sendToRepair}
                                         onChange={(e) => setReturnForm({ ...returnForm, sendToRepair: e.target.checked })}
-                                        className="w-4 h-4 rounded text-amber-600"
+                                        className="w-4 h-4 mt-0.5 sm:mt-0 rounded text-amber-600 flex-shrink-0"
                                     />
-                                    Immediately log and send to Repairs section
+                                    <span>Immediately log and send to Repairs section</span>
                                 </label>
                             </div>
 
-                            <div className="pt-2 flex justify-end gap-3">
+                            <div className="pt-2 flex flex-col-reverse sm:flex-row justify-end gap-2.5">
                                 <button
                                     type="button"
                                     onClick={() => setShowReturnModal(false)}
-                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 rounded-xl"
+                                    className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow"
+                                    className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow font-bold"
                                 >
                                     Confirm Return
                                 </button>
@@ -1231,14 +1232,14 @@ const AdminInventory = () => {
 
             {/* ══════════════ MODAL: SEND TO REPAIR ══════════════ */}
             {showRepairModal && selectedToolForRepair && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 md:p-8">
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 md:p-8">
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
                             <div>
                                 <h2 className="text-base font-black uppercase text-slate-900 dark:text-white">Send Tool to Repair</h2>
-                                <p className="text-xs text-amber-600 font-bold">{selectedToolForRepair.name} ({selectedToolForRepair.code})</p>
+                                <p className="text-xs text-amber-600 font-bold truncate max-w-[240px]">{selectedToolForRepair.name} ({selectedToolForRepair.code})</p>
                             </div>
-                            <button onClick={() => setShowRepairModal(false)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setShowRepairModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -1256,14 +1257,14 @@ const AdminInventory = () => {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-slate-500 mb-1">Workshop / Vendor</label>
                                     <input
                                         type="text"
                                         value={repairForm.repairVendor}
                                         onChange={(e) => setRepairForm({ ...repairForm, repairVendor: e.target.value })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
                                     />
                                 </div>
                                 <div>
@@ -1272,22 +1273,22 @@ const AdminInventory = () => {
                                         type="number"
                                         value={repairForm.repairCost}
                                         onChange={(e) => setRepairForm({ ...repairForm, repairCost: e.target.value })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
                                     />
                                 </div>
                             </div>
 
-                            <div className="pt-2 flex justify-end gap-3">
+                            <div className="pt-2 flex flex-col-reverse sm:flex-row justify-end gap-2.5">
                                 <button
                                     type="button"
                                     onClick={() => setShowRepairModal(false)}
-                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 rounded-xl"
+                                    className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl shadow"
+                                    className="w-full sm:w-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl shadow font-bold"
                                 >
                                     Dispatch to Repair
                                 </button>
@@ -1299,14 +1300,14 @@ const AdminInventory = () => {
 
             {/* ══════════════ MODAL: RESOLVE REPAIR (REPAIRED VS TOTAL LOSS) ══════════════ */}
             {showResolveModal && selectedRepairToResolve && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 md:p-8">
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 md:p-8">
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
                             <div>
                                 <h2 className="text-base font-black uppercase text-slate-900 dark:text-white">Finalize Repair Outcome</h2>
-                                <p className="text-xs text-indigo-600 font-bold">{selectedRepairToResolve.toolName}</p>
+                                <p className="text-xs text-indigo-600 font-bold truncate max-w-[240px]">{selectedRepairToResolve.toolName}</p>
                             </div>
-                            <button onClick={() => setShowResolveModal(false)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setShowResolveModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -1314,7 +1315,7 @@ const AdminInventory = () => {
                         <form onSubmit={handleResolveSubmit} className="space-y-4 text-xs font-bold">
                             <div>
                                 <label className="block text-slate-500 mb-2">Final Outcome *</label>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                                     <button
                                         type="button"
                                         onClick={() => setResolveForm({ ...resolveForm, outcome: 'Repaired', status: 'Repaired' })}
@@ -1345,14 +1346,14 @@ const AdminInventory = () => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-slate-500 mb-1">Final Repair Cost (₹)</label>
                                     <input
                                         type="number"
                                         value={resolveForm.repairCost}
                                         onChange={(e) => setResolveForm({ ...resolveForm, repairCost: e.target.value })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
                                     />
                                 </div>
                                 <div>
@@ -1361,7 +1362,7 @@ const AdminInventory = () => {
                                         type="text"
                                         value={resolveForm.repairVendor}
                                         onChange={(e) => setResolveForm({ ...resolveForm, repairVendor: e.target.value })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
                                     />
                                 </div>
                             </div>
@@ -1377,17 +1378,17 @@ const AdminInventory = () => {
                                 />
                             </div>
 
-                            <div className="pt-2 flex justify-end gap-3">
+                            <div className="pt-2 flex flex-col-reverse sm:flex-row justify-end gap-2.5">
                                 <button
                                     type="button"
                                     onClick={() => setShowResolveModal(false)}
-                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 rounded-xl"
+                                    className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className={`px-5 py-2 text-white rounded-xl shadow ${
+                                    className={`w-full sm:w-auto px-5 py-2.5 text-white rounded-xl shadow font-bold ${
                                         resolveForm.outcome === 'Repaired' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'
                                     }`}
                                 >
@@ -1401,16 +1402,16 @@ const AdminInventory = () => {
 
             {/* ══════════════ MODAL: ADJUST MATERIAL STOCK ══════════════ */}
             {showStockModal && selectedMaterialForStock && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 md:p-8">
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 md:p-8">
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
                             <div>
                                 <h2 className="text-base font-black uppercase text-slate-900 dark:text-white">Adjust Material Stock</h2>
-                                <p className="text-xs text-emerald-600 font-bold">
+                                <p className="text-xs text-emerald-600 font-bold truncate max-w-[240px]">
                                     {selectedMaterialForStock.name} (Current: {selectedMaterialForStock.quantity} {selectedMaterialForStock.unit})
                                 </p>
                             </div>
-                            <button onClick={() => setShowStockModal(false)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setShowStockModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -1422,35 +1423,35 @@ const AdminInventory = () => {
                                     <button
                                         type="button"
                                         onClick={() => setStockForm({ ...stockForm, type: 'IN' })}
-                                        className={`py-2 rounded-xl border text-center font-bold ${
+                                        className={`py-2 px-1 text-center font-bold rounded-xl border text-[11px] sm:text-xs transition ${
                                             stockForm.type === 'IN'
-                                                ? 'bg-emerald-600 text-white border-emerald-600'
-                                                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600'
+                                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                                                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
                                         }`}
                                     >
-                                        + IN (Intake)
+                                        + IN
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setStockForm({ ...stockForm, type: 'OUT' })}
-                                        className={`py-2 rounded-xl border text-center font-bold ${
+                                        className={`py-2 px-1 text-center font-bold rounded-xl border text-[11px] sm:text-xs transition ${
                                             stockForm.type === 'OUT'
-                                                ? 'bg-rose-600 text-white border-rose-600'
-                                                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600'
+                                                ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                                                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
                                         }`}
                                     >
-                                        - OUT (Issued)
+                                        - OUT
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setStockForm({ ...stockForm, type: 'ADJUSTMENT' })}
-                                        className={`py-2 rounded-xl border text-center font-bold ${
+                                        className={`py-2 px-1 text-center font-bold rounded-xl border text-[11px] sm:text-xs transition ${
                                             stockForm.type === 'ADJUSTMENT'
-                                                ? 'bg-indigo-600 text-white border-indigo-600'
-                                                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600'
+                                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                                                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
                                         }`}
                                     >
-                                        = Set Total
+                                        = Total
                                     </button>
                                 </div>
                             </div>
@@ -1466,7 +1467,7 @@ const AdminInventory = () => {
                                     step="any"
                                     value={stockForm.quantity}
                                     onChange={(e) => setStockForm({ ...stockForm, quantity: e.target.value })}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200 font-mono text-sm"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200 font-mono text-sm"
                                 />
                             </div>
 
@@ -1477,21 +1478,21 @@ const AdminInventory = () => {
                                     value={stockForm.reason}
                                     onChange={(e) => setStockForm({ ...stockForm, reason: e.target.value })}
                                     placeholder="e.g. Dispatched to Site A / Physical inventory audit"
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
                                 />
                             </div>
 
-                            <div className="pt-2 flex justify-end gap-3">
+                            <div className="pt-2 flex flex-col-reverse sm:flex-row justify-end gap-2.5">
                                 <button
                                     type="button"
                                     onClick={() => setShowStockModal(false)}
-                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 rounded-xl"
+                                    className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow"
+                                    className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow font-bold"
                                 >
                                     Save Stock Movement
                                 </button>
@@ -1503,14 +1504,14 @@ const AdminInventory = () => {
 
             {/* ══════════════ MODAL: TOOL ASSIGNMENT & RETURN AUDIT HISTORY ══════════════ */}
             {showHistoryModal && historyItem && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 md:p-8 max-h-[85vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 md:p-8 max-h-[85vh] overflow-y-auto">
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
                             <div>
                                 <h2 className="text-base font-black uppercase text-slate-900 dark:text-white">Audit & Assignment History</h2>
-                                <p className="text-xs text-indigo-600 font-bold">{historyItem.name} ({historyItem.code})</p>
+                                <p className="text-xs text-indigo-600 font-bold truncate max-w-[240px]">{historyItem.name} ({historyItem.code})</p>
                             </div>
-                            <button onClick={() => setShowHistoryModal(false)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setShowHistoryModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -1522,12 +1523,12 @@ const AdminInventory = () => {
                         ) : (
                             <div className="space-y-3">
                                 {historyItem.assignmentHistory.map((rec, i) => (
-                                    <div key={i} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs space-y-1">
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-                                                <User className="w-3.5 h-3.5 text-indigo-500" /> {rec.staffName}
+                                    <div key={i} className="p-3 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs space-y-1">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="font-black text-slate-900 dark:text-white flex items-center gap-1.5 truncate">
+                                                <User className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" /> {rec.staffName}
                                             </span>
-                                            <span className="text-[10px] bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded font-black uppercase">
+                                            <span className="text-[10px] bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded font-black uppercase flex-shrink-0">
                                                 {rec.returnCondition || 'Good'}
                                             </span>
                                         </div>
@@ -1547,7 +1548,7 @@ const AdminInventory = () => {
                         <div className="pt-4 flex justify-end">
                             <button
                                 onClick={() => setShowHistoryModal(false)}
-                                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl"
+                                className="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl"
                             >
                                 Close History
                             </button>

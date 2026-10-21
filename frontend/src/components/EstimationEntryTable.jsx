@@ -458,26 +458,26 @@ export const EstimationEntryTable = ({
       </div>
 
       {/* Row Control Actions */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 pt-1">
+        <div className="flex flex-wrap gap-2">
           <button 
             type="button" 
-            className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition"
+            className="flex-1 sm:flex-initial bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm border border-indigo-100 dark:border-indigo-900/50"
             onClick={onAddItem} 
           >
-            <Plus size={14} /> Add Item
+            <Plus size={15} /> Add Item
           </button>
           
           <button 
             type="button" 
-            className="bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition"
+            className="flex-1 sm:flex-initial bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm border border-amber-100 dark:border-amber-900/50"
             onClick={onAddNewCombinedSection} 
           >
-            <Plus size={14} /> Add Combined Section
+            <Plus size={15} /> Add Combined Section
           </button>
         </div>
 
-        <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: '600' }}>
+        <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold text-center sm:text-right">
           {items.length} {items.length === 1 ? 'line item' : 'line items'} in estimation
         </span>
       </div>

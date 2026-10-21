@@ -152,28 +152,28 @@ const CustomerLayout = () => {
             <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-[280px]' : 'md:ml-0'}`}>
 
                 {/* Header */}
-                <header className="sticky top-0 z-30 min-h-16 py-2 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-4 md:px-6 flex flex-wrap items-center justify-between gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
-                    <div className="flex items-center gap-3">
+                <header className="sticky top-0 z-30 h-16 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-3 sm:px-4 md:px-6 flex items-center justify-between gap-1.5 sm:gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
+                    <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}
-                            className="p-2 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:bg-slate-800/70 transition-all border border-white/10"
+                            className="p-2 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:hover:bg-slate-800/70 transition-all border border-white/10 shrink-0"
                             title="Toggle Menu"
                         >
                             <Menu className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => navigate(-1)}
-                            className="p-2 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:bg-slate-800/70 transition-all border border-white/10 flex items-center justify-center"
+                            className="p-2 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:hover:bg-slate-800/70 transition-all border border-white/10 flex items-center justify-center shrink-0"
                             title="Go Back"
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>
-                        <h1 className="text-base md:text-lg font-bold text-white tracking-tight font-poppins truncate max-w-[160px] sm:max-w-xs">
+                        <h1 className="text-sm sm:text-base md:text-lg font-bold text-white tracking-tight font-poppins truncate max-w-[130px] sm:max-w-xs">
                             {currentPage}
                         </h1>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         <ThemeToggle darkNavbar={true} />
                         <button className="relative p-2 text-blue-100 hover:bg-white/10 dark:bg-slate-800/50 rounded-xl transition-all">
                             <Bell className="w-5 h-5" />
@@ -185,13 +185,13 @@ const CustomerLayout = () => {
                         </Link>
                         <div className="flex items-center gap-2">
                             <p className="text-sm font-bold text-white hidden sm:block truncate max-w-[100px]">{user?.name}</p>
-                            <div className="w-8 h-8 bg-white/20 dark:bg-slate-800/70 rounded-xl border border-white/20 flex items-center justify-center text-white text-sm font-bold">
+                            <div className="w-8 h-8 bg-white/20 dark:bg-slate-800/70 rounded-xl border border-white/20 flex items-center justify-center text-white text-sm font-bold shrink-0">
                                 {user?.name?.charAt(0)?.toUpperCase() || <User className="w-4 h-4" />}
                             </div>
                         </div>
                         <button
                             onClick={handleLogout}
-                            className="p-2 text-white/90 hover:text-white bg-white/10 hover:bg-rose-500/80 rounded-xl transition-all border border-white/10 ml-1 flex items-center gap-1.5"
+                            className="p-2 text-white/90 hover:text-white bg-white/10 hover:bg-rose-500/80 rounded-xl transition-all border border-white/10 flex items-center gap-1.5 shrink-0"
                             title="Log Out"
                         >
                             <LogOut className="w-4 h-4" />
@@ -201,7 +201,7 @@ const CustomerLayout = () => {
                 </header>
 
                 {/* Page */}
-                <div className="flex-1 p-4 md:p-8 overflow-x-hidden">
+                <div className="flex-1 p-2.5 sm:p-4 md:p-8 pb-8 overflow-x-hidden">
                     <div className="max-w-[1400px] mx-auto">
                         <Outlet />
                     </div>
