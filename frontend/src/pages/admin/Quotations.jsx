@@ -37,8 +37,8 @@ const Quotations = () => {
     // Line Items & Combined Sections
     const [isCombinedMode, setIsCombinedMode] = useState(false);
     const [items, setItems] = useState([
-        { id: 1, type: 'Item', name: 'Industrial Heavy Truss Fabrication', description: 'Custom engineered ISMB steel truss structure for factory roof', price: 120000, rate: 120000, quantity: 1, unit: 'Units', isCombined: false },
-        { id: 2, type: 'Service', name: 'On-site Erection & Installation Labor', description: 'Crane operations and high-elevation alignment work', price: 25000, rate: 25000, quantity: 1, unit: 'Job', isCombined: false }
+        { id: 1, type: 'Item', name: 'Industrial Heavy Truss Fabrication', description: 'Custom engineered ISMB steel truss structure for factory roof', price: 120000, rate: 120000, quantity: 1, unit: 'Units', hasQuantity: true, hasUnitPrice: true, isCombined: false },
+        { id: 2, type: 'Service', name: 'On-site Erection & Installation Labor', description: 'Crane operations and high-elevation alignment work', price: 25000, rate: 25000, quantity: 1, unit: 'Job', hasQuantity: true, hasUnitPrice: true, isCombined: false }
     ]);
     const [combinedTotals, setCombinedTotals] = useState({});
 
@@ -168,7 +168,7 @@ const Quotations = () => {
     const handleAddItem = () => {
         setItems(prev => [
             ...prev,
-            { id: Date.now() + Math.random(), name: '', description: '', price: 0, rate: 0, quantity: 1, unit: 'Units', isCombined: false }
+            { id: Date.now() + Math.random(), name: '', description: '', price: 0, rate: 0, quantity: 1, unit: 'Units', hasQuantity: true, hasUnitPrice: true, isCombined: false }
         ]);
     };
 
@@ -177,7 +177,7 @@ const Quotations = () => {
         setCombinedTotals(prev => ({ ...prev, [secId]: 0 }));
         setItems(prev => [
             ...prev,
-            { id: Date.now() + Math.random(), name: '', description: '', price: 0, rate: 0, quantity: 1, unit: 'Units', isCombined: true, isCombinedMode: true, combinedSectionId: secId, isNewSectionStart: true }
+            { id: Date.now() + Math.random(), name: '', description: '', price: 0, rate: 0, quantity: 1, unit: 'Units', hasQuantity: true, hasUnitPrice: true, isCombined: true, isCombinedMode: true, combinedSectionId: secId, isNewSectionStart: true }
         ]);
     };
 

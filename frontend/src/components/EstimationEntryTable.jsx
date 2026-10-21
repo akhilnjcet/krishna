@@ -47,7 +47,7 @@ export const EstimationEntryTable = ({
               <th style={{ padding: '0.65rem 0.75rem', fontSize: '0.75rem', fontWeight: '800' }}>
                 Item Description
               </th>
-              <th style={{ padding: '0.65rem 0.5rem', textAlign: 'center', width: '110px', fontSize: '0.75rem', fontWeight: '800' }}>
+              <th style={{ padding: '0.65rem 0.5rem', textAlign: 'center', width: '150px', fontSize: '0.75rem', fontWeight: '800' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
                   <span style={{ color: enableQuantity ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>Qty</span>
                   {onToggleEnableQuantity && (
@@ -65,7 +65,7 @@ export const EstimationEntryTable = ({
                   )}
                 </div>
               </th>
-              <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', width: '150px', fontSize: '0.75rem', fontWeight: '800' }}>
+              <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', width: '160px', fontSize: '0.75rem', fontWeight: '800' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.45rem' }}>
                   <span style={{ color: enableUnitPrice ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>Unit Price (₹)</span>
                   {onToggleEnableUnitPrice && (
@@ -144,7 +144,7 @@ export const EstimationEntryTable = ({
                     </td>
 
                     {/* Qty */}
-                    <td style={{ padding: '0.5rem 0.5rem', textAlign: 'center' }}>
+                    <td style={{ padding: '0.45rem 0.5rem', textAlign: 'center' }}>
                       {!enableQuantity ? (
                         <div 
                           style={{ 
@@ -158,25 +158,77 @@ export const EstimationEntryTable = ({
                             width: '75px',
                             margin: '0 auto'
                           }}
-                          title="Quantity is currently disabled"
+                          title="Quantity is currently disabled in document settings"
                         >
                           —
                         </div>
                       ) : (
-                        <input
-                          type="number"
-                          min="1"
-                          step="any"
-                          className="w-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-center text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 mx-auto block"
-                          value={meta.quantity ?? ''}
-                          onChange={(e) => onUpdateItem(index, 'quantity', e.target.value)}
-                          placeholder="1"
-                        />
+                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+                          <label 
+                            title={meta.hasQuantity !== false ? "Quantity enabled for this item (Click to disable)" : "Quantity disabled for this item (Click to enable)"}
+                            style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', margin: 0 }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={meta.hasQuantity !== false}
+                              onChange={(e) => onUpdateItem(index, 'hasQuantity', e.target.checked)}
+                              style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#3B82F6' }}
+                            />
+                          </label>
+
+                          {meta.hasQuantity !== false ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <input
+                                type="number"
+                                min="1"
+                                step="any"
+                                className="w-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-1.5 py-1 text-xs font-bold text-center text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+                                value={meta.quantity ?? ''}
+                                onChange={(e) => onUpdateItem(index, 'quantity', e.target.value)}
+                                placeholder="1"
+                                title="Quantity"
+                              />
+                              <select
+                                value={meta.unit || 'Units'}
+                                onChange={(e) => onUpdateItem(index, 'unit', e.target.value)}
+                                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-1 py-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 focus:outline-none"
+                                title="Unit of measurement"
+                              >
+                                <option value="Units">Units</option>
+                                <option value="Nos">Nos</option>
+                                <option value="Kg">Kg</option>
+                                <option value="Pcs">Pcs</option>
+                                <option value="Mtr">Mtr</option>
+                                <option value="SqFt">SqFt</option>
+                                <option value="Sets">Sets</option>
+                                <option value="Days">Days</option>
+                                <option value="Hours">Hours</option>
+                                <option value="Lot">Lot</option>
+                              </select>
+                            </div>
+                          ) : (
+                            <span 
+                              style={{ 
+                                display: 'inline-block',
+                                padding: '0.25rem 0.5rem',
+                                color: '#94A3B8', 
+                                fontSize: '0.85rem', 
+                                fontWeight: 'bold',
+                                border: '1px dashed rgba(148, 163, 184, 0.4)',
+                                borderRadius: '4px',
+                                minWidth: '45px'
+                              }}
+                              title="No quantity for this item"
+                            >
+                              —
+                            </span>
+                          )}
+                        </div>
                       )}
                     </td>
 
                     {/* Unit Price (₹) */}
-                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.45rem 0.5rem', textAlign: 'right' }}>
                       {!enableUnitPrice ? (
                         <div 
                           style={{ 
@@ -188,35 +240,71 @@ export const EstimationEntryTable = ({
                             fontSize: '0.8rem',
                             border: '1px dashed rgba(148, 163, 184, 0.4)'
                           }}
-                          title="Unit price is currently disabled"
-                        >
-                          —
-                        </div>
-                      ) : meta.isCombined ? (
-                        <div 
-                          style={{ 
-                            padding: '0.45rem 0.65rem', 
-                            background: 'rgba(0, 0, 0, 0.02)', 
-                            borderRadius: '6px', 
-                            color: '#94A3B8', 
-                            textAlign: 'center',
-                            fontSize: '0.85rem',
-                            border: '1px dashed rgba(148, 163, 184, 0.4)'
-                          }}
-                          title="Unit price not required for combined item"
+                          title="Unit price is currently disabled in document settings"
                         >
                           —
                         </div>
                       ) : (
-                        <input
-                          type="number"
-                          min="0"
-                          step="any"
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-right text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
-                          value={meta.price ?? meta.rate ?? meta.dailyRate ?? ''}
-                          onChange={(e) => onUpdateItem(index, 'price', e.target.value)}
-                          placeholder="0.00"
-                        />
+                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.35rem', width: '100%' }}>
+                          <label 
+                            title={meta.hasUnitPrice !== false ? "Unit price enabled for this item (Click to disable)" : "Unit price disabled for this item (Click to enable)"}
+                            style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', margin: 0 }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={meta.hasUnitPrice !== false}
+                              onChange={(e) => onUpdateItem(index, 'hasUnitPrice', e.target.checked)}
+                              style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#3B82F6' }}
+                            />
+                          </label>
+
+                          {meta.hasUnitPrice !== false ? (
+                            meta.isCombined ? (
+                              <div 
+                                style={{ 
+                                  padding: '0.35rem 0.5rem', 
+                                  background: 'rgba(0, 0, 0, 0.02)', 
+                                  borderRadius: '6px', 
+                                  color: '#94A3B8', 
+                                  textAlign: 'center',
+                                  fontSize: '0.85rem',
+                                  border: '1px dashed rgba(148, 163, 184, 0.4)',
+                                  width: '85px'
+                                }}
+                                title="Unit price not required for combined item"
+                              >
+                                —
+                              </div>
+                            ) : (
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                className="w-24 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold text-right text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+                                value={meta.price ?? meta.rate ?? meta.dailyRate ?? ''}
+                                onChange={(e) => onUpdateItem(index, 'price', e.target.value)}
+                                placeholder="0.00"
+                              />
+                            )
+                          ) : (
+                            <span 
+                              style={{ 
+                                display: 'inline-block',
+                                padding: '0.25rem 0.5rem',
+                                color: '#94A3B8', 
+                                fontSize: '0.85rem', 
+                                fontWeight: 'bold',
+                                border: '1px dashed rgba(148, 163, 184, 0.4)',
+                                borderRadius: '4px',
+                                minWidth: '45px',
+                                textAlign: 'center'
+                              }}
+                              title="No unit price for this item"
+                            >
+                              —
+                            </span>
+                          )}
+                        </div>
                       )}
                     </td>
 
@@ -327,15 +415,18 @@ export const EstimationEntryTable = ({
                       ) : null /* follower rows covered by rowSpan */
                     ) : (
                       <td style={{ padding: '0.45rem 0.5rem', textAlign: 'center', color: '#64748B', fontSize: '0.85rem' }}>
-                        {!enableUnitPrice ? (
+                        {!enableUnitPrice || meta.hasUnitPrice === false ? (
                           <input
                             type="number"
                             min="0"
                             step="any"
                             className="w-24 bg-white dark:bg-slate-900 border border-emerald-400 rounded-lg px-2 py-1 text-center font-bold text-xs text-emerald-600 dark:text-emerald-400 focus:outline-none mx-auto block"
                             placeholder="0.00"
-                            value={meta.total ?? ''}
-                            onChange={(e) => onUpdateItem(index, 'total', e.target.value)}
+                            value={meta.total ?? meta.price ?? ''}
+                            onChange={(e) => {
+                              onUpdateItem(index, 'total', e.target.value);
+                              onUpdateItem(index, 'price', e.target.value);
+                            }}
                             title="Direct item amount (Unit price disabled)"
                           />
                         ) : (

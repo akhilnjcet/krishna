@@ -36,7 +36,7 @@ const Invoices = () => {
     // Combined Billing Mode & Items
     const [isCombinedMode, setIsCombinedMode] = useState(false);
     const [items, setItems] = useState([
-        { id: 1, description: 'Steel Structural I-Beam 150x75', price: 4600, quantity: 2, unit: 'Kg', taxRate: 18, isCombined: false }
+        { id: 1, description: 'Steel Structural I-Beam 150x75', price: 4600, quantity: 2, unit: 'Kg', taxRate: 18, hasQuantity: true, hasUnitPrice: true, isCombined: false }
     ]);
     const [combinedTotals, setCombinedTotals] = useState({});
 
@@ -162,7 +162,7 @@ const Invoices = () => {
     const handleAddItem = () => {
         setItems(prev => [
             ...prev,
-            { id: Date.now() + Math.random(), description: '', price: 0, quantity: 1, unit: 'Units', isCombined: false }
+            { id: Date.now() + Math.random(), description: '', price: 0, quantity: 1, unit: 'Units', hasQuantity: true, hasUnitPrice: true, isCombined: false }
         ]);
     };
 
@@ -171,7 +171,7 @@ const Invoices = () => {
         setCombinedTotals(prev => ({ ...prev, [secId]: 0 }));
         setItems(prev => [
             ...prev,
-            { id: Date.now() + Math.random(), description: '', price: 0, quantity: 1, unit: 'Units', isCombined: true, isCombinedMode: true, combinedSectionId: secId, isNewSectionStart: true }
+            { id: Date.now() + Math.random(), description: '', price: 0, quantity: 1, unit: 'Units', hasQuantity: true, hasUnitPrice: true, isCombined: true, isCombinedMode: true, combinedSectionId: secId, isNewSectionStart: true }
         ]);
     };
 

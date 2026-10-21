@@ -335,25 +335,29 @@ export const computeItemSectionMeta = (items = [], combinedTotals = {}) => {
         const isCombined = Boolean(item.isCombinedMode ?? item.isCombined);
 
         if (!isCombined) {
-            const hasQty = item.quantity !== undefined && item.quantity !== null && item.quantity !== '' && Number(item.quantity) > 0;
+            const hasQtyFlag = item.hasQuantity !== false;
+            const hasQty = hasQtyFlag && item.quantity !== undefined && item.quantity !== null && item.quantity !== '' && Number(item.quantity) > 0;
             const qty = hasQty ? Number(item.quantity) : 1;
-            const price = Number(item.price ?? item.rate ?? item.dailyRate ?? 0) || 0;
+            const hasPriceFlag = item.hasUnitPrice !== false;
+            const price = hasPriceFlag ? (Number(item.price ?? item.rate ?? item.dailyRate ?? 0) || 0) : 0;
             const hasDirectTotal = item.total !== undefined && item.total !== null && item.total !== '';
             const directTotal = hasDirectTotal ? Number(item.total) : null;
             const calculatedTotal = price > 0
                 ? (item.autoCalculate !== false ? qty * price : price)
-                : (directTotal !== null ? directTotal : 0);
+                : (directTotal !== null ? directTotal : (item.price ? Number(item.price) : 0));
 
             metaList.push({
                 ...item,
                 originalIndex: i,
                 isCombined: false,
+                hasQuantity: hasQtyFlag,
+                hasUnitPrice: hasPriceFlag,
                 sectionId: null,
                 isSectionStart: false,
                 sectionRowCount: 1,
                 isSectionFollower: false,
                 combinedAmount: null,
-                displayPrice: price > 0 ? price : null,
+                displayPrice: hasPriceFlag && price > 0 ? price : null,
                 displayTotal: directTotal !== null && price === 0 ? directTotal : calculatedTotal
             });
             i++;
@@ -384,6 +388,8 @@ export const computeItemSectionMeta = (items = [], combinedTotals = {}) => {
                 ...item,
                 originalIndex: i,
                 isCombined: true,
+                hasQuantity: item.hasQuantity !== false,
+                hasUnitPrice: item.hasUnitPrice !== false,
                 sectionId: sectionId,
                 isSectionStart: true,
                 sectionRowCount: rowCount,
@@ -399,6 +405,8 @@ export const computeItemSectionMeta = (items = [], combinedTotals = {}) => {
                     ...items[k],
                     originalIndex: k,
                     isCombined: true,
+                    hasQuantity: items[k].hasQuantity !== false,
+                    hasUnitPrice: items[k].hasUnitPrice !== false,
                     sectionId: sectionId,
                     isSectionStart: false,
                     sectionRowCount: 0,
@@ -428,14 +436,16 @@ export const calculateBillTotals = (items = [], combinedTotals = {}, showTax = f
     (items || []).forEach(item => {
         const isCombined = Boolean(item.isCombinedMode ?? item.isCombined);
         if (!isCombined) {
-            const hasQty = item.quantity !== undefined && item.quantity !== null && item.quantity !== '' && Number(item.quantity) > 0;
+            const hasQtyFlag = item.hasQuantity !== false;
+            const hasQty = hasQtyFlag && item.quantity !== undefined && item.quantity !== null && item.quantity !== '' && Number(item.quantity) > 0;
             const qty = hasQty ? Number(item.quantity) : 1;
-            const price = Number(item.price ?? item.rate ?? item.dailyRate ?? 0) || 0;
+            const hasPriceFlag = item.hasUnitPrice !== false;
+            const price = hasPriceFlag ? (Number(item.price ?? item.rate ?? item.dailyRate ?? 0) || 0) : 0;
             const hasDirectTotal = item.total !== undefined && item.total !== null && item.total !== '';
             const directTotal = hasDirectTotal ? Number(item.total) : null;
             const itemTotal = price > 0
                 ? (item.autoCalculate !== false ? qty * price : (directTotal !== null ? directTotal : price))
-                : (directTotal !== null ? directTotal : 0);
+                : (directTotal !== null ? directTotal : (item.price ? Number(item.price) : 0));
 
             individualTotal += itemTotal;
         }

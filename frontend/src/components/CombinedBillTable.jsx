@@ -146,7 +146,7 @@ export const CombinedBillTableBody = ({
                   whiteSpace: 'nowrap'
                 }}
               >
-                {meta.quantity ? `${meta.quantity} ${unitLabel}` : '-'}
+                {meta.hasQuantity !== false && meta.quantity ? `${meta.quantity} ${unitLabel}` : '—'}
               </td>
             )}
 
@@ -162,7 +162,7 @@ export const CombinedBillTableBody = ({
                   whiteSpace: 'nowrap'
                 }}
               >
-                {meta.isCombined 
+                {meta.isCombined || meta.hasUnitPrice === false
                   ? '—' 
                   : (meta.displayPrice !== null && meta.displayPrice !== undefined && Number(meta.displayPrice) > 0
                       ? `₹${Number(meta.displayPrice).toLocaleString()}`
