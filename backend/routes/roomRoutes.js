@@ -73,6 +73,10 @@ const roomUploadFields = [
 router.put('/:id', protect, admin, upload.fields(roomUploadFields), async (req, res) => {
     try {
         let updateData = { ...req.body };
+        if (req.body.roomNumber !== undefined) updateData.roomNumber = String(req.body.roomNumber).trim();
+        if (req.body.name !== undefined) updateData.name = String(req.body.name).trim();
+        if (req.body.building !== undefined) updateData.building = String(req.body.building).trim();
+        if (req.body.floor !== undefined) updateData.floor = String(req.body.floor).trim();
 
         // Handle existing images logic
         const processExisting = (field) => {
@@ -156,7 +160,7 @@ router.put('/:id', protect, admin, upload.fields(roomUploadFields), async (req, 
 router.post('/', protect, admin, upload.fields(roomUploadFields), async (req, res) => {
   console.log('[DEBUG] Incoming Room Data:', req.body);
   try {
-    const { lodgeId, type, price, rentCycle, maxGuests, description, amenities, videoUrl } = req.body;
+    const { lodgeId, type, price, rentCycle, maxGuests, description, amenities, videoUrl, roomNumber, name, building, floor } = req.body;
 
     if (!lodgeId || !type || !price || !maxGuests) {
       return res.status(400).json({ 
@@ -228,6 +232,10 @@ router.post('/', protect, admin, upload.fields(roomUploadFields), async (req, re
 
     const room = await Room.create({
       lodgeId, 
+      roomNumber: roomNumber ? String(roomNumber).trim() : undefined,
+      name: name ? String(name).trim() : undefined,
+      building: building ? String(building).trim() : undefined,
+      floor: floor ? String(floor).trim() : undefined,
       type, 
       price: parseFloat(price), 
       rentCycle: rentCycle || 'monthly', 

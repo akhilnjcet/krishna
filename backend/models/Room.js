@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 
 const roomSchema = new mongoose.Schema({
   lodgeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lodge', required: true },
+  roomNumber: { type: String, trim: true },
+  name: { type: String, trim: true },
+  building: { type: String, trim: true },
+  floor: { type: String, trim: true },
   type: { type: String, required: true },
   price: { type: Number, required: true },
   rentCycle: { type: String, enum: ['daily', 'weekly', 'monthly'], default: 'monthly' },

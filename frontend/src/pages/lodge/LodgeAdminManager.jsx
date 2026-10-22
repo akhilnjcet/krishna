@@ -36,6 +36,10 @@ export default function LodgeAdminManager() {
   // Forms & Modals
   const [showRoomForm, setShowRoomForm] = useState(false);
   const [roomForm, setRoomForm] = useState({ 
+    roomNumber: '',
+    name: '',
+    building: '',
+    floor: '',
     type: 'Standard', 
     price: '', 
     rentCycle: 'monthly', 
@@ -72,6 +76,7 @@ export default function LodgeAdminManager() {
     show: false, 
     roomId: null, 
     roomNumber: '',
+    roomName: '',
     roomType: '',
     userId: '',
     checkIn: '',
@@ -315,6 +320,10 @@ export default function LodgeAdminManager() {
     try {
       const formData = new FormData();
       formData.append('type', roomForm.type);
+      formData.append('roomNumber', roomForm.roomNumber || '');
+      formData.append('name', roomForm.name || '');
+      formData.append('building', roomForm.building || '');
+      formData.append('floor', roomForm.floor || '');
       formData.append('price', roomForm.price);
       formData.append('rentCycle', roomForm.rentCycle);
       formData.append('maxGuests', roomForm.maxGuests);
@@ -351,6 +360,10 @@ export default function LodgeAdminManager() {
       setShowRoomForm(false); 
       setEditingRoom(null);
       setRoomForm({ 
+        roomNumber: '',
+        name: '',
+        building: '',
+        floor: '',
         type: 'Standard', 
         price: '', 
         rentCycle: 'monthly', 
@@ -424,6 +437,7 @@ export default function LodgeAdminManager() {
       show: true,
       roomId: room._id,
       roomNumber: room.roomNumber,
+      roomName: room.displayName || room.name || (room.roomNumber ? `Room ${room.roomNumber}` : 'Unit'),
       roomType: room.type,
       userId: '',
       checkIn: defaultCheckIn,
@@ -472,7 +486,7 @@ export default function LodgeAdminManager() {
               adminNotes: adminNotes || undefined
           });
           alert("Room Booking Assigned Successfully!");
-          setAssignModal({ show: false, roomId: null, roomNumber: '', roomType: '', userId: '', checkIn: '', checkOut: '', totalAmount: '', securityDeposit: '', adminNotes: '', unavailableIntervals: [], loadingSchedule: false });
+          setAssignModal({ show: false, roomId: null, roomNumber: '', roomName: '', roomType: '', userId: '', checkIn: '', checkOut: '', totalAmount: '', securityDeposit: '', adminNotes: '', unavailableIntervals: [], loadingSchedule: false });
           refreshActiveTabData();
       } catch(e) { 
         alert(e.response?.data?.message || "Error assigning booking. Please check for date overlaps."); 
@@ -737,10 +751,14 @@ export default function LodgeAdminManager() {
 
     const currentStatus = activeBooking ? 'Occupied' : (room.isActive === false ? 'Maintenance' : (upcomingBookings.length > 0 ? 'Reserved' : 'Available'));
 
+    const baseRoomNum = room.roomNumber || room._id.substring(room._id.length - 3);
+    const displayName = room.name || (room.roomNumber ? (room.roomNumber.toLowerCase().startsWith('room') ? room.roomNumber : `Room ${room.roomNumber}`) : `Room ${baseRoomNum}`);
+
     return {
       ...room,
-      roomNumber: room.roomNumber || room._id.substring(room._id.length - 3),
-      building: room.building || selectedLodge?.name || 'Main Block',
+      roomNumber: baseRoomNum,
+      displayName,
+      building: room.building || selectedLodge?.name || 'Krishna Building',
       floor: room.floor || 'Floor 1',
       securityDeposit: room.securityDeposit || room.price * 2,
       occupantName,
@@ -764,6 +782,8 @@ export default function LodgeAdminManager() {
     const matchesSearch = 
       !searchTerm ||
       r.roomNumber.toString().toLowerCase().includes(q) ||
+      (r.name && r.name.toLowerCase().includes(q)) ||
+      (r.displayName && r.displayName.toLowerCase().includes(q)) ||
       r.type.toLowerCase().includes(q) ||
       r.occupantName.toLowerCase().includes(q) ||
       r.phone.toLowerCase().includes(q) ||
@@ -973,13 +993,55 @@ export default function LodgeAdminManager() {
              <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border p-8 animate-in fade-in transition-all">
              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <h2 className="text-xl font-bold flex items-center"><DoorOpen className="w-6 h-6 mr-2 text-indigo-500"/> Managing Rooms</h2>
-                <button onClick={() => { setEditingRoom(null); setRoomForm({ type: 'Standard', price: '', rentCycle: 'monthly', maxGuests: '', description: '', interiorFiles: [], exteriorFiles: [] }); setShowRoomForm(!showRoomForm); }} className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/20 hover:scale-105 transition-transform flex items-center">
+                <button onClick={() => { setEditingRoom(null); setRoomForm({ roomNumber: '', name: '', building: selectedLodge?.name || 'Krishna Building', floor: 'Floor 1', type: 'Standard', price: '', rentCycle: 'monthly', maxGuests: '2', description: '', interiorFiles: [], exteriorFiles: [], interiorDriveUrls: '', exteriorDriveUrls: '', videoUrl: '' }); setShowRoomForm(!showRoomForm); }} className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/20 hover:scale-105 transition-transform flex items-center">
                     <Plus className="w-4 h-4 mr-2"/> Add New Unit
                 </button>
              </div>
 
              {showRoomForm && (
                  <form onSubmit={handleRoomSubmit} className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border mb-10 grid grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-top-4 duration-300">
+                    <div className="col-span-2 lg:col-span-2">
+                        <label className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-widest ml-2 mb-1 block">
+                            Custom Room / Unit Name *
+                        </label>
+                        <input 
+                            placeholder="e.g. Room 5bd, Deluxe Flat 2A, Shopfloor 1, Villa 101" 
+                            required 
+                            className="w-full border-2 border-indigo-200 dark:border-indigo-900/60 p-3 rounded-xl font-black text-slate-900 dark:text-white bg-white dark:bg-slate-900 shadow-xs outline-none focus:ring-2 focus:ring-indigo-500" 
+                            value={roomForm.name} 
+                            onChange={e => {
+                                const val = e.target.value;
+                                setRoomForm(prev => ({
+                                    ...prev,
+                                    name: val,
+                                    roomNumber: prev.roomNumber || val.replace(/^room\s*/i, '').trim()
+                                }));
+                            }} 
+                        />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1 lg:col-span-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 mb-1 block">
+                            Short Unit Code / #
+                        </label>
+                        <input 
+                            placeholder="e.g. 5bd, 678, 101" 
+                            className="w-full border p-3 rounded-xl font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 outline-none" 
+                            value={roomForm.roomNumber} 
+                            onChange={e => setRoomForm({ ...roomForm, roomNumber: e.target.value })} 
+                        />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1 lg:col-span-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 mb-1 block">
+                            Floor Level
+                        </label>
+                        <input 
+                            placeholder="e.g. Floor 1, Ground Floor" 
+                            className="w-full border p-3 rounded-xl font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 outline-none" 
+                            value={roomForm.floor} 
+                            onChange={e => setRoomForm({ ...roomForm, floor: e.target.value })} 
+                        />
+                    </div>
+
                     <div className="col-span-2 lg:col-span-1">
                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 mb-1 block">Unit Type</label>
                         <select className="w-full border p-3 rounded-xl font-bold" value={roomForm.type} onChange={e => setRoomForm({...roomForm, type: e.target.value})}>
@@ -1060,9 +1122,23 @@ export default function LodgeAdminManager() {
                             </div>
                         </div>
                     )}
-                    <button type="submit" className="bg-indigo-600 text-white p-4 rounded-2xl col-span-2 lg:col-span-4 font-black shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">
-                        {editingRoom ? 'Commit Changes' : 'Publish Unit Live'}
-                    </button>
+                    <div className="col-span-2 lg:col-span-4 flex items-center gap-3">
+                        <button type="submit" className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-2xl font-black shadow-xl shadow-indigo-600/20 active:scale-95 transition-all text-sm uppercase tracking-wider">
+                            {editingRoom ? 'Commit Changes' : 'Publish Unit Live'}
+                        </button>
+                        {editingRoom && (
+                            <button 
+                                type="button" 
+                                onClick={() => {
+                                    setEditingRoom(null);
+                                    setShowRoomForm(false);
+                                }}
+                                className="px-6 py-4 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-2xl font-black text-sm active:scale-95 transition-all"
+                            >
+                                Cancel
+                            </button>
+                        )}
+                    </div>
                  </form>
              )}
 
@@ -1108,7 +1184,7 @@ export default function LodgeAdminManager() {
                            <div className="flex justify-between items-start gap-2">
                               <div>
                                  <h4 className="font-black text-slate-900 dark:text-white text-xl tracking-tight flex items-center gap-2">
-                                    <span>Room {r.roomNumber}</span>
+                                    <span>{r.displayName}</span>
                                     <span className="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full font-extrabold uppercase">
                                         {r.type}
                                     </span>
@@ -1224,7 +1300,27 @@ export default function LodgeAdminManager() {
                                      <UserPlus className="w-4 h-4"/>
                                  </button>
                                  <button 
-                                     onClick={() => { setEditingRoom(r); setRoomForm({ type: r.type, price: r.price, rentCycle: r.rentCycle || 'monthly', maxGuests: r.maxGuests, description: r.description, interiorFiles: [], exteriorFiles: [], interiorDriveUrls: '', exteriorDriveUrls: '', videoUrl: r.videoUrl || '' }); setShowRoomForm(true); }} 
+                                     onClick={() => { 
+                                      setEditingRoom(r); 
+                                      setRoomForm({ 
+                                          roomNumber: r.roomNumber || '',
+                                          name: r.name || (r.roomNumber ? (r.roomNumber.toLowerCase().startsWith('room') ? r.roomNumber : `Room ${r.roomNumber}`) : ''),
+                                          building: r.building || '',
+                                          floor: r.floor || '',
+                                          type: r.type, 
+                                          price: r.price, 
+                                          rentCycle: r.rentCycle || 'monthly', 
+                                          maxGuests: r.maxGuests, 
+                                          description: r.description || '', 
+                                          interiorFiles: [], 
+                                          exteriorFiles: [], 
+                                          interiorDriveUrls: '', 
+                                          exteriorDriveUrls: '', 
+                                          videoUrl: r.videoUrl || '' 
+                                      }); 
+                                      setShowRoomForm(true); 
+                                      window.scrollTo({ top: 300, behavior: 'smooth' });
+                                  }} 
                                      className="p-2 sm:p-2.5 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-100 transition-colors shadow-sm"
                                      title="Edit Room Specifications"
                                  >
@@ -1372,7 +1468,7 @@ export default function LodgeAdminManager() {
                             <div>
                               <div className="flex items-center gap-2">
                                 <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                                  Room #{room.roomNumber}
+                                  {room.displayName}
                                 </h3>
                                 <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-100 px-2.5 py-0.5 rounded-full font-black uppercase">
                                   {room.type}
@@ -1988,7 +2084,7 @@ export default function LodgeAdminManager() {
                      Assign Room & Date Schedule
                    </span>
                    <h3 className="text-2xl font-black mt-2 text-slate-900 dark:text-white">
-                     Room #{assignModal.roomNumber || 'Unit'} ({assignModal.roomType || 'Standard'})
+                     {assignModal.roomName || (assignModal.roomNumber ? `Room #${assignModal.roomNumber}` : 'Unit')} ({assignModal.roomType || 'Standard'})
                    </h3>
                    <p className="text-slate-500 text-xs mt-0.5">
                      Create a new confirmed booking with automatic overlap prevention.
@@ -2012,7 +2108,7 @@ export default function LodgeAdminManager() {
                    <div className="p-4 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-900/50 space-y-2 text-xs">
                      <p className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                       Unavailable Booked Dates for Room #{assignModal.roomNumber}:
+                       Unavailable Booked Dates for {assignModal.roomName || `Room #${assignModal.roomNumber}`}:
                      </p>
                      <div className="space-y-1 max-h-28 overflow-y-auto pr-1">
                        {assignModal.unavailableIntervals.map((interval, i) => (
@@ -2509,7 +2605,7 @@ export default function LodgeAdminManager() {
                   Room Profile & History
                 </span>
                 <h3 className="text-2xl font-black mt-2 text-slate-900 dark:text-white">
-                  Room #{selectedRoomDetail.roomNumber} ({selectedRoomDetail.type})
+                  {selectedRoomDetail.displayName || `Room #${selectedRoomDetail.roomNumber}`} ({selectedRoomDetail.type})
                 </h3>
                 <p className="text-xs text-slate-500">
                   {selectedRoomDetail.building} • {selectedRoomDetail.floor} • Rate: ₹{selectedRoomDetail.price.toLocaleString()} / {selectedRoomDetail.rentCycle || 'month'}
@@ -2527,7 +2623,7 @@ export default function LodgeAdminManager() {
             {/* Room Tenancy Bookings Table */}
             <div className="space-y-3">
               <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">
-                All Bookings & Residents for Room #{selectedRoomDetail.roomNumber} ({selectedRoomDetail.roomBookings?.length || 0})
+                All Bookings & Residents for {selectedRoomDetail.displayName || `Room #${selectedRoomDetail.roomNumber}`} ({selectedRoomDetail.roomBookings?.length || 0})
               </h4>
 
               {selectedRoomDetail.roomBookings?.length > 0 ? (
