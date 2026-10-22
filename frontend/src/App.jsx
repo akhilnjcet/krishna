@@ -56,6 +56,7 @@ import LegalPage from './pages/LegalPage';
 import PolicyViewer from './pages/PolicyViewer';
 
 const AdminLegalPolicies = lazy(() => import('./pages/admin/AdminLegalPolicies'));
+const ReviewsPage = lazy(() => import('./pages/ReviewsPage'));
 
 // Layouts (Lazy loaded on demand)
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
@@ -467,6 +468,9 @@ const App = () => {
             <Route path="/delivery-policy" element={<PolicyViewer defaultType="shipping" />} />
             <Route path="/contact-us" element={<PolicyViewer defaultType="contact" />} />
             <Route path="/contact" element={<PolicyViewer defaultType="contact" />} />
+            <Route path="/reviews" element={<ReviewsPage />} />
+            <Route path="/rate-us" element={<ReviewsPage />} />
+            <Route path="/google-reviews" element={<ReviewsPage />} />
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>

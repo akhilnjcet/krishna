@@ -96,6 +96,7 @@ const Footer = () => {
                             <li><Link to="/about" className="hover:text-primary transition flex items-center gap-2">About Us</Link></li>
                             <li><Link to="/services" className="hover:text-primary transition flex items-center gap-2">Services</Link></li>
                             <li><Link to="/projects" className="hover:text-primary transition flex items-center gap-2">Portfolio</Link></li>
+                            <li><Link to="/reviews" className="hover:text-primary transition flex items-center gap-2 text-amber-600 dark:text-amber-400 font-extrabold">⭐ Rate Our Work (Google Reviews)</Link></li>
                         </ul>
                     </div>
 
@@ -147,6 +148,7 @@ const Footer = () => {
                         <Link to="/refund-policy" className="hover:text-primary transition font-bold">Refund Policy</Link>
                         <Link to="/shipping-policy" className="hover:text-primary transition font-bold">Shipping Policy</Link>
                         <Link to="/contact-us" className="hover:text-primary transition font-bold">Contact Us</Link>
+                        <Link to="/reviews" className="hover:text-primary transition font-bold text-amber-600 dark:text-amber-400">Google Reviews</Link>
                     </div>
                 </div>
             </div>

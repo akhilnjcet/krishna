@@ -11,6 +11,7 @@ import api from '../services/api';
 import AdBanner from '../components/AdBanner';
 import { getDirectImageUrl, expandGoogleDriveFolders } from '../utils/imageUtils';
 import DriveImage from '../components/DriveImage';
+import GoogleReviewSection from '../components/GoogleReviewSection';
 
 /* ─── Animation Variants ─────────────────────────────────────────── */
 const fadeUp = {
@@ -645,6 +646,11 @@ const Home = () => {
                         </div>
                     </div>
                 </section>
+
+                {/* ════════════════════════════════════════
+                    5B. RATE OUR WORK & GOOGLE REVIEWS SECTION
+                    ════════════════════════════════════════ */}
+                <GoogleReviewSection />
 
                 {/* ════════════════════════════════════════
                     6. CTA BANNER                          

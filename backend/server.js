@@ -145,6 +145,7 @@ app.use('/api/chatbot-settings', require('./routes/chatbotSettingRoutes'));
 app.use('/api/policies', require('./routes/policyRoutes'));
 app.use('/api/admin/reset', require('./routes/resetRoutes'));
 app.use('/api/inventory', require('./routes/inventoryRoutes'));
+app.use('/api/feedback', require('./routes/feedbackRoutes'));
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
 });
