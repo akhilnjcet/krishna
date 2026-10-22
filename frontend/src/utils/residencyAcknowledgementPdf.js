@@ -309,7 +309,7 @@ export const ensureFontsLoaded = async () => {
             const link = document.createElement('link');
             link.id = fontLinkId;
             link.rel = 'stylesheet';
-            link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Malayalam:wght@400;500;600;700;800;900&display=swap';
+            link.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap';
             document.head.appendChild(link);
         }
         if (document.fonts) {
@@ -361,21 +361,17 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            letter-spacing: normal !important;
-            word-spacing: normal !important;
         }
         body {
-            font-family: 'Inter', 'Noto Sans Malayalam', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+            font-family: 'Noto Sans Malayalam', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
             color: #1e293b;
             background: #ffffff;
             font-size: 10px;
-            line-height: 1.4;
+            line-height: 1.5;
             margin: 0;
             padding: 0;
             -webkit-font-smoothing: antialiased;
-            letter-spacing: normal !important;
-            word-spacing: normal !important;
-            font-variant-ligatures: normal;
+            text-rendering: optimizeLegibility;
         }
         .pdf-document {
             width: 794px;
@@ -535,10 +531,22 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
         .section-header {
             background: #1e293b;
             color: #ffffff;
-            font-size: 9.5px;
-            font-weight: 800;
-            padding: 6px 10px;
-            text-transform: uppercase;
+            padding: 7px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .section-header .header-main {
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .section-header .header-sub-en {
+            font-size: 8.5px;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+            font-family: 'Inter', sans-serif;
         }
         table.info-table {
             width: 100%;
@@ -562,15 +570,20 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
             background: #f8fafc;
             color: #475569;
             font-weight: 700;
-            font-size: 9px;
-            white-space: normal;
-            word-break: keep-all;
+            font-size: 9.5px;
+            line-height: 1.5;
+            word-break: normal;
+            overflow-wrap: break-word;
+            padding: 6.5px 10px;
         }
         table.info-table td.value {
             width: 56%;
             color: #0f172a;
             font-weight: 600;
+            font-size: 9.5px;
+            line-height: 1.5;
             word-break: break-word;
+            padding: 6.5px 10px;
         }
         .muted-text {
             color: #64748b;
@@ -644,19 +657,32 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
             border: 1px solid #e2e8f0;
             border-left: 4px solid #2563eb;
             border-radius: 8px;
-            padding: 8px 12px;
-            margin-top: 4px;
-            font-size: 8.5px;
-            line-height: 1.45;
+            padding: 10px 14px;
+            margin-top: 6px;
         }
         .covenant-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .covenant-title-ml {
             font-weight: 800;
             color: #1e3a8a;
-            margin-bottom: 2px;
+            font-size: 10.5px;
+        }
+        .covenant-title-en {
+            font-weight: 700;
+            color: #64748b;
+            font-size: 9px;
+            font-family: 'Inter', sans-serif;
         }
         .covenant-text {
-            color: #475569;
+            color: #334155;
             font-weight: 500;
+            font-size: 9.5px;
+            line-height: 1.6;
+            text-align: justify;
         }
 
         /* ── Page 2 Repeated Header ── */
@@ -670,15 +696,26 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
             justify-content: space-between;
             align-items: center;
         }
+        .repeated-title-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
         .repeated-title {
             font-size: 11.5px;
             font-weight: 800;
+        }
+        .repeated-title-en {
+            font-size: 9.5px;
+            color: #94a3b8;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
         }
         .repeated-sub {
             font-size: 8.5px;
             color: #94a3b8;
             font-weight: 600;
-            margin-top: 1px;
+            margin-top: 2px;
         }
         .repeated-meta {
             font-size: 8.5px;
@@ -788,19 +825,32 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
             background: #fffbeb;
             border: 1px solid #fef3c7;
             border-radius: 8px;
-            padding: 6px 10px;
-            font-size: 8px;
-            line-height: 1.4;
+            padding: 8px 12px;
+            font-size: 8.5px;
+            line-height: 1.5;
             margin-bottom: 8px;
         }
         .tenant-ack-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 3px;
+        }
+        .tenant-ack-title-ml {
             font-weight: 800;
             color: #92400e;
-            margin-bottom: 1px;
+            font-size: 9px;
+        }
+        .tenant-ack-title-en {
+            font-weight: 700;
+            color: #b45309;
+            font-size: 8px;
+            font-family: 'Inter', sans-serif;
         }
         .tenant-ack-text {
             color: #78350f;
             font-weight: 500;
+            line-height: 1.5;
         }
 
         /* ── Page Footer ── */
@@ -826,7 +876,7 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
                     <div class="header-left">
                         <span class="status-badge">${docStatus}</span>
                         <div class="header-title">${cleanLodgeName(lodge?.name)}</div>
-                        <div class="header-sub">${isMl ? 'ഔദ്യോഗിക&nbsp;വാടകക്കരാർ &amp;&nbsp;താമസ&nbsp;രസീത്' : 'OFFICIAL RESIDENCY ACKNOWLEDGEMENT / LEASE AGREEMENT'}</div>
+                        <div class="header-sub">${isMl ? 'ഔദ്യോഗിക വാടകക്കരാർ &amp; താമസ രസീത്' : 'OFFICIAL RESIDENCY ACKNOWLEDGEMENT / LEASE AGREEMENT'}</div>
                     </div>
                     <div class="header-right">
                         <table class="meta-table">
@@ -852,7 +902,10 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
                 <!-- Tenant & Room Details -->
                 <div class="grid-2">
                     <div class="section-box">
-                        <div class="section-header">${isMl ? 'വാടകക്കാരന്റെ&nbsp;വിവരങ്ങൾ&nbsp;(TENANT&nbsp;DETAILS)' : 'TENANT / OCCUPANT DETAILS'}</div>
+                        <div class="section-header">
+                            <span class="header-main">${isMl ? 'വാടകക്കാരന്റെ വിവരങ്ങൾ' : 'TENANT / OCCUPANT DETAILS'}</span>
+                            ${isMl ? '<span class="header-sub-en">TENANT DETAILS</span>' : ''}
+                        </div>
                         <table class="info-table">
                             <tr>
                                 <td class="label">${isMl ? 'പേര്' : 'Tenant Name'}</td>
@@ -882,7 +935,10 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
                     </div>
 
                     <div class="section-box">
-                        <div class="section-header">${isMl ? 'മുറിയുടെ&nbsp;വിവരങ്ങൾ&nbsp;(ROOM&nbsp;DETAILS)' : 'ROOM & STAY DETAILS'}</div>
+                        <div class="section-header">
+                            <span class="header-main">${isMl ? 'മുറിയുടെ വിവരങ്ങൾ' : 'ROOM & STAY DETAILS'}</span>
+                            ${isMl ? '<span class="header-sub-en">ROOM DETAILS</span>' : ''}
+                        </div>
                         <table class="info-table">
                             <tr>
                                 <td class="label">${isMl ? 'മുറി നമ്പർ' : 'Room Number'}</td>
@@ -955,7 +1011,10 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
 
                 <!-- Tenancy Covenant Summary Box -->
                 <div class="covenant-box">
-                    <div class="covenant-title">${isMl ? 'വാടക ഉടമ്പടി പ്രഖ്യാപനം (Tenancy Declaration):' : 'Official Tenancy Declaration:'}</div>
+                    <div class="covenant-title">
+                        <span class="covenant-title-ml">${isMl ? 'വാടക ഉടമ്പടി പ്രഖ്യാപനം' : 'Official Tenancy Declaration'}</span>
+                        ${isMl ? '<span class="covenant-title-en">(Tenancy Declaration):</span>' : ''}
+                    </div>
                     <div class="covenant-text">
                         ${isMl
                             ? 'ഈ രേഖ കൃഷ്ണ ബിൽഡിംഗും വാടകക്കാരനും തമ്മിലുള്ള ഔദ്യോഗിക വാടകക്കരാറിന്റെ ഒന്നാം ഭാഗമാണ്. കേരള കെട്ടിടങ്ങൾ (പാട്ടവും വാടക നിയന്ത്രണവും) നിയമം 1965, സ്വത്ത് കൈമാറ്റ നിയമം 1882 എന്നിവയിലെ വ്യവസ്ഥകൾക്ക് വിധേയമായി തയ്യാറാക്കിയ 18 നിയമപരമായ നിബന്ധനകളും വ്യവസ്ഥകളും പേജ് 2-ൽ ചേർത്തിരിക്കുന്നു.'
@@ -982,7 +1041,10 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
                 <!-- Repeated Header Banner -->
                 <div class="repeated-header">
                     <div>
-                        <div class="repeated-title">${isMl ? 'വാടകക്കരാർ&nbsp;നിബന്ധനകളും&nbsp;വ്യവസ്ഥകളും&nbsp;(18&nbsp;നിബന്ധനകൾ)' : 'TERMS & CONDITIONS OF RESIDENCY (18 STATUTORY CLAUSES)'}</div>
+                        <div class="repeated-title-row">
+                            <span class="repeated-title">${isMl ? 'വാടകക്കരാർ നിബന്ധനകളും വ്യവസ്ഥകളും' : 'TERMS & CONDITIONS OF RESIDENCY'}</span>
+                            ${isMl ? '<span class="repeated-title-en">(18 STATUTORY CLAUSES)</span>' : ''}
+                        </div>
                         <div class="repeated-sub">${isMl ? 'കേരള കെട്ടിട വാടക നിയന്ത്രണ നിയമങ്ങൾക്കനുസൃതമായ വ്യവസ്ഥകൾ' : 'Statutory & Legally Binding Tenancy Regulations'}</div>
                     </div>
                     <div class="repeated-meta">
@@ -1026,7 +1088,10 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
 
                 <!-- Tenant Acknowledgement Strip -->
                 <div class="tenant-ack-strip">
-                    <div class="tenant-ack-title">${isMl ? 'വാടകക്കാരന്റെ സമ്മതപത്രം (Tenant Binding Acknowledgement):' : 'Tenant Binding Acknowledgement:'}</div>
+                    <div class="tenant-ack-title">
+                        <span class="tenant-ack-title-ml">${isMl ? 'വാടകക്കാരന്റെ സമ്മതപത്രം' : 'Tenant Binding Acknowledgement'}</span>
+                        ${isMl ? '<span class="tenant-ack-title-en">(Tenant Binding Acknowledgement):</span>' : ''}
+                    </div>
                     <div class="tenant-ack-text">
                         ${isMl 
                             ? 'മുകളിൽ രേഖപ്പെടുത്തിയിട്ടുള്ള 18 വാടകക്കരാർ നിബന്ധനകളും വ്യവസ്ഥകളും പൂർണ്ണമായി വായിച്ചു മനസ്സിലാക്കി ഞാൻ ഇതിനാൽ പൂർണ്ണ സമ്മതം രേഖപ്പെടുത്തുന്നു.' 
@@ -1279,27 +1344,78 @@ export const downloadResidencyAcknowledgement = async (data, language = 'ml') =>
         const imgWidth = 210;
         const pageHeight = 297;
 
+        // High-fidelity renderer supporting complex Unicode Indic Malayalam shaping
+        const renderPageToCanvas = async (pageEl, scale = 2.2) => {
+            const width = pageEl.offsetWidth || 794;
+            const height = pageEl.offsetHeight || 1123;
+
+            let css = '';
+            try {
+                for (const sheet of iframeDoc.styleSheets) {
+                    try {
+                        for (const rule of sheet.cssRules) {
+                            css += rule.cssText + '\n';
+                        }
+                    } catch (e) {}
+                }
+            } catch (e) {}
+
+            const serialized = new XMLSerializer().serializeToString(pageEl);
+            const svg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+                    <foreignObject width="100%" height="100%">
+                        <div xmlns="http://www.w3.org/1999/xhtml">
+                            <style>
+                                ${css}
+                            </style>
+                            ${serialized}
+                        </div>
+                    </foreignObject>
+                </svg>
+            `;
+
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.floor(width * scale);
+                    canvas.height = Math.floor(height * scale);
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.scale(scale, scale);
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas);
+                };
+                img.onerror = async (err) => {
+                    console.warn('[PDF] SVG ForeignObject render fallback to html2canvas:', err);
+                    try {
+                        const h2cCanvas = await html2canvas(pageEl, {
+                            scale,
+                            useCORS: true,
+                            logging: false,
+                            backgroundColor: '#ffffff',
+                            window: iframe.contentWindow
+                        });
+                        resolve(h2cCanvas);
+                    } catch (h2cErr) {
+                        console.error('[PDF] Both renderers failed:', h2cErr);
+                        resolve(null);
+                    }
+                };
+                img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+            });
+        };
+
         for (let i = 0; i < pages.length; i++) {
             const pageEl = pages[i];
-            const canvas = await html2canvas(pageEl, {
-                scale: 2.2,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff',
-                window: iframe.contentWindow,
-                onclone: (clonedDoc) => {
-                    // Sync active fonts into cloned render context
-                    if (iframeDoc.fonts && clonedDoc.fonts) {
-                        iframeDoc.fonts.forEach(f => {
-                            try { clonedDoc.fonts.add(f); } catch (e) {}
-                        });
-                    }
-                }
-            });
+            const canvas = await renderPageToCanvas(pageEl, 2.2);
 
-            const imgData = canvas.toDataURL('image/png');
-            if (i > 0) pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, pageHeight, undefined, 'FAST');
+            if (canvas) {
+                const imgData = canvas.toDataURL('image/png');
+                if (i > 0) pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, pageHeight, undefined, 'FAST');
+            }
         }
 
         const name = data.booking?.agreementNumber || 'Acknowledgement';
