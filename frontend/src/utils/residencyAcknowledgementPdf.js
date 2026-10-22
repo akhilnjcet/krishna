@@ -249,6 +249,71 @@ const generateQRDataUrl = async (bookingId) => {
     }
 };
 
+// ─── Helper formatters to prevent squashed / run-together contact text ────────
+export const cleanContactAddress = (addr) => {
+    if (!addr) return 'Krishna Complex, Site A, Kuttanassery, Palakkad, Kerala 679514';
+    let s = String(addr).trim();
+    if (s.includes(',') || s.includes(' ')) return s;
+    return s
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/(krishna)/gi, 'Krishna ')
+        .replace(/(building)/gi, 'Building, ')
+        .replace(/(complex)/gi, 'Complex, ')
+        .replace(/(kuttanassery)/gi, 'Kuttanassery, ')
+        .replace(/(palakkad)/gi, 'Palakkad, ')
+        .replace(/(kerala|kerela)/gi, 'Kerala')
+        .replace(/\s*,\s*/g, ', ')
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+
+export const cleanContactEmail = (email) => {
+    if (!email) return 'support@krishnaengg.com';
+    let s = String(email).trim();
+    if (!s.includes('.')) {
+        s = s.replace(/com$/, '.com').replace(/in$/, '.in').replace(/org$/, '.org');
+    }
+    return s;
+};
+
+export const cleanContactWebsite = (web) => {
+    if (!web) return 'www.krishnaengg.com';
+    let s = String(web).trim();
+    if (!s.includes('.')) {
+        s = s.replace(/^www/, 'www.').replace(/com$/, '.com').replace(/in$/, '.in');
+    }
+    return s;
+};
+
+// ─── Preload & verify Unicode Malayalam and Inter fonts ───────────────────────
+export const ensureFontsLoaded = async () => {
+    if (typeof document === 'undefined') return;
+    try {
+        const fontLinkId = 'krishna-malayalam-font-link';
+        if (!document.getElementById(fontLinkId)) {
+            const link = document.createElement('link');
+            link.id = fontLinkId;
+            link.rel = 'stylesheet';
+            link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Malayalam:wght@400;500;600;700;800;900&display=swap';
+            document.head.appendChild(link);
+        }
+        if (document.fonts) {
+            await Promise.race([
+                Promise.all([
+                    document.fonts.load('400 12px "Noto Sans Malayalam"'),
+                    document.fonts.load('700 12px "Noto Sans Malayalam"'),
+                    document.fonts.load('800 12px "Noto Sans Malayalam"'),
+                    document.fonts.load('600 12px "Inter"'),
+                    document.fonts.ready
+                ]),
+                new Promise(res => setTimeout(res, 2000))
+            ]);
+        }
+    } catch (err) {
+        console.warn('[PDF] ensureFontsLoaded warning:', err);
+    }
+};
+
 // ─── HTML Generator for Native Printing & Retina Malayalam Rendering ─────────
 export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDataUrl = '') => {
     const { booking, tenant, room, lodge } = data;
@@ -263,159 +328,287 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
     Object.entries(facilityMap).forEach(([k, v]) => { if (f[k]) facilities.push(v); });
     if (room?.amenities?.length) facilities.push(...room.amenities);
 
+    const address = cleanContactAddress(lodge?.address);
+    const phone = lodge?.phone || '+91 98765 43210';
+    const email = cleanContactEmail(lodge?.email);
+    const website = cleanContactWebsite(lodge?.website);
+
     return `<!DOCTYPE html>
 <html lang="${isMl ? 'ml' : 'en'}">
 <head>
     <meta charset="utf-8">
     <title>Residency Acknowledgement - ${booking?.agreementNumber || 'Agreement'}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Malayalam:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+Malayalam:wght@400;600;700;800&display=swap');
-        
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            letter-spacing: 0 !important;
+            word-spacing: normal !important;
+        }
         body {
-            font-family: ${isMl ? "'Noto Sans Malayalam', 'Inter', -apple-system, sans-serif" : "'Inter', -apple-system, sans-serif"};
+            font-family: 'Noto Sans Malayalam', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
             color: #1e293b;
             background: #ffffff;
-            font-size: 11px;
-            line-height: 1.45;
-            padding: 18px 24px;
-            width: 100%;
-            max-width: 820px;
+            font-size: 10px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .pdf-document {
+            width: 794px;
+            background: #ffffff;
             margin: 0 auto;
         }
-        @page {
-            size: A4 portrait;
-            margin: 10mm 12mm;
+        .pdf-page {
+            width: 794px;
+            min-height: 1123px;
+            max-height: 1123px;
+            padding: 24px 34px;
+            background: #ffffff;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            position: relative;
+        }
+        .page-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
         @media print {
-            body { padding: 0; max-width: none; }
-            .no-print { display: none !important; }
-            .page-break { page-break-before: always; }
-            .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+                background: #ffffff;
+            }
+            .pdf-document {
+                width: 100%;
+                max-width: none;
+            }
+            .pdf-page {
+                width: 210mm;
+                min-height: 297mm;
+                max-height: 297mm;
+                padding: 12mm 15mm;
+                page-break-after: always;
+                break-after: page;
+                box-sizing: border-box;
+            }
+            .pdf-page:last-child {
+                page-break-after: avoid;
+                break-after: avoid;
+            }
         }
+
+        /* ── Header ── */
         .header {
             background: #0f172a;
             color: #ffffff;
             padding: 16px 20px;
             border-radius: 12px;
-            margin-bottom: 12px;
-            position: relative;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        .header-left {
+            flex: 1;
+            min-width: 0;
         }
         .status-badge {
             display: inline-block;
             background: ${statusHex};
             color: #ffffff;
             font-weight: 800;
-            font-size: 9px;
+            font-size: 8.5px;
             padding: 3px 10px;
-            border-radius: 6px;
-            letter-spacing: 0.5px;
+            border-radius: 5px;
             text-transform: uppercase;
             margin-bottom: 6px;
         }
         .header-title {
-            font-size: 18px;
+            font-size: 19px;
             font-weight: 900;
-            letter-spacing: 0.5px;
             color: #ffffff;
+            line-height: 1.2;
+            margin-bottom: 3px;
         }
         .header-sub {
-            font-size: 9px;
+            font-size: 9.5px;
             color: #94a3b8;
             font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            line-height: 1.3;
         }
-        .header-meta {
-            position: absolute;
-            top: 16px;
-            right: 20px;
-            text-align: right;
+        .header-right {
+            flex-shrink: 0;
+        }
+        .meta-table {
+            border-collapse: collapse;
             font-size: 9px;
-            color: #cbd5e1;
-            line-height: 1.6;
+            line-height: 1.5;
         }
-        .header-meta strong { color: #ffffff; }
+        .meta-table td {
+            padding: 1px 4px;
+        }
+        .meta-lbl {
+            color: #94a3b8;
+            font-weight: 600;
+            text-align: right;
+        }
+        .meta-val {
+            color: #ffffff;
+            font-weight: 800;
+            text-align: left;
+            padding-left: 6px;
+        }
+
+        /* ── Lodge Info Bar ── */
         .lodge-bar {
-            background: #f1f5f9;
-            padding: 6px 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 6px 12px;
             border-radius: 8px;
             font-size: 9px;
             color: #475569;
-            text-align: center;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 6px 12px;
             font-weight: 600;
         }
+        .lodge-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .lodge-sep {
+            color: #94a3b8;
+            font-size: 9px;
+            font-weight: 900;
+        }
+
+        /* ── 2-Column Section Tables ── */
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 12px;
+            gap: 10px;
+            margin-bottom: 10px;
         }
         .section-box {
             border: 1px solid #e2e8f0;
             border-radius: 10px;
             overflow: hidden;
-            break-inside: avoid;
+            background: #ffffff;
         }
         .section-header {
             background: #1e293b;
             color: #ffffff;
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 800;
             padding: 6px 10px;
-            letter-spacing: 0.5px;
             text-transform: uppercase;
         }
         table.info-table {
             width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
             font-size: 9.5px;
         }
-        table.info-table td {
-            padding: 4px 8px;
+        table.info-table tr {
             border-bottom: 1px solid #f1f5f9;
-            vertical-align: top;
         }
-        table.info-table tr:last-child td { border-bottom: none; }
+        table.info-table tr:last-child {
+            border-bottom: none;
+        }
+        table.info-table td {
+            padding: 5.5px 8px;
+            vertical-align: middle;
+            line-height: 1.4;
+        }
         table.info-table td.label {
-            width: 38%;
+            width: 44%;
             background: #f8fafc;
-            color: #64748b;
+            color: #475569;
             font-weight: 700;
+            font-size: 9px;
+            white-space: normal;
+            word-break: keep-all;
         }
         table.info-table td.value {
+            width: 56%;
             color: #0f172a;
             font-weight: 600;
+            word-break: break-word;
         }
+        .muted-text {
+            color: #64748b;
+            font-weight: 500;
+        }
+        .pill-id {
+            color: #334155;
+            font-weight: 700;
+        }
+
+        /* ── Financial Grid ── */
         .financial-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 8px;
             background: #f8fafc;
             padding: 10px;
-            border-radius: 8px;
+            border-radius: 10px;
             border: 1px solid #e2e8f0;
-            margin-bottom: 12px;
-            break-inside: avoid;
+            margin-bottom: 10px;
         }
-        .fin-item { text-align: center; }
-        .fin-item .lbl { font-size: 8.5px; color: #64748b; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; }
-        .fin-item .val { font-size: 12px; color: #0f172a; font-weight: 900; }
+        .fin-item {
+            text-align: center;
+            background: #ffffff;
+            padding: 7px 4px;
+            border-radius: 8px;
+            border: 1px solid #f1f5f9;
+        }
+        .fin-item .lbl {
+            font-size: 8px;
+            color: #64748b;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+        .fin-item .val {
+            font-size: 12px;
+            color: #0f172a;
+            font-weight: 900;
+        }
         .status-pill {
             display: inline-block;
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 9px;
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-size: 8.5px;
             font-weight: 800;
         }
         .status-paid { background: #dcfce7; color: #15803d; }
         .status-due { background: #fee2e2; color: #b91c1c; }
+
+        /* ── Facilities ── */
         .facilities-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
-            padding: 6px 10px;
+            gap: 5px;
+            padding: 6px 8px;
             background: #f8fafc;
         }
         .fac-badge {
@@ -424,44 +617,96 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
             font-weight: 700;
             font-size: 8.5px;
             padding: 2px 7px;
-            border-radius: 6px;
+            border-radius: 5px;
         }
-        .terms-container {
-            margin-top: 10px;
-            break-inside: avoid;
+
+        /* ── Tenancy Covenant Box ── */
+        .covenant-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #2563eb;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-top: 4px;
+            font-size: 8.5px;
+            line-height: 1.45;
         }
+        .covenant-title {
+            font-weight: 800;
+            color: #1e3a8a;
+            margin-bottom: 2px;
+        }
+        .covenant-text {
+            color: #475569;
+            font-weight: 500;
+        }
+
+        /* ── Page 2 Repeated Header ── */
+        .repeated-header {
+            background: #0f172a;
+            color: #ffffff;
+            padding: 10px 16px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .repeated-title {
+            font-size: 11.5px;
+            font-weight: 800;
+        }
+        .repeated-sub {
+            font-size: 8.5px;
+            color: #94a3b8;
+            font-weight: 600;
+            margin-top: 1px;
+        }
+        .repeated-meta {
+            font-size: 8.5px;
+            color: #cbd5e1;
+            text-align: right;
+            line-height: 1.4;
+        }
+        .repeated-meta strong {
+            color: #ffffff;
+        }
+
+        /* ── 18 Terms Grid ── */
         .terms-grid {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 5px;
-            padding: 8px 10px;
-            background: #ffffff;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 10px;
+            margin-bottom: 10px;
         }
         .term-card {
-            border-left: 3px solid #6366f1;
+            border-left: 3px solid #2563eb;
             padding: 4px 8px;
             background: #f8fafc;
             border-radius: 0 6px 6px 0;
-            font-size: 9.5px;
-            line-height: 1.45;
-            break-inside: avoid;
+            font-size: 8px;
+            line-height: 1.35;
+            border-top: 1px solid #f1f5f9;
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #f1f5f9;
         }
         .term-title {
             font-weight: 800;
             color: #1e293b;
-            margin-bottom: 1px;
+            font-size: 8.5px;
+            margin-bottom: 2px;
         }
         .term-desc {
             color: #334155;
             font-weight: 500;
         }
+
+        /* ── Signatures Area ── */
         .sign-area {
             display: grid;
             grid-template-columns: 110px 1fr 1fr;
-            gap: 12px;
-            margin-top: 14px;
-            align-items: stretch;
-            break-inside: avoid;
+            gap: 10px;
+            margin-bottom: 8px;
         }
         .qr-box {
             border: 1px solid #e2e8f0;
@@ -469,177 +714,312 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
             padding: 6px;
             text-align: center;
             background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        .qr-box img { width: 84px; height: 84px; display: block; margin: 0 auto; }
-        .qr-box span { font-size: 7.5px; color: #64748b; font-weight: 600; display: block; margin-top: 3px; }
+        .qr-box img {
+            width: 72px;
+            height: 72px;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .qr-box span {
+            font-size: 7.5px;
+            color: #64748b;
+            font-weight: 700;
+            display: block;
+        }
         .sign-box {
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 10px;
+            padding: 8px 10px;
             text-align: center;
             display: flex;
-            flex-col;
             flex-direction: column;
             justify-content: space-between;
             background: #f8fafc;
-            min-height: 96px;
+            min-height: 94px;
         }
-        .sign-box.seal { background: #eef2ff; border-color: #c7d2fe; }
-        .sign-box.auth { background: #f0fdf4; border-color: #bbf7d0; }
-        .sign-title { font-weight: 800; font-size: 9px; color: #3730a3; }
-        .sign-subtitle { font-size: 8px; color: #64748b; }
-        .sign-line { border-top: 1px dashed #94a3b8; margin: 12px 10px 4px 10px; }
+        .sign-box.seal {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+        .sign-box.auth {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+        .sign-title {
+            font-weight: 800;
+            font-size: 9px;
+            color: #1e3a8a;
+        }
+        .sign-subtitle {
+            font-size: 8px;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .sign-line {
+            border-top: 1px dashed #94a3b8;
+            margin: 10px 12px 3px 12px;
+        }
+
+        /* ── Tenant Acknowledgement ── */
         .tenant-ack-strip {
             background: #fffbeb;
             border: 1px solid #fef3c7;
             border-radius: 8px;
-            padding: 8px 12px;
-            margin-top: 10px;
-            font-size: 9px;
-            break-inside: avoid;
+            padding: 6px 10px;
+            font-size: 8px;
+            line-height: 1.4;
+            margin-bottom: 8px;
         }
-        .tenant-ack-title { font-weight: 800; color: #92400e; margin-bottom: 2px; }
-        .tenant-ack-text { color: #78350f; font-weight: 500; }
-        .footer-line {
-            margin-top: 10px;
-            text-align: center;
+        .tenant-ack-title {
+            font-weight: 800;
+            color: #92400e;
+            margin-bottom: 1px;
+        }
+        .tenant-ack-text {
+            color: #78350f;
+            font-weight: 500;
+        }
+
+        /* ── Page Footer ── */
+        .page-footer {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             font-size: 7.5px;
             color: #94a3b8;
             font-weight: 600;
-            letter-spacing: 0.5px;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <span class="status-badge">${docStatus}</span>
-        <div class="header-title">${lodge?.name || 'KRISHNA LODGE & RESIDENCY'}</div>
-        <div class="header-sub">${isMl ? 'ഔദ്യോഗിക വാടകക്കരാർ & താമസ രസീത്' : 'OFFICIAL RESIDENCY ACKNOWLEDGEMENT / LEASE AGREEMENT'}</div>
-        <div class="header-meta">
-            <div>Agreement: <strong>${booking?.agreementNumber || '-'}</strong></div>
-            <div>Ref: <strong>#${String(booking?._id || '').slice(-8).toUpperCase()}</strong></div>
-            <div>Version: <strong>v${booking?.acknowledgementVersion || 1}.0</strong></div>
-            <div>Date: <strong>${fmtDate(new Date())}</strong></div>
-        </div>
-    </div>
+    <div class="pdf-document">
+        <!-- ════════════════ PAGE 1: CORE PARTICULARS ════════════════ -->
+        <div class="pdf-page" id="page-1">
+            <div class="page-content">
+                <!-- Header -->
+                <div class="header">
+                    <div class="header-left">
+                        <span class="status-badge">${docStatus}</span>
+                        <div class="header-title">${lodge?.name || 'KRISHNA BUILDING & RESIDENCY'}</div>
+                        <div class="header-sub">${isMl ? 'ഔദ്യോഗിക വാടകക്കരാർ & താമസ രസീത്' : 'OFFICIAL RESIDENCY ACKNOWLEDGEMENT / LEASE AGREEMENT'}</div>
+                    </div>
+                    <div class="header-right">
+                        <table class="meta-table">
+                            <tr><td class="meta-lbl">Agreement:</td><td class="meta-val">${booking?.agreementNumber || '-'}</td></tr>
+                            <tr><td class="meta-lbl">Ref:</td><td class="meta-val">#${String(booking?._id || '').slice(-8).toUpperCase()}</td></tr>
+                            <tr><td class="meta-lbl">Version:</td><td class="meta-val">v${booking?.acknowledgementVersion || 1}.0</td></tr>
+                            <tr><td class="meta-lbl">Date:</td><td class="meta-val">${fmtDate(new Date())}</td></tr>
+                        </table>
+                    </div>
+                </div>
 
-    <!-- Lodge Info Bar -->
-    <div class="lodge-bar">
-        ${[lodge?.address || 'Thiruvazhiyode, Kerala', lodge?.phone || '+91 9447940835', lodge?.email, lodge?.website].filter(Boolean).join(' &nbsp;|&nbsp; ')}
-    </div>
+                <!-- Lodge Info Bar -->
+                <div class="lodge-bar">
+                    <span class="lodge-item">${address}</span>
+                    <span class="lodge-sep">•</span>
+                    <span class="lodge-item">${phone}</span>
+                    <span class="lodge-sep">•</span>
+                    <span class="lodge-item">${email}</span>
+                    <span class="lodge-sep">•</span>
+                    <span class="lodge-item">${website}</span>
+                </div>
 
-    <!-- Tenant & Room Details -->
-    <div class="grid-2">
-        <div class="section-box">
-            <div class="section-header">${isMl ? 'വാടകക്കാരന്റെ വിവരങ്ങൾ (Tenant Details)' : 'Tenant / Occupant Details'}</div>
-            <table class="info-table">
-                <tr><td class="label">${isMl ? 'പേര്' : 'Tenant Name'}</td><td class="value">${tenant?.name || '-'}</td></tr>
-                <tr><td class="label">${isMl ? 'രക്ഷിതാവ്' : 'Father / Guardian'}</td><td class="value">${tenant?.fatherName || '-'}</td></tr>
-                <tr><td class="label">${isMl ? 'ഫോൺ നമ്പർ' : 'Mobile'}</td><td class="value">${tenant?.phone || '-'}</td></tr>
-                <tr><td class="label">${isMl ? 'തിരിച്ചറിയൽ രേഖ' : 'Govt ID'}</td><td class="value">${tenant?.govtIdType || 'ID'}: ${tenant?.govtIdNumber || '-'}</td></tr>
-                <tr><td class="label">${isMl ? 'മേൽവിലാസം' : 'Address'}</td><td class="value">${tenant?.address || '-'}</td></tr>
-                <tr><td class="label">${isMl ? 'അടിയന്തര ഫോൺ' : 'Emergency Contact'}</td><td class="value">${tenant?.emergencyPhone || tenant?.emergencyContact || '-'}</td></tr>
-            </table>
-        </div>
+                <!-- Tenant & Room Details -->
+                <div class="grid-2">
+                    <div class="section-box">
+                        <div class="section-header">${isMl ? 'വാടകക്കാരന്റെ വിവരങ്ങൾ (TENANT DETAILS)' : 'TENANT / OCCUPANT DETAILS'}</div>
+                        <table class="info-table">
+                            <tr>
+                                <td class="label">${isMl ? 'പേര്' : 'Tenant Name'}</td>
+                                <td class="value"><strong>${tenant?.name || '-'}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="label">${isMl ? 'രക്ഷിതാവ്' : 'Father / Guardian'}</td>
+                                <td class="value">${tenant?.fatherName || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">${isMl ? 'ഫോൺ നമ്പർ' : 'Mobile'}</td>
+                                <td class="value">${tenant?.phone || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">${isMl ? 'തിരിച്ചറിയൽ രേഖ' : 'Govt ID'}</td>
+                                <td class="value"><span class="pill-id">${tenant?.govtIdType || 'Aadhaar Card'}:</span> &nbsp;<strong>${tenant?.govtIdNumber || 'N/A'}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="label">${isMl ? 'മേൽവിലാസം' : 'Address'}</td>
+                                <td class="value">${tenant?.address || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">${isMl ? 'അടിയന്തര ഫോൺ' : 'Emergency Contact'}</td>
+                                <td class="value">${tenant?.emergencyPhone || tenant?.emergencyContact || '-'}</td>
+                            </tr>
+                        </table>
+                    </div>
 
-        <div class="section-box">
-            <div class="section-header">${isMl ? 'മുറിയുടെ വിവരങ്ങൾ (Room Details)' : 'Room & Stay Details'}</div>
-            <table class="info-table">
-                <tr><td class="label">${isMl ? 'മുറി നമ്പർ' : 'Room Number'}</td><td class="value">Room ${room?.roomNumber || '-'} (${room?.type || 'Standard'})</td></tr>
-                <tr><td class="label">${isMl ? 'കെട്ടിടം / നില' : 'Building / Floor'}</td><td class="value">${room?.building || 'Main Block'}, ${room?.floor || '1st Floor'}</td></tr>
-                <tr><td class="label">${isMl ? 'പ്രവേശന തീയതി' : 'Check-In Date'}</td><td class="value">${fmtDate(booking?.checkIn)}</td></tr>
-                <tr><td class="label">${isMl ? 'കാലാവധി തീയതി' : 'Check-Out Date'}</td><td class="value">${fmtDate(booking?.checkOut)} (${booking?.daysTotal || '-'} Days)</td></tr>
-                <tr><td class="label">${isMl ? 'വാടക ചക്രം' : 'Billing Cycle'}</td><td class="value">${booking?.paymentCycle || 'Monthly'}</td></tr>
-                <tr><td class="label">${isMl ? 'അടുത്ത അടവ് തീയതി' : 'Next Due Date'}</td><td class="value">${fmtDate(booking?.nextDueDate)}</td></tr>
-            </table>
-        </div>
-    </div>
+                    <div class="section-box">
+                        <div class="section-header">${isMl ? 'മുറിയുടെ വിവരങ്ങൾ (ROOM DETAILS)' : 'ROOM & STAY DETAILS'}</div>
+                        <table class="info-table">
+                            <tr>
+                                <td class="label">${isMl ? 'മുറി നമ്പർ' : 'Room Number'}</td>
+                                <td class="value"><strong>Room ${room?.roomNumber || 'N/A'}</strong> &nbsp;<span class="muted-text">(${room?.type || 'Standard'})</span></td>
+                            </tr>
+                            <tr>
+                                <td class="label">${isMl ? 'കെട്ടിടം / നില' : 'Building / Floor'}</td>
+                                <td class="value">${room?.building || 'Main Block'}, ${room?.floor || '1st Floor'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">${isMl ? 'പ്രവേശന തീയതി' : 'Check-In Date'}</td>
+                                <td class="value">${fmtDate(booking?.checkIn)}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">${isMl ? 'കാലാവധി തീയതി' : 'Check-Out Date'}</td>
+                                <td class="value">${fmtDate(booking?.checkOut)} &nbsp;<span class="muted-text">(${booking?.daysTotal || '-'} Days)</span></td>
+                            </tr>
+                            <tr>
+                                <td class="label">${isMl ? 'വാടക ചക്രം' : 'Billing Cycle'}</td>
+                                <td class="value">${booking?.paymentCycle || 'Monthly'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">${isMl ? 'അടുത്ത അടവ് തീയതി' : 'Next Due Date'}</td>
+                                <td class="value">${fmtDate(booking?.nextDueDate)}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
 
-    <!-- Financial Summary -->
-    <div class="financial-grid">
-        <div class="fin-item">
-            <div class="lbl">${isMl ? 'പ്രതിമാസ വാടക' : 'Monthly Rent'}</div>
-            <div class="val">${formatINRDisplay(room?.monthlyRent || booking?.totalAmount)}</div>
-        </div>
-        <div class="fin-item">
-            <div class="lbl">${isMl ? 'സുരക്ഷാനിക്ഷേപം' : 'Security Deposit'}</div>
-            <div class="val">${formatINRDisplay(room?.securityDeposit)}</div>
-        </div>
-        <div class="fin-item">
-            <div class="lbl">${isMl ? 'അടച്ച തുക' : 'Total Paid'}</div>
-            <div class="val" style="color: #15803d;">${formatINRDisplay(booking?.totalPaid)}</div>
-        </div>
-        <div class="fin-item">
-            <div class="lbl">${isMl ? 'കുടിശ്ശിക / സ്റ്റാറ്റസ്' : 'Balance / Status'}</div>
-            <div class="val">
-                <span class="status-pill ${(booking?.outstanding || 0) <= 0 ? 'status-paid' : 'status-due'}">
-                    ${(booking?.outstanding || 0) <= 0 ? (isMl ? '✓ പൂർണ്ണമായി അടച്ചു' : '✓ FULLY PAID') : `${isMl ? 'കുടിശ്ശിക:' : 'DUE:'} ${formatINRDisplay(booking?.outstanding)}`}
-                </span>
+                <!-- Financial Summary -->
+                <div class="financial-grid">
+                    <div class="fin-item">
+                        <div class="lbl">${isMl ? 'പ്രതിമാസ വാടക' : 'Monthly Rent'}</div>
+                        <div class="val">${formatINRDisplay(room?.monthlyRent || booking?.totalAmount)}</div>
+                    </div>
+                    <div class="fin-item">
+                        <div class="lbl">${isMl ? 'സുരക്ഷാനിക്ഷേപം' : 'Security Deposit'}</div>
+                        <div class="val">${formatINRDisplay(room?.securityDeposit)}</div>
+                    </div>
+                    <div class="fin-item">
+                        <div class="lbl">${isMl ? 'അടച്ച തുക' : 'Total Paid'}</div>
+                        <div class="val" style="color: #15803d;">${formatINRDisplay(booking?.totalPaid)}</div>
+                    </div>
+                    <div class="fin-item">
+                        <div class="lbl">${isMl ? 'കുടിശ്ശിക / സ്റ്റാറ്റസ്' : 'Balance / Status'}</div>
+                        <div class="val">
+                            <span class="status-pill ${(booking?.outstanding || 0) <= 0 ? 'status-paid' : 'status-due'}">
+                                ${(booking?.outstanding || 0) <= 0 ? (isMl ? '✓ പൂർണ്ണമായി അടച്ചു' : '✓ FULLY PAID') : `${isMl ? 'കുടിശ്ശിക:' : 'DUE:'} ${formatINRDisplay(booking?.outstanding)}`}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Facilities if present -->
+                ${facilities.length > 0 ? `
+                <div class="section-box" style="margin-bottom: 8px;">
+                    <div class="section-header">${isMl ? 'ലഭ്യമായ സൗകര്യങ്ങൾ (FACILITIES & AMENITIES)' : 'ASSIGNED FACILITIES & AMENITIES'}</div>
+                    <div class="facilities-list">
+                        ${facilities.map(fac => `<span class="fac-badge">✓ ${fac}</span>`).join('')}
+                    </div>
+                </div>` : ''}
+
+                <!-- Tenancy Covenant Summary Box -->
+                <div class="covenant-box">
+                    <div class="covenant-title">${isMl ? 'വാടക ഉടമ്പടി പ്രഖ്യാപനം (Tenancy Declaration):' : 'Official Tenancy Declaration:'}</div>
+                    <div class="covenant-text">
+                        ${isMl
+                            ? 'ഈ രേഖ കൃഷ്ണ ബിൽഡിംഗും വാടകക്കാരനും തമ്മിലുള്ള ഔദ്യോഗിക വാടകക്കരാറിന്റെ ഒന്നാം ഭാഗമാണ്. കേരള കെട്ടിടങ്ങൾ (പാട്ടവും വാടക നിയന്ത്രണവും) നിയമം 1965, സ്വത്ത് കൈമാറ്റ നിയമം 1882 എന്നിവയിലെ വ്യവസ്ഥകൾക്ക് വിധേയമായി തയ്യാറാക്കിയ 18 നിയമപരമായ നിബന്ധനകളും വ്യവസ്ഥകളും പേജ് 2-ൽ ചേർത്തിരിക്കുന്നു.'
+                            : 'This document represents Part 1 of the official Tenancy Agreement executed between Krishna Building and the Tenant. The 18 statutory tenancy clauses under the Kerala Buildings (Lease & Rent Control) Act 1965 and Transfer of Property Act 1882 are detailed on Page 2.'}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page 1 Footer -->
+            <div class="page-footer">
+                <span>Agr: <strong>${booking?.agreementNumber || '-'}</strong></span>
+                <span>•</span>
+                <span>Version: v${booking?.acknowledgementVersion || 1}.0</span>
+                <span>•</span>
+                <span>Page 1 of 2</span>
+                <span>•</span>
+                <span>${lodge?.name || 'Krishna Building'} • Official Residency Record</span>
             </div>
         </div>
-    </div>
 
-    ${facilities.length > 0 ? `
-    <div class="section-box" style="margin-bottom: 12px;">
-        <div class="section-header">${isMl ? 'ലഭ്യമായ സൗകര്യങ്ങൾ (Assigned Facilities & Amenities)' : 'Assigned Facilities & Amenities'}</div>
-        <div class="facilities-list">
-            ${facilities.map(fac => `<span class="fac-badge">✓ ${fac}</span>`).join('')}
-        </div>
-    </div>` : ''}
-
-    <!-- 18 Terms & Conditions -->
-    <div class="section-box terms-container">
-        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>${isMl ? 'വാടകക്കരാർ നിബന്ധനകളും വ്യവസ്ഥകളും (18 നിബന്ധനകൾ)' : 'TERMS & CONDITIONS OF RESIDENCY (18 STATUTORY CLAUSES)'}</span>
-            <span style="font-size: 8px; opacity: 0.85;">${isMl ? 'നിയമപരമായ ബാധ്യതയുള്ളത്' : 'Statutory & Binding'}</span>
-        </div>
-        <div class="terms-grid">
-            ${terms.map(t => `
-                <div class="term-card">
-                    <div class="term-title">${t.id}. ${t.title}</div>
-                    <div class="term-desc">${typeof t.text === 'function' ? t.text(data) : t.text}</div>
+        <!-- ════════════════ PAGE 2: 18 TERMS & EXECUTIONS ════════════════ -->
+        <div class="pdf-page page-break" id="page-2">
+            <div class="page-content">
+                <!-- Repeated Header Banner -->
+                <div class="repeated-header">
+                    <div>
+                        <div class="repeated-title">${isMl ? 'വാടകക്കരാർ നിബന്ധനകളും വ്യവസ്ഥകളും (18 നിബന്ധനകൾ)' : 'TERMS & CONDITIONS OF RESIDENCY (18 STATUTORY CLAUSES)'}</div>
+                        <div class="repeated-sub">${isMl ? 'കേരള കെട്ടിട വാടക നിയന്ത്രണ നിയമങ്ങൾക്കനുസൃതമായ വ്യവസ്ഥകൾ' : 'Statutory & Legally Binding Tenancy Regulations'}</div>
+                    </div>
+                    <div class="repeated-meta">
+                        <div>Agr: <strong>${booking?.agreementNumber || '-'}</strong></div>
+                        <div>Tenant: <strong>${tenant?.name || 'Occupant'}</strong></div>
+                    </div>
                 </div>
-            `).join('')}
+
+                <!-- 18 Terms in 2 Columns -->
+                <div class="terms-grid">
+                    ${terms.map(t => `
+                        <div class="term-card">
+                            <div class="term-title">${t.id}. ${t.title}</div>
+                            <div class="term-desc">${typeof t.text === 'function' ? t.text(data) : t.text}</div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <!-- Signatures and QR Code Area -->
+                <div class="sign-area">
+                    ${qrDataUrl ? `
+                    <div class="qr-box">
+                        <img src="${qrDataUrl}" alt="QR Verification" />
+                        <span>${isMl ? 'സ്കാൻ ചെയ്ത് പരിശോധിക്കുക' : 'Scan to Verify Online'}</span>
+                    </div>` : '<div class="qr-box"><span>Verification Active</span></div>'}
+
+                    <div class="sign-box seal">
+                        <div class="sign-title">${lodge?.name || 'KRISHNA BUILDING'}</div>
+                        <div class="sign-subtitle">${isMl ? 'ഔദ്യോഗിക മുദ്ര (Seal)' : 'Official Company Stamp'}</div>
+                        <div class="sign-line"></div>
+                        <div class="sign-subtitle">${isMl ? 'അംഗീകൃത പ്രതിനിധി' : 'Authorized Signatory'}</div>
+                    </div>
+
+                    <div class="sign-box auth">
+                        <div class="sign-title" style="color: #0f172a;">${tenant?.name || 'Tenant'}</div>
+                        <div class="sign-subtitle">${isMl ? 'വാടകക്കാരന്റെ ഒപ്പ്' : 'Tenant Signature'}</div>
+                        <div class="sign-line"></div>
+                        <div class="sign-subtitle">${isMl ? 'തീയതി & സ്ഥലം' : 'Signature & Date'}</div>
+                    </div>
+                </div>
+
+                <!-- Tenant Acknowledgement Strip -->
+                <div class="tenant-ack-strip">
+                    <div class="tenant-ack-title">${isMl ? 'വാടകക്കാരന്റെ സമ്മതപത്രം (Tenant Binding Acknowledgement):' : 'Tenant Binding Acknowledgement:'}</div>
+                    <div class="tenant-ack-text">
+                        ${isMl 
+                            ? 'മുകളിൽ രേഖപ്പെടുത്തിയിട്ടുള്ള 18 വാടകക്കരാർ നിബന്ധനകളും വ്യവസ്ഥകളും പൂർണ്ണമായി വായിച്ചു മനസ്സിലാക്കി ഞാൻ ഇതിനാൽ പൂർണ്ണ സമ്മതം രേഖപ്പെടുത്തുന്നു.' 
+                            : 'I hereby acknowledge that I have read, understood, and unconditionally agreed to all 18 terms and conditions stipulated in this Residency Agreement.'}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page 2 Footer -->
+            <div class="page-footer">
+                <span>Agr: <strong>${booking?.agreementNumber || '-'}</strong></span>
+                <span>•</span>
+                <span>Version: v${booking?.acknowledgementVersion || 1}.0</span>
+                <span>•</span>
+                <span>Page 2 of 2</span>
+                <span>•</span>
+                <span>Generated: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} • Krishna Building</span>
+            </div>
         </div>
-    </div>
-
-    <!-- Signatures and QR Code Area -->
-    <div class="sign-area">
-        ${qrDataUrl ? `
-        <div class="qr-box">
-            <img src="${qrDataUrl}" alt="QR Verification" />
-            <span>${isMl ? 'സ്കാൻ ചെയ്ത് പരിശോധിക്കുക' : 'Scan to Verify Online'}</span>
-        </div>` : '<div></div>'}
-
-        <div class="sign-box seal">
-            <div class="sign-title">KRISHNA LODGE & RESIDENCY</div>
-            <div class="sign-subtitle">${isMl ? 'ഔദ്യോഗിക മുദ്ര (Seal)' : 'Official Company Stamp'}</div>
-            <div class="sign-line"></div>
-            <div class="sign-subtitle">${isMl ? 'അംഗീകൃത പ്രതിനിധി' : 'Authorized Signatory'}</div>
-        </div>
-
-        <div class="sign-box auth">
-            <div class="sign-title" style="color: #1e293b;">${tenant?.name || 'Tenant'}</div>
-            <div class="sign-subtitle">${isMl ? 'വാടകക്കാരന്റെ ഒപ്പ്' : 'Tenant Signature'}</div>
-            <div class="sign-line"></div>
-            <div class="sign-subtitle">${isMl ? 'തീയതി & സ്ഥലം' : 'Signature & Date'}</div>
-        </div>
-    </div>
-
-    <!-- Tenant Acknowledgement Strip -->
-    <div class="tenant-ack-strip">
-        <div class="tenant-ack-title">${isMl ? 'വാടകക്കാരന്റെ സമ്മതപത്രം (Tenant Acknowledgement):' : 'Tenant Binding Acknowledgement:'}</div>
-        <div class="tenant-ack-text">
-            ${isMl 
-                ? 'മുകളിൽ പറഞ്ഞിരിക്കുന്ന 18 നിബന്ധനകളും വ്യവസ്ഥകളും പൂർണ്ണമായും വായിച്ചു മനസ്സിലാക്കി ഞാൻ ഇതിനാൽ പൂർണ്ണ സമ്മതം അറിയിക്കുന്നു.' 
-                : 'I hereby acknowledge that I have read, understood, and unconditionally agreed to all 18 terms and conditions stipulated in this Residency Agreement.'}
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer-line">
-        Agr: ${booking?.agreementNumber || '-'} &nbsp;|&nbsp; Version: v${booking?.acknowledgementVersion || 1}.0 &nbsp;|&nbsp; Generated: ${new Date().toLocaleString('en-IN')} &nbsp;|&nbsp; Krishna Lodge & Residency
     </div>
 </body>
 </html>`;
@@ -668,7 +1048,7 @@ export const generateResidencyAcknowledgementPDF = async (data, language = 'en')
 
     // Lodge name
     doc.setFontSize(15); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
-    doc.text('KRISHNA LODGE & RESIDENCY', PL, 23);
+    doc.text(lodge?.name || 'KRISHNA BUILDING & RESIDENCY', PL, 23);
     doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(148, 163, 184);
     doc.text('OFFICIAL RESIDENCY ACKNOWLEDGEMENT / LEASE AGREEMENT', PL, 29);
 
@@ -682,7 +1062,7 @@ export const generateResidencyAcknowledgementPDF = async (data, language = 'en')
     // Lodge info bar
     doc.setFillColor(241, 245, 249); doc.rect(0, 40, W, 9, 'F');
     doc.setFontSize(7); doc.setTextColor(71, 85, 105); doc.setFont('helvetica', 'normal');
-    const lodgeInfoParts = [lodge?.address, lodge?.phone, lodge?.email, lodge?.website].filter(Boolean);
+    const lodgeInfoParts = [cleanContactAddress(lodge?.address), lodge?.phone || '+91 98765 43210', cleanContactEmail(lodge?.email), cleanContactWebsite(lodge?.website)].filter(Boolean);
     doc.text(lodgeInfoParts.join('  |  '), 105, 46, { align: 'center' });
 
     let y = 54;
@@ -708,7 +1088,7 @@ export const generateResidencyAcknowledgementPDF = async (data, language = 'en')
         ['Mobile', tenant?.phone || '-'],
         ['Email', tenant?.email || '-'],
         ['Address', tenant?.address || '-'],
-        ['Govt ID Type', tenant?.govtIdType || '-'],
+        ['Govt ID Type', tenant?.govtIdType || 'Aadhaar Card'],
         ['Govt ID Number', tenant?.govtIdNumber || '-'],
         ['Emergency Contact', tenant?.emergencyContact || '-'],
         ['Emergency Phone', tenant?.emergencyPhone || '-'],
@@ -719,8 +1099,8 @@ export const generateResidencyAcknowledgementPDF = async (data, language = 'en')
     y = sectionHeader('Room & Stay Details', y);
     autoTable(doc, {
         startY: y, head: [], body: [
-            ['Room Number', `Room ${room?.roomNumber || '-'} (${room?.type || 'Standard'})`, 'Check-In Date', fmtDate(booking?.checkIn)],
-            ['Building / Floor', `${room?.building || 'Main'}, ${room?.floor || '1st Floor'}`, 'Check-Out Date', fmtDate(booking?.checkOut)],
+            ['Room Number', `Room ${room?.roomNumber || 'N/A'} (${room?.type || 'Standard'})`, 'Check-In Date', fmtDate(booking?.checkIn)],
+            ['Building / Floor', `${room?.building || 'Main Block'}, ${room?.floor || '1st Floor'}`, 'Check-Out Date', fmtDate(booking?.checkOut)],
             ['Max Occupants', String(room?.maxGuests || 1), 'Total Stay Duration', `${booking?.daysTotal || '-'} Days`],
             ['Payment Cycle', booking?.paymentCycle || 'Monthly', 'Next Due Date', fmtDate(booking?.nextDueDate)],
         ],
@@ -797,7 +1177,7 @@ export const generateResidencyAcknowledgementPDF = async (data, language = 'en')
 
     doc.setFillColor(238, 242, 255); doc.roundedRect(col1, sigY, 58, 38, 2, 2, 'F');
     doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(67, 56, 202);
-    doc.text('KRISHNA LODGE & RESIDENCY', col1 + 29, sigY + 10, { align: 'center' });
+    doc.text(lodge?.name || 'KRISHNA BUILDING & RESIDENCY', col1 + 29, sigY + 10, { align: 'center' });
     doc.setFontSize(6.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
     doc.text('(Authorized Signatory / Seal)', col1 + 29, sigY + 16, { align: 'center' });
     doc.setDrawColor(99, 102, 241); doc.line(col1 + 8, sigY + 28, col1 + 50, sigY + 28);
@@ -823,69 +1203,67 @@ export const generateResidencyAcknowledgementPDF = async (data, language = 'en')
     // Footer watermark
     doc.setFontSize(5.5); doc.setTextColor(190, 190, 190); doc.setFont('helvetica', 'normal');
     doc.text(
-        `Agr: ${booking?.agreementNumber || '-'} | v${booking?.acknowledgementVersion || 1}.0 | ${new Date().toLocaleString('en-IN')} | Krishna Lodge & Residency`,
+        `Agr: ${booking?.agreementNumber || '-'} | v${booking?.acknowledgementVersion || 1}.0 | ${new Date().toLocaleString('en-IN')} | Krishna Building & Residency`,
         105, 289, { align: 'center' }
     );
 
     return doc;
 };
 
-// ─── Download Handler with Language Choice (English Vector / Malayalam Retina) ──
+// ─── Download Handler (High-Fidelity 2-Page Rendering for Malayalam & English) ─
 export const downloadResidencyAcknowledgement = async (data, language = 'ml') => {
-    if (language === 'en') {
-        const doc = await generateResidencyAcknowledgementPDF(data, 'en');
-        const name = data.booking?.agreementNumber || 'Acknowledgement';
-        await savePDF(doc, `${name}_Agreement_EN.pdf`);
-        return;
-    }
+    // 1. Ensure fonts are fully loaded and shaped
+    await ensureFontsLoaded();
 
-    // Malayalam PDF: Render styled HTML container with Noto Sans Malayalam at 2x resolution
+    // 2. Generate QR code
     const qrDataUrl = await generateQRDataUrl(data.booking?._id);
-    const htmlString = generateResidencyAcknowledgementHTML(data, 'ml', qrDataUrl);
+    const htmlString = generateResidencyAcknowledgementHTML(data, language, qrDataUrl);
 
-    const tempDiv = document.createElement('div');
-    tempDiv.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#ffffff;z-index:-1000;';
-    tempDiv.innerHTML = htmlString;
-    document.body.appendChild(tempDiv);
+    // 3. Mount in DOM sandbox with active layout
+    const tempContainer = document.createElement('div');
+    tempContainer.id = 'residency-pdf-sandbox';
+    tempContainer.style.cssText = 'position:fixed;top:0;left:0;width:794px;background:#ffffff;z-index:-99999;opacity:0.01;pointer-events:none;';
+    tempContainer.innerHTML = htmlString;
+    document.body.appendChild(tempContainer);
 
     try {
-        const canvas = await html2canvas(tempDiv, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff'
-        });
+        if (document.fonts) {
+            await document.fonts.ready;
+        }
+        // Allow brief frame paint
+        await new Promise(res => setTimeout(res, 200));
 
+        const pages = tempContainer.querySelectorAll('.pdf-page');
         const pdf = new jsPDF('p', 'mm', 'a4');
         const imgWidth = 210;
         const pageHeight = 297;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-        let heightLeft = imgHeight;
-        let position = 0;
-        const imgData = canvas.toDataURL('image/png');
+        for (let i = 0; i < pages.length; i++) {
+            const pageEl = pages[i];
+            const canvas = await html2canvas(pageEl, {
+                scale: 2.2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
 
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+            const imgData = canvas.toDataURL('image/png');
+            if (i > 0) pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, pageHeight, undefined, 'FAST');
         }
 
         const name = data.booking?.agreementNumber || 'Acknowledgement';
-        await savePDF(pdf, `${name}_Agreement_ML.pdf`);
+        await savePDF(pdf, `${name}_Agreement_${language.toUpperCase()}.pdf`);
     } finally {
-        if (document.body.contains(tempDiv)) {
-            document.body.removeChild(tempDiv);
+        if (document.body.contains(tempContainer)) {
+            document.body.removeChild(tempContainer);
         }
     }
 };
 
 // ─── Native High-Fidelity Printing (Crisp Vector Fonts for ML & EN) ────────────
 export const printResidencyAcknowledgement = async (data, language = 'ml') => {
+    await ensureFontsLoaded();
     const qrDataUrl = await generateQRDataUrl(data.booking?._id);
     const htmlString = generateResidencyAcknowledgementHTML(data, language, qrDataUrl);
 
