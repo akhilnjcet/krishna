@@ -3,11 +3,83 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { 
     User, Lock, Mail, Key, ArrowRight, Eye, EyeOff, 
-    Loader2, AlertCircle, ChevronLeft 
+    Loader2, AlertCircle, ChevronLeft, Wifi, Cloud, Terminal 
 } from 'lucide-react';
 import api from '../services/api';
 import useAuthStore from '../stores/authStore';
+import useSignalStore from '../stores/signalStore';
 import ThemeToggle from '../components/ThemeToggle';
+
+const SignalSwitcher = () => {
+    const { activeSignal, localIp, toggleSignal, setLocalIp } = useSignalStore();
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    return (
+        <div className="mb-5 bg-blue-50/60 dark:bg-slate-800/60 rounded-2xl border border-blue-100 dark:border-slate-700/60 overflow-hidden transition-all text-left">
+            <button 
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full px-4 py-2.5 flex items-center justify-between text-blue-600 dark:text-blue-400"
+            >
+                <div className="flex items-center gap-2">
+                    <Wifi className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-black uppercase tracking-wider">
+                        Server: {activeSignal === 'cloud' ? 'Production Cloud' : `Local (${localIp || 'localhost'})`}
+                    </span>
+                </div>
+                <div className="px-2 py-0.5 bg-white dark:bg-slate-900 rounded-lg border border-blue-200/60 dark:border-slate-700 text-[9px] font-black uppercase">
+                    {isExpanded ? 'Close' : 'Switch'}
+                </div>
+            </button>
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="px-4 pb-3 pt-1 space-y-2.5"
+                    >
+                        <div className="flex gap-2">
+                            <button 
+                                type="button"
+                                onClick={() => toggleSignal('cloud')}
+                                className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${
+                                    activeSignal === 'cloud' 
+                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' 
+                                        : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                                }`}
+                            >
+                                <Cloud className="w-3 h-3" /> Cloud
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => toggleSignal('local')}
+                                className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${
+                                    activeSignal === 'local' 
+                                        ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-md' 
+                                        : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                                }`}
+                            >
+                                <Terminal className="w-3 h-3" /> Local Link
+                            </button>
+                        </div>
+                        {activeSignal === 'local' && (
+                            <div className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-blue-100 dark:border-slate-700 flex items-center gap-2">
+                                <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase whitespace-nowrap">IP / Host:</span>
+                                <input 
+                                    className="bg-transparent border-0 p-0 w-full focus:ring-0 text-[11px] font-bold text-slate-700 dark:text-slate-300 font-mono"
+                                    value={localIp}
+                                    onChange={(e) => setLocalIp(e.target.value)}
+                                    placeholder="localhost or 192.168.x.x"
+                                />
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
 
 const Login = () => {
     const [loginMode, setLoginMode] = useState('identity'); // 'identity' (Admin ID) or 'mail' (Mail / OTP)
@@ -83,7 +155,11 @@ const Login = () => {
                 }
             }
         } catch (err) {
-            setError(err.response?.data?.message || err.message || 'Identity verification failed.');
+            let msg = err.response?.data?.message || err.customMessage || err.message || 'Identity verification failed.';
+            if (msg === 'Network Error') {
+                msg = 'Network Error: Cannot connect to server. If on Cloud, Vercel firewall challenge may be active. Use "Adjust Server" below to switch to Local Link.';
+            }
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -137,6 +213,9 @@ const Login = () => {
                             Sign in to your workspace
                         </p>
                     </div>
+
+                    {/* Server Connection Switcher */}
+                    <SignalSwitcher />
 
                     {/* Login Mode Switcher */}
                     <div className="grid grid-cols-2 p-1.5 bg-[#f1f5f9] dark:bg-slate-800/80 rounded-2xl mb-6 border border-slate-200/60 dark:border-slate-700/60">

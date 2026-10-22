@@ -25,6 +25,11 @@ const api = axios.create({
 
 
 api.interceptors.request.use((config) => {
+    // Keep dynamic baseURL synced with signalStore
+    const dynamicBase = useSignalStore.getState().getApiUrl();
+    if (dynamicBase) {
+        config.baseURL = dynamicBase;
+    }
     const token = useAuthStore.getState().token;
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;

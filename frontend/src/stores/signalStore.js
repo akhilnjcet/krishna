@@ -22,24 +22,25 @@ const useSignalStore = create(
 
       getApiUrl: () => {
         const state = get();
-        // On production, ALWAYS use cloud — ignore any stale localStorage value
-        if (isProduction) {
-          return state.cloudUrl || CLOUD_URL;
-        }
+        // If user manually switched to local, honor it
         if (state.activeSignal === 'local') {
           return `http://${state.localIp || 'localhost'}:5000/api`;
+        }
+        // If in a standard web browser on a live website (not localhost and not mobile Capacitor wrapper),
+        // use relative /api so requests are same-origin and avoid CORS / cross-domain issues
+        const isNative = typeof window !== 'undefined' && (
+          window.Capacitor?.isNativePlatform?.() ||
+          window.location.protocol === 'capacitor:' ||
+          window.location.protocol === 'ionic:'
+        );
+        if (isProduction && !isNative) {
+          return '/api';
         }
         return state.cloudUrl || CLOUD_URL;
       }
     }),
     {
-      name: 'krishna-signal-storage',
-      // On production, override any stale 'local' signal saved from a previous session
-      onRehydrateStorage: () => (state) => {
-        if (isProduction && state && state.activeSignal === 'local') {
-          state.activeSignal = 'cloud';
-        }
-      }
+      name: 'krishna-signal-storage'
     }
   )
 );
