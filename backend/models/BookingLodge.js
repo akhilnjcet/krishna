@@ -21,6 +21,23 @@ const bookingSchema = new mongoose.Schema({
       generatedAt: { type: Date, default: Date.now },
       reason: { type: String, default: 'Booking Initialized' },
       snapshot: { type: Object }
+  }],
+  securityDeposit: { type: Number, default: 0 },
+  depositAdjustments: [{
+      adjustmentId: { type: String },
+      amount: { type: Number, required: true },
+      date: { type: Date, default: Date.now },
+      reason: { type: String, required: true },
+      rentPeriod: { type: String, required: true },
+      performedBy: { type: String, default: 'Owner' }
+  }],
+  extraCharges: [{
+      id: { type: String },
+      name: { type: String, required: true },
+      amount: { type: Number, required: true },
+      paidAmount: { type: Number, default: 0 },
+      notes: { type: String },
+      dateAdded: { type: Date, default: Date.now }
   }]
 }, { timestamps: true });
 

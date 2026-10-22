@@ -387,3 +387,309 @@ exports.getPaymentStats = async (req, res) => {
     res.status(500).json({ message: 'Error calculating payment statistics', error: error.message });
   }
 };
+
+// Get Detailed Booking Financials with Line Items & Deposit Adjustments
+exports.getBookingFinancials = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const booking = await BookingLodge.findById(bookingId)
+      .populate('roomId')
+      .populate('lodgeId')
+      .populate('userId', 'name email phone phoneNumber');
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+
+    // Rent
+    const rentDue = parseFloat(booking.roomId?.price || booking.totalAmount || 0);
+
+    // Security Deposit
+    const originalDeposit = parseFloat(booking.securityDeposit || booking.roomId?.securityDeposit || 0);
+
+    // Deposit Adjustments already recorded
+    const depositAdjustments = Array.isArray(booking.depositAdjustments) ? booking.depositAdjustments : [];
+    const totalDepositAdjusted = depositAdjustments.reduce((sum, adj) => sum + (parseFloat(adj.amount) || 0), 0);
+    const availableDeposit = Math.max(0, originalDeposit - totalDepositAdjusted);
+
+    // Extra Charges
+    const extraCharges = Array.isArray(booking.extraCharges) ? booking.extraCharges : [];
+
+    // Fetch payments for this booking
+    const payments = await Payment.find({ bookingId: booking._id }).sort({ createdAt: -1 });
+
+    // Sum paid amounts by category
+    const validPayments = payments.filter(p => p.status !== 'REJECTED' && p.status !== 'Failed');
+
+    let rentPaid = 0;
+    let depositPaid = 0;
+    const extraChargesPaidMap = {};
+
+    validPayments.forEach(p => {
+      const type = (p.paymentType || '').toLowerCase();
+      const amt = parseFloat(p.amount) || 0;
+      if (type.includes('rent') && !type.includes('adjustment')) {
+        rentPaid += amt;
+      } else if (type.includes('deposit') && !type.includes('adjustment')) {
+        depositPaid += amt;
+      } else if (type.includes('additional') || type.includes('extra') || type.includes('service')) {
+        const cat = p.chargeCategory || 'Other';
+        extraChargesPaidMap[cat] = (extraChargesPaidMap[cat] || 0) + amt;
+      } else if (!type.includes('adjustment')) {
+        rentPaid += amt;
+      }
+    });
+
+    // Effective rent paid includes deposit adjustments applied to rent
+    const effectiveRentSettled = rentPaid + totalDepositAdjusted;
+    const remainingRent = Math.max(0, rentDue - effectiveRentSettled);
+
+    const remainingDeposit = Math.max(0, originalDeposit - depositPaid);
+
+    // Calculate extra charges items
+    const extraChargesList = extraCharges.map(ec => {
+      const amt = parseFloat(ec.amount) || 0;
+      const paid = parseFloat(ec.paidAmount || extraChargesPaidMap[ec.name] || 0);
+      const rem = Math.max(0, amt - paid);
+      return {
+        id: ec.id || ec._id,
+        name: ec.name,
+        due: amt,
+        paid,
+        remaining: rem,
+        status: rem === 0 ? 'Paid' : (paid > 0 ? 'Partially Paid' : 'Payment Due'),
+        dateAdded: ec.dateAdded,
+        notes: ec.notes
+      };
+    });
+
+    const totalExtraDue = extraChargesList.reduce((sum, ec) => sum + ec.due, 0);
+    const totalExtraPaid = extraChargesList.reduce((sum, ec) => sum + ec.paid, 0);
+    const totalExtraRemaining = extraChargesList.reduce((sum, ec) => sum + ec.remaining, 0);
+
+    // Overall Totals
+    const overallTotalDue = rentDue + originalDeposit + totalExtraDue;
+    const overallTotalPaid = rentPaid + depositPaid + totalExtraPaid;
+    const overallTotalRemaining = remainingRent + remainingDeposit + totalExtraRemaining;
+
+    // Overall Status
+    let overallStatus = 'Payment Due';
+    if (overallTotalRemaining === 0) {
+      overallStatus = 'Fully Paid';
+    } else if (overallTotalPaid > 0 || totalDepositAdjusted > 0) {
+      overallStatus = 'Partially Paid';
+    }
+
+    res.json({
+      booking: {
+        _id: booking._id,
+        agreementNumber: booking.agreementNumber,
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        tenantName: booking.userId?.name || 'Valued Tenant',
+        tenantPhone: booking.userId?.phone || booking.userId?.phoneNumber,
+        tenantEmail: booking.userId?.email,
+        roomNumber: booking.roomId?.roomNumber || 'Suite',
+        roomType: booking.roomId?.type || 'Room',
+        lodgeName: booking.lodgeId?.name || 'Krishna Lodge',
+      },
+      lineItems: {
+        rent: {
+          due: rentDue,
+          paid: rentPaid,
+          adjusted: totalDepositAdjusted,
+          effectiveSettled: effectiveRentSettled,
+          remaining: remainingRent,
+          status: remainingRent === 0 ? 'Fully Paid' : (effectiveRentSettled > 0 ? 'Partially Paid' : 'Payment Due')
+        },
+        securityDeposit: {
+          original: originalDeposit,
+          due: originalDeposit,
+          paid: depositPaid,
+          usedForRent: totalDepositAdjusted,
+          available: availableDeposit,
+          remaining: remainingDeposit,
+          status: remainingDeposit === 0 ? 'Fully Paid' : (depositPaid > 0 ? 'Partially Paid' : 'Payment Due')
+        },
+        extraCharges: extraChargesList,
+        extraChargesSummary: {
+          due: totalExtraDue,
+          paid: totalExtraPaid,
+          remaining: totalExtraRemaining,
+          status: totalExtraRemaining === 0 && totalExtraDue > 0 ? 'Fully Paid' : (totalExtraPaid > 0 ? 'Partially Paid' : (totalExtraDue > 0 ? 'Payment Due' : 'None'))
+        }
+      },
+      overall: {
+        totalDue: overallTotalDue,
+        totalPaid: overallTotalPaid,
+        totalAdjusted: totalDepositAdjusted,
+        totalRemaining: overallTotalRemaining,
+        status: overallStatus
+      },
+      adjustments: depositAdjustments,
+      payments
+    });
+  } catch (error) {
+    console.error('getBookingFinancials error:', error);
+    res.status(500).json({ message: 'Error retrieving booking financials', error: error.message });
+  }
+};
+
+// Adjust rent from security deposit (Owner / Admin)
+exports.adjustRentFromDeposit = async (req, res) => {
+  try {
+    const { bookingId, amount, reason, rentPeriod } = req.body;
+    const adjAmount = parseFloat(amount);
+
+    if (!adjAmount || adjAmount <= 0) {
+      return res.status(400).json({ message: 'Please specify a valid adjustment amount greater than zero.' });
+    }
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'Reason for adjustment is required.' });
+    }
+    if (!rentPeriod || !rentPeriod.trim()) {
+      return res.status(400).json({ message: 'Rent period covered is required.' });
+    }
+
+    const booking = await BookingLodge.findById(bookingId)
+      .populate('roomId')
+      .populate('userId');
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+
+    // Calculate current available deposit and unpaid rent
+    const originalDeposit = parseFloat(booking.securityDeposit || booking.roomId?.securityDeposit || 0);
+    const existingAdjustments = Array.isArray(booking.depositAdjustments) ? booking.depositAdjustments : [];
+    const totalAdjusted = existingAdjustments.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+    const availableDeposit = Math.max(0, originalDeposit - totalAdjusted);
+
+    if (adjAmount > availableDeposit) {
+      return res.status(400).json({ 
+        message: `Adjustment amount (₹${adjAmount.toLocaleString()}) cannot exceed available security deposit of ₹${availableDeposit.toLocaleString()}.` 
+      });
+    }
+
+    // Calculate unpaid rent
+    const rentDue = parseFloat(booking.roomId?.price || booking.totalAmount || 0);
+    const rentPayments = await Payment.find({
+      bookingId: booking._id,
+      paymentType: 'Rent',
+      status: { $ne: 'REJECTED' }
+    });
+    const rentPaidDirectly = rentPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+    const unpaidRent = Math.max(0, rentDue - rentPaidDirectly - totalAdjusted);
+
+    if (adjAmount > unpaidRent) {
+      return res.status(400).json({ 
+        message: `Adjustment amount (₹${adjAmount.toLocaleString()}) cannot exceed unpaid rent of ₹${unpaidRent.toLocaleString()}.` 
+      });
+    }
+
+    // Create adjustment entry
+    const adjustmentEntry = {
+      adjustmentId: `ADJ-${Date.now().toString(36).toUpperCase()}`,
+      amount: adjAmount,
+      date: new Date(),
+      reason: reason.trim(),
+      rentPeriod: rentPeriod.trim(),
+      performedBy: req.user.name || 'Owner'
+    };
+
+    if (!Array.isArray(booking.depositAdjustments)) {
+      booking.depositAdjustments = [];
+    }
+    booking.depositAdjustments.push(adjustmentEntry);
+    await booking.save();
+
+    // Create verified Payment record for audit log and transaction history
+    const adjPayment = await Payment.create({
+      customerId: booking.userId?._id || booking.userId,
+      tenantName: booking.userId?.name || 'Tenant',
+      name: booking.userId?.name,
+      amount: adjAmount,
+      method: 'Security Deposit',
+      referenceId: adjustmentEntry.adjustmentId,
+      transactionReference: adjustmentEntry.adjustmentId,
+      status: 'VERIFIED',
+      bookingId: booking._id,
+      roomId: booking.roomId?._id || booking.roomId,
+      paymentType: 'Deposit Adjustment',
+      chargeCategory: 'Rent (Deposit Adjustment)',
+      billingPeriodStart: booking.checkIn,
+      billingPeriodEnd: booking.checkOut,
+      receiptNumber: `ADJ-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+      notes: `Adjusted rent from security deposit. Reason: ${reason}. Period: ${rentPeriod}`,
+      auditLog: [{
+        action: 'DEPOSIT_ADJUSTMENT',
+        performedBy: req.user.name || 'Owner',
+        timestamp: new Date(),
+        notes: `Adjusted ₹${adjAmount} from security deposit for rent period ${rentPeriod}. Reason: ${reason}`
+      }]
+    });
+
+    // Real-time broadcast
+    const io = socketUtil.getIO();
+    if (io) {
+      io.emit('lodge-payment-updated', adjPayment);
+      io.emit('payment-status-changed', adjPayment);
+    }
+
+    res.json({
+      message: `Successfully adjusted ₹${adjAmount.toLocaleString()} from security deposit toward rent.`,
+      adjustment: adjustmentEntry,
+      payment: adjPayment
+    });
+  } catch (error) {
+    console.error('adjustRentFromDeposit error:', error);
+    res.status(500).json({ message: 'Error adjusting rent from deposit', error: error.message });
+  }
+};
+
+// Add Additional Utility / Service Charge (Owner / Admin)
+exports.addExtraCharge = async (req, res) => {
+  try {
+    const { bookingId, name, amount, notes } = req.body;
+    const chargeAmt = parseFloat(amount);
+
+    if (!bookingId || !name || !chargeAmt || chargeAmt <= 0) {
+      return res.status(400).json({ message: 'Please provide valid charge name and amount.' });
+    }
+
+    const booking = await BookingLodge.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+
+    const newCharge = {
+      id: `CHG-${Date.now().toString(36).toUpperCase()}`,
+      name: name.trim(),
+      amount: chargeAmt,
+      paidAmount: 0,
+      notes: notes || undefined,
+      dateAdded: new Date()
+    };
+
+    if (!Array.isArray(booking.extraCharges)) {
+      booking.extraCharges = [];
+    }
+    booking.extraCharges.push(newCharge);
+    await booking.save();
+
+    // Real-time broadcast
+    const io = socketUtil.getIO();
+    if (io) {
+      io.emit('lodge-payment-updated', { bookingId, newCharge });
+    }
+
+    res.json({
+      message: `Additional charge '${name}' (₹${chargeAmt.toLocaleString()}) added successfully.`,
+      charge: newCharge,
+      extraCharges: booking.extraCharges
+    });
+  } catch (error) {
+    console.error('addExtraCharge error:', error);
+    res.status(500).json({ message: 'Error adding extra charge', error: error.message });
+  }
+};

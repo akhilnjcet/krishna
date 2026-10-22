@@ -17,4 +17,9 @@ router.put('/verify/:id', protect, admin, lodgePaymentController.verifyPayment);
 router.post('/request', protect, admin, lodgePaymentController.createPaymentRequest);
 router.get('/stats', protect, admin, lodgePaymentController.getPaymentStats);
 
+// Financial Breakdown, Deposit Adjustments & Extra Charges
+router.get('/booking-financials/:bookingId', protect, lodgePaymentController.getBookingFinancials);
+router.post('/adjust-deposit', protect, lodgePaymentController.adjustRentFromDeposit);
+router.post('/add-extra-charge', protect, lodgePaymentController.addExtraCharge);
+
 module.exports = router;
