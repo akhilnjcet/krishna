@@ -57,6 +57,8 @@ bookingSchema.pre('save', function() {
   if (this.checkOut <= this.checkIn) {
     throw new Error('checkOut date must be after checkIn date');
   }
+});
+
 // Performance indexes for sub-second query lookups
 bookingSchema.index({ roomId: 1, status: 1 });
 bookingSchema.index({ userId: 1, status: 1 });
