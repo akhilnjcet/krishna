@@ -493,6 +493,8 @@ const App = () => {
               <Route path="live-chat" element={<SupportHub />} />
               <Route path="profile" element={<Profile />} />
               <Route path="lodge-manager" element={<LodgeAdminManager />} />
+              <Route path="lodge" element={<LodgeAdminManager />} />
+              <Route path="lodge-billing" element={<LodgeBillingManager />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="invoices-studio" element={<Invoices />} />
               <Route path="quotations-studio" element={<Quotations />} />

@@ -365,7 +365,7 @@ const AdminDashboard = () => {
                             {[
                                 { name: 'Staff List', icon: Users, path: '/admin/staff', color: 'blue' },
                                 { name: 'Audit Hub', icon: Clock, path: '/admin/logs', color: 'blue' },
-                                { name: 'Lodge Manager', icon: DoorOpen, path: '/lodge/admin', color: 'indigo' },
+                                { name: 'Lodge Manager', icon: DoorOpen, path: '/admin/lodge-manager', color: 'indigo' },
                                 { name: 'Gallery', icon: Layers, path: '/admin/portfolio', color: 'blue' }
                             ].map((link, i) => (
                                 <button 

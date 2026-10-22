@@ -6,7 +6,7 @@ import {
     Calculator, Receipt, TrendingUp, Settings, LogOut, Menu, X, Bell,
     Search, HelpCircle, ChevronRight, User, Filter, LayoutGrid, Activity,
     Clock, AlertCircle, Radio, MessageCircle, ChevronLeft, CheckSquare, Truck,
-    ShieldCheck, KeyRound, Package
+    ShieldCheck, KeyRound, Package, Building2
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,6 +32,7 @@ const SIDEBAR_ITEMS = [
     { name: 'Invoice Studio',  path: '/admin/invoices-studio', icon: Receipt },
     { name: 'Labour & Freight Bills', path: '/admin/labour-bills', icon: Truck },
     { name: 'Equipment Rental Studio', path: '/admin/rental-bills', icon: KeyRound },
+    { name: 'Lodge Manager',   path: '/admin/lodge-manager', icon: Building2 },
     { name: 'Inventory & Tools', path: '/admin/inventory',    icon: Package },
     { name: 'Document History', path: '/admin/document-history', icon: FileText },
     { name: 'Project Timeline', path: '/admin/progress',     icon: Activity },
@@ -65,7 +66,7 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
         <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-hide">
             <p className="px-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-600 dark:text-slate-400 mb-3">Enterprise Control</p>
             {SIDEBAR_ITEMS.map(item => {
-                const active = location.pathname === item.path;
+                const active = location.pathname === item.path || (item.path !== '/admin' && location.pathname.startsWith(item.path));
                 return (
                     <Link
                         key={item.name}
