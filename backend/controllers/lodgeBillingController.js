@@ -267,3 +267,145 @@ exports.getRevenueReport = async (req, res) => {
     res.status(500).json({ message: 'Error loading revenue reports.', error: err.message });
   }
 };
+
+// Create and Save a Generated Bill
+exports.createBill = async (req, res) => {
+  try {
+    const {
+      roomId,
+      bookingId,
+      userId,
+      billNumber,
+      rentAmount,
+      electricityCharges,
+      waterCharges,
+      maintenanceCharges,
+      extraCharges,
+      additionalCharges,
+      discount,
+      tax,
+      taxAmount,
+      grandTotal,
+      totalAmount,
+      outstandingAmount,
+      status,
+      dueDate,
+      billingPeriodStart,
+      billingPeriodEnd,
+      billingCycle,
+      paymentMethod,
+      transactionId,
+      paymentDate
+    } = req.body;
+
+    if (!roomId) {
+      return res.status(400).json({ message: 'Room ID is required.' });
+    }
+
+    // Resolve booking and user if not explicitly passed
+    let resolvedBookingId = bookingId;
+    let resolvedUserId = userId;
+
+    if (!resolvedBookingId || !resolvedUserId) {
+      const activeBooking = await BookingLodge.findOne({ roomId, status: 'active' });
+      if (activeBooking) {
+        if (!resolvedBookingId) resolvedBookingId = activeBooking._id;
+        if (!resolvedUserId) resolvedUserId = activeBooking.userId;
+      }
+    }
+
+    // If still no user, use authenticated user
+    if (!resolvedUserId && req.user) {
+      resolvedUserId = req.user.id || req.user._id;
+    }
+
+    // Calculate charges and totals
+    const finalRentAmount = Number(rentAmount) || 0;
+    const finalTaxAmount = taxAmount !== undefined ? Number(taxAmount) : (tax !== undefined ? Number(tax) : 0);
+    const finalDiscount = Number(discount) || 0;
+
+    let sumAdditional = Number(extraCharges) || 0;
+    if (Array.isArray(additionalCharges)) {
+      sumAdditional += additionalCharges.reduce((acc, c) => acc + (Number(c.amount) || 0), 0);
+    }
+
+    const calculatedTotal = totalAmount !== undefined
+      ? Number(totalAmount)
+      : (grandTotal !== undefined ? Number(grandTotal) : (finalRentAmount + sumAdditional + finalTaxAmount - finalDiscount));
+
+    // Normalize Status
+    let normalizedStatus = 'Due';
+    if (status === 'Paid') {
+      normalizedStatus = 'Paid';
+    } else if (status === 'Partially Paid') {
+      normalizedStatus = 'Partially Paid';
+    } else {
+      normalizedStatus = 'Due';
+    }
+
+    const finalOutstanding = normalizedStatus === 'Paid'
+      ? 0
+      : (outstandingAmount !== undefined ? Number(outstandingAmount) : calculatedTotal);
+
+    // Bill Number generation
+    let finalBillNumber = billNumber;
+    if (!finalBillNumber) {
+      finalBillNumber = `INV-${Date.now().toString().slice(-6)}`;
+    }
+
+    // Ensure unique billNumber
+    const existing = await LodgeRentBill.findOne({ billNumber: finalBillNumber });
+    if (existing) {
+      finalBillNumber = `INV-${Date.now().toString().slice(-5)}${Math.floor(Math.random() * 10)}`;
+    }
+
+    const startDate = billingPeriodStart ? new Date(billingPeriodStart) : new Date();
+    const endDate = billingPeriodEnd ? new Date(billingPeriodEnd) : (() => {
+      const d = new Date(startDate);
+      d.setMonth(d.getMonth() + 1);
+      return d;
+    })();
+
+    const finalDueDate = dueDate ? new Date(dueDate) : (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      return d;
+    })();
+
+    const newBill = new LodgeRentBill({
+      billNumber: finalBillNumber,
+      roomId,
+      bookingId: resolvedBookingId,
+      userId: resolvedUserId,
+      billingPeriodStart: startDate,
+      billingPeriodEnd: endDate,
+      billingCycle: billingCycle || 'Monthly',
+      rentAmount: finalRentAmount,
+      electricityCharges: Number(electricityCharges) || 0,
+      waterCharges: Number(waterCharges) || 0,
+      maintenanceCharges: Number(maintenanceCharges) || 0,
+      extraCharges: sumAdditional,
+      additionalCharges: Array.isArray(additionalCharges) ? additionalCharges : [],
+      discount: finalDiscount,
+      taxAmount: finalTaxAmount,
+      totalAmount: calculatedTotal,
+      dueDate: finalDueDate,
+      status: normalizedStatus,
+      outstandingAmount: finalOutstanding,
+      paymentDate: normalizedStatus === 'Paid' ? (paymentDate ? new Date(paymentDate) : new Date()) : undefined,
+      paymentMethod: normalizedStatus === 'Paid' ? (paymentMethod || 'Cash') : undefined,
+      transactionId: transactionId || undefined,
+      receivedBy: req.user ? req.user.id || req.user._id : undefined
+    });
+
+    await newBill.save();
+
+    res.status(201).json({
+      message: 'Bill created and saved successfully.',
+      bill: newBill
+    });
+  } catch (err) {
+    console.error('Error creating lodge rent bill:', err);
+    res.status(500).json({ message: 'Error saving bill to database.', error: err.message });
+  }
+};

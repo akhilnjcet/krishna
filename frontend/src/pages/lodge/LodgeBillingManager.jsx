@@ -99,6 +99,7 @@ const LodgeBillingManager = () => {
 
     // Dynamic Bill Generation Dialog State
     const [generatingBillRoom, setGeneratingBillRoom] = useState(null);
+    const [isGeneratingBill, setIsGeneratingBill] = useState(false);
     const [billStep, setBillStep] = useState(1); // Step 1: Base details, Step 2: Additional Charges & Taxes, Step 3: Payment/Advance Adjustments, Step 4: Preview
     
     // Dynamic Bill Generation Form State
@@ -478,12 +479,18 @@ const LodgeBillingManager = () => {
     const handleSaveAndGenerateBill = async () => {
         const { grandTotal, advanceUsed, advanceRemaining, discountAmt, taxesTotal } = calculateTotals();
         
+        setIsGeneratingBill(true);
         try {
             // Save to database
             const billData = {
                 roomId: generatingBillRoom._id,
                 lodgeId: generatingBillRoom.lodgeId,
+                bookingId: generatingBillRoom.activeBooking?._id,
+                userId: generatingBillRoom.activeBooking?.userId?._id || generatingBillRoom.activeBooking?.userId,
                 billNumber: `INV-${Date.now().toString().slice(-6)}`,
+                billingPeriodStart: billForm.billingPeriodStart,
+                billingPeriodEnd: billForm.billingPeriodEnd,
+                billingCycle: billForm.billingCycle || generatingBillRoom.billingCycle || 'Monthly',
                 rentAmount: billForm.monthlyRent,
                 outstandingAmount: billForm.paymentStatus === 'Paid' ? 0 : grandTotal,
                 status: billForm.paymentStatus,
@@ -491,7 +498,12 @@ const LodgeBillingManager = () => {
                 additionalCharges: billForm.additionalCharges,
                 discount: discountAmt,
                 tax: taxesTotal,
-                grandTotal
+                taxAmount: taxesTotal,
+                grandTotal,
+                totalAmount: grandTotal,
+                paymentMethod: billForm.paymentMethod,
+                transactionId: billForm.transactionId,
+                paymentDate: billForm.paymentDate
             };
 
             await api.post('/lodge-billing/bills', billData);
@@ -530,21 +542,27 @@ const LodgeBillingManager = () => {
             doc.text(`Period: ${billForm.billingPeriodStart} to ${billForm.billingPeriodEnd}`, 195, 31, { align: 'right', charSpace: 0 });
 
             // Watermark
-            doc.saveGraphicsState();
-            doc.setGState(new doc.GState({ opacity: 0.1 }));
-            doc.setFontSize(36);
-            doc.setFont('helvetica', 'bold');
-            if (billForm.paymentStatus === 'Paid') {
-                doc.setTextColor(16, 185, 129);
-                doc.text('PAID RECEIVED', 105, 140, { align: 'center', angle: 45, charSpace: 0 });
-            } else if (billForm.paymentStatus === 'Partially Paid') {
-                doc.setTextColor(59, 130, 246);
-                doc.text('PARTIALLY PAID', 105, 140, { align: 'center', angle: 45, charSpace: 0 });
-            } else {
-                doc.setTextColor(239, 68, 68);
-                doc.text('PAYMENT DUE', 105, 140, { align: 'center', angle: 45, charSpace: 0 });
+            try {
+                doc.saveGraphicsState();
+                if (typeof doc.GState === 'function') {
+                    doc.setGState(new doc.GState({ opacity: 0.1 }));
+                }
+                doc.setFontSize(36);
+                doc.setFont('helvetica', 'bold');
+                if (billForm.paymentStatus === 'Paid') {
+                    doc.setTextColor(16, 185, 129);
+                    doc.text('PAID RECEIVED', 105, 140, { align: 'center', angle: 45, charSpace: 0 });
+                } else if (billForm.paymentStatus === 'Partially Paid') {
+                    doc.setTextColor(59, 130, 246);
+                    doc.text('PARTIALLY PAID', 105, 140, { align: 'center', angle: 45, charSpace: 0 });
+                } else {
+                    doc.setTextColor(239, 68, 68);
+                    doc.text('PAYMENT DUE', 105, 140, { align: 'center', angle: 45, charSpace: 0 });
+                }
+                doc.restoreGraphicsState();
+            } catch (wmErr) {
+                console.warn('Watermark rendering notice:', wmErr);
             }
-            doc.restoreGraphicsState();
 
             // Client & Room Details
             doc.setTextColor(15, 23, 42);
@@ -636,7 +654,11 @@ const LodgeBillingManager = () => {
             setGeneratingBillRoom(null);
             loadDashboardData();
         } catch (err) {
-            alert('Failed to save or print bill.');
+            console.error('Failed to save or print bill:', err);
+            const msg = err.response?.data?.message || err.message || 'Failed to save or print bill.';
+            alert(msg);
+        } finally {
+            setIsGeneratingBill(false);
         }
     };
 
@@ -1894,9 +1916,10 @@ const LodgeBillingManager = () => {
                                             <button
                                                 type="button"
                                                 onClick={handleSaveAndGenerateBill}
-                                                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase flex items-center gap-1.5"
+                                                disabled={isGeneratingBill}
+                                                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-black uppercase flex items-center gap-1.5"
                                             >
-                                                <Download className="w-4.5 h-4.5" /> Save & Generate PDF
+                                                <Download className="w-4.5 h-4.5" /> {isGeneratingBill ? 'Saving & Generating...' : 'Save & Generate PDF'}
                                             </button>
                                         </>
                                     )}
