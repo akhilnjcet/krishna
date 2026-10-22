@@ -2,6 +2,7 @@ const Policy = require('../models/Policy');
 const PolicyAcceptance = require('../models/PolicyAcceptance');
 const PrivacyRequest = require('../models/PrivacyRequest');
 const User = require('../models/User');
+const SystemSetting = require('../models/SystemSetting');
 
 // Default initial policies
 const DEFAULT_PRIVACY_CONTENT = `1. INTRODUCTION
@@ -210,27 +211,49 @@ exports.getCurrentPolicy = async (req, res) => {
     }
 };
 
-// GET /api/policies/public-summary (Returns both current versions for registration/login/settings)
+// GET /api/policies/public-summary & /api/policies/summary
 exports.getPublicPolicySummary = async (req, res) => {
     try {
-        const [privacy, terms] = await Promise.all([
-            Policy.findOne({ policyType: 'privacy', isCurrent: true }).select('version title effectiveDate lastUpdated status'),
-            Policy.findOne({ policyType: 'terms', isCurrent: true }).select('version title effectiveDate lastUpdated status')
+        const [privacy, terms, refund, shipping, contact, settingsDocs] = await Promise.all([
+            Policy.findOne({ policyType: 'privacy', isCurrent: true }).select('version title effectiveDate lastUpdated status publishedByName summary content'),
+            Policy.findOne({ policyType: 'terms', isCurrent: true }).select('version title effectiveDate lastUpdated status publishedByName summary content'),
+            Policy.findOne({ policyType: 'refund', isCurrent: true }).select('version title effectiveDate lastUpdated status publishedByName summary content'),
+            Policy.findOne({ policyType: 'shipping', isCurrent: true }).select('version title effectiveDate lastUpdated status publishedByName summary content'),
+            Policy.findOne({ policyType: 'contact', isCurrent: true }).select('version title effectiveDate lastUpdated status publishedByName summary content'),
+            SystemSetting.find({ key: { $in: ['company_name', 'footer_phone', 'footer_email', 'footer_address', 'floating_whatsapp', 'ownerEmail', 'company_phone', 'company_email', 'company_address'] } })
         ]);
 
+        const settingsMap = {};
+        if (Array.isArray(settingsDocs)) {
+            settingsDocs.forEach(s => { settingsMap[s.key] = s.value; });
+        }
+
+        const dpoContact = {
+            name: 'AKHIL N',
+            organization: settingsMap.company_name || 'Krishna Engineering Works',
+            address: settingsMap.footer_address || settingsMap.company_address || 'Thiruvazhiyode, Sreekrishnapuram, Kerala 679514',
+            phone: settingsMap.footer_phone || settingsMap.company_phone || '+91 9447940835',
+            email: settingsMap.footer_email || settingsMap.company_email || 'akhilnadiluveettil@gmail.com',
+            whatsapp: settingsMap.floating_whatsapp || '919447940835'
+        };
+
+        const resultData = {
+            privacy: privacy || { version: '1.0', title: 'Privacy Policy', effectiveDate: '2026-04-01', lastUpdated: '2026-04-01' },
+            terms: terms || { version: '1.0', title: 'Terms of Service', effectiveDate: '2026-04-01', lastUpdated: '2026-04-01' },
+            refund: refund || { version: '1.0', title: 'Cancellation & Refund Policy', effectiveDate: '2026-04-01', lastUpdated: '2026-04-01' },
+            shipping: shipping || { version: '1.0', title: 'Shipping & Delivery Policy', effectiveDate: '2026-04-01', lastUpdated: '2026-04-01' },
+            contact: contact || { version: '1.0', title: 'Contact Us & Corporate Details', effectiveDate: '2026-04-01', lastUpdated: '2026-04-01' },
+            dpoContact,
+            contacts: dpoContact
+        };
+
         res.json({
-            privacy: privacy || { version: '1.0', effectiveDate: '2026-04-01', lastUpdated: '2026-04-01' },
-            terms: terms || { version: '1.0', effectiveDate: '2026-04-01', lastUpdated: '2026-04-01' },
-            dpoContact: {
-                name: 'AKHIL N',
-                organization: 'Krishna Engineering Works',
-                address: 'Thiruvazhiyode, Sreekrishnapuram, Kerala 679514',
-                phone: '+91 9447940835',
-                email: 'akhilnadiluveettil@gmail.com'
-            }
+            success: true,
+            data: resultData,
+            ...resultData
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 

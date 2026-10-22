@@ -12,11 +12,36 @@ const PolicyViewer = ({ defaultType = 'privacy' }) => {
     const [policy, setPolicy] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [contacts, setContacts] = useState({
+        address: 'Thiruvazhiyode, Sreekrishnapuram, Kerala 679514',
+        phone: '+91 9447940835',
+        email: 'akhilnadiluveettil@gmail.com'
+    });
     const navigate = useNavigate();
 
     useEffect(() => {
         setPolicyType(defaultType);
     }, [defaultType]);
+
+    useEffect(() => {
+        const fetchPublicSettings = async () => {
+            try {
+                const res = await api.get('/settings/public');
+                if (res.data && Array.isArray(res.data)) {
+                    const map = {};
+                    res.data.forEach(s => { map[s.key] = s.value; });
+                    setContacts({
+                        address: map.footer_address || map.company_address || 'Thiruvazhiyode, Sreekrishnapuram, Kerala 679514',
+                        phone: map.footer_phone || map.company_phone || '+91 9447940835',
+                        email: map.footer_email || map.company_email || 'akhilnadiluveettil@gmail.com'
+                    });
+                }
+            } catch (err) {
+                console.warn('Failed to fetch public contact settings:', err);
+            }
+        };
+        fetchPublicSettings();
+    }, []);
 
     useEffect(() => {
         const fetchPolicy = async () => {
@@ -235,7 +260,7 @@ const PolicyViewer = ({ defaultType = 'privacy' }) => {
                                             <MapPin className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                                             <div>
                                                 <span className="text-[10px] uppercase text-slate-400 block font-black">Registered Entity</span>
-                                                <span className="text-slate-800 dark:text-slate-200">Thiruvazhiyode, Sreekrishnapuram, Kerala 679514</span>
+                                                <span className="text-slate-800 dark:text-slate-200">{contacts.address}</span>
                                             </div>
                                         </div>
 
@@ -243,15 +268,15 @@ const PolicyViewer = ({ defaultType = 'privacy' }) => {
                                             <Phone className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                                             <div>
                                                 <span className="text-[10px] uppercase text-slate-400 block font-black">Direct Support</span>
-                                                <a href="tel:+919447940835" className="text-slate-800 dark:text-slate-200 hover:text-blue-600">+91 9447940835</a>
+                                                <a href={`tel:${contacts.phone.replace(/[^0-9+]/g, '')}`} className="text-slate-800 dark:text-slate-200 hover:text-blue-600 font-bold">{contacts.phone}</a>
                                             </div>
                                         </div>
 
                                         <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-start gap-3">
                                             <Mail className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
                                             <div>
-                                                <span className="text-[10px] uppercase text-slate-400 block font-black">Compliance Email</span>
-                                                <a href="mailto:akhilnadiluveettil@gmail.com" className="text-slate-800 dark:text-slate-200 hover:text-blue-600 break-all">akhilnadiluveettil@gmail.com</a>
+                                                <span className="text-[10px] uppercase text-slate-400 block font-black">Compliance & Support Email</span>
+                                                <a href={`mailto:${contacts.email}`} className="text-slate-800 dark:text-slate-200 hover:text-blue-600 break-all font-bold">{contacts.email}</a>
                                             </div>
                                         </div>
                                     </div>

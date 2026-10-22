@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
     ShieldCheck, FileText, CheckCircle2, Clock, AlertTriangle, 
     RefreshCw, Send, Plus, Users, Search, Download, Eye,
-    Check, X, ChevronRight, Filter, AlertCircle
+    Check, X, ChevronRight, Filter, AlertCircle,
+    Phone, Mail, MapPin, Save, MessageCircle, Truck, RotateCcw
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -15,6 +16,16 @@ const AdminLegalPolicies = () => {
     const [acceptanceStats, setAcceptanceStats] = useState({ totalUsers: 0, currentPrivacyAccepted: 0, currentTermsAccepted: 0 });
     const [requests, setRequests] = useState([]);
     const [requestFilter, setRequestFilter] = useState('all');
+
+    // Contact details state (support emails, phone numbers, addresses editable by admin)
+    const [contactSettings, setContactSettings] = useState({
+        footer_phone: '',
+        footer_email: '',
+        footer_address: '',
+        floating_whatsapp: ''
+    });
+    const [savingContacts, setSavingContacts] = useState(false);
+    const [contactSaveMessage, setContactSaveMessage] = useState(null);
 
     // Publish form state
     const [publishForm, setPublishForm] = useState({
@@ -40,11 +51,12 @@ const AdminLegalPolicies = () => {
         setLoading(true);
         setStatusMessage(null);
         try {
-            const [sumRes, polRes, accRes, reqRes] = await Promise.all([
+            const [sumRes, polRes, accRes, reqRes, setRes] = await Promise.all([
                 api.get('/policies/summary').catch(() => ({ data: { success: false } })),
                 api.get('/policies/admin/all').catch(() => ({ data: { success: false } })),
                 api.get('/policies/admin/acceptances').catch(() => ({ data: { success: false } })),
-                api.get('/policies/admin/privacy-requests').catch(() => ({ data: { success: false } }))
+                api.get('/policies/admin/privacy-requests').catch(() => ({ data: { success: false } })),
+                api.get('/settings').catch(() => ({ data: [] }))
             ]);
 
             if (sumRes.data?.success) setSummary(sumRes.data.data);
@@ -54,11 +66,43 @@ const AdminLegalPolicies = () => {
                 setAcceptanceStats(accRes.data.data?.stats || {});
             }
             if (reqRes.data?.success) setRequests(reqRes.data.data || []);
+            if (setRes.data && Array.isArray(setRes.data)) {
+                const map = {};
+                setRes.data.forEach(s => { map[s.key] = s.value; });
+                setContactSettings({
+                    footer_phone: map.footer_phone || '+91 9447940835',
+                    footer_email: map.footer_email || 'contact@krishnaengg.com',
+                    footer_address: map.footer_address || 'Thiruvazhiyode, Sreekrishnapuram, Kerala 679514',
+                    floating_whatsapp: map.floating_whatsapp || '919447940835'
+                });
+            }
         } catch (err) {
             console.error('Failed to load legal admin data', err);
             setStatusMessage({ type: 'error', text: 'Error loading compliance telemetry from server.' });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSaveContacts = async (e) => {
+        e.preventDefault();
+        setSavingContacts(true);
+        setContactSaveMessage(null);
+        try {
+            await api.post('/settings', {
+                settings: {
+                    footer_phone: contactSettings.footer_phone,
+                    footer_email: contactSettings.footer_email,
+                    footer_address: contactSettings.footer_address,
+                    floating_whatsapp: contactSettings.floating_whatsapp
+                }
+            });
+            setContactSaveMessage({ type: 'success', text: 'Support emails, contact numbers & addresses updated successfully! Changes reflect on all public policy pages.' });
+            setTimeout(() => setContactSaveMessage(null), 5000);
+        } catch (err) {
+            setContactSaveMessage({ type: 'error', text: 'Failed to update support contact details.' });
+        } finally {
+            setSavingContacts(false);
         }
     };
 
@@ -68,6 +112,14 @@ const AdminLegalPolicies = () => {
 
     const handlePreFillForPublish = (type) => {
         const cur = policies.find(p => p.policyType === type && p.isCurrent);
+        const titles = {
+            privacy: 'Privacy Policy - Krishna Engineering Works',
+            terms: 'Terms of Service - Krishna Engineering Works',
+            refund: 'Cancellation & Refund Policy - Krishna Engineering Works',
+            shipping: 'Shipping & Delivery Policy - Krishna Engineering Works',
+            contact: 'Contact Us & Corporate Details - Krishna Engineering Works'
+        };
+
         if (cur) {
             // Suggest next version e.g. 1.0 -> 1.1 or 2.0
             const parts = (cur.version || '1.0').split('.');
@@ -86,7 +138,7 @@ const AdminLegalPolicies = () => {
             setPublishForm({
                 policyType: type,
                 version: '1.0',
-                title: type === 'privacy' ? 'Privacy Policy - Krishna Engineering Works' : 'Terms of Service - Krishna Engineering Works',
+                title: titles[type] || 'Company Policy Directive',
                 content: '',
                 summary: 'Initial baseline revision',
                 effectiveDate: new Date().toISOString().split('T')[0]
@@ -295,97 +347,326 @@ const AdminLegalPolicies = () => {
                         </div>
                     </div>
 
-                    {/* Active Policies Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Privacy Card */}
-                        <div className="bg-slate-900/70 border border-slate-800 p-6 rounded-3xl relative overflow-hidden">
-                            <div className="flex items-center justify-between mb-4">
-                                <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[10px] font-black uppercase tracking-widest">
-                                    Current Active
+                    {/* SUPPORT CONTACT & NUMBERS DIRECTORY (LIVE ADMIN EDIT) */}
+                    <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400 block mb-1">
+                                    Direct Support & Contact Relay
                                 </span>
-                                <span className="text-xs font-mono font-bold text-slate-400">
-                                    v{summary?.privacy?.version || '1.0'}
-                                </span>
+                                <h3 className="text-xl font-black text-white">Support Emails, Phone Numbers & Addresses</h3>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    Changes saved here dynamically update the footer, contact section, and compliance notices on all public policy pages.
+                                </p>
                             </div>
-                            <h3 className="text-xl font-black text-white mb-2">Privacy Policy</h3>
-                            <p className="text-xs text-slate-400 mb-4 line-clamp-2">
-                                {summary?.privacy?.title || 'Data protection and telemetry disclosure guidelines'}
-                            </p>
-                            <div className="space-y-2 text-xs text-slate-400 border-t border-slate-800/80 pt-4 mb-6">
-                                <div className="flex justify-between">
-                                    <span>Effective Date:</span>
-                                    <span className="text-white font-medium">{summary?.privacy?.effectiveDate ? new Date(summary.privacy.effectiveDate).toLocaleDateString() : 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Last Updated:</span>
-                                    <span className="text-white font-medium">{summary?.privacy?.lastUpdated ? new Date(summary.privacy.lastUpdated).toLocaleDateString() : 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Publisher:</span>
-                                    <span className="text-white font-medium">{summary?.privacy?.publishedByName || 'Administrator'}</span>
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <a
-                                    href="#/privacy-policy"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 rounded-xl text-center text-xs font-black uppercase tracking-wider transition-all"
-                                >
-                                    View Full Document
-                                </a>
-                                <button
-                                    onClick={() => handlePreFillForPublish('privacy')}
-                                    className="px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-600/20"
-                                >
-                                    Publish Revision
-                                </button>
-                            </div>
+                            <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full text-[10px] font-black uppercase tracking-wider self-start md:self-auto">
+                                Live Sync
+                            </span>
                         </div>
 
-                        {/* Terms Card */}
-                        <div className="bg-slate-900/70 border border-slate-800 p-6 rounded-3xl relative overflow-hidden">
-                            <div className="flex items-center justify-between mb-4">
-                                <span className="px-3 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full text-[10px] font-black uppercase tracking-widest">
-                                    Current Active
-                                </span>
-                                <span className="text-xs font-mono font-bold text-slate-400">
-                                    v{summary?.terms?.version || '1.0'}
-                                </span>
+                        {contactSaveMessage && (
+                            <div className={`p-4 rounded-xl text-xs font-bold mb-6 flex items-center gap-2 ${
+                                contactSaveMessage.type === 'success' 
+                                    ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400' 
+                                    : 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
+                            }`}>
+                                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                                {contactSaveMessage.text}
                             </div>
-                            <h3 className="text-xl font-black text-white mb-2">Terms of Service</h3>
-                            <p className="text-xs text-slate-400 mb-4 line-clamp-2">
-                                {summary?.terms?.title || 'Contractual terms and operational protocols'}
-                            </p>
-                            <div className="space-y-2 text-xs text-slate-400 border-t border-slate-800/80 pt-4 mb-6">
-                                <div className="flex justify-between">
-                                    <span>Effective Date:</span>
-                                    <span className="text-white font-medium">{summary?.terms?.effectiveDate ? new Date(summary.terms.effectiveDate).toLocaleDateString() : 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Last Updated:</span>
-                                    <span className="text-white font-medium">{summary?.terms?.lastUpdated ? new Date(summary.terms.lastUpdated).toLocaleDateString() : 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Publisher:</span>
-                                    <span className="text-white font-medium">{summary?.terms?.publishedByName || 'Administrator'}</span>
-                                </div>
+                        )}
+
+                        <form onSubmit={handleSaveContacts} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                    <Phone className="w-3.5 h-3.5 text-emerald-400" /> Support Phone Number
+                                </label>
+                                <input
+                                    type="text"
+                                    value={contactSettings.footer_phone}
+                                    onChange={(e) => setContactSettings({ ...contactSettings, footer_phone: e.target.value })}
+                                    placeholder="+91 9447940835"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                                />
                             </div>
-                            <div className="flex gap-2">
-                                <a
-                                    href="#/terms-of-service"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 rounded-xl text-center text-xs font-black uppercase tracking-wider transition-all"
-                                >
-                                    View Full Document
-                                </a>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                    <Mail className="w-3.5 h-3.5 text-blue-400" /> Support & Grievance Email
+                                </label>
+                                <input
+                                    type="email"
+                                    value={contactSettings.footer_email}
+                                    onChange={(e) => setContactSettings({ ...contactSettings, footer_email: e.target.value })}
+                                    placeholder="contact@krishnaengg.com"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                    <MessageCircle className="w-3.5 h-3.5 text-green-400" /> WhatsApp Hotline (91...)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={contactSettings.floating_whatsapp}
+                                    onChange={(e) => setContactSettings({ ...contactSettings, floating_whatsapp: e.target.value })}
+                                    placeholder="919447940835"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold text-emerald-400 outline-none focus:border-emerald-500"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                    <MapPin className="w-3.5 h-3.5 text-amber-400" /> Operational / Registered Address
+                                </label>
+                                <input
+                                    type="text"
+                                    value={contactSettings.footer_address}
+                                    onChange={(e) => setContactSettings({ ...contactSettings, footer_address: e.target.value })}
+                                    placeholder="Thiruvazhiyode, Sreekrishnapuram, Kerala 679514"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                                />
+                            </div>
+
+                            <div className="md:col-span-2 lg:col-span-4 flex justify-end pt-2">
                                 <button
-                                    onClick={() => handlePreFillForPublish('terms')}
-                                    className="px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-600/20"
+                                    type="submit"
+                                    disabled={savingContacts}
+                                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20 disabled:opacity-50"
                                 >
-                                    Publish Revision
+                                    <Save className="w-4 h-4" />
+                                    {savingContacts ? 'Saving Changes...' : 'Save Support Contact Details'}
                                 </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* Active Policies Cards Grid (All 5 Policies) */}
+                    <div>
+                        <div className="mb-4">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-blue-400 block">Published Documents</span>
+                            <h3 className="text-xl font-black text-white">Active Policy Directives</h3>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {/* 1. Privacy Policy */}
+                            <div className="bg-slate-900/70 border border-slate-800 p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between">
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                            Active Policy
+                                        </span>
+                                        <span className="text-xs font-mono font-bold text-slate-400">
+                                            v{summary?.privacy?.version || '1.0'}
+                                        </span>
+                                    </div>
+                                    <h4 className="text-lg font-black text-white mb-1.5">Privacy Policy</h4>
+                                    <p className="text-xs text-slate-400 mb-4 line-clamp-2">
+                                        {summary?.privacy?.title || 'Data protection and telemetry disclosure guidelines'}
+                                    </p>
+                                    <div className="space-y-1.5 text-[11px] text-slate-400 border-t border-slate-800/80 pt-3 mb-5">
+                                        <div className="flex justify-between">
+                                            <span>Effective Date:</span>
+                                            <span className="text-white font-medium">{summary?.privacy?.effectiveDate ? new Date(summary.privacy.effectiveDate).toLocaleDateString() : 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Last Updated:</span>
+                                            <span className="text-white font-medium">{summary?.privacy?.lastUpdated ? new Date(summary.privacy.lastUpdated).toLocaleDateString() : 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <a
+                                        href="#/privacy-policy"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 rounded-xl text-center text-xs font-bold transition"
+                                    >
+                                        View Page
+                                    </a>
+                                    <button
+                                        onClick={() => handlePreFillForPublish('privacy')}
+                                        className="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition"
+                                    >
+                                        Edit / Revise
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 2. Terms of Service */}
+                            <div className="bg-slate-900/70 border border-slate-800 p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between">
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="px-2.5 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                            Active Policy
+                                        </span>
+                                        <span className="text-xs font-mono font-bold text-slate-400">
+                                            v{summary?.terms?.version || '1.0'}
+                                        </span>
+                                    </div>
+                                    <h4 className="text-lg font-black text-white mb-1.5">Terms of Service</h4>
+                                    <p className="text-xs text-slate-400 mb-4 line-clamp-2">
+                                        {summary?.terms?.title || 'Contractual terms and operational protocols'}
+                                    </p>
+                                    <div className="space-y-1.5 text-[11px] text-slate-400 border-t border-slate-800/80 pt-3 mb-5">
+                                        <div className="flex justify-between">
+                                            <span>Effective Date:</span>
+                                            <span className="text-white font-medium">{summary?.terms?.effectiveDate ? new Date(summary.terms.effectiveDate).toLocaleDateString() : 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Last Updated:</span>
+                                            <span className="text-white font-medium">{summary?.terms?.lastUpdated ? new Date(summary.terms.lastUpdated).toLocaleDateString() : 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <a
+                                        href="#/terms-of-service"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 rounded-xl text-center text-xs font-bold transition"
+                                    >
+                                        View Page
+                                    </a>
+                                    <button
+                                        onClick={() => handlePreFillForPublish('terms')}
+                                        className="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition"
+                                    >
+                                        Edit / Revise
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 3. Refund Policy */}
+                            <div className="bg-slate-900/70 border border-slate-800 p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between">
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="px-2.5 py-0.5 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                            Active Policy
+                                        </span>
+                                        <span className="text-xs font-mono font-bold text-slate-400">
+                                            v{summary?.refund?.version || '1.0'}
+                                        </span>
+                                    </div>
+                                    <h4 className="text-lg font-black text-white mb-1.5">Cancellation & Refund</h4>
+                                    <p className="text-xs text-slate-400 mb-4 line-clamp-2">
+                                        {summary?.refund?.title || 'Order cancellation and refund turnaround terms'}
+                                    </p>
+                                    <div className="space-y-1.5 text-[11px] text-slate-400 border-t border-slate-800/80 pt-3 mb-5">
+                                        <div className="flex justify-between">
+                                            <span>Effective Date:</span>
+                                            <span className="text-white font-medium">{summary?.refund?.effectiveDate ? new Date(summary.refund.effectiveDate).toLocaleDateString() : 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Last Updated:</span>
+                                            <span className="text-white font-medium">{summary?.refund?.lastUpdated ? new Date(summary.refund.lastUpdated).toLocaleDateString() : 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <a
+                                        href="#/refund-policy"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 rounded-xl text-center text-xs font-bold transition"
+                                    >
+                                        View Page
+                                    </a>
+                                    <button
+                                        onClick={() => handlePreFillForPublish('refund')}
+                                        className="px-3.5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition"
+                                    >
+                                        Edit / Revise
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 4. Shipping Policy */}
+                            <div className="bg-slate-900/70 border border-slate-800 p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between">
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                            Active Policy
+                                        </span>
+                                        <span className="text-xs font-mono font-bold text-slate-400">
+                                            v{summary?.shipping?.version || '1.0'}
+                                        </span>
+                                    </div>
+                                    <h4 className="text-lg font-black text-white mb-1.5">Shipping & Delivery</h4>
+                                    <p className="text-xs text-slate-400 mb-4 line-clamp-2">
+                                        {summary?.shipping?.title || 'Material dispatch and on-site assembly milestones'}
+                                    </p>
+                                    <div className="space-y-1.5 text-[11px] text-slate-400 border-t border-slate-800/80 pt-3 mb-5">
+                                        <div className="flex justify-between">
+                                            <span>Effective Date:</span>
+                                            <span className="text-white font-medium">{summary?.shipping?.effectiveDate ? new Date(summary.shipping.effectiveDate).toLocaleDateString() : 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Last Updated:</span>
+                                            <span className="text-white font-medium">{summary?.shipping?.lastUpdated ? new Date(summary.shipping.lastUpdated).toLocaleDateString() : 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <a
+                                        href="#/shipping-policy"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 rounded-xl text-center text-xs font-bold transition"
+                                    >
+                                        View Page
+                                    </a>
+                                    <button
+                                        onClick={() => handlePreFillForPublish('shipping')}
+                                        className="px-3.5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition"
+                                    >
+                                        Edit / Revise
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 5. Contact Us */}
+                            <div className="bg-slate-900/70 border border-slate-800 p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between">
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="px-2.5 py-0.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                            Active Policy
+                                        </span>
+                                        <span className="text-xs font-mono font-bold text-slate-400">
+                                            v{summary?.contact?.version || '1.0'}
+                                        </span>
+                                    </div>
+                                    <h4 className="text-lg font-black text-white mb-1.5">Contact Us & Grievance</h4>
+                                    <p className="text-xs text-slate-400 mb-4 line-clamp-2">
+                                        {summary?.contact?.title || 'Corporate address, helplines and grievance redressal'}
+                                    </p>
+                                    <div className="space-y-1.5 text-[11px] text-slate-400 border-t border-slate-800/80 pt-3 mb-5">
+                                        <div className="flex justify-between">
+                                            <span>Effective Date:</span>
+                                            <span className="text-white font-medium">{summary?.contact?.effectiveDate ? new Date(summary.contact.effectiveDate).toLocaleDateString() : 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Last Updated:</span>
+                                            <span className="text-white font-medium">{summary?.contact?.lastUpdated ? new Date(summary.contact.lastUpdated).toLocaleDateString() : 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <a
+                                        href="#/contact-us"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 rounded-xl text-center text-xs font-bold transition"
+                                    >
+                                        View Page
+                                    </a>
+                                    <button
+                                        onClick={() => handlePreFillForPublish('contact')}
+                                        className="px-3.5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition"
+                                    >
+                                        Edit / Revise
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -418,8 +699,14 @@ const AdminLegalPolicies = () => {
                                             <td className="py-4 px-4 font-black uppercase tracking-wider">
                                                 {p.policyType === 'privacy' ? (
                                                     <span className="text-emerald-400">Privacy</span>
-                                                ) : (
+                                                ) : p.policyType === 'terms' ? (
                                                     <span className="text-blue-400">Terms</span>
+                                                ) : p.policyType === 'refund' ? (
+                                                    <span className="text-purple-400">Refund</span>
+                                                ) : p.policyType === 'shipping' ? (
+                                                    <span className="text-amber-400">Shipping</span>
+                                                ) : (
+                                                    <span className="text-cyan-400">Contact</span>
                                                 )}
                                             </td>
                                             <td className="py-4 px-4 font-mono font-bold text-white">v{p.version}</td>
@@ -492,11 +779,17 @@ const AdminLegalPolicies = () => {
                                 </label>
                                 <select
                                     value={publishForm.policyType}
-                                    onChange={(e) => setPublishForm({ ...publishForm, policyType: e.target.value })}
+                                    onChange={(e) => {
+                                        const type = e.target.value;
+                                        handlePreFillForPublish(type);
+                                    }}
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-blue-500"
                                 >
                                     <option value="privacy">Privacy Policy</option>
                                     <option value="terms">Terms of Service</option>
+                                    <option value="refund">Cancellation & Refund Policy</option>
+                                    <option value="shipping">Shipping & Delivery Policy</option>
+                                    <option value="contact">Contact Us & Grievance Directives</option>
                                 </select>
                             </div>
 

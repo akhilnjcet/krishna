@@ -19,6 +19,7 @@ const { protect, admin } = require('../middleware/authMiddleware');
 
 // ─── Public Routes (No authentication required) ───────────────────
 router.get('/current/:type', getCurrentPolicy);
+router.get('/summary', getPublicPolicySummary);
 router.get('/public-summary', getPublicPolicySummary);
 router.get('/version/:type/:version', getPolicyByVersion);
 

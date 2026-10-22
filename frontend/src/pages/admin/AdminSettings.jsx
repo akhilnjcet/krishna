@@ -798,25 +798,42 @@ const AdminSettings = () => {
                                         />
                                     </div>
                                     <div className="space-y-4">
-                                        <input 
-                                            value={settings.footer_phone}
-                                            onChange={(e) => updateField('footer_phone', e.target.value)}
-                                            className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-bold text-slate-800 dark:text-gray-400 focus:border-blue-500 dark:focus:border-brand-accent/50 outline-none transition-all shadow-sm"
-                                            placeholder="Phone"
-                                        />
-                                        <input 
-                                            value={settings.footer_email}
-                                            onChange={(e) => updateField('footer_email', e.target.value)}
-                                            className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-bold text-slate-800 dark:text-gray-400 focus:border-blue-500 dark:focus:border-brand-accent/50 outline-none transition-all shadow-sm"
-                                            placeholder="Email"
-                                        />
-                                        <textarea 
-                                            value={settings.map_embed_url}
-                                            onChange={(e) => updateField('map_embed_url', e.target.value)}
-                                            rows={2}
-                                            className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-2xl p-4 text-sm font-bold text-slate-800 dark:text-gray-400 focus:border-blue-500 dark:focus:border-brand-accent/50 outline-none transition-all shadow-sm"
-                                            placeholder="Google Maps Embed URL (src parameter)"
-                                        />
+                                        <div className="space-y-1.5">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-gray-400 flex items-center gap-1.5">
+                                                <Phone className="w-3 h-3 text-emerald-500" /> Support Helpline Phone (Footer & Public Policies)
+                                            </label>
+                                            <input 
+                                                value={settings.footer_phone}
+                                                onChange={(e) => updateField('footer_phone', e.target.value)}
+                                                className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-bold text-slate-800 dark:text-gray-400 focus:border-blue-500 dark:focus:border-brand-accent/50 outline-none transition-all shadow-sm"
+                                                placeholder="e.g. +91 9447940835"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-gray-400 flex items-center gap-1.5">
+                                                <Mail className="w-3 h-3 text-blue-500" /> Support & Grievance Email (Footer & Public Policies)
+                                            </label>
+                                            <input 
+                                                value={settings.footer_email}
+                                                onChange={(e) => updateField('footer_email', e.target.value)}
+                                                className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-bold text-slate-800 dark:text-gray-400 focus:border-blue-500 dark:focus:border-brand-accent/50 outline-none transition-all shadow-sm"
+                                                placeholder="e.g. contact@krishnaengg.com"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-gray-400">
+                                                Google Maps Location Embed URL
+                                            </label>
+                                            <textarea 
+                                                value={settings.map_embed_url}
+                                                onChange={(e) => updateField('map_embed_url', e.target.value)}
+                                                rows={2}
+                                                className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-2xl p-4 text-sm font-bold text-slate-800 dark:text-gray-400 focus:border-blue-500 dark:focus:border-brand-accent/50 outline-none transition-all shadow-sm"
+                                                placeholder="Google Maps Embed URL (src parameter)"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -877,64 +894,149 @@ const AdminSettings = () => {
                         <section className="p-6 md:p-10 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-[2rem] md:rounded-[3rem] shadow-sm backdrop-blur-3xl relative overflow-hidden group hover:border-blue-500/30 transition-all">
                             <ModuleHeader icon={Shield} title="Legal & Privacy Governance" status="Audit-Ready" />
                             
-                            {/* Live Policy Telemetry Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                <div className="p-6 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl relative shadow-sm">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Privacy Policy</span>
-                                        <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">v{policySummary?.privacy?.version || '1.0'}</span>
+                            {/* Live Policy Telemetry Cards (All 5 Policies) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+                                {/* 1. Privacy Policy */}
+                                <div className="p-5 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl relative shadow-sm flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Privacy Policy</span>
+                                            <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">v{policySummary?.privacy?.version || '1.0'}</span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 dark:text-gray-400 mb-3 line-clamp-2">
+                                            {policySummary?.privacy?.title || 'Data protection and telemetry standards.'}
+                                        </p>
                                     </div>
-                                    <p className="text-xs text-slate-600 dark:text-gray-400 mb-4 line-clamp-2">
-                                        {policySummary?.privacy?.title || 'Data protection and telemetry transparency standards.'}
-                                    </p>
-                                    <div className="text-[11px] text-slate-500 dark:text-gray-500 space-y-1 mb-4 border-t border-slate-200 dark:border-white/5 pt-3">
-                                        <div>Effective: <span className="text-slate-800 dark:text-gray-300 font-medium">{policySummary?.privacy?.effectiveDate ? new Date(policySummary.privacy.effectiveDate).toLocaleDateString() : 'Active'}</span></div>
-                                        <div>Last Updated: <span className="text-slate-800 dark:text-gray-300 font-medium">{policySummary?.privacy?.lastUpdated ? new Date(policySummary.privacy.lastUpdated).toLocaleDateString() : 'Current'}</span></div>
-                                    </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-white/5">
                                         <a 
                                             href="#/privacy-policy" 
                                             target="_blank" 
                                             rel="noreferrer"
-                                            className="flex-1 py-2 text-center bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                            className="flex-1 py-1.5 text-center bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
                                         >
-                                            View Public Page
+                                            View Page
                                         </a>
                                         <a 
                                             href="#/admin/legal-policies" 
-                                            className="px-4 py-2 bg-blue-600/10 hover:bg-blue-600 text-blue-600 hover:text-white dark:bg-blue-600/30 dark:hover:bg-blue-600 dark:text-blue-300 dark:hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
                                         >
-                                            Manage
+                                            Edit
                                         </a>
                                     </div>
                                 </div>
 
-                                <div className="p-6 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl relative shadow-sm">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">Terms of Service</span>
-                                        <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">v{policySummary?.terms?.version || '1.0'}</span>
+                                {/* 2. Terms of Service */}
+                                <div className="p-5 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl relative shadow-sm flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">Terms of Service</span>
+                                            <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">v{policySummary?.terms?.version || '1.0'}</span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 dark:text-gray-400 mb-3 line-clamp-2">
+                                            {policySummary?.terms?.title || 'Client agreements and software usage terms.'}
+                                        </p>
                                     </div>
-                                    <p className="text-xs text-slate-600 dark:text-gray-400 mb-4 line-clamp-2">
-                                        {policySummary?.terms?.title || 'Operating rules, client agreements, and software usage terms.'}
-                                    </p>
-                                    <div className="text-[11px] text-slate-500 dark:text-gray-500 space-y-1 mb-4 border-t border-slate-200 dark:border-white/5 pt-3">
-                                        <div>Effective: <span className="text-slate-800 dark:text-gray-300 font-medium">{policySummary?.terms?.effectiveDate ? new Date(policySummary.terms.effectiveDate).toLocaleDateString() : 'Active'}</span></div>
-                                        <div>Last Updated: <span className="text-slate-800 dark:text-gray-300 font-medium">{policySummary?.terms?.lastUpdated ? new Date(policySummary.terms.lastUpdated).toLocaleDateString() : 'Current'}</span></div>
-                                    </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-white/5">
                                         <a 
                                             href="#/terms-of-service" 
                                             target="_blank" 
                                             rel="noreferrer"
-                                            className="flex-1 py-2 text-center bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                            className="flex-1 py-1.5 text-center bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
                                         >
-                                            View Public Page
+                                            View Page
                                         </a>
                                         <a 
                                             href="#/admin/legal-policies" 
-                                            className="px-4 py-2 bg-blue-600/10 hover:bg-blue-600 text-blue-600 hover:text-white dark:bg-blue-600/30 dark:hover:bg-blue-600 dark:text-blue-300 dark:hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
                                         >
-                                            Manage
+                                            Edit
+                                        </a>
+                                    </div>
+                                </div>
+
+                                {/* 3. Refund Policy */}
+                                <div className="p-5 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl relative shadow-sm flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-purple-600 dark:text-purple-400">Refund Policy</span>
+                                            <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">v{policySummary?.refund?.version || '1.0'}</span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 dark:text-gray-400 mb-3 line-clamp-2">
+                                            {policySummary?.refund?.title || 'Cancellation guidelines & 5-7 day turnaround.'}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-white/5">
+                                        <a 
+                                            href="#/refund-policy" 
+                                            target="_blank" 
+                                            rel="noreferrer"
+                                            className="flex-1 py-1.5 text-center bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            View Page
+                                        </a>
+                                        <a 
+                                            href="#/admin/legal-policies" 
+                                            className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            Edit
+                                        </a>
+                                    </div>
+                                </div>
+
+                                {/* 4. Shipping Policy */}
+                                <div className="p-5 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl relative shadow-sm flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Shipping Policy</span>
+                                            <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">v{policySummary?.shipping?.version || '1.0'}</span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 dark:text-gray-400 mb-3 line-clamp-2">
+                                            {policySummary?.shipping?.title || 'Delivery modes, freight & site erection.'}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-white/5">
+                                        <a 
+                                            href="#/shipping-policy" 
+                                            target="_blank" 
+                                            rel="noreferrer"
+                                            className="flex-1 py-1.5 text-center bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            View Page
+                                        </a>
+                                        <a 
+                                            href="#/admin/legal-policies" 
+                                            className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            Edit
+                                        </a>
+                                    </div>
+                                </div>
+
+                                {/* 5. Contact Us */}
+                                <div className="p-5 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl relative shadow-sm flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-cyan-600 dark:text-cyan-400">Contact Us</span>
+                                            <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">v{policySummary?.contact?.version || '1.0'}</span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 dark:text-gray-400 mb-3 line-clamp-2">
+                                            {policySummary?.contact?.title || 'Corporate address, phone & grievance officer.'}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-white/5">
+                                        <a 
+                                            href="#/contact-us" 
+                                            target="_blank" 
+                                            rel="noreferrer"
+                                            className="flex-1 py-1.5 text-center bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            View Page
+                                        </a>
+                                        <a 
+                                            href="#/admin/legal-policies" 
+                                            className="px-3 py-1.5 bg-cyan-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            Edit
                                         </a>
                                     </div>
                                 </div>
