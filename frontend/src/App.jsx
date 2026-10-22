@@ -28,7 +28,9 @@ const lazy = (factory) =>
             try {
               const cacheNames = await caches.keys();
               await Promise.all(cacheNames.map((c) => caches.delete(c)));
-            } catch (e) {}
+            } catch (_err) {
+              void _err;
+            }
           }
           window.location.reload();
           return new Promise(() => {});
@@ -359,7 +361,9 @@ const SystemRescue = ({ error, isChunkError }) => {
           names.forEach((name) => caches.delete(name));
         });
       }
-    } catch (e) {}
+    } catch (_err) {
+      void _err;
+    }
     window.location.reload();
   };
 

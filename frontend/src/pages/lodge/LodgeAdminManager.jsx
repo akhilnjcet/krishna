@@ -7,7 +7,7 @@ import {
     RefreshCcw, LogIn
 } from 'lucide-react';
 import api from '../../services/api';
-import { getDirectImageUrl, expandGoogleDriveFolders } from '../../utils/imageUtils';
+import { expandGoogleDriveFolders } from '../../utils/imageUtils';
 import DriveImage from '../../components/DriveImage';
 import LodgeBillingManager from './LodgeBillingManager';
 import LodgeTenantPaymentModal from '../../components/lodge/LodgeTenantPaymentModal';
@@ -31,7 +31,6 @@ export default function LodgeAdminManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedRoomDetail, setSelectedRoomDetail] = useState(null);
-  const [roomDetailTab, setRoomDetailTab] = useState('overview');
 
   // Forms & Modals
   const [showRoomForm, setShowRoomForm] = useState(false);
@@ -135,6 +134,7 @@ export default function LodgeAdminManager() {
 
   useEffect(() => {
     fetchBaseLodge();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -179,12 +179,14 @@ export default function LodgeAdminManager() {
   useEffect(() => {
     if (!selectedLodge || selectedLodge._id === 'error_state') return;
     refreshActiveTabData('dashboard');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedLodge]);
 
   // Tab switch: targeted fetch only for the newly selected tab
   useEffect(() => {
     if (!selectedLodge || selectedLodge._id === 'error_state') return;
     refreshActiveTabData(activeTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   // Real-Time Socket.IO Synchronization
@@ -205,6 +207,7 @@ export default function LodgeAdminManager() {
         socket.off('maintenance_updated', handleSync);
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedLodge]);
 
   const fetchBaseLodge = async () => {
@@ -414,6 +417,7 @@ export default function LodgeAdminManager() {
           setShowLodgeEdit(false);
           fetchBaseLodge();
       } catch (err) {
+          console.error('Building update error:', err);
           alert('Failed to update building');
       }
   };
@@ -622,7 +626,10 @@ export default function LodgeAdminManager() {
           await api.put(`/auth/${editClient._id}/admin-edit`, clientForm);
           alert('Client updated successfully');
           setEditClient(null); fetchClients();
-      } catch(e) { alert("Update failed"); }
+      } catch (_err) { 
+          void _err;
+          alert("Update failed"); 
+      }
   };
 
 
@@ -646,7 +653,10 @@ export default function LodgeAdminManager() {
           alert('Cash Logged');
           setPaymentModal({ show: false, customerId: '', amount: '', notes: '' });
           fetchPayments();
-      } catch(e) { alert('Logging failed'); }
+      } catch (_err) { 
+          void _err;
+          alert('Logging failed'); 
+      }
   };
 
   // MAINTENANCE LOGIC
@@ -1108,7 +1118,8 @@ export default function LodgeAdminManager() {
                                                         } else {
                                                             setEditingRoom(null);
                                                         }
-                                                    } catch (e) {
+                                                    } catch (_err) {
+                                                        void _err;
                                                         alert('Failed to delete photo');
                                                     }
                                                 }
@@ -1521,7 +1532,6 @@ export default function LodgeAdminManager() {
                                 if (occupyingBooking) {
                                   const nowTime = new Date();
                                   const bStart = new Date(occupyingBooking.checkIn);
-                                  const bEnd = new Date(occupyingBooking.checkOut);
 
                                   if (occupyingBooking.status === 'completed') {
                                     cellBg = 'bg-slate-600 text-white border-slate-700 font-bold';
@@ -1825,6 +1835,19 @@ export default function LodgeAdminManager() {
                                 </span>
                               )}
                             </div>
+
+                            {/* Extension Request Banner */}
+                            {b.extensionStatus === 'pending' && (
+                              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between gap-3 text-xs">
+                                <span className="font-bold text-amber-800 dark:text-amber-200">
+                                  Extension Requested {b.extendedUntil ? `until ${new Date(b.extendedUntil).toLocaleDateString()}` : ''}
+                                </span>
+                                <div className="flex gap-2">
+                                  <button type="button" onClick={() => approveExtension(b._id)} className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs">Approve</button>
+                                  <button type="button" onClick={() => rejectExtension(b._id)} className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-xs">Reject</button>
+                                </div>
+                              </div>
+                            )}
 
                             {/* Checkout notes display */}
                             {b.actualCheckOut && (
@@ -2545,7 +2568,8 @@ export default function LodgeAdminManager() {
                                                       } else {
                                                           setActiveGalleryRoom(null);
                                                       }
-                                                  } catch (e) {
+                                                  } catch (_err) {
+                                                      void _err;
                                                       alert('Failed to delete photo');
                                                   }
                                               }
@@ -2698,7 +2722,7 @@ const renderVideoPlayer = (url) => {
     // YouTube
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
         let videoId = '';
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
         const match = url.match(regExp);
         if (match && match[2].length === 11) {
             videoId = match[2];

@@ -9,7 +9,6 @@ import {
 import FloatingContact from '../components/FloatingContact';
 import api from '../services/api';
 import AdBanner from '../components/AdBanner';
-import { getDirectImageUrl, expandGoogleDriveFolders } from '../utils/imageUtils';
 import DriveImage from '../components/DriveImage';
 import GoogleReviewSection from '../components/GoogleReviewSection';
 
@@ -78,10 +77,7 @@ const AnimatedCounter = ({ target, suffix }) => {
         if (!started) return;
         const cleanTarget = (target || '0').toString().replace(/,/g, '');
         const num = parseFloat(cleanTarget);
-        if (isNaN(num)) {
-            setCount(0);
-            return;
-        }
+        if (isNaN(num)) return;
 
         let animationFrameId;
         const startTime = performance.now();
