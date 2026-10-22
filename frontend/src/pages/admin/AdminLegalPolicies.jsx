@@ -89,7 +89,7 @@ const AdminLegalPolicies = () => {
         setSavingContacts(true);
         setContactSaveMessage(null);
         try {
-            await api.post('/settings', {
+            await api.put('/settings', {
                 settings: {
                     footer_phone: contactSettings.footer_phone,
                     footer_email: contactSettings.footer_email,
@@ -100,7 +100,9 @@ const AdminLegalPolicies = () => {
             setContactSaveMessage({ type: 'success', text: 'Support emails, contact numbers & addresses updated successfully! Changes reflect on all public policy pages.' });
             setTimeout(() => setContactSaveMessage(null), 5000);
         } catch (err) {
-            setContactSaveMessage({ type: 'error', text: 'Failed to update support contact details.' });
+            console.error('Failed to update support contact details:', err);
+            const msg = err.response?.data?.message || err.message || 'Failed to update support contact details.';
+            setContactSaveMessage({ type: 'error', text: msg });
         } finally {
             setSavingContacts(false);
         }

@@ -7,5 +7,6 @@ router.get('/public', getPublicSettings);
 router.get('/', protect, admin, getSettings);
 router.get('/whatsapp-status', protect, admin, getWhatsAppStatus);
 router.put('/', protect, admin, updateSettings);
+router.post('/', protect, admin, updateSettings);
 
 module.exports = router;
