@@ -643,10 +643,6 @@ const Home = () => {
                     </div>
                 </section>
 
-                {/* ════════════════════════════════════════
-                    5B. RATE OUR WORK & GOOGLE REVIEWS SECTION
-                    ════════════════════════════════════════ */}
-                <GoogleReviewSection />
 
                 {/* ════════════════════════════════════════
                     6. CTA BANNER                          
@@ -751,6 +747,11 @@ const Home = () => {
                         </motion.div>
                     </div>
                 </section>
+
+                {/* ════════════════════════════════════════
+                    8. RATE OUR WORK & GOOGLE REVIEWS (FINAL SECTION)
+                    ════════════════════════════════════════ */}
+                <GoogleReviewSection />
             </div>
         </>
     );

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Star, ExternalLink, Copy, Check, ShieldCheck, 
-    MessageSquare, ThumbsUp, Sparkles, AlertCircle, Info, Heart
+    Sparkles, AlertCircle
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -32,9 +32,6 @@ const GoogleReviewSection = ({ className = '', id = 'rate-our-work' }) => {
     const [hoverRating, setHoverRating] = useState(0);
     const [comment, setComment] = useState('');
     const [selectedServices, setSelectedServices] = useState([]);
-    const [customerName, setCustomerName] = useState('');
-    const [customerPhone, setCustomerPhone] = useState('');
-    const [consentInternal, setConsentInternal] = useState(true);
 
     const [copied, setCopied] = useState(false);
     const [submittingInternal, setSubmittingInternal] = useState(false);
@@ -84,20 +81,17 @@ const GoogleReviewSection = ({ className = '', id = 'rate-our-work' }) => {
             await copyReviewText();
         }
 
-        // Optionally send a record to backend if customer gave consent
-        if (consentInternal && rating) {
+        // Record review event in backend
+        if (rating) {
             try {
                 api.post('/feedback', {
                     rating,
                     comment,
                     services: selectedServices,
-                    customerName: customerName.trim() || undefined,
-                    customerPhone: customerPhone.trim() || undefined,
-                    consentGiven: true,
                     openedGoogleReview: true
                 }).catch(e => console.warn('Internal feedback sync notice:', e));
-            } catch (err) {
-                // Non-blocking
+            } catch (_err) {
+                void _err;
             }
         }
 
@@ -119,13 +113,10 @@ const GoogleReviewSection = ({ className = '', id = 'rate-our-work' }) => {
                 rating,
                 comment,
                 services: selectedServices,
-                customerName: customerName.trim() || undefined,
-                customerPhone: customerPhone.trim() || undefined,
-                consentGiven: true,
                 openedGoogleReview: false
             });
 
-            setInternalSuccess('Thank you! Your feedback has been safely shared with the Krishna Engineering quality team.');
+            setInternalSuccess('Thank you! Your feedback has been safely shared with the Krishna Engineering team.');
             setTimeout(() => setInternalSuccess(null), 6000);
         } catch (err) {
             console.error('Failed to submit internal feedback:', err);
@@ -313,52 +304,7 @@ const GoogleReviewSection = ({ className = '', id = 'rate-our-work' }) => {
                         )}
                     </div>
 
-                    {/* Step 4: Optional Customer Identification & Consent */}
-                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 mb-8 border border-slate-200/70 dark:border-slate-700/60">
-                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
-                            Optional Details (For Internal Quality Follow-up)
-                        </h4>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">
-                                    Your Name (Optional)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={customerName}
-                                    onChange={(e) => setCustomerName(e.target.value)}
-                                    placeholder="e.g. Rahul Menon"
-                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">
-                                    Phone Number (Optional)
-                                </label>
-                                <input
-                                    type="tel"
-                                    value={customerPhone}
-                                    onChange={(e) => setCustomerPhone(e.target.value)}
-                                    placeholder="+91 94479 00000"
-                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-500"
-                                />
-                            </div>
-                        </div>
 
-                        {/* Consent Checkbox */}
-                        <label className="flex items-start gap-3 cursor-pointer select-none">
-                            <input
-                                type="checkbox"
-                                checked={consentInternal}
-                                onChange={(e) => setConsentInternal(e.target.checked)}
-                                className="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600"
-                            />
-                            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
-                                Share a private copy of this feedback directly with the Krishna Engineering Works internal quality team. (Stored separately in our database; distinct from public Google reviews).
-                            </span>
-                        </label>
-                    </div>
 
                     {/* Error and Success Notifications */}
                     {errorMsg && (
