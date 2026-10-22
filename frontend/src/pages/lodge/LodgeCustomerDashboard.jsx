@@ -26,7 +26,7 @@ export default function LodgeCustomerDashboard() {
     // Modals
     const [extendModal, setExtendModal] = useState({ show: false, booking: null, newDate: '', extraAmount: 0 });
     const [complaintModal, setComplaintModal] = useState({ show: false, bookingId: '', title: '', description: '' });
-    const [payModalState, setPayModalState] = useState({ show: false, booking: null, isPayMore: false });
+    const [payModalState, setPayModalState] = useState({ show: false, booking: null, isPayMore: false, initialTarget: 'ALL', initialTab: 'PAY' });
 
     useEffect(() => {
         fetchData();
@@ -296,17 +296,58 @@ export default function LodgeCustomerDashboard() {
                                                     <p className="text-sm font-black text-indigo-600 font-poppins">₹{b.totalAmount}</p>
                                                 </div>
                                             </div>
+
+                                            {/* Security Deposit & Available Balance Card */}
+                                            {(() => {
+                                                const reqDeposit = b.securityDeposit || b.roomId?.securityDeposit || 0;
+                                                const usedForRent = (b.depositAdjustments || []).reduce((sum, a) => sum + (a.amount || 0), 0);
+                                                const availableBal = Math.max(0, reqDeposit - usedForRent);
+                                                return (
+                                                    <div className="mt-4 p-4 bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-800/60 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-9 h-9 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded-xl flex items-center justify-center shrink-0">
+                                                                <Shield className="w-5 h-5" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-black text-slate-800 dark:text-white flex items-center gap-2">
+                                                                    <span>Security Deposit</span>
+                                                                    <span className="text-[10px] font-bold text-slate-400 font-poppins">Total: ₹{reqDeposit.toLocaleString()}</span>
+                                                                </p>
+                                                                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                                                    Available Balance: <strong className="text-emerald-600 font-poppins font-black">₹{availableBal.toLocaleString()}</strong>
+                                                                    {usedForRent > 0 && <span className="text-amber-600 ml-1.5 font-bold">(Adjusted: ₹{usedForRent.toLocaleString()})</span>}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        {b.status === 'active' && (
+                                                            <button
+                                                                onClick={() => setPayModalState({ show: true, booking: b, isPayMore: false, initialTarget: 'DEPOSIT', initialTab: 'PAY' })}
+                                                                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs shadow-xs transition-all active:scale-95 flex items-center gap-1.5 ml-auto"
+                                                            >
+                                                                <CreditCard className="w-3.5 h-3.5" />
+                                                                <span>Pay Deposit</span>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
 
                                         <div className="flex flex-col justify-center gap-3 lg:w-56 shrink-0">
                                             {b.status === 'active' && (
                                                 <>
                                                     <button 
-                                                        onClick={() => setPayModalState({ show: true, booking: b, isPayMore: b.isPaid || b.rentStatus === 'Paid' })} 
+                                                        onClick={() => setPayModalState({ show: true, booking: b, isPayMore: b.isPaid || b.rentStatus === 'Paid', initialTarget: 'ALL', initialTab: 'PAY' })} 
                                                         className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-2xl font-black text-sm shadow-lg shadow-emerald-600/20 flex items-center justify-center hover:-translate-y-0.5 transition-all"
                                                     >
                                                         <CreditCard className="w-4 h-4 mr-2" />
                                                         {(b.isPaid || b.rentStatus === 'Paid') ? '➕ Pay More' : '💳 Pay Rent'}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setPayModalState({ show: true, booking: b, isPayMore: false, initialTarget: 'DEPOSIT', initialTab: 'PAY' })} 
+                                                        className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 py-3 rounded-2xl font-black text-xs border border-indigo-200 dark:border-indigo-800 flex items-center justify-center hover:-translate-y-0.5 transition-all"
+                                                    >
+                                                        <Shield className="w-4 h-4 mr-1.5" /> Pay Security Deposit
                                                     </button>
                                                     {b.extensionRequest?.status === 'pending' ? (
                                                         <div className="w-full bg-amber-50 text-amber-600 py-3.5 rounded-2xl font-black text-sm border border-amber-100 flex items-center justify-center">
@@ -562,9 +603,11 @@ export default function LodgeCustomerDashboard() {
             {/* Tenant Payment Modal */}
             <LodgeTenantPaymentModal
                 isOpen={payModalState.show}
-                onClose={() => setPayModalState({ show: false, booking: null, isPayMore: false })}
+                onClose={() => setPayModalState({ show: false, booking: null, isPayMore: false, initialTarget: 'ALL', initialTab: 'PAY' })}
                 booking={payModalState.booking}
                 isPayMore={payModalState.isPayMore}
+                initialTarget={payModalState.initialTarget || 'ALL'}
+                initialTab={payModalState.initialTab || 'PAY'}
                 onSuccess={() => fetchData()}
             />
 

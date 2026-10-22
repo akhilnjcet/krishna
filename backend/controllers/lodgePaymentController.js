@@ -693,3 +693,71 @@ exports.addExtraCharge = async (req, res) => {
     res.status(500).json({ message: 'Error adding extra charge', error: error.message });
   }
 };
+
+// Add / Set / Update Security Deposit for a Booking (Admin / Owner)
+exports.manageSecurityDeposit = async (req, res) => {
+  try {
+    const { bookingId, amount, mode = 'add', notes = '' } = req.body;
+    const depAmount = parseFloat(amount);
+
+    if (!bookingId) {
+      return res.status(400).json({ message: 'Booking ID is required.' });
+    }
+    if (isNaN(depAmount) || depAmount < 0) {
+      return res.status(400).json({ message: 'Please provide a valid security deposit amount (0 or greater).' });
+    }
+
+    const booking = await BookingLodge.findById(bookingId)
+      .populate('roomId')
+      .populate('userId');
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+
+    const previousDeposit = parseFloat(booking.securityDeposit || booking.roomId?.securityDeposit || 0);
+    let newDeposit = 0;
+
+    if (mode === 'add') {
+      newDeposit = previousDeposit + depAmount;
+    } else {
+      // mode === 'set'
+      newDeposit = depAmount;
+    }
+
+    booking.securityDeposit = newDeposit;
+
+    if (!Array.isArray(booking.versionHistory)) {
+      booking.versionHistory = [];
+    }
+    booking.versionHistory.push({
+      version: (booking.acknowledgementVersion || 1) + 1,
+      generatedAt: new Date(),
+      reason: `Security Deposit updated to ₹${newDeposit.toLocaleString()} (${mode === 'add' ? `Added ₹${depAmount.toLocaleString()}` : `Set to ₹${depAmount.toLocaleString()}`}) by ${req.user?.name || 'Admin'}. ${notes ? `Notes: ${notes}` : ''}`.trim()
+    });
+    booking.acknowledgementVersion = (booking.acknowledgementVersion || 1) + 1;
+
+    await booking.save();
+
+    // Broadcast update via socket
+    const io = socketUtil.getIO();
+    if (io) {
+      io.emit('lodge-payment-updated', {
+        bookingId: booking._id,
+        securityDeposit: newDeposit,
+        action: 'SECURITY_DEPOSIT_UPDATED'
+      });
+      io.emit('booking-updated', booking);
+    }
+
+    res.json({
+      message: `Security deposit successfully updated to ₹${newDeposit.toLocaleString()}.`,
+      securityDeposit: newDeposit,
+      previousDeposit,
+      booking
+    });
+  } catch (error) {
+    console.error('manageSecurityDeposit error:', error);
+    res.status(500).json({ message: 'Failed to update security deposit', error: error.message });
+  }
+};

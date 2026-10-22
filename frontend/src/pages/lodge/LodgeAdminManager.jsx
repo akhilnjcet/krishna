@@ -3,12 +3,13 @@ import {
     Building2, Plus, DoorOpen, List, Trash2, Edit3, UserPlus, 
     Calendar, IndianRupee, AlertTriangle, Users, CheckCircle, 
     Settings, LogOut, Clock, Link, Check, X, Building, BarChart3, ShieldAlert, ArrowLeft, Folder,
-    Eye, Search, Filter
+    Eye, Search, Filter, ShieldCheck, CreditCard
 } from 'lucide-react';
 import api from '../../services/api';
 import { getDirectImageUrl, expandGoogleDriveFolders } from '../../utils/imageUtils';
 import DriveImage from '../../components/DriveImage';
 import LodgeBillingManager from './LodgeBillingManager';
+import LodgeTenantPaymentModal from '../../components/lodge/LodgeTenantPaymentModal';
 import { getSocket } from '../../utils/socket';
 
 export default function LodgeAdminManager() {
@@ -69,6 +70,9 @@ export default function LodgeAdminManager() {
 
   // Add Payment
   const [paymentModal, setPaymentModal] = useState({ show: false, customerId: '', amount: '', notes: '' });
+
+  // Security Deposit & Settlement Hub Modal
+  const [settlementModalData, setSettlementModalData] = useState(null);
 
   useEffect(() => {
     fetchBaseLodge();
@@ -1019,6 +1023,18 @@ export default function LodgeAdminManager() {
                              <p className="text-xs font-bold text-slate-400 flex items-center uppercase tracking-widest"><Building className="w-4 h-4 mr-1 text-indigo-400"/> {b.roomId?.type || 'Suite'} Unit</p>
                              <div className="h-3 w-[1px] bg-slate-200"></div>
                              <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest">Rate: ₹{b.roomId?.price || 0} / {b.roomId?.rentCycle || 'monthly'}</p>
+                             <div className="h-3 w-[1px] bg-slate-200"></div>
+                             {(() => {
+                                 const reqDeposit = b.securityDeposit || b.roomId?.securityDeposit || 0;
+                                 const usedForRent = (b.depositAdjustments || []).reduce((sum, a) => sum + (a.amount || 0), 0);
+                                 const availableBal = Math.max(0, reqDeposit - usedForRent);
+                                 return (
+                                     <p className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                                         <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                                         <span>Deposit: ₹{reqDeposit.toLocaleString()} (Available: ₹{availableBal.toLocaleString()})</span>
+                                     </p>
+                                 );
+                             })()}
                           </div>
                           {/* Booking Dates and Remaining Time */}
                           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400 font-semibold">
@@ -1037,10 +1053,25 @@ export default function LodgeAdminManager() {
                               )}
                           </div>
                       </div>
-                      <div className="flex gap-2 w-full md:w-auto">
-                           <button onClick={() => { setActiveTab('finance'); setPaymentModal({ show: true, customerId: b.userId?._id, amount: b.roomId?.price || '', notes: `Manual Rent Settlement: ${b.roomId?.type || 'Unit'}` }); }} className="flex-1 md:flex-none bg-slate-900 text-white px-6 py-3 rounded-2xl text-xs font-black shadow-lg shadow-slate-900/10 active:scale-95 transition-all">Collect Rent</button>
+                      <div className="flex flex-wrap gap-2 w-full md:w-auto mt-4 md:mt-0">
+                           <button 
+                               onClick={() => setSettlementModalData({ booking: b, initialTab: 'MANAGE_DEPOSIT' })} 
+                               className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-2xl text-xs font-black shadow-lg shadow-emerald-600/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                               title="Manage Security Deposit & View Available Balance"
+                           >
+                               <ShieldCheck className="w-4 h-4" />
+                               <span>Security Deposit</span>
+                           </button>
+                           <button 
+                               onClick={() => setSettlementModalData({ booking: b, initialTab: 'PAY', initialTarget: 'ALL' })} 
+                               className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-2xl text-xs font-black shadow-lg shadow-indigo-600/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                               title="Settle Dues / Collect Rent"
+                           >
+                               <CreditCard className="w-4 h-4" />
+                               <span>Settle / Collect</span>
+                           </button>
                            {b.status === 'active' && (
-                               <button onClick={() => cancelBooking(b._id)} className="flex-1 md:flex-none border border-rose-100 bg-rose-50 text-rose-600 px-6 py-3 rounded-2xl text-xs font-black shadow-lg shadow-rose-500/5 hover:bg-rose-100 active:scale-95 transition-all">Evict Tenant</button>
+                               <button onClick={() => cancelBooking(b._id)} className="flex-1 md:flex-none border border-rose-100 bg-rose-50 text-rose-600 px-4 py-2.5 rounded-2xl text-xs font-black shadow-lg shadow-rose-500/5 hover:bg-rose-100 active:scale-95 transition-all">Evict Tenant</button>
                            )}
                       </div>
                       
@@ -1360,6 +1391,21 @@ export default function LodgeAdminManager() {
           <div className="animate-in fade-in duration-300 bg-white dark:bg-slate-900 rounded-[2rem] p-8 border">
               <LodgeBillingManager />
           </div>
+      )}
+
+      {/* Security Deposit & Settlement Hub Modal */}
+      {settlementModalData && (
+        <LodgeTenantPaymentModal
+          isOpen={Boolean(settlementModalData)}
+          onClose={() => setSettlementModalData(null)}
+          booking={settlementModalData.booking}
+          isAdmin={true}
+          initialTab={settlementModalData.initialTab || 'MANAGE_DEPOSIT'}
+          initialTarget={settlementModalData.initialTarget || 'ALL'}
+          onSuccess={() => {
+            fetchBaseLodge();
+          }}
+        />
       )}
 
     </div>

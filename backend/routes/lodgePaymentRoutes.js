@@ -19,6 +19,7 @@ router.get('/stats', protect, admin, lodgePaymentController.getPaymentStats);
 
 // Financial Breakdown, Deposit Adjustments & Extra Charges
 router.get('/booking-financials/:bookingId', protect, lodgePaymentController.getBookingFinancials);
+router.post('/manage-deposit', protect, lodgePaymentController.manageSecurityDeposit);
 router.post('/adjust-deposit', protect, lodgePaymentController.adjustRentFromDeposit);
 router.post('/add-extra-charge', protect, lodgePaymentController.addExtraCharge);
 

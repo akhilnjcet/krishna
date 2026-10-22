@@ -1801,6 +1801,7 @@ const LodgeBillingManager = () => {
                                         <h4 className="text-[10px] font-black uppercase text-slate-400 font-bold">Billing Properties</h4>
                                         <div className="space-y-2 text-slate-700 dark:text-slate-300">
                                             <p>Monthly Rent: <span className="text-slate-900 dark:text-white font-extrabold">₹ {selectedRoomDetail.rent || selectedRoomDetail.price}</span></p>
+                                            <p>Security Deposit: <span className="text-emerald-600 font-extrabold">₹ {(selectedRoomDetail.securityDeposit || 0).toLocaleString()}</span></p>
                                             <p>Payment Status: <span className="text-indigo-600 font-extrabold">{selectedRoomDetail.paymentBadge}</span></p>
                                             <p>Outstanding Due: <span className="text-rose-600 font-extrabold">₹ {selectedRoomDetail.outstandingAmt}</span></p>
                                         </div>

@@ -22,7 +22,9 @@ export default function LodgeTenantPaymentModal({
   booking, 
   isPayMore = false, 
   onSuccess, 
-  isAdmin: isAdminProp 
+  isAdmin: isAdminProp,
+  initialTab = 'PAY',
+  initialTarget = 'ALL'
 }) {
   if (!isOpen || !booking) return null;
 
@@ -37,15 +39,22 @@ export default function LodgeTenantPaymentModal({
   const [financials, setFinancials] = useState(null);
   const [loadingFinancials, setLoadingFinancials] = useState(true);
 
-  // Active Tab: 'PAY' | 'ADJUST_DEPOSIT' | 'ADD_CHARGE' | 'HISTORY' | 'RECEIPT'
-  const [activeTab, setActiveTab] = useState('PAY');
+  // Active Tab: 'PAY' | 'MANAGE_DEPOSIT' | 'ADJUST_DEPOSIT' | 'ADD_CHARGE' | 'HISTORY' | 'RECEIPT'
+  const [activeTab, setActiveTab] = useState(initialTab || 'PAY');
 
   // Payment Selection: Target item
   // 'ALL' | 'RENT' | 'DEPOSIT' | 'EXTRA'
-  const [paymentTarget, setPaymentTarget] = useState('ALL');
+  const [paymentTarget, setPaymentTarget] = useState(initialTarget || 'ALL');
   const [paymentMode, setPaymentMode] = useState('FULL'); // 'FULL' | 'CUSTOM'
   const [customPayInput, setCustomPayInput] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('UPI QR'); // 'UPI QR' | 'UPI ID' | 'Bank Transfer' | 'Cash' | 'Card'
+
+  // Manage Security Deposit (Admin / Owner)
+  const [depositManageMode, setDepositManageMode] = useState('ADD'); // 'ADD' | 'SET'
+  const [depositAmountInput, setDepositAmountInput] = useState('');
+  const [depositNotesInput, setDepositNotesInput] = useState('');
+  const [submittingDeposit, setSubmittingDeposit] = useState(false);
+  const [depositSuccessMsg, setDepositSuccessMsg] = useState('');
 
   // Deposit Adjustment Form (Owner / Admin)
   const [adjustAmountInput, setAdjustAmountInput] = useState('');
@@ -137,12 +146,19 @@ export default function LodgeTenantPaymentModal({
 
   useEffect(() => {
     if (isOpen) {
+      if (initialTab) setActiveTab(initialTab);
+      if (initialTarget) {
+        setPaymentTarget(initialTarget);
+        setPaymentMode('FULL');
+      }
+      setDepositSuccessMsg('');
+      setAdjustmentSuccessMsg('');
       fetchBookingFinancials();
       // Pre-fill suggested rent period
       const now = new Date();
       setAdjustPeriodInput(now.toLocaleString('default', { month: 'long', year: 'numeric' }));
     }
-  }, [isOpen, fetchBookingFinancials]);
+  }, [isOpen, initialTab, initialTarget, fetchBookingFinancials]);
 
   // Load Admin Settings
   useEffect(() => {
@@ -272,6 +288,42 @@ export default function LodgeTenantPaymentModal({
       alert(err.response?.data?.message || 'Payment submission failed. Please try again.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Add / Set Security Deposit (Owner / Admin)
+  const handleManageSecurityDeposit = async (e) => {
+    e.preventDefault();
+    const amt = parseFloat(depositAmountInput);
+    if (!amt || amt <= 0) {
+      return alert('Enter a valid security deposit amount greater than zero.');
+    }
+
+    setSubmittingDeposit(true);
+    setDepositSuccessMsg('');
+    try {
+      const res = await api.post('/lodge-payments/manage-deposit', {
+        bookingId: booking._id,
+        amount: amt,
+        mode: depositManageMode.toLowerCase(), // 'add' or 'set'
+        notes: depositNotesInput.trim()
+      });
+
+      const updatedVal = res.data?.booking?.securityDeposit || amt;
+      setDepositSuccessMsg(
+        depositManageMode === 'ADD'
+          ? `✓ Successfully added ₹${amt.toLocaleString()} to security deposit (New Total: ₹${updatedVal.toLocaleString()}).`
+          : `✓ Successfully set security deposit requirement to ₹${updatedVal.toLocaleString()}.`
+      );
+      setDepositAmountInput('');
+      setDepositNotesInput('');
+      await fetchBookingFinancials();
+
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update security deposit.');
+    } finally {
+      setSubmittingDeposit(false);
     }
   };
 
@@ -441,6 +493,20 @@ export default function LodgeTenantPaymentModal({
           >
             <CreditCard className="w-4 h-4" /> Pay Online / Cash
           </button>
+
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('MANAGE_DEPOSIT')}
+              className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+                activeTab === 'MANAGE_DEPOSIT'
+                  ? 'bg-emerald-600 text-white shadow-xs font-black'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" /> Manage Security Deposit
+            </button>
+          )}
 
           {isAdmin && (
             <button
@@ -677,6 +743,23 @@ export default function LodgeTenantPaymentModal({
                         Remaining dues for selection: <strong className="text-rose-600 font-poppins">₹{targetMaxDue.toLocaleString()}</strong>
                       </p>
                     </div>
+
+                  {paymentTarget === 'DEPOSIT' && (
+                    <div className="w-full bg-emerald-50 dark:bg-emerald-950/30 p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                        <div>
+                          <p className="font-bold text-emerald-900 dark:text-emerald-200">Security Deposit Settlement</p>
+                          <p className="text-[10px] text-emerald-700 dark:text-emerald-400">
+                            Total Required: ₹{depositData.original.toLocaleString()} • Paid: ₹{depositData.paid.toLocaleString()} • Available Balance: ₹{depositData.available.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="font-black text-rose-600 font-poppins bg-white dark:bg-slate-900 px-3 py-1 rounded-lg border border-emerald-200">
+                        Pending Due: ₹{depositData.remaining.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
 
                     <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
                       <button
@@ -952,6 +1035,208 @@ export default function LodgeTenantPaymentModal({
                 </div>
               )}
             </>
+          )}
+
+          {/* ═══════════ TAB: MANAGE SECURITY DEPOSIT (ADMIN) ═══════════ */}
+          {activeTab === 'MANAGE_DEPOSIT' && (
+            <div className="space-y-6">
+              {/* Header Box */}
+              <div className="bg-emerald-50 dark:bg-emerald-950/30 p-5 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                  <h3 className="font-black text-base">Client Security Deposit Control & Balances</h3>
+                </div>
+                <p className="text-xs leading-relaxed opacity-90">
+                  Manage the required security deposit for this booking. You can increment (add) or set the required security deposit amount. The client can pay this deposit online, and available balances can be monitored or adjusted against rent.
+                </p>
+              </div>
+
+              {/* 5-Card Deposit Metrics Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl shadow-2xs">
+                  <p className="text-[10px] font-black uppercase text-slate-400">Total Required</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white font-poppins mt-0.5">₹{depositData.original.toLocaleString()}</p>
+                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full mt-1.5 inline-block ${
+                    depositData.status === 'Fully Paid' ? 'bg-emerald-100 text-emerald-700' :
+                    depositData.status === 'Partially Paid' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {depositData.status}
+                  </span>
+                </div>
+
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl shadow-2xs">
+                  <p className="text-[10px] font-black uppercase text-slate-400">Paid by Client</p>
+                  <p className="text-base font-black text-emerald-600 font-poppins mt-0.5">₹{depositData.paid.toLocaleString()}</p>
+                  <p className="text-[9px] text-slate-400 mt-1 font-semibold">Verified Receipts</p>
+                </div>
+
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl shadow-2xs">
+                  <p className="text-[10px] font-black uppercase text-slate-400">Used for Rent</p>
+                  <p className="text-base font-black text-amber-600 font-poppins mt-0.5">₹{depositData.usedForRent.toLocaleString()}</p>
+                  <p className="text-[9px] text-slate-400 mt-1 font-semibold">{financials?.adjustments?.length || 0} Adjustments</p>
+                </div>
+
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl shadow-2xs border-2 border-emerald-300 dark:border-emerald-700">
+                  <p className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400">Available Balance</p>
+                  <p className="text-base font-black text-emerald-600 font-poppins mt-0.5">₹{depositData.available.toLocaleString()}</p>
+                  <p className="text-[9px] text-emerald-600 font-bold mt-1">Ready for Refund/Rent</p>
+                </div>
+
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl shadow-2xs border-2 border-rose-200 dark:border-rose-800">
+                  <p className="text-[10px] font-black uppercase text-rose-600">Pending Due</p>
+                  <p className="text-base font-black text-rose-600 font-poppins mt-0.5">₹{depositData.remaining.toLocaleString()}</p>
+                  <p className="text-[9px] text-rose-500 font-bold mt-1">Awaiting Payment</p>
+                </div>
+              </div>
+
+              {depositSuccessMsg && (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-800 flex items-center gap-2 animate-in fade-in">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span>{depositSuccessMsg}</span>
+                </div>
+              )}
+
+              {/* Add / Set Deposit Requirement Form */}
+              <form onSubmit={handleManageSecurityDeposit} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h4 className="font-black text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                      Update Deposit Requirement
+                    </h4>
+                    <p className="text-xs text-slate-400">Choose whether to add an additional amount or set an absolute total.</p>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setDepositManageMode('ADD')}
+                      className={`px-3 py-1.5 rounded-lg transition ${
+                        depositManageMode === 'ADD' ? 'bg-emerald-600 text-white font-black shadow-xs' : 'text-slate-600 dark:text-slate-300'
+                      }`}
+                    >
+                      ➕ Add to Existing
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDepositManageMode('SET')}
+                      className={`px-3 py-1.5 rounded-lg transition ${
+                        depositManageMode === 'SET' ? 'bg-emerald-600 text-white font-black shadow-xs' : 'text-slate-600 dark:text-slate-300'
+                      }`}
+                    >
+                      ✏️ Set Total Required
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {depositManageMode === 'ADD' ? 'Additional Deposit Amount to Add (₹) *' : 'New Total Security Deposit Required (₹) *'}
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-2.5 text-sm font-bold text-slate-400 font-poppins">₹</span>
+                      <input
+                        type="number"
+                        required
+                        placeholder={depositManageMode === 'ADD' ? 'e.g. 5000' : 'e.g. 15000'}
+                        value={depositAmountInput}
+                        onChange={(e) => setDepositAmountInput(e.target.value)}
+                        className="w-full pl-8 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    {/* Quick Preset Chips */}
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {[1000, 2000, 5000, 10000].map(val => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setDepositAmountInput(String(val))}
+                          className="text-[10px] bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-1 rounded-lg font-bold transition"
+                        >
+                          +{val.toLocaleString()}
+                        </button>
+                      ))}
+                      {rentData.due > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setDepositAmountInput(String(rentData.due))}
+                          className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg font-bold transition"
+                        >
+                          1 Mo Rent (₹{rentData.due.toLocaleString()})
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Reason / Notes (Optional)
+                    </label>
+                    <textarea
+                      rows="2"
+                      placeholder="e.g. Additional security deposit for AC & furniture installation"
+                      value={depositNotesInput}
+                      onChange={(e) => setDepositNotesInput(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                  <button
+                    type="submit"
+                    disabled={submittingDeposit || !depositAmountInput}
+                    className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-8 py-3 rounded-xl font-black text-xs shadow-md transition-all flex items-center justify-center gap-2"
+                  >
+                    {submittingDeposit ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                    <span>{depositManageMode === 'ADD' ? 'Add to Security Deposit' : 'Update Total Security Deposit'}</span>
+                  </button>
+
+                  {depositData.remaining > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => { setActiveTab('PAY'); setPaymentTarget('DEPOSIT'); setPaymentMode('FULL'); }}
+                      className="w-full sm:w-auto bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-6 py-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span>Collect / Pay This Deposit (₹{depositData.remaining.toLocaleString()})</span>
+                    </button>
+                  )}
+                </div>
+              </form>
+
+              {/* Deposit Adjustments & Payments Trail */}
+              <div className="bg-slate-50 dark:bg-slate-800/80 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">
+                    Deposit Balances & Settlement Summary
+                  </h4>
+                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md">
+                    Net Available: ₹{depositData.available.toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700">
+                    <p className="font-bold text-slate-800 dark:text-white mb-1">Deposit Payment Status</p>
+                    <p className="text-slate-500 text-[11px]">
+                      Required: <strong className="text-slate-800 dark:text-white">₹{depositData.original.toLocaleString()}</strong> • 
+                      Collected: <strong className="text-emerald-600">₹{depositData.paid.toLocaleString()}</strong> • 
+                      Unpaid: <strong className="text-rose-600">₹{depositData.remaining.toLocaleString()}</strong>
+                    </p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700">
+                    <p className="font-bold text-slate-800 dark:text-white mb-1">Rent Adjustment Status</p>
+                    <p className="text-slate-500 text-[11px]">
+                      Used towards Rent: <strong className="text-amber-600">₹{depositData.usedForRent.toLocaleString()}</strong> • 
+                      Remaining Available: <strong className="text-emerald-600">₹{depositData.available.toLocaleString()}</strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* ═══════════ TAB 2: ADJUST RENT FROM DEPOSIT (OWNER) ═══════════ */}
