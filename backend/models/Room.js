@@ -14,4 +14,8 @@ const roomSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
+// Performance indexes for sub-second query lookups
+roomSchema.index({ lodgeId: 1, isActive: 1 });
+roomSchema.index({ lodgeId: 1, price: 1 });
+
 module.exports = mongoose.model('Room', roomSchema);

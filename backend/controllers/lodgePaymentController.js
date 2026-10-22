@@ -410,7 +410,6 @@ exports.getBookingFinancials = async (req, res) => {
     // Deposit Adjustments already recorded
     const depositAdjustments = Array.isArray(booking.depositAdjustments) ? booking.depositAdjustments : [];
     const totalDepositAdjusted = depositAdjustments.reduce((sum, adj) => sum + (parseFloat(adj.amount) || 0), 0);
-    const availableDeposit = Math.max(0, originalDeposit - totalDepositAdjusted);
 
     // Extra Charges
     const extraCharges = Array.isArray(booking.extraCharges) ? booking.extraCharges : [];
@@ -423,12 +422,25 @@ exports.getBookingFinancials = async (req, res) => {
 
     let rentPaid = 0;
     let depositPaid = 0;
+    let rentRefunded = 0;
+    let depositRefunded = 0;
+    let totalRefunded = 0;
     const extraChargesPaidMap = {};
+    const refundsList = [];
 
     validPayments.forEach(p => {
       const type = (p.paymentType || '').toLowerCase();
       const amt = parseFloat(p.amount) || 0;
-      if (type.includes('rent') && !type.includes('adjustment')) {
+      if (type.includes('refund')) {
+        totalRefunded += amt;
+        refundsList.push(p);
+        const cat = (p.chargeCategory || p.notes || '').toLowerCase();
+        if (cat.includes('deposit')) {
+          depositRefunded += amt;
+        } else {
+          rentRefunded += amt;
+        }
+      } else if (type.includes('rent') && !type.includes('adjustment')) {
         rentPaid += amt;
       } else if (type.includes('deposit') && !type.includes('adjustment')) {
         depositPaid += amt;
@@ -440,10 +452,14 @@ exports.getBookingFinancials = async (req, res) => {
       }
     });
 
-    // Effective rent paid includes deposit adjustments applied to rent
-    const effectiveRentSettled = rentPaid + totalDepositAdjusted;
+    // Net values after accounting for refunds
+    const netRentPaid = Math.max(0, rentPaid - rentRefunded);
+    const netDepositPaid = Math.max(0, depositPaid - depositRefunded);
+    const effectiveRentSettled = netRentPaid + totalDepositAdjusted;
     const remainingRent = Math.max(0, rentDue - effectiveRentSettled);
 
+    // Available deposit held after adjustments and refunds
+    const availableDeposit = Math.max(0, originalDeposit - totalDepositAdjusted - depositRefunded);
     const remainingDeposit = Math.max(0, originalDeposit - depositPaid);
 
     // Calculate extra charges items
@@ -470,6 +486,7 @@ exports.getBookingFinancials = async (req, res) => {
     // Overall Totals
     const overallTotalDue = rentDue + originalDeposit + totalExtraDue;
     const overallTotalPaid = rentPaid + depositPaid + totalExtraPaid;
+    const netOverallPaid = Math.max(0, overallTotalPaid - totalRefunded);
     const overallTotalRemaining = remainingRent + remainingDeposit + totalExtraRemaining;
 
     // Overall Status
@@ -486,6 +503,10 @@ exports.getBookingFinancials = async (req, res) => {
         agreementNumber: booking.agreementNumber,
         checkIn: booking.checkIn,
         checkOut: booking.checkOut,
+        actualCheckOut: booking.actualCheckOut,
+        checkoutNotes: booking.checkoutNotes,
+        checkedOutBy: booking.checkedOutBy,
+        status: booking.status,
         tenantName: booking.userId?.name || 'Valued Tenant',
         tenantPhone: booking.userId?.phone || booking.userId?.phoneNumber,
         tenantEmail: booking.userId?.email,
@@ -497,6 +518,8 @@ exports.getBookingFinancials = async (req, res) => {
         rent: {
           due: rentDue,
           paid: rentPaid,
+          refunded: rentRefunded,
+          netPaid: netRentPaid,
           adjusted: totalDepositAdjusted,
           effectiveSettled: effectiveRentSettled,
           remaining: remainingRent,
@@ -506,6 +529,8 @@ exports.getBookingFinancials = async (req, res) => {
           original: originalDeposit,
           due: originalDeposit,
           paid: depositPaid,
+          refunded: depositRefunded,
+          netPaid: netDepositPaid,
           usedForRent: totalDepositAdjusted,
           available: availableDeposit,
           remaining: remainingDeposit,
@@ -522,11 +547,14 @@ exports.getBookingFinancials = async (req, res) => {
       overall: {
         totalDue: overallTotalDue,
         totalPaid: overallTotalPaid,
+        totalRefunded: totalRefunded,
+        netPaid: netOverallPaid,
         totalAdjusted: totalDepositAdjusted,
         totalRemaining: overallTotalRemaining,
         status: overallStatus
       },
       adjustments: depositAdjustments,
+      refunds: refundsList,
       payments
     });
   } catch (error) {
@@ -761,3 +789,214 @@ exports.manageSecurityDeposit = async (req, res) => {
     res.status(500).json({ message: 'Failed to update security deposit', error: error.message });
   }
 };
+
+// Record Admin Payment Directly
+exports.recordAdminPayment = async (req, res) => {
+  try {
+    const {
+      bookingId,
+      amount,
+      paymentType = 'Rent',
+      chargeCategory = 'Rent',
+      method = 'Cash',
+      referenceId,
+      paymentDate,
+      notes
+    } = req.body;
+
+    const finalAmount = parseFloat(amount);
+    if (!bookingId || isNaN(finalAmount) || finalAmount <= 0) {
+      return res.status(400).json({ message: 'Valid booking ID and payment amount greater than zero are required.' });
+    }
+
+    const booking = await BookingLodge.findById(bookingId).populate('roomId').populate('userId');
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+
+    const receiptNumber = `RCP-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+    const effectiveDate = paymentDate ? new Date(paymentDate) : new Date();
+
+    const payment = await Payment.create({
+      customerId: booking.userId?._id || booking.userId,
+      tenantName: booking.userId?.name || 'Resident',
+      name: booking.userId?.name || 'Resident',
+      amount: finalAmount,
+      method: method || 'Cash',
+      referenceId: referenceId || `ADMIN-${Date.now().toString(36).toUpperCase()}`,
+      transactionReference: referenceId || `ADMIN-${Date.now()}`,
+      status: 'VERIFIED',
+      bookingId: booking._id,
+      roomId: booking.roomId?._id || booking.roomId,
+      paymentType,
+      chargeCategory: chargeCategory || paymentType,
+      billingPeriodStart: booking.checkIn,
+      billingPeriodEnd: booking.checkOut,
+      receiptNumber,
+      paymentDate: effectiveDate,
+      notes: notes || undefined,
+      verifiedByName: req.user.name || 'Administrator',
+      verifiedBy: req.user._id,
+      verifiedAt: new Date(),
+      auditLog: [{
+        action: 'ADMIN_RECORDED',
+        performedBy: req.user.name || 'Administrator',
+        timestamp: new Date(),
+        notes: `Direct payment of ₹${finalAmount.toLocaleString()} recorded by admin via ${method}. Type: ${paymentType}. Ref: ${referenceId || 'N/A'}. Notes: ${notes || 'None'}`
+      }]
+    });
+
+    const io = socketUtil.getIO();
+    if (io) {
+      io.emit('lodge-payment-submitted', payment);
+      io.emit('lodge-payment-updated', payment);
+      io.emit('payment-status-changed', payment);
+    }
+
+    res.status(201).json({
+      message: `Payment of ₹${finalAmount.toLocaleString()} recorded successfully.`,
+      payment
+    });
+  } catch (error) {
+    console.error('recordAdminPayment error:', error);
+    res.status(500).json({ message: 'Failed to record payment', error: error.message });
+  }
+};
+
+// Correct Payment Record with Mandatory Reason & Audit History
+exports.correctPayment = async (req, res) => {
+  try {
+    const paymentId = req.params.paymentId || req.body.paymentId;
+    const { amount, paymentType, chargeCategory, method, referenceId, paymentDate, reason, notes } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'A correction reason is strictly required.' });
+    }
+
+    const payment = await Payment.findById(paymentId);
+    if (!payment) {
+      return res.status(404).json({ message: 'Payment record not found.' });
+    }
+
+    const oldValues = {
+      amount: payment.amount,
+      paymentType: payment.paymentType,
+      chargeCategory: payment.chargeCategory,
+      method: payment.method,
+      referenceId: payment.referenceId,
+      paymentDate: payment.paymentDate,
+      notes: payment.notes
+    };
+
+    if (amount !== undefined && !isNaN(parseFloat(amount))) {
+      payment.amount = parseFloat(amount);
+    }
+    if (paymentType) payment.paymentType = paymentType;
+    if (chargeCategory) payment.chargeCategory = chargeCategory;
+    if (method) payment.method = method;
+    if (referenceId !== undefined) payment.referenceId = referenceId;
+    if (paymentDate) payment.paymentDate = new Date(paymentDate);
+    if (notes !== undefined) payment.notes = notes;
+
+    if (!Array.isArray(payment.auditLog)) {
+      payment.auditLog = [];
+    }
+    payment.auditLog.push({
+      action: 'CORRECTED',
+      performedBy: req.user.name || 'Administrator',
+      timestamp: new Date(),
+      notes: `Corrected by Admin. Reason: ${reason.trim()}. Previous: [₹${oldValues.amount}, ${oldValues.paymentType}, ${oldValues.method}, Ref: ${oldValues.referenceId || 'N/A'}]. New: [₹${payment.amount}, ${payment.paymentType}, ${payment.method}, Ref: ${payment.referenceId || 'N/A'}]`
+    });
+
+    await payment.save();
+
+    const io = socketUtil.getIO();
+    if (io) {
+      io.emit('lodge-payment-updated', payment);
+      io.emit('payment-status-changed', payment);
+    }
+
+    res.json({
+      message: 'Payment record corrected successfully.',
+      payment
+    });
+  } catch (error) {
+    console.error('correctPayment error:', error);
+    res.status(500).json({ message: 'Failed to correct payment record', error: error.message });
+  }
+};
+
+// Record Refund for a Booking (e.g. Deposit or Rent Refund)
+exports.recordRefund = async (req, res) => {
+  try {
+    const {
+      bookingId,
+      amount,
+      refundType = 'Security Deposit Refund',
+      method = 'Bank Transfer',
+      referenceId,
+      reason,
+      notes
+    } = req.body;
+
+    const refundAmt = parseFloat(amount);
+    if (!bookingId || isNaN(refundAmt) || refundAmt <= 0) {
+      return res.status(400).json({ message: 'Please specify a valid booking ID and refund amount greater than zero.' });
+    }
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'A reason for the refund is required.' });
+    }
+
+    const booking = await BookingLodge.findById(bookingId).populate('roomId').populate('userId');
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+
+    const receiptNumber = `RFD-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+
+    const refundPayment = await Payment.create({
+      customerId: booking.userId?._id || booking.userId,
+      tenantName: booking.userId?.name || 'Resident',
+      name: booking.userId?.name || 'Resident',
+      amount: refundAmt,
+      method: method || 'Bank Transfer',
+      referenceId: referenceId || `RFD-${Date.now().toString(36).toUpperCase()}`,
+      transactionReference: referenceId || `RFD-${Date.now()}`,
+      status: 'VERIFIED',
+      bookingId: booking._id,
+      roomId: booking.roomId?._id || booking.roomId,
+      paymentType: 'Refund',
+      chargeCategory: refundType || 'Security Deposit Refund',
+      billingPeriodStart: booking.checkIn,
+      billingPeriodEnd: booking.checkOut,
+      receiptNumber,
+      paymentDate: new Date(),
+      notes: `Refund issued: ${reason.trim()}. ${notes ? `Notes: ${notes}` : ''}`,
+      verifiedByName: req.user.name || 'Administrator',
+      verifiedBy: req.user._id,
+      verifiedAt: new Date(),
+      auditLog: [{
+        action: 'REFUND_ISSUED',
+        performedBy: req.user.name || 'Administrator',
+        timestamp: new Date(),
+        notes: `Refund of ₹${refundAmt.toLocaleString()} issued via ${method}. Type: ${refundType}. Reason: ${reason.trim()}. Ref: ${referenceId || 'N/A'}`
+      }]
+    });
+
+    const io = socketUtil.getIO();
+    if (io) {
+      io.emit('lodge-payment-submitted', refundPayment);
+      io.emit('lodge-payment-updated', refundPayment);
+      io.emit('payment-status-changed', refundPayment);
+    }
+
+    res.status(201).json({
+      message: `Refund of ₹${refundAmt.toLocaleString()} recorded successfully.`,
+      refund: refundPayment
+    });
+  } catch (error) {
+    console.error('recordRefund error:', error);
+    res.status(500).json({ message: 'Failed to record refund', error: error.message });
+  }
+};
+

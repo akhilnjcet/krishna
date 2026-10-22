@@ -48,19 +48,81 @@ api.interceptors.response.use(
     }
 );
 
-const cache = {};
-const originalGet = api.get;
-api.get = function (url, config) {
-    if (url === '/settings/public') {
-        if (cache[url]) {
-            return Promise.resolve(cache[url]);
-        }
-        return originalGet.call(this, url, config).then(res => {
-            cache[url] = res;
-            return res;
-        });
-    }
-    return originalGet.call(this, url, config);
+const cache = new Map();
+const pendingRequests = new Map();
+
+// URLs that are safe to cache with short TTLs
+const CACHE_CONFIG = {
+    '/settings/public': 60 * 1000,           // 1 minute
+    '/lodge': 30 * 1000,                     // 30 seconds
+    '/lodge-billing/settings': 30 * 1000,    // 30 seconds
+    '/lodge-billing/dashboard': 8 * 1000,    // 8 seconds
+    '/lodge/sys/stats': 8 * 1000             // 8 seconds
 };
+
+export const clearApiCache = (urlPattern) => {
+    if (!urlPattern) {
+        cache.clear();
+        return;
+    }
+    for (const key of cache.keys()) {
+        if (key.includes(urlPattern)) cache.delete(key);
+    }
+};
+
+api.clearCache = clearApiCache;
+
+const originalGet = api.get;
+
+api.get = function (url, config = {}) {
+    // If request explicitly asks to skip cache (e.g. manual refresh)
+    if (config.skipCache) {
+        cache.delete(url);
+        return originalGet.call(this, url, config);
+    }
+
+    const ttl = CACHE_CONFIG[url];
+    const now = Date.now();
+
+    // 1. Check TTL cache
+    if (ttl && cache.has(url)) {
+        const { timestamp, data } = cache.get(url);
+        if (now - timestamp < ttl) {
+            return Promise.resolve(data);
+        }
+        cache.delete(url);
+    }
+
+    // 2. Inflight request deduplication: if exact request is already pending, return it!
+    const inflightKey = url + (config.params ? JSON.stringify(config.params) : '');
+    if (pendingRequests.has(inflightKey)) {
+        return pendingRequests.get(inflightKey);
+    }
+
+    // 3. Execute request and track inflight
+    const promise = originalGet.call(this, url, config)
+        .then(res => {
+            if (ttl) {
+                cache.set(url, { timestamp: Date.now(), data: res });
+            }
+            return res;
+        })
+        .finally(() => {
+            pendingRequests.delete(inflightKey);
+        });
+
+    pendingRequests.set(inflightKey, promise);
+    return promise;
+};
+
+// Auto-invalidate cache on mutation
+['post', 'put', 'delete', 'patch'].forEach(method => {
+    const orig = api[method];
+    api[method] = function (url, data, config) {
+        if (url.includes('/lodge')) api.clearCache('/lodge');
+        if (url.includes('/settings')) api.clearCache('/settings');
+        return orig.call(this, url, data, config);
+    };
+});
 
 export default api;

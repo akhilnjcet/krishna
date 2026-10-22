@@ -48,4 +48,11 @@ const paymentSchema = new mongoose.Schema({
     }]
 });
 
+// Performance indexes for sub-second query lookups
+paymentSchema.index({ bookingId: 1, status: 1 });
+paymentSchema.index({ customerId: 1, createdAt: -1 });
+paymentSchema.index({ status: 1, createdAt: -1 });
+paymentSchema.index({ roomId: 1 });
+paymentSchema.index({ paymentRequestId: 1 });
+
 module.exports = mongoose.model('Payment', paymentSchema);

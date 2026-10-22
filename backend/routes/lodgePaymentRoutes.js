@@ -23,4 +23,9 @@ router.post('/manage-deposit', protect, lodgePaymentController.manageSecurityDep
 router.post('/adjust-deposit', protect, lodgePaymentController.adjustRentFromDeposit);
 router.post('/add-extra-charge', protect, lodgePaymentController.addExtraCharge);
 
+// Admin Direct Payment, Corrections & Refunds
+router.post('/record-admin-payment', protect, admin, lodgePaymentController.recordAdminPayment);
+router.put('/payments/:paymentId/correct', protect, admin, lodgePaymentController.correctPayment);
+router.post('/record-refund', protect, admin, lodgePaymentController.recordRefund);
+
 module.exports = router;

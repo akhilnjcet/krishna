@@ -120,15 +120,17 @@ exports.getBills = async (req, res) => {
     const parsedLimit = parseInt(limit);
     const skip = (parsedPage - 1) * parsedLimit;
 
-    const bills = await LodgeRentBill.find(query)
-      .populate('roomId')
-      .populate('userId', 'name phone email address')
-      .populate('receivedBy', 'name email')
-      .sort(sortOption)
-      .skip(skip)
-      .limit(parsedLimit);
-
-    const total = await LodgeRentBill.countDocuments(query);
+    const [bills, total] = await Promise.all([
+      LodgeRentBill.find(query)
+        .populate('roomId', 'roomNumber type price building floor')
+        .populate('userId', 'name phone email address')
+        .populate('receivedBy', 'name email')
+        .sort(sortOption)
+        .skip(skip)
+        .limit(parsedLimit)
+        .lean(),
+      LodgeRentBill.countDocuments(query)
+    ]);
 
     res.status(200).json({
       bills,
@@ -205,34 +207,38 @@ exports.toggleArchiveBill = async (req, res) => {
 // Fetch Dashboard Analytics
 exports.getDashboardStats = async (req, res) => {
   try {
-    const totalRooms = await Room.countDocuments({ isActive: true });
-    
-    // Find active bookings count
-    const occupiedRooms = await BookingLodge.countDocuments({ status: 'active' });
-    const vacantRooms = Math.max(0, totalRooms - occupiedRooms);
-
-    // Bills status counts
-    const billsGenerated = await LodgeRentBill.countDocuments({ archived: false });
-    const paidBills = await LodgeRentBill.countDocuments({ status: 'Paid', archived: false });
-    const dueBills = await LodgeRentBill.countDocuments({ status: 'Due', archived: false });
-
-    // Monthly revenue totals
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0,0,0,0);
 
-    const paidBillsThisMonth = await LodgeRentBill.find({
-      status: 'Paid',
-      paymentDate: { $gte: startOfMonth },
-      archived: false
-    });
-    const monthlyRevenue = paidBillsThisMonth.reduce((acc, b) => acc + b.totalAmount, 0);
+    const [
+      totalRooms,
+      occupiedRooms,
+      billsGenerated,
+      paidBills,
+      dueBills,
+      paidBillsThisMonth,
+      outstandingBills
+    ] = await Promise.all([
+      Room.countDocuments({ isActive: true }),
+      BookingLodge.countDocuments({ status: 'active' }),
+      LodgeRentBill.countDocuments({ archived: false }),
+      LodgeRentBill.countDocuments({ status: 'Paid', archived: false }),
+      LodgeRentBill.countDocuments({ status: 'Due', archived: false }),
+      LodgeRentBill.find({
+        status: 'Paid',
+        paymentDate: { $gte: startOfMonth },
+        archived: false
+      }).select('totalAmount').lean(),
+      LodgeRentBill.find({
+        status: 'Due',
+        archived: false
+      }).select('outstandingAmount').lean()
+    ]);
 
-    const outstandingBills = await LodgeRentBill.find({
-      status: 'Due',
-      archived: false
-    });
-    const outstandingAmount = outstandingBills.reduce((acc, b) => acc + b.outstandingAmount, 0);
+    const vacantRooms = Math.max(0, totalRooms - occupiedRooms);
+    const monthlyRevenue = paidBillsThisMonth.reduce((acc, b) => acc + (b.totalAmount || 0), 0);
+    const outstandingAmount = outstandingBills.reduce((acc, b) => acc + (b.outstandingAmount || 0), 0);
 
     res.status(200).json({
       totalRooms,

@@ -6,53 +6,7 @@ const { listarArquivosDaPasta, extrairFolderId } = require('../utils/driveHelper
 
 router.get('/lodge/:lodgeId', async (req, res) => {
   try {
-    const rooms = await Room.find({ lodgeId: req.params.lodgeId, isActive: true });
-    
-    // Auto-expand any Google Drive folder links saved as room photos
-    for (let room of rooms) {
-        let roomUpdated = false;
-        
-        const newInterior = [];
-        for (const img of room.interiorPhotos || []) {
-            const folderId = extrairFolderId(img.url);
-            if (folderId && img.url.includes('/folders/')) {
-                try {
-                    const files = await listarArquivosDaPasta(folderId);
-                    files.forEach(f => newInterior.push({ url: f, publicId: 'drive_link' }));
-                    roomUpdated = true;
-                } catch (err) {
-                    console.error('Failed to auto-expand folder:', folderId, err);
-                    newInterior.push(img);
-                }
-            } else {
-                newInterior.push(img);
-            }
-        }
-        
-        const newExterior = [];
-        for (const img of room.exteriorPhotos || []) {
-            const folderId = extrairFolderId(img.url);
-            if (folderId && img.url.includes('/folders/')) {
-                try {
-                    const files = await listarArquivosDaPasta(folderId);
-                    files.forEach(f => newExterior.push({ url: f, publicId: 'drive_link' }));
-                    roomUpdated = true;
-                } catch (err) {
-                    console.error('Failed to auto-expand folder:', folderId, err);
-                    newExterior.push(img);
-                }
-            } else {
-                newExterior.push(img);
-            }
-        }
-        
-        if (roomUpdated) {
-            room.interiorPhotos = newInterior;
-            room.exteriorPhotos = newExterior;
-            await room.save();
-        }
-    }
-    
+    const rooms = await Room.find({ lodgeId: req.params.lodgeId, isActive: true }).lean();
     res.json(rooms);
   } catch (err) {
     res.status(500).json({ message: 'Server Error' });

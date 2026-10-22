@@ -247,16 +247,16 @@ export default function LodgeAdminPaymentVerification() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
                     <button
                       onClick={() => handleApprove(p)}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-emerald-600/20 flex items-center gap-1.5"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 sm:px-5 py-2.5 rounded-xl text-xs font-black shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 touch-manipulation min-h-[40px]"
                     >
                       <CheckCircle2 className="w-4 h-4" /> Approve
                     </button>
                     <button
                       onClick={() => setRejectModal({ show: true, payment: p, reason: '' })}
-                      className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2.5 rounded-xl text-xs font-bold border border-rose-100 flex items-center gap-1.5"
+                      className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2.5 rounded-xl text-xs font-bold border border-rose-100 flex items-center justify-center gap-1.5 touch-manipulation min-h-[40px]"
                     >
                       <XCircle className="w-4 h-4" /> Reject
                     </button>
@@ -305,9 +305,47 @@ export default function LodgeAdminPaymentVerification() {
 
       {/* 2. All Payments */}
       {activeTab === 'all' && (
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
-          <h3 className="text-lg font-black text-slate-900 dark:text-white">Complete Lodge Payment Ledger</h3>
-          <div className="overflow-x-auto">
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
+          <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">Complete Lodge Payment Ledger</h3>
+          
+          {/* Mobile Stacked Records (< 640px) */}
+          <div className="block sm:hidden space-y-3">
+            {payments.map(p => (
+              <div key={p._id} className="p-3.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 text-xs space-y-2">
+                <div className="flex justify-between items-start gap-2">
+                  <div>
+                    <p className="font-bold text-slate-900 dark:text-white">
+                      {p.tenantName || p.customerId?.name || 'Tenant'}
+                    </p>
+                    <p className="text-[10px] text-slate-400">Room #{p.roomId?.roomNumber || '101'}</p>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                    p.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700' :
+                    p.status === 'REJECTED' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'
+                  }`}>
+                    {p.status}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-1 border-t border-slate-200/60 dark:border-slate-700">
+                  <div>
+                    <span className="font-black text-indigo-600 text-sm font-poppins">₹{p.amount}</span>
+                    <span className="text-[10px] text-slate-400 ml-1.5 font-medium">{p.method} {p.referenceId ? `• ${p.referenceId}` : ''}</span>
+                  </div>
+                  {(p.status === 'VERIFIED' || p.status === 'Completed') && (
+                    <button 
+                      onClick={() => generateLodgeReceiptPDF(p)} 
+                      className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center gap-1 font-bold text-[10px]"
+                    >
+                      <Download className="w-3.5 h-3.5" /> PDF
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop & Tablet Table (sm:block) */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 dark:bg-slate-800 text-slate-400 font-black uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800">
                 <tr>

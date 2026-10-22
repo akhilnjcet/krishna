@@ -150,30 +150,29 @@ const LodgeBillingManager = () => {
     const loadDashboardData = async () => {
         setLoadingLive(true);
         try {
-            // Get stats
-            const statsRes = await api.get('/lodge-billing/dashboard');
+            // Concurrently fetch all independent dashboard endpoints
+            const [statsRes, settingsRes, bookingsRes, billsRes, lodgesRes] = await Promise.all([
+                api.get('/lodge-billing/dashboard'),
+                api.get('/lodge-billing/settings'),
+                api.get('/bookings/all'),
+                api.get('/lodge-billing/bills?limit=1000'),
+                api.get('/lodge')
+            ]);
+
             setStats(statsRes.data);
-
-            // Get settings
-            const settingsRes = await api.get('/lodge-billing/settings');
             const activeSettings = settingsRes.data || settings;
-
-            // Get all bookings
-            const bookingsRes = await api.get('/bookings/all');
             const allBookings = bookingsRes.data || [];
             setBookings(allBookings);
-
-            // Get all bills
-            const billsRes = await api.get('/lodge-billing/bills?limit=1000');
             const allBills = billsRes.data?.bills || [];
             setBills(allBills);
 
-            // Fetch Lodges and Rooms
-            const lodgesRes = await api.get('/lodge');
+            // Fetch rooms for active lodge
+            let allRooms = [];
             if (lodgesRes.data && lodgesRes.data.length > 0) {
                 const lodgeId = lodgesRes.data[0]._id;
                 const roomsRes = await api.get(`/rooms/lodge/${lodgeId}`);
-                const allRooms = roomsRes.data || [];
+                allRooms = roomsRes.data || [];
+            }
 
                 // Map and calculate properties for live dashboard
                 const computedRooms = allRooms.map((room, idx) => {
@@ -281,7 +280,6 @@ const LodgeBillingManager = () => {
                 });
 
                 setRooms(computedRooms);
-            }
         } catch (err) {
             console.error('Failed to load dashboard:', err);
         } finally {
@@ -686,18 +684,18 @@ const LodgeBillingManager = () => {
     const previewTotals = generatingBillRoom ? calculateTotals() : { grandTotal: 0, taxesTotal: 0, discountAmt: 0, advanceUsed: 0, advanceRemaining: 0 };
 
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-slate-50 dark:bg-slate-800 min-h-screen relative font-sans print:p-0 print:bg-white dark:bg-slate-900">
+        <div className="p-3 sm:p-5 md:p-8 pb-24 sm:pb-12 space-y-6 sm:space-y-8 bg-slate-50 dark:bg-slate-800 min-h-screen relative font-sans print:p-0 print:bg-white dark:bg-slate-900 overflow-x-hidden">
             
             {/* Header Banner */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl print:hidden">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl print:hidden">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Live Room Billing Dashboard</h1>
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Live Room Billing Dashboard</h1>
                     <p className="text-slate-500 dark:text-slate-400 font-medium">Real-time building accounts, live room allocation status, utility settles, and reminders dispatch console.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={loadDashboardData}
-                        className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-indigo-600 rounded-2xl border border-slate-200 dark:border-slate-700 transition-colors flex items-center gap-2 font-bold text-xs uppercase"
+                        className="min-h-[40px] px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-indigo-600 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 transition-colors flex items-center justify-center gap-2 font-bold text-xs uppercase touch-manipulation"
                     >
                         <RefreshCw className={`w-4 h-4 ${loadingLive ? 'animate-spin' : ''}`} /> Refresh
                     </button>
@@ -705,17 +703,17 @@ const LodgeBillingManager = () => {
             </div>
 
             {/* Quick Tabs Menu */}
-            <div className="flex flex-wrap gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 w-fit print:hidden">
+            <div className="flex overflow-x-auto no-scrollbar gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 w-full sm:w-fit print:hidden max-w-full pb-1">
                 <button
                     onClick={() => setActiveTab('dashboard')}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'dashboard' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap min-h-[40px] flex items-center shrink-0 ${activeTab === 'dashboard' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                 >
                     <LayoutDashboard className="w-4 h-4 inline-block mr-1.5 -mt-0.5" /> Dashboard Board
                 </button>
                 {isAdmin && (
                     <button
                         onClick={() => setActiveTab('verifications')}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'verifications' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap min-h-[40px] flex items-center shrink-0 ${activeTab === 'verifications' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                     >
                         <ShieldCheck className="w-4 h-4 inline-block mr-1.5 -mt-0.5" /> Payment Verifications
                     </button>
@@ -723,7 +721,7 @@ const LodgeBillingManager = () => {
                 {isAdmin && (
                     <button
                         onClick={() => setActiveTab('settings')}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'settings' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap min-h-[40px] flex items-center shrink-0 ${activeTab === 'settings' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                     >
                         <Settings className="w-4 h-4 inline-block mr-1.5 -mt-0.5" /> General Settings
                     </button>
@@ -759,7 +757,7 @@ const LodgeBillingManager = () => {
                 <div className="space-y-8 print:hidden">
                     
                     {/* Summary Widgets */}
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                         {[
                             { label: 'Total Rooms', value: stats.totalRooms, desc: 'Registered rooms' },
                             { label: 'Occupied Units', value: stats.occupiedRooms, desc: 'Live leases' },
@@ -855,8 +853,94 @@ const LodgeBillingManager = () => {
                             <h3 className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-tight">Live Room Billing Registry</h3>
                         </div>
 
+                        {/* Mobile Stacked Cards View */}
+                        <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800 p-3 space-y-3">
+                            {sortedRooms.map(room => (
+                                <div key={room._id} className="bg-slate-50/80 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-700 space-y-3">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="font-black text-slate-900 dark:text-white text-base">Room {room.number}</h4>
+                                                <span className="text-[10px] uppercase font-bold text-slate-500 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                                                    {room.type}
+                                                </span>
+                                            </div>
+                                            <p className="font-bold text-slate-800 dark:text-slate-200 text-xs mt-1">{room.occupantName}</p>
+                                            {room.phone !== 'N/A' && (
+                                                <a href={`tel:${room.phone}`} className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold flex items-center gap-1 mt-0.5">
+                                                    <Phone className="w-3 h-3" /> {room.phone}
+                                                </a>
+                                            )}
+                                        </div>
+                                        <span className={`text-[9px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider shrink-0 ${
+                                            room.paymentBadge === 'Paid' || room.paymentBadge === 'Advance Paid' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                                            room.paymentBadge === 'Upcoming' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                                            room.paymentBadge === 'Overdue' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                            'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                                        }`}>
+                                            {room.paymentBadge}
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 text-xs bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                        <div>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase">Next Due</p>
+                                            <p className="font-bold text-slate-700 dark:text-slate-300">{room.nextBillDate}</p>
+                                            <span className={`text-[10px] font-bold ${room.daysRemaining < 0 ? 'text-rose-600' : room.daysRemaining === 0 ? 'text-amber-600' : 'text-slate-500'}`}>
+                                                {room.daysRemainingText}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase">Rent Dues / Adv</p>
+                                            {room.outstandingAmt > 0 ? (
+                                                <p className="font-black text-rose-600">₹ {room.outstandingAmt}</p>
+                                            ) : room.advanceBalance > 0 ? (
+                                                <p className="font-black text-emerald-600">Adv: ₹ {room.advanceBalance}</p>
+                                            ) : (
+                                                <p className="font-bold text-slate-400">Clear</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 pt-1">
+                                        <button 
+                                            onClick={() => setSelectedRoomDetail(room)}
+                                            className="min-h-[40px] px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition touch-manipulation"
+                                        >
+                                            <Eye className="w-4 h-4 text-slate-500" /> Details
+                                        </button>
+                                        {room.occupancyStatus === 'occupied' && (
+                                            <>
+                                                <button 
+                                                    onClick={() => handleOpenBillDialog(room)}
+                                                    className="min-h-[40px] px-3 py-2 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-600 dark:text-indigo-400 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition touch-manipulation"
+                                                >
+                                                    <Receipt className="w-4 h-4" /> Bill
+                                                </button>
+                                                <button 
+                                                    onClick={() => setCollectingAdvanceRoom(room)}
+                                                    className="min-h-[40px] px-3 py-2 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 text-teal-600 dark:text-teal-400 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition touch-manipulation"
+                                                >
+                                                    <CreditCard className="w-4 h-4" /> Advance
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleSendReminder('WhatsApp', room)}
+                                                    className="min-h-[40px] px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition touch-manipulation col-span-2 sm:col-span-1"
+                                                >
+                                                    <Share2 className="w-4 h-4" /> WhatsApp
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                            {sortedRooms.length === 0 && (
+                                <p className="text-center py-8 text-xs text-slate-400 uppercase font-bold tracking-wider">No rooms match filter criteria</p>
+                            )}
+                        </div>
+
                         {/* Desktop Table View */}
-                        <div className="overflow-x-auto">
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left border-collapse text-[11px] font-semibold">
                                 <thead>
                                     <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -1094,8 +1178,73 @@ const LodgeBillingManager = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-[2rem] overflow-hidden shadow-xl">
-                            <div className="overflow-x-auto">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-xl">
+                            {/* Mobile Stacked Verifications View */}
+                            <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800 p-3 space-y-3">
+                                {filteredVerifications.map((v) => (
+                                    <div key={v._id} className="bg-slate-50/80 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-700 space-y-3">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <p className="font-black text-slate-900 dark:text-white text-sm">{v.tenantName || v.name || v.customerId?.name || 'Unknown Guest'}</p>
+                                                <p className="text-[10px] text-slate-500">Room ID: {v.roomId?._id || v.roomId || 'N/A'}</p>
+                                                <p className="text-[9px] text-indigo-500 uppercase font-bold">Booking: {v.bookingId?._id || v.bookingId || 'Direct Settlement'}</p>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <p className="font-black text-slate-900 dark:text-white text-base">₹{v.amount}</p>
+                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider inline-block mt-1 ${
+                                                    v.status === 'APPROVED' || v.status === 'Completed' || v.status === 'verified' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                                                    v.status === 'REJECTED' || v.status === 'Failed' || v.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                                    'bg-amber-50 text-amber-600 border border-amber-100'
+                                                }`}>
+                                                    {v.status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="text-[11px] space-y-1 text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                            <p><span className="font-bold text-slate-400">Method:</span> <span className="uppercase font-semibold">{v.method}</span></p>
+                                            <p><span className="font-bold text-slate-400">Txn:</span> <span className="font-mono">{v.referenceId || v.transactionReference || 'N/A'}</span></p>
+                                            <p><span className="font-bold text-slate-400">Date:</span> {new Date(v.createdAt).toLocaleString()}</p>
+                                        </div>
+                                        {v.uploadedProof && (
+                                            <div className="flex items-center gap-3">
+                                                <img 
+                                                    src={v.uploadedProof} 
+                                                    alt="Proof" 
+                                                    onClick={() => setActiveVerificationPhoto(v.uploadedProof)}
+                                                    className="w-12 h-12 object-cover rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer" 
+                                                />
+                                                <a 
+                                                    href={v.uploadedProof} 
+                                                    download={`proof_${v._id}.png`} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="text-indigo-600 hover:text-indigo-800 text-xs font-black uppercase tracking-wider"
+                                                >
+                                                    Download Proof
+                                                </a>
+                                            </div>
+                                        )}
+                                        {v.status === 'WAITING_FOR_VERIFICATION' && (
+                                            <div className="grid grid-cols-2 gap-2 pt-1">
+                                                <button 
+                                                    onClick={() => handleApproveVerification(v._id)}
+                                                    className="min-h-[42px] bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold uppercase tracking-wider text-xs flex items-center justify-center transition touch-manipulation"
+                                                >
+                                                    Approve
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleRejectVerification(v._id)}
+                                                    className="min-h-[42px] bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl font-bold uppercase tracking-wider text-xs flex items-center justify-center transition touch-manipulation border border-rose-200"
+                                                >
+                                                    Reject
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            {/* Desktop Table View */}
+                            <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-left text-xs border-collapse">
                                     <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 font-bold uppercase tracking-wider text-slate-400">
                                         <tr>
@@ -1210,7 +1359,7 @@ const LodgeBillingManager = () => {
             {/* Interactive Generate Bill Dialog (Modal Overlay) */}
             <AnimatePresence>
                 {generatingBillRoom && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto print:relative print:inset-auto print:p-0 print:z-0">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:relative print:inset-auto print:p-0 print:z-0 overscroll-contain">
                         <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -1222,7 +1371,7 @@ const LodgeBillingManager = () => {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 max-h-[90vh] overflow-y-auto flex flex-col print:max-h-full print:rounded-none print:shadow-none print:w-full"
+                            className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-2xl sm:rounded-3xl shadow-2xl relative z-10 max-h-[94dvh] sm:max-h-[90vh] overflow-y-auto flex flex-col print:max-h-full print:rounded-none print:shadow-none print:w-full"
                         >
                             {/* Modal Header */}
                             <div className="bg-slate-900 p-6 text-white flex justify-between items-center print:hidden">
@@ -1239,7 +1388,7 @@ const LodgeBillingManager = () => {
                             </div>
 
                             {/* Step Indicator */}
-                            <div className="bg-slate-100 dark:bg-slate-800 p-4 border-b flex justify-around text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 print:hidden">
+                            <div className="bg-slate-100 dark:bg-slate-800 p-3 sm:p-4 border-b flex overflow-x-auto no-scrollbar sm:justify-around gap-4 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 print:hidden whitespace-nowrap">
                                 {[
                                     { step: 1, label: 'Room & Rent' },
                                     { step: 2, label: 'Charges & Taxes' },
@@ -1761,7 +1910,7 @@ const LodgeBillingManager = () => {
             {/* Modal: View Details */}
             <AnimatePresence>
                 {selectedRoomDetail && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 print:hidden">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 print:hidden overscroll-contain">
                         <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -1773,7 +1922,7 @@ const LodgeBillingManager = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl relative z-10 overflow-hidden"
+                            className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl relative z-10 overflow-hidden max-h-[94dvh] flex flex-col"
                         >
                             <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
                                 <div>
@@ -1837,7 +1986,7 @@ const LodgeBillingManager = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl relative z-10 overflow-hidden"
+                            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl sm:rounded-3xl shadow-2xl relative z-10 overflow-hidden max-h-[94dvh] flex flex-col"
                         >
                             <div className="bg-slate-900 p-6 text-white">
                                 <h3 className="text-lg font-bold">Collect Advance Rent</h3>

@@ -32,5 +32,7 @@ lodgeRentBillSchema.index({ roomId: 1 });
 lodgeRentBillSchema.index({ userId: 1 });
 lodgeRentBillSchema.index({ status: 1 });
 lodgeRentBillSchema.index({ dueDate: -1 });
+lodgeRentBillSchema.index({ status: 1, paymentDate: -1, archived: 1 });
+lodgeRentBillSchema.index({ archived: 1, status: 1 });
 
 module.exports = mongoose.model('LodgeRentBill', lodgeRentBillSchema);

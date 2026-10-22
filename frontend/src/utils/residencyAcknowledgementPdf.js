@@ -250,28 +250,38 @@ const generateQRDataUrl = async (bookingId) => {
 };
 
 // ─── Helper formatters to prevent squashed / run-together contact text ────────
+export const cleanLodgeName = (name) => {
+    if (!name) return 'Krishna Building & Residency';
+    let s = String(name).trim();
+    if (s.toLowerCase() === 'krishnabuilding') return 'Krishna Building';
+    if (s.toLowerCase() === 'krishnacomplex') return 'Krishna Complex';
+    return s.replace(/([a-z])([A-Z])/g, '$1 $2');
+};
+
 export const cleanContactAddress = (addr) => {
     if (!addr) return 'Krishna Complex, Site A, Kuttanassery, Palakkad, Kerala 679514';
     let s = String(addr).trim();
-    if (s.includes(',') || s.includes(' ')) return s;
-    return s
+    s = s
         .replace(/([a-z])([A-Z])/g, '$1 $2')
-        .replace(/(krishna)/gi, 'Krishna ')
-        .replace(/(building)/gi, 'Building, ')
-        .replace(/(complex)/gi, 'Complex, ')
-        .replace(/(kuttanassery)/gi, 'Kuttanassery, ')
-        .replace(/(palakkad)/gi, 'Palakkad, ')
+        .replace(/krishnabuilding/gi, 'Krishna Building, ')
+        .replace(/krishnacomplex/gi, 'Krishna Complex, ')
+        .replace(/krishna\s*building/gi, 'Krishna Building, ')
+        .replace(/krishna\s*complex/gi, 'Krishna Complex, ')
+        .replace(/kuttanassery/gi, 'Kuttanassery, ')
+        .replace(/palakkad/gi, 'Palakkad, ')
         .replace(/(kerala|kerela)/gi, 'Kerala')
         .replace(/\s*,\s*/g, ', ')
+        .replace(/(,\s*)+/g, ', ')
         .replace(/\s+/g, ' ')
         .trim();
+    return s || 'Krishna Complex, Site A, Kuttanassery, Palakkad, Kerala 679514';
 };
 
 export const cleanContactEmail = (email) => {
     if (!email) return 'support@krishnaengg.com';
     let s = String(email).trim();
-    if (!s.includes('.')) {
-        s = s.replace(/com$/, '.com').replace(/in$/, '.in').replace(/org$/, '.org');
+    if (!s.includes('.') && s.toLowerCase().includes('com')) {
+        s = s.replace(/com$/i, '.com');
     }
     return s;
 };
@@ -279,8 +289,13 @@ export const cleanContactEmail = (email) => {
 export const cleanContactWebsite = (web) => {
     if (!web) return 'www.krishnaengg.com';
     let s = String(web).trim();
-    if (!s.includes('.')) {
-        s = s.replace(/^www/, 'www.').replace(/com$/, '.com').replace(/in$/, '.in');
+    if (!s.startsWith('http://') && !s.startsWith('https://')) {
+        if (!s.startsWith('www.')) {
+            s = s.replace(/^www/i, 'www.');
+        }
+    }
+    if (!s.includes('.com') && s.toLowerCase().includes('com')) {
+        s = s.replace(/com$/i, '.com');
     }
     return s;
 };
@@ -346,11 +361,11 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            letter-spacing: 0 !important;
+            letter-spacing: normal !important;
             word-spacing: normal !important;
         }
         body {
-            font-family: 'Noto Sans Malayalam', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            font-family: 'Inter', 'Noto Sans Malayalam', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
             color: #1e293b;
             background: #ffffff;
             font-size: 10px;
@@ -358,6 +373,9 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
             margin: 0;
             padding: 0;
             -webkit-font-smoothing: antialiased;
+            letter-spacing: normal !important;
+            word-spacing: normal !important;
+            font-variant-ligatures: normal;
         }
         .pdf-document {
             width: 794px;
@@ -807,15 +825,15 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
                 <div class="header">
                     <div class="header-left">
                         <span class="status-badge">${docStatus}</span>
-                        <div class="header-title">${lodge?.name || 'KRISHNA BUILDING & RESIDENCY'}</div>
-                        <div class="header-sub">${isMl ? 'ഔദ്യോഗിക വാടകക്കരാർ & താമസ രസീത്' : 'OFFICIAL RESIDENCY ACKNOWLEDGEMENT / LEASE AGREEMENT'}</div>
+                        <div class="header-title">${cleanLodgeName(lodge?.name)}</div>
+                        <div class="header-sub">${isMl ? 'ഔദ്യോഗിക&nbsp;വാടകക്കരാർ &amp;&nbsp;താമസ&nbsp;രസീത്' : 'OFFICIAL RESIDENCY ACKNOWLEDGEMENT / LEASE AGREEMENT'}</div>
                     </div>
                     <div class="header-right">
                         <table class="meta-table">
                             <tr><td class="meta-lbl">Agreement:</td><td class="meta-val">${booking?.agreementNumber || '-'}</td></tr>
                             <tr><td class="meta-lbl">Ref:</td><td class="meta-val">#${String(booking?._id || '').slice(-8).toUpperCase()}</td></tr>
                             <tr><td class="meta-lbl">Version:</td><td class="meta-val">v${booking?.acknowledgementVersion || 1}.0</td></tr>
-                            <tr><td class="meta-lbl">Date:</td><td class="meta-val">${fmtDate(new Date())}</td></tr>
+                            <tr><td class="meta-lbl">Date:</td><td class="meta-val">${fmtDate(new Date()).replace(/\s+/g, '\u00A0')}</td></tr>
                         </table>
                     </div>
                 </div>
@@ -834,7 +852,7 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
                 <!-- Tenant & Room Details -->
                 <div class="grid-2">
                     <div class="section-box">
-                        <div class="section-header">${isMl ? 'വാടകക്കാരന്റെ വിവരങ്ങൾ (TENANT DETAILS)' : 'TENANT / OCCUPANT DETAILS'}</div>
+                        <div class="section-header">${isMl ? 'വാടകക്കാരന്റെ&nbsp;വിവരങ്ങൾ&nbsp;(TENANT&nbsp;DETAILS)' : 'TENANT / OCCUPANT DETAILS'}</div>
                         <table class="info-table">
                             <tr>
                                 <td class="label">${isMl ? 'പേര്' : 'Tenant Name'}</td>
@@ -864,11 +882,11 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
                     </div>
 
                     <div class="section-box">
-                        <div class="section-header">${isMl ? 'മുറിയുടെ വിവരങ്ങൾ (ROOM DETAILS)' : 'ROOM & STAY DETAILS'}</div>
+                        <div class="section-header">${isMl ? 'മുറിയുടെ&nbsp;വിവരങ്ങൾ&nbsp;(ROOM&nbsp;DETAILS)' : 'ROOM & STAY DETAILS'}</div>
                         <table class="info-table">
                             <tr>
                                 <td class="label">${isMl ? 'മുറി നമ്പർ' : 'Room Number'}</td>
-                                <td class="value"><strong>Room ${room?.roomNumber || 'N/A'}</strong> &nbsp;<span class="muted-text">(${room?.type || 'Standard'})</span></td>
+                                <td class="value"><strong>Room&nbsp;${room?.roomNumber || 'N/A'}</strong> &nbsp;<span class="muted-text">(${room?.type || 'Standard'})</span></td>
                             </tr>
                             <tr>
                                 <td class="label">${isMl ? 'കെട്ടിടം / നില' : 'Building / Floor'}</td>
@@ -876,19 +894,24 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
                             </tr>
                             <tr>
                                 <td class="label">${isMl ? 'പ്രവേശന തീയതി' : 'Check-In Date'}</td>
-                                <td class="value">${fmtDate(booking?.checkIn)}</td>
+                                <td class="value">${fmtDate(booking?.checkIn).replace(/\s+/g, '\u00A0')}</td>
                             </tr>
                             <tr>
                                 <td class="label">${isMl ? 'കാലാവധി തീയതി' : 'Check-Out Date'}</td>
-                                <td class="value">${fmtDate(booking?.checkOut)} &nbsp;<span class="muted-text">(${booking?.daysTotal || '-'} Days)</span></td>
+                                <td class="value">${fmtDate(booking?.checkOut).replace(/\s+/g, '\u00A0')} &nbsp;<span class="muted-text">(${booking?.daysTotal || '-'} Days)</span></td>
                             </tr>
+                            ${booking?.actualCheckOut ? `
+                            <tr>
+                                <td class="label">${isMl ? 'യഥാർത്ഥ ഒഴിയൽ തീയതി' : 'Actual Check-Out'}</td>
+                                <td class="value"><strong>${fmtDate(booking?.actualCheckOut)}</strong> &nbsp;<span class="muted-text">(${booking?.checkoutNotes || 'Cleared'})</span></td>
+                            </tr>` : ''}
                             <tr>
                                 <td class="label">${isMl ? 'വാടക ചക്രം' : 'Billing Cycle'}</td>
                                 <td class="value">${booking?.paymentCycle || 'Monthly'}</td>
                             </tr>
                             <tr>
                                 <td class="label">${isMl ? 'അടുത്ത അടവ് തീയതി' : 'Next Due Date'}</td>
-                                <td class="value">${fmtDate(booking?.nextDueDate)}</td>
+                                <td class="value">${fmtDate(booking?.nextDueDate).replace(/\s+/g, '\u00A0')}</td>
                             </tr>
                         </table>
                     </div>
@@ -902,18 +925,21 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
                     </div>
                     <div class="fin-item">
                         <div class="lbl">${isMl ? 'സുരക്ഷാനിക്ഷേപം' : 'Security Deposit'}</div>
-                        <div class="val">${formatINRDisplay(room?.securityDeposit)}</div>
+                        <div class="val">${formatINRDisplay(booking?.securityDeposit || room?.securityDeposit)}</div>
                     </div>
                     <div class="fin-item">
                         <div class="lbl">${isMl ? 'അടച്ച തുക' : 'Total Paid'}</div>
                         <div class="val" style="color: #15803d;">${formatINRDisplay(booking?.totalPaid)}</div>
                     </div>
                     <div class="fin-item">
-                        <div class="lbl">${isMl ? 'കുടിശ്ശിക / സ്റ്റാറ്റസ്' : 'Balance / Status'}</div>
+                        <div class="lbl">${booking?.totalRefunded > 0 ? (isMl ? 'തിരികെ നൽകിയ തുക' : 'Refunded / Returned') : (isMl ? 'കുടിശ്ശിക / സ്റ്റാറ്റസ്' : 'Balance / Status')}</div>
                         <div class="val">
-                            <span class="status-pill ${(booking?.outstanding || 0) <= 0 ? 'status-paid' : 'status-due'}">
-                                ${(booking?.outstanding || 0) <= 0 ? (isMl ? '✓ പൂർണ്ണമായി അടച്ചു' : '✓ FULLY PAID') : `${isMl ? 'കുടിശ്ശിക:' : 'DUE:'} ${formatINRDisplay(booking?.outstanding)}`}
-                            </span>
+                            ${booking?.totalRefunded > 0 
+                                ? `<span style="color:#b91c1c; font-weight:700;">- ${formatINRDisplay(booking?.totalRefunded)}</span>` 
+                                : `<span class="status-pill ${(booking?.outstanding || 0) <= 0 ? 'status-paid' : 'status-due'}">
+                                    ${(booking?.outstanding || 0) <= 0 ? (isMl ? '✓ പൂർണ്ണമായി അടച്ചു' : '✓ FULLY PAID') : `${isMl ? 'കുടിശ്ശിക:' : 'DUE:'} ${formatINRDisplay(booking?.outstanding)}`}
+                                   </span>`
+                            }
                         </div>
                     </div>
                 </div>
@@ -956,7 +982,7 @@ export const generateResidencyAcknowledgementHTML = (data, language = 'ml', qrDa
                 <!-- Repeated Header Banner -->
                 <div class="repeated-header">
                     <div>
-                        <div class="repeated-title">${isMl ? 'വാടകക്കരാർ നിബന്ധനകളും വ്യവസ്ഥകളും (18 നിബന്ധനകൾ)' : 'TERMS & CONDITIONS OF RESIDENCY (18 STATUTORY CLAUSES)'}</div>
+                        <div class="repeated-title">${isMl ? 'വാടകക്കരാർ&nbsp;നിബന്ധനകളും&nbsp;വ്യവസ്ഥകളും&nbsp;(18&nbsp;നിബന്ധനകൾ)' : 'TERMS & CONDITIONS OF RESIDENCY (18 STATUTORY CLAUSES)'}</div>
                         <div class="repeated-sub">${isMl ? 'കേരള കെട്ടിട വാടക നിയന്ത്രണ നിയമങ്ങൾക്കനുസൃതമായ വ്യവസ്ഥകൾ' : 'Statutory & Legally Binding Tenancy Regulations'}</div>
                     </div>
                     <div class="repeated-meta">
@@ -1120,17 +1146,20 @@ export const generateResidencyAcknowledgementPDF = async (data, language = 'en')
         head: [['Description', 'Amount']],
         body: [
             ['Monthly Rent', formatINR(room?.monthlyRent || booking?.totalAmount)],
-            ['Security Deposit', formatINR(room?.securityDeposit)],
+            ['Security Deposit', formatINR(booking?.securityDeposit || room?.securityDeposit)],
             ['Total Booking Amount', formatINR(booking?.totalAmount)],
-            ['Total Paid', formatINR(booking?.totalPaid)],
+            ['Total Paid by Tenant', formatINR(booking?.totalPaid)],
+            ...(booking?.totalRefunded > 0 ? [['Refunds / Deposit Returned', `- ${formatINR(booking?.totalRefunded)}`]] : []),
+            ...(booking?.totalRefunded > 0 ? [['Net Paid', formatINR(booking?.netPaid)]] : []),
             ['Outstanding Balance', formatINR(booking?.outstanding)],
-            ['Payment Status', (booking?.outstanding || 0) <= 0 ? 'FULLY PAID' : `BALANCE DUE: ${formatINR(booking?.outstanding)}`],
+            ['Payment Status', (booking?.outstanding || 0) <= 0 ? 'FULLY PAID / CLEARED' : `BALANCE DUE: ${formatINR(booking?.outstanding)}`],
         ],
         headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
         columnStyles: { 0: { cellWidth: 100, fontStyle: 'bold', textColor: [71, 85, 105] }, 1: { cellWidth: 82, halign: 'right' } },
         styles: { fontSize: 7.5, cellPadding: 2, font: 'helvetica', textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.2 },
         didParseCell: (d) => {
-            if (d.row.index === 5) {
+            const lastRowIndex = d.table.body.length - 1;
+            if (d.row.index === lastRowIndex) {
                 d.cell.styles.fontStyle = 'bold';
                 d.cell.styles.fillColor = (booking?.outstanding || 0) <= 0 ? [209, 250, 229] : [254, 226, 226];
                 d.cell.styles.textColor  = (booking?.outstanding || 0) <= 0 ? [4, 120, 87]   : [185, 28, 28];
@@ -1212,28 +1241,40 @@ export const generateResidencyAcknowledgementPDF = async (data, language = 'en')
 
 // ─── Download Handler (High-Fidelity 2-Page Rendering for Malayalam & English) ─
 export const downloadResidencyAcknowledgement = async (data, language = 'ml') => {
-    // 1. Ensure fonts are fully loaded and shaped
-    await ensureFontsLoaded();
+    // If English, generate crisp vector PDF directly via jsPDF
+    if (language === 'en') {
+        const doc = await generateResidencyAcknowledgementPDF(data, 'en');
+        const name = data.booking?.agreementNumber || 'Acknowledgement';
+        await savePDF(doc, `${name}_Agreement_EN.pdf`);
+        return;
+    }
 
-    // 2. Generate QR code
+    // For Malayalam, use an isolated iframe to guarantee valid head, CSS, and Google Web Fonts
+    await ensureFontsLoaded();
     const qrDataUrl = await generateQRDataUrl(data.booking?._id);
     const htmlString = generateResidencyAcknowledgementHTML(data, language, qrDataUrl);
 
-    // 3. Mount in DOM sandbox with active layout
-    const tempContainer = document.createElement('div');
-    tempContainer.id = 'residency-pdf-sandbox';
-    tempContainer.style.cssText = 'position:fixed;top:0;left:0;width:794px;background:#ffffff;z-index:-99999;opacity:0.01;pointer-events:none;';
-    tempContainer.innerHTML = htmlString;
-    document.body.appendChild(tempContainer);
+    const iframe = document.createElement('iframe');
+    iframe.id = 'residency-pdf-sandbox-frame';
+    iframe.style.cssText = 'position:fixed;top:0;left:0;width:820px;height:2400px;border:none;opacity:0.01;pointer-events:none;z-index:-99999;';
+    document.body.appendChild(iframe);
 
     try {
-        if (document.fonts) {
-            await document.fonts.ready;
-        }
-        // Allow brief frame paint
-        await new Promise(res => setTimeout(res, 200));
+        const iframeDoc = iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(htmlString);
+        iframeDoc.close();
 
-        const pages = tempContainer.querySelectorAll('.pdf-page');
+        // Ensure web fonts in iframe are fully shaped
+        if (iframeDoc.fonts) {
+            await Promise.race([
+                iframeDoc.fonts.ready,
+                new Promise(res => setTimeout(res, 2000))
+            ]);
+        }
+        await new Promise(res => setTimeout(res, 350));
+
+        const pages = iframeDoc.querySelectorAll('.pdf-page');
         const pdf = new jsPDF('p', 'mm', 'a4');
         const imgWidth = 210;
         const pageHeight = 297;
@@ -1244,7 +1285,16 @@ export const downloadResidencyAcknowledgement = async (data, language = 'ml') =>
                 scale: 2.2,
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                window: iframe.contentWindow,
+                onclone: (clonedDoc) => {
+                    // Sync active fonts into cloned render context
+                    if (iframeDoc.fonts && clonedDoc.fonts) {
+                        iframeDoc.fonts.forEach(f => {
+                            try { clonedDoc.fonts.add(f); } catch (e) {}
+                        });
+                    }
+                }
             });
 
             const imgData = canvas.toDataURL('image/png');
@@ -1255,8 +1305,8 @@ export const downloadResidencyAcknowledgement = async (data, language = 'ml') =>
         const name = data.booking?.agreementNumber || 'Acknowledgement';
         await savePDF(pdf, `${name}_Agreement_${language.toUpperCase()}.pdf`);
     } finally {
-        if (document.body.contains(tempContainer)) {
-            document.body.removeChild(tempContainer);
+        if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
         }
     }
 };

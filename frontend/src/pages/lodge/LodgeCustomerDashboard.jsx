@@ -33,7 +33,7 @@ export default function LodgeCustomerDashboard() {
 
         const socket = getSocket();
         if (socket) {
-            const handleRealtimeSync = () => fetchData();
+            const handleRealtimeSync = () => fetchData(true);
             socket.on('lodge-payment-submitted', handleRealtimeSync);
             socket.on('lodge-payment-updated', handleRealtimeSync);
             socket.on('payment-status-changed', handleRealtimeSync);
@@ -46,8 +46,10 @@ export default function LodgeCustomerDashboard() {
         }
     }, []);
 
-    const fetchData = async () => {
-        setLoading(true);
+    const fetchData = async (isSilent = false) => {
+        if (!isSilent && bookings.length === 0) {
+            setLoading(true);
+        }
         try {
             const [bookRes, wishRes, payRes, lodgePayRes, userRes, compRes] = await Promise.all([
                 api.get('/bookings/my-bookings'),
@@ -57,7 +59,7 @@ export default function LodgeCustomerDashboard() {
                 api.get('/auth/me'),
                 api.get('/complaints/my-complaints').catch(() => ({ data: [] }))
             ]);
-            setBookings(bookRes.data);
+            setBookings(bookRes.data || []);
             setWishlist(wishRes.data || []);
             const allPayments = [
                 ...(lodgePayRes.data?.payments || []),
@@ -374,7 +376,28 @@ export default function LodgeCustomerDashboard() {
                                     </div>
                                 </div>
                             ))}
-                            {bookings.length === 0 && (
+                            {loading && bookings.length === 0 ? (
+                                <div className="grid gap-6">
+                                    {[1, 2].map((idx) => (
+                                        <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-[2rem] p-8 shadow-sm animate-pulse">
+                                            <div className="flex flex-col lg:flex-row justify-between gap-8">
+                                                <div className="flex-grow space-y-4">
+                                                    <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded-full w-40"></div>
+                                                    <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-72"></div>
+                                                    <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-52"></div>
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
+                                                        <div className="h-16 bg-slate-50 dark:bg-slate-800/60 rounded-2xl"></div>
+                                                        <div className="h-16 bg-slate-50 dark:bg-slate-800/60 rounded-2xl"></div>
+                                                        <div className="h-16 bg-slate-50 dark:bg-slate-800/60 rounded-2xl"></div>
+                                                        <div className="h-16 bg-slate-50 dark:bg-slate-800/60 rounded-2xl"></div>
+                                                    </div>
+                                                </div>
+                                                <div className="w-full lg:w-72 h-44 bg-slate-100 dark:bg-slate-800 rounded-3xl"></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : bookings.length === 0 ? (
                                 <div className="text-center py-40 bg-white dark:bg-slate-900 rounded-[3rem] border-4 border-dashed border-slate-100 dark:border-slate-800">
                                     <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 text-slate-300 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
                                         <Calendar className="w-10 h-10" />
@@ -382,7 +405,7 @@ export default function LodgeCustomerDashboard() {
                                     <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">No Residency History</h3>
                                     <p className="text-slate-400 max-w-xs mx-auto font-medium">Your historical records are empty. Book your first site visit residency today.</p>
                                 </div>
-                            )}
+                            ) : null}
                         </div>
                     </div>
                 )}

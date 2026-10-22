@@ -100,17 +100,17 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
     const displayedTerms = showAllTerms ? termsList : termsList.slice(0, 4);
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-2xl shadow-2xl max-h-[94vh] flex flex-col overflow-hidden animate-in zoom-in duration-300 relative border border-slate-200 dark:border-slate-800">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overscroll-contain">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl w-full max-w-2xl shadow-2xl max-h-[96dvh] sm:max-h-[94vh] flex flex-col overflow-hidden animate-in zoom-in duration-300 relative border border-slate-200 dark:border-slate-800">
 
                 {/* Header */}
-                <div className="bg-slate-900 px-6 sm:px-8 py-5 flex items-start justify-between shrink-0 border-b border-slate-800">
-                    <div>
-                        <div className="flex items-center gap-3 mb-1.5">
-                            <FileText className="w-5 h-5 text-indigo-400" />
-                            <h2 className="text-white font-black text-lg sm:text-xl tracking-tight">Residency Acknowledgement</h2>
+                <div className="bg-slate-900 px-4 sm:px-8 py-4 sm:py-5 flex items-start justify-between shrink-0 border-b border-slate-800 gap-3">
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 sm:gap-3 mb-1">
+                            <FileText className="w-5 h-5 text-indigo-400 shrink-0" />
+                            <h2 className="text-white font-black text-base sm:text-xl tracking-tight truncate">Residency Acknowledgement</h2>
                         </div>
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+                        <p className="text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest truncate">
                             Official Booking Agreement — Krishna Lodge & Residency
                         </p>
                     </div>
@@ -211,13 +211,46 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
                                 ))}
                             </div>
 
+                            {/* Checkout Clearance Summary (if checked out) */}
+                            {(data.booking?.status === 'completed' || data.booking?.actualCheckOut) && (
+                                <div className="bg-indigo-50/80 dark:bg-indigo-950/40 rounded-2xl p-5 border border-indigo-200 dark:border-indigo-800 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                            <h3 className="font-black text-indigo-900 dark:text-indigo-200 text-xs sm:text-sm uppercase tracking-wider">
+                                                Checkout Clearance & Tenancy Closure
+                                            </h3>
+                                        </div>
+                                        <span className="bg-indigo-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                            Completed Stay
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                        <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-indigo-100 dark:border-slate-800">
+                                            <span className="text-slate-400 font-bold block text-[10px] uppercase">Actual Check-Out</span>
+                                            <span className="font-black text-slate-900 dark:text-white">
+                                                {fmtDate(data.booking?.actualCheckOut || data.booking?.checkOut)}
+                                            </span>
+                                        </div>
+                                        <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-indigo-100 dark:border-slate-800">
+                                            <span className="text-slate-400 font-bold block text-[10px] uppercase">Closure / Notes</span>
+                                            <span className="font-medium text-slate-700 dark:text-slate-300">
+                                                {data.booking?.checkoutNotes || 'Keys handed over and premises inspected.'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Financial Summary */}
                             <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 space-y-3">
                                 <h3 className="font-black text-slate-900 dark:text-white text-xs sm:text-sm uppercase tracking-widest">Financial Summary</h3>
                                 {[
-                                    ['Monthly Rent', formatINRDisplay(data.room?.monthlyRent)],
-                                    ['Security Deposit', formatINRDisplay(data.room?.securityDeposit)],
-                                    ['Total Paid', formatINRDisplay(data.booking?.totalPaid)],
+                                    ['Monthly Rent', formatINRDisplay(data.room?.monthlyRent || data.booking?.totalAmount)],
+                                    ['Security Deposit', formatINRDisplay(data.booking?.securityDeposit || data.room?.securityDeposit)],
+                                    ['Total Paid by Tenant', formatINRDisplay(data.booking?.totalPaid)],
+                                    ...(data.booking?.totalRefunded > 0 ? [['Refunds / Deposit Returned', `- ${formatINRDisplay(data.booking?.totalRefunded)}`]] : []),
+                                    ...(data.booking?.totalRefunded > 0 ? [['Net Paid', formatINRDisplay(data.booking?.netPaid)]] : []),
                                     ['Outstanding Balance', formatINRDisplay(data.booking?.outstanding)],
                                     ['Next Due Date', fmtDate(data.booking?.nextDueDate)],
                                 ].map(([k, v]) => (
@@ -228,9 +261,63 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
                                 ))}
                                 <div className={`flex justify-between items-center text-xs sm:text-sm pt-3 border-t border-slate-200 dark:border-slate-700 ${(data.booking?.outstanding || 0) <= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
                                     <span className="font-black uppercase tracking-wider">Payment Status</span>
-                                    <span className="font-black">{(data.booking?.outstanding || 0) <= 0 ? '✓ FULLY PAID' : `BALANCE DUE: ${formatINRDisplay(data.booking?.outstanding)}`}</span>
+                                    <span className="font-black">{(data.booking?.outstanding || 0) <= 0 ? '✓ FULLY PAID / CLEARED' : `BALANCE DUE: ${formatINRDisplay(data.booking?.outstanding)}`}</span>
                                 </div>
                             </div>
+
+                            {/* Itemized Payment & Refund Records */}
+                            {((data.booking?.paymentsList && data.booking.paymentsList.length > 0) || (data.booking?.refundsList && data.booking.refundsList.length > 0)) && (
+                                <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="font-black text-slate-900 dark:text-white text-xs sm:text-sm uppercase tracking-widest">
+                                            Payment & Transaction Records ({((data.booking?.paymentsList?.length || 0) + (data.booking?.refundsList?.length || 0))})
+                                        </h3>
+                                    </div>
+                                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                        {data.booking?.paymentsList?.map((p) => (
+                                            <div key={p._id} className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex items-center justify-between">
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-black text-slate-900 dark:text-white">
+                                                            {p.paymentType || p.chargeCategory || 'Rent Payment'}
+                                                        </span>
+                                                        <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-full uppercase">
+                                                            {p.method}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[11px] text-slate-400 mt-0.5">
+                                                        {fmtDate(p.createdAt)} {p.referenceId ? `• Ref: ${p.referenceId}` : ''} {p.receiptNumber ? `• Rcpt: ${p.receiptNumber}` : ''} {p.verifiedByName ? `• By: ${p.verifiedByName}` : ''}
+                                                    </p>
+                                                </div>
+                                                <span className="font-black text-emerald-600 dark:text-emerald-400 text-sm">
+                                                    +{formatINRDisplay(p.amount)}
+                                                </span>
+                                            </div>
+                                        ))}
+
+                                        {data.booking?.refundsList?.map((r) => (
+                                            <div key={r._id} className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-red-200 dark:border-red-900/50 text-xs flex items-center justify-between">
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-black text-red-600 dark:text-red-400">
+                                                            Refund / Deposit Return
+                                                        </span>
+                                                        <span className="text-[10px] bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 font-bold px-2 py-0.5 rounded-full uppercase">
+                                                            {r.method}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[11px] text-slate-400 mt-0.5">
+                                                        {fmtDate(r.createdAt)} {r.referenceId ? `• Ref: ${r.referenceId}` : ''} {r.notes ? `• ${r.notes}` : ''}
+                                                    </p>
+                                                </div>
+                                                <span className="font-black text-red-600 dark:text-red-400 text-sm">
+                                                    -{formatINRDisplay(r.amount)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* 18 Terms & Conditions Preview */}
                             <div className="bg-indigo-50/70 dark:bg-indigo-950/30 rounded-2xl p-5 border border-indigo-100 dark:border-indigo-900/50 space-y-3">
@@ -303,33 +390,33 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
                 </div>
 
                 {/* Action Bar */}
-                <div className="bg-slate-50 dark:bg-slate-800/90 border-t border-slate-200 dark:border-slate-700 px-5 sm:px-8 py-4 flex items-center justify-between gap-3 flex-wrap shrink-0">
-                    <div className="flex items-center gap-2 flex-wrap">
+                <div className="bg-slate-50 dark:bg-slate-800/90 border-t border-slate-200 dark:border-slate-700 px-4 sm:px-8 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
+                    <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
                         <button
                             onClick={handleDownload}
                             disabled={!data || generating}
-                            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm shadow-md shadow-indigo-600/20 transition-all active:scale-95"
+                            className="flex items-center justify-center gap-1.5 sm:gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-3 sm:px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm shadow-md shadow-indigo-600/20 transition-all active:scale-95 touch-manipulation min-h-[42px]"
                             title={`Download PDF in ${language === 'ml' ? 'Malayalam' : 'English'}`}
                         >
                             {generating ? <Loader className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                            Download PDF ({language === 'ml' ? 'മലയാളം' : 'EN'})
+                            <span>Download PDF ({language === 'ml' ? 'മലയാളം' : 'EN'})</span>
                         </button>
                         <button
                             onClick={handlePrint}
                             disabled={!data || generating}
-                            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 disabled:opacity-60 text-white px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-95 shadow-sm"
+                            className="flex items-center justify-center gap-1.5 sm:gap-2 bg-slate-800 hover:bg-slate-900 disabled:opacity-60 text-white px-3 sm:px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-95 shadow-sm touch-manipulation min-h-[42px]"
                             title={`Print agreement in ${language === 'ml' ? 'Malayalam' : 'English'}`}
                         >
-                            <Printer className="w-4 h-4" /> Print ({language === 'ml' ? 'മലയാളം' : 'EN'})
+                            <Printer className="w-4 h-4" /> <span>Print ({language === 'ml' ? 'മലയാളം' : 'EN'})</span>
                         </button>
                     </div>
 
                     <button
                         onClick={handleShare}
                         disabled={!data}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-95 shadow-sm ml-auto"
+                        className="flex items-center justify-center gap-1.5 sm:gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-95 shadow-sm touch-manipulation min-h-[42px]"
                     >
-                        <Share2 className="w-4 h-4" /> Share Link
+                        <Share2 className="w-4 h-4" /> <span>Share Link</span>
                     </button>
                 </div>
             </div>

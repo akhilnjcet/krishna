@@ -5,12 +5,26 @@ const LodgeBillingSetting = require('../models/LodgeBillingSetting');
 const Payment = require('../models/Payment');
 const { protect } = require('../middleware/authMiddleware');
 
+// Helper: Check if room dates overlap with an active booking
+const checkRoomOverlap = async (roomId, checkIn, checkOut, excludeBookingId = null) => {
+  const query = {
+    roomId,
+    status: 'active',
+    checkIn: { $lt: new Date(checkOut) },
+    checkOut: { $gt: new Date(checkIn) }
+  };
+  if (excludeBookingId) {
+    query._id = { $ne: excludeBookingId };
+  }
+  return await BookingLodge.find(query).populate('userId', 'name email phone phoneNumber');
+};
+
 // @route   POST /api/bookings
 // @desc    Create new lodge booking
 // @access  Private
 router.post('/', protect, async (req, res) => {
   try {
-    const { lodgeId, roomId, checkIn, checkOut, totalAmount } = req.body;
+    const { lodgeId, roomId, checkIn, checkOut, totalAmount, securityDeposit } = req.body;
 
     const start = new Date(checkIn);
     const end = new Date(checkOut);
@@ -19,16 +33,14 @@ router.post('/', protect, async (req, res) => {
       return res.status(400).json({ message: 'Check-out date must be after check-in date' });
     }
 
-    // Dynamic overlap logic against BookingLodge
-    const conflictingBookings = await BookingLodge.find({
-      roomId,
-      status: 'active',
-      checkIn: { $lt: end },
-      checkOut: { $gt: start }
-    });
-
+    // Overlap validation
+    const conflictingBookings = await checkRoomOverlap(roomId, start, end);
     if (conflictingBookings.length > 0) {
-      return res.status(400).json({ message: 'Room is already booked for these dates' });
+      const c = conflictingBookings[0];
+      return res.status(409).json({ 
+        message: `Room is unavailable for selected dates (Reserved from ${new Date(c.checkIn).toLocaleDateString()} to ${new Date(c.checkOut).toLocaleDateString()}).`,
+        conflicts: conflictingBookings
+      });
     }
 
     const booking = await BookingLodge.create({
@@ -37,7 +49,13 @@ router.post('/', protect, async (req, res) => {
       roomId,
       checkIn: start,
       checkOut: end,
-      totalAmount
+      totalAmount: parseFloat(totalAmount) || 0,
+      securityDeposit: parseFloat(securityDeposit) || 0,
+      versionHistory: [{
+        version: 1,
+        generatedAt: new Date(),
+        reason: 'Online booking initialized'
+      }]
     });
 
     req.app.get('io')?.emit('booking_updated', booking);
@@ -46,7 +64,7 @@ router.post('/', protect, async (req, res) => {
     res.status(201).json(booking);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 });
 
@@ -56,9 +74,11 @@ router.post('/', protect, async (req, res) => {
 router.get('/my-bookings', protect, async (req, res) => {
   try {
     const bookings = await BookingLodge.find({ userId: req.user.id || req.user._id })
+      .select('-versionHistory')
       .populate('lodgeId', 'name location images')
-      .populate('roomId', 'type price rentCycle')
-      .sort({ createdAt: -1 });
+      .populate('roomId', 'type price rentCycle roomNumber building floor securityDeposit')
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(bookings);
   } catch (err) {
     res.status(500).json({ message: 'Server Error' });
@@ -66,19 +86,80 @@ router.get('/my-bookings', protect, async (req, res) => {
 });
 
 // @route   GET /api/bookings/all
-// @desc    Get all lodge bookings for Admin Occupancy tab
+// @desc    Get all lodge bookings for Admin with filters (room, tenant, date range, status, search)
 // @access  Private Admin
 router.get('/all', protect, async (req, res) => {
    if (req.user.role !== 'admin') return res.status(401).json({ message: 'Not authorized' });
    try {
-     const bookings = await BookingLodge.find()
+     const { roomId, userId, status, startDate, endDate, search } = req.query;
+     const filter = {};
+     if (roomId) filter.roomId = roomId;
+     if (userId) filter.userId = userId;
+     if (status && status !== 'all') filter.status = status;
+     if (startDate || endDate) {
+       filter.checkIn = {};
+       if (startDate) filter.checkIn.$gte = new Date(startDate);
+       if (endDate) filter.checkIn.$lte = new Date(endDate);
+     }
+     if (search && search.trim()) {
+       const regex = new RegExp(search.trim(), 'i');
+       filter.$or = [
+         { agreementNumber: regex },
+         { adminNotes: regex }
+       ];
+     }
+     const bookings = await BookingLodge.find(filter)
+       .select('-versionHistory')
        .populate('userId', 'name email phone phoneNumber')
-       .populate('roomId', 'type price rentCycle')
-       .sort({ createdAt: -1 });
+       .populate('roomId', 'type price rentCycle roomNumber building floor securityDeposit')
+       .populate('lodgeId', 'name')
+       .sort({ checkIn: -1 })
+       .lean();
      res.json(bookings);
    } catch (err) {
-     res.status(500).json({ message: 'Server Error' });
+     res.status(500).json({ message: 'Server Error', error: err.message });
    }
+});
+
+// @route   GET /api/bookings/room-schedule/:roomId
+// @desc    Get room bookings calendar schedule & unavailable intervals
+// @access  Private
+router.get('/room-schedule/:roomId', protect, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const bookings = await BookingLodge.find({
+      roomId,
+      status: { $in: ['active', 'completed'] }
+    })
+      .populate('userId', 'name email phone phoneNumber')
+      .sort({ checkIn: 1 });
+
+    const schedule = bookings.map(b => ({
+      _id: b._id,
+      agreementNumber: b.agreementNumber,
+      tenantName: b.userId?.name || 'Resident',
+      tenantPhone: b.userId?.phone || b.userId?.phoneNumber || '',
+      checkIn: b.checkIn,
+      checkOut: b.checkOut,
+      status: b.status,
+      totalAmount: b.totalAmount,
+      securityDeposit: b.securityDeposit
+    }));
+
+    res.json({
+      roomId,
+      schedule,
+      unavailableIntervals: bookings.filter(b => b.status === 'active').map(b => ({
+        start: b.checkIn,
+        end: b.checkOut,
+        bookingId: b._id,
+        tenantName: b.userId?.name || 'Resident',
+        agreementNumber: b.agreementNumber
+      }))
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server Error', error: err.message });
+  }
 });
 
 // @route   PUT /api/bookings/:id/cancel
@@ -113,6 +194,17 @@ router.put('/:id/cancel', protect, async (req, res) => {
 
     booking.status = 'cancelled';
     booking.refundPercentage = refundPct;
+
+    if (!Array.isArray(booking.versionHistory)) {
+      booking.versionHistory = [];
+    }
+    booking.versionHistory.push({
+      version: (booking.acknowledgementVersion || 1) + 1,
+      generatedAt: new Date(),
+      reason: `Booking cancelled by ${req.user.name || 'User'}`
+    });
+    booking.acknowledgementVersion = (booking.acknowledgementVersion || 1) + 1;
+
     await booking.save();
 
     req.app.get('io')?.emit('booking_updated', booking);
@@ -124,27 +216,130 @@ router.put('/:id/cancel', protect, async (req, res) => {
   }
 });
 
+// @route   PUT /api/bookings/:id/checkout
+// @desc    Check-out tenant and close booking cleanly
+// @access  Private Admin
+router.put('/:id/checkout', protect, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(401).json({ message: 'Not authorized' });
+  try {
+    const { checkoutNotes, depositRefundAmount, refundMethod, refundReference } = req.body;
+    const booking = await BookingLodge.findById(req.params.id)
+      .populate('roomId')
+      .populate('userId');
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    if (booking.status === 'completed') {
+      return res.status(400).json({ message: 'Booking is already closed and checked out' });
+    }
+
+    booking.status = 'completed';
+    booking.actualCheckOut = new Date();
+    booking.checkoutNotes = checkoutNotes || 'Check-out completed by Administrator';
+    booking.checkedOutBy = req.user.name || 'Admin';
+
+    if (!Array.isArray(booking.versionHistory)) {
+      booking.versionHistory = [];
+    }
+    booking.versionHistory.push({
+      version: (booking.acknowledgementVersion || 1) + 1,
+      generatedAt: new Date(),
+      reason: `Tenant Check-out completed by ${req.user.name || 'Admin'}. ${checkoutNotes ? `Notes: ${checkoutNotes}` : ''}`.trim()
+    });
+    booking.acknowledgementVersion = (booking.acknowledgementVersion || 1) + 1;
+
+    // If a deposit refund was processed at checkout, record it as a verified payment of type Refund
+    if (depositRefundAmount && parseFloat(depositRefundAmount) > 0) {
+      const refAmt = parseFloat(depositRefundAmount);
+      await Payment.create({
+        customerId: booking.userId?._id || booking.userId,
+        tenantName: booking.userId?.name || 'Tenant',
+        name: booking.userId?.name,
+        amount: refAmt,
+        method: refundMethod || 'Bank Transfer',
+        referenceId: refundReference || `REFUND-${Date.now().toString(36).toUpperCase()}`,
+        transactionReference: refundReference || `REFUND-${Date.now()}`,
+        status: 'VERIFIED',
+        bookingId: booking._id,
+        roomId: booking.roomId?._id || booking.roomId,
+        paymentType: 'Refund',
+        chargeCategory: 'Security Deposit Refund',
+        receiptNumber: `REF-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+        notes: `Security deposit refund of ₹${refAmt} upon checkout. ${checkoutNotes || ''}`,
+        verifiedBy: req.user._id,
+        verifiedByName: req.user.name || 'Admin',
+        verifiedAt: new Date(),
+        auditLog: [{
+          action: 'REFUND_PROCESSED',
+          performedBy: req.user.name || 'Admin',
+          timestamp: new Date(),
+          notes: `Checkout refund of ₹${refAmt} issued.`
+        }]
+      });
+    }
+
+    await booking.save();
+
+    req.app.get('io')?.emit('booking_updated', booking);
+    req.app.get('io')?.emit('room_updated', { roomId: booking.roomId?._id || booking.roomId });
+    req.app.get('io')?.emit('lodge-payment-updated', { bookingId: booking._id, action: 'CHECKOUT' });
+
+    res.json({
+      message: 'Check-out successfully completed. Booking closed with history preserved.',
+      booking
+    });
+  } catch (err) {
+    console.error('Checkout error:', err);
+    res.status(500).json({ message: 'Server Error during check-out', error: err.message });
+  }
+});
+
 // @route   POST /api/bookings/admin-assign
-// @desc    Admin manually assign room (bypass limits)
+// @desc    Admin manually assign room with date validation and overlap prevention
 // @access  Private Admin
 router.post('/admin-assign', protect, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(401).json({ message: 'Not authorized' });
 
   try {
-    const { lodgeId, roomId, userId, checkIn, checkOut, totalAmount } = req.body;
+    const { lodgeId, roomId, userId, checkIn, checkOut, totalAmount, securityDeposit, adminNotes } = req.body;
     
-    await BookingLodge.updateMany(
-       { roomId, status: 'active', checkIn: { $lt: new Date(checkOut) }, checkOut: { $gt: new Date(checkIn) } },
-       { $set: { status: 'cancelled', refundPercentage: 100 } }
-    );
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+
+    if (start >= end) {
+      return res.status(400).json({ message: 'Check-out date must be after check-in date' });
+    }
+
+    // Overlap validation: multiple non-overlapping bookings of the same room are allowed
+    const conflicts = await checkRoomOverlap(roomId, start, end);
+    if (conflicts.length > 0) {
+      const c = conflicts[0];
+      const cTenant = c.userId?.name || 'Another Tenant';
+      const cStart = new Date(c.checkIn).toLocaleDateString();
+      const cEnd = new Date(c.checkOut).toLocaleDateString();
+      return res.status(409).json({
+        message: `Date overlap detected: Room is already booked from ${cStart} to ${cEnd} by ${cTenant} (Agr: ${c.agreementNumber || '-'}). Please select different dates.`,
+        conflicts
+      });
+    }
 
     const booking = await BookingLodge.create({
       userId,
       lodgeId,
       roomId,
-      checkIn: new Date(checkIn),
-      checkOut: new Date(checkOut),
-      totalAmount
+      checkIn: start,
+      checkOut: end,
+      totalAmount: parseFloat(totalAmount) || 0,
+      securityDeposit: parseFloat(securityDeposit) || 0,
+      adminNotes: adminNotes || '',
+      bookedByAdmin: req.user._id,
+      versionHistory: [{
+        version: 1,
+        generatedAt: new Date(),
+        reason: `Booking created manually by Administrator ${req.user.name || 'Admin'}`
+      }]
     });
 
     req.app.get('io')?.emit('booking_updated', booking);
@@ -152,7 +347,68 @@ router.post('/admin-assign', protect, async (req, res) => {
 
     res.status(201).json(booking);
   } catch (err) {
-    res.status(500).json({ message: 'Server Error' });
+    console.error('admin-assign error:', err);
+    res.status(500).json({ message: 'Server Error', error: err.message });
+  }
+});
+
+// @route   PUT /api/bookings/:id/admin-edit
+// @desc    Admin edit booking details with overlap protection
+// @access  Private Admin
+router.put('/:id/admin-edit', protect, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(401).json({ message: 'Not authorized' });
+  try {
+    const { checkIn, checkOut, totalAmount, securityDeposit, adminNotes, reason } = req.body;
+    const booking = await BookingLodge.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    const start = checkIn ? new Date(checkIn) : booking.checkIn;
+    const end = checkOut ? new Date(checkOut) : booking.checkOut;
+
+    if (start >= end) {
+      return res.status(400).json({ message: 'Check-out date must be after check-in date' });
+    }
+
+    // Overlap validation excluding this booking
+    const conflicts = await checkRoomOverlap(booking.roomId, start, end, booking._id);
+    if (conflicts.length > 0) {
+      const c = conflicts[0];
+      return res.status(409).json({
+        message: `Date overlap detected with booking #${c.agreementNumber || c._id.toString().slice(-6)} (${c.userId?.name || 'Resident'}) from ${new Date(c.checkIn).toLocaleDateString()} to ${new Date(c.checkOut).toLocaleDateString()}.`,
+        conflicts
+      });
+    }
+
+    booking.checkIn = start;
+    booking.checkOut = end;
+    if (totalAmount !== undefined) booking.totalAmount = parseFloat(totalAmount);
+    if (securityDeposit !== undefined) booking.securityDeposit = parseFloat(securityDeposit);
+    if (adminNotes !== undefined) booking.adminNotes = adminNotes;
+
+    if (!Array.isArray(booking.versionHistory)) {
+      booking.versionHistory = [];
+    }
+    booking.versionHistory.push({
+      version: (booking.acknowledgementVersion || 1) + 1,
+      generatedAt: new Date(),
+      reason: reason || `Booking parameters updated by Administrator ${req.user.name || 'Admin'}`
+    });
+    booking.acknowledgementVersion = (booking.acknowledgementVersion || 1) + 1;
+
+    await booking.save();
+
+    req.app.get('io')?.emit('booking_updated', booking);
+    req.app.get('io')?.emit('room_updated', { roomId: booking.roomId });
+
+    res.json({
+      message: 'Booking updated successfully',
+      booking
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server Error updating booking', error: err.message });
   }
 });
 
@@ -285,6 +541,10 @@ router.get('/:id/acknowledgement', protect, async (req, res) => {
     const statusMap = { active: 'ACTIVE', cancelled: 'CANCELLED', completed: 'CHECKED OUT' };
     const docStatus = statusMap[booking.status] || 'PENDING';
 
+    const refunds = payments.filter(p => p.paymentType === 'Refund');
+    const totalRefunded = refunds.reduce((s, p) => s + (p.amount || 0), 0);
+    const netPaid = totalPaid - totalRefunded;
+
     res.json({
       booking: {
         _id: booking._id,
@@ -296,13 +556,42 @@ router.get('/:id/acknowledgement', protect, async (req, res) => {
         bookingDate: booking.createdAt,
         checkIn: booking.checkIn,
         checkOut: booking.checkOut,
+        actualCheckOut: booking.actualCheckOut,
+        checkoutNotes: booking.checkoutNotes,
+        checkedOutBy: booking.checkedOutBy,
         daysTotal,
         daysRemaining,
         nextDueDate: nextDue,
         totalAmount: booking.totalAmount || 0,
+        securityDeposit: booking.securityDeposit || 0,
+        depositAdjustments: booking.depositAdjustments || [],
+        extraCharges: booking.extraCharges || [],
         totalPaid,
+        totalRefunded,
+        netPaid,
         outstanding,
         paymentCycle: settings?.defaultBillingCycle || 'Monthly',
+        paymentsList: payments.map(p => ({
+          _id: p._id,
+          createdAt: p.createdAt,
+          amount: p.amount,
+          method: p.method,
+          paymentType: p.paymentType || 'Rent',
+          chargeCategory: p.chargeCategory,
+          referenceId: p.referenceId,
+          receiptNumber: p.receiptNumber,
+          notes: p.notes,
+          verifiedByName: p.verifiedByName
+        })),
+        refundsList: refunds.map(r => ({
+          _id: r._id,
+          createdAt: r.createdAt,
+          amount: r.amount,
+          method: r.method,
+          chargeCategory: r.chargeCategory,
+          referenceId: r.referenceId,
+          notes: r.notes
+        }))
       },
       tenant: {
         name: booking.userId?.name || 'Guest User',

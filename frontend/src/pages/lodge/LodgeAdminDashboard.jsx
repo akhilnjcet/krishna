@@ -390,43 +390,43 @@ const LodgeAdminDashboard = () => {
     return (
         <div className="min-h-screen bg-[#F8FAFC]">
             {/* Lodge Manager Header */}
-            <div className="bg-[#111827] pt-12 pb-24 px-6 text-white overflow-hidden relative">
+            <div className="bg-[#111827] pt-6 sm:pt-12 pb-16 sm:pb-24 px-3 sm:px-6 text-white overflow-hidden relative">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                <div className="relative z-10 flex justify-between items-start mb-8">
-                    <div className="flex items-center gap-4">
+                <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
+                    <div className="flex items-center gap-3 sm:gap-4">
                         <button 
                             onClick={() => navigate('/admin')}
-                            className="p-3 bg-white/5 dark:bg-slate-800/30 rounded-2xl hover:bg-white/10 dark:bg-slate-800/50 transition-all text-slate-400"
+                            className="p-2.5 sm:p-3 bg-white/5 dark:bg-slate-800/30 rounded-xl sm:rounded-2xl hover:bg-white/10 dark:bg-slate-800/50 transition-all text-slate-400 min-w-[40px] min-h-[40px] flex items-center justify-center touch-manipulation"
                             title="Return to Main Portal"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </button>
                         <div>
-                            <div className="flex items-center gap-3">
-                                <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Lodge Manager <br /><span className="text-blue-500">Command.</span></h1>
-                                <span className="px-3 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[9px] font-black uppercase rounded-full tracking-widest">Lodge Manager</span>
+                            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                                <h1 className="text-xl sm:text-3xl font-black italic tracking-tighter uppercase leading-none">Lodge Manager <span className="text-blue-500">Command.</span></h1>
+                                <span className="px-2.5 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[9px] font-black uppercase rounded-full tracking-widest">Lodge Manager</span>
                             </div>
-                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em] mt-2">Lodge Manager Operations Portal</p>
+                            <p className="text-slate-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] sm:tracking-[0.4em] mt-1.5">Lodge Manager Operations Portal</p>
                         </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
                         <button 
                             onClick={() => navigate('/lodge/billing')}
-                            className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-md"
+                            className="flex-1 sm:flex-none px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-md min-h-[40px] touch-manipulation flex items-center justify-center"
                             title="Rent Billing System"
                         >
                             Rent Billing
                         </button>
                         <button 
                             onClick={() => navigate('/lodge')}
-                            className="px-4 py-3 bg-white/5 dark:bg-slate-800/30 hover:bg-white/10 dark:bg-slate-800/50 text-slate-300 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+                            className="flex-1 sm:flex-none px-3.5 py-2.5 bg-white/5 dark:bg-slate-800/30 hover:bg-white/10 dark:bg-slate-800/50 text-slate-300 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all min-h-[40px] touch-manipulation flex items-center justify-center"
                             title="Lodge Home"
                         >
                             Lodge Home
                         </button>
                         <button 
                             onClick={() => { logoutAdmin(); useAuthStore.getState().logout(); navigate('/lodge/admin-login'); }}
-                            className="p-3 bg-white/5 dark:bg-slate-800/30 rounded-2xl hover:bg-white/10 dark:bg-slate-800/50 transition-all text-slate-400"
+                            className="p-2.5 sm:p-3 bg-white/5 dark:bg-slate-800/30 rounded-xl sm:rounded-2xl hover:bg-white/10 dark:bg-slate-800/50 transition-all text-slate-400 min-w-[40px] min-h-[40px] flex items-center justify-center touch-manipulation ml-auto sm:ml-0"
                             title="Logout Portal"
                         >
                             <LogOut className="w-5 h-5" />
@@ -435,12 +435,12 @@ const LodgeAdminDashboard = () => {
                 </div>
 
                 {/* Tab Navigation */}
-                <div className="relative z-10 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                <div className="relative z-10 flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm whitespace-nowrap transition-all ${
+                            className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all shrink-0 min-h-[42px] touch-manipulation ${
                                 activeTab === tab.id 
                                 ? 'bg-[#2D5BE3] text-white shadow-lg shadow-blue-500/20' 
                                 : 'bg-white/5 dark:bg-slate-800/30 text-slate-400 hover:bg-white/10 dark:bg-slate-800/50'
@@ -474,11 +474,11 @@ const LodgeAdminDashboard = () => {
                             className="space-y-6"
                         >
                             {/* Live Metrics Grid */}
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                                 {liveStats.map((stat, i) => (
-                                    <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                                        <p className="text-2xl font-black text-slate-800 dark:text-slate-200">{stat.value}</p>
+                                    <div key={i} className="bg-white dark:bg-slate-900 p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs transition-all hover:shadow-md">
+                                        <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 truncate">{stat.label}</p>
+                                        <p className="text-base sm:text-2xl font-black text-slate-800 dark:text-slate-200 truncate">{stat.value}</p>
                                     </div>
                                 ))}
                             </div>

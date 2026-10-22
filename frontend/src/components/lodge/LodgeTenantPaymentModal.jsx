@@ -77,6 +77,35 @@ export default function LodgeTenantPaymentModal({
   const [proofPreview, setProofPreview] = useState('');
   const [skipProof, setSkipProof] = useState(false);
 
+  // Admin Direct Payment Entry Mode
+  const [isAdminDirectPay, setIsAdminDirectPay] = useState(Boolean(isAdmin));
+  const [adminPaymentDate, setAdminPaymentDate] = useState(() => new Date().toISOString().split('T')[0]);
+
+  // Refund Form (Admin)
+  const [refundType, setRefundType] = useState('Security Deposit Refund');
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundMethod, setRefundMethod] = useState('Bank Transfer');
+  const [refundReference, setRefundReference] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [refundNotes, setRefundNotes] = useState('');
+  const [submittingRefund, setSubmittingRefund] = useState(false);
+  const [refundSuccessMsg, setRefundSuccessMsg] = useState('');
+
+  // Payment Correction Form & Modal (Admin)
+  const [correctingPayment, setCorrectingPayment] = useState(null);
+  const [correctionForm, setCorrectionForm] = useState({
+    amount: '',
+    paymentType: 'Rent',
+    chargeCategory: 'Rent',
+    method: 'Cash',
+    referenceId: '',
+    paymentDate: '',
+    reason: '',
+    notes: ''
+  });
+  const [submittingCorrection, setSubmittingCorrection] = useState(false);
+  const [expandedAuditId, setExpandedAuditId] = useState(null);
+
   // Admin Payment Settings
   const [paymentSettings, setPaymentSettings] = useState({
     upiId: storeUpiId || 'krishnaengineering@upi',
@@ -153,6 +182,7 @@ export default function LodgeTenantPaymentModal({
       }
       setDepositSuccessMsg('');
       setAdjustmentSuccessMsg('');
+      setRefundSuccessMsg('');
       fetchBookingFinancials();
       // Pre-fill suggested rent period
       const now = new Date();
@@ -240,7 +270,7 @@ export default function LodgeTenantPaymentModal({
     if (fileInput) fileInput.click();
   };
 
-  // Submit Tenant Payment
+  // Submit Payment (Tenant Submission OR Admin Direct Entry)
   const handleSubmitPayment = async (e) => {
     e.preventDefault();
     if (isAmountExceeded) {
@@ -249,28 +279,50 @@ export default function LodgeTenantPaymentModal({
     if (activePayAmount <= 0) {
       return alert('Payment amount must be greater than zero.');
     }
-    if (!skipProof && !referenceId && paymentMethod !== 'Cash') {
-      if (!confirm('You have not entered a Transaction Reference ID/UTR. Do you wish to proceed?')) return;
-    }
 
     setSubmitting(true);
     try {
-      const payload = {
-        bookingId: booking._id,
-        roomId: room._id || booking.roomId,
-        amount: activePayAmount,
-        paymentMethod,
-        referenceId: referenceId || `REF-${Date.now().toString(36).toUpperCase()}`,
-        paymentType: paymentTarget === 'ALL' ? 'Rent' : (paymentTarget === 'DEPOSIT' ? 'Security Deposit' : (paymentTarget === 'EXTRA' ? 'Additional Charge' : 'Rent')),
-        chargeCategory: paymentTarget === 'ALL' ? 'Combined Settlement' : (paymentTarget === 'DEPOSIT' ? 'Security Deposit' : (paymentTarget === 'EXTRA' ? 'Additional Charges' : 'Rent')),
-        billingPeriodStart: booking.checkIn,
-        billingPeriodEnd: booking.checkOut,
-        grandTotal: activePayAmount,
-        notes: remarks || `Payment allocated for ${targetTitle}`,
-        uploadedProof: proofPreview || undefined
-      };
+      const paymentType = paymentTarget === 'ALL' ? 'Rent' : (paymentTarget === 'DEPOSIT' ? 'Security Deposit' : (paymentTarget === 'EXTRA' ? 'Additional Charge' : 'Rent'));
+      const chargeCategory = paymentTarget === 'ALL' ? 'Combined Settlement' : (paymentTarget === 'DEPOSIT' ? 'Security Deposit' : (paymentTarget === 'EXTRA' ? 'Additional Charges' : 'Rent'));
 
-      const res = await api.post('/lodge-payments/submit', payload);
+      let res;
+      if (isAdmin && isAdminDirectPay) {
+        // Direct Verified Entry by Admin
+        res = await api.post('/lodge-payments/record-admin-payment', {
+          bookingId: booking._id,
+          amount: activePayAmount,
+          paymentType,
+          chargeCategory,
+          method: paymentMethod,
+          referenceId: referenceId || `RCP-${Date.now().toString(36).toUpperCase()}`,
+          paymentDate: adminPaymentDate ? new Date(adminPaymentDate) : new Date(),
+          notes: remarks || `Direct payment recorded by Administrator for ${targetTitle}`
+        });
+      } else {
+        if (!skipProof && !referenceId && paymentMethod !== 'Cash') {
+          if (!confirm('You have not entered a Transaction Reference ID/UTR. Do you wish to proceed?')) {
+            setSubmitting(false);
+            return;
+          }
+        }
+
+        const payload = {
+          bookingId: booking._id,
+          roomId: room._id || booking.roomId,
+          amount: activePayAmount,
+          paymentMethod,
+          referenceId: referenceId || `REF-${Date.now().toString(36).toUpperCase()}`,
+          paymentType,
+          chargeCategory,
+          billingPeriodStart: booking.checkIn,
+          billingPeriodEnd: booking.checkOut,
+          grandTotal: activePayAmount,
+          notes: remarks || `Payment allocated for ${targetTitle}`,
+          uploadedProof: proofPreview || undefined
+        };
+        res = await api.post('/lodge-payments/submit', payload);
+      }
+
       setLastPaymentReceipt({
         ...res.data.payment,
         targetTitle,
@@ -288,6 +340,91 @@ export default function LodgeTenantPaymentModal({
       alert(err.response?.data?.message || 'Payment submission failed. Please try again.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Issue / Record Refund (Admin)
+  const handleRecordRefund = async (e) => {
+    e.preventDefault();
+    const amt = parseFloat(refundAmount);
+    if (!amt || amt <= 0) return alert('Enter a valid refund amount greater than zero.');
+    if (!refundReason.trim()) return alert('A reason for the refund is mandatory.');
+
+    setSubmittingRefund(true);
+    setRefundSuccessMsg('');
+    try {
+      await api.post('/lodge-payments/record-refund', {
+        bookingId: booking._id,
+        amount: amt,
+        refundType,
+        method: refundMethod,
+        referenceId: refundReference.trim() || undefined,
+        reason: refundReason.trim(),
+        notes: refundNotes.trim() || undefined
+      });
+
+      setRefundSuccessMsg(`✓ Successfully recorded refund of ₹${amt.toLocaleString()} (${refundType}).`);
+      setRefundAmount('');
+      setRefundReference('');
+      setRefundReason('');
+      setRefundNotes('');
+      await fetchBookingFinancials();
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to record refund.');
+    } finally {
+      setSubmittingRefund(false);
+    }
+  };
+
+  // Open Payment Correction Dialog
+  const openCorrection = (p) => {
+    setCorrectingPayment(p);
+    setCorrectionForm({
+      amount: String(p.amount || ''),
+      paymentType: p.paymentType || 'Rent',
+      chargeCategory: p.chargeCategory || p.paymentType || 'Rent',
+      method: p.method || 'Cash',
+      referenceId: p.referenceId || '',
+      paymentDate: p.paymentDate ? new Date(p.paymentDate).toISOString().split('T')[0] : (p.createdAt ? new Date(p.createdAt).toISOString().split('T')[0] : ''),
+      reason: '',
+      notes: p.notes || ''
+    });
+  };
+
+  // Submit Payment Correction with Mandatory Reason
+  const handleSubmitCorrection = async (e) => {
+    e.preventDefault();
+    if (!correctingPayment) return;
+    if (!correctionForm.reason.trim()) {
+      return alert('Correction reason is strictly mandatory and will be logged in the permanent audit history.');
+    }
+    const amt = parseFloat(correctionForm.amount);
+    if (isNaN(amt) || amt <= 0) {
+      return alert('Enter a valid correction amount greater than zero.');
+    }
+
+    setSubmittingCorrection(true);
+    try {
+      await api.put(`/lodge-payments/payments/${correctingPayment._id}/correct`, {
+        amount: amt,
+        paymentType: correctionForm.paymentType,
+        chargeCategory: correctionForm.chargeCategory,
+        method: correctionForm.method,
+        referenceId: correctionForm.referenceId.trim(),
+        paymentDate: correctionForm.paymentDate ? new Date(correctionForm.paymentDate) : undefined,
+        reason: correctionForm.reason.trim(),
+        notes: correctionForm.notes.trim()
+      });
+
+      alert('Payment record corrected and audit trail updated successfully.');
+      setCorrectingPayment(null);
+      await fetchBookingFinancials();
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to correct payment record.');
+    } finally {
+      setSubmittingCorrection(false);
     }
   };
 
@@ -430,18 +567,18 @@ export default function LodgeTenantPaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] max-w-4xl w-full shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-300 max-h-[94vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto overscroll-contain">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl max-w-4xl w-full shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-300 max-h-[96dvh] sm:max-h-[94vh] flex flex-col">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 p-6 text-white flex justify-between items-center relative overflow-hidden flex-shrink-0">
+        <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 p-4 sm:p-6 text-white flex justify-between items-start sm:items-center relative overflow-hidden shrink-0 gap-3">
           <div className="absolute right-0 top-0 w-44 h-44 bg-white/10 rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none"></div>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-3 py-1 bg-white/20 text-white rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+          <div className="relative z-10 flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="px-2.5 py-0.5 bg-white/20 text-white rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
                 <Receipt className="w-3 h-3" /> Rent Payment & Settlement Hub
               </span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+              <span className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider ${
                 overall.status === 'Fully Paid' ? 'bg-emerald-400 text-slate-950' :
                 overall.status === 'Partially Paid' ? 'bg-amber-400 text-slate-950' :
                 'bg-red-400 text-white'
@@ -449,30 +586,30 @@ export default function LodgeTenantPaymentModal({
                 {overall.status}
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+            <h2 className="text-base sm:text-xl md:text-2xl font-black tracking-tight truncate">
               Settle Room Rent, Security Deposit & Charges
             </h2>
-            <p className="text-indigo-100 text-xs mt-0.5 font-medium">
+            <p className="text-indigo-100 text-[11px] sm:text-xs mt-0.5 font-medium truncate">
               Room #{room.roomNumber || 'Suite'} • {lodge.name || 'Krishna Lodge'} • Agr: {booking.agreementNumber || '-'}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 relative z-10">
+          <div className="flex items-center gap-1.5 sm:gap-2 relative z-10 shrink-0">
             {isAdmin && (
               <button 
                 type="button"
                 onClick={() => setShowEditSettingsModal(true)}
-                className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl font-black text-xs flex items-center gap-1.5 transition-all shadow-md"
+                className="px-2.5 sm:px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl font-black text-xs flex items-center gap-1.5 transition-all shadow-md touch-manipulation min-h-[40px]"
                 title="Edit UPI ID & Bank Account Config"
               >
                 <Settings className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Rent Payment Config</span>
+                <span className="hidden md:inline">Rent Config</span>
               </button>
             )}
             <button 
               type="button"
               onClick={onClose}
-              className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all"
+              className="p-2 sm:p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl sm:rounded-2xl transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -481,7 +618,7 @@ export default function LodgeTenantPaymentModal({
         </div>
 
         {/* Tab Navigation */}
-        <div className="bg-slate-100 dark:bg-slate-800/80 px-6 py-2 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2 overflow-x-auto scrollbar-hide text-xs font-bold shrink-0">
+        <div className="bg-slate-100 dark:bg-slate-800/80 px-3 sm:px-6 py-2 border-b border-slate-200 dark:border-slate-700 flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar text-xs font-bold shrink-0 scroll-smooth">
           <button
             type="button"
             onClick={() => setActiveTab('PAY')}
@@ -536,6 +673,20 @@ export default function LodgeTenantPaymentModal({
             </button>
           )}
 
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('RECORD_REFUND')}
+              className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+                activeTab === 'RECORD_REFUND'
+                  ? 'bg-rose-600 text-white shadow-xs font-black'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700'
+              }`}
+            >
+              <RefreshCcw className="w-4 h-4" /> Issue / Record Refund
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setActiveTab('HISTORY')}
@@ -564,7 +715,7 @@ export default function LodgeTenantPaymentModal({
         </div>
 
         {/* Content Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
+        <div className="p-3 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 flex-1 -webkit-overflow-scrolling-touch">
 
           {/* ═══════════ TAB 1: PAY DUES ═══════════ */}
           {activeTab === 'PAY' && (
@@ -586,7 +737,138 @@ export default function LodgeTenantPaymentModal({
                   </button>
                 </div>
 
-                <div className="overflow-x-auto">
+                {/* Stacked Mobile Records for Small Screens (< 640px) */}
+                <div className="block sm:hidden space-y-3">
+                  {/* Rent Card */}
+                  <div className={`p-3.5 rounded-xl border transition-all ${paymentTarget === 'RENT' ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-black text-slate-900 dark:text-white text-sm">Room Rent</p>
+                        <p className="text-[10px] text-slate-400">Monthly residency charges</p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                        rentData.status === 'Fully Paid' ? 'bg-emerald-100 text-emerald-700' :
+                        rentData.status === 'Partially Paid' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {rentData.status}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-100 dark:border-slate-800 text-[11px]">
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Due</span>
+                        <span className="font-bold">₹{rentData.due.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Paid</span>
+                        <span className="font-bold text-emerald-600">₹{rentData.paid.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Remaining</span>
+                        <span className="font-black text-rose-600">₹{rentData.remaining.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setPaymentTarget('RENT'); setPaymentMode('FULL'); }}
+                      className={`w-full mt-2.5 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 touch-manipulation min-h-[38px] ${
+                        paymentTarget === 'RENT' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
+                      }`}
+                    >
+                      {paymentTarget === 'RENT' ? '✓ Selected for Payment' : 'Select Room Rent to Pay'}
+                    </button>
+                  </div>
+
+                  {/* Security Deposit Card */}
+                  <div className={`p-3.5 rounded-xl border transition-all ${paymentTarget === 'DEPOSIT' ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-black text-slate-900 dark:text-white text-sm">Security Deposit</p>
+                        <p className="text-[10px] text-slate-400">Available: <strong className="text-indigo-600">₹{depositData.available.toLocaleString()}</strong></p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                        depositData.status === 'Fully Paid' ? 'bg-emerald-100 text-emerald-700' :
+                        depositData.status === 'Partially Paid' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {depositData.status}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-100 dark:border-slate-800 text-[11px]">
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Total Required</span>
+                        <span className="font-bold">₹{depositData.original.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Paid</span>
+                        <span className="font-bold text-emerald-600">₹{depositData.paid.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Remaining</span>
+                        <span className="font-black text-rose-600">₹{depositData.remaining.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setPaymentTarget('DEPOSIT'); setPaymentMode('FULL'); }}
+                      className={`w-full mt-2.5 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 touch-manipulation min-h-[38px] ${
+                        paymentTarget === 'DEPOSIT' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
+                      }`}
+                    >
+                      {paymentTarget === 'DEPOSIT' ? '✓ Selected for Payment' : 'Select Security Deposit to Pay'}
+                    </button>
+                  </div>
+
+                  {/* Extra Charges Cards if present */}
+                  {extraChargesList.map(charge => (
+                    <div key={charge.id} className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-black text-slate-900 dark:text-white text-sm">⚡ {charge.name}</p>
+                          {charge.notes && <p className="text-[10px] text-slate-400">{charge.notes}</p>}
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                          charge.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' :
+                          charge.status === 'Partially Paid' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {charge.status}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-100 dark:border-slate-800 text-[11px]">
+                        <div>
+                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Due</span>
+                          <span className="font-bold">₹{charge.due.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Paid</span>
+                          <span className="font-bold text-emerald-600">₹{charge.paid.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Remaining</span>
+                          <span className="font-black text-rose-600">₹{charge.remaining.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Select All Full Due Card */}
+                  <div className="p-3 bg-slate-100 dark:bg-slate-800/80 rounded-xl flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-black text-slate-800 dark:text-white">Total Outstanding Balance</p>
+                      <p className="text-[10px] text-slate-500">Rent + Deposit + Extras</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setPaymentTarget('ALL'); setPaymentMode('FULL'); }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                        paymentTarget === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 text-indigo-600 border'
+                      }`}
+                    >
+                      {paymentTarget === 'ALL' ? '✓ All Selected' : 'Select All Dues'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Desktop / Tablet Table View (sm:block) */}
+                <div className="hidden sm:block overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-400 font-black uppercase text-[10px]">
@@ -1471,57 +1753,276 @@ export default function LodgeTenantPaymentModal({
             </div>
           )}
 
-          {/* ═══════════ TAB 4: TRANSACTION & ADJUSTMENT HISTORY ═══════════ */}
+          {/* ═══════════ TAB 4: ISSUE / RECORD REFUND (ADMIN) ═══════════ */}
+          {activeTab === 'RECORD_REFUND' && isAdmin && (
+            <div className="space-y-5">
+              <div className="bg-rose-50 dark:bg-slate-800 p-5 rounded-2xl border border-rose-200 dark:border-slate-700 text-slate-800 dark:text-white">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <RefreshCcw className="w-5 h-5 text-rose-600" />
+                  <h3 className="font-black text-base">Issue / Record Resident Refund</h3>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Record refunds for security deposits, advance rent, or excess utility payments. Every refund is logged directly to this specific booking with a mandatory audit reason.
+                </p>
+                {depositData.available > 0 && (
+                  <div className="mt-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-rose-100 dark:border-slate-700 flex items-center justify-between">
+                    <span className="text-xs text-slate-600 dark:text-slate-300 font-bold">
+                      Available Security Deposit Held: <strong className="text-rose-600 font-poppins">₹{depositData.available.toLocaleString()}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRefundAmount(String(depositData.available));
+                        setRefundType('Security Deposit Refund');
+                        setRefundReason('Full security deposit refunded upon tenancy checkout & room inspection');
+                      }}
+                      className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-[10px] font-black transition"
+                    >
+                      Fill Available Deposit (₹{depositData.available.toLocaleString()})
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {refundSuccessMsg && (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-800 font-bold flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span>{refundSuccessMsg}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleRecordRefund} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Refund Category / Type *
+                    </label>
+                    <select
+                      value={refundType}
+                      onChange={(e) => setRefundType(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none"
+                    >
+                      <option value="Security Deposit Refund">Security Deposit Refund</option>
+                      <option value="Rent Refund">Rent Refund / Overpayment</option>
+                      <option value="Utility / Service Charge Refund">Utility / Service Charge Refund</option>
+                      <option value="Advance Refund">Advance Booking Refund</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Refund Amount (₹) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      placeholder="e.g. 10000"
+                      value={refundAmount}
+                      onChange={(e) => setRefundAmount(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Disbursement Method *
+                    </label>
+                    <select
+                      value={refundMethod}
+                      onChange={(e) => setRefundMethod(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none"
+                    >
+                      <option value="Bank Transfer">Bank Transfer (NEFT/IMPS)</option>
+                      <option value="UPI">UPI Transfer</option>
+                      <option value="Cash">Cash Handover</option>
+                      <option value="Cheque">Cheque</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Transaction / UTR Reference ID
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. UTR-98402830491 or Cheque #"
+                      value={refundReference}
+                      onChange={(e) => setRefundReference(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Mandatory Reason for Refund *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Security deposit refund upon checkout clearance, zero room damages recorded"
+                    value={refundReason}
+                    onChange={(e) => setRefundReason(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">This reason is permanently preserved in the transaction audit trail.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Internal Notes (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Sent to tenant HDFC account ending 4019"
+                    value={refundNotes}
+                    onChange={(e) => setRefundNotes(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submittingRefund}
+                  className="w-full bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white py-3 rounded-xl font-black text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+                >
+                  {submittingRefund ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" />}
+                  <span>Record & Commit Refund</span>
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* ═══════════ TAB 5: TRANSACTION & ADJUSTMENT HISTORY ═══════════ */}
           {activeTab === 'HISTORY' && (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">
-                  Payment Transactions & Adjustments
-                </h3>
-                <span className="text-xs font-bold text-slate-500">
-                  Total Records: {financials?.payments?.length || 0}
-                </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">
+                    Payment Transactions, Adjustments & Refunds
+                  </h3>
+                  <p className="text-[10px] text-slate-400">Strictly isolated to Booking #{booking.agreementNumber || String(booking._id).slice(-6).toUpperCase()}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('RECORD_REFUND')}
+                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl font-black text-[11px] transition flex items-center gap-1"
+                    >
+                      <RefreshCcw className="w-3.5 h-3.5" /> Issue Refund
+                    </button>
+                  )}
+                  <span className="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+                    Total Records: {financials?.payments?.length || 0}
+                  </span>
+                </div>
               </div>
 
               {financials?.payments?.length > 0 ? (
-                <div className="space-y-2.5">
-                  {financials.payments.map((p, idx) => (
-                    <div 
-                      key={p._id || idx} 
-                      className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                            p.status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800' :
-                            p.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
-                          }`}>
-                            {p.status}
-                          </span>
-                          <span className="text-xs font-black text-slate-800 dark:text-white">
-                            {p.paymentType || 'Rent'} {p.chargeCategory ? `· ${p.chargeCategory}` : ''}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500">
-                          Ref: <strong className="font-mono text-slate-700 dark:text-slate-300">{p.referenceId || p.transactionReference || 'N/A'}</strong> • Method: {p.method}
-                        </p>
-                        <p className="text-[10px] text-slate-400">
-                          Date: {new Date(p.paymentDate || p.createdAt).toLocaleString()} {p.notes ? `• ${p.notes}` : ''}
-                        </p>
-                      </div>
+                <div className="space-y-3">
+                  {financials.payments.map((p, idx) => {
+                    const isRefund = (p.paymentType || '').toLowerCase().includes('refund');
+                    const hasAudit = Array.isArray(p.auditLog) && p.auditLog.length > 0;
+                    const isAuditExpanded = expandedAuditId === (p._id || idx);
 
-                      <div className="text-right">
-                        <p className="text-base font-black text-slate-900 dark:text-white font-poppins">
-                          ₹{p.amount.toLocaleString()}
-                        </p>
-                        {p.receiptNumber && (
-                          <span className="text-[9px] font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded font-bold">
-                            {p.receiptNumber}
-                          </span>
+                    return (
+                      <div 
+                        key={p._id || idx} 
+                        className={`p-4 rounded-2xl border transition-all ${
+                          isRefund 
+                            ? 'bg-rose-50/40 dark:bg-slate-800 border-rose-200 dark:border-rose-900/40' 
+                            : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                isRefund ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                                p.status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800' :
+                                p.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {isRefund ? 'REFUND' : p.status}
+                              </span>
+                              <span className="text-xs font-black text-slate-800 dark:text-white">
+                                {p.paymentType || 'Rent'} {p.chargeCategory ? `· ${p.chargeCategory}` : ''}
+                              </span>
+                              {p.verifiedByName && (
+                                <span className="text-[10px] text-slate-400 font-semibold">
+                                  (By {p.verifiedByName})
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-500">
+                              Ref: <strong className="font-mono text-slate-700 dark:text-slate-300">{p.referenceId || p.transactionReference || 'N/A'}</strong> • Method: {p.method}
+                            </p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              Date: {new Date(p.paymentDate || p.createdAt).toLocaleString()} {p.notes ? `• ${p.notes}` : ''}
+                            </p>
+                          </div>
+
+                          <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2">
+                            <p className={`text-base font-black font-poppins ${isRefund ? 'text-rose-600' : 'text-slate-900 dark:text-white'}`}>
+                              {isRefund ? '-' : ''}₹{p.amount.toLocaleString()}
+                            </p>
+                            {p.receiptNumber && (
+                              <span className="text-[9px] font-mono text-indigo-600 bg-indigo-50 dark:bg-slate-700 px-2 py-0.5 rounded font-bold">
+                                {p.receiptNumber}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Audit Log Dropdown & Admin Correction Toolbar */}
+                        <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            {hasAudit && (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedAuditId(isAuditExpanded ? null : (p._id || idx))}
+                                className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                              >
+                                <History className="w-3 h-3" />
+                                <span>Audit Trail ({p.auditLog.length})</span>
+                                <ChevronDown className={`w-3 h-3 transition-transform ${isAuditExpanded ? 'rotate-180' : ''}`} />
+                              </button>
+                            )}
+                          </div>
+
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => openCorrection(p)}
+                              className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-lg text-[10px] font-black transition flex items-center gap-1"
+                              title="Correct payment amount, type, reference or date with mandatory audit reason"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              <span>Correct Record</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Expanded Audit Log Items */}
+                        {isAuditExpanded && hasAudit && (
+                          <div className="mt-2.5 p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 text-xs animate-in fade-in duration-200">
+                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Change & Correction History</p>
+                            {p.auditLog.map((log, lIdx) => (
+                              <div key={lIdx} className="text-[11px] pb-1.5 border-b border-slate-100 dark:border-slate-800 last:border-b-0">
+                                <div className="flex justify-between font-bold text-slate-700 dark:text-slate-300">
+                                  <span>{log.action} • {log.performedBy || 'Admin'}</span>
+                                  <span className="text-[10px] text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
+                                </div>
+                                <p className="text-[10.5px] text-slate-500 mt-0.5">{log.notes}</p>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="py-12 text-center text-slate-400 text-xs">
@@ -1722,6 +2223,136 @@ export default function LodgeTenantPaymentModal({
               >
                 {savingSettings ? 'Saving...' : 'Save Payment Configuration'}
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Correction Modal (Admin with Mandatory Audit Reason) */}
+      {correctingPayment && (
+        <div className="fixed inset-0 z-[70] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-amber-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto animate-in zoom-in duration-200">
+            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div>
+                <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-black uppercase tracking-wider">
+                  Audited Payment Correction
+                </span>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white mt-1">
+                  Correct Payment Record
+                </h3>
+                <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                  Ref: {correctingPayment.referenceId || correctingPayment.transactionReference || correctingPayment._id}
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setCorrectingPayment(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-xl"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitCorrection} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Amount (₹) *</label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    value={correctionForm.amount}
+                    onChange={e => setCorrectionForm({...correctionForm, amount: e.target.value})}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-bold font-poppins text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Payment Type</label>
+                  <select
+                    value={correctionForm.paymentType}
+                    onChange={e => setCorrectionForm({...correctionForm, paymentType: e.target.value, chargeCategory: e.target.value})}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-bold text-slate-900 dark:text-white"
+                  >
+                    <option value="Rent">Rent</option>
+                    <option value="Security Deposit">Security Deposit</option>
+                    <option value="Additional Charge">Additional Charge</option>
+                    <option value="Deposit Adjustment">Deposit Adjustment</option>
+                    <option value="Refund">Refund</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Method</label>
+                  <select
+                    value={correctionForm.method}
+                    onChange={e => setCorrectionForm({...correctionForm, method: e.target.value})}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-bold text-slate-900 dark:text-white"
+                  >
+                    <option value="Cash">Cash</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Card">Card</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Security Deposit">Security Deposit</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Payment Date</label>
+                  <input
+                    type="date"
+                    value={correctionForm.paymentDate}
+                    onChange={e => setCorrectionForm({...correctionForm, paymentDate: e.target.value})}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-bold text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Reference / UTR ID</label>
+                <input
+                  type="text"
+                  value={correctionForm.referenceId}
+                  onChange={e => setCorrectionForm({...correctionForm, referenceId: e.target.value})}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl font-mono text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/60">
+                <label className="block font-black text-amber-900 dark:text-amber-200 mb-1">
+                  Correction Reason (Mandatory Audit Log) *
+                </label>
+                <textarea
+                  required
+                  rows={2}
+                  placeholder="e.g. Corrected typo in amount from ₹5000 to ₹4500 as per bank statement reconciliation"
+                  value={correctionForm.reason}
+                  onChange={e => setCorrectionForm({...correctionForm, reason: e.target.value})}
+                  className="w-full bg-white dark:bg-slate-900 border border-amber-300 dark:border-slate-700 p-2 rounded-lg text-xs font-medium text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-amber-500"
+                />
+                <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1">
+                  Administrator name, timestamp, previous values, and this reason will be permanently saved.
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setCorrectingPayment(null)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 py-3 rounded-xl font-bold text-xs transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingCorrection}
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 py-3 rounded-xl font-black text-xs shadow-md transition flex items-center justify-center gap-1.5"
+                >
+                  {submittingCorrection ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                  <span>Save & Record Audit</span>
+                </button>
+              </div>
             </form>
           </div>
         </div>

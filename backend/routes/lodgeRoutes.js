@@ -6,10 +6,22 @@ const { protect, admin } = require('../middleware/authMiddleware');
 const { listarArquivosDaPasta, extrairFolderId } = require('../utils/driveHelper');
 const lodgeController = require('../controllers/lodgeController');
 
+let cachedFallbackImages = null;
+let lastFallbackFetchTime = 0;
+const FALLBACK_CACHE_TTL = 10 * 60 * 1000; // 10 minutes cache
+
 const getFallbackImages = async () => {
+    const now = Date.now();
+    if (cachedFallbackImages && (now - lastFallbackFetchTime < FALLBACK_CACHE_TTL)) {
+        return cachedFallbackImages;
+    }
     try {
-        const driveLink = await DriveLink.findOne();
-        if (!driveLink || !driveLink.link) return [];
+        const driveLink = await DriveLink.findOne().lean();
+        if (!driveLink || !driveLink.link) {
+            cachedFallbackImages = [];
+            lastFallbackFetchTime = now;
+            return [];
+        }
         
         let files = [];
         const folderId = extrairFolderId(driveLink.link);
@@ -23,10 +35,12 @@ const getFallbackImages = async () => {
         } else {
             files = [driveLink.link];
         }
-        return files.map(f => ({ url: f, publicId: 'drive_link' }));
+        cachedFallbackImages = files.map(f => ({ url: f, publicId: 'drive_link' }));
+        lastFallbackFetchTime = now;
+        return cachedFallbackImages;
     } catch (err) {
         console.error('Error fetching lodge fallback images:', err);
-        return [];
+        return cachedFallbackImages || [];
     }
 };
 
@@ -35,40 +49,17 @@ router.post('/sync', protect, lodgeController.syncLodgeData);
 
 router.get('/', async (req, res) => {
   try {
-    const lodges = await Lodge.find({});
+    const lodges = await Lodge.find({}).lean();
     
-    // Auto-expand folder links for lodges
-    for (let lodge of lodges) {
-        let lodgeUpdated = false;
-        const newImages = [];
-        for (const img of lodge.images || []) {
-            const folderId = extrairFolderId(img.url);
-            if (folderId && img.url.includes('/folders/')) {
-                try {
-                    const files = await listarArquivosDaPasta(folderId);
-                    files.forEach(f => newImages.push({ url: f, publicId: 'drive_link' }));
-                    lodgeUpdated = true;
-                } catch (err) {
-                    console.error('Failed to auto-expand folder:', folderId, err);
-                    newImages.push(img);
-                }
-            } else {
-                newImages.push(img);
-            }
-        }
-        if (lodgeUpdated) {
-            lodge.images = newImages;
-            await lodge.save();
-        }
-    }
+    // Quick fallback check if no images exist
+    const hasEmptyImages = lodges.some(l => !l.images || l.images.length === 0);
+    const fallbackImages = hasEmptyImages ? await getFallbackImages() : [];
 
-    const fallbackImages = await getFallbackImages();
     const lodgesJSON = lodges.map(l => {
-        const obj = l.toJSON();
-        if (!obj.images || obj.images.length === 0) {
-            obj.images = fallbackImages;
+        if (!l.images || l.images.length === 0) {
+            return { ...l, images: fallbackImages };
         }
-        return obj;
+        return l;
     });
     
     res.json(lodgesJSON);
@@ -215,15 +206,18 @@ router.get('/sys/stats', protect, admin, async (req, res) => {
         const Room = require('../models/Room');
         const User = require('../models/User');
 
-        const [totalBookings, payments, totalRooms, totalUsers] = await Promise.all([
+        const [totalBookings, revenueAgg, totalRooms, totalUsers, activeBookings] = await Promise.all([
             Booking.countDocuments(),
-            Payment.find({ status: 'verified' }),
-            Room.countDocuments(),
-            User.countDocuments({ role: 'customer' })
+            Payment.aggregate([
+                { $match: { status: { $in: ['verified', 'VERIFIED', 'approved', 'APPROVED', 'paid', 'PAID'] } } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]),
+            Room.countDocuments({ isActive: true }),
+            User.countDocuments({ role: 'customer' }),
+            Booking.countDocuments({ status: 'active' })
         ]);
 
-        const totalRevenue = payments.reduce((acc, curr) => acc + curr.amount, 0);
-        const activeBookings = await Booking.countDocuments({ status: 'active' });
+        const totalRevenue = revenueAgg[0]?.total || 0;
         const occupancyRate = totalRooms > 0 ? (activeBookings / totalRooms) * 100 : 0;
 
         res.json({

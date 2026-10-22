@@ -3,13 +3,15 @@ import {
     Building2, Plus, DoorOpen, List, Trash2, Edit3, UserPlus, 
     Calendar, IndianRupee, AlertTriangle, Users, CheckCircle, 
     Settings, LogOut, Clock, Link, Check, X, Building, BarChart3, ShieldAlert, ArrowLeft, Folder,
-    Eye, Search, Filter, ShieldCheck, CreditCard
+    Eye, Search, Filter, ShieldCheck, CreditCard, ChevronLeft, ChevronRight, FileText, CheckCircle2,
+    RefreshCcw, LogIn
 } from 'lucide-react';
 import api from '../../services/api';
 import { getDirectImageUrl, expandGoogleDriveFolders } from '../../utils/imageUtils';
 import DriveImage from '../../components/DriveImage';
 import LodgeBillingManager from './LodgeBillingManager';
 import LodgeTenantPaymentModal from '../../components/lodge/LodgeTenantPaymentModal';
+import ResidencyAcknowledgementModal from '../../components/ResidencyAcknowledgementModal';
 import { getSocket } from '../../utils/socket';
 
 export default function LodgeAdminManager() {
@@ -65,8 +67,60 @@ export default function LodgeAdminManager() {
   const [editClient, setEditClient] = useState(null);
   const [clientForm, setClientForm] = useState({ name: '', phone: '', password: '', status: 'active' });
 
-  // Assign Room
-  const [assignModal, setAssignModal] = useState({ show: false, roomId: null, userId: '' });
+  // Assign Room / New Booking Modal
+  const [assignModal, setAssignModal] = useState({ 
+    show: false, 
+    roomId: null, 
+    roomNumber: '',
+    roomType: '',
+    userId: '',
+    checkIn: '',
+    checkOut: '',
+    totalAmount: '',
+    securityDeposit: '',
+    adminNotes: '',
+    unavailableIntervals: [],
+    loadingSchedule: false
+  });
+
+  // Edit Booking Modal
+  const [editBookingModal, setEditBookingModal] = useState({
+    show: false,
+    booking: null,
+    checkIn: '',
+    checkOut: '',
+    totalAmount: '',
+    securityDeposit: '',
+    adminNotes: '',
+    reason: '',
+    unavailableIntervals: [],
+    loadingSchedule: false
+  });
+
+  // Check-Out / Close Booking Modal
+  const [checkoutModal, setCheckoutModal] = useState({
+    show: false,
+    booking: null,
+    actualCheckOut: '',
+    checkoutNotes: '',
+    issueRefund: false,
+    refundAmount: '',
+    refundMethod: 'Bank Transfer',
+    refundReason: 'Security deposit refund upon tenancy closure',
+    submitting: false
+  });
+
+  // Residency Acknowledgement Modal
+  const [viewAckBookingId, setViewAckBookingId] = useState(null);
+
+  // Occupancy Sub-views: 'calendar' | 'history'
+  const [occupancySubView, setOccupancySubView] = useState('calendar');
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyRoomFilter, setHistoryRoomFilter] = useState('All');
+  const [historyStatusFilter, setHistoryStatusFilter] = useState('All');
+  const [historyStartDate, setHistoryStartDate] = useState('');
+  const [historyEndDate, setHistoryEndDate] = useState('');
 
   // Add Payment
   const [paymentModal, setPaymentModal] = useState({ show: false, customerId: '', amount: '', notes: '' });
@@ -93,20 +147,40 @@ export default function LodgeAdminManager() {
     }
   }, [selectedLodge]);
 
-  const refreshActiveTabData = () => {
+  const refreshActiveTabData = (targetTab = activeTab) => {
     if (!selectedLodge || selectedLodge._id === 'error_state') return;
-    fetchRooms(selectedLodge._id);
-    fetchClients();
-    fetchBookings();
-    fetchPayments();
-    fetchComplaints();
-    fetchStats();
+    const lodgeId = selectedLodge._id;
+    
+    // Tab-targeted fetching to eliminate redundant requests and reduce latency
+    if (targetTab === 'dashboard') {
+      fetchRooms(lodgeId);
+      fetchBookings();
+      fetchStats();
+    } else if (targetTab === 'rooms') {
+      fetchRooms(lodgeId);
+      fetchClients();
+    } else if (targetTab === 'occupancy') {
+      fetchRooms(lodgeId);
+      fetchBookings();
+    } else if (targetTab === 'clients') {
+      fetchClients();
+      fetchBookings();
+    } else if (targetTab === 'complaints') {
+      fetchComplaints();
+    }
   };
 
+  // Initial load when selectedLodge becomes ready
   useEffect(() => {
-    if(!selectedLodge) return;
-    refreshActiveTabData();
-  }, [activeTab, selectedLodge]);
+    if (!selectedLodge || selectedLodge._id === 'error_state') return;
+    refreshActiveTabData('dashboard');
+  }, [selectedLodge]);
+
+  // Tab switch: targeted fetch only for the newly selected tab
+  useEffect(() => {
+    if (!selectedLodge || selectedLodge._id === 'error_state') return;
+    refreshActiveTabData(activeTab);
+  }, [activeTab]);
 
   // Real-Time Socket.IO Synchronization
   useEffect(() => {
@@ -191,17 +265,26 @@ export default function LodgeAdminManager() {
   const fetchRooms = async (lodgeId) => {
     if (!lodgeId || lodgeId === 'error_state') return;
     const res = await api.get(`/rooms/lodge/${lodgeId}`);
-    const roomsData = res.data;
-    const expandedRooms = await Promise.all(roomsData.map(async room => {
-        const expandedInterior = await expandGoogleDriveFolders(room.interiorPhotos || []);
-        const expandedExterior = await expandGoogleDriveFolders(room.exteriorPhotos || []);
-        return {
-            ...room,
-            interiorPhotos: expandedInterior,
-            exteriorPhotos: expandedExterior
-        };
-    }));
-    setRooms(expandedRooms);
+    const roomsData = res.data || [];
+    // Display rooms immediately so UI renders in <100ms
+    setRooms(roomsData);
+
+    // Non-blocking background folder expansion if needed
+    const hasFolders = roomsData.some(r => 
+        (r.interiorPhotos || []).some(p => (p.url || p).includes('/folders/')) ||
+        (r.exteriorPhotos || []).some(p => (p.url || p).includes('/folders/'))
+    );
+    if (hasFolders) {
+        Promise.all(roomsData.map(async room => {
+            const expandedInterior = await expandGoogleDriveFolders(room.interiorPhotos || []);
+            const expandedExterior = await expandGoogleDriveFolders(room.exteriorPhotos || []);
+            return {
+                ...room,
+                interiorPhotos: expandedInterior,
+                exteriorPhotos: expandedExterior
+            };
+        })).then(expanded => setRooms(expanded)).catch(e => console.warn('Background folder expansion error:', e));
+    }
   };
   
   const fetchClients = async () => {
@@ -329,28 +412,176 @@ export default function LodgeAdminManager() {
      }
   };
 
+  // Open Assign Room Modal with live schedule & unavailable dates
+  const handleOpenAssignModal = async (room) => {
+    const today = new Date();
+    const defaultCheckIn = today.toISOString().split('T')[0];
+    const nextMonth = new Date(today);
+    nextMonth.setDate(nextMonth.getDate() + 30);
+    const defaultCheckOut = nextMonth.toISOString().split('T')[0];
+
+    setAssignModal({
+      show: true,
+      roomId: room._id,
+      roomNumber: room.roomNumber,
+      roomType: room.type,
+      userId: '',
+      checkIn: defaultCheckIn,
+      checkOut: defaultCheckOut,
+      totalAmount: String(room.price || ''),
+      securityDeposit: String(room.securityDeposit || ''),
+      adminNotes: '',
+      unavailableIntervals: [],
+      loadingSchedule: true
+    });
+
+    try {
+      const res = await api.get(`/bookings/room-schedule/${room._id}`);
+      if (res.data?.intervals) {
+        setAssignModal(prev => ({
+          ...prev,
+          unavailableIntervals: res.data.intervals,
+          loadingSchedule: false
+        }));
+      }
+    } catch (e) {
+      console.warn('Failed to load room schedule:', e);
+      setAssignModal(prev => ({ ...prev, loadingSchedule: false }));
+    }
+  };
+
   const assignRoomManual = async (e) => {
       e.preventDefault();
       try {
-          const checkIn = new Date();
-          const checkOut = new Date();
-          checkOut.setFullYear(checkOut.getFullYear() + 1);
+          const { roomId, userId, checkIn, checkOut, totalAmount, securityDeposit, adminNotes } = assignModal;
+          if (!roomId || !userId || !checkIn || !checkOut) {
+            return alert("Please select a tenant identity and both check-in & check-out dates.");
+          }
+          if (new Date(checkIn) >= new Date(checkOut)) {
+            return alert("Check-out date must be after check-in date.");
+          }
 
           await api.post('/bookings/admin-assign', {
               lodgeId: selectedLodge._id,
-              roomId: assignModal.roomId,
-              userId: assignModal.userId,
-              checkIn, checkOut,
-              totalAmount: 0 
+              roomId,
+              userId,
+              checkIn: new Date(checkIn),
+              checkOut: new Date(checkOut),
+              totalAmount: totalAmount !== '' ? parseFloat(totalAmount) : undefined,
+              securityDeposit: securityDeposit !== '' ? parseFloat(securityDeposit) : undefined,
+              adminNotes: adminNotes || undefined
           });
-          alert("Room Assigned! Locked online booking for 1 year.");
-          setAssignModal({ show:false, roomId: null, userId: '' });
-      } catch(e) { alert("Error assigning"); }
+          alert("Room Booking Assigned Successfully!");
+          setAssignModal({ show: false, roomId: null, roomNumber: '', roomType: '', userId: '', checkIn: '', checkOut: '', totalAmount: '', securityDeposit: '', adminNotes: '', unavailableIntervals: [], loadingSchedule: false });
+          refreshActiveTabData();
+      } catch(e) { 
+        alert(e.response?.data?.message || "Error assigning booking. Please check for date overlaps."); 
+      }
+  };
+
+  // Open Edit Booking Modal
+  const handleOpenEditBooking = async (booking) => {
+    const roomId = booking.roomId?._id || booking.roomId;
+    setEditBookingModal({
+      show: true,
+      booking,
+      checkIn: booking.checkIn ? new Date(booking.checkIn).toISOString().split('T')[0] : '',
+      checkOut: booking.checkOut ? new Date(booking.checkOut).toISOString().split('T')[0] : '',
+      totalAmount: String(booking.totalAmount || ''),
+      securityDeposit: String(booking.securityDeposit || ''),
+      adminNotes: booking.adminNotes || '',
+      reason: '',
+      unavailableIntervals: [],
+      loadingSchedule: true
+    });
+
+    try {
+      const res = await api.get(`/bookings/room-schedule/${roomId}`);
+      if (res.data?.intervals) {
+        const otherIntervals = res.data.intervals.filter(i => String(i.bookingId) !== String(booking._id));
+        setEditBookingModal(prev => ({
+          ...prev,
+          unavailableIntervals: otherIntervals,
+          loadingSchedule: false
+        }));
+      }
+    } catch (e) {
+      console.warn('Failed to load room schedule:', e);
+      setEditBookingModal(prev => ({ ...prev, loadingSchedule: false }));
+    }
+  };
+
+  const handleSaveEditBooking = async (e) => {
+    e.preventDefault();
+    try {
+      const { booking, checkIn, checkOut, totalAmount, securityDeposit, adminNotes, reason } = editBookingModal;
+      if (new Date(checkIn) >= new Date(checkOut)) {
+        return alert("Check-out date must be after check-in date.");
+      }
+
+      await api.put(`/bookings/${booking._id}/admin-edit`, {
+        checkIn: new Date(checkIn),
+        checkOut: new Date(checkOut),
+        totalAmount: parseFloat(totalAmount) || 0,
+        securityDeposit: parseFloat(securityDeposit) || 0,
+        adminNotes,
+        reason: reason || 'Booking parameters updated by Administrator'
+      });
+
+      alert("Booking parameters updated successfully!");
+      setEditBookingModal(prev => ({ ...prev, show: false }));
+      refreshActiveTabData();
+    } catch (e) {
+      alert(e.response?.data?.message || "Error updating booking.");
+    }
+  };
+
+  // Open Check-Out Modal
+  const handleOpenCheckout = (booking) => {
+    const originalDep = parseFloat(booking.securityDeposit || booking.roomId?.securityDeposit || 0);
+    const adjustments = (booking.depositAdjustments || []).reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
+    const availableDep = Math.max(0, originalDep - adjustments);
+
+    setCheckoutModal({
+      show: true,
+      booking,
+      actualCheckOut: new Date().toISOString().split('T')[0],
+      checkoutNotes: '',
+      issueRefund: availableDep > 0,
+      refundAmount: String(availableDep),
+      refundMethod: 'Bank Transfer',
+      refundReason: 'Security deposit refund upon tenancy closure and clearance',
+      submitting: false
+    });
+  };
+
+  const handleConfirmCheckout = async (e) => {
+    e.preventDefault();
+    try {
+      const { booking, actualCheckOut, checkoutNotes, issueRefund, refundAmount, refundMethod, refundReason } = checkoutModal;
+      setCheckoutModal(prev => ({ ...prev, submitting: true }));
+
+      await api.put(`/bookings/${booking._id}/checkout`, {
+        actualCheckOut: actualCheckOut ? new Date(actualCheckOut) : new Date(),
+        checkoutNotes: checkoutNotes.trim(),
+        refundDeposit: issueRefund && parseFloat(refundAmount) > 0,
+        refundAmount: parseFloat(refundAmount) || 0,
+        refundMethod: refundMethod || 'Bank Transfer',
+        refundReason: refundReason || 'Security deposit refund upon tenancy closure'
+      });
+
+      alert("Tenant checked out successfully! Booking closed and past payment history preserved.");
+      setCheckoutModal(prev => ({ ...prev, show: false, submitting: false }));
+      refreshActiveTabData();
+    } catch (e) {
+      alert(e.response?.data?.message || "Checkout failed.");
+      setCheckoutModal(prev => ({ ...prev, submitting: false }));
+    }
   };
 
   // OCCUPANCY LOGIC
   const cancelBooking = async (id) => {
-      if(confirm('Evict tenant and cancel booking? This frees the room immediately.')) {
+      if(confirm('Evict tenant and cancel booking? This marks the booking cancelled without deleting history.')) {
           await api.put(`/bookings/${id}/cancel`);
           fetchBookings();
       }
@@ -472,32 +703,39 @@ export default function LodgeAdminManager() {
       );
   }
 
-  // Live Database Room Cards Enrichment
-  const activeBookingsList = bookings.filter(b => b.status === 'active');
-  const activeBookingUserIds = new Set(activeBookingsList.map(b => b.userId?._id || b.userId));
-
-  const unassignedClients = clients.filter(c => !activeBookingUserIds.has(c._id));
+  // Live Database Room Cards Enrichment (Supporting Multiple Non-overlapping Bookings)
+  const now = new Date();
 
   const enrichedRooms = rooms.map(room => {
-    const activeBooking = activeBookingsList.find(b => {
+    const roomBookings = bookings.filter(b => {
       const bRoomId = b.roomId?._id || b.roomId;
       return String(bRoomId) === String(room._id);
     });
 
-    const occupantName = activeBooking?.userId?.name || 'Vacant';
-    const phone = activeBooking?.userId?.phone || activeBooking?.userId?.phoneNumber || 'N/A';
-    const email = activeBooking?.userId?.email || 'N/A';
-    const bookingId = activeBooking?._id ? activeBooking._id.substring(activeBooking._id.length - 8).toUpperCase() : 'N/A';
-    const checkIn = activeBooking?.checkIn ? new Date(activeBooking.checkIn).toLocaleDateString() : 'N/A';
-    const checkOut = activeBooking?.checkOut ? new Date(activeBooking.checkOut).toLocaleDateString() : 'N/A';
+    // Active booking: active status and current date fits within stay, or active
+    const activeBooking = roomBookings.find(b => b.status === 'active' && new Date(b.checkIn) <= now && new Date(b.checkOut) >= now)
+      || roomBookings.find(b => b.status === 'active');
+
+    const upcomingBookings = roomBookings.filter(b => b.status === 'active' && new Date(b.checkIn) > now)
+      .sort((a,b) => new Date(a.checkIn) - new Date(b.checkIn));
+
+    const pastBookings = roomBookings.filter(b => b.status === 'completed' || b.status === 'cancelled' || (b.status === 'active' && new Date(b.checkOut) < now))
+      .sort((a,b) => new Date(b.checkOut) - new Date(a.checkOut));
+
+    const occupantName = activeBooking?.userId?.name || (upcomingBookings.length > 0 ? `Upcoming: ${upcomingBookings[0].userId?.name}` : 'Vacant');
+    const phone = activeBooking?.userId?.phone || activeBooking?.userId?.phoneNumber || (upcomingBookings[0]?.userId?.phone || 'N/A');
+    const email = activeBooking?.userId?.email || (upcomingBookings[0]?.userId?.email || 'N/A');
+    const bookingId = activeBooking?._id ? activeBooking._id.substring(activeBooking._id.length - 8).toUpperCase() : (upcomingBookings[0]?._id ? upcomingBookings[0]._id.substring(upcomingBookings[0]._id.length - 8).toUpperCase() : 'N/A');
+    const checkIn = activeBooking?.checkIn ? new Date(activeBooking.checkIn).toLocaleDateString() : (upcomingBookings[0]?.checkIn ? new Date(upcomingBookings[0].checkIn).toLocaleDateString() : 'N/A');
+    const checkOut = activeBooking?.checkOut ? new Date(activeBooking.checkOut).toLocaleDateString() : (upcomingBookings[0]?.checkOut ? new Date(upcomingBookings[0].checkOut).toLocaleDateString() : 'N/A');
     
     let daysRemaining = 0;
     if (activeBooking?.checkOut) {
-      const diff = new Date(activeBooking.checkOut) - new Date();
+      const diff = new Date(activeBooking.checkOut) - now;
       daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
     }
 
-    const currentStatus = activeBooking ? 'Occupied' : (room.isActive === false ? 'Maintenance' : 'Available');
+    const currentStatus = activeBooking ? 'Occupied' : (room.isActive === false ? 'Maintenance' : (upcomingBookings.length > 0 ? 'Reserved' : 'Available'));
 
     return {
       ...room,
@@ -514,6 +752,9 @@ export default function LodgeAdminManager() {
       daysRemaining,
       currentStatus,
       activeBooking,
+      upcomingBookings,
+      pastBookings,
+      roomBookings,
       photos: [...(room.interiorPhotos || []), ...(room.exteriorPhotos || [])]
     };
   });
@@ -977,8 +1218,7 @@ export default function LodgeAdminManager() {
                                      <Eye className="w-4 h-4" /> Detail
                                  </button>
                                  <button 
-                                     onClick={() => setAssignModal({ show: true, roomId: r._id, userId: '' })} 
-                                     className="p-2 sm:p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-colors shadow-sm" 
+                                     onClick={() => handleOpenAssignModal(r)}className="p-2 sm:p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-colors shadow-sm" 
                                      title="Assign Tenant to Room"
                                  >
                                      <UserPlus className="w-4 h-4"/>
@@ -1009,88 +1249,568 @@ export default function LodgeAdminManager() {
 
       {/* OCCUPANCY TAB */}
       {activeTab === 'occupancy' && (
-         <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border p-8 animate-in fade-in transition-all">
-            <h2 className="text-xl font-bold mb-8 flex items-center"><Calendar className="w-6 h-6 mr-2 text-indigo-500"/> Live Occupancy Directory</h2>
-            <div className="grid gap-4">
-                {bookings.map(b => (
-                  <div key={b._id} className={`p-6 border rounded-[1.5rem] flex flex-col md:flex-row justify-between items-start md:items-center ${b.status === 'cancelled' ? 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-800 opacity-60 grayscale' : 'bg-white dark:bg-slate-900 hover:border-indigo-200 transition-all shadow-sm'}`}>
-                      <div className="mb-4 md:mb-0">
-                          <p className="font-black text-slate-900 dark:text-white text-lg flex items-center gap-3">
-                              {b.userId?.name || 'Purged User Record'}
-                              <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm ${b.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600 dark:text-slate-400'}`}>{b.status}</span>
-                          </p>
-                          <div className="flex flex-wrap gap-4 mt-2">
-                             <p className="text-xs font-bold text-slate-400 flex items-center uppercase tracking-widest"><Building className="w-4 h-4 mr-1 text-indigo-400"/> {b.roomId?.type || 'Suite'} Unit</p>
-                             <div className="h-3 w-[1px] bg-slate-200"></div>
-                             <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest">Rate: ₹{b.roomId?.price || 0} / {b.roomId?.rentCycle || 'monthly'}</p>
-                             <div className="h-3 w-[1px] bg-slate-200"></div>
-                             {(() => {
-                                 const reqDeposit = b.securityDeposit || b.roomId?.securityDeposit || 0;
-                                 const usedForRent = (b.depositAdjustments || []).reduce((sum, a) => sum + (a.amount || 0), 0);
-                                 const availableBal = Math.max(0, reqDeposit - usedForRent);
-                                 return (
-                                     <p className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
-                                         <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                                         <span>Deposit: ₹{reqDeposit.toLocaleString()} (Available: ₹{availableBal.toLocaleString()})</span>
-                                     </p>
-                                 );
-                             })()}
-                          </div>
-                          {/* Booking Dates and Remaining Time */}
-                          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                              <span className="flex items-center gap-1">
-                                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                  Stay: <strong className="text-slate-700 dark:text-slate-300">{new Date(b.checkIn).toLocaleDateString()}</strong> - <strong className="text-slate-700 dark:text-slate-300">{new Date(b.checkOut).toLocaleDateString()}</strong>
-                              </span>
-                              {b.status === 'active' && (
-                                  <>
-                                      <div className="h-3 w-[1px] bg-slate-200"></div>
-                                      <span className="flex items-center gap-1 text-indigo-600">
-                                          <Clock className="w-3.5 h-3.5 text-indigo-500" />
-                                          Remaining: <strong>{Math.max(0, Math.ceil((new Date(b.checkOut) - new Date()) / (1000 * 60 * 60 * 24)))} days</strong>
-                                      </span>
-                                  </>
-                              )}
-                          </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 w-full md:w-auto mt-4 md:mt-0">
-                           <button 
-                               onClick={() => setSettlementModalData({ booking: b, initialTab: 'MANAGE_DEPOSIT' })} 
-                               className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-2xl text-xs font-black shadow-lg shadow-emerald-600/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"
-                               title="Manage Security Deposit & View Available Balance"
-                           >
-                               <ShieldCheck className="w-4 h-4" />
-                               <span>Security Deposit</span>
-                           </button>
-                           <button 
-                               onClick={() => setSettlementModalData({ booking: b, initialTab: 'PAY', initialTarget: 'ALL' })} 
-                               className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-2xl text-xs font-black shadow-lg shadow-indigo-600/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"
-                               title="Settle Dues / Collect Rent"
-                           >
-                               <CreditCard className="w-4 h-4" />
-                               <span>Settle / Collect</span>
-                           </button>
-                           {b.status === 'active' && (
-                               <button onClick={() => cancelBooking(b._id)} className="flex-1 md:flex-none border border-rose-100 bg-rose-50 text-rose-600 px-4 py-2.5 rounded-2xl text-xs font-black shadow-lg shadow-rose-500/5 hover:bg-rose-100 active:scale-95 transition-all">Evict Tenant</button>
-                           )}
-                      </div>
-                      
-                      {b.extensionRequest?.status === 'pending' && (
-                          <div className="w-full mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex flex-col md:flex-row justify-between items-center animate-in zoom-in duration-300">
-                              <div className="mb-4 md:mb-0">
-                                  <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 flex items-center mb-1"><Clock className="w-3 h-3 mr-1"/> Extension Request Pending</p>
-                                  <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">Requested CheckOut: {new Date(b.extensionRequest.requestedCheckOut).toLocaleDateString()}</p>
-                                  <p className="text-xs font-bold text-indigo-600 font-poppins">Additional Bill: ₹{b.extensionRequest.additionalAmount.toLocaleString()}</p>
-                              </div>
-                              <div className="flex gap-2 w-full md:w-auto">
-                                  <button onClick={() => approveExtension(b._id)} className="flex-1 md:flex-none bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-indigo-700 transition-all">Approve</button>
-                                  <button onClick={() => rejectExtension(b._id)} className="flex-1 md:flex-none bg-white dark:bg-slate-900 text-rose-600 border border-rose-200 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-rose-50 transition-all">Reject</button>
-                              </div>
-                          </div>
-                      )}
-                  </div>
-               ))}
+         <div className="space-y-6 animate-in fade-in transition-all">
+            {/* Top Toolbar: Sub-view Switcher & Controls */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[2rem] shadow-xs border p-4 sm:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-black flex items-center text-slate-900 dark:text-white">
+                  <Calendar className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-indigo-500 shrink-0" />
+                  Room-Wise Tenancy Matrix & Booking Hub
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Manage multiple non-overlapping bookings per room with isolated financials and checkout audit trails.
+                </p>
+              </div>
+
+              {/* Sub-view switcher */}
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl sm:rounded-2xl text-xs font-bold w-full md:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setOccupancySubView('calendar')}
+                  className={`px-4 py-2 rounded-xl transition flex items-center gap-1.5 ${
+                    occupancySubView === 'calendar'
+                      ? 'bg-indigo-600 text-white font-black shadow-md shadow-indigo-600/20'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <Calendar className="w-4 h-4" /> Room-Wise Calendar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOccupancySubView('history')}
+                  className={`px-4 py-2 rounded-xl transition flex items-center gap-1.5 ${
+                    occupancySubView === 'history'
+                      ? 'bg-indigo-600 text-white font-black shadow-md shadow-indigo-600/20'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <FileText className="w-4 h-4" /> Searchable Booking History ({bookings.length})
+                </button>
+              </div>
             </div>
+
+            {/* ═══════════ SUB-VIEW 1: ROOM-WISE CALENDAR & TIMELINE ═══════════ */}
+            {occupancySubView === 'calendar' && (() => {
+              const year = calendarMonth.getFullYear();
+              const month = calendarMonth.getMonth();
+              const daysInMonth = new Date(year, month + 1, 0).getDate();
+              const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+              const monthStart = new Date(year, month, 1, 0, 0, 0);
+              const monthEnd = new Date(year, month, daysInMonth, 23, 59, 59);
+
+              return (
+                <div className="space-y-6">
+                  {/* Calendar Navigation & Legend Bar */}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[2rem] shadow-xs border p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={() => setCalendarMonth(new Date(year, month - 1, 1))}
+                        className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition"
+                        title="Previous Month"
+                      >
+                        <ChevronLeft className="w-4 h-4 text-slate-700 dark:text-slate-200" />
+                      </button>
+
+                      <div className="px-4 py-2 bg-indigo-50 dark:bg-slate-800 rounded-xl text-center">
+                        <span className="text-sm font-black text-indigo-950 dark:text-white uppercase tracking-wider">
+                          {calendarMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setCalendarMonth(new Date(year, month + 1, 1))}
+                        className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition"
+                        title="Next Month"
+                      >
+                        <ChevronRight className="w-4 h-4 text-slate-700 dark:text-slate-200" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setCalendarMonth(new Date())}
+                        className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition ml-2"
+                      >
+                        Current Month
+                      </button>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold">
+                      <span className="flex items-center gap-1.5 text-emerald-600">
+                        <span className="w-3 h-3 rounded-md bg-emerald-500"></span> Active Stay
+                      </span>
+                      <span className="flex items-center gap-1.5 text-purple-600">
+                        <span className="w-3 h-3 rounded-md bg-purple-500"></span> Upcoming Confirmed
+                      </span>
+                      <span className="flex items-center gap-1.5 text-slate-500">
+                        <span className="w-3 h-3 rounded-md bg-slate-400"></span> Completed / Past
+                      </span>
+                      <span className="flex items-center gap-1.5 text-slate-400">
+                        <span className="w-3 h-3 rounded-md border border-slate-300 bg-white dark:bg-slate-800"></span> Free / Available
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Room Rows Grid */}
+                  <div className="space-y-4">
+                    {enrichedRooms.map(room => {
+                      // Filter bookings overlapping with selected month
+                      const roomBookingsInMonth = (room.roomBookings || []).filter(b => {
+                        if (b.status === 'cancelled') return false;
+                        const bStart = new Date(b.checkIn);
+                        const bEnd = new Date(b.checkOut);
+                        return bStart <= monthEnd && bEnd >= monthStart;
+                      });
+
+                      return (
+                        <div key={room._id} className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[2rem] shadow-xs border p-4 sm:p-6 space-y-4">
+                          {/* Room Header */}
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                                  Room #{room.roomNumber}
+                                </h3>
+                                <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-100 px-2.5 py-0.5 rounded-full font-black uppercase">
+                                  {room.type}
+                                </span>
+                                <span className={`text-[9px] px-2.5 py-0.5 rounded-full font-black uppercase border ${
+                                  room.currentStatus === 'Occupied' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                  room.currentStatus === 'Reserved' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                  'bg-slate-50 text-slate-600 border-slate-200'
+                                }`}>
+                                  {room.currentStatus}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-400 font-semibold mt-0.5">
+                                Rate: <strong className="text-indigo-600">₹{room.price.toLocaleString()}</strong> / {room.rentCycle || 'month'} • Deposit: ₹{room.securityDeposit.toLocaleString()} • {room.building}
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAssignModal(room)}
+                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md shadow-emerald-600/10 transition active:scale-95 flex items-center gap-1.5"
+                            >
+                              <UserPlus className="w-3.5 h-3.5" />
+                              <span>Book / Assign Date Range</span>
+                            </button>
+                          </div>
+
+                          {/* 30-Day Month Strip */}
+                          <div>
+                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">
+                              {calendarMonth.toLocaleString('default', { month: 'long' })} Occupancy Strip (1 - {daysInMonth})
+                            </p>
+                            <div className="grid grid-cols-7 sm:grid-cols-10 md:grid-cols-16 lg:grid-cols-31 gap-1 overflow-x-auto pb-1 text-center">
+                              {daysArray.map(dayNum => {
+                                const currentDayDate = new Date(year, month, dayNum);
+                                const isToday = currentDayDate.toDateString() === new Date().toDateString();
+
+                                // Find booking occupying this day
+                                const occupyingBooking = roomBookingsInMonth.find(b => {
+                                  const bStart = new Date(b.checkIn);
+                                  const bEnd = new Date(b.checkOut);
+                                  const dayStart = new Date(year, month, dayNum, 0, 0, 0);
+                                  const dayEnd = new Date(year, month, dayNum, 23, 59, 59);
+                                  return bStart <= dayEnd && bEnd >= dayStart;
+                                });
+
+                                let cellBg = 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400';
+                                let tooltipText = `Day ${dayNum}: Available`;
+
+                                if (occupyingBooking) {
+                                  const nowTime = new Date();
+                                  const bStart = new Date(occupyingBooking.checkIn);
+                                  const bEnd = new Date(occupyingBooking.checkOut);
+
+                                  if (occupyingBooking.status === 'completed') {
+                                    cellBg = 'bg-slate-600 text-white border-slate-700 font-bold';
+                                    tooltipText = `Day ${dayNum}: Checked Out - ${occupyingBooking.userId?.name || 'Resident'}`;
+                                  } else if (bStart > nowTime) {
+                                    cellBg = 'bg-purple-600 text-white border-purple-700 font-bold';
+                                    tooltipText = `Day ${dayNum}: Upcoming - ${occupyingBooking.userId?.name || 'Resident'}`;
+                                  } else {
+                                    cellBg = 'bg-emerald-600 text-white border-emerald-700 font-bold';
+                                    tooltipText = `Day ${dayNum}: Active Stay - ${occupyingBooking.userId?.name || 'Resident'}`;
+                                  }
+                                }
+
+                                return (
+                                  <div
+                                    key={dayNum}
+                                    title={tooltipText}
+                                    className={`p-1.5 rounded-lg border text-[10px] transition-all ${cellBg} ${
+                                      isToday ? 'ring-2 ring-indigo-500 font-black' : ''
+                                    }`}
+                                  >
+                                    <span>{dayNum}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Itemized Bookings List for this Room */}
+                          {roomBookingsInMonth.length > 0 ? (
+                            <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                              <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                                Scheduled & Completed Stays This Month ({roomBookingsInMonth.length})
+                              </p>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {roomBookingsInMonth.map(b => {
+                                  const isCompleted = b.status === 'completed';
+                                  const isActive = b.status === 'active';
+                                  const reqDeposit = b.securityDeposit || room.securityDeposit || 0;
+                                  const usedDep = (b.depositAdjustments || []).reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+                                  const availDep = Math.max(0, reqDeposit - usedDep);
+
+                                  return (
+                                    <div
+                                      key={b._id}
+                                      className={`p-4 rounded-2xl border text-xs flex flex-col justify-between gap-3 ${
+                                        isCompleted ? 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 opacity-90' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                                      }`}
+                                    >
+                                      <div>
+                                        <div className="flex justify-between items-center mb-1">
+                                          <span className="font-bold text-slate-900 dark:text-white">
+                                            {b.userId?.name || 'Valued Resident'}
+                                          </span>
+                                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${
+                                            isCompleted ? 'bg-blue-100 text-blue-800' :
+                                            isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                                          }`}>
+                                            {isCompleted ? 'CHECKED OUT' : b.status}
+                                          </span>
+                                        </div>
+                                        <p className="text-[11px] text-slate-500">
+                                          Stay: <strong className="text-slate-800 dark:text-slate-200">{new Date(b.checkIn).toLocaleDateString()}</strong> - <strong className="text-slate-800 dark:text-slate-200">{new Date(b.checkOut).toLocaleDateString()}</strong>
+                                        </p>
+                                        <p className="text-[10px] text-slate-400 mt-0.5">
+                                          Deposit: ₹{reqDeposit.toLocaleString()} (Avail: ₹{availDep.toLocaleString()}) • Rent: ₹{(b.totalAmount || room.price).toLocaleString()}
+                                        </p>
+                                        {b.actualCheckOut && (
+                                          <p className="text-[10px] text-indigo-600 font-semibold mt-0.5">
+                                            Actual Check-out: {new Date(b.actualCheckOut).toLocaleDateString()}
+                                          </p>
+                                        )}
+                                      </div>
+
+                                      <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200 dark:border-slate-700">
+                                        <button
+                                          type="button"
+                                          onClick={() => setSettlementModalData({ booking: b, initialTab: 'PAY', initialTarget: 'ALL' })}
+                                          className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-black transition flex items-center gap-1"
+                                          title="Settle Dues / View Line Items"
+                                        >
+                                          <CreditCard className="w-3 h-3" /> Settle
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setViewAckBookingId(b._id)}
+                                          className="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-white rounded-lg text-[10px] font-black transition flex items-center gap-1"
+                                          title="View Residency Acknowledgement & PDF"
+                                        >
+                                          <FileText className="w-3 h-3" /> Agreement
+                                        </button>
+                                        {isActive && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleOpenCheckout(b)}
+                                            className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-black transition flex items-center gap-1"
+                                            title="Close Stay & Record Settlement"
+                                          >
+                                            <LogIn className="w-3 h-3 rotate-180" /> Check-Out
+                                          </button>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenEditBooking(b)}
+                                          className="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg transition"
+                                          title="Edit Booking Dates & Rent"
+                                        >
+                                          <Edit3 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-slate-400 italic py-1">
+                              No bookings scheduled for this room in {calendarMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}. Ready to book!
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ═══════════ SUB-VIEW 2: SEARCHABLE BOOKING HISTORY DIRECTORY ═══════════ */}
+            {occupancySubView === 'history' && (() => {
+              // Filter bookings
+              const filteredBookings = bookings.filter(b => {
+                const q = historySearch.toLowerCase();
+                const tenantName = (b.userId?.name || '').toLowerCase();
+                const tenantPhone = (b.userId?.phone || b.userId?.phoneNumber || '').toLowerCase();
+                const agreementNo = (b.agreementNumber || '').toLowerCase();
+                const roomNum = String(b.roomId?.roomNumber || '').toLowerCase();
+
+                const matchesSearch = !historySearch ||
+                  tenantName.includes(q) ||
+                  tenantPhone.includes(q) ||
+                  agreementNo.includes(q) ||
+                  roomNum.includes(q);
+
+                const matchesRoom = historyRoomFilter === 'All' || String(b.roomId?._id || b.roomId) === historyRoomFilter;
+                const matchesStatus = historyStatusFilter === 'All' || b.status === historyStatusFilter;
+
+                let matchesDate = true;
+                if (historyStartDate) {
+                  matchesDate = matchesDate && new Date(b.checkOut) >= new Date(historyStartDate);
+                }
+                if (historyEndDate) {
+                  matchesDate = matchesDate && new Date(b.checkIn) <= new Date(historyEndDate);
+                }
+
+                return matchesSearch && matchesRoom && matchesStatus && matchesDate;
+              });
+
+              return (
+                <div className="space-y-5">
+                  {/* Filter Toolbar */}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[2rem] shadow-xs border p-4 sm:p-6 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
+                      {/* Search Input */}
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          placeholder="Search Tenant, Phone, Agreement #..."
+                          value={historySearch}
+                          onChange={e => setHistorySearch(e.target.value)}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 pl-10 pr-3.5 py-2.5 rounded-xl font-bold text-slate-900 dark:text-white outline-none"
+                        />
+                      </div>
+
+                      {/* Room Filter */}
+                      <div>
+                        <select
+                          value={historyRoomFilter}
+                          onChange={e => setHistoryRoomFilter(e.target.value)}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl font-bold text-slate-800 dark:text-slate-200 outline-none"
+                        >
+                          <option value="All">All Rooms</option>
+                          {rooms.map(rm => (
+                            <option key={rm._id} value={rm._id}>
+                              Room {rm.roomNumber} ({rm.type})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Status Filter */}
+                      <div>
+                        <select
+                          value={historyStatusFilter}
+                          onChange={e => setHistoryStatusFilter(e.target.value)}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl font-bold text-slate-800 dark:text-slate-200 outline-none"
+                        >
+                          <option value="All">All Booking Statuses</option>
+                          <option value="active">Active Stay</option>
+                          <option value="completed">Completed / Checked Out</option>
+                          <option value="cancelled">Cancelled / Evicted</option>
+                        </select>
+                      </div>
+
+                      {/* Date Range Inputs */}
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="date"
+                          value={historyStartDate}
+                          onChange={e => setHistoryStartDate(e.target.value)}
+                          className="w-1/2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-2.5 rounded-xl font-bold text-slate-800 dark:text-slate-200 text-[11px] outline-none"
+                          title="Filter From Date"
+                        />
+                        <span className="text-slate-400 font-bold">-</span>
+                        <input
+                          type="date"
+                          value={historyEndDate}
+                          onChange={e => setHistoryEndDate(e.target.value)}
+                          className="w-1/2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-2.5 rounded-xl font-bold text-slate-800 dark:text-slate-200 text-[11px] outline-none"
+                          title="Filter To Date"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500 font-bold">
+                        Matching Records: <strong className="text-indigo-600">{filteredBookings.length}</strong> of {bookings.length}
+                      </span>
+                      {(historySearch || historyRoomFilter !== 'All' || historyStatusFilter !== 'All' || historyStartDate || historyEndDate) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHistorySearch('');
+                            setHistoryRoomFilter('All');
+                            setHistoryStatusFilter('All');
+                            setHistoryStartDate('');
+                            setHistoryEndDate('');
+                          }}
+                          className="text-xs text-rose-600 hover:underline font-bold"
+                        >
+                          Reset Filters
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Booking Records Grid */}
+                  <div className="grid gap-4">
+                    {filteredBookings.map(b => {
+                      const isCompleted = b.status === 'completed';
+                      const isActive = b.status === 'active';
+                      const reqDeposit = b.securityDeposit || b.roomId?.securityDeposit || 0;
+                      const adjustments = (b.depositAdjustments || []).reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+                      const availDeposit = Math.max(0, reqDeposit - adjustments);
+
+                      return (
+                        <div
+                          key={b._id}
+                          className={`p-4 sm:p-6 border rounded-2xl sm:rounded-[2rem] bg-white dark:bg-slate-900 transition-all shadow-xs flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6 ${
+                            b.status === 'cancelled' ? 'opacity-60 grayscale bg-slate-50 dark:bg-slate-800' : ''
+                          }`}
+                        >
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <h4 className="font-black text-slate-900 dark:text-white text-lg">
+                                {b.userId?.name || 'Resident'}
+                              </h4>
+                              <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider ${
+                                isCompleted ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                                isActive ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                                'bg-slate-200 text-slate-700'
+                              }`}>
+                                {isCompleted ? 'CHECKED OUT' : b.status}
+                              </span>
+                              {b.agreementNumber && (
+                                <span className="text-[10px] font-mono text-indigo-600 bg-indigo-50 dark:bg-slate-800 border border-indigo-100 px-2.5 py-0.5 rounded-lg font-bold">
+                                  #{b.agreementNumber}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 font-semibold">
+                              <span>Room {b.roomId?.roomNumber || 'N/A'} ({b.roomId?.type || 'Standard'})</span>
+                              <span>•</span>
+                              <span>Phone: {b.userId?.phone || b.userId?.phoneNumber || 'N/A'}</span>
+                              <span>•</span>
+                              <span>Stay: <strong className="text-slate-800 dark:text-slate-200">{new Date(b.checkIn).toLocaleDateString()}</strong> to <strong className="text-slate-800 dark:text-slate-200">{new Date(b.checkOut).toLocaleDateString()}</strong></span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                              <span className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg font-bold text-slate-700 dark:text-slate-300">
+                                Monthly Rent: ₹{(b.totalAmount || b.roomId?.price || 0).toLocaleString()}
+                              </span>
+                              <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-lg font-bold">
+                                Deposit: ₹{reqDeposit.toLocaleString()} (Avail: ₹{availDeposit.toLocaleString()})
+                              </span>
+                              {adjustments > 0 && (
+                                <span className="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg font-bold">
+                                  Deposit Used for Rent: ₹{adjustments.toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Checkout notes display */}
+                            {b.actualCheckOut && (
+                              <div className="p-3 bg-blue-50/60 dark:bg-slate-800 rounded-xl border border-blue-100 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300">
+                                <p className="font-bold text-blue-900 dark:text-blue-300">
+                                  Checked Out on {new Date(b.actualCheckOut).toLocaleDateString()} {b.checkedOutBy ? `• Admin: ${b.checkedOutBy}` : ''}
+                                </p>
+                                {b.checkoutNotes && (
+                                  <p className="text-slate-600 dark:text-slate-400 mt-0.5 italic">"{b.checkoutNotes}"</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Toolbar */}
+                          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full lg:w-auto">
+                            <button
+                              type="button"
+                              onClick={() => setSettlementModalData({ booking: b, initialTab: 'PAY', initialTarget: 'ALL' })}
+                              className="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-md shadow-indigo-600/20 transition active:scale-95 flex items-center justify-center gap-1.5 min-h-[40px] touch-manipulation"
+                              title="View Financial Breakdown, Payments & Refunds"
+                            >
+                              <CreditCard className="w-4 h-4" />
+                              <span>Payments</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setViewAckBookingId(b._id)}
+                              className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-white rounded-xl text-xs font-black transition active:scale-95 flex items-center justify-center gap-1.5 min-h-[40px] touch-manipulation"
+                              title="Official Tenancy Agreement & PDF"
+                            >
+                              <FileText className="w-4 h-4 text-indigo-500" />
+                              <span>Agreement</span>
+                            </button>
+
+                            {isActive && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenCheckout(b)}
+                                className="col-span-2 sm:col-span-1 px-3.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-md shadow-blue-600/20 transition active:scale-95 flex items-center justify-center gap-1.5 min-h-[40px] touch-manipulation"
+                                title="Check Out & Finalize Settlement"
+                              >
+                                <LogIn className="w-4 h-4 rotate-180" />
+                                <span>Check-Out</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditBooking(b)}
+                              className="p-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl transition shadow-xs min-h-[40px] flex items-center justify-center touch-manipulation"
+                              title="Edit Booking Stay Dates & Rent"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+
+                            {isActive && (
+                              <button
+                                type="button"
+                                onClick={() => cancelBooking(b._id)}
+                                className="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition shadow-xs min-h-[40px] flex items-center justify-center touch-manipulation"
+                                title="Cancel Booking / Evict"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {filteredBookings.length === 0 && (
+                      <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-12 text-center text-slate-400 border border-dashed">
+                        <Calendar className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                        <p className="font-bold text-sm">No booking records match the selected filters.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
          </div>
       )}
 
@@ -1261,24 +1981,387 @@ export default function LodgeAdminManager() {
       )}
 
       {assignModal.show && (
-          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex flex-col justify-center items-center p-4">
-             <form onSubmit={assignRoomManual} className="bg-white dark:bg-slate-900 p-5 sm:p-10 rounded-[2rem] sm:rounded-[3rem] w-full max-w-lg relative shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
-                 <h3 className="text-3xl font-black mb-2 tracking-tight">Manual Override</h3>
-                 <p className="text-slate-500 dark:text-slate-400 font-medium mb-10 italic">Injecting tenant into residency matrix #BypassEnforced</p>
-                 <button type="button" onClick={() => setAssignModal({show:false, roomId: null, userId: ''})} className="absolute top-10 right-10 text-slate-400 bg-slate-50 dark:bg-slate-800 p-3 rounded-full hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm border border-slate-100 dark:border-slate-800"><X className="w-5 h-5"/></button>
-                 
-                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4 mb-2 block font-poppins">Select Tenant Identity</label>
-                 <select required className="w-full border-2 border-slate-100 dark:border-slate-800 p-5 rounded-3xl mb-10 appearance-none font-bold text-slate-900 dark:text-white focus:border-indigo-500 outline-none transition-all" value={assignModal.userId} onChange={e => setAssignModal({...assignModal, userId: e.target.value})}>
-                     <option value="" disabled>Search DB for identities...</option>
-                     {clients.map(c => <option key={c._id} value={c._id}>{c.name} ({c.email})</option>)}
-                 </select>
-                 
-                 <button type="submit" className="w-full bg-indigo-600 text-white py-6 rounded-[2.5rem] font-black text-sm shadow-2xl shadow-indigo-600/30 hover:scale-[1.02] active:scale-95 transition-all">Lock Unit for 365 Days</button>
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex flex-col justify-center items-center p-4">
+             <form onSubmit={assignRoomManual} className="bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2.5rem] w-full max-w-xl relative shadow-2xl animate-in zoom-in duration-300 max-h-[92vh] overflow-y-auto space-y-4">
+                 <div>
+                   <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-black uppercase tracking-wider">
+                     Assign Room & Date Schedule
+                   </span>
+                   <h3 className="text-2xl font-black mt-2 text-slate-900 dark:text-white">
+                     Room #{assignModal.roomNumber || 'Unit'} ({assignModal.roomType || 'Standard'})
+                   </h3>
+                   <p className="text-slate-500 text-xs mt-0.5">
+                     Create a new confirmed booking with automatic overlap prevention.
+                   </p>
+                 </div>
+
+                 <button 
+                   type="button" 
+                   onClick={() => setAssignModal(prev => ({ ...prev, show: false }))} 
+                   className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-xl"
+                 >
+                   <X className="w-5 h-5" />
+                 </button>
+
+                 {/* Unavailable dates notice */}
+                 {assignModal.loadingSchedule ? (
+                   <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs text-slate-500 flex items-center gap-2">
+                     <RefreshCcw className="w-4 h-4 animate-spin" /> Loading room schedule...
+                   </div>
+                 ) : assignModal.unavailableIntervals?.length > 0 ? (
+                   <div className="p-4 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-900/50 space-y-2 text-xs">
+                     <p className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                       <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                       Unavailable Booked Dates for Room #{assignModal.roomNumber}:
+                     </p>
+                     <div className="space-y-1 max-h-28 overflow-y-auto pr-1">
+                       {assignModal.unavailableIntervals.map((interval, i) => (
+                         <div key={i} className="flex justify-between items-center text-[11px] bg-white dark:bg-slate-900 p-2 rounded-lg border border-amber-100">
+                           <span className="font-bold text-slate-800 dark:text-white">
+                             {new Date(interval.checkIn).toLocaleDateString()} to {new Date(interval.checkOut).toLocaleDateString()}
+                           </span>
+                           <span className="text-slate-500 font-medium">({interval.tenantName || 'Resident'})</span>
+                         </div>
+                       ))}
+                     </div>
+                     <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                       Please choose dates that do not overlap with the intervals above.
+                     </p>
+                   </div>
+                 ) : (
+                   <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl text-xs text-emerald-700 font-bold flex items-center gap-2">
+                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                     <span>This room has no upcoming active bookings. All dates are available!</span>
+                   </div>
+                 )}
+
+                 {/* Form Fields */}
+                 <div>
+                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                     Select Tenant Identity *
+                   </label>
+                   <select 
+                     required 
+                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl font-bold text-slate-900 dark:text-white outline-none" 
+                     value={assignModal.userId} 
+                     onChange={e => setAssignModal({ ...assignModal, userId: e.target.value })}
+                   >
+                       <option value="" disabled>Search tenant directory...</option>
+                       {clients.map(c => <option key={c._id} value={c._id}>{c.name} ({c.phone || c.email})</option>)}
+                   </select>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-3">
+                   <div>
+                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                       Check-In Date *
+                     </label>
+                     <input
+                       type="date"
+                       required
+                       value={assignModal.checkIn}
+                       onChange={e => setAssignModal({ ...assignModal, checkIn: e.target.value })}
+                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl font-bold text-xs text-slate-900 dark:text-white outline-none"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                       Check-Out Date *
+                     </label>
+                     <input
+                       type="date"
+                       required
+                       value={assignModal.checkOut}
+                       onChange={e => setAssignModal({ ...assignModal, checkOut: e.target.value })}
+                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl font-bold text-xs text-slate-900 dark:text-white outline-none"
+                     />
+                   </div>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-3">
+                   <div>
+                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                       Monthly Rent (₹)
+                     </label>
+                     <input
+                       type="number"
+                       placeholder="e.g. 5000"
+                       value={assignModal.totalAmount}
+                       onChange={e => setAssignModal({ ...assignModal, totalAmount: e.target.value })}
+                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl font-bold text-xs text-slate-900 dark:text-white outline-none"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                       Security Deposit (₹)
+                     </label>
+                     <input
+                       type="number"
+                       placeholder="e.g. 10000"
+                       value={assignModal.securityDeposit}
+                       onChange={e => setAssignModal({ ...assignModal, securityDeposit: e.target.value })}
+                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl font-bold text-xs text-slate-900 dark:text-white outline-none"
+                     />
+                   </div>
+                 </div>
+
+                 <div>
+                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                     Administrator Notes (Optional)
+                   </label>
+                   <input
+                     type="text"
+                     placeholder="e.g. Assigned upon company trainee onboarding"
+                     value={assignModal.adminNotes}
+                     onChange={e => setAssignModal({ ...assignModal, adminNotes: e.target.value })}
+                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white outline-none"
+                   />
+                 </div>
+
+                 <button 
+                   type="submit" 
+                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black text-xs shadow-xl shadow-indigo-600/30 active:scale-95 transition-all"
+                 >
+                   Confirm & Lock Room Booking
+                 </button>
              </form>
           </div>
-      )}
+       )}
 
-      {editClient && (
+       {/* Edit Booking Parameters Modal */}
+       {editBookingModal.show && (
+         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex flex-col justify-center items-center p-4">
+            <form onSubmit={handleSaveEditBooking} className="bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2.5rem] w-full max-w-xl relative shadow-2xl animate-in zoom-in duration-300 max-h-[92vh] overflow-y-auto space-y-4">
+                <div>
+                  <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-[10px] font-black uppercase tracking-wider">
+                    Edit Booking Stay Parameters
+                  </span>
+                  <h3 className="text-2xl font-black mt-2 text-slate-900 dark:text-white">
+                    Agreement #{editBookingModal.booking?.agreementNumber || String(editBookingModal.booking?._id).slice(-6).toUpperCase()}
+                  </h3>
+                  <p className="text-slate-500 text-xs mt-0.5">
+                    Tenant: <strong>{editBookingModal.booking?.userId?.name || 'Resident'}</strong> • Room: {editBookingModal.booking?.roomId?.roomNumber}
+                  </p>
+                </div>
+
+                <button 
+                  type="button" 
+                  onClick={() => setEditBookingModal(prev => ({ ...prev, show: false }))} 
+                  className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-xl"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                {/* Overlap warnings for other stays in the room */}
+                {editBookingModal.unavailableIntervals?.length > 0 && (
+                  <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs space-y-1">
+                    <p className="font-bold text-amber-900">Other Stays in this Room (Cannot Overlap):</p>
+                    {editBookingModal.unavailableIntervals.map((inv, idx) => (
+                      <p key={idx} className="text-[11px] text-amber-800">
+                        • {new Date(inv.checkIn).toLocaleDateString()} to {new Date(inv.checkOut).toLocaleDateString()} ({inv.tenantName})
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Check-In Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={editBookingModal.checkIn}
+                      onChange={e => setEditBookingModal({ ...editBookingModal, checkIn: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border p-3 rounded-2xl font-bold text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Check-Out Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={editBookingModal.checkOut}
+                      onChange={e => setEditBookingModal({ ...editBookingModal, checkOut: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border p-3 rounded-2xl font-bold text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Total / Monthly Rent (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={editBookingModal.totalAmount}
+                      onChange={e => setEditBookingModal({ ...editBookingModal, totalAmount: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border p-3 rounded-2xl font-bold text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Security Deposit (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={editBookingModal.securityDeposit}
+                      onChange={e => setEditBookingModal({ ...editBookingModal, securityDeposit: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border p-3 rounded-2xl font-bold text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Correction / Modification Reason *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Lease dates extended by 2 weeks upon mutual agreement"
+                    value={editBookingModal.reason}
+                    onChange={e => setEditBookingModal({ ...editBookingModal, reason: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border p-3 rounded-2xl text-xs font-semibold"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">This reason is appended to agreement version history.</p>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 py-4 rounded-2xl font-black text-xs shadow-xl transition-all"
+                >
+                  Commit Booking Updates & Overlap Check
+                </button>
+            </form>
+         </div>
+       )}
+
+       {/* Check-Out & Tenancy Closure Modal */}
+       {checkoutModal.show && (
+         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex flex-col justify-center items-center p-4">
+            <form onSubmit={handleConfirmCheckout} className="bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2.5rem] w-full max-w-lg relative shadow-2xl animate-in zoom-in duration-300 max-h-[92vh] overflow-y-auto space-y-4">
+                <div>
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-[10px] font-black uppercase tracking-wider">
+                    Tenancy Check-Out & Clearance
+                  </span>
+                  <h3 className="text-2xl font-black mt-2 text-slate-900 dark:text-white">
+                    Close Stay for {checkoutModal.booking?.userId?.name || 'Resident'}
+                  </h3>
+                  <p className="text-slate-500 text-xs mt-0.5">
+                    Room #{checkoutModal.booking?.roomId?.roomNumber} • Agreement #{checkoutModal.booking?.agreementNumber}
+                  </p>
+                </div>
+
+                <button 
+                  type="button" 
+                  onClick={() => setCheckoutModal(prev => ({ ...prev, show: false }))} 
+                  className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-xl"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border text-xs space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Scheduled Check-Out:</span>
+                    <strong className="text-slate-800 dark:text-white">
+                      {checkoutModal.booking?.checkOut ? new Date(checkoutModal.booking.checkOut).toLocaleDateString() : '-'}
+                    </strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Security Deposit Held:</span>
+                    <strong className="text-indigo-600">
+                      ₹{(checkoutModal.booking?.securityDeposit || 0).toLocaleString()}
+                    </strong>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Actual Check-Out Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={checkoutModal.actualCheckOut}
+                    onChange={e => setCheckoutModal({ ...checkoutModal, actualCheckOut: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border p-3 rounded-2xl font-bold text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Checkout Notes & Inspection Report *
+                  </label>
+                  <textarea
+                    required
+                    rows={2}
+                    placeholder="e.g. Keys handed over, meter reading recorded, room in clean condition"
+                    value={checkoutModal.checkoutNotes}
+                    onChange={e => setCheckoutModal({ ...checkoutModal, checkoutNotes: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border p-3 rounded-2xl text-xs font-medium"
+                  />
+                </div>
+
+                {/* Refund Security Deposit Option */}
+                <div className="p-4 bg-rose-50 dark:bg-slate-800 rounded-2xl border border-rose-200 dark:border-slate-700 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-xs text-rose-950 dark:text-white">Disburse Security Deposit Refund</p>
+                      <p className="text-[10px] text-slate-500">Record refund transaction directly upon checkout clearance</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={checkoutModal.issueRefund}
+                      onChange={e => setCheckoutModal({ ...checkoutModal, issueRefund: e.target.checked })}
+                      className="w-4 h-4 text-rose-600 rounded"
+                    />
+                  </div>
+
+                  {checkoutModal.issueRefund && (
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-rose-100 dark:border-slate-700 text-xs">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Refund Amount (₹)</label>
+                        <input
+                          type="number"
+                          value={checkoutModal.refundAmount}
+                          onChange={e => setCheckoutModal({ ...checkoutModal, refundAmount: e.target.value })}
+                          className="w-full bg-white dark:bg-slate-900 border p-2 rounded-xl font-bold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Payment Method</label>
+                        <select
+                          value={checkoutModal.refundMethod}
+                          onChange={e => setCheckoutModal({ ...checkoutModal, refundMethod: e.target.value })}
+                          className="w-full bg-white dark:bg-slate-900 border p-2 rounded-xl font-bold"
+                        >
+                          <option value="Bank Transfer">Bank Transfer</option>
+                          <option value="Cash">Cash Handover</option>
+                          <option value="UPI">UPI</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={checkoutModal.submitting}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black text-xs shadow-xl transition-all flex items-center justify-center gap-2"
+                >
+                  {checkoutModal.submitting ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  <span>Confirm Check-Out & Mark Booking Completed</span>
+                </button>
+            </form>
+         </div>
+       )}
+       
+       {editClient && (
           <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex flex-col justify-center items-center p-4">
              <form onSubmit={handleClientEdit} className="bg-white dark:bg-slate-900 p-5 sm:p-10 rounded-[2rem] sm:rounded-[3rem] w-full max-w-lg relative shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
                  <div className="text-center mb-10">
@@ -1408,7 +2491,108 @@ export default function LodgeAdminManager() {
         />
       )}
 
-    </div>
+      {/* Official Residency Acknowledgement & PDF Viewer Modal */}
+      {viewAckBookingId && (
+        <ResidencyAcknowledgementModal
+          bookingId={viewAckBookingId}
+          onClose={() => setViewAckBookingId(null)}
+        />
+      )}
+
+      {/* Selected Room Detail & Complete Tenancy History Modal */}
+      {selectedRoomDetail && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overscroll-contain">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl w-full max-w-2xl relative shadow-2xl animate-in zoom-in duration-300 max-h-[94dvh] sm:max-h-[90vh] overflow-y-auto space-y-4">
+            <div className="flex justify-between items-start pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-wider">
+                  Room Profile & History
+                </span>
+                <h3 className="text-2xl font-black mt-2 text-slate-900 dark:text-white">
+                  Room #{selectedRoomDetail.roomNumber} ({selectedRoomDetail.type})
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {selectedRoomDetail.building} • {selectedRoomDetail.floor} • Rate: ₹{selectedRoomDetail.price.toLocaleString()} / {selectedRoomDetail.rentCycle || 'month'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedRoomDetail(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-xl"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Room Tenancy Bookings Table */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">
+                All Bookings & Residents for Room #{selectedRoomDetail.roomNumber} ({selectedRoomDetail.roomBookings?.length || 0})
+              </h4>
+
+              {selectedRoomDetail.roomBookings?.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedRoomDetail.roomBookings.map(b => (
+                    <div key={b._id} className="p-3.5 bg-slate-50 dark:bg-slate-800 rounded-2xl border text-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <strong className="text-slate-900 dark:text-white">{b.userId?.name || 'Resident'}</strong>
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 uppercase">
+                            {b.status === 'completed' ? 'CHECKED OUT' : b.status}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Stay: {new Date(b.checkIn).toLocaleDateString()} to {new Date(b.checkOut).toLocaleDateString()}
+                          {b.actualCheckOut && ` • Left: ${new Date(b.actualCheckOut).toLocaleDateString()}`}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedRoomDetail(null);
+                            setSettlementModalData({ booking: b, initialTab: 'PAY', initialTarget: 'ALL' });
+                          }}
+                          className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-black"
+                        >
+                          Payments
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedRoomDetail(null);
+                            setViewAckBookingId(b._id);
+                          }}
+                          className="px-2.5 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white rounded-lg text-[10px] font-black"
+                        >
+                          Agreement
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 py-4 text-center">No bookings recorded for this room yet.</p>
+              )}
+            </div>
+
+            <div className="pt-3 border-t flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  const rm = selectedRoomDetail;
+                  setSelectedRoomDetail(null);
+                  handleOpenAssignModal(rm);
+                }}
+                className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-black shadow-md flex items-center gap-1.5"
+              >
+                <UserPlus className="w-4 h-4" /> Book This Room
+              </button>
+            </div>
+          </div>
+        </div>
+      )}</div>
   );
 }
 
