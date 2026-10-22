@@ -95,85 +95,128 @@ const AIChatWidget = () => {
             .catch(err => console.warn('Chatbot contact settings fetch error:', err));
     }, []);
 
-    // Draggable position state
-    const [position, setPosition] = useState({ x: 0, y: 0 });
-    const [dragStart, setDragStart] = useState(null);
-    const [hasDragged, setHasDragged] = useState(false);
+    // Draggable position state (remembered in localStorage)
+    const [position, setPosition] = useState(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem('krishna_ai_widget_pos');
+                if (saved) return JSON.parse(saved);
+            } catch (e) {}
+        }
+        return { x: 0, y: 0 };
+    });
+
+    const currentPosRef = useRef(position);
+    useEffect(() => {
+        currentPosRef.current = position;
+    }, [position]);
+
+    const dragRef = useRef({
+        isDragging: false,
+        startX: 0,
+        startY: 0,
+        originX: 0,
+        originY: 0,
+        hasMoved: false
+    });
+
+    const clampPosition = (x, y) => {
+        if (typeof window === 'undefined') return { x, y };
+        const buttonSize = 56;
+        const margin = 12;
+        const baseOffset = 24; // styles bottom: 24px, right: 24px
+        // Negative x moves left from right:24px
+        const minX = -(window.innerWidth - buttonSize - baseOffset - margin);
+        const maxX = baseOffset - margin;
+        // Negative y moves up from bottom:24px
+        const minY = -(window.innerHeight - buttonSize - baseOffset - margin);
+        const maxY = baseOffset - margin;
+
+        return {
+            x: Math.min(maxX, Math.max(minX, x)),
+            y: Math.min(maxY, Math.max(minY, y))
+        };
+    };
 
     useEffect(() => {
-        if (!dragStart) return;
+        const handleResize = () => {
+            setPosition(prev => clampPosition(prev.x, prev.y));
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
-        const handleMove = (clientX, clientY) => {
-            const dx = clientX - dragStart.startX;
-            const dy = clientY - dragStart.startY;
-            
-            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-                setHasDragged(true);
+    const handlePointerDown = (e) => {
+        if (e.button !== undefined && e.button !== 0) return; // left click only
+        if (e.target.closest('.no-drag') || e.target.closest('input') || e.target.closest('textarea')) return;
+
+        dragRef.current = {
+            isDragging: true,
+            startX: e.clientX,
+            startY: e.clientY,
+            originX: position.x,
+            originY: position.y,
+            hasMoved: false
+        };
+
+        try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+        } catch (err) {}
+    };
+
+    const handlePointerMove = (e) => {
+        if (!dragRef.current.isDragging) return;
+
+        const dx = e.clientX - dragRef.current.startX;
+        const dy = e.clientY - dragRef.current.startY;
+
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+            dragRef.current.hasMoved = true;
+        }
+
+        if (dragRef.current.hasMoved) {
+            const clamped = clampPosition(dragRef.current.originX + dx, dragRef.current.originY + dy);
+            currentPosRef.current = clamped;
+            setPosition(clamped);
+        }
+    };
+
+    const handlePointerUp = (e) => {
+        if (!dragRef.current.isDragging) return;
+        dragRef.current.isDragging = false;
+        try {
+            if (e.currentTarget?.hasPointerCapture?.(e.pointerId)) {
+                e.currentTarget.releasePointerCapture(e.pointerId);
             }
-            
-            setPosition({
-                x: dragStart.posX + dx,
-                y: dragStart.posY + dy
-            });
-        };
+        } catch (err) {}
 
-        const onMouseMove = (e) => {
-            handleMove(e.clientX, e.clientY);
-        };
-
-        const onTouchMove = (e) => {
-            if (e.touches.length === 0) return;
-            handleMove(e.touches[0].clientX, e.touches[0].clientY);
-        };
-
-        const onEnd = () => {
-            setDragStart(null);
-        };
-
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onEnd);
-        window.addEventListener('touchmove', onTouchMove);
-        window.addEventListener('touchend', onEnd);
-
-        return () => {
-            window.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('mouseup', onEnd);
-            window.removeEventListener('touchmove', onTouchMove);
-            window.removeEventListener('touchend', onEnd);
-        };
-    }, [dragStart]);
-
-    const startDrag = (clientX, clientY) => {
-        setHasDragged(false);
-        setDragStart({
-            startX: clientX,
-            startY: clientY,
-            posX: position.x,
-            posY: position.y
-        });
-    };
-
-    const handleMouseDown = (e) => {
-        if (e.button !== 0) return; // Left click only
-        // Prevent drag on close button or inputs
-        if (e.target.closest('.close-btn') || e.target.closest('input') || e.target.closest('textarea') || e.target.closest('button')) return;
-        startDrag(e.clientX, e.clientY);
-    };
-
-    const handleTouchStart = (e) => {
-        if (e.touches.length === 0) return;
-        // Prevent drag on close button or inputs
-        if (e.target.closest('.close-btn') || e.target.closest('input') || e.target.closest('textarea') || e.target.closest('button')) return;
-        startDrag(e.touches[0].clientX, e.touches[0].clientY);
+        if (dragRef.current.hasMoved) {
+            try {
+                localStorage.setItem('krishna_ai_widget_pos', JSON.stringify(currentPosRef.current));
+            } catch (err) {}
+            setTimeout(() => {
+                dragRef.current.hasMoved = false;
+            }, 120);
+        }
     };
 
     const handleToggleClick = (e) => {
-        if (hasDragged) {
+        if (dragRef.current.hasMoved) {
             e.preventDefault();
             e.stopPropagation();
+            dragRef.current.hasMoved = false;
             return;
         }
-        setIsOpen(!isOpen);
+        setIsOpen(prev => !prev);
+    };
+
+    const handleResetPosition = (e) => {
+        e.stopPropagation();
+        setPosition({ x: 0, y: 0 });
+        currentPosRef.current = { x: 0, y: 0 };
+        try {
+            localStorage.removeItem('krishna_ai_widget_pos');
+        } catch (err) {}
     };
 
     const scrollToBottom = () => {
@@ -237,6 +280,9 @@ const AIChatWidget = () => {
         }
     };
 
+    const isLeft = typeof window !== 'undefined' && position.x < -(window.innerWidth / 2);
+    const isTop = typeof window !== 'undefined' && position.y < -(window.innerHeight / 2);
+
     return (
         <div 
             className="fixed z-[100] font-sans"
@@ -250,18 +296,21 @@ const AIChatWidget = () => {
             <AnimatePresence>
                 {isOpen && (
                     <motion.div 
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        initial={{ opacity: 0, y: isTop ? -20 : 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="absolute bottom-20 right-0 w-[92vw] sm:w-[400px] h-[580px] max-h-[85vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800"
+                        exit={{ opacity: 0, y: isTop ? -20 : 20, scale: 0.95 }}
+                        className={`absolute ${isTop ? 'top-16' : 'bottom-20'} ${isLeft ? 'left-0' : 'right-0'} w-[90vw] sm:w-[400px] max-w-[420px] h-[580px] max-h-[82vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800`}
                     >
-                        {/* Header */}
+                        {/* Header (Draggable) */}
                         <div 
-                            onMouseDown={handleMouseDown}
-                            onTouchStart={handleTouchStart}
+                            onPointerDown={handlePointerDown}
+                            onPointerMove={handlePointerMove}
+                            onPointerUp={handlePointerUp}
+                            onPointerCancel={handlePointerUp}
+                            style={{ touchAction: 'none' }}
                             className="bg-slate-900 dark:bg-black text-white p-4 flex items-center justify-between shadow-md cursor-grab active:cursor-grabbing select-none border-b border-white/10"
                         >
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 pointer-events-none">
                                 <div className="relative">
                                     <div className="w-10 h-10 bg-blue-600/20 border border-blue-400/30 rounded-2xl flex items-center justify-center">
                                         <Bot className="w-5 h-5 text-blue-400" />
@@ -275,9 +324,23 @@ const AIChatWidget = () => {
                                     </p>
                                 </div>
                             </div>
-                            <button onClick={() => setIsOpen(false)} className="close-btn p-2 hover:bg-white/10 rounded-xl transition-colors">
-                                <X className="w-5 h-5" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                                <button 
+                                    type="button"
+                                    onClick={handleResetPosition} 
+                                    title="Reset position to bottom right"
+                                    className="no-drag px-2 py-1 text-[11px] font-semibold text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                >
+                                    Reset
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={() => setIsOpen(false)} 
+                                    className="no-drag close-btn p-2 hover:bg-white/10 rounded-xl transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
  
                         {/* Quick Contact Bar */}
@@ -318,7 +381,7 @@ const AIChatWidget = () => {
                                     <div className={`max-w-[88%] rounded-2xl px-4 py-3 shadow-xs ${
                                         msg.role === 'user' 
                                             ? 'bg-blue-600 text-white rounded-br-xs text-xs sm:text-sm leading-relaxed whitespace-pre-line' 
-                                            : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-bl-xs'
+                                             : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-bl-xs'
                                     }`}>
                                         {msg.role === 'user' ? (
                                             msg.content.replace(/[*#]/g, '')
@@ -406,13 +469,19 @@ const AIChatWidget = () => {
  
             <button 
                 onClick={handleToggleClick}
-                onMouseDown={handleMouseDown}
-                onTouchStart={handleTouchStart}
-                className="w-14 h-14 bg-brand-900 border-2 border-brand-accent hover:bg-black text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 active:scale-95 z-50 relative group cursor-grab active:cursor-grabbing"
+                onDoubleClick={handleResetPosition}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                style={{ touchAction: 'none' }}
+                title="Drag freely to move, click to chat, double-click to reset"
+                aria-label="AI Assistant (Draggable)"
+                className="w-14 h-14 bg-brand-900 border-2 border-brand-accent hover:bg-black text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105 active:scale-95 z-50 relative group cursor-grab active:cursor-grabbing select-none touch-none"
             >
                 {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
                 {!isOpen && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 pointer-events-none">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white"></span>
                     </span>
