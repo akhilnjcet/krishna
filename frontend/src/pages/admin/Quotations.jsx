@@ -28,6 +28,8 @@ const Quotations = () => {
     const [quotationDate, setQuotationDate] = useState(new Date().toISOString().split('T')[0]);
     const [proposalValidityDate, setProposalValidityDate] = useState(new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]);
     const [showValidityDate, setShowValidityDate] = useState(true);
+    const [tagline, setTagline] = useState('Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication');
+    const [showTagline, setShowTagline] = useState(true);
 
     // Client Information Lookup
     const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -129,6 +131,9 @@ const Quotations = () => {
                 const map = {};
                 res.data.forEach(item => { map[item.key] = item.value; });
                 setBrandingSettings(map);
+                if (map.company_tagline || map.tagline) {
+                    setTagline(prev => (prev === 'Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication' ? (map.company_tagline || map.tagline) : prev));
+                }
                 if (map.show_signature !== undefined) setShowSignature(map.show_signature !== false && map.show_signature !== 'false');
             }
         } catch (err) {
@@ -327,6 +332,8 @@ const Quotations = () => {
         setQuotationDate(new Date().toISOString().split('T')[0]);
         setProposalValidityDate(new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]);
         setShowValidityDate(true);
+        setTagline(brandingSettings?.company_tagline || brandingSettings?.tagline || 'Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication');
+        setShowTagline(true);
         setSelectedCustomerId('');
         setClientName('');
         setClientAddress('');
@@ -363,6 +370,8 @@ const Quotations = () => {
         }
         setProposalValidityDate(data.proposalValidityDate || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]);
         if (data.showValidityDate !== undefined) setShowValidityDate(data.showValidityDate);
+        if (data.tagline !== undefined) setTagline(data.tagline);
+        if (data.showTagline !== undefined) setShowTagline(data.showTagline);
         setClientName(data.clientName || '');
         setClientAddress(data.clientAddress || '');
         setClientPhone(data.clientPhone || '');
@@ -398,6 +407,8 @@ const Quotations = () => {
         quotationDate,
         proposalValidityDate,
         showValidityDate,
+        tagline,
+        showTagline,
         selectedCustomerId,
         clientName,
         clientAddress,
@@ -530,6 +541,8 @@ const Quotations = () => {
                     quotationDate,
                     proposalValidityDate,
                     showValidityDate,
+                    tagline,
+                    showTagline,
                     clientName,
                     clientAddress,
                     clientPhone,
@@ -825,6 +838,31 @@ const Quotations = () => {
                                 }`}
                             />
                         </div>
+
+                        <div className="pt-1">
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Header Tagline / Subtitle</label>
+                                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={showTagline}
+                                        onChange={(e) => setShowTagline(e.target.checked)}
+                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 cursor-pointer"
+                                    />
+                                    Include Tagline
+                                </label>
+                            </div>
+                            <input
+                                type="text"
+                                disabled={!showTagline}
+                                value={tagline}
+                                onChange={(e) => setTagline(e.target.value)}
+                                placeholder="e.g. Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication"
+                                className={`w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition ${
+                                    !showTagline ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-850' : ''
+                                }`}
+                            />
+                        </div>
                     </div>
 
                     {/* Customer Autofill */}
@@ -1095,6 +1133,15 @@ const Quotations = () => {
                             <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                                 <input
                                     type="checkbox"
+                                    checked={showTagline}
+                                    onChange={(e) => setShowTagline(e.target.checked)}
+                                    className="rounded border-slate-300 text-indigo-600"
+                                />
+                                Header Tagline
+                            </label>
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                <input
+                                    type="checkbox"
                                     checked={showValidityDate}
                                     onChange={(e) => setShowValidityDate(e.target.checked)}
                                     className="rounded border-slate-300 text-indigo-600"
@@ -1230,8 +1277,22 @@ const Quotations = () => {
                                                 <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white p-1 rounded-xl shadow-md" />
                                             )}
                                             <div>
-                                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
-                                                <p className="text-xs opacity-90 font-medium">Formal Engineering Estimation & Quotation Proposal</p>
+                                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                                {showTagline && (
+                                                    <div>
+                                                        <input
+                                                            type="text"
+                                                            value={tagline}
+                                                            onChange={(e) => setTagline(e.target.value)}
+                                                            placeholder="Click to edit tagline..."
+                                                            title="Click to edit tagline directly"
+                                                            className="no-print text-xs opacity-90 font-medium bg-transparent hover:bg-white/10 focus:bg-black/20 text-white placeholder-white/60 border border-transparent hover:border-white/30 focus:border-white/60 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                        />
+                                                        <p className="hidden print:block text-xs opacity-90 font-medium">
+                                                            {tagline}
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
@@ -1253,8 +1314,22 @@ const Quotations = () => {
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-10 w-auto object-contain" />
                                         )}
                                         <div>
-                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white company-name">KRISHNA ENGINEERING WORKS</h1>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Industrial Area | Engineering & Structural Division</p>
+                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                            {showTagline && (
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        value={tagline}
+                                                        onChange={(e) => setTagline(e.target.value)}
+                                                        placeholder="Click to edit tagline..."
+                                                        title="Click to edit tagline directly"
+                                                        className="no-print text-xs text-slate-500 dark:text-slate-400 font-medium bg-transparent hover:bg-slate-100 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                    />
+                                                    <p className="hidden print:block text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                                        {tagline}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right">
@@ -1275,7 +1350,21 @@ const Quotations = () => {
                                         )}
                                         <div>
                                             <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication</p>
+                                            {showTagline && (
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        value={tagline}
+                                                        onChange={(e) => setTagline(e.target.value)}
+                                                        placeholder="Click to edit tagline..."
+                                                        title="Click to edit tagline directly"
+                                                        className="no-print text-xs text-slate-500 dark:text-slate-400 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                    />
+                                                    <p className="hidden print:block text-xs text-slate-500 dark:text-slate-400">
+                                                        {tagline}
+                                                    </p>
+                                                </div>
+                                            )}
                                             <p className="text-[11px] text-slate-400 font-medium mt-0.5 whitespace-pre-wrap break-all">
                                                 Phone: {brandingSettings?.company_phone || brandingSettings?.footer_phone || '+91 9447940835'} | Email: {brandingSettings?.company_email || brandingSettings?.footer_email || 'contact@krishnaengg.com'}
                                             </p>

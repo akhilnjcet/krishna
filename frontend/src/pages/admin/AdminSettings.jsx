@@ -6,7 +6,7 @@ import {
     MapPin, Phone, Mail, Globe, Share2, AlignLeft, 
     Terminal, Cpu, Radio, Activity, Zap, TrendingUp,
     BarChart3, Info, ImageIcon, FileText, Building, CreditCard,
-    RotateCcw, Sliders, ShieldAlert, AlertTriangle
+    RotateCcw, Sliders, ShieldAlert, AlertTriangle, Sparkles
 } from 'lucide-react';
 import api from '../../services/api';
 import MasterResetHub from '../../components/admin/MasterResetHub';
@@ -22,6 +22,7 @@ const AdminSettings = () => {
         systemName: 'Krishna Engineering ERP',
         ownerEmail: 'admin@krishnaengg.com',
         company_name: 'KRISHNA ENGINEERING WORKS',
+        company_tagline: 'Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication',
         company_email: 'contact@krishnaengg.com',
         company_phone: '+91 9447940835',
         company_address: 'Industrial Area Phase 1, Sector 123',
@@ -446,6 +447,18 @@ const AdminSettings = () => {
                                             onChange={(e) => updateField('company_name', e.target.value)}
                                             placeholder="e.g. KRISHNA ENGINEERING WORKS"
                                             className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-slate-900 dark:text-white outline-none focus:border-amber-500/50 shadow-sm transition-all"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
+                                            <Sparkles className="w-3 h-3 text-purple-500" /> Company Tagline / Subtitle
+                                        </label>
+                                        <input 
+                                            value={settings.company_tagline || ''}
+                                            onChange={(e) => updateField('company_tagline', e.target.value)}
+                                            placeholder="e.g. Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication"
+                                            className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-purple-500/50 shadow-sm transition-all"
                                         />
                                     </div>
 
