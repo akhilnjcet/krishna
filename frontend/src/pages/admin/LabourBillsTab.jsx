@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Printer, Save, Plus, Trash2, Truck, Users, Calendar, Hash, FileText, 
     Palette, CheckCircle, ShieldCheck, DollarSign, MapPin, Package, Clock,
-    Copy, RotateCcw, History, Search, X, UserCheck, Compass, Phone, ArrowRight
+    Copy, RotateCcw, History, Search, X, UserCheck, Compass, Phone, ArrowRight,
+    Sparkles, Check
 } from 'lucide-react';
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
@@ -91,6 +92,11 @@ const LabourBillsTab = () => {
     const [savingHistory, setSavingHistory] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
 
+    // Auto-Save & Crash Protection State
+    const DRAFT_STORAGE_KEY = 'krishna_draft_labour_bill_v1';
+    const [recoveredDraft, setRecoveredDraft] = useState(null);
+    const [lastAutoSavedTime, setLastAutoSavedTime] = useState(null);
+
     useEffect(() => {
         fetch('/api/settings/public')
             .then(res => res.ok ? res.json() : [])
@@ -103,6 +109,27 @@ const LabourBillsTab = () => {
             })
             .catch(err => console.warn('Public settings fetch failed', err));
         checkDuplicatedDoc();
+
+        // Check for crash recovery draft
+        try {
+            const savedDraftStr = localStorage.getItem(DRAFT_STORAGE_KEY);
+            if (savedDraftStr) {
+                const parsed = JSON.parse(savedDraftStr);
+                const hasMeaningful = Boolean(
+                    parsed?.data && (
+                        (parsed.data.clientName && parsed.data.clientName.trim()) ||
+                        (parsed.data.vehicleNumber && parsed.data.vehicleNumber.trim()) ||
+                        (Array.isArray(parsed.data.labourRows) && parsed.data.labourRows.some(r => r.workDescription?.trim() || r.dailyRate > 0)) ||
+                        parsed.data.baseFreightCharges > 0
+                    )
+                );
+                if (hasMeaningful) {
+                    setRecoveredDraft(parsed);
+                }
+            }
+        } catch (e) {
+            console.warn('Labour bill draft recovery error', e);
+        }
     }, []);
 
     const checkDuplicatedDoc = () => {
@@ -255,6 +282,9 @@ const LabourBillsTab = () => {
 
     const handleResetBill = () => {
         if (!window.confirm('Reset this bill and start fresh?')) return;
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setRecoveredDraft(null);
+        setLastAutoSavedTime(null);
         setBillNumber(generateBillNumber(billMode));
         setBillDate(new Date().toISOString().split('T')[0]);
         setClientName('');
@@ -335,6 +365,125 @@ const LabourBillsTab = () => {
         setShowHistoryModal(false);
     };
 
+    // Auto-save helper payload
+    const getDraftData = () => ({
+        billMode,
+        billNumber,
+        billDate,
+        clientName,
+        clientAddress,
+        clientPhone,
+        clientGstin,
+        siteLocation,
+        siteSupervisor,
+        vehicleNumber,
+        lrGrNumber,
+        origin,
+        destination,
+        goodsDescription,
+        driverName,
+        driverPhone,
+        loadingDate,
+        unloadingDate,
+        labourRows,
+        combinedTotals,
+        showQuantity,
+        showUnitPrice,
+        baseFreightCharges,
+        loadingCharges,
+        unloadingCharges,
+        handlingCharges,
+        packingCharges,
+        overtimeCharges,
+        detentionCharges,
+        advancePaid,
+        discountAmount,
+        taxPercentage,
+        isTaxExempt,
+        theme,
+        themeColor
+    });
+
+    // Auto-save to localStorage on change (debounced 1.2s)
+    useEffect(() => {
+        const hasContent = Boolean(
+            (clientName && clientName.trim()) ||
+            (vehicleNumber && vehicleNumber.trim()) ||
+            (Array.isArray(labourRows) && labourRows.some(r => r.workDescription?.trim() || r.dailyRate > 0)) ||
+            baseFreightCharges > 0
+        );
+        if (!hasContent) return;
+
+        const timer = setTimeout(() => {
+            try {
+                const draft = {
+                    data: getDraftData(),
+                    savedAt: new Date().toISOString()
+                };
+                localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+                setLastAutoSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+            } catch (e) {
+                console.warn('Labour bill auto-save error', e);
+            }
+        }, 1200);
+
+        return () => clearTimeout(timer);
+    }, [
+        billMode, billNumber, billDate, clientName, clientAddress, clientPhone, clientGstin,
+        siteLocation, siteSupervisor, vehicleNumber, lrGrNumber, origin, destination,
+        goodsDescription, driverName, driverPhone, loadingDate, unloadingDate, labourRows,
+        combinedTotals, showQuantity, showUnitPrice, baseFreightCharges, loadingCharges,
+        unloadingCharges, handlingCharges, packingCharges, overtimeCharges, detentionCharges,
+        advancePaid, discountAmount, taxPercentage, isTaxExempt, theme, themeColor
+    ]);
+
+    // Save immediately on beforeunload (accidental close or crash protection)
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            const hasContent = Boolean(
+                (clientName && clientName.trim()) ||
+                (vehicleNumber && vehicleNumber.trim()) ||
+                (Array.isArray(labourRows) && labourRows.some(r => r.workDescription?.trim() || r.dailyRate > 0)) ||
+                baseFreightCharges > 0
+            );
+            if (hasContent) {
+                try {
+                    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
+                        data: getDraftData(),
+                        savedAt: new Date().toISOString()
+                    }));
+                } catch (e) {}
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [clientName, vehicleNumber, labourRows, billNumber, baseFreightCharges]);
+
+    // Background auto-save to Document History vault (debounced 6s if basic fields present)
+    useEffect(() => {
+        if (!clientName?.trim() && !vehicleNumber?.trim()) return;
+        const cloudTimer = setTimeout(() => {
+            handleSaveToHistory(true);
+        }, 6000);
+        return () => clearTimeout(cloudTimer);
+    }, [clientName, vehicleNumber, labourRows, billNumber, grandTotal]);
+
+    const handleRestoreDraft = () => {
+        if (recoveredDraft?.data) {
+            applyBillData(recoveredDraft.data, false);
+            setSaveMessage(`✓ Restored auto-saved draft from ${new Date(recoveredDraft.savedAt).toLocaleTimeString()}`);
+            setTimeout(() => setSaveMessage(''), 4000);
+        }
+        setRecoveredDraft(null);
+    };
+
+    const handleDiscardDraft = () => {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setRecoveredDraft(null);
+        setSaveMessage('Auto-saved draft discarded.');
+        setTimeout(() => setSaveMessage(''), 3000);
+    };
+
     const handleSaveToHistory = async (autoSilent = false) => {
         if (!billNumber) {
             if (!autoSilent) alert("Bill number is required.");
@@ -363,8 +512,12 @@ const LabourBillsTab = () => {
             };
             const res = await api.post('/document-history/save', payload);
             if (!autoSilent) {
+                localStorage.removeItem(DRAFT_STORAGE_KEY);
+                setRecoveredDraft(null);
                 setSaveMessage(`✅ ${documentType} #${billNumber} saved to Document History (Version ${res.data.document?.version || 1}).`);
                 setTimeout(() => setSaveMessage(''), 4000);
+            } else {
+                setLastAutoSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
             }
         } catch (err) {
             console.error('Failed to save bill history:', err);
@@ -383,11 +536,57 @@ const LabourBillsTab = () => {
 
     return (
         <div className="min-h-screen bg-slate-100 dark:bg-slate-950 p-4 md:p-8 font-sans">
+            {/* Auto-Save Crash Recovery Banner */}
+            {recoveredDraft && (
+                <div className="no-print mb-4 p-4 bg-gradient-to-r from-amber-500/15 via-indigo-500/10 to-emerald-500/15 border-2 border-amber-400 dark:border-amber-500/60 rounded-3xl shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                            <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                                Unsaved Bill Recovered
+                                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 px-2 py-0.5 rounded-full">
+                                    Crash Protection Active
+                                </span>
+                            </h4>
+                            <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                                We found an auto-saved draft from <strong>{new Date(recoveredDraft.savedAt).toLocaleString()}</strong> with client <em>"{recoveredDraft.data?.clientName || 'Unnamed'}"</em>.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                        <button
+                            type="button"
+                            onClick={handleRestoreDraft}
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md flex items-center gap-1.5 transition"
+                        >
+                            <Check className="w-4 h-4" /> Restore Draft
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDiscardDraft}
+                            className="px-3 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition"
+                        >
+                            Discard
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Header Toolbar */}
             <div className="no-print bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl mb-8 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                 <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-1 flex items-center gap-2">
-                        <Truck className="w-4 h-4" /> Workforce & Transport Operations
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                            <Truck className="w-4 h-4" /> Workforce & Transport Operations
+                        </div>
+                        {lastAutoSavedTime && (
+                            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Draft auto-saved {lastAutoSavedTime}
+                            </span>
+                        )}
                     </div>
                     <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
                         Labour & Transport Billing Engine

@@ -86,10 +86,34 @@ const Invoices = () => {
     const [savingHistory, setSavingHistory] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
 
+    // Auto-Save & Crash Protection State
+    const DRAFT_STORAGE_KEY = 'krishna_draft_invoice_v1';
+    const [recoveredDraft, setRecoveredDraft] = useState(null);
+    const [lastAutoSavedTime, setLastAutoSavedTime] = useState(null);
+
     useEffect(() => {
         fetchCustomers();
         fetchBranding();
         checkDuplicatedDoc();
+
+        // Check for crash recovery draft
+        try {
+            const savedDraftStr = localStorage.getItem(DRAFT_STORAGE_KEY);
+            if (savedDraftStr) {
+                const parsed = JSON.parse(savedDraftStr);
+                const hasMeaningful = Boolean(
+                    parsed?.data && (
+                        (parsed.data.customerName && parsed.data.customerName.trim()) ||
+                        (Array.isArray(parsed.data.items) && parsed.data.items.some(i => (i.description || i.name || '').trim() || i.price > 0))
+                    )
+                );
+                if (hasMeaningful) {
+                    setRecoveredDraft(parsed);
+                }
+            }
+        } catch (e) {
+            console.warn('Invoice draft recovery error', e);
+        }
     }, []);
 
     const fetchBranding = async () => {
@@ -251,7 +275,9 @@ const Invoices = () => {
         showTax,
         discountType,
         discountValue,
-        taxPercentage
+        taxPercentage,
+        showQuantity,
+        showUnitPrice
     );
 
     const financials = {
@@ -281,6 +307,9 @@ const Invoices = () => {
 
     const handleResetInvoice = () => {
         if (!window.confirm('Reset this invoice and start fresh? All unsaved inputs will be cleared.')) return;
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setRecoveredDraft(null);
+        setLastAutoSavedTime(null);
         setInvoiceNumber(generateInvoiceNumber());
         setInvoiceDate(new Date().toISOString().split('T')[0]);
         setDueDate(new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]);
@@ -352,6 +381,117 @@ const Invoices = () => {
         setShowHistoryModal(false);
     };
 
+    // Auto-save helper payload
+    const getDraftData = () => ({
+        invoiceNumber,
+        invoiceDate,
+        dueDate,
+        selectedCustomerId,
+        customerName,
+        billingAddress,
+        phone,
+        gstin,
+        customerState,
+        isCombinedMode,
+        items,
+        combinedTotals,
+        status,
+        paidAmount,
+        discountType,
+        discountValue,
+        taxPercentage,
+        taxType,
+        showTerms,
+        showTax,
+        showSignature,
+        showFooter,
+        showUnitPrice,
+        showQuantity,
+        showNotes,
+        showQrCode,
+        theme,
+        themeColor,
+        showLogo,
+        termsText,
+        invoiceNotes,
+        footerRemarks
+    });
+
+    // Auto-save to localStorage on change (debounced 1.2s)
+    useEffect(() => {
+        const hasContent = Boolean(
+            (customerName && customerName.trim()) ||
+            (items && items.some(i => (i.description || i.name || '').trim() || i.price > 0))
+        );
+        if (!hasContent) return;
+
+        const timer = setTimeout(() => {
+            try {
+                const draft = {
+                    data: getDraftData(),
+                    savedAt: new Date().toISOString()
+                };
+                localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+                setLastAutoSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+            } catch (e) {
+                console.warn('Invoice auto-save error', e);
+            }
+        }, 1200);
+
+        return () => clearTimeout(timer);
+    }, [
+        invoiceNumber, invoiceDate, dueDate, selectedCustomerId, customerName, billingAddress,
+        phone, gstin, customerState, isCombinedMode, items, combinedTotals, status, paidAmount,
+        discountType, discountValue, taxPercentage, taxType, showTerms, showTax, showSignature,
+        showFooter, showUnitPrice, showQuantity, showNotes, showQrCode, theme, themeColor,
+        showLogo, termsText, invoiceNotes, footerRemarks
+    ]);
+
+    // Save immediately on beforeunload (accidental close or crash protection)
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            const hasContent = Boolean(
+                (customerName && customerName.trim()) ||
+                (items && items.some(i => (i.description || i.name || '').trim() || i.price > 0))
+            );
+            if (hasContent) {
+                try {
+                    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
+                        data: getDraftData(),
+                        savedAt: new Date().toISOString()
+                    }));
+                } catch (e) {}
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [customerName, items, invoiceNumber, invoiceDate, dueDate]);
+
+    // Background auto-save to Document History vault (debounced 6s if basic fields present)
+    useEffect(() => {
+        if (!customerName?.trim() || !items || items.length === 0 || items.every(i => !((i.description || i.name || '').trim()))) return;
+        const cloudTimer = setTimeout(() => {
+            handleSaveToHistory(true);
+        }, 6000);
+        return () => clearTimeout(cloudTimer);
+    }, [customerName, items, invoiceNumber, totals.totalAmount]);
+
+    const handleRestoreDraft = () => {
+        if (recoveredDraft?.data) {
+            applyInvoiceData(recoveredDraft.data, false);
+            setSaveMessage(`✓ Restored auto-saved draft from ${new Date(recoveredDraft.savedAt).toLocaleTimeString()}`);
+            setTimeout(() => setSaveMessage(''), 4000);
+        }
+        setRecoveredDraft(null);
+    };
+
+    const handleDiscardDraft = () => {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setRecoveredDraft(null);
+        setSaveMessage('Auto-saved draft discarded.');
+        setTimeout(() => setSaveMessage(''), 3000);
+    };
+
     const handleSaveToHistory = async (autoSilent = false) => {
         if (!invoiceNumber) {
             if (!autoSilent) alert("Invoice number is required.");
@@ -413,8 +553,12 @@ const Invoices = () => {
 
             const res = await api.post('/document-history/save', payload);
             if (!autoSilent) {
+                localStorage.removeItem(DRAFT_STORAGE_KEY);
+                setRecoveredDraft(null);
                 setSaveMessage(`✅ Invoice #${invoiceNumber} saved to Document History (Version ${res.data.document?.version || 1}).`);
                 setTimeout(() => setSaveMessage(''), 4000);
+            } else {
+                setLastAutoSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
             }
         } catch (err) {
             console.error("Save to history error:", err);
@@ -455,11 +599,57 @@ const Invoices = () => {
 
     return (
         <div className="min-h-screen bg-slate-100 dark:bg-slate-950 p-2 sm:p-4 md:p-8 font-sans">
+            {/* Auto-Save Crash Recovery Banner */}
+            {recoveredDraft && (
+                <div className="no-print mb-4 p-4 bg-gradient-to-r from-amber-500/15 via-indigo-500/10 to-emerald-500/15 border-2 border-amber-400 dark:border-amber-500/60 rounded-3xl shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                            <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                                Unsaved Invoice Recovered
+                                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 px-2 py-0.5 rounded-full">
+                                    Crash Protection Active
+                                </span>
+                            </h4>
+                            <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                                We found an auto-saved draft from <strong>{new Date(recoveredDraft.savedAt).toLocaleString()}</strong> with client <em>"{recoveredDraft.data?.customerName || 'Unnamed'}"</em> and {recoveredDraft.data?.items?.length || 0} line items.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                        <button
+                            type="button"
+                            onClick={handleRestoreDraft}
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md flex items-center gap-1.5 transition"
+                        >
+                            <Check className="w-4 h-4" /> Restore Draft
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDiscardDraft}
+                            className="px-3 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition"
+                        >
+                            Discard
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Header Toolbar */}
             <div className="no-print bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl mb-6 sm:mb-8 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                 <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-1 flex items-center gap-2">
-                        <FileText className="w-4 h-4" /> {showTax ? 'GST Invoicing Suite' : 'Invoicing Suite'}
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                            <FileText className="w-4 h-4" /> {showTax ? 'GST Invoicing Suite' : 'Invoicing Suite'}
+                        </div>
+                        {lastAutoSavedTime && (
+                            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Draft auto-saved {lastAutoSavedTime}
+                            </span>
+                        )}
                     </div>
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
                         {showTax ? 'Tax Invoice Studio' : 'Invoice Studio'}

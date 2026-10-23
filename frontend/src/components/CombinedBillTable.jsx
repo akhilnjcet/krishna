@@ -81,7 +81,7 @@ export const CombinedBillTableBody = ({
   enableUnitPrice = true,
   enableQuantity = true
 }) => {
-  const sectionMeta = computeItemSectionMeta(items, combinedTotals);
+  const sectionMeta = computeItemSectionMeta(items, combinedTotals, enableQuantity, enableUnitPrice);
 
   return (
     <tbody>

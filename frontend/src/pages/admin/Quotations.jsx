@@ -5,7 +5,7 @@ import {
     Palette, Clock, CheckCircle, ShieldCheck, DollarSign, Layers,
     Save, History, CheckCircle2, AlertCircle, Copy, RotateCcw, 
     Search, X, Tag, Percent, Eye, EyeOff, FolderPlus, Split, ArrowRight,
-    Columns, Maximize2, Minimize2
+    Columns, Maximize2, Minimize2, Sparkles, Check
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
@@ -27,6 +27,7 @@ const Quotations = () => {
     const [quotationNumber, setQuotationNumber] = useState(generateQuotationNumber());
     const [quotationDate, setQuotationDate] = useState(new Date().toISOString().split('T')[0]);
     const [proposalValidityDate, setProposalValidityDate] = useState(new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]);
+    const [showValidityDate, setShowValidityDate] = useState(true);
 
     // Client Information Lookup
     const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -91,10 +92,34 @@ const Quotations = () => {
     const [toastMsg, setToastMsg] = useState('');
     const toastTimerRef = useRef(null);
 
+    // Auto-Save & Crash Protection State
+    const DRAFT_STORAGE_KEY = 'krishna_draft_quotation_v1';
+    const [recoveredDraft, setRecoveredDraft] = useState(null);
+    const [lastAutoSavedTime, setLastAutoSavedTime] = useState(null);
+
     useEffect(() => {
         fetchCustomers();
         fetchBranding();
         checkDuplicatedDoc();
+
+        // Check for crash recovery draft
+        try {
+            const savedDraftStr = localStorage.getItem(DRAFT_STORAGE_KEY);
+            if (savedDraftStr) {
+                const parsed = JSON.parse(savedDraftStr);
+                const hasMeaningful = Boolean(
+                    parsed?.data && (
+                        (parsed.data.clientName && parsed.data.clientName.trim()) ||
+                        (Array.isArray(parsed.data.items) && parsed.data.items.some(i => (i.name || i.description || '').trim() || i.price > 0 || i.rate > 0))
+                    )
+                );
+                if (hasMeaningful) {
+                    setRecoveredDraft(parsed);
+                }
+            }
+        } catch (e) {
+            console.warn('Quotation draft recovery error', e);
+        }
     }, []);
 
     const fetchBranding = async () => {
@@ -260,7 +285,9 @@ const Quotations = () => {
         showTax,
         discountType,
         discountValue,
-        taxPercentage
+        taxPercentage,
+        showQuantity,
+        showUnitPrice
     );
 
     const financials = {
@@ -293,9 +320,13 @@ const Quotations = () => {
     // Reset current quotation
     const handleResetQuotation = () => {
         if (!window.confirm('Reset this quotation and start fresh? All unsaved inputs will be cleared.')) return;
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setRecoveredDraft(null);
+        setLastAutoSavedTime(null);
         setQuotationNumber(generateQuotationNumber());
         setQuotationDate(new Date().toISOString().split('T')[0]);
         setProposalValidityDate(new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]);
+        setShowValidityDate(true);
         setSelectedCustomerId('');
         setClientName('');
         setClientAddress('');
@@ -331,6 +362,7 @@ const Quotations = () => {
             setQuotationDate(new Date().toISOString().split('T')[0]);
         }
         setProposalValidityDate(data.proposalValidityDate || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]);
+        if (data.showValidityDate !== undefined) setShowValidityDate(data.showValidityDate);
         setClientName(data.clientName || '');
         setClientAddress(data.clientAddress || '');
         setClientPhone(data.clientPhone || '');
@@ -360,22 +392,131 @@ const Quotations = () => {
         setShowHistoryModal(false);
     };
 
+    // Auto-save helper payload
+    const getDraftData = () => ({
+        quotationNumber,
+        quotationDate,
+        proposalValidityDate,
+        showValidityDate,
+        selectedCustomerId,
+        clientName,
+        clientAddress,
+        clientPhone,
+        clientGstin,
+        clientState,
+        isCombinedMode,
+        items,
+        combinedTotals,
+        discountType,
+        discountValue,
+        taxPercentage,
+        taxType,
+        showTax,
+        showUnitPrice,
+        showQuantity,
+        showTerms,
+        showPaymentTerms,
+        showSignature,
+        showNotes,
+        showFooter,
+        disclaimers,
+        paymentTerms,
+        projectNotes,
+        timelines,
+        footerRemarks,
+        theme,
+        themeColor
+    });
+
+    // Auto-save to localStorage on change (debounced 1.2s)
+    useEffect(() => {
+        const hasContent = Boolean(
+            (clientName && clientName.trim()) ||
+            (items && items.some(i => (i.name || i.description || '').trim() || i.price > 0 || i.rate > 0))
+        );
+        if (!hasContent) return;
+
+        const timer = setTimeout(() => {
+            try {
+                const draft = {
+                    data: getDraftData(),
+                    savedAt: new Date().toISOString()
+                };
+                localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+                setLastAutoSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+            } catch (e) {
+                console.warn('Quotation auto-save error', e);
+            }
+        }, 1200);
+
+        return () => clearTimeout(timer);
+    }, [
+        quotationNumber, quotationDate, proposalValidityDate, showValidityDate, selectedCustomerId,
+        clientName, clientAddress, clientPhone, clientGstin, clientState, isCombinedMode,
+        items, combinedTotals, discountType, discountValue, taxPercentage, taxType, showTax,
+        showUnitPrice, showQuantity, showTerms, showPaymentTerms, showSignature, showNotes,
+        showFooter, disclaimers, paymentTerms, projectNotes, timelines, footerRemarks, theme, themeColor
+    ]);
+
+    // Save immediately on beforeunload (accidental close or crash protection)
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            const hasContent = Boolean(
+                (clientName && clientName.trim()) ||
+                (items && items.some(i => (i.name || i.description || '').trim() || i.price > 0 || i.rate > 0))
+            );
+            if (hasContent) {
+                try {
+                    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
+                        data: getDraftData(),
+                        savedAt: new Date().toISOString()
+                    }));
+                } catch (e) {}
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [clientName, items, quotationNumber, proposalValidityDate, showValidityDate]);
+
+    // Background auto-save to Document History vault (debounced 6s if basic fields present)
+    useEffect(() => {
+        if (!clientName?.trim() || !items || items.length === 0 || items.every(i => !((i.name || i.description || '').trim()))) return;
+        const cloudTimer = setTimeout(() => {
+            handleSaveToHistory('autosave');
+        }, 6000);
+        return () => clearTimeout(cloudTimer);
+    }, [clientName, items, quotationNumber, totals.totalAmount]);
+
+    const handleRestoreDraft = () => {
+        if (recoveredDraft?.data) {
+            applyQuotationData(recoveredDraft.data, false);
+            showToast(`✓ Restored auto-saved draft from ${new Date(recoveredDraft.savedAt).toLocaleTimeString()}`);
+        }
+        setRecoveredDraft(null);
+    };
+
+    const handleDiscardDraft = () => {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setRecoveredDraft(null);
+        showToast('Auto-saved draft discarded.');
+    };
+
     // Save to History
     const handleSaveToHistory = async (triggeredBy = 'manual') => {
         if (!quotationNumber.trim()) {
-            showToast('Please enter a Quotation Number before saving.', 'error');
+            if (triggeredBy !== 'autosave') showToast('Please enter a Quotation Number before saving.', 'error');
             return false;
         }
         if (!clientName.trim()) {
-            showToast('Please enter a Client Name before saving.', 'error');
+            if (triggeredBy !== 'autosave') showToast('Please enter a Client Name before saving.', 'error');
             return false;
         }
         if (items.length === 0 || items.every(i => !((i.name || i.description || '').trim()))) {
-            showToast('Add at least one line item before saving.', 'error');
+            if (triggeredBy !== 'autosave') showToast('Add at least one line item before saving.', 'error');
             return false;
         }
 
-        setSaveState('saving');
+        if (triggeredBy !== 'autosave') setSaveState('saving');
         try {
             const payload = {
                 documentType: 'Quotation',
@@ -388,6 +529,7 @@ const Quotations = () => {
                     quotationNumber,
                     quotationDate,
                     proposalValidityDate,
+                    showValidityDate,
                     clientName,
                     clientAddress,
                     clientPhone,
@@ -428,15 +570,21 @@ const Quotations = () => {
             };
 
             await api.post('/document-history/save', payload);
-            showToast(
-                triggeredBy === 'print'
-                    ? '✓ Quotation auto-saved before printing.'
-                    : `✓ Quotation ${quotationNumber} saved to Document History.`
-            );
+            if (triggeredBy !== 'autosave') {
+                localStorage.removeItem(DRAFT_STORAGE_KEY);
+                setRecoveredDraft(null);
+                showToast(
+                    triggeredBy === 'print'
+                        ? '✓ Quotation auto-saved before printing.'
+                        : `✓ Quotation ${quotationNumber} saved to Document History.`
+                );
+            } else {
+                setLastAutoSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+            }
             return true;
         } catch (err) {
             console.error('Save to history failed:', err);
-            showToast('Failed to save quotation. Please try again.', 'error');
+            if (triggeredBy !== 'autosave') showToast('Failed to save quotation. Please try again.', 'error');
             return false;
         }
     };
@@ -472,11 +620,57 @@ const Quotations = () => {
                 )}
             </AnimatePresence>
 
+            {/* Auto-Save Crash Recovery Banner */}
+            {recoveredDraft && (
+                <div className="no-print mb-4 p-4 bg-gradient-to-r from-amber-500/15 via-indigo-500/10 to-emerald-500/15 border-2 border-amber-400 dark:border-amber-500/60 rounded-3xl shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                            <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                                Unsaved Quotation Recovered
+                                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 px-2 py-0.5 rounded-full">
+                                    Crash Protection Active
+                                </span>
+                            </h4>
+                            <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                                We found an auto-saved draft from <strong>{new Date(recoveredDraft.savedAt).toLocaleString()}</strong> with client <em>"{recoveredDraft.data?.clientName || 'Unnamed'}"</em> and {recoveredDraft.data?.items?.length || 0} line items.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                        <button
+                            type="button"
+                            onClick={handleRestoreDraft}
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md flex items-center gap-1.5 transition"
+                        >
+                            <Check className="w-4 h-4" /> Restore Draft
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDiscardDraft}
+                            className="px-3 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition"
+                        >
+                            Discard
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Header Toolbar */}
             <div className="no-print bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl mb-6 sm:mb-8 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                 <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-1 flex items-center gap-2">
-                        <FileText className="w-4 h-4" /> Cost Estimation & Quotation Engine
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                            <FileText className="w-4 h-4" /> Cost Estimation & Quotation Engine
+                        </div>
+                        {lastAutoSavedTime && (
+                            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Draft auto-saved {lastAutoSavedTime}
+                            </span>
+                        )}
                     </div>
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
                         Quotation Studio
@@ -609,12 +803,26 @@ const Quotations = () => {
                         </div>
 
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Proposal Validity Date</label>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Proposal Validity Date</label>
+                                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={showValidityDate}
+                                        onChange={(e) => setShowValidityDate(e.target.checked)}
+                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 cursor-pointer"
+                                    />
+                                    Include Validity
+                                </label>
+                            </div>
                             <input
                                 type="date"
+                                disabled={!showValidityDate}
                                 value={proposalValidityDate}
                                 onChange={(e) => setProposalValidityDate(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+                                className={`w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition ${
+                                    !showValidityDate ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-850' : ''
+                                }`}
                             />
                         </div>
                     </div>
@@ -887,6 +1095,15 @@ const Quotations = () => {
                             <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                                 <input
                                     type="checkbox"
+                                    checked={showValidityDate}
+                                    onChange={(e) => setShowValidityDate(e.target.checked)}
+                                    className="rounded border-slate-300 text-indigo-600"
+                                />
+                                Validity Date
+                            </label>
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                <input
+                                    type="checkbox"
                                     checked={showTax}
                                     onChange={(e) => setShowTax(e.target.checked)}
                                     className="rounded border-slate-300 text-indigo-600"
@@ -1023,6 +1240,9 @@ const Quotations = () => {
                                             </span>
                                             <p className="text-sm font-black">{quotationNumber}</p>
                                             <p className="text-xs opacity-80">Date: {quotationDate}</p>
+                                            {showValidityDate && proposalValidityDate && (
+                                                <p className="text-xs opacity-80">Valid Until: {proposalValidityDate}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -1041,6 +1261,9 @@ const Quotations = () => {
                                         <h2 className="text-2xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>QUOTATION</h2>
                                         <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{quotationNumber}</p>
                                         <p className="text-xs text-slate-500 dark:text-slate-400">Date: {quotationDate}</p>
+                                        {showValidityDate && proposalValidityDate && (
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Valid Until: {proposalValidityDate}</p>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
@@ -1067,7 +1290,9 @@ const Quotations = () => {
                                         </span>
                                         <p className="text-xs font-black text-slate-900 dark:text-white">{quotationNumber}</p>
                                         <p className="text-xs text-slate-500 dark:text-slate-400">Date: {quotationDate}</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">Valid Until: {proposalValidityDate}</p>
+                                        {showValidityDate && proposalValidityDate && (
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Valid Until: {proposalValidityDate}</p>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -1081,12 +1306,14 @@ const Quotations = () => {
                                     {clientPhone && <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Ph: {clientPhone}</p>}
                                     {clientGstin && <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mt-1">GSTIN: {clientGstin} ({clientState})</p>}
                                 </div>
-                                <div className="text-left sm:text-right">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">VALIDITY DATE:</span>
-                                    <span className="text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 px-3 py-1 rounded-lg inline-block">
-                                        {proposalValidityDate}
-                                    </span>
-                                </div>
+                                {showValidityDate && proposalValidityDate && (
+                                    <div className="text-left sm:text-right">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">VALIDITY DATE:</span>
+                                        <span className="text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 px-3 py-1 rounded-lg inline-block">
+                                            {proposalValidityDate}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Quotation Table */}

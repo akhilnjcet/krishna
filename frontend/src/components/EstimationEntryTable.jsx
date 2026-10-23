@@ -48,7 +48,7 @@ export const EstimationEntryTable = ({
     }
   };
 
-  const sectionMeta = computeItemSectionMeta(items, combinedTotals);
+  const sectionMeta = computeItemSectionMeta(items, combinedTotals, enableQuantity, enableUnitPrice);
 
   return (
     <div className="flex flex-col gap-3">
@@ -147,8 +147,8 @@ export const EstimationEntryTable = ({
               const prevItem = index > 0 ? items[index - 1] : null;
               const prevIsCombined = prevItem && Boolean(prevItem.isCombinedMode ?? prevItem.isCombined);
               const currentName = meta.description || meta.productName || meta.name || meta.workDescription || meta.itemName || '';
-              const qty = meta.hasQuantity !== false ? (parseFloat(meta.quantity || 1) || 1) : 1;
-              const rate = meta.hasUnitPrice !== false ? (parseFloat(meta.price ?? meta.rate ?? 0) || 0) : 0;
+              const qty = (enableQuantity !== false && meta.hasQuantity !== false) ? (parseFloat(meta.quantity || 1) || 1) : 1;
+              const rate = (enableUnitPrice !== false && meta.hasUnitPrice !== false) ? (parseFloat(meta.price ?? meta.rate ?? 0) || 0) : 0;
               const rowCalculated = qty * rate;
 
               return (
@@ -409,8 +409,8 @@ export const EstimationEntryTable = ({
               const prevItem = index > 0 ? items[index - 1] : null;
               const prevIsCombined = prevItem && Boolean(prevItem.isCombinedMode ?? prevItem.isCombined);
               const currentName = meta.description || meta.productName || meta.name || meta.workDescription || meta.itemName || '';
-              const qty = meta.hasQuantity !== false ? (parseFloat(meta.quantity || 1) || 1) : 1;
-              const rate = meta.hasUnitPrice !== false ? (parseFloat(meta.price ?? meta.rate ?? 0) || 0) : 0;
+              const qty = (enableQuantity !== false && meta.hasQuantity !== false) ? (parseFloat(meta.quantity || 1) || 1) : 1;
+              const rate = (enableUnitPrice !== false && meta.hasUnitPrice !== false) ? (parseFloat(meta.price ?? meta.rate ?? 0) || 0) : 0;
               const rowCalculated = qty * rate;
 
               return (

@@ -323,7 +323,7 @@ export function groupItemsBySections(items = []) {
  * Identifies consecutive combined items and determines row spans,
  * section starts, section followers, and combined amounts.
  */
-export const computeItemSectionMeta = (items = [], combinedTotals = {}) => {
+export const computeItemSectionMeta = (items = [], combinedTotals = {}, enableQuantity = true, enableUnitPrice = true) => {
     if (!Array.isArray(items) || items.length === 0) return [];
 
     const metaList = [];
@@ -335,10 +335,10 @@ export const computeItemSectionMeta = (items = [], combinedTotals = {}) => {
         const isCombined = Boolean(item.isCombinedMode ?? item.isCombined);
 
         if (!isCombined) {
-            const hasQtyFlag = item.hasQuantity !== false;
+            const hasQtyFlag = enableQuantity !== false && item.hasQuantity !== false;
             const hasQty = hasQtyFlag && item.quantity !== undefined && item.quantity !== null && item.quantity !== '' && Number(item.quantity) > 0;
             const qty = hasQty ? Number(item.quantity) : 1;
-            const hasPriceFlag = item.hasUnitPrice !== false;
+            const hasPriceFlag = enableUnitPrice !== false && item.hasUnitPrice !== false;
             const price = hasPriceFlag ? (Number(item.price ?? item.rate ?? item.dailyRate ?? 0) || 0) : 0;
             const hasDirectTotal = item.total !== undefined && item.total !== null && item.total !== '';
             const directTotal = hasDirectTotal ? Number(item.total) : null;
@@ -428,7 +428,7 @@ export const computeItemSectionMeta = (items = [], combinedTotals = {}) => {
  * Calculates Grand Total, Subtotal, and Tax according to:
  * Grand Total = All combined-section amounts + All individual item totals
  */
-export const calculateBillTotals = (items = [], combinedTotals = {}, showTax = false, discountType = 'none', discountValue = 0, taxPercentage = 18) => {
+export const calculateBillTotals = (items = [], combinedTotals = {}, showTax = false, discountType = 'none', discountValue = 0, taxPercentage = 18, enableQuantity = true, enableUnitPrice = true) => {
     const totalsObj = combinedTotals instanceof Map ? Object.fromEntries(combinedTotals) : (combinedTotals || {});
 
     // 1. Sum individual uncombined items
@@ -436,10 +436,10 @@ export const calculateBillTotals = (items = [], combinedTotals = {}, showTax = f
     (items || []).forEach(item => {
         const isCombined = Boolean(item.isCombinedMode ?? item.isCombined);
         if (!isCombined) {
-            const hasQtyFlag = item.hasQuantity !== false;
+            const hasQtyFlag = enableQuantity !== false && item.hasQuantity !== false;
             const hasQty = hasQtyFlag && item.quantity !== undefined && item.quantity !== null && item.quantity !== '' && Number(item.quantity) > 0;
             const qty = hasQty ? Number(item.quantity) : 1;
-            const hasPriceFlag = item.hasUnitPrice !== false;
+            const hasPriceFlag = enableUnitPrice !== false && item.hasUnitPrice !== false;
             const price = hasPriceFlag ? (Number(item.price ?? item.rate ?? item.dailyRate ?? 0) || 0) : 0;
             const hasDirectTotal = item.total !== undefined && item.total !== null && item.total !== '';
             const directTotal = hasDirectTotal ? Number(item.total) : null;
