@@ -48,6 +48,10 @@ const LabourBillsTab = () => {
     const [showQuantity, setShowQuantity] = useState(true);
     const [showUnitPrice, setShowUnitPrice] = useState(true);
 
+    // Tagline & Header Customization
+    const [tagline, setTagline] = useState('Site Assembly Crew, Structural Welders & Heavy Logistics');
+    const [showTagline, setShowTagline] = useState(true);
+
     // Dynamic Labour Row Matrix
     const [labourRows, setLabourRows] = useState([
         { id: 1, workDescription: 'Site Assembly & Fitting Labor (Senior Fabricator Crew)', unit: 'Shifts', labourersCount: 6, workingDays: 5, dailyRate: 950, isCombined: false },
@@ -106,6 +110,9 @@ const LabourBillsTab = () => {
                     data.forEach(item => { map[item.key] = item.value; });
                 }
                 setBrandingSettings(map);
+                if (map.company_tagline || map.tagline) {
+                    setTagline(prev => (prev === 'Site Assembly Crew, Structural Welders & Heavy Logistics' ? (map.company_tagline || map.tagline) : prev));
+                }
             })
             .catch(err => console.warn('Public settings fetch failed', err));
         checkDuplicatedDoc();
@@ -287,6 +294,8 @@ const LabourBillsTab = () => {
         setLastAutoSavedTime(null);
         setBillNumber(generateBillNumber(billMode));
         setBillDate(new Date().toISOString().split('T')[0]);
+        setTagline(brandingSettings?.company_tagline || brandingSettings?.tagline || 'Site Assembly Crew, Structural Welders & Heavy Logistics');
+        setShowTagline(true);
         setClientName('');
         setClientAddress('');
         setClientPhone('');
@@ -330,6 +339,8 @@ const LabourBillsTab = () => {
             setBillDate(new Date().toISOString().split('T')[0]);
         }
         if (data.billMode) setBillMode(data.billMode);
+        if (data.tagline !== undefined) setTagline(data.tagline);
+        if (data.showTagline !== undefined) setShowTagline(data.showTagline);
         setClientName(data.clientName || '');
         setClientAddress(data.clientAddress || '');
         setClientPhone(data.clientPhone || '');
@@ -370,6 +381,8 @@ const LabourBillsTab = () => {
         billMode,
         billNumber,
         billDate,
+        tagline,
+        showTagline,
         clientName,
         clientAddress,
         clientPhone,
@@ -429,7 +442,7 @@ const LabourBillsTab = () => {
 
         return () => clearTimeout(timer);
     }, [
-        billMode, billNumber, billDate, clientName, clientAddress, clientPhone, clientGstin,
+        billMode, billNumber, billDate, tagline, showTagline, clientName, clientAddress, clientPhone, clientGstin,
         siteLocation, siteSupervisor, vehicleNumber, lrGrNumber, origin, destination,
         goodsDescription, driverName, driverPhone, loadingDate, unloadingDate, labourRows,
         combinedTotals, showQuantity, showUnitPrice, baseFreightCharges, loadingCharges,
@@ -501,7 +514,7 @@ const LabourBillsTab = () => {
                     billMode,
                     vehicleNumber, lrGrNumber, origin, destination, goodsDescription,
                     driverName, driverPhone, loadingDate, unloadingDate, 
-                    billNumber, billDate, clientName, clientAddress, clientPhone, clientGstin,
+                    billNumber, billDate, tagline, showTagline, clientName, clientAddress, clientPhone, clientGstin,
                     siteLocation, siteSupervisor, labourRows, combinedTotals, showQuantity, showUnitPrice,
                     baseFreightCharges, loadingCharges, unloadingCharges, handlingCharges, packingCharges,
                     overtimeCharges, detentionCharges, advancePaid: numAdvance, discountAmount: numDiscount,
@@ -746,6 +759,31 @@ const LabourBillsTab = () => {
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
+                        </div>
+
+                        <div className="pt-1">
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Header Tagline / Subtitle</label>
+                                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={showTagline}
+                                        onChange={(e) => setShowTagline(e.target.checked)}
+                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 cursor-pointer"
+                                    />
+                                    Include Tagline
+                                </label>
+                            </div>
+                            <input
+                                type="text"
+                                disabled={!showTagline}
+                                value={tagline}
+                                onChange={(e) => setTagline(e.target.value)}
+                                placeholder="e.g. Site Assembly Crew, Structural Welders & Heavy Logistics"
+                                className={`w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none transition ${
+                                    !showTagline ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800/50' : ''
+                                }`}
+                            />
                         </div>
 
                         {/* Supervisor & Site Tracking */}
@@ -1220,6 +1258,17 @@ const LabourBillsTab = () => {
                                 className="w-8 h-8 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5"
                             />
                         </div>
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={showTagline}
+                                    onChange={(e) => setShowTagline(e.target.checked)}
+                                    className="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5 cursor-pointer"
+                                />
+                                Header Tagline
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -1250,8 +1299,22 @@ const LabourBillsTab = () => {
                                                 <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white p-1 rounded-xl shadow-md" />
                                             )}
                                             <div>
-                                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
-                                                <p className="text-xs opacity-90 font-medium">Workforce Assembly, Erection & Transport Logistics Division</p>
+                                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                                {showTagline && (
+                                                    <div>
+                                                        <input
+                                                            type="text"
+                                                            value={tagline}
+                                                            onChange={(e) => setTagline(e.target.value)}
+                                                            placeholder="Click to edit tagline..."
+                                                            title="Click to edit tagline directly"
+                                                            className="no-print text-xs opacity-90 font-medium bg-transparent hover:bg-white/10 focus:bg-black/20 text-white placeholder-white/60 border border-transparent hover:border-white/30 focus:border-white/60 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                        />
+                                                        <p className="hidden print:block text-xs opacity-90 font-medium">
+                                                            {tagline}
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
@@ -1272,7 +1335,21 @@ const LabourBillsTab = () => {
                                         )}
                                         <div>
                                             <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
-                                            <p className="text-xs text-slate-500">Site Assembly Crew, Structural Welders & Heavy Logistics</p>
+                                            {showTagline && (
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        value={tagline}
+                                                        onChange={(e) => setTagline(e.target.value)}
+                                                        placeholder="Click to edit tagline..."
+                                                        title="Click to edit tagline directly"
+                                                        className="no-print text-xs text-slate-500 dark:text-slate-400 font-medium bg-transparent hover:bg-slate-100 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                    />
+                                                    <p className="hidden print:block text-xs text-slate-500 dark:text-slate-400">
+                                                        {tagline}
+                                                    </p>
+                                                </div>
+                                            )}
                                             <p className="text-[11px] text-slate-400 font-medium mt-0.5">
                                                 Yard: Industrial Area Thiruvazhiyode, Palakkad | Ph: +91 9447940835
                                             </p>

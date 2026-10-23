@@ -73,6 +73,10 @@ const RentalBills = () => {
     const [showQuantity, setShowQuantity] = useState(true);
     const [showUnitPrice, setShowUnitPrice] = useState(true);
 
+    // Tagline & Header Customization
+    const [tagline, setTagline] = useState('Equipment Rental, Machinery Leasing & Plant Asset Services');
+    const [showTagline, setShowTagline] = useState(true);
+
     // Rented Items / Assets
     const [rentedItems, setRentedItems] = useState([
         {
@@ -150,6 +154,9 @@ const RentalBills = () => {
                     data.forEach(item => { map[item.key] = item.value; });
                 }
                 setBrandingSettings(map);
+                if (map.company_tagline || map.tagline) {
+                    setTagline(prev => (prev === 'Equipment Rental, Machinery Leasing & Plant Asset Services' ? (map.company_tagline || map.tagline) : prev));
+                }
             })
             .catch(err => console.warn('Public settings fetch failed', err));
         fetchCustomers();
@@ -394,6 +401,8 @@ const RentalBills = () => {
         setLastAutoSavedTime(null);
         setBillNumber(generateRentalBillNumber());
         setIssueDate(new Date().toISOString().split('T')[0]);
+        setTagline(brandingSettings?.company_tagline || brandingSettings?.tagline || 'Equipment Rental, Machinery Leasing & Plant Asset Services');
+        setShowTagline(true);
         setSelectedCustomerId('');
         setCustomerName('');
         setCustomerAddress('');
@@ -431,6 +440,8 @@ const RentalBills = () => {
             setIssueDate(new Date().toISOString().split('T')[0]);
         }
         if (data.workflowMode) setWorkflowMode(data.workflowMode);
+        if (data.tagline !== undefined) setTagline(data.tagline);
+        if (data.showTagline !== undefined) setShowTagline(data.showTagline);
         setExpectedReturnDate(data.expectedReturnDate || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]);
         setActualReturnDate(data.actualReturnDate || new Date().toISOString().split('T')[0]);
         setCustomerName(data.customerName || '');
@@ -466,6 +477,8 @@ const RentalBills = () => {
         issueDate,
         expectedReturnDate,
         actualReturnDate,
+        tagline,
+        showTagline,
         selectedCustomerId,
         customerName,
         customerAddress,
@@ -515,7 +528,7 @@ const RentalBills = () => {
 
         return () => clearTimeout(timer);
     }, [
-        workflowMode, billNumber, issueDate, expectedReturnDate, actualReturnDate, selectedCustomerId,
+        workflowMode, billNumber, issueDate, expectedReturnDate, actualReturnDate, tagline, showTagline, selectedCustomerId,
         customerName, customerAddress, customerPhone, customerGstin, siteLocation, rentedItems,
         combinedTotals, showQuantity, showUnitPrice, securityDeposit, lateFeePerDay, damageCharge,
         lossCharge, damageRemarks, issuedByStaff, receivedByCustomer, returnedByCustomer,
@@ -582,6 +595,7 @@ const RentalBills = () => {
                 data: {
                     workflowMode,
                     billNumber, issueDate, expectedReturnDate, actualReturnDate,
+                    tagline, showTagline,
                     customerName, customerAddress, customerPhone, customerGstin, siteLocation,
                     rentedItems, combinedTotals, showQuantity, showUnitPrice,
                     securityDeposit, lateFeePerDay, computedLateFees, daysOverdue,
@@ -815,6 +829,31 @@ const RentalBills = () => {
                                 <span>Late Fee: {formatCurrencyINR(computedLateFees)}</span>
                             </div>
                         )}
+
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Header Tagline / Subtitle</label>
+                                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={showTagline}
+                                        onChange={(e) => setShowTagline(e.target.checked)}
+                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 cursor-pointer"
+                                    />
+                                    Include Tagline
+                                </label>
+                            </div>
+                            <input
+                                type="text"
+                                disabled={!showTagline}
+                                value={tagline}
+                                onChange={(e) => setTagline(e.target.value)}
+                                placeholder="e.g. Equipment Rental, Machinery Leasing & Plant Asset Services"
+                                className={`w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none transition ${
+                                    !showTagline ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800/50' : ''
+                                }`}
+                            />
+                        </div>
                     </div>
 
                     {/* Customer Info */}
@@ -1274,6 +1313,47 @@ const RentalBills = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* Theme & Display Options */}
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
+                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                            <Palette className="w-4 h-4 text-indigo-500" /> Theme & Display Toggles
+                        </h2>
+                        <div className="grid grid-cols-3 gap-2">
+                            {['Classic', 'Modern', 'Minimalist'].map(t => (
+                                <button
+                                    key={t}
+                                    type="button"
+                                    onClick={() => setTheme(t)}
+                                    className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition ${
+                                        theme === t ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                                    }`}
+                                >
+                                    {t}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-3 pt-2">
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Theme Color:</label>
+                            <input
+                                type="color"
+                                value={themeColor}
+                                onChange={(e) => setThemeColor(e.target.value)}
+                                className="w-8 h-8 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5"
+                            />
+                        </div>
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={showTagline}
+                                    onChange={(e) => setShowTagline(e.target.checked)}
+                                    className="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5 cursor-pointer"
+                                />
+                                Header Tagline
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 {/* RIGHT: Live Printable Rental Agreement Preview */}
@@ -1295,9 +1375,28 @@ const RentalBills = () => {
                             {theme === 'Modern' ? (
                                 <div className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden" style={{ backgroundColor: themeColor }}>
                                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
-                                        <div>
-                                            <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
-                                            <p className="text-xs opacity-90 font-medium">Heavy Industrial Plant & Machinery Rental Division</p>
+                                        <div className="flex items-center gap-4 flex-wrap">
+                                            {brandingSettings.company_logo && (
+                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white p-1 rounded-xl shadow-md" />
+                                            )}
+                                            <div>
+                                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                                {showTagline && (
+                                                    <div>
+                                                        <input
+                                                            type="text"
+                                                            value={tagline}
+                                                            onChange={(e) => setTagline(e.target.value)}
+                                                            placeholder="Click to edit tagline..."
+                                                            title="Click to edit tagline directly"
+                                                            className="no-print text-xs opacity-90 font-medium bg-transparent hover:bg-white/10 focus:bg-black/20 text-white placeholder-white/60 border border-transparent hover:border-white/30 focus:border-white/60 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                        />
+                                                        <p className="hidden print:block text-xs opacity-90 font-medium">
+                                                            {tagline}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="text-left sm:text-right">
                                             <span className="bg-white/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
@@ -1310,12 +1409,31 @@ const RentalBills = () => {
                                 </div>
                             ) : (
                                 <div className="border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
-                                    <div>
-                                        <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white company-name">
-                                            {brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}
-                                        </h1>
-                                        <p className="text-xs text-slate-500">Equipment Rental, Machinery Leasing & Plant Asset Services</p>
-                                        <p className="text-[11px] text-slate-400 mt-0.5">Yard: Industrial Area Thiruvazhiyode, Palakkad | Ph: +91 9447940835</p>
+                                    <div className="flex items-center gap-4 flex-wrap">
+                                        {brandingSettings.company_logo && (
+                                            <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900 rounded-xl shadow p-1" />
+                                        )}
+                                        <div>
+                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white company-name">
+                                                {brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}
+                                            </h1>
+                                            {showTagline && (
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        value={tagline}
+                                                        onChange={(e) => setTagline(e.target.value)}
+                                                        placeholder="Click to edit tagline..."
+                                                        title="Click to edit tagline directly"
+                                                        className="no-print text-xs text-slate-500 dark:text-slate-400 font-medium bg-transparent hover:bg-slate-100 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                    />
+                                                    <p className="hidden print:block text-xs text-slate-500 dark:text-slate-400">
+                                                        {tagline}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            <p className="text-[11px] text-slate-400 mt-0.5">Yard: Industrial Area Thiruvazhiyode, Palakkad | Ph: +91 9447940835</p>
+                                        </div>
                                     </div>
                                     <div className="text-left sm:text-right">
                                         <span className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm" style={{ backgroundColor: themeColor }}>

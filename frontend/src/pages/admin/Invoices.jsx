@@ -28,6 +28,8 @@ const Invoices = () => {
     const [showDueDate, setShowDueDate] = useState(true);
     const [netDays, setNetDays] = useState('15');
     const [showNetDays, setShowNetDays] = useState(true);
+    const [tagline, setTagline] = useState('Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication');
+    const [showTagline, setShowTagline] = useState(true);
     
     // Customer Selector & Autofill
     const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -127,6 +129,9 @@ const Invoices = () => {
                 const map = {};
                 res.data.forEach(item => { map[item.key] = item.value; });
                 setBrandingSettings(map);
+                if (map.company_tagline || map.tagline) {
+                    setTagline(prev => (prev === 'Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication' ? (map.company_tagline || map.tagline) : prev));
+                }
                 if (map.show_logo !== undefined) setShowLogo(map.show_logo !== false && map.show_logo !== 'false');
                 if (map.show_signature !== undefined) setShowSignature(map.show_signature !== false && map.show_signature !== 'false');
             }
@@ -320,6 +325,8 @@ const Invoices = () => {
         setShowDueDate(true);
         setNetDays('15');
         setShowNetDays(true);
+        setTagline(brandingSettings?.company_tagline || brandingSettings?.tagline || 'Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication');
+        setShowTagline(true);
         setSelectedCustomerId('');
         setCustomerName('');
         setBillingAddress('');
@@ -363,6 +370,8 @@ const Invoices = () => {
         if (data.netDays !== undefined) setNetDays(data.netDays);
         if (data.showNetDays !== undefined) setShowNetDays(data.showNetDays);
         if (data.showPaymentStatus !== undefined) setShowPaymentStatus(data.showPaymentStatus);
+        if (data.tagline !== undefined) setTagline(data.tagline);
+        if (data.showTagline !== undefined) setShowTagline(data.showTagline);
         setSelectedCustomerId(data.selectedCustomerId || '');
         setCustomerName(data.customerName || '');
         setBillingAddress(data.billingAddress || '');
@@ -401,6 +410,8 @@ const Invoices = () => {
         showDueDate,
         netDays,
         showNetDays,
+        tagline,
+        showTagline,
         selectedCustomerId,
         customerName,
         billingAddress,
@@ -522,6 +533,8 @@ const Invoices = () => {
                 showDueDate,
                 netDays,
                 showNetDays,
+                tagline,
+                showTagline,
                 selectedCustomerId,
                 customerName,
                 billingAddress,
@@ -887,6 +900,31 @@ const Invoices = () => {
                             />
                         </div>
 
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Header Tagline / Subtitle</label>
+                                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={showTagline}
+                                        onChange={(e) => setShowTagline(e.target.checked)}
+                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 cursor-pointer"
+                                    />
+                                    Include Tagline
+                                </label>
+                            </div>
+                            <input
+                                type="text"
+                                disabled={!showTagline}
+                                value={tagline}
+                                onChange={(e) => setTagline(e.target.value)}
+                                placeholder="e.g. Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication"
+                                className={`w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition ${
+                                    !showTagline ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-850' : ''
+                                }`}
+                            />
+                        </div>
+
                         {/* Partial Payment Amount Input */}
                         {status === 'Partially Paid' && (
                             <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl space-y-2">
@@ -1137,6 +1175,15 @@ const Invoices = () => {
                             <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                                 <input
                                     type="checkbox"
+                                    checked={showTagline}
+                                    onChange={(e) => setShowTagline(e.target.checked)}
+                                    className="rounded border-slate-300 text-indigo-600"
+                                />
+                                Header Tagline
+                            </label>
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                <input
+                                    type="checkbox"
                                     checked={showDueDate}
                                     onChange={(e) => setShowDueDate(e.target.checked)}
                                     className="rounded border-slate-300 text-indigo-600"
@@ -1290,8 +1337,23 @@ const Invoices = () => {
                                                 <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white p-1 rounded-xl shadow-md" />
                                             )}
                                             <div>
-                                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">KRISHNA ENGINEERING WORKS</h1>
-                                                <p className="text-xs opacity-90 font-medium">
+                                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                                {showTagline && (
+                                                    <div>
+                                                        <input
+                                                            type="text"
+                                                            value={tagline}
+                                                            onChange={(e) => setTagline(e.target.value)}
+                                                            placeholder="Click to edit tagline..."
+                                                            title="Click to edit tagline directly"
+                                                            className="no-print text-xs opacity-90 font-medium bg-transparent hover:bg-white/10 focus:bg-black/20 text-white placeholder-white/60 border border-transparent hover:border-white/30 focus:border-white/60 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                        />
+                                                        <p className="hidden print:block text-xs opacity-90 font-medium">
+                                                            {tagline}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                <p className="text-xs opacity-80 font-medium">
                                                     {showTax ? 'Tax Invoice / Supply of Goods & Engineering Services' : 'Invoice / Supply of Goods & Engineering Services'}
                                                 </p>
                                             </div>
@@ -1324,7 +1386,22 @@ const Invoices = () => {
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-10 w-auto object-contain" />
                                         )}
                                         <div>
-                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white company-name">KRISHNA ENGINEERING WORKS</h1>
+                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                            {showTagline && (
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        value={tagline}
+                                                        onChange={(e) => setTagline(e.target.value)}
+                                                        placeholder="Click to edit tagline..."
+                                                        title="Click to edit tagline directly"
+                                                        className="no-print text-xs text-slate-500 dark:text-slate-400 font-medium bg-transparent hover:bg-slate-100 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                    />
+                                                    <p className="hidden print:block text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                                        {tagline}
+                                                    </p>
+                                                </div>
+                                            )}
                                             <p className="text-xs text-slate-500 font-medium">GSTIN: {brandingSettings?.company_gstin || '32AAAAA0000A1Z5'}</p>
                                         </div>
                                     </div>
@@ -1348,6 +1425,21 @@ const Invoices = () => {
                                         )}
                                         <div>
                                             <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                            {showTagline && (
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        value={tagline}
+                                                        onChange={(e) => setTagline(e.target.value)}
+                                                        placeholder="Click to edit tagline..."
+                                                        title="Click to edit tagline directly"
+                                                        className="no-print text-xs text-slate-500 dark:text-slate-400 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                    />
+                                                    <p className="hidden print:block text-xs text-slate-500 dark:text-slate-400">
+                                                        {tagline}
+                                                    </p>
+                                                </div>
+                                            )}
                                             <p className="text-xs text-slate-500 dark:text-slate-400">Industrial Area, Thiruvazhiyode, Palakkad, Kerala 679514</p>
                                             <p className="text-[11px] text-slate-400 font-medium mt-0.5">
                                                 GSTIN: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{brandingSettings?.company_gstin || '32AAAAA0000A1Z5'}</span> | State: Kerala (32)
