@@ -29,6 +29,9 @@ class CashfreeService {
             console.warn('[Cashfree] Could not query settings table:', err.message);
         }
 
+        appId = (appId || '').toString().trim();
+        secretKey = (secretKey || '').toString().trim();
+
         // Automatically enforce Production mode when live production keys are detected
         // Cashfree Sandbox requires TEST_ keys. Production keys (cfsk_ma_prod_ or numeric App ID) fail on Sandbox with 'authentication Failed'.
         let isProduction = env === 'production' || env === 'prod';
