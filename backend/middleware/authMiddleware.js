@@ -1,6 +1,7 @@
-const jwt = require('jsonwebtoken');
+const { verifyToken } = require('../config/jwtConfig');
+const User = require('../models/User');
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
     let token;
 
     if (
@@ -9,16 +10,30 @@ const protect = (req, res, next) => {
     ) {
         try {
             token = req.headers.authorization.split(' ')[1];
-            const secret = process.env.JWT_SECRET || 'secret123';
-            const decoded = jwt.verify(token, secret);
-            req.user = decoded;
-            if (req.user && req.user.id) {
-                req.user._id = req.user.id;
+            const decoded = verifyToken(token);
+
+            if (!decoded || !decoded.id) {
+                return res.status(401).json({ message: 'Not authorized: token payload is malformed.' });
             }
+
+            // Secure session validation: verify the user actually exists and is active
+            const user = await User.findById(decoded.id).select('-password -faceDescriptor');
+            if (!user) {
+                return res.status(401).json({ message: 'Not authorized: user account does not exist or was deleted.' });
+            }
+
+            if (user.status === 'inactive' || user.deletionStatus === 'deleted') {
+                return res.status(403).json({ message: 'Access denied: your account is inactive or disabled. Contact administrator.' });
+            }
+
+            req.user = user;
             return next();
         } catch (error) {
             console.error('Auth token verification error:', error.message);
-            return res.status(401).json({ message: 'Not authorized, token invalid or expired' });
+            if (error.name === 'TokenExpiredError') {
+                return res.status(401).json({ message: 'Session expired. Please log in again.', expired: true });
+            }
+            return res.status(401).json({ message: 'Not authorized, token invalid' });
         }
     }
 
@@ -27,7 +42,7 @@ const protect = (req, res, next) => {
     }
 };
 
-const optionalProtect = (req, res, next) => {
+const optionalProtect = async (req, res, next) => {
     let token;
     if (
         req.headers.authorization &&
@@ -35,11 +50,12 @@ const optionalProtect = (req, res, next) => {
     ) {
         try {
             token = req.headers.authorization.split(' ')[1];
-            const secret = process.env.JWT_SECRET || 'secret123';
-            const decoded = jwt.verify(token, secret);
-            req.user = decoded;
-            if (req.user && req.user.id) {
-                req.user._id = req.user.id;
+            const decoded = verifyToken(token);
+            if (decoded && decoded.id) {
+                const user = await User.findById(decoded.id).select('-password -faceDescriptor');
+                if (user && user.status !== 'inactive' && user.deletionStatus !== 'deleted') {
+                    req.user = user;
+                }
             }
         } catch (error) {
             // ignore expired/invalid token in optionalProtect
@@ -66,5 +82,3 @@ const admin = (req, res, next) => {
 };
 
 module.exports = { protect, optionalProtect, authorize, admin };
-
-

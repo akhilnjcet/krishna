@@ -61,21 +61,47 @@ const apiLimiter = rateLimit({
     }
 });
 
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,                         // 100 auth attempts per real IP per 15 min
+// Granular Authentication Rate Limiters for Brute-Force & Credential Stuffing Defense
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,         // 15 minutes
+    max: 10,                          // Max 10 login attempts per IP per 15 min
     standardHeaders: true,
     legacyHeaders: false,
-    // Always return JSON so the login page shows a readable error
     handler: (req, res) => {
-        res.status(429).json({ message: 'Too many authentication attempts. Please wait 15 minutes and try again.' });
+        res.status(429).json({ message: 'Too many login attempts. Please wait 15 minutes before trying again.' });
+    }
+});
+
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,         // 1 hour
+    max: 10,                          // Max 10 account creations per IP per hour
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+        res.status(429).json({ message: 'Too many account registrations from this IP. Please try again later.' });
+    }
+});
+
+const otpLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,         // 15 minutes
+    max: 5,                           // Max 5 OTP verification attempts per IP per 15 min
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+        res.status(429).json({ message: 'Too many OTP requests or verification attempts. Please wait 15 minutes.' });
     }
 });
 
 app.use('/api/', apiLimiter);
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
-app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/register', registerLimiter);
+app.use('/api/auth/forgot-password', otpLimiter);
+app.use('/api/auth/verify-otp', otpLimiter);
+app.use('/api/auth/reset-password', otpLimiter);
+app.use('/api/auth/login-otp/request', otpLimiter);
+app.use('/api/auth/login-otp/verify', otpLimiter);
+app.use('/api/auth/email-verification/request', otpLimiter);
+app.use('/api/auth/email-verification/verify', otpLimiter);
 
 
 const path = require('path');

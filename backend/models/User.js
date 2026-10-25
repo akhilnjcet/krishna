@@ -39,9 +39,22 @@ const userSchema = new mongoose.Schema({
     autoSalaryCalculation: { type: Boolean, default: true },
     otApprovalRequired: { type: Boolean, default: true },
 
-    // Email OTP Auth Fields
-    resetOTP: { type: String },
-    otpExpiry: { type: Date },
+    // Email OTP Auth & Password Reset Fields (Hashed for security)
+    resetOTP: { type: String }, // Legacy compatibility
+    otpExpiry: { type: Date }, // Legacy compatibility
+    resetPasswordHash: { type: String },
+    resetPasswordExpires: { type: Date },
+    resetPasswordAttempts: { type: Number, default: 0 },
+
+    // Account Lockout / Brute-Force Defense
+    failedLoginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date },
+
+    // Email Verification Fields
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationHash: { type: String },
+    emailVerificationExpires: { type: Date },
+    emailVerificationAttempts: { type: Number, default: 0 },
 
     // Policy & Terms Acceptance Tracking
     policyAcceptedAt: { type: Date },
@@ -57,5 +70,17 @@ const userSchema = new mongoose.Schema({
     },
     deletionRequestedAt: { type: Date }
 });
+
+// Helper method to check if user account is currently locked out
+userSchema.methods.isLocked = function() {
+    return !!(this.lockUntil && this.lockUntil > Date.now());
+};
+
+// Helper method to compare passwords securely via bcrypt
+userSchema.methods.comparePassword = async function(candidatePassword) {
+    if (!this.password || !candidatePassword) return false;
+    const bcrypt = require('bcryptjs');
+    return bcrypt.compare(candidatePassword, this.password);
+};
 
 module.exports = mongoose.model('User', userSchema);

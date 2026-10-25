@@ -195,6 +195,32 @@ Security Directives:
     }
 };
 
+const sendEmailVerificationOTP = async (email, otp, name) => {
+    try {
+        const transporter = createTransporter();
+        const mailOptions = {
+            from: `"Krishna Engineering Works" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: 'Email Verification Code - Krishna Engineering Portal',
+            text: `Hello ${name || 'User'},
+
+Your email verification code is: ${otp}
+
+This code is valid for 15 minutes. Please enter this code to verify your email address.
+If you did not request this verification, please disregard this email.
+
+– Krishna Engineering Works Security Desk`
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email verification OTP dispatched: ' + (info.messageId || 'Delivered'));
+        return true;
+    } catch (error) {
+        console.error('Error sending email verification OTP:', error.message);
+        return false;
+    }
+};
+
 module.exports = {
     sendWelcomeEmail,
     sendPasswordResetOTP,
@@ -203,5 +229,6 @@ module.exports = {
     sendLoginNotification,
     sendSignoutNotification,
     sendPasswordChangeConfirmation,
-    sendStatusUpdateEmail
+    sendStatusUpdateEmail,
+    sendEmailVerificationOTP
 };
