@@ -170,11 +170,7 @@ exports.getCashfreeConfig = async (req, res) => {
             enabled: creds.enabled,
             env: creds.env,
             isProduction: creds.isProduction,
-            appId: creds.appId ? `${creds.appId.slice(0, 8)}...` : null,
-            hasSecret: Boolean(creds.secretKey),
-            secretLen: creds.secretKey ? creds.secretKey.length : 0,
-            secretStart: creds.secretKey ? creds.secretKey.slice(0, 15) : null,
-            secretEnd: creds.secretKey ? creds.secretKey.slice(-6) : null
+            appId: creds.appId ? `${creds.appId.slice(0, 8)}...` : null
         });
     } catch (err) {
         res.status(500).json({ message: err.message });

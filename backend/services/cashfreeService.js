@@ -32,6 +32,16 @@ class CashfreeService {
         appId = (appId || '').toString().trim();
         secretKey = (secretKey || '').toString().trim();
 
+        // If secret was accidentally double-pasted into input box (e.g. 108 chars instead of 54)
+        const keyMatch = secretKey.match(/cfsk_ma_[a-z0-9]+_[a-f0-9]+_[a-f0-9]+/);
+        if (keyMatch) {
+            const cleanSecret = keyMatch[0];
+            if (cleanSecret !== secretKey) {
+                secretKey = cleanSecret;
+                Setting.findOneAndUpdate({ key: 'cashfree_secret_key' }, { value: cleanSecret }).catch(() => {});
+            }
+        }
+
         // Automatically enforce Production mode when live production keys are detected
         // Cashfree Sandbox requires TEST_ keys. Production keys (cfsk_ma_prod_ or numeric App ID) fail on Sandbox with 'authentication Failed'.
         let isProduction = env === 'production' || env === 'prod';
