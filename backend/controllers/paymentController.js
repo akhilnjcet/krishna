@@ -250,7 +250,8 @@ exports.createCashfreeOrder = async (req, res) => {
                     clientId: err.config?.headers?.['x-client-id'],
                     hasSecret: Boolean(err.config?.headers?.['x-client-secret']),
                     secretLength: err.config?.headers?.['x-client-secret']?.length,
-                    secretPrefix: err.config?.headers?.['x-client-secret']?.slice(0, 15)
+                    secretPrefix: err.config?.headers?.['x-client-secret']?.slice(0, 15),
+                    secretHex: Buffer.from(err.config?.headers?.['x-client-secret'] || '').toString('hex')
                 }
             }
         });
