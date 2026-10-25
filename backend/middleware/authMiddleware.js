@@ -27,6 +27,27 @@ const protect = (req, res, next) => {
     }
 };
 
+const optionalProtect = (req, res, next) => {
+    let token;
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const secret = process.env.JWT_SECRET || 'secret123';
+            const decoded = jwt.verify(token, secret);
+            req.user = decoded;
+            if (req.user && req.user.id) {
+                req.user._id = req.user.id;
+            }
+        } catch (error) {
+            // ignore expired/invalid token in optionalProtect
+        }
+    }
+    next();
+};
+
 const authorize = (...roles) => {
     return (req, res, next) => {
         if (!req.user || !roles.includes(req.user.role)) {
@@ -44,6 +65,6 @@ const admin = (req, res, next) => {
     }
 };
 
-module.exports = { protect, authorize, admin };
+module.exports = { protect, optionalProtect, authorize, admin };
 
 

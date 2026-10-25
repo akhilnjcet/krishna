@@ -178,33 +178,50 @@ exports.getCashfreeConfig = async (req, res) => {
 };
 
 /**
- * Protected: Create Cashfree PG Order
+ * Protected/Optional: Create Cashfree PG Order
  */
 exports.createCashfreeOrder = async (req, res) => {
     try {
-        const { amount, orderNote, projectId, quoteId, bookingId, roomId, returnUrl } = req.body;
-        const customer = req.user;
+        const { 
+            amount, 
+            orderNote, 
+            projectId, 
+            quoteId, 
+            bookingId, 
+            roomId, 
+            paymentType = 'Rent', 
+            chargeCategory = 'Rent',
+            name, 
+            email, 
+            phone, 
+            returnUrl 
+        } = req.body;
+        const customer = req.user || {};
 
         if (!amount || parseFloat(amount) <= 0) {
             return res.status(400).json({ message: 'Valid payment amount is required.' });
         }
 
         const orderId = `KE_${Date.now()}_${Math.floor(100 + Math.random() * 900)}`;
+        const customerId = customer._id || customer.id || req.body.customerId || `guest_${Date.now().toString(36)}`;
+        const customerName = name || customer.name || 'Valued Client';
+        const customerEmail = email || customer.email || 'customer@krishnaengg.com';
+        const customerPhone = phone || customer.phone || customer.phoneNumber || '9447940835';
 
         const orderResult = await cashfreeService.createOrder({
             orderId,
             orderAmount: parseFloat(amount),
-            customerId: customer._id || customer.id,
-            customerName: customer.name || 'Client',
-            customerEmail: customer.email || 'customer@krishnaengg.com',
-            customerPhone: customer.phone || customer.phoneNumber || '9447940835',
-            orderNote: orderNote || 'Online Payment for Krishna Engineering Works',
+            customerId: String(customerId),
+            customerName,
+            customerEmail,
+            customerPhone,
+            orderNote: orderNote || `${paymentType} Online Payment for Krishna Engineering / Lodge`,
             returnUrl
         });
 
         // Pre-create pending payment record in DB
         await Payment.create({
-            customerId: customer._id || customer.id,
+            customerId: customer._id || customer.id || undefined,
             amount: parseFloat(amount),
             method: 'cashfree',
             referenceId: orderId,
@@ -214,8 +231,10 @@ exports.createCashfreeOrder = async (req, res) => {
             quoteId: quoteId || undefined,
             bookingId: bookingId || undefined,
             roomId: roomId || undefined,
-            tenantName: customer.name,
-            notes: orderNote || 'Cashfree Online Payment',
+            tenantName: customerName,
+            paymentType: paymentType,
+            chargeCategory: chargeCategory,
+            notes: orderNote || `${paymentType} Cashfree Payment`,
             status: 'WAITING_FOR_VERIFICATION'
         });
 
@@ -229,7 +248,7 @@ exports.createCashfreeOrder = async (req, res) => {
 };
 
 /**
- * Protected: Verify Cashfree PG Order & Complete Payment
+ * Protected/Optional: Verify Cashfree PG Order & Complete Payment
  */
 exports.verifyCashfreePayment = async (req, res) => {
     try {
@@ -246,14 +265,16 @@ exports.verifyCashfreePayment = async (req, res) => {
             
             if (!payment) {
                 payment = new Payment({
-                    customerId: req.user._id || req.user.id,
+                    customerId: (req.user && (req.user._id || req.user.id)) || undefined,
                     amount: parseFloat(orderData.order_amount),
                     method: 'cashfree',
                     referenceId: orderId,
                     transactionReference: orderData.cf_order_id ? String(orderData.cf_order_id) : orderId,
                     paymentDate: new Date(),
-                    tenantName: req.user.name,
-                    notes: orderData.order_note || 'Cashfree Online Gateway'
+                    tenantName: (req.user && req.user.name) || 'Client',
+                    notes: orderData.order_note || 'Cashfree Online Gateway',
+                    paymentType: 'Rent',
+                    chargeCategory: 'Rent'
                 });
             }
 
@@ -272,7 +293,7 @@ exports.verifyCashfreePayment = async (req, res) => {
             if (payment.roomId) {
                 const LodgeRentBill = require('../models/LodgeRentBill');
                 await LodgeRentBill.findOneAndUpdate(
-                    { roomId: payment.roomId, userId: payment.customerId, status: 'Due' },
+                    { roomId: payment.roomId, status: 'Due' },
                     { status: 'Paid', paymentDate: Date.now(), paymentMethod: 'cashfree', transactionId: orderId, outstandingAmount: 0 }
                 );
             }
@@ -307,35 +328,81 @@ exports.verifyCashfreePayment = async (req, res) => {
 
 /**
  * Public: Cashfree Webhook Listener
+ * Verifies HMAC-SHA256 signature using rawBody and re-verifies payment state
  */
 exports.cashfreeWebhook = async (req, res) => {
     try {
-        const eventData = req.body;
-        console.log('[Cashfree Webhook Received]:', eventData?.type || eventData);
+        const signature = req.headers['x-webhook-signature'];
+        const timestamp = req.headers['x-webhook-timestamp'];
+        const rawBodyStr = req.rawBody ? req.rawBody.toString('utf-8') : JSON.stringify(req.body);
 
-        if (eventData?.type === 'PAYMENT_SUCCESS_WEBHOOK' || eventData?.data?.order?.order_status === 'PAID') {
-            const orderId = eventData?.data?.order?.order_id || eventData?.order_id;
-            if (orderId) {
-                const payment = await Payment.findOne({ referenceId: orderId });
-                if (payment && payment.status !== 'Completed') {
-                    payment.status = 'Completed';
-                    payment.verifiedByName = 'Cashfree Webhook';
-                    payment.verifiedAt = new Date();
-                    await payment.save();
+        // Verify webhook signature if present
+        if (signature && timestamp) {
+            try {
+                cashfreeService.verifyWebhookSignature(signature, rawBodyStr, timestamp);
+            } catch (sigErr) {
+                console.error('[Cashfree Webhook] Invalid signature:', sigErr.message);
+                return res.status(400).send('Invalid signature');
+            }
+        }
 
-                    const socketUtil = require('../utils/socket');
-                    const io = socketUtil.getIO();
-                    if (io) {
-                        io.emit('payment-status-changed', payment);
+        const payload = req.body || {};
+        const { type, data } = payload;
+        console.log('[Cashfree Webhook Received]:', type, data?.order?.order_id || payload.order_id);
+
+        const orderId = data?.order?.order_id || payload.order_id;
+
+        if (orderId) {
+            if (type === 'PAYMENT_SUCCESS_WEBHOOK' || data?.order?.order_status === 'PAID') {
+                // Re-verify order from backend before final fulfillment
+                try {
+                    const verifiedOrder = await cashfreeService.getOrder(orderId);
+                    if (verifiedOrder.order_status === 'PAID') {
+                        let payment = await Payment.findOne({ referenceId: orderId });
+                        if (payment && payment.status !== 'Completed') {
+                            payment.status = 'Completed';
+                            payment.verifiedByName = 'Cashfree Webhook';
+                            payment.verifiedAt = new Date();
+                            await payment.save();
+
+                            if (payment.projectId) {
+                                const { recalculateProjectPaymentStatus } = require('../utils/projectHelper');
+                                await recalculateProjectPaymentStatus(payment.projectId);
+                            }
+
+                            if (payment.roomId) {
+                                const LodgeRentBill = require('../models/LodgeRentBill');
+                                await LodgeRentBill.findOneAndUpdate(
+                                    { roomId: payment.roomId, userId: payment.customerId, status: 'Due' },
+                                    { status: 'Paid', paymentDate: Date.now(), paymentMethod: 'cashfree', transactionId: orderId, outstandingAmount: 0 }
+                                );
+                            }
+
+                            const socketUtil = require('../utils/socket');
+                            const io = socketUtil.getIO();
+                            if (io) {
+                                io.emit('payment-status-changed', payment);
+                            }
+                        }
                     }
+                } catch (verifyErr) {
+                    console.warn('[Cashfree Webhook] Order re-fetch warning:', verifyErr.message);
+                }
+            } else if (type === 'PAYMENT_FAILED_WEBHOOK') {
+                const payment = await Payment.findOne({ referenceId: orderId });
+                if (payment && payment.status === 'WAITING_FOR_VERIFICATION') {
+                    payment.status = 'Failed';
+                    payment.rejectionReason = data?.error_details?.error_reason || 'Payment failed at bank';
+                    await payment.save();
                 }
             }
         }
 
-        res.status(200).json({ status: 'ACK' });
+        return res.status(200).send('OK');
     } catch (err) {
         console.error('[Cashfree Webhook Error]:', err.message);
-        res.status(200).json({ status: 'ERROR_RECORDED' });
+        return res.status(200).send('ERROR_RECORDED');
     }
 };
+
 

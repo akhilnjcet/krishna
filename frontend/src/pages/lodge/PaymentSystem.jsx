@@ -3,10 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
     ArrowLeft, CreditCard, Smartphone, CheckCircle2, 
-    ShieldCheck, IndianRupee, Zap, Droplets, Info, Wifi, Wrench
+    ShieldCheck, IndianRupee, Zap, Droplets, Info, Wifi, Wrench, Sparkles, ArrowRight
 } from 'lucide-react';
 import useLodgeStore from '../../stores/lodgeStore';
 import api from '../../services/api';
+import { initializeCashfree } from '../../utils/cashfreeLoader';
 
 const PaymentSystem = () => {
     const { roomNumber, type } = useParams();
@@ -53,6 +54,63 @@ const PaymentSystem = () => {
         } catch (e) {
             console.error('Native Camera Error:', e);
             // Fallback for strict browser mode if ever needed, though Capacitor handles it
+        }
+    };
+
+    const handleCashfreePayment = async () => {
+        if (!amount || parseFloat(amount) <= 0) {
+            alert('Please specify a valid payment amount.');
+            return;
+        }
+        setProcessing(true);
+        try {
+            const orderRes = await api.post('/payments/cashfree/create-order', {
+                amount: parseFloat(amount),
+                roomId: room?.id,
+                bookingId: room?.id,
+                name: room?.tenant || 'Guest Tenant',
+                paymentType: type === 'rent' ? 'Rent' : 'Additional Charge',
+                chargeCategory: type,
+                orderNote: `${type.toUpperCase()} payment for Room ${roomNumber}`
+            });
+
+            const { paymentSessionId, orderId, environment } = orderRes.data;
+            if (!paymentSessionId) throw new Error('Could not acquire payment session from Cashfree.');
+
+            const cashfree = await initializeCashfree(environment || 'production');
+            
+            cashfree.checkout({
+                paymentSessionId,
+                redirectTarget: '_modal'
+            }).then(async (result) => {
+                if (result.error) {
+                    console.warn('Cashfree checkout modal closed or error:', result.error);
+                    alert(result.error.message || 'Payment was not completed. You can retry anytime.');
+                } else if (result.paymentDetails) {
+                    const verifyRes = await api.post('/payments/cashfree/verify', { orderId });
+                    if (verifyRes.data.success) {
+                        addPayment({
+                            roomNumber,
+                            type,
+                            amount: parseFloat(amount),
+                            method: 'Cashfree Gateway (Cards/UPI/NetBanking)',
+                            status: 'Completed'
+                        });
+                        if (['electricity', 'water', 'wifi', 'maintenance', 'advanceRent'].includes(type)) {
+                            markBillPaid(room.id, type, parseFloat(amount));
+                        }
+                        setSuccess('completed');
+                        setTimeout(() => navigate(`/lodge/room/${roomNumber}`), 3000);
+                    } else {
+                        alert(`Cashfree status: ${verifyRes.data.orderStatus || 'Verification pending'}`);
+                    }
+                }
+            });
+        } catch (err) {
+            console.error('Cashfree Checkout Error:', err);
+            alert(err.response?.data?.message || err.message || 'Failed to initialize Cashfree Gateway.');
+        } finally {
+            setProcessing(false);
         }
     };
 
@@ -220,10 +278,40 @@ const PaymentSystem = () => {
 
                     {/* Payment Hub */}
                     {!showQR && (
-                        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl shadow-blue-900/5 border border-slate-100 dark:border-slate-800">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Execution Hub</p>
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl shadow-blue-900/5 border border-slate-100 dark:border-slate-800 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Select Payment Method</p>
+                                <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                    Instant Clearance
+                                </span>
+                            </div>
                             
                             <div className="space-y-3">
+                                {/* Cashfree Gateway Button */}
+                                <button
+                                    onClick={handleCashfreePayment}
+                                    disabled={processing}
+                                    className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white rounded-2xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40 transition-all group active:scale-[0.99] border-2 border-indigo-400/30"
+                                >
+                                    <div className="flex items-center gap-4 text-left">
+                                        <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-white shrink-0">
+                                            <Sparkles className="w-6 h-6 animate-pulse" />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <p className="text-sm font-black tracking-tight">Pay via Cashfree Gateway</p>
+                                                <span className="px-2 py-0.5 bg-amber-400 text-slate-950 font-black text-[9px] uppercase tracking-wider rounded-md">
+                                                    Live
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] text-blue-100 uppercase tracking-wider mt-0.5">
+                                                UPI • Cards • NetBanking • EMI
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <ArrowRight className="w-5 h-5 text-white/90 group-hover:translate-x-1 transition-transform shrink-0" />
+                                </button>
+
                                 <button
                                     onClick={() => handlePayment('UPI')}
                                     disabled={processing}

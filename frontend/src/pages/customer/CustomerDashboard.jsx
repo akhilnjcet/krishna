@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import {
     TrendingUp, Wallet, ShieldCheck, Activity, ChevronRight, Search, Bed, CalendarX,
-    CheckCircle2, Plus, X, AlertTriangle, Construction, Zap, Clock
+    CheckCircle2, Plus, X, AlertTriangle, Construction, Zap, Clock, Sparkles, ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReportHeader from '../../components/ReportHeader';
+import { initializeCashfree } from '../../utils/cashfreeLoader';
 
 const CustomerDashboard = () => {
     const [projects, setProjects] = useState([]);
@@ -23,7 +24,8 @@ const CustomerDashboard = () => {
     
     // Modal States
     const [issueModal, setIssueModal] = useState({ show: false, bookingId: null, lodgeId: null, roomId: null, title: '', desc: '' });
-    const [payModal, setPayModal] = useState({ show: false, bookingId: null, amount: 0, name: '', notes: '' });
+    const [payModal, setPayModal] = useState({ show: false, bookingId: null, roomId: null, amount: 0, name: '', notes: '' });
+    const [cashfreeLoading, setCashfreeLoading] = useState(false);
 
     useEffect(() => {
         fetchDashboardData();
@@ -79,20 +81,68 @@ const CustomerDashboard = () => {
         } catch(err) { alert('Failed to submit issue'); }
     };
 
+    const handleCashfreeDashboardPay = async () => {
+        const amt = parseFloat(payModal.amount);
+        if (!amt || amt <= 0) return alert('Please enter a valid payment amount.');
+        setCashfreeLoading(true);
+        try {
+            const orderRes = await api.post('/payments/cashfree/create-order', {
+                amount: amt,
+                bookingId: payModal.bookingId,
+                roomId: payModal.roomId,
+                name: payModal.name || 'Lodge Booking Settlement',
+                orderNote: payModal.notes || `Settlement for Lodge Booking: ${payModal.bookingId}`,
+                paymentType: 'Rent',
+                chargeCategory: 'Lodge Booking'
+            });
+
+            const { paymentSessionId, orderId, environment } = orderRes.data;
+            if (!paymentSessionId) throw new Error('Could not acquire payment session from Cashfree.');
+
+            const cashfree = await initializeCashfree(environment || 'production');
+            
+            cashfree.checkout({
+                paymentSessionId,
+                redirectTarget: '_modal'
+            }).then(async (result) => {
+                if (result.error) {
+                    console.warn('Cashfree checkout modal closed / error:', result.error);
+                    alert(result.error.message || 'Payment was not completed. You can retry anytime.');
+                } else if (result.paymentDetails) {
+                    const verifyRes = await api.post('/payments/cashfree/verify', { orderId });
+                    if (verifyRes.data.success) {
+                        alert('Payment successful! Verified by Cashfree and booking settled.');
+                        setPayModal({ show: false, bookingId: null, roomId: null, amount: 0, name: '', notes: '' });
+                        fetchDashboardData();
+                    } else {
+                        alert(`Cashfree status: ${verifyRes.data.orderStatus}`);
+                    }
+                }
+            });
+        } catch (err) {
+            console.error('Cashfree Settlement Error:', err);
+            alert(err.response?.data?.message || err.message || 'Failed to initialize Cashfree Gateway.');
+        } finally {
+            setCashfreeLoading(false);
+        }
+    };
+
     const submitPayment = async (e) => {
         e.preventDefault();
-        if (!payModal.name) return alert("Please enter payment name.");
-        if (!payModal.notes) return alert("Please enter payment details.");
+        if (!payModal.name) return alert('Please enter payment name.');
+        if (!payModal.notes) return alert('Please enter payment details.');
         
         try {
             await api.post('/payments/submit', {
                 amount: parseFloat(payModal.amount),
                 method: 'upi',
                 name: payModal.name,
-                notes: payModal.notes
+                notes: payModal.notes,
+                bookingId: payModal.bookingId,
+                roomId: payModal.roomId
             });
             alert('Payment acknowledgement submitted successfully.');
-            setPayModal({ show: false, bookingId: null, amount: 0, name: '', notes: '' });
+            setPayModal({ show: false, bookingId: null, roomId: null, amount: 0, name: '', notes: '' });
             fetchDashboardData();
         } catch(err) { 
             console.error('Lodge payment error:', err);
@@ -250,42 +300,85 @@ const CustomerDashboard = () => {
             )}
 
             {payModal.show && (
-                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-                    <form onSubmit={submitPayment} className="bg-white dark:bg-slate-900 rounded-3xl p-8 w-full max-w-md shadow-2xl relative space-y-4 text-left">
-                       <h3 className="text-xl font-black uppercase text-slate-900 dark:text-white tracking-tight">Settle Booking Amount</h3>
-                       <button type="button" onClick={() => setPayModal({...payModal, show: false})} className="absolute top-4 right-4 text-slate-400 hover:text-red-500">
-                           <X className="w-5 h-5" />
-                       </button>
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 w-full max-w-md shadow-2xl relative space-y-5 text-left border border-slate-200 dark:border-slate-800">
+                       <div className="flex items-center justify-between">
+                           <h3 className="text-xl font-black uppercase text-slate-900 dark:text-white tracking-tight">Settle Booking Amount</h3>
+                           <button type="button" onClick={() => setPayModal({...payModal, show: false})} className="p-1 rounded-full text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                               <X className="w-5 h-5" />
+                           </button>
+                       </div>
                        
-                       <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl border border-emerald-100 text-sm font-bold">
-                           Amount to Settle: ₹ {payModal.amount?.toLocaleString()}
+                       <div className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-800 text-sm font-bold flex justify-between items-center">
+                           <span>Amount to Settle:</span>
+                           <span className="text-lg font-black font-poppins text-emerald-600 dark:text-emerald-400">₹ {payModal.amount?.toLocaleString()}</span>
                        </div>
 
-                       <div className="space-y-2">
-                           <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Name</label>
-                           <input 
-                               required
-                               value={payModal.name}
-                               onChange={(e) => setPayModal({...payModal, name: e.target.value})}
-                               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-400 outline-none focus:border-blue-500 transition-all"
-                               placeholder="e.g. Settle Room Booking"
-                           />
+                       {/* Cashfree Instant Option */}
+                       <div className="bg-gradient-to-br from-indigo-950 to-slate-900 text-white p-5 rounded-2xl border border-indigo-800 space-y-3">
+                           <div className="flex items-center justify-between">
+                               <span className="text-[10px] font-black uppercase text-indigo-300 tracking-wider flex items-center gap-1.5">
+                                   <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                                   Cashfree Online Gateway
+                               </span>
+                               <span className="text-[8px] font-black uppercase px-2 py-0.5 bg-amber-400 text-slate-950 rounded">
+                                   Instant
+                               </span>
+                           </div>
+                           <p className="text-[11px] text-slate-300">
+                               Pay instantly via UPI (GPay/PhonePe), Credit/Debit Cards, Net Banking, or Card EMI.
+                           </p>
+                           <button
+                               type="button"
+                               onClick={handleCashfreeDashboardPay}
+                               disabled={cashfreeLoading || !payModal.amount}
+                               className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-black py-3 rounded-xl text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer"
+                           >
+                               {cashfreeLoading ? (
+                                   <span>Connecting Gateway...</span>
+                               ) : (
+                                   <>
+                                       <Sparkles className="w-4 h-4 text-slate-950" />
+                                       <span>Pay ₹{payModal.amount?.toLocaleString()} via Cashfree</span>
+                                       <ArrowRight className="w-4 h-4 text-slate-950" />
+                                   </>
+                               )}
+                           </button>
                        </div>
 
-                       <div className="space-y-2">
-                           <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Details</label>
-                           <textarea 
-                               required
-                               value={payModal.notes}
-                               onChange={(e) => setPayModal({...payModal, notes: e.target.value})}
-                               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-400 outline-none focus:border-blue-500 transition-all"
-                               placeholder="Enter details of payment..."
-                               rows="3"
-                           />
+                       <div className="relative flex py-1 items-center">
+                           <div className="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+                           <span className="flex-shrink mx-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Or report manual transfer</span>
+                           <div className="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
                        </div>
 
-                       <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all">Settle Payment</button>
-                    </form>
+                       <form onSubmit={submitPayment} className="space-y-3">
+                           <div className="space-y-1">
+                               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Name</label>
+                               <input 
+                                   required
+                                   value={payModal.name}
+                                   onChange={(e) => setPayModal({...payModal, name: e.target.value})}
+                                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-400 outline-none focus:border-blue-500 transition-all"
+                                   placeholder="e.g. Settle Room Booking"
+                               />
+                           </div>
+
+                           <div className="space-y-1">
+                               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Details</label>
+                               <textarea 
+                                   required
+                                   value={payModal.notes}
+                                   onChange={(e) => setPayModal({...payModal, notes: e.target.value})}
+                                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-400 outline-none focus:border-blue-500 transition-all"
+                                   placeholder="Enter details of payment..."
+                                   rows="2"
+                               />
+                           </div>
+
+                           <button type="submit" className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-all">Submit Manual Report</button>
+                       </form>
+                    </div>
                 </div>
             )}
 

@@ -1,15 +1,17 @@
+const { Cashfree, CFEnvironment } = require('cashfree-pg');
 const axios = require('axios');
 const Setting = require('../models/SystemSetting');
 
 /**
- * Cashfree Payment Gateway Service (API version 2023-08-01)
+ * Cashfree Payment Gateway Service
+ * Powered by official cashfree-pg SDK (API version 2026-01-01)
  * Supports dynamic credentials from MongoDB Settings or Environment Variables
  */
 class CashfreeService {
     async getCredentials() {
         let appId = process.env.CASHFREE_APP_ID || '';
         let secretKey = process.env.CASHFREE_SECRET_KEY || '';
-        let env = process.env.CASHFREE_ENV || 'sandbox';
+        let env = (process.env.CASHFREE_ENV || 'sandbox').toLowerCase();
         let enabled = true;
 
         try {
@@ -27,7 +29,7 @@ class CashfreeService {
             console.warn('[Cashfree] Could not query settings table:', err.message);
         }
 
-        const isProduction = env === 'production';
+        const isProduction = env === 'production' || env === 'prod';
         const baseUrl = isProduction 
             ? 'https://api.cashfree.com/pg' 
             : 'https://sandbox.cashfree.com/pg';
@@ -35,11 +37,26 @@ class CashfreeService {
         return {
             appId,
             secretKey,
-            env,
+            env: isProduction ? 'production' : 'sandbox',
             isProduction,
             baseUrl,
             enabled: enabled && Boolean(appId && secretKey)
         };
+    }
+
+    /**
+     * Get initialized Cashfree SDK client
+     */
+    async getClient() {
+        const creds = await this.getCredentials();
+        if (!creds.appId || !creds.secretKey) {
+            throw new Error('Cashfree credentials not configured. Please set CASHFREE_APP_ID and CASHFREE_SECRET_KEY in Admin Settings or .env.');
+        }
+
+        const cfEnv = creds.isProduction ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
+        const cashfree = new Cashfree(cfEnv, creds.appId, creds.secretKey);
+        cashfree.XApiVersion = '2026-01-01';
+        return { cashfree, creds };
     }
 
     /**
@@ -55,11 +72,7 @@ class CashfreeService {
         orderNote = 'Payment for Krishna Engineering Works',
         returnUrl
     }) {
-        const creds = await this.getCredentials();
-
-        if (!creds.appId || !creds.secretKey) {
-            throw new Error('Cashfree credentials not configured. Please set CASHFREE_APP_ID and CASHFREE_SECRET_KEY in Admin Settings or .env.');
-        }
+        const { cashfree, creds } = await this.getClient();
 
         // Clean & format customer parameters to satisfy Cashfree validation
         const sanitizedPhone = (customerPhone || '9999999999').toString().replace(/\D/g, '').slice(-10) || '9999999999';
@@ -67,7 +80,7 @@ class CashfreeService {
         const sanitizedName = (customerName || 'Valued Customer').slice(0, 50);
         const sanitizedEmail = (customerEmail && customerEmail.includes('@')) ? customerEmail : 'customer@krishnaengg.com';
 
-        const payload = {
+        const request = {
             order_id: orderId,
             order_amount: parseFloat(parseFloat(orderAmount).toFixed(2)),
             order_currency: 'INR',
@@ -83,14 +96,7 @@ class CashfreeService {
             order_note: orderNote.slice(0, 200)
         };
 
-        const response = await axios.post(`${creds.baseUrl}/orders`, payload, {
-            headers: {
-                'x-client-id': creds.appId,
-                'x-client-secret': creds.secretKey,
-                'x-api-version': '2023-08-01',
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await cashfree.PGCreateOrder(request);
 
         return {
             orderId: response.data.order_id,
@@ -105,22 +111,44 @@ class CashfreeService {
      * Fetch Cashfree PG Order details & verify status
      */
     async getOrder(orderId) {
-        const creds = await this.getCredentials();
+        const { cashfree } = await this.getClient();
+        const response = await cashfree.PGFetchOrder(orderId);
+        return response.data;
+    }
 
+    /**
+     * Verify Webhook Signature (HMAC-SHA256)
+     */
+    async verifyWebhookSignature(signature, rawBody, timestamp) {
+        const { cashfree } = await this.getClient();
+        return cashfree.PGVerifyWebhookSignature(signature, rawBody, timestamp);
+    }
+
+    /**
+     * Get Eligible Payment Methods for an amount
+     */
+    async getEligiblePaymentMethods(amount = 100) {
+        const creds = await this.getCredentials();
         if (!creds.appId || !creds.secretKey) {
             throw new Error('Cashfree credentials not configured.');
         }
 
-        const response = await axios.get(`${creds.baseUrl}/orders/${encodeURIComponent(orderId)}`, {
-            headers: {
-                'x-client-id': creds.appId,
-                'x-client-secret': creds.secretKey,
-                'x-api-version': '2023-08-01'
+        const response = await axios.post(
+            `${creds.baseUrl}/eligibility/payment_methods`,
+            { queries: { amount: parseFloat(amount) } },
+            {
+                headers: {
+                    'x-client-id': creds.appId,
+                    'x-client-secret': creds.secretKey,
+                    'x-api-version': '2026-01-01',
+                    'Content-Type': 'application/json'
+                }
             }
-        });
+        );
 
         return response.data;
     }
 }
 
 module.exports = new CashfreeService();
+

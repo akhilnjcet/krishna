@@ -9,6 +9,7 @@ import {
   DollarSign, Receipt, ChevronDown, ChevronUp, AlertTriangle, ShieldAlert
 } from 'lucide-react';
 import api from '../../services/api';
+import { initializeCashfree } from '../../utils/cashfreeLoader';
 
 const DEFAULT_CATEGORIES = [
   'Electricity', 'Water', 'Wi-Fi', 'Internet', 'Maintenance', 'Parking',
@@ -47,7 +48,7 @@ export default function LodgeTenantPaymentModal({
   const [paymentTarget, setPaymentTarget] = useState(initialTarget || 'ALL');
   const [paymentMode, setPaymentMode] = useState('FULL'); // 'FULL' | 'CUSTOM'
   const [customPayInput, setCustomPayInput] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('UPI QR'); // 'UPI QR' | 'UPI ID' | 'Bank Transfer' | 'Cash' | 'Card'
+  const [paymentMethod, setPaymentMethod] = useState('Cashfree'); // 'Cashfree' | 'UPI QR' | 'UPI ID' | 'Bank Transfer' | 'Cash'
 
   // Manage Security Deposit (Admin / Owner)
   const [depositManageMode, setDepositManageMode] = useState('ADD'); // 'ADD' | 'SET'
@@ -270,14 +271,82 @@ export default function LodgeTenantPaymentModal({
     if (fileInput) fileInput.click();
   };
 
-  // Submit Payment (Tenant Submission OR Admin Direct Entry)
-  const handleSubmitPayment = async (e) => {
-    e.preventDefault();
+  // Launch Cashfree PG Modal Checkout
+  const handleCashfreeModalPay = async () => {
     if (isAmountExceeded) {
       return alert(`Entered payment amount exceeds the remaining balance of ₹${targetMaxDue.toLocaleString()}.`);
     }
     if (activePayAmount <= 0) {
       return alert('Payment amount must be greater than zero.');
+    }
+    setSubmitting(true);
+    try {
+      const paymentType = paymentTarget === 'ALL' ? 'Rent' : (paymentTarget === 'DEPOSIT' ? 'Security Deposit' : (paymentTarget === 'EXTRA' ? 'Additional Charge' : 'Rent'));
+      const chargeCategory = paymentTarget === 'ALL' ? 'Combined Settlement' : (paymentTarget === 'DEPOSIT' ? 'Security Deposit' : (paymentTarget === 'EXTRA' ? 'Additional Charges' : 'Rent'));
+
+      const orderRes = await api.post('/payments/cashfree/create-order', {
+        amount: activePayAmount,
+        bookingId: booking._id,
+        roomId: room._id || booking.roomId,
+        name: booking.tenantName || user?.name || 'Valued Tenant',
+        email: booking.tenantEmail || user?.email || 'tenant@krishnaengg.com',
+        phone: booking.tenantPhone || user?.phone || user?.phoneNumber || '9447940835',
+        paymentType,
+        chargeCategory,
+        orderNote: `Lodge Settlement: Room ${room.roomNumber || 'Suite'} - ${targetTitle}`
+      });
+
+      const { paymentSessionId, orderId, environment } = orderRes.data;
+      if (!paymentSessionId) throw new Error('Could not acquire payment session from Cashfree.');
+
+      const cashfree = await initializeCashfree(environment || 'production');
+
+      cashfree.checkout({
+        paymentSessionId,
+        redirectTarget: '_modal'
+      }).then(async (result) => {
+        if (result.error) {
+          console.warn('Cashfree checkout modal closed / error:', result.error);
+          alert(result.error.message || 'Payment was not completed. You can retry anytime.');
+        } else if (result.paymentDetails) {
+          const verifyRes = await api.post('/payments/cashfree/verify', { orderId });
+          if (verifyRes.data.success) {
+            setLastPaymentReceipt({
+              ...verifyRes.data.payment,
+              targetTitle,
+              lineItemsSnapshot: financials?.lineItems,
+              overallSnapshot: financials?.overall,
+              newRemaining: resultOverallRemaining,
+              resultStatus: resultOverallStatus
+            });
+            setSubmittedSuccess(true);
+            await fetchBookingFinancials();
+            if (onSuccess) onSuccess(verifyRes.data.payment);
+          } else {
+            alert(`Cashfree status: ${verifyRes.data.orderStatus}`);
+          }
+        }
+      });
+    } catch (err) {
+      console.error('Cashfree Checkout Error:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to initialize Cashfree Gateway.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Submit Payment (Tenant Submission OR Admin Direct Entry)
+  const handleSubmitPayment = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (isAmountExceeded) {
+      return alert(`Entered payment amount exceeds the remaining balance of ₹${targetMaxDue.toLocaleString()}.`);
+    }
+    if (activePayAmount <= 0) {
+      return alert('Payment amount must be greater than zero.');
+    }
+
+    if (paymentMethod === 'Cashfree') {
+      return handleCashfreeModalPay();
     }
 
     setSubmitting(true);
@@ -1116,30 +1185,104 @@ export default function LodgeTenantPaymentModal({
 
               {/* Payment Method Selector */}
               {activePayAmount > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">Select Payment Method</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">Select Payment Method</h3>
+                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                      Target: <strong>{targetTitle}</strong>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                     {[
-                      { id: 'UPI QR', name: 'UPI Dynamic QR', icon: QrCode },
-                      { id: 'UPI ID', name: 'Direct UPI ID', icon: CreditCard },
-                      { id: 'Bank Transfer', name: 'Bank Transfer', icon: Building2 },
-                      { id: 'Cash', name: 'Cash Counter', icon: ShieldCheck },
+                      { id: 'Cashfree', name: 'Cashfree Gateway', icon: Sparkles, featured: true, sub: 'Cards/UPI/EMI' },
+                      { id: 'UPI QR', name: 'UPI Dynamic QR', icon: QrCode, sub: 'GPay/PhonePe' },
+                      { id: 'UPI ID', name: 'Direct UPI ID', icon: CreditCard, sub: 'VPA Transfer' },
+                      { id: 'Bank Transfer', name: 'Bank Transfer', icon: Building2, sub: 'NEFT / RTGS' },
+                      { id: 'Cash', name: 'Cash Counter', icon: ShieldCheck, sub: 'Physical Desk' },
                     ].map(m => (
                       <button
                         key={m.id}
                         type="button"
                         onClick={() => setPaymentMethod(m.id)}
-                        className={`p-3 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-1.5 transition-all ${
+                        className={`p-3 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-1 transition-all ${
                           paymentMethod === m.id
-                            ? 'border-indigo-600 bg-indigo-50/60 text-indigo-600 shadow-sm'
+                            ? m.featured 
+                              ? 'border-indigo-600 bg-gradient-to-b from-indigo-50 to-white dark:from-indigo-950/40 dark:to-slate-900 text-indigo-600 shadow-md ring-2 ring-indigo-500/30'
+                              : 'border-indigo-600 bg-indigo-50/60 dark:bg-indigo-950/30 text-indigo-600 shadow-sm'
                             : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50'
                         }`}
                       >
-                        <m.icon className="w-5 h-5" />
-                        <span>{m.name}</span>
+                        <div className="relative">
+                          <m.icon className="w-5 h-5" />
+                          {m.featured && (
+                            <span className="absolute -top-2 -right-3 px-1 py-0.2 bg-amber-400 text-slate-950 rounded-full text-[7px] font-black uppercase">
+                              Live
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-center font-black leading-tight text-[11px]">{m.name}</span>
+                        <span className="text-[9px] text-slate-400 font-semibold">{m.sub}</span>
                       </button>
                     ))}
                   </div>
+
+                  {/* Cashfree View */}
+                  {paymentMethod === 'Cashfree' && (
+                    <div className="bg-gradient-to-br from-indigo-950 via-indigo-900 to-slate-900 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden">
+                      <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+                      <div className="relative z-10 space-y-4">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 text-white rounded-full text-[10px] font-black uppercase tracking-wider backdrop-blur-md border border-white/15">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                            <span>Official Cashfree Payments Gateway</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                            Instant Verified Clearance
+                          </span>
+                        </div>
+
+                        <div>
+                          <h4 className="text-xl font-black text-white">
+                            Pay ₹{activePayAmount.toLocaleString()} Online
+                          </h4>
+                          <p className="text-xs text-indigo-200 mt-1">
+                            Secure instant clearance for {targetTitle}. All modes supported:
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-slate-200 text-[11px]">
+                          <div className="bg-white/10 backdrop-blur-xs p-2.5 rounded-xl border border-white/10 text-center">
+                            <p className="font-black text-white">UPI Apps</p>
+                            <p className="text-[9px] text-indigo-300">GPay, PhonePe, Paytm</p>
+                          </div>
+                          <div className="bg-white/10 backdrop-blur-xs p-2.5 rounded-xl border border-white/10 text-center">
+                            <p className="font-black text-white">Cards</p>
+                            <p className="text-[9px] text-indigo-300">Visa, Mastercard, RuPay</p>
+                          </div>
+                          <div className="bg-white/10 backdrop-blur-xs p-2.5 rounded-xl border border-white/10 text-center">
+                            <p className="font-black text-white">Net Banking</p>
+                            <p className="text-[9px] text-indigo-300">30+ Indian Banks</p>
+                          </div>
+                          <div className="bg-white/10 backdrop-blur-xs p-2.5 rounded-xl border border-white/10 text-center">
+                            <p className="font-black text-white">Card EMI</p>
+                            <p className="text-[9px] text-indigo-300">Instant Approval</p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleCashfreeModalPay}
+                          disabled={submitting || activePayAmount <= 0}
+                          className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-[0.99] transition-all cursor-pointer"
+                        >
+                          <Sparkles className="w-4 h-4 text-slate-950" />
+                          <span>Pay ₹{activePayAmount.toLocaleString()} via Cashfree Checkout</span>
+                          <ArrowRight className="w-4 h-4 text-slate-950" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* QR Code view */}
                   {paymentMethod === 'UPI QR' && (
@@ -1234,68 +1377,72 @@ export default function LodgeTenantPaymentModal({
                     </div>
                   )}
 
-                  {/* Reference & Proof Inputs */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Transaction Ref / UTR Number
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 420912384910 or GPay Ref"
-                        value={referenceId}
-                        onChange={(e) => setReferenceId(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Payment Remarks (Optional)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Settle rent + water charge"
-                        value={remarks}
-                        onChange={(e) => setRemarks(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Proof upload */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
-                    <div>
-                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Payment Screenshot / Receipt</p>
-                      <p className="text-[10px] text-slate-400">Attach verification screenshot or tap Camera</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <label className="bg-white dark:bg-slate-900 hover:bg-slate-100 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 cursor-pointer flex items-center gap-1.5 shadow-2xs">
-                        <Upload className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>{proofFile ? 'Change' : 'Browse'}</span>
-                        <input type="file" accept="image/*,.pdf" onChange={handleFileChange} className="hidden" />
-                      </label>
-                      <input type="file" id="modal-camera-input" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
-                      <button
-                        type="button"
-                        onClick={handleCameraCapture}
-                        className="bg-white dark:bg-slate-900 hover:bg-slate-100 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 shadow-2xs"
-                      >
-                        <Camera className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>Camera</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {proofPreview && (
-                    <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                      <div className="flex items-center gap-2">
-                        <img src={proofPreview} alt="Proof" className="w-8 h-8 object-cover rounded-md" />
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-xs">{proofFile?.name || 'Payment_Proof.jpg'}</span>
+                  {/* Reference & Proof Inputs (Only shown for non-gateway manual transfers) */}
+                  {paymentMethod !== 'Cashfree' && (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                            Transaction Ref / UTR Number
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 420912384910 or GPay Ref"
+                            value={referenceId}
+                            onChange={(e) => setReferenceId(e.target.value)}
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                            Payment Remarks (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Settle rent + water charge"
+                            value={remarks}
+                            onChange={(e) => setRemarks(e.target.value)}
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none"
+                          />
+                        </div>
                       </div>
-                      <button type="button" onClick={() => { setProofFile(null); setProofPreview(''); }} className="text-red-500 p-1 hover:bg-red-50 rounded-lg">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+
+                      {/* Proof upload */}
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+                        <div>
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Payment Screenshot / Receipt</p>
+                          <p className="text-[10px] text-slate-400">Attach verification screenshot or tap Camera</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <label className="bg-white dark:bg-slate-900 hover:bg-slate-100 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 cursor-pointer flex items-center gap-1.5 shadow-2xs">
+                            <Upload className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>{proofFile ? 'Change' : 'Browse'}</span>
+                            <input type="file" accept="image/*,.pdf" onChange={handleFileChange} className="hidden" />
+                          </label>
+                          <input type="file" id="modal-camera-input" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+                          <button
+                            type="button"
+                            onClick={handleCameraCapture}
+                            className="bg-white dark:bg-slate-900 hover:bg-slate-100 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 shadow-2xs"
+                          >
+                            <Camera className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Camera</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {proofPreview && (
+                        <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                          <div className="flex items-center gap-2">
+                            <img src={proofPreview} alt="Proof" className="w-8 h-8 object-cover rounded-md" />
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-xs">{proofFile?.name || 'Payment_Proof.jpg'}</span>
+                          </div>
+                          <button type="button" onClick={() => { setProofFile(null); setProofPreview(''); }} className="text-red-500 p-1 hover:bg-red-50 rounded-lg">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {/* Submit Button */}
@@ -1303,10 +1450,20 @@ export default function LodgeTenantPaymentModal({
                     type="button"
                     onClick={handleSubmitPayment}
                     disabled={submitting || activePayAmount <= 0}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-3.5 rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all active:scale-95"
+                    className={`w-full py-3.5 rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 ${
+                      paymentMethod === 'Cashfree'
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-600/30'
+                        : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white shadow-indigo-600/30'
+                    }`}
                   >
                     {submitting ? (
-                      <span>Recording Payment...</span>
+                      <span>Processing Payment...</span>
+                    ) : paymentMethod === 'Cashfree' ? (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Pay ₹{activePayAmount.toLocaleString()} via Cashfree Gateway</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
                     ) : (
                       <>
                         <span>Submit Payment of ₹{activePayAmount.toLocaleString()}</span>

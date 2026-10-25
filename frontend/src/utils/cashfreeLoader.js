@@ -42,12 +42,19 @@ export const loadCashfree = () => {
     return cashfreeSdkPromise;
 };
 
+const instances = {};
+
 /**
- * Initialize Cashfree instance with sandbox or production mode
+ * Initialize Cashfree instance with sandbox or production mode (cached per mode)
  */
-export const initializeCashfree = async (mode = 'sandbox') => {
+export const initializeCashfree = async (mode = 'production') => {
+    const cleanMode = mode.toLowerCase() === 'sandbox' ? 'sandbox' : 'production';
+    if (instances[cleanMode]) {
+        return instances[cleanMode];
+    }
     const Cashfree = await loadCashfree();
-    return new Cashfree({
-        mode: mode.toLowerCase() === 'production' ? 'production' : 'sandbox'
+    instances[cleanMode] = Cashfree({
+        mode: cleanMode
     });
+    return instances[cleanMode];
 };

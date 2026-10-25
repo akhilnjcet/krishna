@@ -11,7 +11,7 @@ const {
     verifyCashfreePayment,
     cashfreeWebhook
 } = require('../controllers/paymentController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { protect, optionalProtect, admin } = require('../middleware/authMiddleware');
 
 const upload = require('../config/cloudinary');
 
@@ -21,8 +21,8 @@ router.get('/my-payments', protect, getMyPayments);
 
 // Cashfree Gateway Routes
 router.get('/cashfree/config', getCashfreeConfig);
-router.post('/cashfree/create-order', protect, createCashfreeOrder);
-router.post('/cashfree/verify', protect, verifyCashfreePayment);
+router.post('/cashfree/create-order', optionalProtect, createCashfreeOrder);
+router.post('/cashfree/verify', optionalProtect, verifyCashfreePayment);
 router.post('/cashfree/webhook', cashfreeWebhook);
 
 // Admin only

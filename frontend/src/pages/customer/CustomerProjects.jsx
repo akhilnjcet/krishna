@@ -4,10 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Briefcase, Calendar, DollarSign, User, Mail, Phone, Clock, 
     CheckCircle2, AlertCircle, RefreshCw, FileText, ChevronRight,
-    MapPin, Users, IndianRupee, Wallet, CheckCircle, XCircle, Plus, X, Wrench, Send
+    MapPin, Users, IndianRupee, Wallet, CheckCircle, XCircle, Plus, X, Wrench, Send, Sparkles, ArrowRight
 } from 'lucide-react';
 import { getSocket } from '../../utils/socket';
 import { getDirectImageUrl } from '../../utils/imageUtils';
+import { initializeCashfree } from '../../utils/cashfreeLoader';
 
 const CustomerProjects = () => {
     const [projects, setProjects] = useState([]);
@@ -15,9 +16,10 @@ const CustomerProjects = () => {
     const [loading, setLoading] = useState(true);
     const [selectedProject, setSelectedProject] = useState(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [cashfreeLoading, setCashfreeLoading] = useState(false);
     const [paymentForm, setPaymentForm] = useState({
         amount: '',
-        method: 'upi',
+        method: 'cashfree',
         referenceId: '',
         paymentDate: new Date().toISOString().split('T')[0],
         name: '',
@@ -107,11 +109,70 @@ const CustomerProjects = () => {
         }
     };
 
+    const handleCashfreeProjectPay = async () => {
+        const amt = parseFloat(paymentForm.amount);
+        if (!amt || amt <= 0) return alert('Please enter a valid payment amount.');
+        setCashfreeLoading(true);
+        try {
+            const orderRes = await api.post('/payments/cashfree/create-order', {
+                amount: amt,
+                projectId: selectedProject._id,
+                name: paymentForm.name || `Project Milestone: ${selectedProject.title}`,
+                orderNote: `Payment for Project: ${selectedProject.title} (${selectedProject.projectCode || ''})`,
+                paymentType: 'Project Contract',
+                chargeCategory: 'Engineering Project'
+            });
+
+            const { paymentSessionId, orderId, environment } = orderRes.data;
+            if (!paymentSessionId) throw new Error('Could not acquire payment session from Cashfree.');
+
+            const cashfree = await initializeCashfree(environment || 'production');
+            
+            cashfree.checkout({
+                paymentSessionId,
+                redirectTarget: '_modal'
+            }).then(async (result) => {
+                if (result.error) {
+                    console.warn('Cashfree checkout modal closed / error:', result.error);
+                    alert(result.error.message || 'Payment was not completed. You can retry anytime.');
+                } else if (result.paymentDetails) {
+                    const verifyRes = await api.post('/payments/cashfree/verify', { orderId });
+                    if (verifyRes.data.success) {
+                        alert('Payment successful! Verified by Cashfree and applied to your project.');
+                        setShowPaymentModal(false);
+                        setPaymentForm({
+                            amount: '',
+                            method: 'cashfree',
+                            referenceId: '',
+                            paymentDate: new Date().toISOString().split('T')[0],
+                            name: '',
+                            notes: ''
+                        });
+                        fetchPayments();
+                        fetchProjects();
+                    } else {
+                        alert(`Cashfree status: ${verifyRes.data.orderStatus}`);
+                    }
+                }
+            });
+        } catch (err) {
+            console.error('Cashfree Project Payment Error:', err);
+            alert(err.response?.data?.message || err.message || 'Failed to initialize Cashfree Gateway.');
+        } finally {
+            setCashfreeLoading(false);
+        }
+    };
+
     const handleProjectPaymentSubmit = async (e) => {
-        e.preventDefault();
-        if (!paymentForm.amount || parseFloat(paymentForm.amount) <= 0) return alert("Please enter a valid amount.");
-        if (!paymentForm.referenceId) return alert("Please enter Transaction ID/UTR Number.");
-        if (!paymentForm.paymentDate) return alert("Please select a Payment Date.");
+        if (e && e.preventDefault) e.preventDefault();
+        if (!paymentForm.amount || parseFloat(paymentForm.amount) <= 0) return alert('Please enter a valid amount.');
+        
+        if (paymentForm.method === 'cashfree') {
+            return handleCashfreeProjectPay();
+        }
+
+        if (!paymentForm.referenceId) return alert('Please enter Transaction ID/UTR Number.');
+        if (!paymentForm.paymentDate) return alert('Please select a Payment Date.');
         
         try {
             await api.post('/payments/submit', {
@@ -120,11 +181,11 @@ const CustomerProjects = () => {
                 projectId: selectedProject._id,
                 name: paymentForm.name || `Payment for ${selectedProject.title}`
             });
-            alert("Payment Acknowledgement Submitted successfully! Awaiting Admin Verification.");
+            alert('Payment Acknowledgement Submitted successfully! Awaiting Admin Verification.');
             setShowPaymentModal(false);
             setPaymentForm({
                 amount: '',
-                method: 'upi',
+                method: 'cashfree',
                 referenceId: '',
                 paymentDate: new Date().toISOString().split('T')[0],
                 name: '',
@@ -133,7 +194,7 @@ const CustomerProjects = () => {
             fetchPayments();
             fetchProjects();
         } catch (err) {
-            alert("Failed to submit payment: " + (err.response?.data?.message || err.message));
+            alert('Failed to submit payment: ' + (err.response?.data?.message || err.message));
         }
     };
 
@@ -327,6 +388,31 @@ const CustomerProjects = () => {
                                                 {selectedProject.paymentStatus === 'fully-paid' ? 'Fully Paid ✓' :
                                                  selectedProject.paymentStatus === 'partially-paid' ? 'Partially Paid' : 'Unpaid'}
                                             </span>
+
+                                            <button 
+                                                onClick={() => {
+                                                    const budget = selectedProject.budget || 0;
+                                                    const approvedAdditional = selectedProject.approvedAdditionalWorkTotal ||
+                                                        (selectedProject.additionalWork || []).filter(w => w.status === 'Approved').reduce((s, w) => s + (w.amount || 0), 0);
+                                                    const totalCost = selectedProject.totalCost || (budget + approvedAdditional);
+                                                    const totalPaid = (selectedProject.paidCash || 0) + (selectedProject.paidOnline || 0) + (selectedProject.advancePaid || 0);
+                                                    const discount = selectedProject.discount || 0;
+                                                    const dues = Math.max(0, totalCost - discount - totalPaid);
+                                                    setPaymentForm({
+                                                        amount: dues > 0 ? String(dues) : '',
+                                                        method: 'cashfree',
+                                                        referenceId: '',
+                                                        paymentDate: new Date().toISOString().split('T')[0],
+                                                        name: `Milestone Payment - ${selectedProject.title}`,
+                                                        notes: `Contract remittance for ${selectedProject.title}`
+                                                    });
+                                                    setShowPaymentModal(true);
+                                                }}
+                                                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-xl flex items-center gap-1.5 border-none cursor-pointer shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
+                                            >
+                                                <Sparkles className="w-3.5 h-3.5 text-amber-300" /> Pay via Cashfree
+                                            </button>
+
                                             <button 
                                                 onClick={() => {
                                                     setPaymentForm({
@@ -725,18 +811,55 @@ const CustomerProjects = () => {
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
 
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-1">Report Project Payment</h2>
-                            <p className="text-[10px] font-black uppercase text-indigo-500 tracking-wider mb-8">Remittance submission for: {selectedProject?.title}</p>
+                            <div className="flex items-center justify-between mb-1">
+                                <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Project Payment Gateway</h2>
+                                <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                                    <Sparkles className="w-3 h-3 text-emerald-500" /> Cashfree Active
+                                </span>
+                            </div>
+                            <p className="text-[10px] font-black uppercase text-indigo-500 tracking-wider mb-6">Remittance submission for: {selectedProject?.title}</p>
 
-                            <form onSubmit={handleProjectPaymentSubmit} className="space-y-6">
+                            <form onSubmit={handleProjectPaymentSubmit} className="space-y-5">
+                                <div>
+                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Payment Method *</label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                        {[
+                                            { id: 'cashfree', name: 'Cashfree Gateway', sub: 'Cards, UPI, NetBank', badge: 'Instant' },
+                                            { id: 'upi', name: 'Manual UPI QR', sub: 'Scan & Manual UTR', badge: null },
+                                            { id: 'bank_transfer', name: 'Bank Transfer', sub: 'NEFT / RTGS Wire', badge: null }
+                                        ].map(m => (
+                                            <button
+                                                key={m.id}
+                                                type="button"
+                                                onClick={() => setPaymentForm({ ...paymentForm, method: m.id })}
+                                                className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                                                    paymentForm.method === m.id
+                                                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-650 dark:text-indigo-300 shadow-sm'
+                                                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50'
+                                                }`}
+                                            >
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="font-black text-xs">{m.name}</span>
+                                                    {m.badge && (
+                                                        <span className="px-1.5 py-0.5 bg-amber-400 text-slate-950 font-black text-[8px] uppercase rounded">
+                                                            {m.badge}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[9px] text-slate-400">{m.sub}</p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Payment Name *</label>
+                                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Payment / Milestone Name *</label>
                                         <input 
                                             required 
                                             value={paymentForm.name} 
                                             onChange={e => setPaymentForm({...paymentForm, name: e.target.value})} 
-                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" 
+                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs text-slate-900 dark:text-white" 
                                             placeholder="e.g., Progress Installment 1" 
                                         />
                                     </div>
@@ -747,60 +870,67 @@ const CustomerProjects = () => {
                                             type="number"
                                             value={paymentForm.amount} 
                                             onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})} 
-                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" 
+                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs text-slate-900 dark:text-white font-poppins" 
                                             placeholder="0.00" 
                                         />
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Payment Method *</label>
-                                        <select 
-                                            required
-                                            value={paymentForm.method} 
-                                            onChange={e => setPaymentForm({...paymentForm, method: e.target.value})} 
-                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" 
-                                        >
-                                            <option value="upi">UPI Portal</option>
-                                            <option value="bank_transfer">Bank Node / UTR</option>
-                                        </select>
+                                {/* Cashfree Highlights */}
+                                {paymentForm.method === 'cashfree' && (
+                                    <div className="bg-gradient-to-br from-indigo-950 to-slate-900 text-white p-5 rounded-2xl border border-indigo-800 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black uppercase text-indigo-300 tracking-wider flex items-center gap-1.5">
+                                                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                                                Instant Gateway Settlement
+                                            </span>
+                                            <span className="text-[9px] text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30 font-bold">
+                                                Zero Wait Time
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                            Pay securely using any Indian or International Card, UPI (PhonePe, Google Pay, Paytm), 30+ Banks, or Card EMI. Your project ledger will update automatically upon completion.
+                                        </p>
                                     </div>
-                                    <div>
-                                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Transaction ID / UTR *</label>
-                                        <input 
-                                            required 
-                                            value={paymentForm.referenceId} 
-                                            onChange={e => setPaymentForm({...paymentForm, referenceId: e.target.value})} 
-                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" 
-                                            placeholder="Enter UPI Ref / UTR number" 
-                                        />
+                                )}
+
+                                {/* Manual UTR & Date fields only for manual transfers */}
+                                {paymentForm.method !== 'cashfree' && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Transaction ID / UTR *</label>
+                                            <input 
+                                                required 
+                                                value={paymentForm.referenceId} 
+                                                onChange={e => setPaymentForm({...paymentForm, referenceId: e.target.value})} 
+                                                className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs text-slate-900 dark:text-white" 
+                                                placeholder="Enter UPI Ref / UTR number" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Payment Date *</label>
+                                            <input 
+                                                required 
+                                                type="date"
+                                                value={paymentForm.paymentDate} 
+                                                onChange={e => setPaymentForm({...paymentForm, paymentDate: e.target.value})} 
+                                                className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs text-slate-900 dark:text-white" 
+                                            />
+                                        </div>
                                     </div>
+                                )}
+
+                                <div>
+                                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Notes / Details (Optional)</label>
+                                    <input 
+                                        value={paymentForm.notes} 
+                                        onChange={e => setPaymentForm({...paymentForm, notes: e.target.value})} 
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs text-slate-900 dark:text-white" 
+                                        placeholder="Any details or milestone notes" 
+                                    />
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Payment Date *</label>
-                                        <input 
-                                            required 
-                                            type="date"
-                                            value={paymentForm.paymentDate} 
-                                            onChange={e => setPaymentForm({...paymentForm, paymentDate: e.target.value})} 
-                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" 
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Notes / Details</label>
-                                        <input 
-                                            value={paymentForm.notes} 
-                                            onChange={e => setPaymentForm({...paymentForm, notes: e.target.value})} 
-                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" 
-                                            placeholder="Any details to share with verifier" 
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="pt-6 border-t flex gap-3">
+                                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-3">
                                     <button 
                                         type="button"
                                         onClick={() => setShowPaymentModal(false)}
@@ -810,9 +940,24 @@ const CustomerProjects = () => {
                                     </button>
                                     <button 
                                         type="submit" 
-                                        className="flex-[2] bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-indigo-700 transition flex items-center justify-center gap-2 text-xs uppercase tracking-widest border-none cursor-pointer"
+                                        disabled={cashfreeLoading}
+                                        className={`flex-[2] text-white font-black py-4 rounded-2xl shadow-xl transition flex items-center justify-center gap-2 text-xs uppercase tracking-widest border-none cursor-pointer ${
+                                            paymentForm.method === 'cashfree'
+                                                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-600/30'
+                                                : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/30'
+                                        }`}
                                     >
-                                        Submit Payment
+                                        {cashfreeLoading ? (
+                                            <span>Initializing Gateway...</span>
+                                        ) : paymentForm.method === 'cashfree' ? (
+                                            <>
+                                                <Sparkles className="w-4 h-4 text-amber-300" />
+                                                <span>Pay Online via Cashfree</span>
+                                                <ArrowRight className="w-4 h-4" />
+                                            </>
+                                        ) : (
+                                            <span>Submit Payment Report</span>
+                                        )}
                                     </button>
                                 </div>
                             </form>
