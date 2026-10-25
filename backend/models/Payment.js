@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema({
-    customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
     amount: { type: Number, required: true },
     method: { type: String, required: true }, // upi, bank_transfer, cash, card, other, UPI QR, UPI ID, Bank Transfer, Cash, Card
     referenceId: { type: String }, // For UPI Ref or UTR

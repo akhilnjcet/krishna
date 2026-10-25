@@ -219,9 +219,12 @@ exports.createCashfreeOrder = async (req, res) => {
             returnUrl
         });
 
+        const rawCustId = customer._id || customer.id || req.body.customerId;
+        const validCustId = (rawCustId && mongoose.Types.ObjectId.isValid(rawCustId)) ? rawCustId : undefined;
+
         // Pre-create pending payment record in DB
         await Payment.create({
-            customerId: customer._id || customer.id || undefined,
+            customerId: validCustId,
             amount: parseFloat(amount),
             method: 'cashfree',
             referenceId: orderId,
