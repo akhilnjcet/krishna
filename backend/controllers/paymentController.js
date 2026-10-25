@@ -242,18 +242,7 @@ exports.createCashfreeOrder = async (req, res) => {
     } catch (err) {
         console.error('[Cashfree Order Error]:', err.response?.data || err.message);
         res.status(500).json({ 
-            message: err.response?.data?.message || err.message || 'Unable to generate Cashfree payment order.',
-            debug: {
-                status: err.response?.status,
-                url: err.config?.url,
-                headersSent: {
-                    clientId: err.config?.headers?.['x-client-id'],
-                    hasSecret: Boolean(err.config?.headers?.['x-client-secret']),
-                    secretLength: err.config?.headers?.['x-client-secret']?.length,
-                    secretPrefix: err.config?.headers?.['x-client-secret']?.slice(0, 15),
-                    secretHex: Buffer.from(err.config?.headers?.['x-client-secret'] || '').toString('hex')
-                }
-            }
+            message: err.response?.data?.message || err.message || 'Unable to generate Cashfree payment order.' 
         });
     }
 };

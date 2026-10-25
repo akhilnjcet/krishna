@@ -32,8 +32,8 @@ class CashfreeService {
         appId = (appId || '').toString().trim();
         secretKey = (secretKey || '').toString().trim();
 
-        // If secret was accidentally double-pasted into input box (e.g. 108 chars instead of 54)
-        const keyMatch = secretKey.match(/cfsk_ma_[a-z0-9]+_[a-f0-9]+_[a-f0-9]+/);
+        // If secret was accidentally double-pasted or has trailing characters (e.g. extra "cf" or 108 chars)
+        const keyMatch = secretKey.match(/cfsk_ma_[a-z0-9]+_[a-f0-9]{32}_[a-f0-9]{8}/);
         if (keyMatch) {
             const cleanSecret = keyMatch[0];
             if (cleanSecret !== secretKey) {
