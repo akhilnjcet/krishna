@@ -94,7 +94,10 @@ class CashfreeService {
         orderNote = 'Payment for Krishna Engineering Works',
         returnUrl
     }) {
-        const { cashfree, creds } = await this.getClient();
+        const creds = await this.getCredentials();
+        if (!creds.appId || !creds.secretKey) {
+            throw new Error('Cashfree credentials not configured. Please set CASHFREE_APP_ID and CASHFREE_SECRET_KEY in Admin Settings or .env.');
+        }
 
         // Clean & format customer parameters to satisfy Cashfree validation
         const sanitizedPhone = (customerPhone || '9999999999').toString().replace(/\D/g, '').slice(-10) || '9999999999';
@@ -118,7 +121,14 @@ class CashfreeService {
             order_note: orderNote.slice(0, 200)
         };
 
-        const response = await cashfree.PGCreateOrder(request);
+        const response = await axios.post(`${creds.baseUrl}/orders`, request, {
+            headers: {
+                'x-client-id': creds.appId,
+                'x-client-secret': creds.secretKey,
+                'x-api-version': '2026-01-01',
+                'Content-Type': 'application/json'
+            }
+        });
 
         return {
             orderId: response.data.order_id,
@@ -133,8 +143,14 @@ class CashfreeService {
      * Fetch Cashfree PG Order details & verify status
      */
     async getOrder(orderId) {
-        const { cashfree } = await this.getClient();
-        const response = await cashfree.PGFetchOrder(orderId);
+        const creds = await this.getCredentials();
+        const response = await axios.get(`${creds.baseUrl}/orders/${orderId}`, {
+            headers: {
+                'x-client-id': creds.appId,
+                'x-client-secret': creds.secretKey,
+                'x-api-version': '2026-01-01'
+            }
+        });
         return response.data;
     }
 
@@ -142,8 +158,13 @@ class CashfreeService {
      * Verify Webhook Signature (HMAC-SHA256)
      */
     async verifyWebhookSignature(signature, rawBody, timestamp) {
-        const { cashfree } = await this.getClient();
-        return cashfree.PGVerifyWebhookSignature(signature, rawBody, timestamp);
+        const crypto = require('crypto');
+        const creds = await this.getCredentials();
+        const expectedSig = crypto
+            .createHmac('sha256', creds.secretKey)
+            .update(timestamp + rawBody)
+            .digest('base64');
+        return expectedSig === signature;
     }
 
     /**
