@@ -1,5 +1,6 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_mock');
 const Payment = require('../models/Payment');
+const mongoose = require('mongoose');
 
 exports.submitPayment = async (req, res) => {
     try {
