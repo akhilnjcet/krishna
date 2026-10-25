@@ -150,7 +150,7 @@ const CustomerPayments = () => {
             }
 
             // 2. Initialize official Cashfree JS SDK
-            const cashfree = await initializeCashfree(environment || cashfreeConfig.env || 'sandbox');
+            const cashfree = await initializeCashfree(environment || cashfreeConfig.env || 'production');
 
             // 3. Launch Checkout Modal
             cashfree.checkout({

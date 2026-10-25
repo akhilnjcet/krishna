@@ -29,7 +29,16 @@ class CashfreeService {
             console.warn('[Cashfree] Could not query settings table:', err.message);
         }
 
-        const isProduction = env === 'production' || env === 'prod';
+        // Automatically enforce Production mode when live production keys are detected
+        // Cashfree Sandbox requires TEST_ keys. Production keys (cfsk_ma_prod_ or numeric App ID) fail on Sandbox with 'authentication Failed'.
+        let isProduction = env === 'production' || env === 'prod';
+        const hasProdSecret = secretKey && secretKey.includes('_prod_');
+        const hasProdAppId = appId && !appId.toUpperCase().startsWith('TEST');
+        if (hasProdSecret || hasProdAppId) {
+            isProduction = true;
+            env = 'production';
+        }
+
         const baseUrl = isProduction 
             ? 'https://api.cashfree.com/pg' 
             : 'https://sandbox.cashfree.com/pg';
