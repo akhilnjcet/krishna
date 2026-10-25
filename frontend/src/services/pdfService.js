@@ -270,10 +270,16 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
         rightY += 4;
     });
 
-    gstinLines.forEach((line) => {
-        doc.text(line, rightMargin, rightY, { align: 'right', charSpace: 0 });
-        rightY += 4;
-    });
+    const showGstin = companyInfoOverride.showCompanyGstin !== undefined 
+        ? companyInfoOverride.showCompanyGstin 
+        : (cachedBranding?.show_company_gstin !== false && cachedBranding?.show_company_gstin !== 'false');
+
+    if (showGstin) {
+        gstinLines.forEach((line) => {
+            doc.text(line, rightMargin, rightY, { align: 'right', charSpace: 0 });
+            rightY += 4;
+        });
+    }
 
     return headerHeight;
 };

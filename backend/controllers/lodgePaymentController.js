@@ -216,20 +216,35 @@ exports.verifyPayment = async (req, res) => {
       payment.receiptNumber = `REC-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
       payment.rejectionReason = undefined;
 
-      // Update associated LodgeRentBill if present
+      // Update associated LodgeRentBill with accurate balance reconciliation
+      let bill = null;
       if (payment.billId) {
-        await LodgeRentBill.findByIdAndUpdate(payment.billId, {
-          status: 'Paid',
-          paymentDate: new Date(),
-          paymentMethod: payment.method,
-          transactionId: payment.referenceId,
-          outstandingAmount: 0
+        bill = await LodgeRentBill.findById(payment.billId);
+      } else if (payment.roomId) {
+        bill = await LodgeRentBill.findOne({
+          roomId: payment.roomId,
+          archived: false,
+          status: { $in: ['Due', 'Unpaid', 'Partially Paid'] }
+        }).sort({ dueDate: 1 });
+      }
+
+      if (bill) {
+        const verifiedPayments = await Payment.find({
+          $or: [
+            { billId: bill._id },
+            { roomId: payment.roomId, paymentType: 'Rent' },
+            { bookingId: payment.bookingId, paymentType: 'Rent' }
+          ],
+          status: { $in: ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'] }
         });
-      } else if (payment.roomId && payment.customerId) {
-        await LodgeRentBill.findOneAndUpdate(
-          { roomId: payment.roomId, userId: payment.customerId._id || payment.customerId, status: 'Due' },
-          { status: 'Paid', paymentDate: new Date(), paymentMethod: payment.method, transactionId: payment.referenceId, outstandingAmount: 0 }
-        );
+        const totalPaidForBill = verifiedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+        const rem = Math.max(0, bill.totalAmount - totalPaidForBill);
+        bill.outstandingAmount = rem;
+        bill.status = rem === 0 ? 'Paid' : (totalPaidForBill > 0 ? 'Partially Paid' : 'Due');
+        if (rem === 0) bill.paymentDate = new Date();
+        bill.paymentMethod = payment.method;
+        bill.transactionId = payment.referenceId;
+        await bill.save();
       }
 
       // If linked to payment request, mark paid
@@ -332,13 +347,15 @@ exports.getPaymentStats = async (req, res) => {
     startOfMonth.setDate(1);
     startOfMonth.setHours(0,0,0,0);
 
+    const VERIFIED_STATUSES = ['VERIFIED', 'Completed', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'];
+
     // Today's verified collections
     const todayPayments = await Payment.find({
-      status: 'VERIFIED',
+      status: { $in: VERIFIED_STATUSES },
       verifiedAt: { $gte: startOfToday },
       roomId: { $ne: null }
     });
-    const todaysCollections = todayPayments.reduce((acc, p) => acc + p.amount, 0);
+    const todaysCollections = todayPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
 
     // Pending verification count & sum
     const pendingPayments = await Payment.find({
@@ -346,15 +363,15 @@ exports.getPaymentStats = async (req, res) => {
       roomId: { $ne: null }
     });
     const pendingCount = pendingPayments.length;
-    const pendingAmount = pendingPayments.reduce((acc, p) => acc + p.amount, 0);
+    const pendingAmount = pendingPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
 
     // Verified payments this month
     const monthPayments = await Payment.find({
-      status: 'VERIFIED',
+      status: { $in: VERIFIED_STATUSES },
       verifiedAt: { $gte: startOfMonth },
       roomId: { $ne: null }
     });
-    const monthlyRevenue = monthPayments.reduce((acc, p) => acc + p.amount, 0);
+    const monthlyRevenue = monthPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
 
     // Rejected count
     const rejectedCount = await Payment.countDocuments({
@@ -362,17 +379,17 @@ exports.getPaymentStats = async (req, res) => {
       roomId: { $ne: null }
     });
 
-    // Outstanding Rent Amount
-    const dueBills = await LodgeRentBill.find({ status: 'Due', archived: false });
-    const outstandingRent = dueBills.reduce((acc, b) => acc + (b.totalAmount || b.rentAmount || 0), 0);
+    // Outstanding Rent Amount (including partially paid bills)
+    const dueBills = await LodgeRentBill.find({ status: { $in: ['Due', 'Unpaid', 'Partially Paid'] }, archived: false });
+    const outstandingRent = dueBills.reduce((acc, b) => acc + (b.outstandingAmount !== undefined ? b.outstandingAmount : (b.totalAmount || b.rentAmount || 0)), 0);
 
     // Advance collections
     const advancePayments = await Payment.find({
       paymentType: 'Advance',
-      status: 'VERIFIED',
+      status: { $in: VERIFIED_STATUSES },
       roomId: { $ne: null }
     });
-    const advanceCollections = advancePayments.reduce((acc, p) => acc + p.amount, 0);
+    const advanceCollections = advancePayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
 
     res.json({
       todaysCollections,
@@ -417,8 +434,9 @@ exports.getBookingFinancials = async (req, res) => {
     // Fetch payments for this booking
     const payments = await Payment.find({ bookingId: booking._id }).sort({ createdAt: -1 });
 
-    // Sum paid amounts by category
-    const validPayments = payments.filter(p => p.status !== 'REJECTED' && p.status !== 'Failed');
+    // Sum paid amounts by category - ONLY count strictly verified/completed payments!
+    const VERIFIED_STATUSES = ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'];
+    const validPayments = payments.filter(p => VERIFIED_STATUSES.includes(p.status));
 
     let rentPaid = 0;
     let depositPaid = 0;
@@ -604,7 +622,7 @@ exports.adjustRentFromDeposit = async (req, res) => {
     const rentPayments = await Payment.find({
       bookingId: booking._id,
       paymentType: 'Rent',
-      status: { $ne: 'REJECTED' }
+      status: { $in: ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'] }
     });
     const rentPaidDirectly = rentPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
     const unpaidRent = Math.max(0, rentDue - rentPaidDirectly - totalAdjusted);

@@ -155,6 +155,26 @@ class CashfreeService {
     }
 
     /**
+     * Fetch Cashfree PG Order Payments list (cf_payment_id, amount, status, etc.)
+     */
+    async getOrderPayments(orderId) {
+        try {
+            const creds = await this.getCredentials();
+            const response = await axios.get(`${creds.baseUrl}/orders/${orderId}/payments`, {
+                headers: {
+                    'x-client-id': creds.appId,
+                    'x-client-secret': creds.secretKey,
+                    'x-api-version': '2026-01-01'
+                }
+            });
+            return Array.isArray(response.data) ? response.data : [];
+        } catch (err) {
+            console.warn(`[Cashfree] getOrderPayments(${orderId}) warning:`, err.response?.data?.message || err.message);
+            return [];
+        }
+    }
+
+    /**
      * Verify Webhook Signature (HMAC-SHA256)
      */
     async verifyWebhookSignature(signature, rawBody, timestamp) {

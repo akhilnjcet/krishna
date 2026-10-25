@@ -30,6 +30,9 @@ const Invoices = () => {
     const [showNetDays, setShowNetDays] = useState(true);
     const [tagline, setTagline] = useState('Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication');
     const [showTagline, setShowTagline] = useState(true);
+    const [companyGstin, setCompanyGstin] = useState('');
+    const [showCompanyGstin, setShowCompanyGstin] = useState(true);
+    const [companyState, setCompanyState] = useState('Kerala (32)');
     
     // Customer Selector & Autofill
     const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -131,6 +134,12 @@ const Invoices = () => {
                 setBrandingSettings(map);
                 if (map.company_tagline || map.tagline) {
                     setTagline(prev => (prev === 'Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication' ? (map.company_tagline || map.tagline) : prev));
+                }
+                if (map.company_gstin) {
+                    setCompanyGstin(prev => prev || map.company_gstin);
+                }
+                if (map.show_company_gstin !== undefined) {
+                    setShowCompanyGstin(map.show_company_gstin !== false && map.show_company_gstin !== 'false');
                 }
                 if (map.show_logo !== undefined) setShowLogo(map.show_logo !== false && map.show_logo !== 'false');
                 if (map.show_signature !== undefined) setShowSignature(map.show_signature !== false && map.show_signature !== 'false');
@@ -396,6 +405,9 @@ const Invoices = () => {
         if (data.showQuantity !== undefined) setShowQuantity(data.showQuantity);
         if (data.theme) setTheme(data.theme);
         if (data.themeColor) setThemeColor(data.themeColor);
+        if (data.companyGstin) setCompanyGstin(data.companyGstin);
+        if (data.showCompanyGstin !== undefined) setShowCompanyGstin(data.showCompanyGstin);
+        if (data.companyState) setCompanyState(data.companyState);
         if (data.termsText) setTermsText(data.termsText);
         if (data.invoiceNotes) setInvoiceNotes(data.invoiceNotes);
         if (data.footerRemarks) setFooterRemarks(data.footerRemarks);
@@ -412,6 +424,9 @@ const Invoices = () => {
         showNetDays,
         tagline,
         showTagline,
+        companyGstin,
+        showCompanyGstin,
+        companyState,
         selectedCustomerId,
         customerName,
         billingAddress,
@@ -535,6 +550,9 @@ const Invoices = () => {
                 showNetDays,
                 tagline,
                 showTagline,
+                companyGstin,
+                showCompanyGstin,
+                companyState,
                 selectedCustomerId,
                 customerName,
                 billingAddress,
@@ -1184,6 +1202,15 @@ const Invoices = () => {
                             <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                                 <input
                                     type="checkbox"
+                                    checked={showCompanyGstin}
+                                    onChange={(e) => setShowCompanyGstin(e.target.checked)}
+                                    className="rounded border-slate-300 text-indigo-600"
+                                />
+                                Company GSTIN & State
+                            </label>
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                <input
+                                    type="checkbox"
                                     checked={showDueDate}
                                     onChange={(e) => setShowDueDate(e.target.checked)}
                                     className="rounded border-slate-300 text-indigo-600"
@@ -1356,6 +1383,32 @@ const Invoices = () => {
                                                 <p className="text-xs opacity-80 font-medium">
                                                     {showTax ? 'Tax Invoice / Supply of Goods & Engineering Services' : 'Invoice / Supply of Goods & Engineering Services'}
                                                 </p>
+                                                {showCompanyGstin && (
+                                                    <div className="text-[11px] opacity-85 font-medium mt-1">
+                                                        <div className="no-print flex items-center gap-1.5 flex-wrap">
+                                                            <span>GSTIN:</span>
+                                                            <input
+                                                                type="text"
+                                                                value={companyGstin || brandingSettings?.company_gstin || '32AAAAA0000A1Z5'}
+                                                                onChange={(e) => setCompanyGstin(e.target.value)}
+                                                                placeholder="Enter GSTIN..."
+                                                                title="Click to edit GSTIN"
+                                                                className="font-mono font-bold text-white bg-white/10 hover:bg-white/20 border border-transparent hover:border-white/30 rounded px-1 -mx-1 py-0.5 outline-none w-44 transition text-[11px]"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowCompanyGstin(false)}
+                                                                className="text-[10px] text-white/70 hover:text-white ml-1 underline cursor-pointer"
+                                                                title="Hide GSTIN"
+                                                            >
+                                                                Hide
+                                                            </button>
+                                                        </div>
+                                                        <p className="hidden print:block">
+                                                            GSTIN: {companyGstin || brandingSettings?.company_gstin || '32AAAAA0000A1Z5'}
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
@@ -1402,7 +1455,32 @@ const Invoices = () => {
                                                     </p>
                                                 </div>
                                             )}
-                                            <p className="text-xs text-slate-500 font-medium">GSTIN: {brandingSettings?.company_gstin || '32AAAAA0000A1Z5'}</p>
+                                            {showCompanyGstin && (
+                                                <div className="text-xs text-slate-500 font-medium">
+                                                    <div className="no-print flex items-center gap-1.5 flex-wrap">
+                                                        <span>GSTIN:</span>
+                                                        <input
+                                                            type="text"
+                                                            value={companyGstin || brandingSettings?.company_gstin || '32AAAAA0000A1Z5'}
+                                                            onChange={(e) => setCompanyGstin(e.target.value)}
+                                                            placeholder="Enter GSTIN..."
+                                                            title="Click to edit GSTIN"
+                                                            className="font-mono font-bold text-slate-700 dark:text-slate-300 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-44 transition text-xs"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowCompanyGstin(false)}
+                                                            className="text-[10px] text-slate-400 hover:text-rose-500 ml-1 underline cursor-pointer"
+                                                            title="Hide GSTIN"
+                                                        >
+                                                            Hide
+                                                        </button>
+                                                    </div>
+                                                    <p className="hidden print:block">
+                                                        GSTIN: {companyGstin || brandingSettings?.company_gstin || '32AAAAA0000A1Z5'}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right">
@@ -1441,9 +1519,41 @@ const Invoices = () => {
                                                 </div>
                                             )}
                                             <p className="text-xs text-slate-500 dark:text-slate-400">Industrial Area, Thiruvazhiyode, Palakkad, Kerala 679514</p>
-                                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                                                GSTIN: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{brandingSettings?.company_gstin || '32AAAAA0000A1Z5'}</span> | State: Kerala (32)
-                                            </p>
+                                            {showCompanyGstin && (
+                                                <div className="text-[11px] text-slate-400 font-medium mt-0.5">
+                                                    <div className="no-print flex items-center gap-1.5 flex-wrap">
+                                                        <span>GSTIN:</span>
+                                                        <input
+                                                            type="text"
+                                                            value={companyGstin || brandingSettings?.company_gstin || '32AAAAA0000A1Z5'}
+                                                            onChange={(e) => setCompanyGstin(e.target.value)}
+                                                            placeholder="Enter GSTIN..."
+                                                            title="Click to edit Company GSTIN directly"
+                                                            className="font-mono font-bold text-slate-700 dark:text-slate-300 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-44 transition text-[11px]"
+                                                        />
+                                                        <span>| State:</span>
+                                                        <input
+                                                            type="text"
+                                                            value={companyState}
+                                                            onChange={(e) => setCompanyState(e.target.value)}
+                                                            placeholder="State..."
+                                                            title="Click to edit State directly"
+                                                            className="font-bold text-slate-700 dark:text-slate-300 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-28 transition text-[11px]"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowCompanyGstin(false)}
+                                                            className="text-[10px] text-slate-400 hover:text-rose-500 ml-1 underline cursor-pointer"
+                                                            title="Hide GSTIN from this invoice"
+                                                        >
+                                                            Hide
+                                                        </button>
+                                                    </div>
+                                                    <p className="hidden print:block">
+                                                        GSTIN: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{companyGstin || brandingSettings?.company_gstin || '32AAAAA0000A1Z5'}</span> | State: {companyState}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right">

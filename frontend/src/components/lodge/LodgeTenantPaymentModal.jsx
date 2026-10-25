@@ -48,7 +48,8 @@ export default function LodgeTenantPaymentModal({
   const [paymentTarget, setPaymentTarget] = useState(initialTarget || 'ALL');
   const [paymentMode, setPaymentMode] = useState('FULL'); // 'FULL' | 'CUSTOM'
   const [customPayInput, setCustomPayInput] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('Cashfree'); // 'Cashfree' | 'UPI QR' | 'UPI ID' | 'Bank Transfer' | 'Cash'
+  const [paymentMethod, setPaymentMethod] = useState('Cashfree'); // 'Cashfree' | 'BankTransfer' | 'Cash'
+  const [paymentResultModal, setPaymentResultModal] = useState(null); // { show, success, amount, cfPaymentId, orderId, remainingBalance, status, message }
 
   // Manage Security Deposit (Admin / Owner)
   const [depositManageMode, setDepositManageMode] = useState('ADD'); // 'ADD' | 'SET'
@@ -191,6 +192,58 @@ export default function LodgeTenantPaymentModal({
     }
   }, [isOpen, initialTab, initialTarget, fetchBookingFinancials]);
 
+  // Check URL query parameters for Cashfree return redirect (e.g. ?order_id=... or ?cf_order_id=...)
+  useEffect(() => {
+    if (!isOpen) return;
+    const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
+    const searchParams = new URLSearchParams(window.location.search || hashQuery);
+    const redirectOrderId = searchParams.get('order_id') || searchParams.get('cf_order_id');
+    if (redirectOrderId) {
+      setSubmitting(true);
+      api.post('/payments/cashfree/verify', { orderId: redirectOrderId })
+        .then(res => {
+          if (res.data.success) {
+            setPaymentResultModal({
+              show: true,
+              success: true,
+              amount: res.data.verifiedAmount,
+              cfPaymentId: res.data.cfPaymentId,
+              orderId: redirectOrderId,
+              remainingBalance: res.data.remainingBillBalance,
+              status: res.data.remainingBillBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID',
+              message: `Payment of ₹${res.data.verifiedAmount} verified and recorded successfully.`
+            });
+            fetchBookingFinancials();
+            if (onSuccess) onSuccess(res.data.payment);
+          } else {
+            setPaymentResultModal({
+              show: true,
+              success: false,
+              amount: 0,
+              orderId: redirectOrderId,
+              status: res.data.orderStatus || 'INCOMPLETE',
+              message: res.data.message || 'Payment not completed or failed at bank.'
+            });
+          }
+        })
+        .catch(err => {
+          setPaymentResultModal({
+            show: true,
+            success: false,
+            amount: 0,
+            orderId: redirectOrderId,
+            status: 'ERROR',
+            message: err.response?.data?.message || err.message
+          });
+        })
+        .finally(() => {
+          setSubmitting(false);
+          const cleanUrl = window.location.pathname + window.location.hash.split('?')[0];
+          window.history.replaceState({}, document.title, cleanUrl);
+        });
+    }
+  }, [isOpen, fetchBookingFinancials, onSuccess]);
+
   // Load Admin Settings
   useEffect(() => {
     if (!isOpen) return;
@@ -305,31 +358,76 @@ export default function LodgeTenantPaymentModal({
         paymentSessionId,
         redirectTarget: '_modal'
       }).then(async (result) => {
-        if (result.error) {
-          console.warn('Cashfree checkout modal closed / error:', result.error);
-          alert(result.error.message || 'Payment was not completed. You can retry anytime.');
-        } else if (result.paymentDetails) {
+        if (result && result.error) {
+          console.warn('Cashfree checkout modal error / cancelled:', result.error);
+          setPaymentResultModal({
+            show: true,
+            success: false,
+            amount: activePayAmount,
+            orderId,
+            status: 'CANCELLED',
+            message: result.error.message || 'Payment checkout was cancelled or closed.'
+          });
+          return;
+        }
+
+        // Always authoritative verification on backend
+        try {
           const verifyRes = await api.post('/payments/cashfree/verify', { orderId });
           if (verifyRes.data.success) {
+            setPaymentResultModal({
+              show: true,
+              success: true,
+              amount: verifyRes.data.verifiedAmount,
+              cfPaymentId: verifyRes.data.cfPaymentId,
+              orderId,
+              remainingBalance: verifyRes.data.remainingBillBalance,
+              status: verifyRes.data.remainingBillBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID',
+              message: verifyRes.data.message || `Payment of ₹${verifyRes.data.verifiedAmount} verified successfully.`
+            });
             setLastPaymentReceipt({
               ...verifyRes.data.payment,
               targetTitle,
               lineItemsSnapshot: financials?.lineItems,
               overallSnapshot: financials?.overall,
-              newRemaining: resultOverallRemaining,
-              resultStatus: resultOverallStatus
+              newRemaining: verifyRes.data.remainingBillBalance,
+              resultStatus: verifyRes.data.remainingBillBalance === 0 ? 'Fully Paid' : 'Partially Paid'
             });
             setSubmittedSuccess(true);
             await fetchBookingFinancials();
             if (onSuccess) onSuccess(verifyRes.data.payment);
           } else {
-            alert(`Cashfree status: ${verifyRes.data.orderStatus}`);
+            setPaymentResultModal({
+              show: true,
+              success: false,
+              amount: activePayAmount,
+              orderId,
+              status: verifyRes.data.orderStatus || 'INCOMPLETE',
+              message: verifyRes.data.message || `Cashfree reported status: ${verifyRes.data.orderStatus}.`
+            });
           }
+        } catch (vErr) {
+          console.error('Backend payment verification error:', vErr);
+          setPaymentResultModal({
+            show: true,
+            success: false,
+            amount: activePayAmount,
+            orderId,
+            status: 'VERIFICATION_ERROR',
+            message: vErr.response?.data?.message || vErr.message || 'Failed to verify transaction with Cashfree.'
+          });
         }
       });
     } catch (err) {
-      console.error('Cashfree Checkout Error:', err);
-      alert(err.response?.data?.message || err.message || 'Failed to initialize Cashfree Gateway.');
+      console.error('Cashfree Checkout Initiation Error:', err);
+      setPaymentResultModal({
+        show: true,
+        success: false,
+        amount: activePayAmount,
+        orderId: 'N/A',
+        status: 'INITIATION_ERROR',
+        message: err.response?.data?.message || err.message || 'Failed to connect to Cashfree Gateway.'
+      });
     } finally {
       setSubmitting(false);
     }
@@ -1193,41 +1291,99 @@ export default function LodgeTenantPaymentModal({
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                    {[
-                      { id: 'Cashfree', name: 'Cashfree Gateway', icon: Sparkles, featured: true, sub: 'Cards/UPI/EMI' },
-                      { id: 'UPI QR', name: 'UPI Dynamic QR', icon: QrCode, sub: 'GPay/PhonePe' },
-                      { id: 'UPI ID', name: 'Direct UPI ID', icon: CreditCard, sub: 'VPA Transfer' },
-                      { id: 'Bank Transfer', name: 'Bank Transfer', icon: Building2, sub: 'NEFT / RTGS' },
-                      { id: 'Cash', name: 'Cash Counter', icon: ShieldCheck, sub: 'Physical Desk' },
-                    ].map(m => (
+                  {/* Clean 2-Option Selector: Cashfree vs Bank Details Display (Plus Admin Cash if applicable) */}
+                  <div className={`grid gap-2.5 ${isAdmin ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+                    {/* Option 1: Cashfree Gateway */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('Cashfree')}
+                      className={`p-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-1.5 transition-all text-left ${
+                        paymentMethod === 'Cashfree'
+                          ? 'border-indigo-600 bg-gradient-to-b from-indigo-50 to-white dark:from-indigo-950/40 dark:to-slate-900 text-indigo-600 shadow-md ring-2 ring-indigo-500/30'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="w-full flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl text-indigo-600">
+                            <Sparkles className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-black text-sm text-slate-900 dark:text-white">Cashfree Gateway</p>
+                            <p className="text-[10px] text-slate-400 font-medium">Instant Online Clearance</p>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 bg-emerald-400 text-slate-950 rounded-full text-[8px] font-black uppercase tracking-wider">
+                          Recommended
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 self-start">
+                        Instant automated verification: UPI (GPay/PhonePe), Cards, NetBanking, EMI
+                      </p>
+                    </button>
+
+                    {/* Option 2: Direct Bank & UPI Details */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('BankTransfer')}
+                      className={`p-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-1.5 transition-all text-left ${
+                        paymentMethod === 'BankTransfer'
+                          ? 'border-indigo-600 bg-gradient-to-b from-indigo-50 to-white dark:from-indigo-950/40 dark:to-slate-900 text-indigo-600 shadow-md ring-2 ring-indigo-500/30'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="w-full flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-xl text-blue-600">
+                            <Building2 className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-black text-sm text-slate-900 dark:text-white">Bank Details & UPI</p>
+                            <p className="text-[10px] text-slate-400 font-medium">Manual Transfer (Optional Proof)</p>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-[8px] font-black uppercase tracking-wider">
+                          Bank Info
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 self-start">
+                        Shows UPI ID, Bank Acc No, IFSC code • Screenshot upload optional
+                      </p>
+                    </button>
+
+                    {/* Option 3: Admin Cash Counter (Admin Only) */}
+                    {isAdmin && (
                       <button
-                        key={m.id}
                         type="button"
-                        onClick={() => setPaymentMethod(m.id)}
-                        className={`p-3 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-1 transition-all ${
-                          paymentMethod === m.id
-                            ? m.featured 
-                              ? 'border-indigo-600 bg-gradient-to-b from-indigo-50 to-white dark:from-indigo-950/40 dark:to-slate-900 text-indigo-600 shadow-md ring-2 ring-indigo-500/30'
-                              : 'border-indigo-600 bg-indigo-50/60 dark:bg-indigo-950/30 text-indigo-600 shadow-sm'
-                            : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50'
+                        onClick={() => setPaymentMethod('Cash')}
+                        className={`p-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-1.5 transition-all text-left ${
+                          paymentMethod === 'Cash'
+                            ? 'border-indigo-600 bg-gradient-to-b from-amber-50 to-white dark:from-amber-950/40 dark:to-slate-900 text-amber-700 shadow-md ring-2 ring-amber-500/30'
+                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
                         }`}
                       >
-                        <div className="relative">
-                          <m.icon className="w-5 h-5" />
-                          {m.featured && (
-                            <span className="absolute -top-2 -right-3 px-1 py-0.2 bg-amber-400 text-slate-950 rounded-full text-[7px] font-black uppercase">
-                              Live
-                            </span>
-                          )}
+                        <div className="w-full flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-xl text-amber-700">
+                              <ShieldCheck className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="font-black text-sm text-slate-900 dark:text-white">Cash Counter</p>
+                              <p className="text-[10px] text-slate-400 font-medium">Physical Desk Recording</p>
+                            </div>
+                          </div>
+                          <span className="px-2 py-0.5 bg-amber-400 text-slate-950 rounded-full text-[8px] font-black uppercase tracking-wider">
+                            Admin
+                          </span>
                         </div>
-                        <span className="text-center font-black leading-tight text-[11px]">{m.name}</span>
-                        <span className="text-[9px] text-slate-400 font-semibold">{m.sub}</span>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 self-start">
+                          Record physical cash paid directly to management
+                        </p>
                       </button>
-                    ))}
+                    )}
                   </div>
 
-                  {/* Cashfree View */}
+                  {/* ────────────────── Cashfree View ────────────────── */}
                   {paymentMethod === 'Cashfree' && (
                     <div className="bg-gradient-to-br from-indigo-950 via-indigo-900 to-slate-900 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden">
                       <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
@@ -1247,7 +1403,7 @@ export default function LodgeTenantPaymentModal({
                             Pay ₹{activePayAmount.toLocaleString()} Online
                           </h4>
                           <p className="text-xs text-indigo-200 mt-1">
-                            Secure instant clearance for {targetTitle}. All modes supported:
+                            Secure automated clearance for {targetTitle}. Supported payment methods:
                           </p>
                         </div>
 
@@ -1274,7 +1430,7 @@ export default function LodgeTenantPaymentModal({
                           type="button"
                           onClick={handleCashfreeModalPay}
                           disabled={submitting || activePayAmount <= 0}
-                          className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-[0.99] transition-all cursor-pointer"
+                          className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-black py-4 rounded-2xl text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-[0.99] transition-all cursor-pointer"
                         >
                           <Sparkles className="w-4 h-4 text-slate-950" />
                           <span>Pay ₹{activePayAmount.toLocaleString()} via Cashfree Checkout</span>
@@ -1284,197 +1440,246 @@ export default function LodgeTenantPaymentModal({
                     </div>
                   )}
 
-                  {/* QR Code view */}
-                  {paymentMethod === 'UPI QR' && (
-                    <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-6 rounded-3xl flex flex-col sm:flex-row items-center gap-6 shadow-xl">
-                      <div className="bg-white p-4 rounded-2xl shadow-2xl shrink-0">
-                        <QRCodeSVG value={upiUrl} size={150} level="H" includeMargin={false} />
-                        <p className="text-[9px] font-black text-center text-slate-500 mt-2 uppercase tracking-widest">
-                          Scan with GPay / PhonePe / Paytm
-                        </p>
+                  {/* ────────────────── Bank Details Display Option ────────────────── */}
+                  {paymentMethod === 'BankTransfer' && (
+                    <div className="space-y-4">
+                      {/* Bank Details Display Card */}
+                      <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white p-5 sm:p-6 rounded-3xl shadow-xl space-y-4 border border-indigo-900/50">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <h4 className="text-xs font-black text-indigo-300 uppercase tracking-wider flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-indigo-400" /> Company Bank & UPI Account Details
+                          </h4>
+                          <span className="text-[10px] bg-white/10 px-2.5 py-0.5 rounded-full font-bold text-indigo-200">
+                            Transfer Amount: ₹{activePayAmount.toLocaleString()}
+                          </span>
+                        </div>
+
+                        {/* Grid with Bank Details */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                          {/* UPI ID */}
+                          <div className="bg-white/5 p-3.5 rounded-2xl border border-white/10 flex items-center justify-between">
+                            <div>
+                              <p className="text-slate-400 text-[10px] uppercase font-bold">UPI ID (VPA)</p>
+                              <p className="font-black font-mono text-emerald-400 text-sm mt-0.5">{paymentSettings.upiId}</p>
+                              <p className="text-[10px] text-slate-300">{paymentSettings.merchantDisplayName}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(paymentSettings.upiId, 'upiId')}
+                              className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl text-white font-bold text-[10px] flex items-center gap-1 transition"
+                            >
+                              {copiedField === 'upiId' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                              <span>{copiedField === 'upiId' ? 'Copied' : 'Copy'}</span>
+                            </button>
+                          </div>
+
+                          {/* Bank Name & Holder */}
+                          <div className="bg-white/5 p-3.5 rounded-2xl border border-white/10">
+                            <p className="text-slate-400 text-[10px] uppercase font-bold">Bank Name & Branch</p>
+                            <p className="font-bold text-white text-xs mt-0.5">{paymentSettings.bankName}</p>
+                            <p className="text-[10px] text-slate-300">{paymentSettings.branch || 'Branch'}</p>
+                          </div>
+
+                          {/* Bank Account Number */}
+                          <div className="bg-white/5 p-3.5 rounded-2xl border border-white/10 flex items-center justify-between">
+                            <div>
+                              <p className="text-slate-400 text-[10px] uppercase font-bold">Bank Account Number</p>
+                              <p className="font-black font-mono text-white text-sm mt-0.5">{paymentSettings.accountNumber}</p>
+                              <p className="text-[10px] text-slate-300">Holder: {paymentSettings.accountHolder}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(paymentSettings.accountNumber, 'acc')}
+                              className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl text-white font-bold text-[10px] flex items-center gap-1 transition"
+                            >
+                              {copiedField === 'acc' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                              <span>{copiedField === 'acc' ? 'Copied' : 'Copy'}</span>
+                            </button>
+                          </div>
+
+                          {/* IFSC Code */}
+                          <div className="bg-white/5 p-3.5 rounded-2xl border border-white/10 flex items-center justify-between">
+                            <div>
+                              <p className="text-slate-400 text-[10px] uppercase font-bold">IFSC Code</p>
+                              <p className="font-black font-mono text-amber-300 text-sm mt-0.5">{paymentSettings.ifsc}</p>
+                              <p className="text-[10px] text-slate-300">RTGS / NEFT / IMPS</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(paymentSettings.ifsc, 'ifsc')}
+                              className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl text-white font-bold text-[10px] flex items-center gap-1 transition"
+                            >
+                              {copiedField === 'ifsc' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                              <span>{copiedField === 'ifsc' ? 'Copied' : 'Copy'}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Optional QR Code Toggle */}
+                        <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-white p-2 rounded-xl shrink-0">
+                              <QRCodeSVG value={upiUrl} size={64} level="M" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-white text-xs">Scan & Pay ₹{activePayAmount.toLocaleString()}</p>
+                              <p className="text-[10px] text-slate-300">Amount encoded in QR for quick scan</p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-slate-400 italic">
+                            Supports GPay, PhonePe, Paytm, BHIM, Yono
+                          </span>
+                        </div>
                       </div>
-                      <div className="space-y-3 text-xs flex-1">
-                        <div className="inline-block px-3 py-1 bg-indigo-500/30 text-indigo-200 rounded-full text-[10px] font-black uppercase tracking-wider">
-                          ⚡ Dynamic QR - Amount Encoded
+
+                      {/* Manual Transfer Inputs: Ref / UTR, Optional Screenshot, Remarks */}
+                      <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                              Transaction Reference / UTR Number
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. 12-digit UTR or UPI Ref ID"
+                              value={referenceId}
+                              onChange={(e) => setReferenceId(e.target.value)}
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-600 font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                              Payment Remarks (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Rent payment from SBI"
+                              value={remarks}
+                              onChange={(e) => setRemarks(e.target.value)}
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-600"
+                            />
+                          </div>
                         </div>
-                        <h4 className="text-lg font-black text-white">Scan & Pay ₹{activePayAmount.toLocaleString()}</h4>
-                        <p className="text-slate-300 text-xs leading-relaxed">
-                          Scan this QR with any UPI app to transfer exactly <strong className="text-white font-poppins">₹{activePayAmount.toLocaleString()}</strong> directly to Krishna Lodge.
-                        </p>
-                        <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-300">
-                          <span>UPI ID: <strong className="text-white font-mono">{paymentSettings.upiId}</strong></span>
-                          <button 
-                            type="button" 
-                            onClick={() => copyToClipboard(paymentSettings.upiId, 'upiQr')} 
-                            className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-white font-bold flex items-center gap-1"
-                          >
-                            {copiedField === 'upiQr' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                            {copiedField === 'upiQr' ? 'Copied' : 'Copy'}
-                          </button>
+
+                        {/* Payment Screenshot (SS) Upload - EXPLICITLY OPTIONAL */}
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-black text-slate-800 dark:text-slate-200">Payment Screenshot / Proof</p>
+                              <span className="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md text-[9px] font-black uppercase">
+                                Optional
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              Upload is optional. If you have a screenshot of the payment, attach it for faster verification.
+                            </p>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <label className="bg-white dark:bg-slate-900 hover:bg-slate-100 text-slate-700 dark:text-slate-300 px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 cursor-pointer flex items-center gap-1.5 shadow-xs">
+                              <Upload className="w-3.5 h-3.5 text-indigo-600" />
+                              <span>{proofFile ? 'Change File' : 'Upload SS'}</span>
+                              <input type="file" accept="image/*,.pdf" onChange={handleFileChange} className="hidden" />
+                            </label>
+                            <input type="file" id="modal-camera-input" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+                            <button
+                              type="button"
+                              onClick={handleCameraCapture}
+                              className="bg-white dark:bg-slate-900 hover:bg-slate-100 text-slate-700 dark:text-slate-300 px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 shadow-xs"
+                            >
+                              <Camera className="w-3.5 h-3.5 text-indigo-600" />
+                              <span>Camera</span>
+                            </button>
+                          </div>
                         </div>
+
+                        {proofPreview && (
+                          <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center gap-2">
+                              <img src={proofPreview} alt="Proof" className="w-10 h-10 object-cover rounded-lg" />
+                              <div>
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block truncate max-w-xs">{proofFile?.name || 'Screenshot_Proof.jpg'}</span>
+                                <span className="text-[9px] text-emerald-600 font-bold">Screenshot attached successfully</span>
+                              </div>
+                            </div>
+                            <button type="button" onClick={() => { setProofFile(null); setProofPreview(''); }} className="text-red-500 p-1 hover:bg-red-50 rounded-lg">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Submit Button for Manual Transfer */}
+                        <button
+                          type="button"
+                          onClick={handleSubmitPayment}
+                          disabled={submitting || activePayAmount <= 0}
+                          className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30 flex items-center justify-center gap-2 transition active:scale-[0.99] cursor-pointer"
+                        >
+                          {submitting ? (
+                            <span>Submitting Payment...</span>
+                          ) : (
+                            <>
+                              <span>Submit Payment of ₹{activePayAmount.toLocaleString()} for Verification</span>
+                              <ArrowRight className="w-4 h-4" />
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
                   )}
 
-                  {/* UPI ID view */}
-                  {paymentMethod === 'UPI ID' && (
-                    <div className="bg-indigo-50 dark:bg-slate-800 p-5 rounded-2xl border border-indigo-100 dark:border-slate-700 flex justify-between items-center">
-                      <div>
-                        <p className="text-[10px] font-black uppercase text-indigo-500 tracking-wider">Official Merchant UPI ID</p>
-                        <p className="text-lg font-black text-indigo-950 dark:text-white font-mono mt-0.5">{paymentSettings.upiId}</p>
-                        <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5">Merchant: {paymentSettings.merchantDisplayName}</p>
+                  {/* ────────────────── Cash Counter View (Admin Only) ────────────────── */}
+                  {paymentMethod === 'Cash' && isAdmin && (
+                    <div className="bg-amber-50 dark:bg-amber-950/30 p-5 rounded-3xl border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="font-black text-sm flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-amber-600" /> Physical Cash Counter Settlement
+                        </p>
+                        <span className="px-2 py-0.5 bg-amber-400 text-slate-950 rounded-full text-[8px] font-black uppercase">
+                          Admin Verified
+                        </span>
                       </div>
+                      <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+                        Record physical cash of <strong className="font-poppins font-black">₹{activePayAmount.toLocaleString()}</strong> received directly at the manager desk. This will immediately issue an official receipt and update the tenant's ledger.
+                      </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        <div>
+                          <label className="block text-[11px] font-bold text-amber-900 dark:text-amber-200 mb-1">Receipt / Ref Number (Optional)</label>
+                          <input
+                            type="text"
+                            placeholder="Auto-generated if empty"
+                            value={referenceId}
+                            onChange={(e) => setReferenceId(e.target.value)}
+                            className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-amber-900 dark:text-amber-200 mb-1">Effective Date</label>
+                          <input
+                            type="date"
+                            value={adminPaymentDate}
+                            onChange={(e) => setAdminPaymentDate(e.target.value)}
+                            className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none"
+                          />
+                        </div>
+                      </div>
+
                       <button
                         type="button"
-                        onClick={() => copyToClipboard(paymentSettings.upiId, 'upiId')}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20"
+                        onClick={handleSubmitPayment}
+                        disabled={submitting || activePayAmount <= 0}
+                        className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-wider bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition cursor-pointer"
                       >
-                        {copiedField === 'upiId' ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                        {copiedField === 'upiId' ? 'Copied!' : 'Copy UPI ID'}
+                        {submitting ? 'Recording Payment...' : `Record Cash Receipt of ₹${activePayAmount.toLocaleString()}`}
                       </button>
                     </div>
                   )}
 
-                  {/* Bank Transfer view */}
-                  {paymentMethod === 'Bank Transfer' && (
-                    <div className="bg-slate-900 text-white p-5 rounded-3xl space-y-3">
-                      <h4 className="text-xs font-black text-indigo-300 uppercase tracking-wider flex items-center">
-                        <Building2 className="w-4 h-4 mr-2" /> Direct Bank Transfer Details
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div className="bg-white/5 p-3 rounded-xl border border-white/10">
-                          <p className="text-slate-400 text-[10px] uppercase font-bold">Bank & Holder</p>
-                          <p className="font-bold text-white mt-0.5">{paymentSettings.bankName}</p>
-                          <p className="text-[11px] text-slate-300">{paymentSettings.accountHolder}</p>
-                        </div>
-                        <div className="bg-white/5 p-3 rounded-xl border border-white/10 flex justify-between items-center">
-                          <div>
-                            <p className="text-slate-400 text-[10px] uppercase font-bold">Account Number & IFSC</p>
-                            <p className="font-bold font-mono text-white mt-0.5">{paymentSettings.accountNumber}</p>
-                            <p className="font-mono text-xs text-indigo-300">{paymentSettings.ifsc}</p>
-                          </div>
-                          <button 
-                            type="button" 
-                            onClick={() => copyToClipboard(paymentSettings.accountNumber, 'acc')} 
-                            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white"
-                          >
-                            {copiedField === 'acc' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Cash Counter view */}
-                  {paymentMethod === 'Cash' && (
-                    <div className="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs">
-                      <p className="font-black text-sm mb-1 flex items-center">
-                        <ShieldCheck className="w-4 h-4 mr-1.5 text-amber-600" /> Reception Desk Cash Settlement
-                      </p>
-                      <p>
-                        Hand over <strong className="font-poppins">₹{activePayAmount.toLocaleString()}</strong> at the lodge manager's desk. The admin will verify and issue your digital receipt immediately.
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Reference & Proof Inputs (Only shown for non-gateway manual transfers) */}
-                  {paymentMethod !== 'Cashfree' && (
-                    <>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                            Transaction Ref / UTR Number
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. 420912384910 or GPay Ref"
-                            value={referenceId}
-                            onChange={(e) => setReferenceId(e.target.value)}
-                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                            Payment Remarks (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Settle rent + water charge"
-                            value={remarks}
-                            onChange={(e) => setRemarks(e.target.value)}
-                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Proof upload */}
-                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
-                        <div>
-                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Payment Screenshot / Receipt</p>
-                          <p className="text-[10px] text-slate-400">Attach verification screenshot or tap Camera</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <label className="bg-white dark:bg-slate-900 hover:bg-slate-100 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 cursor-pointer flex items-center gap-1.5 shadow-2xs">
-                            <Upload className="w-3.5 h-3.5 text-indigo-600" />
-                            <span>{proofFile ? 'Change' : 'Browse'}</span>
-                            <input type="file" accept="image/*,.pdf" onChange={handleFileChange} className="hidden" />
-                          </label>
-                          <input type="file" id="modal-camera-input" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
-                          <button
-                            type="button"
-                            onClick={handleCameraCapture}
-                            className="bg-white dark:bg-slate-900 hover:bg-slate-100 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 shadow-2xs"
-                          >
-                            <Camera className="w-3.5 h-3.5 text-indigo-600" />
-                            <span>Camera</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {proofPreview && (
-                        <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                          <div className="flex items-center gap-2">
-                            <img src={proofPreview} alt="Proof" className="w-8 h-8 object-cover rounded-md" />
-                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-xs">{proofFile?.name || 'Payment_Proof.jpg'}</span>
-                          </div>
-                          <button type="button" onClick={() => { setProofFile(null); setProofPreview(''); }} className="text-red-500 p-1 hover:bg-red-50 rounded-lg">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {/* Submit Button */}
-                  <button
-                    type="button"
-                    onClick={handleSubmitPayment}
-                    disabled={submitting || activePayAmount <= 0}
-                    className={`w-full py-3.5 rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 ${
-                      paymentMethod === 'Cashfree'
-                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-600/30'
-                        : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white shadow-indigo-600/30'
-                    }`}
-                  >
-                    {submitting ? (
-                      <span>Processing Payment...</span>
-                    ) : paymentMethod === 'Cashfree' ? (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        <span>Pay ₹{activePayAmount.toLocaleString()} via Cashfree Gateway</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    ) : (
-                      <>
-                        <span>Submit Payment of ₹{activePayAmount.toLocaleString()}</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
                 </div>
               )}
             </>
           )}
+
 
           {/* ═══════════ TAB: MANAGE SECURITY DEPOSIT (ADMIN) ═══════════ */}
           {activeTab === 'MANAGE_DEPOSIT' && (
@@ -2511,6 +2716,94 @@ export default function LodgeTenantPaymentModal({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Cashfree Payment Verification Result Modal */}
+      {paymentResultModal && paymentResultModal.show && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-center">
+            <button
+              onClick={() => setPaymentResultModal(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center ${
+              paymentResultModal.success 
+                ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50' 
+                : 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50'
+            }`}>
+              {paymentResultModal.success ? (
+                <CheckCircle2 className="w-10 h-10" />
+              ) : (
+                <AlertCircle className="w-10 h-10" />
+              )}
+            </div>
+
+            <h3 className={`text-xl font-black mb-1 ${
+              paymentResultModal.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+            }`}>
+              {paymentResultModal.success ? 'Payment Verified & Confirmed' : 'Payment Incomplete or Failed'}
+            </h3>
+            
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">
+              {paymentResultModal.message}
+            </p>
+
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200 dark:border-slate-700/60 mb-5 text-left text-xs space-y-2.5">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold">Payment Amount:</span>
+                <span className="text-sm font-black text-slate-900 dark:text-white">₹{paymentResultModal.amount?.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold">Gateway Status:</span>
+                <span className={`px-2 py-0.5 rounded font-black text-[10px] tracking-wider uppercase ${
+                  paymentResultModal.success 
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' 
+                    : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                }`}>
+                  {paymentResultModal.status}
+                </span>
+              </div>
+              {paymentResultModal.cfPaymentId && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 dark:text-slate-400 font-semibold">Cashfree Ref ID:</span>
+                  <span className="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">{paymentResultModal.cfPaymentId}</span>
+                </div>
+              )}
+              {paymentResultModal.orderId && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 dark:text-slate-400 font-semibold">Order ID:</span>
+                  <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400">{paymentResultModal.orderId}</span>
+                </div>
+              )}
+              {paymentResultModal.remainingBalance !== undefined && (
+                <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-700 dark:text-slate-300 font-bold">Remaining Due Balance:</span>
+                  <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">₹{paymentResultModal.remainingBalance?.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setPaymentResultModal(null);
+                if (paymentResultModal.success) {
+                  fetchBookingFinancials();
+                }
+              }}
+              className={`w-full py-3 rounded-xl font-bold text-xs shadow-md transition ${
+                paymentResultModal.success
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  : 'bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-700 dark:hover:bg-slate-600'
+              }`}
+            >
+              {paymentResultModal.success ? 'Done & Refresh Balance' : 'Close'}
+            </button>
           </div>
         </div>
       )}

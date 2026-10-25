@@ -21,7 +21,7 @@ async function recalculateProjectPaymentStatus(projectId) {
         // Find all completed/verified payments for this project
         const completedPayments = await Payment.find({
             projectId: projectId,
-            status: { $in: ['verified', 'Completed'] }
+            status: { $in: ['verified', 'Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'completed'] }
         });
 
         // Sum payments by cash and online methods

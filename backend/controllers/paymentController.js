@@ -252,6 +252,124 @@ exports.createCashfreeOrder = async (req, res) => {
 };
 
 /**
+/**
+ * Helper to reconcile and apply verified Cashfree payment to ledger, projects, and rent bills
+ */
+async function processConfirmedCashfreeOrder(orderData, reqUser = null, source = 'Cashfree Verification') {
+    const orderId = orderData.order_id;
+    const paymentsList = await cashfreeService.getOrderPayments(orderId);
+    const successfulPayment = Array.isArray(paymentsList) 
+        ? paymentsList.find(p => (p.payment_status || '').toUpperCase() === 'SUCCESS') || paymentsList[0]
+        : null;
+
+    const verifiedAmount = successfulPayment?.payment_amount !== undefined 
+        ? parseFloat(successfulPayment.payment_amount) 
+        : parseFloat(orderData.order_amount);
+
+    const cfPaymentId = successfulPayment?.cf_payment_id 
+        ? String(successfulPayment.cf_payment_id) 
+        : String(orderData.cf_order_id || orderId);
+
+    const paymentTime = successfulPayment?.payment_completion_time || successfulPayment?.payment_time;
+
+    // Find existing initiated payment record or create one
+    let payment = await Payment.findOne({ 
+        $or: [
+            { referenceId: orderId },
+            { cfPaymentId: cfPaymentId },
+            { transactionReference: orderId }
+        ] 
+    });
+
+    if (!payment) {
+        payment = new Payment({
+            customerId: (reqUser && (reqUser._id || reqUser.id)) || undefined,
+            amount: verifiedAmount,
+            method: 'cashfree',
+            referenceId: orderId,
+            transactionReference: cfPaymentId,
+            cfOrderId: String(orderData.cf_order_id || orderId),
+            cfPaymentId: cfPaymentId,
+            paymentDate: paymentTime ? new Date(paymentTime) : new Date(),
+            tenantName: (reqUser && reqUser.name) || orderData.customer_details?.customer_name || 'Client',
+            notes: orderData.order_note || 'Cashfree Online Gateway',
+            paymentType: 'Rent',
+            chargeCategory: 'Rent'
+        });
+    }
+
+    // Mark as verified & completed
+    payment.status = 'Completed';
+    payment.amount = verifiedAmount;
+    payment.cfOrderId = String(orderData.cf_order_id || orderId);
+    payment.cfPaymentId = cfPaymentId;
+    payment.transactionReference = cfPaymentId;
+    payment.verifiedByName = source;
+    payment.verifiedAt = new Date();
+    if (paymentTime) {
+        payment.paymentDate = new Date(paymentTime);
+    }
+    await payment.save();
+
+    // Recalculate Project Status if linked to a project
+    if (payment.projectId) {
+        const { recalculateProjectPaymentStatus } = require('../utils/projectHelper');
+        await recalculateProjectPaymentStatus(payment.projectId);
+    }
+
+    // Settle Lodge Rent Bill with exact remaining balance calculation
+    let bill = null;
+    const LodgeRentBill = require('../models/LodgeRentBill');
+    if (payment.billId) {
+        bill = await LodgeRentBill.findById(payment.billId);
+    }
+    if (!bill && (payment.roomId || payment.bookingId)) {
+        bill = await LodgeRentBill.findOne({
+            $or: [
+                { bookingId: payment.bookingId },
+                { roomId: payment.roomId }
+            ],
+            archived: false,
+            status: { $in: ['Due', 'Unpaid', 'Partially Paid'] }
+        }).sort({ dueDate: 1 });
+    }
+
+    let remainingBillBalance = 0;
+    if (bill) {
+        // Sum all verified/completed payments for this bill or room rent
+        const verifiedPayments = await Payment.find({
+            $or: [
+                { billId: bill._id },
+                { bookingId: payment.bookingId, paymentType: 'Rent' },
+                { roomId: payment.roomId, paymentType: 'Rent' }
+            ],
+            status: { $in: ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED'] }
+        });
+        const totalPaidForBill = verifiedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+        remainingBillBalance = Math.max(0, bill.totalAmount - totalPaidForBill);
+        
+        bill.outstandingAmount = remainingBillBalance;
+        bill.status = remainingBillBalance === 0 ? 'Paid' : (totalPaidForBill > 0 ? 'Partially Paid' : 'Due');
+        if (remainingBillBalance === 0) {
+            bill.paymentDate = new Date();
+        }
+        bill.paymentMethod = 'cashfree';
+        bill.transactionId = cfPaymentId;
+        await bill.save();
+    }
+
+    // Socket.IO real-time notification
+    const socketUtil = require('../utils/socket');
+    const io = socketUtil.getIO();
+    if (io) {
+        io.emit('payment-status-changed', payment);
+        io.emit('lodge-payment-updated', payment);
+    }
+
+    return { payment, verifiedAmount, cfPaymentId, remainingBillBalance, bill };
+}
+
+/**
  * Protected/Optional: Verify Cashfree PG Order & Complete Payment
  */
 exports.verifyCashfreePayment = async (req, res) => {
@@ -262,65 +380,39 @@ exports.verifyCashfreePayment = async (req, res) => {
         }
 
         const orderData = await cashfreeService.getOrder(orderId);
-        const orderStatus = orderData.order_status; // PAID, ACTIVE, EXPIRED, TERMINATED
+        const orderStatus = (orderData.order_status || '').toUpperCase(); // PAID, ACTIVE, EXPIRED, TERMINATED
 
         if (orderStatus === 'PAID') {
-            let payment = await Payment.findOne({ referenceId: orderId });
-            
-            if (!payment) {
-                payment = new Payment({
-                    customerId: (req.user && (req.user._id || req.user.id)) || undefined,
-                    amount: parseFloat(orderData.order_amount),
-                    method: 'cashfree',
-                    referenceId: orderId,
-                    transactionReference: orderData.cf_order_id ? String(orderData.cf_order_id) : orderId,
-                    paymentDate: new Date(),
-                    tenantName: (req.user && req.user.name) || 'Client',
-                    notes: orderData.order_note || 'Cashfree Online Gateway',
-                    paymentType: 'Rent',
-                    chargeCategory: 'Rent'
-                });
-            }
-
-            payment.status = 'Completed';
-            payment.verifiedByName = 'Cashfree Automated Gateway';
-            payment.verifiedAt = new Date();
-            await payment.save();
-
-            // Recalculate Project Status if linked
-            if (payment.projectId) {
-                const { recalculateProjectPaymentStatus } = require('../utils/projectHelper');
-                await recalculateProjectPaymentStatus(payment.projectId);
-            }
-
-            // Settle Rent Bill if linked to room
-            if (payment.roomId) {
-                const LodgeRentBill = require('../models/LodgeRentBill');
-                await LodgeRentBill.findOneAndUpdate(
-                    { roomId: payment.roomId, status: 'Due' },
-                    { status: 'Paid', paymentDate: Date.now(), paymentMethod: 'cashfree', transactionId: orderId, outstandingAmount: 0 }
-                );
-            }
-
-            // Socket.IO real-time notification
-            const socketUtil = require('../utils/socket');
-            const io = socketUtil.getIO();
-            if (io) {
-                io.emit('payment-status-changed', payment);
-            }
+            const { payment, verifiedAmount, cfPaymentId, remainingBillBalance, bill } = 
+                await processConfirmedCashfreeOrder(orderData, req.user, 'Cashfree Gateway Verification');
 
             return res.json({ 
                 success: true, 
-                message: 'Payment verified and completed successfully.', 
+                verified: true,
+                message: `Payment of ₹${verifiedAmount} verified and recorded successfully.`, 
                 payment,
+                cfPaymentId,
+                verifiedAmount,
+                remainingBillBalance,
                 order: orderData 
             });
         }
 
+        // If order ended with failure or expiry, update payment record to prevent lingering waiting state
+        if (['EXPIRED', 'FAILED', 'TERMINATED', 'CANCELLED'].includes(orderStatus)) {
+            const payment = await Payment.findOne({ referenceId: orderId });
+            if (payment && payment.status === 'WAITING_FOR_VERIFICATION') {
+                payment.status = 'Failed';
+                payment.rejectionReason = `Cashfree order ended with status ${orderStatus}`;
+                await payment.save();
+            }
+        }
+
         return res.json({ 
             success: false, 
+            verified: false,
             orderStatus, 
-            message: `Order status is currently ${orderStatus}.` 
+            message: `Order status is currently ${orderStatus}. Payment is not completed.` 
         });
     } catch (err) {
         console.error('[Cashfree Verification Error]:', err.response?.data || err.message);
@@ -352,42 +444,16 @@ exports.cashfreeWebhook = async (req, res) => {
 
         const payload = req.body || {};
         const { type, data } = payload;
-        console.log('[Cashfree Webhook Received]:', type, data?.order?.order_id || payload.order_id);
-
         const orderId = data?.order?.order_id || payload.order_id;
+        console.log('[Cashfree Webhook Received]:', type, orderId);
 
         if (orderId) {
             if (type === 'PAYMENT_SUCCESS_WEBHOOK' || data?.order?.order_status === 'PAID') {
-                // Re-verify order from backend before final fulfillment
+                // Re-verify order from backend authoritative API before fulfillment
                 try {
                     const verifiedOrder = await cashfreeService.getOrder(orderId);
-                    if (verifiedOrder.order_status === 'PAID') {
-                        let payment = await Payment.findOne({ referenceId: orderId });
-                        if (payment && payment.status !== 'Completed') {
-                            payment.status = 'Completed';
-                            payment.verifiedByName = 'Cashfree Webhook';
-                            payment.verifiedAt = new Date();
-                            await payment.save();
-
-                            if (payment.projectId) {
-                                const { recalculateProjectPaymentStatus } = require('../utils/projectHelper');
-                                await recalculateProjectPaymentStatus(payment.projectId);
-                            }
-
-                            if (payment.roomId) {
-                                const LodgeRentBill = require('../models/LodgeRentBill');
-                                await LodgeRentBill.findOneAndUpdate(
-                                    { roomId: payment.roomId, userId: payment.customerId, status: 'Due' },
-                                    { status: 'Paid', paymentDate: Date.now(), paymentMethod: 'cashfree', transactionId: orderId, outstandingAmount: 0 }
-                                );
-                            }
-
-                            const socketUtil = require('../utils/socket');
-                            const io = socketUtil.getIO();
-                            if (io) {
-                                io.emit('payment-status-changed', payment);
-                            }
-                        }
+                    if ((verifiedOrder.order_status || '').toUpperCase() === 'PAID') {
+                        await processConfirmedCashfreeOrder(verifiedOrder, null, 'Cashfree Webhook');
                     }
                 } catch (verifyErr) {
                     console.warn('[Cashfree Webhook] Order re-fetch warning:', verifyErr.message);
@@ -408,5 +474,6 @@ exports.cashfreeWebhook = async (req, res) => {
         return res.status(200).send('ERROR_RECORDED');
     }
 };
+
 
 

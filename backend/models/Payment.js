@@ -6,6 +6,8 @@ const paymentSchema = new mongoose.Schema({
     method: { type: String, required: true }, // upi, bank_transfer, cash, card, other, UPI QR, UPI ID, Bank Transfer, Cash, Card
     referenceId: { type: String }, // For UPI Ref or UTR
     transactionReference: { type: String },
+    cfOrderId: { type: String, index: true },
+    cfPaymentId: { type: String, index: true },
     status: { type: String, default: 'WAITING_FOR_VERIFICATION' }, // pending, verified, rejected, failed, WAITING_FOR_VERIFICATION, APPROVED, REJECTED, VERIFIED, PAID, PARTIAL, ADVANCE, REFUNDED
     projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
     quoteId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quote' },

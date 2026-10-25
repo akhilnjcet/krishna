@@ -518,6 +518,15 @@ const AdminSettings = () => {
                                             placeholder="e.g. 32ABCDE1234F1Z5"
                                             className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-indigo-600 dark:text-indigo-400 outline-none focus:border-indigo-500/50 shadow-sm transition-all"
                                         />
+                                        <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-gray-300 cursor-pointer pt-1">
+                                            <input 
+                                                type="checkbox"
+                                                checked={settings.show_company_gstin !== false && settings.show_company_gstin !== 'false'}
+                                                onChange={(e) => updateField('show_company_gstin', e.target.checked)}
+                                                className="rounded border-slate-300 text-indigo-600"
+                                            />
+                                            Show Company GSTIN on Invoices & Documents by default
+                                        </label>
                                     </div>
                                 </div>
                             </div>
