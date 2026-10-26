@@ -4,9 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Calendar, ArrowRight, BedDouble, ShieldCheck, FileText, 
     Headphones, Home, LayoutDashboard, CreditCard, ChevronRight,
-    Bell, User, ArrowLeft, Loader2, LogIn, Sparkles, Building2,
-    CheckCircle2, Clock, AlertCircle, XCircle, Menu, X, ExternalLink,
-    Key, DoorOpen
+    Bell, User, ArrowLeft, Loader2, LogIn, Building2, Menu, X
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
@@ -25,7 +23,6 @@ export default function LodgeHome() {
     const [loadingBookings, setLoadingBookings] = useState(false);
     const [userDropdown, setUserDropdown] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [alreadyBookedModal, setAlreadyBookedModal] = useState(false);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -141,13 +138,6 @@ export default function LodgeHome() {
                                     className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center gap-2 shadow-sm"
                                 >
                                     <Home className="w-4 h-4" /> Home
-                                </Link>
-                                <Link 
-                                    to="/lodge/tenant-login"
-                                    className="px-3.5 py-2 rounded-xl text-blue-200 hover:text-white hover:bg-white/10 font-bold text-xs flex items-center gap-2 border border-blue-400/30 bg-blue-500/10 transition-colors"
-                                    title="Enter Room PIN (Room 101 Access)"
-                                >
-                                    <Key className="w-4 h-4 text-blue-300" /> Room PIN Keypad
                                 </Link>
                                 <Link 
                                     to="/customer"
@@ -305,13 +295,6 @@ export default function LodgeHome() {
                                         <Home className="w-4 h-4 text-blue-200" /> Home
                                     </Link>
                                     <Link 
-                                        to="/lodge/tenant-login"
-                                        onClick={() => setMobileMenuOpen(false)}
-                                        className="p-2.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 font-bold text-xs flex items-center gap-2 border border-blue-400/30"
-                                    >
-                                        <Key className="w-4 h-4 text-blue-300" /> Room Keypad
-                                    </Link>
-                                    <Link 
                                         to="/lodge/dashboard"
                                         onClick={() => setMobileMenuOpen(false)}
                                         className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 font-semibold text-xs flex items-center gap-2 border border-white/10"
@@ -328,7 +311,7 @@ export default function LodgeHome() {
                                     <Link 
                                         to="/customer/payments"
                                         onClick={() => setMobileMenuOpen(false)}
-                                        className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 font-semibold text-xs flex items-center gap-2 border border-white/10 col-span-2"
+                                        className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 font-semibold text-xs flex items-center gap-2 border border-white/10"
                                     >
                                         <CreditCard className="w-4 h-4 text-slate-400" /> Payments
                                     </Link>
@@ -385,9 +368,9 @@ export default function LodgeHome() {
                             {/* Two Prominent Side-by-Side Buttons */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-xl">
                                 
-                                {/* 1. START YOUR BOOKING */}
+                                {/* 1. START YOUR BOOKING -> Goes to actual booking search & room availability */}
                                 <button
-                                    onClick={() => navigate('/lodge/rooms')}
+                                    onClick={() => navigate('/lodge/search')}
                                     className="w-full min-h-[52px] sm:min-h-[58px] px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm tracking-wider uppercase transition-all duration-200 shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2.5 sm:gap-3 cursor-pointer group active:scale-[0.98]"
                                 >
                                     <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-200 shrink-0" />
@@ -395,9 +378,9 @@ export default function LodgeHome() {
                                     <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform shrink-0" />
                                 </button>
 
-                                {/* 2. ALREADY BOOKED – View & Manage Your Bookings */}
+                                {/* 2. ALREADY BOOKED – View & Manage Your Bookings -> Goes directly to customer bookings dashboard */}
                                 <button
-                                    onClick={() => setAlreadyBookedModal(true)}
+                                    onClick={() => navigate('/lodge/dashboard')}
                                     className="w-full min-h-[52px] sm:min-h-[58px] px-4 sm:px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/20 text-white transition-all duration-200 backdrop-blur-md flex items-center justify-between gap-2.5 sm:gap-3 cursor-pointer group active:scale-[0.98] shadow-lg text-left"
                                 >
                                     <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
@@ -414,26 +397,6 @@ export default function LodgeHome() {
                                         </div>
                                     </div>
                                     <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-blue-300 group-hover:translate-x-1 transition-transform shrink-0" />
-                                </button>
-                            </div>
-
-                            {/* Prominent Quick Access Badges for Old Integration and Dashboard */}
-                            <div className="flex flex-wrap items-center gap-2 pt-1 max-w-xl">
-                                <button
-                                    onClick={() => navigate('/lodge/tenant-login')}
-                                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-400/35 text-xs font-bold transition-all cursor-pointer backdrop-blur-md hover:scale-[1.02] active:scale-[0.98]"
-                                >
-                                    <Key className="w-3.5 h-3.5 text-blue-300" />
-                                    <span>Enter Room PIN Keypad (Room 101 Access)</span>
-                                    <ChevronRight className="w-3 h-3 text-blue-300" />
-                                </button>
-                                <button
-                                    onClick={() => navigate('/lodge/dashboard')}
-                                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-400/35 text-xs font-bold transition-all cursor-pointer backdrop-blur-md hover:scale-[1.02] active:scale-[0.98]"
-                                >
-                                    <LayoutDashboard className="w-3.5 h-3.5 text-purple-300" />
-                                    <span>Bookings Dashboard</span>
-                                    <ChevronRight className="w-3 h-3 text-purple-300" />
                                 </button>
                             </div>
 
@@ -478,7 +441,7 @@ export default function LodgeHome() {
                                     </h2>
                                     <Link 
                                         to="/lodge/dashboard"
-                                        className="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors min-h-[36px] items-center"
+                                        className="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors min-h-[36px]"
                                     >
                                         View All <ArrowRight className="w-3.5 h-3.5" />
                                     </Link>
@@ -496,7 +459,7 @@ export default function LodgeHome() {
                                             const roomNum = b.roomId?.roomNumber || b.roomNumber || `Room #${idx + 1}`;
                                             const buildingName = b.lodgeId?.name || b.roomId?.building || 'Krishna Building';
                                             const dateRange = formatDateRange(b.checkIn, b.checkOut);
-                                            const status = getStatusBadge(b.status);
+                                            const status = getStatusBadge(b.status || b.bookingStatus);
                                             const thumbnail = b.roomId?.interiorPhotos?.[0]?.url 
                                                 || b.roomId?.interiorFiles?.[0]?.url 
                                                 || b.lodgeId?.images?.[0]?.url 
@@ -556,7 +519,7 @@ export default function LodgeHome() {
                                                 </p>
                                             </div>
                                             <button
-                                                onClick={() => navigate('/lodge/rooms')}
+                                                onClick={() => navigate('/lodge/search')}
                                                 className="w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md inline-flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
                                             >
                                                 <span>Browse Available Rooms</span>
@@ -567,7 +530,7 @@ export default function LodgeHome() {
                                         // Unauthenticated guest preview state
                                         <div className="p-5 sm:p-6 bg-white/5 rounded-2xl border border-white/10 text-center space-y-3">
                                             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center mx-auto">
-                                                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
+                                                <ShieldCheck className="w-6 h-6" />
                                             </div>
                                             <div>
                                                 <p className="text-xs sm:text-sm font-bold text-white">Manage Your Existing Tenancy</p>
@@ -677,96 +640,6 @@ export default function LodgeHome() {
 
                 </div>
             </section>
-
-            {/* ═══════════════════════════════════════════════════════════════
-                ALREADY BOOKED MODAL: CHOOSE ROOM PIN KEYPAD OR DASHBOARD
-            ═══════════════════════════════════════════════════════════════ */}
-            <AnimatePresence>
-                {alreadyBookedModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            transition={{ duration: 0.18 }}
-                            className="bg-[#121B3B] border border-white/20 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-white space-y-6 relative"
-                        >
-                            {/* Close Button */}
-                            <button
-                                onClick={() => setAlreadyBookedModal(false)}
-                                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-
-                            <div className="space-y-1.5">
-                                <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-blue-300">
-                                    Manage Existing Stay
-                                </span>
-                                <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                                    Access Your Tenancy
-                                </h3>
-                                <p className="text-xs text-slate-300 leading-relaxed">
-                                    Select how you would like to access your room details and reservations:
-                                </p>
-                            </div>
-
-                            <div className="space-y-3.5">
-                                {/* Option 1: Old Integration - Room PIN Keypad */}
-                                <div 
-                                    onClick={() => { setAlreadyBookedModal(false); navigate('/lodge/tenant-login'); }}
-                                    className="p-4 rounded-2xl bg-gradient-to-r from-blue-900/60 to-indigo-900/60 hover:from-blue-800/80 hover:to-indigo-800/80 border border-blue-400/40 hover:border-blue-400 transition-all cursor-pointer group flex items-start gap-3.5 shadow-lg active:scale-[0.99]"
-                                >
-                                    <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
-                                        <Key className="w-6 h-6" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between">
-                                            <h4 className="text-sm font-bold text-white group-hover:text-blue-300 transition-colors">
-                                                Room PIN Keypad (Room 101)
-                                            </h4>
-                                            <ArrowRight className="w-4 h-4 text-blue-300 group-hover:translate-x-1 transition-transform shrink-0" />
-                                        </div>
-                                        <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                                            Enter the 4-digit temporary PIN provided by administrator to access room bills, WiFi/electricity, and PDF summary.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Option 2: Full Customer Bookings Dashboard */}
-                                <div 
-                                    onClick={() => { setAlreadyBookedModal(false); navigate('/lodge/dashboard'); }}
-                                    className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/40 transition-all cursor-pointer group flex items-start gap-3.5 shadow-lg active:scale-[0.99]"
-                                >
-                                    <div className="w-12 h-12 rounded-2xl bg-purple-600/30 border border-purple-400/30 flex items-center justify-center text-purple-200 shrink-0 shadow-lg group-hover:scale-105 transition-transform">
-                                        <LayoutDashboard className="w-6 h-6" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between">
-                                            <h4 className="text-sm font-bold text-white group-hover:text-purple-300 transition-colors">
-                                                Customer Bookings Dashboard
-                                            </h4>
-                                            <ArrowRight className="w-4 h-4 text-purple-300 group-hover:translate-x-1 transition-transform shrink-0" />
-                                        </div>
-                                        <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                                            Sign in to view all past and current reservations, invoices, payment history, and tenancy agreements.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="pt-2 text-center">
-                                <button
-                                    onClick={() => setAlreadyBookedModal(false)}
-                                    className="text-xs font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
-                                >
-                                    Dismiss
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
 
         </div>
     );
