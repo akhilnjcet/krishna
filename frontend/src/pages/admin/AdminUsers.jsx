@@ -388,28 +388,28 @@ const AdminUsers = () => {
                             initial={{ scale: 0.95, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.95, y: 20 }}
-                            className="bg-white dark:bg-slate-900 dark:bg-dark-surface border border-[#E2E8F0] dark:border-dark-border rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl relative my-8"
+                            className="bg-white dark:bg-slate-900 dark:bg-dark-surface border border-[#E2E8F0] dark:border-dark-border rounded-3xl md:rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl relative my-auto max-h-[92dvh] flex flex-col"
                         >
                             {/* Modal Header */}
-                            <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 dark:border-dark-border flex justify-between items-center bg-slate-50 dark:bg-slate-800/25 dark:bg-dark-bg/25">
-                                <div>
-                                    <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic">
+                            <div className="p-4 sm:p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 dark:border-dark-border flex justify-between items-center bg-slate-50 dark:bg-slate-800/25 dark:bg-dark-bg/25 shrink-0">
+                                <div className="min-w-0 pr-2">
+                                    <h3 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic truncate">
                                         {showAddModal ? "Register System User" : "Modify User Account"}
                                     </h3>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 uppercase font-bold tracking-widest opacity-60">
+                                    <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 uppercase font-bold tracking-widest opacity-60 truncate">
                                         {showAddModal ? "Configure new authentication credentials" : "Edit credential settings and parameters"}
                                     </p>
                                 </div>
                                 <button 
                                     onClick={() => { setShowAddModal(false); setShowEditModal(false); resetForm(); }}
-                                    className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-dark-bg rounded-xl transition-all"
+                                    className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-dark-bg rounded-xl transition-all shrink-0"
                                 >
-                                    <X className="w-6 h-6" />
+                                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </button>
                             </div>
 
                             {/* Modal Form */}
-                            <form onSubmit={showAddModal ? handleAddUser : handleEditUser} className="p-6 md:p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+                            <form onSubmit={showAddModal ? handleAddUser : handleEditUser} className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Full Name *</label>

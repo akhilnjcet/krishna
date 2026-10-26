@@ -357,49 +357,49 @@ const AdminTasks = () => {
             </div>
 
             {/* Metrics Dashboard */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                <div className="bg-slate-50 dark:bg-slate-800/40 dark:bg-dark-surface/40 p-4 border border-slate-200/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
-                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Total Tasks</p>
-                    <p className="text-2xl font-black text-slate-800 dark:text-slate-200 dark:text-white mt-1">{stats.total}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-4">
+                <div className="bg-slate-50 dark:bg-slate-800/40 p-3 sm:p-4 border border-slate-200/60 dark:border-slate-700/60 rounded-xl sm:rounded-2xl">
+                    <p className="text-slate-400 text-[9px] sm:text-[10px] font-black uppercase tracking-wider">Total Tasks</p>
+                    <p className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-200 mt-1">{stats.total}</p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800/40 dark:bg-dark-surface/40 p-4 border border-slate-200/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl">
-                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Pending</p>
-                    <p className="text-2xl font-black text-slate-700 dark:text-slate-300 mt-1">{stats.pending}</p>
+                <div className="bg-slate-50 dark:bg-slate-800/40 p-3 sm:p-4 border border-slate-200/60 dark:border-slate-700/60 rounded-xl sm:rounded-2xl">
+                    <p className="text-slate-400 text-[9px] sm:text-[10px] font-black uppercase tracking-wider">Pending</p>
+                    <p className="text-xl sm:text-2xl font-black text-slate-700 dark:text-slate-300 mt-1">{stats.pending}</p>
                 </div>
-                <div className="bg-blue-50/20 dark:bg-blue-950/20 p-4 border border-blue-100/50 dark:border-blue-950/50 rounded-2xl">
-                    <p className="text-blue-500 text-[10px] font-black uppercase tracking-wider">In Progress</p>
-                    <p className="text-2xl font-black text-blue-700 dark:text-blue-400 mt-1">{stats.inProgress}</p>
+                <div className="bg-blue-50/20 dark:bg-blue-950/20 p-3 sm:p-4 border border-blue-100/50 dark:border-blue-950/50 rounded-xl sm:rounded-2xl">
+                    <p className="text-blue-500 text-[9px] sm:text-[10px] font-black uppercase tracking-wider">In Progress</p>
+                    <p className="text-xl sm:text-2xl font-black text-blue-700 dark:text-blue-400 mt-1">{stats.inProgress}</p>
                 </div>
-                <div className="bg-amber-50/20 dark:bg-amber-950/20 p-4 border border-amber-100/50 dark:border-amber-950/50 rounded-2xl">
-                    <p className="text-amber-500 text-[10px] font-black uppercase tracking-wider">Delayed</p>
-                    <p className="text-2xl font-black text-amber-700 dark:text-amber-400 mt-1">{stats.delayed}</p>
+                <div className="bg-amber-50/20 dark:bg-amber-950/20 p-3 sm:p-4 border border-amber-100/50 dark:border-amber-950/50 rounded-xl sm:rounded-2xl">
+                    <p className="text-amber-500 text-[9px] sm:text-[10px] font-black uppercase tracking-wider">Delayed</p>
+                    <p className="text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-400 mt-1">{stats.delayed}</p>
                 </div>
-                <div className="bg-emerald-50/20 dark:bg-emerald-950/20 p-4 border border-emerald-100/50 dark:border-emerald-950/50 rounded-2xl">
-                    <p className="text-emerald-500 text-[10px] font-black uppercase tracking-wider">Completed</p>
-                    <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1">{stats.completed}</p>
+                <div className="bg-emerald-50/20 dark:bg-emerald-950/20 p-3 sm:p-4 border border-emerald-100/50 dark:border-emerald-950/50 rounded-xl sm:rounded-2xl">
+                    <p className="text-emerald-500 text-[9px] sm:text-[10px] font-black uppercase tracking-wider">Completed</p>
+                    <p className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1">{stats.completed}</p>
                 </div>
-                <div className="bg-rose-50/20 dark:bg-rose-950/20 p-4 border border-rose-100/50 dark:border-rose-950/50 rounded-2xl">
-                    <p className="text-rose-500 text-[10px] font-black uppercase tracking-wider">Overdue</p>
-                    <p className="text-2xl font-black text-rose-700 dark:text-rose-400 mt-1">{stats.overdue}</p>
+                <div className="bg-rose-50/20 dark:bg-rose-950/20 p-3 sm:p-4 border border-rose-100/50 dark:border-rose-950/50 rounded-xl sm:rounded-2xl">
+                    <p className="text-rose-500 text-[9px] sm:text-[10px] font-black uppercase tracking-wider">Overdue</p>
+                    <p className="text-xl sm:text-2xl font-black text-rose-700 dark:text-rose-400 mt-1">{stats.overdue}</p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800/40 dark:bg-dark-surface/40 p-4 border border-slate-200/60 dark:border-slate-700/60 dark:border-dark-border rounded-2xl col-span-2 sm:col-span-1">
-                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Cancelled</p>
-                    <p className="text-2xl font-black text-slate-500 dark:text-slate-400 mt-1">{stats.cancelled}</p>
+                <div className="bg-slate-50 dark:bg-slate-800/40 p-3 sm:p-4 border border-slate-200/60 dark:border-slate-700/60 rounded-xl sm:rounded-2xl col-span-2 sm:col-span-1">
+                    <p className="text-slate-400 text-[9px] sm:text-[10px] font-black uppercase tracking-wider">Cancelled</p>
+                    <p className="text-xl sm:text-2xl font-black text-slate-500 dark:text-slate-400 mt-1">{stats.cancelled}</p>
                 </div>
             </div>
 
             {/* Filter Bar */}
-            <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-[#E2E8F0] dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
                 <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-[#2563EB]" />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 dark:text-white uppercase tracking-wider">Filter Task Board</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Filter Task Board</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-grow max-w-3xl justify-end">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 flex-grow max-w-3xl justify-end">
                     <select 
                         name="projectId"
                         value={filters.projectId}
                         onChange={handleFilterChange}
-                        className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-xl text-xs font-bold outline-none text-slate-700 dark:text-slate-300 dark:text-white"
+                        className="px-3.5 py-2 sm:py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none text-slate-700 dark:text-slate-300"
                     >
                         <option value="">All Projects</option>
                         {projects.map(p => (
@@ -411,7 +411,7 @@ const AdminTasks = () => {
                         name="staffId"
                         value={filters.staffId}
                         onChange={handleFilterChange}
-                        className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-xl text-xs font-bold outline-none text-slate-700 dark:text-slate-300 dark:text-white"
+                        className="px-3.5 py-2 sm:py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none text-slate-700 dark:text-slate-300"
                     >
                         <option value="">All Staff</option>
                         {staffList.map(s => (
@@ -423,7 +423,7 @@ const AdminTasks = () => {
                         name="priority"
                         value={filters.priority}
                         onChange={handleFilterChange}
-                        className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-slate-200 dark:border-slate-700 dark:border-dark-border rounded-xl text-xs font-bold outline-none text-slate-700 dark:text-slate-300 dark:text-white"
+                        className="px-3.5 py-2 sm:py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none text-slate-700 dark:text-slate-300"
                     >
                         <option value="">All Priorities</option>
                         <option value="Low">Low</option>
@@ -564,7 +564,7 @@ const AdminTasks = () => {
                         <div className="space-y-6">
                             <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200 dark:text-white uppercase tracking-tight">Team Productivity Summary</h3>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
+                                <table className="w-full text-left text-sm min-w-[600px]">
                                     <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg text-[10px] font-black uppercase text-slate-400 tracking-wider border-b">
                                             <th className="p-4">Staff Member</th>
@@ -613,7 +613,7 @@ const AdminTasks = () => {
                         <div className="space-y-6">
                             <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200 dark:text-white uppercase tracking-tight">Staff Assignment Breakdown</h3>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
+                                <table className="w-full text-left text-sm min-w-[600px]">
                                     <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg text-[10px] font-black uppercase text-slate-400 tracking-wider border-b">
                                             <th className="p-4">Task Name</th>
@@ -655,7 +655,7 @@ const AdminTasks = () => {
                         <div className="space-y-6">
                             <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200 dark:text-white uppercase tracking-tight">Project Workflow Breakdown</h3>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
+                                <table className="w-full text-left text-sm min-w-[600px]">
                                     <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg text-[10px] font-black uppercase text-slate-400 tracking-wider border-b">
                                             <th className="p-4">Project</th>
@@ -694,7 +694,7 @@ const AdminTasks = () => {
                         <div className="space-y-6">
                             <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200 dark:text-white uppercase tracking-tight">Delayed Tasks Incident Log</h3>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
+                                <table className="w-full text-left text-sm min-w-[600px]">
                                     <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg text-[10px] font-black uppercase text-slate-400 tracking-wider border-b">
                                             <th className="p-4">Task Name</th>
@@ -729,16 +729,16 @@ const AdminTasks = () => {
             {/* Create Task Modal Dialog */}
             <AnimatePresence>
                 {createModal && (
-                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="w-full max-w-2xl bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 dark:border-dark-border p-8 max-h-[90vh] overflow-y-auto"
+                            className="w-full max-w-2xl bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 dark:border-dark-border p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto"
                         >
-                            <div className="flex justify-between items-center mb-6 border-b pb-4">
-                                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                                    <PlusCircle className="w-5 h-5 text-blue-600" /> Create Operational Task
+                            <div className="flex justify-between items-center mb-4 sm:mb-6 border-b pb-3 sm:pb-4">
+                                <h3 className="text-base sm:text-xl font-bold text-slate-800 dark:text-slate-200 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                                    <PlusCircle className="w-5 h-5 text-blue-600 shrink-0" /> Create Operational Task
                                 </h3>
                                 <button 
                                     onClick={() => setCreateModal(false)}
@@ -933,14 +933,14 @@ const AdminTasks = () => {
             {/* Task Details Dialog Modal */}
             <AnimatePresence>
                 {detailsModal.show && detailsModal.task && (
-                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="w-full max-w-2xl bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 dark:border-dark-border p-8 max-h-[90vh] overflow-y-auto text-slate-800 dark:text-slate-200"
+                            className="w-full max-w-2xl bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 dark:border-dark-border p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto text-slate-800 dark:text-slate-200"
                         >
-                            <div className="flex justify-between items-center mb-6 border-b pb-4">
+                            <div className="flex justify-between items-center mb-4 sm:mb-6 border-b pb-3 sm:pb-4">
                                 <div>
                                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
                                         detailsModal.task.priority === 'Critical' ? 'bg-red-100 text-red-700' :

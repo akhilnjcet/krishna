@@ -117,8 +117,91 @@ const AdminApplications = () => {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
-                <div className="overflow-x-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl md:rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
+                {/* Mobile Applications Cards (block lg:hidden) */}
+                <div className="block lg:hidden p-3 sm:p-4 space-y-3">
+                    {loading ? (
+                        <div className="p-12 text-center">
+                            <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-3" />
+                            <p className="text-slate-400 font-black uppercase tracking-widest text-[11px] italic">Synchronizing Application Database...</p>
+                        </div>
+                    ) : applications.length === 0 ? (
+                        <div className="p-8 text-center text-slate-400 font-bold uppercase text-xs">
+                            No authorized applications found in this sector.
+                        </div>
+                    ) : (
+                        applications.map((app) => (
+                            <div key={`m-app-${app._id}`} className="p-4 bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 space-y-3">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/60 rounded-xl flex items-center justify-center font-black text-indigo-600 text-sm uppercase shrink-0">
+                                            {app.staffId?.name?.charAt(0)}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h4 className="font-black text-slate-900 dark:text-white text-sm uppercase tracking-tight truncate">{app.staffId?.name}</h4>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{app.type.replace('_', ' ')}</p>
+                                        </div>
+                                    </div>
+                                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border shrink-0 whitespace-nowrap ${getStatusColor(app.status)}`}>
+                                        {app.status}
+                                    </span>
+                                </div>
+
+                                <div className="text-xs bg-white dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5">
+                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{app.title}</p>
+                                    {app.description && (
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 italic leading-relaxed">"{app.description}"</p>
+                                    )}
+                                    <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100 dark:border-slate-800">
+                                        <span className="text-slate-400 font-bold uppercase text-[10px]">Financial / Timeline:</span>
+                                        {app.amount ? (
+                                            <span className="font-black text-emerald-600 dark:text-emerald-400 text-xs">₹{app.amount}</span>
+                                        ) : app.startDate ? (
+                                            <span className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
+                                                {new Date(app.startDate).toLocaleDateString()} - {new Date(app.endDate).toLocaleDateString()}
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400 text-[10px]">Standard</span>
+                                        )}
+                                    </div>
+                                    {app.adminRemark && (
+                                        <div className="text-[10px] text-indigo-600 dark:text-indigo-400 italic pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
+                                            <Sparkle className="w-3 h-3 shrink-0" /> Remark: "{app.adminRemark}"
+                                        </div>
+                                    )}
+                                </div>
+
+                                {(app.status === 'pending' || app.status === 'reviewed') && (
+                                    <div className="flex items-center gap-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                                        <button 
+                                            onClick={() => { setSelectedApp(app); setPendingAction('approved'); setShowRemarkModal(true); }}
+                                            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-2 rounded-xl transition text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm"
+                                        >
+                                            <BadgeCheck className="w-3.5 h-3.5" /> Approve
+                                        </button>
+                                        {app.status === 'pending' && (
+                                            <button 
+                                                onClick={() => { setSelectedApp(app); setPendingAction('reviewed'); setShowRemarkModal(true); }}
+                                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-2 rounded-xl transition text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm"
+                                            >
+                                                <Sparkle className="w-3.5 h-3.5" /> Review
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={() => { setSelectedApp(app); setPendingAction('rejected'); setShowRemarkModal(true); }}
+                                            className="flex-1 bg-slate-900 hover:bg-red-600 text-white py-2 px-2 rounded-xl transition text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1"
+                                        >
+                                            <XCircle className="w-3.5 h-3.5" /> Reject
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Desktop Table View (hidden lg:block) */}
+                <div className="hidden lg:block overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[1000px]">
                         <thead>
                             <tr className="bg-slate-50/50 dark:bg-slate-800/50 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest border-b border-slate-100 dark:border-slate-800">
@@ -259,9 +342,9 @@ const AdminApplications = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] shadow-2xl p-10 md:p-12 border-4 border-indigo-50"
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl sm:rounded-[3rem] shadow-2xl p-5 sm:p-8 md:p-12 border-4 border-indigo-50 dark:border-indigo-950/60 max-h-[92dvh] overflow-y-auto"
                         >
-                            <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-2 italic">Official Verdict</h3>
+                            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-2 italic">Official Verdict</h3>
                             <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px] mb-8">
                                 Application ID: {selectedApp._id.slice(-8).toUpperCase()} | Action: <span className={pendingAction === 'approved' ? 'text-emerald-500' : pendingAction === 'reviewed' ? 'text-indigo-500' : 'text-rose-500'}>{pendingAction}</span>
                             </p>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import useAuthStore from '../../stores/authStore';
+import api from '../../services/api';
 import VerificationFlow from './VerificationFlow';
 import RealTimeChat from './RealTimeChat';
 import { db } from '../../services/firebase';
@@ -96,29 +97,60 @@ const SupportHub = () => {
     const handleAction = async (requestId, userId, userName, projectId, projectTitle, action) => {
         try {
             if (action === 'approve') {
-                // 1. Create a Chat Room
-                const newRoom = await addDoc(collection(db, "chatRooms"), {
-                    userId: userId || "",
-                    participants: [userId || "", 'admin'], // 'admin' is the high-level monitor ID
-                    title: `${userName || ""} - ${projectTitle || ""}`,
-                    status: 'active',
-                    createdAt: serverTimestamp(),
-                    lastMessage: "Channel established. Support is active.",
-                    lastMessageTime: serverTimestamp()
-                });
+                // 1. Create a Chat Room in Firestore
+                let newRoomId = '';
+                try {
+                    const newRoom = await addDoc(collection(db, "chatRooms"), {
+                        userId: userId || "",
+                        participants: [userId || "", 'admin'], // 'admin' is the high-level monitor ID
+                        title: `${userName || ""} - ${projectTitle || ""}`,
+                        status: 'active',
+                        createdAt: serverTimestamp(),
+                        lastMessage: "Channel established. Support is active.",
+                        lastMessageTime: serverTimestamp()
+                    });
+                    newRoomId = newRoom.id;
 
-                // 2. Update Request Status and link to Room
-                await updateDoc(doc(db, "chatRequests", requestId), {
-                    status: 'approved',
-                    chatId: newRoom.id,
-                    approvedAt: serverTimestamp()
-                });
-                alert("Channel Successfully Initialized.");
+                    // 2. Update Request Status and link to Room in Firestore
+                    await updateDoc(doc(db, "chatRequests", requestId), {
+                        status: 'approved',
+                        chatId: newRoomId,
+                        approvedAt: serverTimestamp()
+                    });
+                } catch (fsErr) {
+                    console.warn("Firestore channel warning:", fsErr.message);
+                }
+
+                // 3. Dispatch backend approval: sends client email notification with support link
+                try {
+                    const res = await api.put(`/support/requests/${requestId}/approve`, {
+                        chatId: newRoomId,
+                        firestoreId: requestId,
+                        userId,
+                        userName,
+                        projectId,
+                        projectTitle
+                    });
+                    const emailInfo = res.data?.emailNotification;
+                    let msg = "Channel successfully initialized!";
+                    if (emailInfo?.sent) {
+                        msg += `\n\n📧 Client confirmation email dispatched with session access link.`;
+                    }
+                    alert(msg);
+                } catch (apiErr) {
+                    console.error("Backend approval warning:", apiErr);
+                    alert("Channel Successfully Initialized.");
+                }
             } else {
-                await updateDoc(doc(db, "chatRequests", requestId), {
-                    status: 'rejected',
-                    rejectedAt: serverTimestamp()
-                });
+                try {
+                    await updateDoc(doc(db, "chatRequests", requestId), {
+                        status: 'rejected',
+                        rejectedAt: serverTimestamp()
+                    });
+                } catch (fsErr) {}
+                try {
+                    await api.put(`/support/requests/${requestId}/reject`);
+                } catch (apiErr) {}
                 alert("Request Terminated.");
             }
         } catch (err) {

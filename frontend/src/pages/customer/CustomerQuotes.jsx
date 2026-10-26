@@ -80,16 +80,16 @@ const CustomerQuotes = () => {
                                 </div>
                             </div>
 
-                            <div className="p-8 flex-1">
-                                <h3 className="text-2xl font-black text-brand-950 uppercase tracking-tighter italic mb-6">{quote.serviceType} Report</h3>
+                            <div className="p-4 sm:p-6 md:p-8 flex-1">
+                                <h3 className="text-xl sm:text-2xl font-black text-brand-950 dark:text-white uppercase tracking-tighter italic mb-4 sm:mb-6">{quote.serviceType} Report</h3>
                                 
-                                <div className="space-y-4 mb-8">
+                                <div className="space-y-4 mb-6 sm:mb-8">
                                     {/* Existing site coordinate overview */}
-                                    <div className="flex items-start gap-4 p-4 bg-brand-50 border-2 border-brand-100">
-                                        <div className="p-2 bg-white dark:bg-slate-900 rounded-lg"><MapPin className="w-4 h-4" /></div>
-                                        <div>
+                                    <div className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-brand-50 dark:bg-slate-800 border-2 border-brand-100 dark:border-slate-700">
+                                        <div className="p-2 bg-white dark:bg-slate-900 rounded-lg shrink-0"><MapPin className="w-4 h-4" /></div>
+                                        <div className="min-w-0">
                                             <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest leading-none mb-1">Site Coordinate</p>
-                                            <p className="text-xs font-bold text-brand-950 uppercase">{quote.location}</p>
+                                            <p className="text-xs font-bold text-brand-950 dark:text-white uppercase truncate">{quote.location}</p>
                                         </div>
                                     </div>
 
@@ -101,11 +101,11 @@ const CustomerQuotes = () => {
                                     />
                                     
                                     {/* FLIPKART-STYLE VERTICAL TRACKING TIMELINE */}
-                                    <div className="py-6 mb-6">
-                                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-6">Live Work Tracking</p>
+                                    <div className="py-4 sm:py-6 mb-4 sm:mb-6">
+                                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-4 sm:mb-6">Live Work Tracking</p>
                                         <div className="flex flex-col gap-0 relative">
                                             {/* Vertical Connecting Line */}
-                                            <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-gray-200 z-0"></div>
+                                            <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-gray-200 dark:bg-slate-700 z-0"></div>
                                             
                                             {[
                                                 { 
@@ -125,20 +125,20 @@ const CustomerQuotes = () => {
                                                     active: quote.status === 'accepted' || quote.status === 'rejected'
                                                 }
                                             ].map((step, idx) => (
-                                                <div key={idx} className="flex gap-6 relative z-10 pb-8 last:pb-0">
+                                                <div key={idx} className="flex gap-4 sm:gap-6 relative z-10 pb-6 sm:pb-8 last:pb-0">
                                                     <div className="flex flex-col items-center">
-                                                        <div className={`w-6 h-6 rounded-full border-4 flex items-center justify-center transition-all duration-500 shadow-sm ${step.active ? (quote.status === 'rejected' && idx === 2 ? 'bg-red-500 border-red-200' : 'bg-brand-accent border-brand-100') : 'bg-white dark:bg-slate-900 border-gray-200'}`}>
+                                                        <div className={`w-6 h-6 rounded-full border-4 flex items-center justify-center transition-all duration-500 shadow-sm shrink-0 ${step.active ? (quote.status === 'rejected' && idx === 2 ? 'bg-red-500 border-red-200' : 'bg-brand-accent border-brand-100') : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700'}`}>
                                                             {step.active && <div className={`w-2 h-2 rounded-full ${quote.status === 'rejected' && idx === 2 ? 'bg-white dark:bg-slate-900' : 'bg-brand-950'}`} />}
                                                         </div>
                                                     </div>
-                                                    <div className="-mt-1 flex-1">
-                                                        <div className="flex justify-between items-start">
-                                                            <span className={`text-sm font-black uppercase tracking-tight ${step.active ? (quote.status === 'rejected' && idx === 2 ? 'text-red-500' : 'text-brand-950') : 'text-gray-400'}`}>
+                                                    <div className="-mt-1 flex-1 min-w-0">
+                                                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-0.5">
+                                                            <span className={`text-xs sm:text-sm font-black uppercase tracking-tight ${step.active ? (quote.status === 'rejected' && idx === 2 ? 'text-red-500' : 'text-brand-950 dark:text-white') : 'text-gray-400'}`}>
                                                                 {step.label}
                                                             </span>
                                                             {step.date && <span className="text-[9px] text-gray-400 font-bold uppercase">{step.date}</span>}
                                                         </div>
-                                                        <p className={`text-xs font-bold leading-relaxed mt-1 ${step.active ? 'text-brand-600' : 'text-gray-300'}`}>
+                                                        <p className={`text-[11px] sm:text-xs font-bold leading-relaxed mt-1 ${step.active ? 'text-brand-600 dark:text-brand-400' : 'text-gray-300 dark:text-slate-600'}`}>
                                                             {step.desc}
                                                         </p>
                                                     </div>
@@ -147,23 +147,23 @@ const CustomerQuotes = () => {
                                         </div>
                                     </div>
 
-                                    <p className="text-xs font-bold text-brand-600 border-l-4 border-brand-950 pl-4 py-2 italic leading-relaxed">
+                                    <p className="text-xs font-bold text-brand-600 dark:text-brand-400 border-l-4 border-brand-950 dark:border-brand-accent pl-4 py-2 italic leading-relaxed">
                                         {quote.description}
                                     </p>
                                 </div>
 
-                                <div className="mt-auto pt-6 border-t-2 border-dashed border-gray-200 flex items-center justify-between">
+                                <div className="mt-auto pt-4 sm:pt-6 border-t-2 border-dashed border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                     <div>
-                                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-1">Finalized Quote Cost</p>
-                                        <p className="text-3xl font-black text-brand-950 italic">
+                                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-0.5">Finalized Quote Cost</p>
+                                        <p className="text-2xl sm:text-3xl font-black text-brand-950 dark:text-white italic">
                                             {quote.status === 'accepted' && quote.estimatedCost ? `₹ ${quote.estimatedCost.toLocaleString()}` : 'Awaiting Review'}
                                         </p>
                                     </div>
                                     
                                     <button 
                                         onClick={() => handleDownload(quote)}
-                                        className={`p-4 flex items-center gap-3 font-black uppercase tracking-widest text-[10px] transition-all border-4 border-brand-950 shadow-solid-sm active:shadow-none hover:bg-brand-950 hover:text-white ${
-                                            quote.status === 'accepted' ? 'bg-brand-accent border-brand-950' : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
+                                        className={`p-3 sm:p-4 flex items-center justify-center gap-2 sm:gap-3 font-black uppercase tracking-widest text-[10px] transition-all border-2 sm:border-4 border-brand-950 shadow-solid-sm active:shadow-none hover:bg-brand-950 hover:text-white ${
+                                            quote.status === 'accepted' ? 'bg-brand-accent border-brand-950 text-brand-950' : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
                                         }`}
                                     >
                                         {quote.status === 'accepted' ? <Download className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
@@ -173,8 +173,8 @@ const CustomerQuotes = () => {
                             </div>
 
                             {quote.status !== 'accepted' && (
-                                <div className="absolute inset-0 bg-white/40 dark:bg-slate-800/40 backdrop-blur-[1px] pointer-events-none flex items-center justify-center">
-                                    <div className="bg-brand-950 text-brand-accent px-6 py-2 font-black uppercase tracking-widest text-[10px] rotate-12 shadow-2xl">
+                                <div className="absolute inset-0 bg-white/40 dark:bg-slate-800/40 backdrop-blur-[1px] pointer-events-none flex items-center justify-center p-4">
+                                    <div className="bg-brand-950 text-brand-accent px-4 sm:px-6 py-2 font-black uppercase tracking-widest text-[9px] sm:text-[10px] rotate-12 shadow-2xl text-center">
                                         RESTRICTED / AWAITING APPROVAL
                                     </div>
                                 </div>
@@ -185,8 +185,8 @@ const CustomerQuotes = () => {
             )}
             
             {/* Policy Reminder */}
-            <div className="mt-16 p-8 bg-brand-950 text-white border-l-[12px] border-brand-accent shadow-2xl">
-                <h4 className="text-xl font-black uppercase tracking-tighter italic mb-2">Institutional Access Policy</h4>
+            <div className="mt-12 sm:mt-16 p-4 sm:p-8 bg-brand-950 text-white border-l-[8px] sm:border-l-[12px] border-brand-accent shadow-2xl">
+                <h4 className="text-lg sm:text-xl font-black uppercase tracking-tighter italic mb-2">Institutional Access Policy</h4>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-tight leading-relaxed max-w-3xl">
                     Documents are accessible only within the Krishna Engineering application environment until administrative verification is complete. PDF extraction is authorized solely for unyielding, verified project specifications.
                 </p>

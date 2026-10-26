@@ -11,7 +11,7 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import ThemeToggle from '../components/ThemeToggle';
 
-const SIDEBAR_W = 'w-64';
+const SIDEBAR_W = 'w-64 max-w-[85vw]';
 
 const navItems = [
     { name: 'Staff Dashboard',  path: '/staff',              icon: LayoutDashboard },

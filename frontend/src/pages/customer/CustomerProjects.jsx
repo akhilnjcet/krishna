@@ -314,6 +314,7 @@ const CustomerProjects = () => {
             case 'delayed':
                 return 'bg-amber-100 text-amber-800 border-amber-200 animate-pulse';
             case 'stopped':
+            case 'cancelled':
                 return 'bg-rose-100 text-rose-800 border-rose-200';
             default:
                 return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
@@ -609,18 +610,63 @@ const CustomerProjects = () => {
                                     {/* Remittance History Sublist */}
                                     <div className="border-t pt-6 border-slate-100 dark:border-slate-800">
                                         <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-4">Project Remittance History</h4>
-                                        <div className="overflow-x-auto max-h-40 overflow-y-auto pr-1">
-                                            <table className="w-full text-left border-collapse">
+                                        {/* Mobile Cards for Project Remittance (sm:hidden) */}
+                                        <div className="block sm:hidden space-y-2.5 max-h-52 overflow-y-auto pr-0.5">
+                                            {allPayments.filter(p => p.projectId === selectedProject._id || p.projectId?._id === selectedProject._id).length === 0 ? (
+                                                <div className="p-4 text-center text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                                    No payments reported for this project unit.
+                                                </div>
+                                            ) : (
+                                                allPayments.filter(p => p.projectId === selectedProject._id || p.projectId?._id === selectedProject._id).map(p => {
+                                                    const isCompleted = p.status === 'Completed' || p.status === 'verified';
+                                                    const isFailed = p.status === 'Failed' || p.status === 'rejected';
+
+                                                    return (
+                                                        <div key={p._id} className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-100 dark:border-slate-800 space-y-2 text-xs">
+                                                            <div className="flex items-start justify-between gap-2">
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate">{p.referenceId || 'N/A'}</p>
+                                                                    <p className="text-[10px] text-slate-400 truncate">{p.name || 'Remittance'}</p>
+                                                                </div>
+                                                                <div className="text-right shrink-0">
+                                                                    <p className="font-black text-slate-900 dark:text-white text-sm whitespace-nowrap">₹ {p.amount?.toLocaleString()}</p>
+                                                                    <span className="text-[9px] font-bold uppercase text-slate-500 dark:text-slate-400 whitespace-nowrap">{p.method}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                                                                <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                                                                    {new Date(p.paymentDate || p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                                </span>
+                                                                <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider whitespace-nowrap ${
+                                                                    isCompleted ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                                                                    isFailed ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                                                    'bg-amber-50 text-amber-600 border border-amber-100'
+                                                                }`}>
+                                                                    {isCompleted ? 'Completed' : isFailed ? 'Failed' : 'PAYMENT VERIFICATION'}
+                                                                </span>
+                                                            </div>
+                                                            {p.rejectionReason && isFailed && (
+                                                                <p className="text-[10px] text-rose-500 font-semibold pt-0.5">Reason: {p.rejectionReason}</p>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+
+                                        {/* Desktop Table (hidden sm:block) */}
+                                        <div className="hidden sm:block overflow-x-auto max-h-40 overflow-y-auto pr-1">
+                                            <table className="w-full text-left border-collapse min-w-[460px]">
                                                 <thead>
                                                     <tr className="bg-slate-50 dark:bg-slate-800 text-[8px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                                                        <th className="p-3">Reference/UTR</th>
-                                                        <th className="p-3">Date</th>
-                                                        <th className="p-3">Method</th>
-                                                        <th className="p-3">Amount</th>
-                                                        <th className="p-3 text-center">Status</th>
+                                                        <th className="p-3 whitespace-nowrap">Reference/UTR</th>
+                                                        <th className="p-3 whitespace-nowrap">Date</th>
+                                                        <th className="p-3 whitespace-nowrap">Method</th>
+                                                        <th className="p-3 whitespace-nowrap">Amount</th>
+                                                        <th className="p-3 text-center whitespace-nowrap">Status</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-slate-50">
+                                                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                                                     {allPayments.filter(p => p.projectId === selectedProject._id || p.projectId?._id === selectedProject._id).length === 0 ? (
                                                         <tr>
                                                             <td colSpan="5" className="p-6 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">
@@ -630,26 +676,26 @@ const CustomerProjects = () => {
                                                     ) : (
                                                         allPayments.filter(p => p.projectId === selectedProject._id || p.projectId?._id === selectedProject._id).map(p => (
                                                             <tr key={p._id} className="text-xs hover:bg-slate-50/50 dark:bg-slate-800/50 transition-colors">
-                                                                <td className="p-3 font-bold">
+                                                                <td className="p-3 font-bold whitespace-nowrap">
                                                                     <div>{p.referenceId || 'N/A'}</div>
                                                                     <div className="text-[7px] text-slate-400 mt-0.5">{p.name}</div>
                                                                 </td>
-                                                                <td className="p-3 font-semibold text-slate-500 dark:text-slate-400">
+                                                                <td className="p-3 font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                                                     {new Date(p.paymentDate || p.createdAt).toLocaleDateString()}
                                                                 </td>
-                                                                <td className="p-3">
+                                                                <td className="p-3 whitespace-nowrap">
                                                                     <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[8px] font-black uppercase">{p.method}</span>
                                                                 </td>
-                                                                <td className="p-3 font-black text-slate-800 dark:text-slate-200">
+                                                                <td className="p-3 font-black text-slate-800 dark:text-slate-200 whitespace-nowrap">
                                                                     ₹ {p.amount?.toLocaleString()}
                                                                 </td>
-                                                                <td className="p-3 text-center">
-                                                                    <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider ${
+                                                                <td className="p-3 text-center whitespace-nowrap">
+                                                                    <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider whitespace-nowrap ${
                                                                         p.status === 'Completed' || p.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
                                                                         p.status === 'Failed' || p.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
                                                                         'bg-amber-50 text-amber-600 border border-amber-100'
                                                                     }`}>
-                                                                        {p.status === 'verified' ? 'Completed' : (p.status === 'rejected' ? 'Failed' : p.status)}
+                                                                        {p.status === 'verified' || p.status === 'Completed' ? 'Completed' : (p.status === 'rejected' || p.status === 'Failed' ? 'Failed' : 'PAYMENT VERIFICATION')}
                                                                     </span>
                                                                     {p.rejectionReason && (p.status === 'Failed' || p.status === 'rejected') && (
                                                                         <div className="text-[7px] text-rose-500 font-bold mt-0.5 max-w-[120px] truncate" title={p.rejectionReason}>
@@ -790,30 +836,30 @@ const CustomerProjects = () => {
                                         </div>
                                     ) : (
                                         <div className="overflow-x-auto">
-                                            <table className="w-full text-left border-collapse">
+                                            <table className="w-full text-left border-collapse min-w-[360px]">
                                                 <thead>
                                                     <tr className="bg-slate-50 dark:bg-slate-800 text-[8px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                                                        <th className="p-3">Work Item</th>
-                                                        <th className="p-3">Requested On</th>
-                                                        <th className="p-3">Approved Amount</th>
-                                                        <th className="p-3 text-center">Status</th>
+                                                        <th className="p-3 whitespace-nowrap">Work Item</th>
+                                                        <th className="p-3 whitespace-nowrap">Requested On</th>
+                                                        <th className="p-3 whitespace-nowrap">Approved Amount</th>
+                                                        <th className="p-3 text-center whitespace-nowrap">Status</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-slate-50">
+                                                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                                                     {(selectedProject.additionalWork || []).map(w => (
                                                         <tr key={w._id} className="text-xs hover:bg-slate-50/50 dark:bg-slate-800/50 transition-colors">
                                                             <td className="p-3">
                                                                 <p className="font-black text-slate-800 dark:text-slate-200 uppercase">{w.title}</p>
                                                                 {w.description && <p className="text-[9px] text-slate-400 font-semibold mt-0.5">{w.description}</p>}
                                                             </td>
-                                                            <td className="p-3 font-semibold text-slate-500 dark:text-slate-400">
+                                                            <td className="p-3 font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                                                 {new Date(w.requestedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                             </td>
-                                                            <td className="p-3 font-black text-slate-800 dark:text-slate-200">
+                                                            <td className="p-3 font-black text-slate-800 dark:text-slate-200 whitespace-nowrap">
                                                                 {w.status === 'Approved' ? `₹ ${(w.amount || 0).toLocaleString()}` : '—'}
                                                             </td>
-                                                            <td className="p-3 text-center">
-                                                                <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider ${
+                                                            <td className="p-3 text-center whitespace-nowrap">
+                                                                <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider whitespace-nowrap ${
                                                                     w.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
                                                                     w.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
                                                                     'bg-amber-50 text-amber-600 border border-amber-100'
@@ -830,7 +876,7 @@ const CustomerProjects = () => {
                                 </div>
 
                                 {/* Project Timeline */}
-                                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-[2.5rem] p-8 shadow-sm space-y-6">
+                                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 shadow-sm space-y-4 sm:space-y-6">
                                     <h3 className="text-lg font-black text-slate-850 uppercase tracking-tight flex items-center gap-2 border-b pb-3 border-slate-100 dark:border-slate-800">
                                         <Clock className="w-5 h-5 text-indigo-500" /> Milestone Delivery Timeline
                                     </h3>

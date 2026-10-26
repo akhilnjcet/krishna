@@ -4,10 +4,74 @@ import 'leaflet/dist/leaflet.css';
 import { 
     Navigation, MapPin, Search, Crosshair, Check, 
     Copy, ExternalLink, Loader2, AlertCircle, ShieldCheck, 
-    RefreshCw, Sparkles, CheckCircle2
+    RefreshCw, Sparkles, CheckCircle2, Settings, HelpCircle,
+    ChevronDown, ChevronUp, Smartphone, Monitor, Globe, Info
 } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
+import { App } from '@capacitor/app';
+
+// Detect runtime environment / operating platform
+const detectPlatform = () => {
+    if (typeof window === 'undefined') return 'desktop';
+    if (Capacitor.isNativePlatform()) return 'mobile_app';
+    const ua = navigator.userAgent || '';
+    if (/iPhone|iPad|iPod/i.test(ua)) return 'ios_safari';
+    if (/Android/i.test(ua)) return 'android_chrome';
+    return 'desktop';
+};
+
+// Platform-specific instructions for enabling location permissions
+const PLATFORM_GUIDES = {
+    android_chrome: {
+        id: 'android_chrome',
+        label: 'Android Chrome',
+        icon: Smartphone,
+        subtitle: 'Chrome / Edge / Firefox on Android',
+        steps: [
+            { num: '1', title: 'Tap Site Info', desc: 'Tap the lock or tune icon 🔒 (or 3-dot menu ⋮) beside the URL in the address bar.' },
+            { num: '2', title: 'Open Permissions', desc: 'Tap "Permissions" or "Site settings".' },
+            { num: '3', title: 'Allow Location', desc: 'Select "Location" and change it to "Allow".' },
+            { num: '4', title: 'Return & Try Again', desc: 'Return to this page and tap "Try Again" below without refreshing.' }
+        ]
+    },
+    ios_safari: {
+        id: 'ios_safari',
+        label: 'iPhone Safari',
+        icon: Smartphone,
+        subtitle: 'Safari & Browsers on iPhone/iPad',
+        steps: [
+            { num: '1', title: 'Safari Website Settings', desc: 'Tap the "aA" (or website settings) icon on the left of the Safari search/address bar.' },
+            { num: '2', title: 'Allow Location', desc: 'Tap "Website Settings" → "Location" → choose "Allow".' },
+            { num: '3', title: 'Device Settings Check', desc: 'If still blocked, open iPhone Settings → Privacy & Security → Location Services (turn ON) → Safari Websites → choose "While Using the App".' },
+            { num: '4', title: 'Return & Try Again', desc: 'Return to Safari and tap "Try Again" below.' }
+        ]
+    },
+    desktop: {
+        id: 'desktop',
+        label: 'Desktop Browsers',
+        icon: Monitor,
+        subtitle: 'Chrome, Edge, Firefox, Safari on PC/Mac',
+        steps: [
+            { num: '1', title: 'Click Site Settings / Padlock', desc: 'Click the padlock 🔒 or tune icon on the left side of your browser address bar.' },
+            { num: '2', title: 'Locate Location', desc: 'Find "Location" in the permissions list (or click "Site settings").' },
+            { num: '3', title: 'Change to Allow', desc: 'Change the permission setting from "Blocked" or "Ask" to "Allow".' },
+            { num: '4', title: 'Return & Try Again', desc: 'Return here and click "Try Again" below.' }
+        ]
+    },
+    mobile_app: {
+        id: 'mobile_app',
+        label: 'Mobile App',
+        icon: ShieldCheck,
+        subtitle: 'Krishna Engineering Works Installed Mobile App',
+        steps: [
+            { num: '1', title: 'Open Device Settings', desc: 'Open your phone\'s Settings app.' },
+            { num: '2', title: 'Find App Permissions', desc: 'Go to Apps (or Application Manager) → select "Krishna Engineering Works".' },
+            { num: '3', title: 'Grant Location Access', desc: 'Tap "Permissions" → "Location" → choose "Allow only while using the app" and enable "Use Precise Location".' },
+            { num: '4', title: 'Return & Try Again', desc: 'Switch back to the app and tap "Try Again".' }
+        ]
+    }
+};
 
 // Default center: Krishna Engineering Works region (Palakkad / Sreekrishnapuram, Kerala)
 const DEFAULT_CENTER = { lat: 10.9022, lng: 76.3768, zoom: 12 };
@@ -66,6 +130,7 @@ const WorksiteLocationPicker = ({ value, onChange, disabled = false }) => {
     const mapInstanceRef = useRef(null);
     const markerRef = useRef(null);
     const accuracyCircleRef = useRef(null);
+    const userExplicitGpsRequestedRef = useRef(false);
 
     const [locationData, setLocationData] = useState({
         address: value?.address || '',
@@ -82,6 +147,10 @@ const WorksiteLocationPicker = ({ value, onChange, disabled = false }) => {
     const [showResultsDropdown, setShowResultsDropdown] = useState(false);
     const [isLocatingGPS, setIsLocatingGPS] = useState(false);
     const [gpsError, setGpsError] = useState('');
+    const [isPermissionBlocked, setIsPermissionBlocked] = useState(false);
+    const [showInstructions, setShowInstructions] = useState(false);
+    const [activePlatformTab, setActivePlatformTab] = useState(detectPlatform);
+    const [permissionRestoredToast, setPermissionRestoredToast] = useState(false);
     const [copied, setCopied] = useState(false);
 
     // Keep internal state synchronized with incoming props if external value changes
@@ -99,7 +168,7 @@ const WorksiteLocationPicker = ({ value, onChange, disabled = false }) => {
     }, [value?.latitude, value?.longitude, value?.address, value?.source]);
 
     // Reverse geocode via OpenStreetMap Nominatim
-    const reverseGeocode = async (lat, lng) => {
+    const reverseGeocode = useCallback(async (lat, lng) => {
         try {
             const res = await fetch(
                 `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
@@ -112,7 +181,7 @@ const WorksiteLocationPicker = ({ value, onChange, disabled = false }) => {
             console.warn('Reverse geocode failed:', err);
             return null;
         }
-    };
+    }, []);
 
     // Update location and notify parent
     const updateLocation = useCallback((updates) => {
@@ -279,20 +348,40 @@ const WorksiteLocationPicker = ({ value, onChange, disabled = false }) => {
     }, [locationData.latitude, locationData.longitude, locationData.source, disabled]);
 
     // "Use Current Location" (GPS) - Explicit user trigger only
-    const handleUseCurrentLocation = async () => {
+    const handleUseCurrentLocation = useCallback(async (isRetry = false) => {
+        // Enforce Privacy (Requirement 10): Mark that the user explicitly initiated a GPS request
+        userExplicitGpsRequestedRef.current = true;
         setIsLocatingGPS(true);
         setGpsError('');
+        setPermissionRestoredToast(false);
+
+        // 1. Check for Secure Context (Requirement 9)
+        if (typeof window !== 'undefined' && !window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            setIsPermissionBlocked(false);
+            setGpsError('Geolocation requires a secure connection (HTTPS). Please open this site over HTTPS or pin the location manually on the map.');
+            setIsLocatingGPS(false);
+            return;
+        }
 
         try {
             let lat = null;
             let lng = null;
             let accuracy = null;
 
-            // 1. Try Capacitor Geolocation if on mobile native
+            // 2. Try Capacitor Geolocation if running in Native Mobile App (Requirement 8)
             if (Capacitor.isNativePlatform()) {
                 try {
-                    const permission = await Geolocation.requestPermissions();
-                    if (permission.location === 'granted' || permission.coarseLocation === 'granted') {
+                    let perm = await Geolocation.checkPermissions();
+                    if (perm.location === 'denied' || perm.coarseLocation === 'denied') {
+                        // Attempt to request permission
+                        try {
+                            perm = await Geolocation.requestPermissions();
+                        } catch (pErr) {
+                            console.warn('Native permission request error:', pErr);
+                        }
+                    }
+
+                    if (perm.location === 'granted' || perm.coarseLocation === 'granted') {
                         const position = await Geolocation.getCurrentPosition({
                             enableHighAccuracy: true,
                             timeout: 12000
@@ -300,27 +389,70 @@ const WorksiteLocationPicker = ({ value, onChange, disabled = false }) => {
                         lat = position.coords.latitude;
                         lng = position.coords.longitude;
                         accuracy = position.coords.accuracy;
+                    } else {
+                        // Native permission permanently blocked
+                        setIsPermissionBlocked(true);
+                        setActivePlatformTab('mobile_app');
+                        setGpsError('Location access is blocked. Enable location permission in your browser or device settings, then try again.');
+                        setShowInstructions(true);
+                        setIsLocatingGPS(false);
+                        return;
                     }
                 } catch (capErr) {
-                    console.warn('Capacitor Geolocation fallback:', capErr);
+                    console.warn('Capacitor Geolocation error:', capErr);
+                    const msg = capErr?.message?.toLowerCase() || '';
+                    if (msg.includes('denied') || msg.includes('permission')) {
+                        setIsPermissionBlocked(true);
+                        setActivePlatformTab('mobile_app');
+                        setGpsError('Location access is blocked. Enable location permission in your browser or device settings, then try again.');
+                        setShowInstructions(true);
+                        setIsLocatingGPS(false);
+                        return;
+                    }
                 }
             }
 
-            // 2. Standard Browser Geolocation
+            // 3. Web Geolocation API (Desktop Web and Mobile Web)
             if (lat === null) {
-                if (!navigator.geolocation) {
-                    throw new Error('GPS Geolocation is not supported by your browser.');
+                if (typeof navigator === 'undefined' || !navigator.geolocation) {
+                    throw new Error('GPS Geolocation is not supported by your browser or device. Please pin your worksite manually on the map.');
+                }
+
+                // If Permissions API is supported, check if state is already explicitly 'denied'
+                if (navigator.permissions && navigator.permissions.query) {
+                    try {
+                        const permStatus = await navigator.permissions.query({ name: 'geolocation' });
+                        if (permStatus.state === 'denied') {
+                            setIsPermissionBlocked(true);
+                            setActivePlatformTab(detectPlatform());
+                            setGpsError('Location access is blocked. Enable location permission in your browser or device settings, then try again.');
+                            setShowInstructions(true);
+                            setIsLocatingGPS(false);
+                            return;
+                        }
+                    } catch (qErr) {
+                        // permissions.query may fail in some environments; fallback gracefully
+                    }
                 }
 
                 const position = await new Promise((resolve, reject) => {
                     navigator.geolocation.getCurrentPosition(
                         resolve,
                         (err) => {
-                            let msg = 'Unable to acquire location.';
-                            if (err.code === 1) msg = 'Location access permission was denied. Please allow location permissions in your browser or select manually.';
-                            else if (err.code === 2) msg = 'GPS satellites or cell towers unavailable. Please pin your worksite manually on the map.';
-                            else if (err.code === 3) msg = 'GPS signal request timed out. Please retry or click on the map.';
-                            reject(new Error(msg));
+                            if (err.code === 1) { // PERMISSION_DENIED (Requirement 2)
+                                setIsPermissionBlocked(true);
+                                setActivePlatformTab(detectPlatform());
+                                reject(new Error('Location access is blocked. Enable location permission in your browser or device settings, then try again.'));
+                            } else if (err.code === 2) { // POSITION_UNAVAILABLE
+                                setIsPermissionBlocked(false);
+                                reject(new Error('GPS satellites or network location unavailable. Please verify GPS is turned ON or pin the worksite manually on the map.'));
+                            } else if (err.code === 3) { // TIMEOUT
+                                setIsPermissionBlocked(false);
+                                reject(new Error('GPS location request timed out. Please tap "Try Again" or pin your worksite manually on the map.'));
+                            } else {
+                                setIsPermissionBlocked(false);
+                                reject(new Error(err.message || 'Unable to acquire GPS location.'));
+                            }
                         },
                         {
                             enableHighAccuracy: true,
@@ -334,6 +466,12 @@ const WorksiteLocationPicker = ({ value, onChange, disabled = false }) => {
                 lng = position.coords.longitude;
                 accuracy = position.coords.accuracy;
             }
+
+            // Successfully retrieved accurate coordinates (Requirement 7)
+            setIsPermissionBlocked(false);
+            setGpsError('');
+            setShowInstructions(false);
+            setPermissionRestoredToast(false);
 
             const cleanLat = Number(lat.toFixed(6));
             const cleanLng = Number(lng.toFixed(6));
@@ -365,6 +503,23 @@ const WorksiteLocationPicker = ({ value, onChange, disabled = false }) => {
                         draggable: !disabled,
                         icon: createCustomPin('gps')
                     }).addTo(map);
+
+                    marker.on('dragend', async () => {
+                        const pos = marker.getLatLng();
+                        const nLat = Number(pos.lat.toFixed(6));
+                        const nLng = Number(pos.lng.toFixed(6));
+                        marker.setIcon(createCustomPin('manual'));
+                        const addr = await reverseGeocode(nLat, nLng);
+                        updateLocation({
+                            latitude: nLat,
+                            longitude: nLng,
+                            address: addr || locationData.address,
+                            source: 'manual',
+                            accuracy: null,
+                            capturedAt: new Date().toISOString()
+                        });
+                    });
+
                     markerRef.current = marker;
                 }
             }
@@ -383,10 +538,110 @@ const WorksiteLocationPicker = ({ value, onChange, disabled = false }) => {
 
         } catch (err) {
             setGpsError(err.message || 'Failed to detect current location.');
+            if (err.message && err.message.includes('Location access is blocked')) {
+                setIsPermissionBlocked(true);
+                setShowInstructions(true);
+            }
         } finally {
             setIsLocatingGPS(false);
         }
-    };
+    }, [disabled, locationData.address, reverseGeocode, updateLocation]);
+
+    // Automatic Permission Recovery (Requirement 5):
+    // When the user switches to browser/device settings and returns,
+    // detect that permission has been enabled and allow immediate retry or auto-recovery without page refresh.
+    useEffect(() => {
+        let permStatusObj = null;
+
+        const checkAndRecoverPermission = async () => {
+            // Only attempt recovery if permission was previously blocked or requested
+            if (Capacitor.isNativePlatform()) {
+                try {
+                    const perm = await Geolocation.checkPermissions();
+                    if (perm.location === 'granted' || perm.coarseLocation === 'granted') {
+                        if (isPermissionBlocked) {
+                            setIsPermissionBlocked(false);
+                            setGpsError('');
+                            setPermissionRestoredToast(true);
+                            if (userExplicitGpsRequestedRef.current) {
+                                handleUseCurrentLocation(true);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Native permission recovery check error:', e);
+                }
+            } else if (typeof navigator !== 'undefined' && navigator.permissions && navigator.permissions.query) {
+                try {
+                    const status = await navigator.permissions.query({ name: 'geolocation' });
+                    if (status.state === 'granted') {
+                        if (isPermissionBlocked) {
+                            setIsPermissionBlocked(false);
+                            setGpsError('');
+                            setPermissionRestoredToast(true);
+                            if (userExplicitGpsRequestedRef.current) {
+                                handleUseCurrentLocation(true);
+                            }
+                        }
+                    } else if (status.state === 'prompt') {
+                        // User reset the permission from blocked to prompt
+                        if (isPermissionBlocked) {
+                            setIsPermissionBlocked(false);
+                            setGpsError('');
+                        }
+                    }
+                } catch (e) {
+                    // permissions.query may fail in some mobile browsers
+                }
+            }
+        };
+
+        // 1. Browser Permission Status Change Listener
+        if (typeof navigator !== 'undefined' && navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'geolocation' })
+                .then(status => {
+                    permStatusObj = status;
+                    permStatusObj.onchange = () => {
+                        checkAndRecoverPermission();
+                    };
+                })
+                .catch(() => {});
+        }
+
+        // 2. Window focus and document visibilitychange
+        const handleFocus = () => {
+            checkAndRecoverPermission();
+        };
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                checkAndRecoverPermission();
+            }
+        };
+
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        // 3. Capacitor Native App State Listener
+        let appStateHandle = null;
+        if (Capacitor.isNativePlatform()) {
+            App.addListener('appStateChange', (state) => {
+                if (state.isActive) {
+                    checkAndRecoverPermission();
+                }
+            }).then(handle => {
+                appStateHandle = handle;
+            }).catch(() => {});
+        }
+
+        return () => {
+            if (permStatusObj) permStatusObj.onchange = null;
+            window.removeEventListener('focus', handleFocus);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            if (appStateHandle && typeof appStateHandle.remove === 'function') {
+                appStateHandle.remove();
+            }
+        };
+    }, [isPermissionBlocked, handleUseCurrentLocation]);
 
     // Location Search (Nominatim)
     const handleSearch = async (e) => {
@@ -546,11 +801,140 @@ const WorksiteLocationPicker = ({ value, onChange, disabled = false }) => {
                 </button>
             </div>
 
-            {/* GPS Error Notification */}
+            {/* Permission Restored Notification (Requirement 5) */}
+            {permissionRestoredToast && (
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 text-emerald-900 dark:text-emerald-100 text-xs font-bold flex items-center justify-between gap-2.5 shadow-[2px_2px_0_0_#059669]">
+                    <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                        <span>Location access restored! Fetching your exact worksite coordinates...</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => handleUseCurrentLocation(true)}
+                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] uppercase tracking-wider transition shrink-0"
+                    >
+                        Fetch Now
+                    </button>
+                </div>
+            )}
+
+            {/* GPS Error & Permission Guidance Block (Requirements 2, 3, 4, 6) */}
             {gpsError && (
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500 text-amber-800 dark:text-amber-200 text-xs font-bold flex items-center gap-2.5">
-                    <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                    <span>{gpsError}</span>
+                <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500 rounded-none shadow-[2px_2px_0_0_#d97706] text-amber-900 dark:text-amber-100 space-y-3">
+                    <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 text-xs">
+                            <div className="font-black uppercase tracking-wider text-amber-900 dark:text-amber-200 mb-1">
+                                {isPermissionBlocked ? 'GPS Permission Blocked' : 'Location Detection Notice'}
+                            </div>
+                            <p className="font-semibold leading-relaxed">
+                                {gpsError}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Action Controls: Try Again, Settings Guide, Manual Fallback */}
+                    <div className="pt-2 border-t border-amber-200 dark:border-amber-900/60 flex flex-wrap items-center gap-2">
+                        {/* Requirement 3: Try Again Button */}
+                        <button
+                            type="button"
+                            onClick={() => handleUseCurrentLocation(true)}
+                            disabled={disabled || isLocatingGPS}
+                            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-black text-xs uppercase tracking-wider transition flex items-center gap-2 border-2 border-amber-800 shadow-[2px_2px_0_0_#78350f] active:translate-x-[1px] active:translate-y-[1px]"
+                        >
+                            <RefreshCw className={`w-3.5 h-3.5 ${isLocatingGPS ? 'animate-spin' : ''}`} />
+                            <span>{isLocatingGPS ? 'Rechecking...' : 'Try Again'}</span>
+                        </button>
+
+                        {/* Requirement 4: How to Enable Instructions Toggle */}
+                        {isPermissionBlocked && (
+                            <button
+                                type="button"
+                                onClick={() => setShowInstructions(prev => !prev)}
+                                className="px-3.5 py-2 bg-white dark:bg-slate-900 text-brand-950 dark:text-white hover:bg-brand-50 dark:hover:bg-slate-800 font-bold text-xs uppercase tracking-wider transition flex items-center gap-2 border-2 border-amber-600 shadow-[1px_1px_0_0_#d97706]"
+                            >
+                                <Settings className="w-3.5 h-3.5 text-amber-600" />
+                                <span>{showInstructions ? 'Hide Instructions' : 'How to Enable Permission'}</span>
+                                {showInstructions ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            </button>
+                        )}
+
+                        {/* Requirement 6: Manual Map Pin Fallback */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (mapContainerRef.current) {
+                                    mapContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            }}
+                            className="px-3 py-1.5 text-slate-700 dark:text-slate-300 hover:text-brand-950 font-bold text-xs underline underline-offset-4 flex items-center gap-1.5 ml-auto"
+                        >
+                            <MapPin className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Pin worksite on map below</span>
+                        </button>
+                    </div>
+
+                    {/* Requirement 4: Platform-Specific Instructions Drawer */}
+                    {isPermissionBlocked && showInstructions && (
+                        <div className="mt-3 pt-3 border-t border-amber-300 dark:border-amber-800/80 space-y-3">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                <span className="text-[11px] font-black uppercase tracking-wider text-amber-950 dark:text-amber-200 flex items-center gap-1.5">
+                                    <HelpCircle className="w-4 h-4 text-amber-600" />
+                                    Choose Your Platform:
+                                </span>
+                                {/* Platform Switcher Tabs */}
+                                <div className="inline-flex flex-wrap rounded-none border border-amber-300 dark:border-amber-800 p-0.5 bg-amber-100/60 dark:bg-amber-950/80 gap-1">
+                                    {Object.values(PLATFORM_GUIDES).map(guide => {
+                                        const IconComponent = guide.icon;
+                                        const isActive = activePlatformTab === guide.id;
+                                        return (
+                                            <button
+                                                key={guide.id}
+                                                type="button"
+                                                onClick={() => setActivePlatformTab(guide.id)}
+                                                className={`px-2 py-1 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition ${
+                                                    isActive
+                                                        ? 'bg-amber-600 text-white shadow-sm'
+                                                        : 'text-amber-900 dark:text-amber-200 hover:bg-amber-200/50 dark:hover:bg-amber-900/50'
+                                                }`}
+                                            >
+                                                <IconComponent className="w-3 h-3" />
+                                                <span>{guide.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Step list for selected platform */}
+                            <div className="bg-white dark:bg-slate-900 p-3.5 border border-amber-400 dark:border-amber-700 text-xs">
+                                <div className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2.5 flex items-center justify-between">
+                                    <span>{PLATFORM_GUIDES[activePlatformTab]?.subtitle}</span>
+                                    {activePlatformTab === detectPlatform() && (
+                                        <span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold">
+                                            (Auto-detected platform)
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="space-y-2.5">
+                                    {PLATFORM_GUIDES[activePlatformTab]?.steps.map((st, idx) => (
+                                        <div key={idx} className="flex items-start gap-2.5">
+                                            <span className="w-5 h-5 rounded-full bg-amber-600 text-white text-[10px] font-black flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                {st.num}
+                                            </span>
+                                            <div>
+                                                <span className="font-black text-brand-950 dark:text-white mr-1.5">{st.title}:</span>
+                                                <span className="text-slate-700 dark:text-slate-300 font-medium">{st.desc}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                    💡 After enabling in your browser/device settings, tap <strong>"Try Again"</strong> above. We automatically re-detect the permission without reloading the page or losing your form data.
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 

@@ -29,21 +29,21 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
   const getStatusBadge = (status) => {
     if (status === 'VERIFIED' || status === 'Completed' || status === 'APPROVED') {
       return (
-        <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-          <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Verified / Paid
+        <span className="px-2.5 sm:px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1 whitespace-nowrap shrink-0">
+          <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" /> Verified / Paid
         </span>
       );
     }
     if (status === 'REJECTED' || status === 'Failed') {
       return (
-        <span className="px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-          <XCircle className="w-3 h-3 text-rose-500" /> Rejected
+        <span className="px-2.5 sm:px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1 whitespace-nowrap shrink-0">
+          <XCircle className="w-3 h-3 text-rose-500 shrink-0" /> Rejected
         </span>
       );
     }
     return (
-      <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-        <Clock className="w-3 h-3 text-amber-500 animate-spin" /> Pending Verification
+      <span className="px-2.5 sm:px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1 whitespace-nowrap shrink-0">
+        <Clock className="w-3 h-3 text-amber-500 animate-spin shrink-0" /> Pending Verification
       </span>
     );
   };
@@ -95,32 +95,32 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
           return (
             <div 
               key={p._id}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all space-y-4"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all space-y-3.5 sm:space-y-4"
             >
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-6 h-6" />
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-50 text-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0">
+                    <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-black text-slate-900 dark:text-white text-base font-poppins">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-black text-slate-900 dark:text-white text-sm sm:text-base font-poppins whitespace-nowrap">
                         ₹{p.amount.toLocaleString()}
                       </h4>
-                      <span className="text-slate-400 text-xs font-bold">• {p.method || 'UPI QR'}</span>
+                      <span className="text-slate-400 text-[11px] sm:text-xs font-bold whitespace-nowrap">• {p.method || 'UPI QR'}</span>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
                       Ref: <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">{p.referenceId || 'N/A'}</span> • {new Date(p.createdAt || p.paymentDate).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
                   {getStatusBadge(p.status)}
                   {isVerified && (
                     <button
                       onClick={() => generateLodgeReceiptPDF(p)}
-                      className="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3.5 py-2 rounded-xl text-xs font-bold border border-indigo-100 flex items-center gap-1.5 transition-all"
+                      className="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold border border-indigo-100 flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Receipt</span>
@@ -130,18 +130,18 @@ export default function LodgePaymentHistory({ payments = [], isAdmin = false, on
               </div>
 
               {/* Breakdown Row */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl text-xs border border-slate-100 dark:border-slate-800">
-                <div>
-                  <p className="text-slate-400 font-medium">Tenant</p>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">{p.tenantName || p.customerId?.name || 'Tenant'}</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 bg-slate-50 dark:bg-slate-800 p-3 sm:p-4 rounded-xl text-xs border border-slate-100 dark:border-slate-800">
+                <div className="min-w-0">
+                  <p className="text-slate-400 text-[10px] sm:text-xs font-medium uppercase tracking-wider">Tenant</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{p.tenantName || p.customerId?.name || 'Tenant'}</p>
                 </div>
-                <div>
-                  <p className="text-slate-400 font-medium">Room / Suite</p>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">#{p.roomId?.roomNumber || '101'}</p>
+                <div className="min-w-0">
+                  <p className="text-slate-400 text-[10px] sm:text-xs font-medium uppercase tracking-wider">Room / Suite</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 truncate">#{p.roomId?.roomNumber || '101'}</p>
                 </div>
-                <div>
-                  <p className="text-slate-400 font-medium">Category</p>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">{p.chargeCategory || p.paymentType || 'Rent'}</p>
+                <div className="min-w-0">
+                  <p className="text-slate-400 text-[10px] sm:text-xs font-medium uppercase tracking-wider">Category</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{p.chargeCategory || p.paymentType || 'Rent'}</p>
                 </div>
                 <div>
                   <p className="text-slate-400 font-medium">Receipt No</p>

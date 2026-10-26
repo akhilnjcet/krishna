@@ -5,6 +5,7 @@ const {
     getProjects, 
     updateProject, 
     deleteProject, 
+    cancelProject, 
     proposeTimeline, 
     sendTimeline,
     requestAdditionalWork,
@@ -26,6 +27,9 @@ router.route('/')
 router.route('/:id')
     .put(protect, authorize('admin', 'staff'), updateProject)
     .delete(protect, authorize('admin'), deleteProject);
+
+router.route('/:id/cancel')
+    .put(protect, authorize('admin'), cancelProject);
 
 router.route('/:id/propose-timeline')
     .put(protect, authorize('admin', 'staff'), proposeTimeline);

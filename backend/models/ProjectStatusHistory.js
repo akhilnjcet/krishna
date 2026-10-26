@@ -12,7 +12,7 @@ const projectStatusHistorySchema = new mongoose.Schema({
     },
     status: { 
         type: String, 
-        enum: ['In Progress', 'Delayed', 'Stopped', 'Completed', 'Restarted'], 
+        enum: ['In Progress', 'Delayed', 'Stopped', 'Completed', 'Restarted', 'Cancelled', 'CANCELLED'], 
         required: true 
     },
     reason: { 

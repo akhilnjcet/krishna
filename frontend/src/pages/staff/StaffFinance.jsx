@@ -248,15 +248,97 @@ const StaffFinance = () => {
                     </div>
 
                     {/* Salary History Table */}
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
-                        <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/30">
-                            <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+                        <div className="p-4 sm:p-6 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/30">
+                            <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 text-sm sm:text-base">
                                 <History className="w-5 h-5 text-indigo-600" /> Payout History
                             </h3>
                         </div>
                         
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
+                        {/* Mobile View: Cards */}
+                        <div className="block md:hidden p-3 sm:p-4 space-y-3">
+                            {Array.isArray(history) && history.length > 0 ? history.map((sal) => {
+                                if (!sal) return null;
+                                const netPayable   = sal.netSalary || sal.salaryAmount || 0;
+                                const disbursed    = sal.salaryAlreadyPaid ?? 0;
+                                const remaining    = sal.remainingBalance ?? (netPayable - disbursed);
+                                const deductions   = (sal.deductions || 0) + (sal.advanceRecovery || 0);
+                                const isCurrentMonth = sal.month === (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })();
+
+                                return (
+                                    <div key={sal._id} className={`p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 ${isCurrentMonth ? 'bg-indigo-50/20 dark:bg-indigo-950/20 border-indigo-200' : 'bg-slate-50 dark:bg-slate-800/60'}`}>
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-black text-slate-900 dark:text-white">{sal.month}</span>
+                                                    {isCurrentMonth && (
+                                                        <span className="text-[9px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full">Current</span>
+                                                    )}
+                                                </div>
+                                                {sal.updatedAt && (
+                                                    <p className="text-[9px] text-slate-400 mt-0.5">Updated: {new Date(sal.updatedAt).toLocaleDateString('en-IN')}</p>
+                                                )}
+                                            </div>
+                                            <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full border whitespace-nowrap ${getStatusStyle(sal.paymentStatus)}`}>
+                                                {sal.paymentStatus}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 text-xs bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                            <div>
+                                                <span className="text-[9px] text-slate-400 font-black uppercase block">Net Payable</span>
+                                                <div className="font-black text-slate-900 dark:text-white text-sm mt-0.5">
+                                                    ₹ {netPayable.toLocaleString('en-IN')}
+                                                </div>
+                                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                                    Base: ₹ {(sal.baseSalary || sal.salaryAmount || 0).toLocaleString('en-IN')}
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <span className="text-[9px] text-slate-400 font-black uppercase block">Disbursed / Balance</span>
+                                                <div className="font-bold text-emerald-700 text-xs mt-0.5">
+                                                    Paid: ₹ {disbursed.toLocaleString('en-IN')}
+                                                </div>
+                                                <div className={`font-bold text-xs ${remaining > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                                                    Bal: ₹ {Math.max(0, remaining).toLocaleString('en-IN')}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                                            <div className="flex items-center gap-3">
+                                                <span>OT: <strong className="text-emerald-600">₹ {(sal.overtimeEarnings || 0).toLocaleString('en-IN')}</strong></span>
+                                                <span>Deductions: <strong className="text-rose-500">₹ {deductions.toLocaleString('en-IN')}</strong></span>
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5">
+                                                <button 
+                                                    onClick={() => setSelectedSlipForView(sal)}
+                                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-indigo-600 hover:bg-indigo-50 transition shadow-sm"
+                                                    title="View Slip"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDownloadSlip(sal)}
+                                                    className="p-1.5 rounded-lg border border-indigo-200 bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-sm"
+                                                    title="Download PDF"
+                                                >
+                                                    <Download className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            }) : (
+                                <div className="p-8 text-center text-slate-400 font-bold italic text-xs">No payment statements logged yet.</div>
+                            )}
+                        </div>
+
+                        {/* Desktop View: Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full text-left border-collapse min-w-[750px]">
                                 <thead>
                                     <tr className="bg-slate-50/50 dark:bg-slate-800/50 text-[10px] font-black uppercase tracking-widest text-slate-400">
                                         <th className="px-6 py-4">Month / Cycle</th>
@@ -270,7 +352,7 @@ const StaffFinance = () => {
                                         <th className="px-6 py-4 text-center">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                <tbody className="divide-y divide-slate-50 dark:divide-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400">
                                     {Array.isArray(history) && history.length > 0 ? history.map((sal) => {
                                         if (!sal) return null;
                                         const netPayable   = sal.netSalary || sal.salaryAmount || 0;
@@ -553,18 +635,49 @@ const StaffFinance = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
-                        <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/30">
-                            <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+                        <div className="p-4 sm:p-6 border-b border-slate-50 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/30 dark:bg-slate-800/30">
+                            <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 text-sm sm:text-base">
                                 <Clock className="w-5 h-5 text-indigo-600" /> Overtime Logging Summary
                             </h3>
-                            <div className="text-[9px] font-black uppercase text-slate-400 bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800">
-                                Total OT Yield: ₹ {otRecords.reduce((acc, r) => acc + r.totalAmount, 0).toLocaleString()}
+                            <div className="text-[10px] font-black uppercase text-slate-400 bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800 w-fit">
+                                Total OT: ₹ {otRecords.reduce((acc, r) => acc + (r.totalAmount || 0), 0).toLocaleString()}
                             </div>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse text-xs">
+                        {/* Mobile View: Cards */}
+                        <div className="block sm:hidden p-3 space-y-2.5">
+                            {loadingTabContent ? (
+                                <div className="p-8 text-center text-slate-400 text-xs">
+                                    <Loader2 className="animate-spin w-6 h-6 mx-auto mb-2 text-indigo-600" />
+                                    Loading overtime records...
+                                </div>
+                            ) : otRecords.length > 0 ? otRecords.map(ot => (
+                                <div key={ot._id} className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="font-black text-slate-900 dark:text-white text-xs">{ot.date}</span>
+                                        <span className="font-black text-emerald-600 text-xs">₹ {ot.totalAmount?.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                                        <span>Hours: <strong className="text-slate-800 dark:text-slate-200">{ot.hours} hrs</strong></span>
+                                        <span>Rate: ₹ {ot.ratePerHour}/hr</span>
+                                    </div>
+                                    {ot.remarks && (
+                                        <p className="text-[10px] text-slate-400 italic border-t border-slate-100 dark:border-slate-700 pt-1">
+                                            "{ot.remarks}"
+                                        </p>
+                                    )}
+                                </div>
+                            )) : (
+                                <div className="p-8 text-center text-slate-400 font-bold italic text-xs">
+                                    No overtime logs registered for this month.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Desktop View: Table */}
+                        <div className="hidden sm:block overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs min-w-[550px]">
                                 <thead>
                                     <tr className="bg-slate-50/50 dark:bg-slate-800/50 font-black text-[10px] text-slate-400 uppercase tracking-widest">
                                         <th className="px-6 py-4">Date</th>
@@ -574,7 +687,7 @@ const StaffFinance = () => {
                                         <th className="px-6 py-4">Remarks</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-50 text-slate-600 dark:text-slate-400 font-semibold">
+                                <tbody className="divide-y divide-slate-50 dark:divide-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
                                     {loadingTabContent ? (
                                         <tr>
                                             <td colSpan="5" className="p-12 text-center text-slate-400">

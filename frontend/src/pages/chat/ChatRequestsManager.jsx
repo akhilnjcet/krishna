@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../../services/api';
 import { db } from '../../services/firebase';
 import { 
     collection, query, where, onSnapshot, 
     doc, updateDoc, addDoc, serverTimestamp 
 } from 'firebase/firestore';
-import { ShieldCheck, ShieldAlert, CheckCircle, XCircle, User, Projector as Project, Calendar } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, CheckCircle, XCircle, User, Projector as Project, Calendar, Sliders, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ChatRequestsManager = () => {
@@ -21,36 +23,75 @@ const ChatRequestsManager = () => {
         return () => unsubscribe();
     }, []);
 
-    const handleAction = async (requestId, userId, userName, projectId, projectTitle, action) => {
+    const handleAction = async (requestId, userId, userName, userEmail, projectId, projectTitle, action) => {
         try {
             if (action === 'approve') {
-                // 1. Create a Chat Room
-                const newRoom = await addDoc(collection(db, "chatRooms"), {
-                    userId: userId || "",
-                    participants: [userId || "", 'admin'], // 'admin' is the high-level monitor ID
-                    title: `${userName || ""} - ${projectTitle || ""}`,
-                    status: 'active',
-                    createdAt: serverTimestamp(),
-                    lastMessage: "Channel established. Support is active.",
-                    lastMessageTime: serverTimestamp()
-                });
+                // 1. Create a Chat Room in Firestore for live messaging
+                let newRoomId = '';
+                try {
+                    const newRoom = await addDoc(collection(db, "chatRooms"), {
+                        userId: userId || "",
+                        participants: [userId || "", 'admin'], // 'admin' is the high-level monitor ID
+                        title: `${userName || ""} - ${projectTitle || ""}`,
+                        status: 'active',
+                        createdAt: serverTimestamp(),
+                        lastMessage: "Channel established. Support is active.",
+                        lastMessageTime: serverTimestamp()
+                    });
+                    newRoomId = newRoom.id;
 
-                // 2. Update Request Status and link to Room
-                await updateDoc(doc(db, "chatRequests", requestId), {
-                    status: 'approved',
-                    chatId: newRoom.id,
-                    approvedAt: serverTimestamp()
-                });
-                alert("Channel Successfully Initialized.");
+                    // 2. Update Request Status in Firestore
+                    await updateDoc(doc(db, "chatRequests", requestId), {
+                        status: 'approved',
+                        chatId: newRoomId,
+                        approvedAt: serverTimestamp()
+                    });
+                } catch (fsErr) {
+                    console.warn("Firestore channel warning:", fsErr.message);
+                }
+
+                // 3. Dispatch backend approval: triggers client confirmation email with support link & access instructions
+                try {
+                    const res = await api.put(`/support/requests/${requestId}/approve`, {
+                        chatId: newRoomId,
+                        firestoreId: requestId,
+                        userId,
+                        userName,
+                        userEmail,
+                        projectId,
+                        projectTitle
+                    });
+
+                    const emailInfo = res.data?.emailNotification;
+                    let successMessage = "Channel established and authenticated!";
+                    if (emailInfo?.sent) {
+                        successMessage += `\n\n📧 Official access link & instructions emailed to client (${emailInfo.to}).`;
+                    } else if (emailInfo?.error) {
+                        successMessage += `\n\n⚠️ Channel opened, but email notification failed: ${emailInfo.error}`;
+                    }
+                    alert(successMessage);
+                } catch (apiErr) {
+                    console.error("Backend approval warning:", apiErr);
+                    alert("Channel initialized in chat registry.");
+                }
+
             } else {
-                await updateDoc(doc(db, "chatRequests", requestId), {
-                    status: 'rejected',
-                    rejectedAt: serverTimestamp()
-                });
+                try {
+                    await updateDoc(doc(db, "chatRequests", requestId), {
+                        status: 'rejected',
+                        rejectedAt: serverTimestamp()
+                    });
+                } catch (fsErr) {}
+
+                try {
+                    await api.put(`/support/requests/${requestId}/reject`);
+                } catch (apiErr) {}
+
                 alert("Request Terminated.");
             }
         } catch (err) {
             console.error("Administrative Auth failure", err);
+            alert("Action failed: " + (err.message || 'Unknown error'));
         }
     };
 
@@ -65,13 +106,22 @@ const ChatRequestsManager = () => {
 
     return (
         <div className="space-y-6">
-            <header className="flex items-center justify-between">
+            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200 tracking-tight leading-none mb-1">Inbound Support Requests</h1>
                     <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Authentication & Authorization Pending</p>
                 </div>
-                <div className="bg-indigo-600 px-4 py-1.5 rounded-full text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                    <ShieldCheck className="w-3.5 h-3.5" /> High Precision Channeling
+                <div className="flex flex-wrap items-center gap-3">
+                    <Link
+                        to="/admin/settings?tab=alerts"
+                        className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all no-underline"
+                    >
+                        <Bell className="w-3.5 h-3.5 text-indigo-600" />
+                        Alert & Chime Settings
+                    </Link>
+                    <div className="bg-indigo-600 px-4 py-2 rounded-full text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                        <ShieldCheck className="w-3.5 h-3.5" /> High Precision Channeling
+                    </div>
                 </div>
             </header>
 
@@ -114,16 +164,16 @@ const ChatRequestsManager = () => {
 
                             <div className="grid grid-cols-2 gap-4 pt-8">
                                 <button 
-                                    onClick={() => handleAction(req.id, req.userId, req.userName, req.projectId, req.projectTitle, 'reject')}
-                                    className="bg-slate-50 dark:bg-slate-800 hover:bg-rose-50 text-slate-400 hover:text-rose-600 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+                                    onClick={() => handleAction(req.id, req.userId, req.userName, req.userEmail, req.projectId, req.projectTitle, 'reject')}
+                                    className="bg-slate-50 dark:bg-slate-800 hover:bg-rose-50 text-slate-400 hover:text-rose-600 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer border-none"
                                 >
                                     <XCircle className="w-4 h-4" /> Terminate
                                 </button>
                                 <button 
-                                    onClick={() => handleAction(req.id, req.userId, req.userName, req.projectId, req.projectTitle, 'approve')}
-                                    className="bg-indigo-600 hover:bg-emerald-600 text-white py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-100"
+                                    onClick={() => handleAction(req.id, req.userId, req.userName, req.userEmail, req.projectId, req.projectTitle, 'approve')}
+                                    className="bg-indigo-600 hover:bg-emerald-600 text-white py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-100 cursor-pointer border-none"
                                 >
-                                    <CheckCircle className="w-4 h-4" /> Authenticate
+                                    <CheckCircle className="w-4 h-4" /> Authenticate & Establish Link
                                 </button>
                             </div>
                         </motion.div>

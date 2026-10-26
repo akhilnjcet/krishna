@@ -73,7 +73,51 @@ const StaffTimesheets = () => {
             </div>
 
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Mobile Cards View (block sm:hidden) */}
+                <div className="block sm:hidden p-3 space-y-3">
+                    {loading ? (
+                        <div className="p-12 text-center">
+                            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
+                            <p className="text-slate-500 dark:text-slate-400 font-medium text-xs">Loading your records...</p>
+                        </div>
+                    ) : logs.length === 0 ? (
+                        <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-xs font-bold">
+                            No attendance activity recorded yet.
+                        </div>
+                    ) : (
+                        logs.map((log) => {
+                            const status = getSalaryStatus(log.duration_minutes);
+                            return (
+                                <div key={`m-ts-${log._id}`} className="p-4 bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 space-y-2.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-sm">
+                                            <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
+                                            <span>{log.date}</span>
+                                        </div>
+                                        <div className={`font-bold uppercase tracking-wider text-[9px] py-1 px-2.5 rounded-lg shrink-0 whitespace-nowrap ${status.color}`}>
+                                            {status.label}
+                                        </div>
+                                    </div>
+                                    <div className="text-xs bg-white dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                        <div className="space-y-0.5">
+                                            <p className="text-emerald-600 font-bold text-[11px]">IN: {log.login_time ? new Date(log.login_time).toLocaleTimeString() : 'N/A'}</p>
+                                            <p className="text-rose-500 font-bold text-[11px]">OUT: {log.check_out ? new Date(log.check_out).toLocaleTimeString() : '--:--'}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-[9px] text-slate-400 font-bold uppercase block">Duration</span>
+                                            <span className="font-mono font-black text-sm text-slate-700 dark:text-slate-300">
+                                                {log.duration_minutes ? `${Math.floor(log.duration_minutes / 60)}h ${log.duration_minutes % 60}m` : '--'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+
+                {/* Desktop Table View (hidden sm:block) */}
+                <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full border-collapse min-w-[700px]">
                         <thead>
                             <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-left">

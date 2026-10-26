@@ -37,14 +37,14 @@ const PaymentHistory = () => {
                 </div>
             </div>
 
-            <div className="px-6 -mt-10 pb-12 max-w-lg mx-auto">
-                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl shadow-blue-900/5 border border-slate-100 dark:border-slate-800 min-h-[400px]">
-                    <div className="flex items-center gap-3 mb-8">
-                        <History className="w-5 h-5 text-slate-400" />
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Archive for Room {roomNumber}</p>
+            <div className="px-4 sm:px-6 -mt-10 pb-12 max-w-lg mx-auto">
+                <div className="bg-white dark:bg-slate-900 rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 shadow-xl shadow-blue-900/5 border border-slate-100 dark:border-slate-800 min-h-[400px]">
+                    <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                        <History className="w-5 h-5 text-slate-400 shrink-0" />
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">Archive for Room {roomNumber}</p>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-5 sm:space-y-6">
                         {payments.map((pay, i) => {
                             const typeInfo = typeIcons[pay.type] || typeIcons.rent;
                             return (
@@ -53,31 +53,31 @@ const PaymentHistory = () => {
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: i * 0.05 }}
-                                    className="flex items-center justify-between group"
+                                    className="flex items-center justify-between gap-3 group"
                                 >
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 ${typeInfo.bg} ${typeInfo.color} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110`}>
-                                            <typeInfo.icon className="w-6 h-6" />
+                                    <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                                        <div className={`w-10 h-10 sm:w-12 sm:h-12 ${typeInfo.bg} ${typeInfo.color} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 shrink-0`}>
+                                            <typeInfo.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                                         </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200 capitalize">{pay.type} Settlement</p>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase">{new Date(pay.timestamp).toLocaleDateString()} • {pay.method}</p>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 capitalize truncate">{pay.type} Settlement</p>
+                                            <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase truncate">{new Date(pay.timestamp).toLocaleDateString()} • {pay.method}</p>
                                             {pay.status === 'Completed' && (
                                                 <button 
                                                     onClick={() => {
                                                         const room = useLodgeStore.getState().getRoomByNumber(roomNumber);
                                                         generatePaymentReceiptPDF(pay, { name: room.tenant, email: `Room ${roomNumber}` });
                                                     }}
-                                                    className="text-[10px] text-[#2D5BE3] font-bold uppercase underline mt-1 block"
+                                                    className="text-[9px] sm:text-[10px] text-[#2D5BE3] font-bold uppercase underline mt-0.5 block whitespace-nowrap cursor-pointer"
                                                 >
                                                     Download Receipt
                                                 </button>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-black text-slate-800 dark:text-slate-200">₹{pay.amount.toLocaleString()}</p>
-                                        <p className={`text-[10px] font-bold uppercase tracking-wider ${
+                                    <div className="text-right shrink-0 whitespace-nowrap">
+                                        <p className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200">₹{pay.amount.toLocaleString()}</p>
+                                        <p className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${
                                             pay.status === 'Completed' ? 'text-emerald-500' : 
                                             pay.status === 'Rejected' ? 'text-rose-500' : 'text-amber-500'
                                         }`}>

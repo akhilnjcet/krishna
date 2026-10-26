@@ -60,7 +60,7 @@ const FloatingContact = () => {
     ];
 
     return (
-        <div className="fixed bottom-24 right-6 md:bottom-10 md:right-10 z-[100] flex flex-col gap-3 pointer-events-none group items-end">
+        <div className="fixed bottom-24 right-3 sm:right-6 md:bottom-10 md:right-10 z-[90] flex flex-col gap-2.5 sm:gap-3 pointer-events-none group items-end">
             <AnimatePresence>
                 {contacts.map((contact, idx) => (
                     <motion.a

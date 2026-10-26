@@ -13,8 +13,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getSocket } from '../utils/socket';
 import api from '../services/api';
 import ThemeToggle from '../components/ThemeToggle';
+import { playNotificationSound, unlockAudio } from '../utils/soundService';
 
-const SIDEBAR_W = 'w-[280px]';
+const SIDEBAR_W = 'w-[280px] max-w-[85vw]';
 
 const SIDEBAR_ITEMS = [
     { name: 'Core Dashboard',  path: '/admin',              icon: LayoutDashboard },
@@ -205,6 +206,8 @@ const AdminLayout = () => {
     const [criticalAlerts, setCriticalAlerts] = useState([]);
     const [isMuted, setIsMuted] = useState(false);
     const [activePopupAlert, setActivePopupAlert] = useState(null);
+    const [supportAlertToast, setSupportAlertToast] = useState(null);
+    const handledSupportRequestIds = React.useRef(new Set());
 
     const fetchNotifications = async () => {
         try {
@@ -323,6 +326,57 @@ const AdminLayout = () => {
             });
         });
 
+        // Real-time Technical Support Inbound Request from Client
+        socket.on('technical-support-request', (data) => {
+            console.log("🔔 Inbound Technical Support Request Alert:", data);
+            
+            // Deduplicate to prevent multiple chime sounds for retried/duplicate events
+            const reqKey = data.requestId || data.firestoreId || `${data.projectId}_${data.clientEmail}`;
+            if (handledSupportRequestIds.current.has(reqKey)) {
+                console.log("ℹ️ Support request alert already handled; skipping duplicate sound.");
+                return;
+            }
+            handledSupportRequestIds.current.add(reqKey);
+
+            // Play short professional notification chime on admin device only
+            if (!isMuted && data.soundEnabled !== false) {
+                playNotificationSound(data.selectedTone || 'chime', data.soundVolume ?? 80);
+            }
+
+            // Desktop notification (if permitted)
+            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                new Notification(`Support Request: ${data.projectTitle}`, {
+                    body: `${data.clientName}: ${data.reason}\n${data.description || ''}`,
+                    icon: '/logo512.png',
+                    badge: '/logo512.png'
+                });
+            }
+
+            // Show interactive in-app toast
+            setSupportAlertToast({
+                requestId: data.requestId,
+                firestoreId: data.firestoreId,
+                projectId: data.projectId,
+                projectTitle: data.projectTitle,
+                clientName: data.clientName,
+                clientEmail: data.clientEmail,
+                reason: data.reason,
+                description: data.description,
+                submittedAt: data.submittedAt || new Date().toISOString()
+            });
+
+            setUnreadCount(prev => prev + 1);
+            fetchAllAlertState();
+        });
+
+        // Admin confirmation tone when support request is approved
+        socket.on('technical-support-approved-admin', (data) => {
+            console.log("🔔 Technical Support Approved Confirmation:", data);
+            if (!isMuted) {
+                playNotificationSound(data.selectedTone || 'chime', (data.soundVolume ?? 80) * 0.7);
+            }
+        });
+
         const interval = setInterval(() => {
             fetchAllAlertState();
         }, 12000);
@@ -330,6 +384,8 @@ const AdminLayout = () => {
         return () => {
             socket.off('admin-notification');
             socket.off('admin-notification-update');
+            socket.off('technical-support-request');
+            socket.off('technical-support-approved-admin');
             socket.disconnect();
             clearInterval(interval);
         };
@@ -602,7 +658,7 @@ const AdminLayout = () => {
                             initial={{ opacity: 0, y: 50 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 50 }}
-                            className="fixed bottom-24 left-6 z-[9998] bg-rose-600 text-white px-6 py-4 rounded-3xl shadow-2xl border-4 border-white flex flex-col sm:flex-row items-center gap-4 animate-bounce"
+                            className="fixed bottom-24 left-3 right-3 sm:left-6 sm:right-auto sm:max-w-md z-[9998] bg-rose-600 text-white px-4 sm:px-6 py-4 rounded-3xl shadow-2xl border-4 border-white flex flex-col sm:flex-row items-center gap-3 sm:gap-4 animate-bounce"
                         >
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 bg-white dark:bg-slate-900 text-rose-600 rounded-full flex items-center justify-center font-black animate-pulse">
@@ -729,6 +785,84 @@ const AdminLayout = () => {
                                         }`}
                                     >
                                         Acknowledge Alert
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* ── TECHNICAL SUPPORT INBOUND POPUP TOAST ── */}
+                <AnimatePresence>
+                    {supportAlertToast && (
+                        <div className="fixed bottom-6 left-3 right-3 sm:left-auto sm:right-6 z-[70] sm:max-w-md pointer-events-auto">
+                            <motion.div
+                                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                                className="bg-slate-900 border-2 border-indigo-500 text-white rounded-3xl p-6 shadow-2xl shadow-indigo-500/20 space-y-4"
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-600/40">
+                                            <Bell className="w-5 h-5 animate-bounce" />
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
+                                                New Support Request
+                                            </div>
+                                            <h4 className="text-base font-black tracking-tight text-white leading-tight">
+                                                {supportAlertToast.projectTitle}
+                                            </h4>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setSupportAlertToast(null)}
+                                        className="p-1.5 text-slate-400 hover:text-white rounded-lg transition-colors border-none bg-transparent cursor-pointer"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+
+                                <div className="bg-slate-800/80 rounded-2xl p-4 space-y-2 text-xs border border-slate-700/60">
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-400 font-bold uppercase text-[10px]">Client:</span>
+                                        <span className="font-extrabold text-slate-200">{supportAlertToast.clientName}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-400 font-bold uppercase text-[10px]">Email:</span>
+                                        <span className="font-mono text-[11px] text-indigo-300">{supportAlertToast.clientEmail}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-400 font-bold uppercase text-[10px]">Reason:</span>
+                                        <span className="font-bold text-amber-400">{supportAlertToast.reason}</span>
+                                    </div>
+                                    {supportAlertToast.description && (
+                                        <div className="pt-2 border-t border-slate-700 text-slate-300 italic text-[11px]">
+                                            "{supportAlertToast.description}"
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between text-[10px] text-slate-400 pt-1">
+                                        <span>Submitted:</span>
+                                        <span>{new Date(supportAlertToast.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setSupportAlertToast(null)}
+                                        className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-black uppercase tracking-widest rounded-xl transition border-none cursor-pointer"
+                                    >
+                                        Dismiss
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setSupportAlertToast(null);
+                                            navigate('/admin/support');
+                                        }}
+                                        className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 border-none cursor-pointer"
+                                    >
+                                        Review in Support Hub &rarr;
                                     </button>
                                 </div>
                             </motion.div>

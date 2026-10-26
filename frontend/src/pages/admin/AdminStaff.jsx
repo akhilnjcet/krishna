@@ -375,9 +375,124 @@ const AdminStaff = () => {
                 </div>
             </div>
 
-            {/* Staff Table */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden mobile-table-scroll">
-                <div className="min-w-[800px] md:min-w-full">
+            {/* Staff Table & Mobile Cards */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
+                {/* Mobile Staff Cards (block lg:hidden) */}
+                <div className="block lg:hidden p-3 space-y-3">
+                    {loading ? (
+                        <div className="p-12 text-center">
+                            <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-3" />
+                            <p className="text-slate-500 dark:text-slate-400 font-medium font-mono text-xs">Synchronizing staff data...</p>
+                        </div>
+                    ) : safeStaff.length === 0 ? (
+                        <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+                            <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-20" />
+                            <p className="text-xs font-bold">No staff members found matching criteria.</p>
+                        </div>
+                    ) : (
+                        safeStaff.map((member) => (
+                            <div key={`m-staff-${member._id}`} className="p-4 bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 space-y-3">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-mono text-indigo-600 font-bold">{member.staff_id}</p>
+                                        <h4 className="text-base font-bold text-slate-900 dark:text-white capitalize truncate">{member.name}</h4>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{member.designation} • {member.department}</p>
+                                    </div>
+                                    <div className="shrink-0 flex flex-col items-end gap-1">
+                                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase whitespace-nowrap ${
+                                            member.status === 'active' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300' : 'bg-slate-200 text-slate-600 dark:text-slate-400'
+                                        }`}>
+                                            {member.status}
+                                        </span>
+                                        {member.faceDescriptor?.length > 0 ? (
+                                            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800 whitespace-nowrap">
+                                                ✓ Face Active
+                                            </span>
+                                        ) : (
+                                            <span className="text-[9px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-100 dark:border-amber-800 whitespace-nowrap">
+                                                Face Pending
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="text-xs bg-white dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1">
+                                    {member.email && (
+                                        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 truncate">
+                                            <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                            <span className="truncate">{member.email}</span>
+                                        </div>
+                                    )}
+                                    {member.phone && (
+                                        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                                            <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                            <span>{member.phone}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-4 gap-1.5 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                                    <button 
+                                        onClick={() => { setSelectedStaff(member); setShowIdCardModal(true); }}
+                                        className="py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold"
+                                        title="ID Card"
+                                    >
+                                        <CreditCard className="w-4 h-4" /> ID
+                                    </button>
+                                    <button 
+                                        onClick={() => { setSelectedStaff(member); setShowFaceModal(true); }}
+                                        className="py-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold"
+                                        title="Face"
+                                    >
+                                        <Camera className="w-4 h-4" /> Face
+                                    </button>
+                                    <button 
+                                        onClick={() => { 
+                                            setSelectedStaff(member); 
+                                            fetchAttendanceStats(member._id, member.base_salary);
+                                            setShowPayModal(true); 
+                                        }}
+                                        className="py-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold"
+                                        title="Payout"
+                                    >
+                                        <Banknote className="w-4 h-4" /> Pay
+                                    </button>
+                                    <button 
+                                        onClick={() => { 
+                                            setSelectedStaff(member); 
+                                            setFormData({
+                                                ...member,
+                                                password: '',
+                                                upi_id: member.upi_id || '',
+                                                bank_name: member.bank_name || '',
+                                                account_number: member.account_number || '',
+                                                ifsc_code: member.ifsc_code || '',
+                                                base_salary: member.base_salary || '',
+                                                joiningDate: member.joiningDate ? new Date(member.joiningDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                                                address: member.address || '',
+                                                emergencyContact: member.emergencyContact || '',
+                                                salaryType: member.salaryType || 'Monthly',
+                                                overtimeRate: member.overtimeRate || 0,
+                                                bonusAmount: member.bonusAmount || 0,
+                                                advanceAmount: member.advanceAmount || 0,
+                                                deductionAmount: member.deductionAmount || 0,
+                                                leavesAllowed: member.leavesAllowed || 2
+                                            });
+                                            setShowEditModal(true); 
+                                        }}
+                                        className="py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-indigo-600 hover:text-white transition flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold"
+                                        title="Edit"
+                                    >
+                                        <Edit3 className="w-4 h-4" /> Edit
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Desktop Table View (hidden lg:block) */}
+                <div className="hidden lg:block overflow-x-auto min-w-full">
                     <table className="w-full border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-left">

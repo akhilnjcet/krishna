@@ -97,30 +97,107 @@ const AdminInvoices = () => {
             ) : (
                 <>
                     {/* Header Section */}
-                    <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-xl gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-8 bg-white dark:bg-slate-900 p-4 sm:p-8 rounded-3xl md:rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-xl gap-4 sm:gap-6">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Financial Oversight</div>
-                    <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900 dark:text-white">Accounts Receivable</h2>
+                    <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter text-slate-900 dark:text-white">Accounts Receivable</h2>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 w-full md:w-auto">
                     <button 
                         onClick={handleDownloadLedger}
-                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-50 dark:bg-slate-800 transition shadow-sm"
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-4 sm:px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 dark:bg-slate-800 transition shadow-sm text-xs sm:text-sm"
                     >
-                        <Download className="w-5 h-5" /> Download Ledger
+                        <Download className="w-4 h-4 sm:w-5 sm:h-5" /> Download Ledger
                     </button>
-                    <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-3xl text-right">
+                    <div className="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-left sm:text-right">
                         <div className="text-[10px] uppercase font-black tracking-widest text-indigo-500">Total Outstanding</div>
-                        <div className="font-black text-3xl text-indigo-600 flex items-center justify-end gap-1">
-                            <IndianRupee className="w-6 h-6" /> {totalOutstanding.toLocaleString()}
+                        <div className="font-black text-2xl sm:text-3xl text-indigo-600 dark:text-indigo-400 flex items-center sm:justify-end gap-1 mt-0.5">
+                            <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6" /> {totalOutstanding.toLocaleString()}
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Invoices Table */}
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
-                <div className="overflow-x-auto">
+            {/* Invoices Table & Mobile Cards */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl md:rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
+                {/* Mobile Cards (block sm:hidden) */}
+                <div className="block sm:hidden p-3 space-y-3">
+                    {loading ? (
+                        <div className="p-12 text-center">
+                            <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-3" />
+                            <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Generating Financial Ledger</p>
+                        </div>
+                    ) : invoices.length === 0 ? (
+                        <div className="p-8 text-center text-slate-400 text-xs font-bold">
+                            No invoices found in the system.
+                        </div>
+                    ) : (
+                        invoices.map((inv) => (
+                            <div key={`m-inv-${inv._id}`} className="p-4 bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 space-y-2.5">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                        <div className="font-black text-slate-900 dark:text-white uppercase text-sm">INV-{inv._id.slice(-6).toUpperCase()}</div>
+                                        <div className="text-[10px] text-slate-400 italic font-medium">{new Date(inv.createdAt).toLocaleDateString()}</div>
+                                    </div>
+                                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border shrink-0 whitespace-nowrap ${
+                                        inv.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300' :
+                                        inv.paymentStatus === 'overdue' ? 'bg-red-100 text-red-700 border-red-200 dark:bg-rose-950/60 dark:text-rose-300 animate-pulse' :
+                                        'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300'
+                                    }`}>
+                                        {inv.paymentStatus}
+                                    </span>
+                                </div>
+                                <div className="text-xs bg-white dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1">
+                                    <div className="flex justify-between items-center text-[11px]">
+                                        <span className="text-slate-400 font-semibold uppercase text-[10px]">Client:</span>
+                                        <span className="font-bold text-indigo-600 dark:text-indigo-400 font-mono">
+                                            #{inv.customerId?._id?.slice(-8) || 'N/A'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[11px]">
+                                        <span className="text-slate-400 font-semibold uppercase text-[10px]">Project:</span>
+                                        <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[180px]">
+                                            {inv.projectId?.title || 'Unknown'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100 dark:border-slate-800">
+                                        <span className="text-slate-400 font-semibold uppercase text-[10px]">Amount:</span>
+                                        <span className="text-base font-black text-slate-900 dark:text-white">
+                                            ₹ {inv.amount.toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                                    {inv.paymentStatus !== 'paid' ? (
+                                        <button 
+                                            onClick={() => handleUpdateStatus(inv._id, 'paid')}
+                                            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded-xl transition text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm"
+                                        >
+                                            <CheckCircle className="w-3.5 h-3.5" /> Mark Paid
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => handleUpdateStatus(inv._id, 'unpaid')}
+                                            className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-500 py-2 px-3 rounded-xl transition text-xs font-bold flex items-center justify-center gap-1.5"
+                                        >
+                                            <RotateCcw className="w-3.5 h-3.5" /> Unpaid
+                                        </button>
+                                    )}
+                                    <button 
+                                        onClick={() => handleDownloadPDF(inv)}
+                                        className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-600 hover:text-white transition"
+                                        title="Download PDF"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Desktop Table (hidden sm:block) */}
+                <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
                             <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] uppercase font-black tracking-widest border-b border-slate-100 dark:border-slate-800">

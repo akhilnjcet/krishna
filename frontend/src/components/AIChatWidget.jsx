@@ -287,8 +287,8 @@ const AIChatWidget = () => {
         <div 
             className="fixed z-[100] font-sans"
             style={{ 
-                bottom: '24px', 
-                right: '24px',
+                bottom: '20px', 
+                right: '16px',
                 transform: `translate(${position.x}px, ${position.y}px)`,
                 touchAction: 'none'
             }}
@@ -299,7 +299,7 @@ const AIChatWidget = () => {
                         initial={{ opacity: 0, y: isTop ? -20 : 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: isTop ? -20 : 20, scale: 0.95 }}
-                        className={`absolute ${isTop ? 'top-16' : 'bottom-20'} ${isLeft ? 'left-0' : 'right-0'} w-[90vw] sm:w-[400px] max-w-[420px] h-[580px] max-h-[82vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800`}
+                        className={`fixed sm:absolute inset-x-3 sm:inset-x-auto ${isTop ? 'top-16' : 'bottom-20'} ${isLeft ? 'sm:left-0' : 'sm:right-0'} w-auto sm:w-[400px] sm:max-w-[420px] h-[580px] max-h-[80dvh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800`}
                     >
                         {/* Header (Draggable) */}
                         <div 

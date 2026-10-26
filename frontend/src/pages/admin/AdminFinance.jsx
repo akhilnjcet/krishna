@@ -531,30 +531,30 @@ const AdminFinance = () => {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex bg-slate-200/50 p-1.5 rounded-2xl w-fit border border-slate-200 dark:border-slate-700">
+            <div className="flex flex-wrap sm:flex-nowrap gap-1.5 bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-2xl w-full sm:w-fit border border-slate-200 dark:border-slate-700 overflow-x-auto">
                 <button 
                     onClick={() => setActiveTab('expenses')}
-                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'expenses' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                    className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap text-center ${activeTab === 'expenses' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                 >
                     📈 Expense Ledger
                 </button>
                 <button 
                     onClick={() => setActiveTab('payroll')}
-                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'payroll' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                    className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap text-center ${activeTab === 'payroll' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                 >
-                    💰 Salary & Payroll Manager
+                    💰 Salary & Payroll
                 </button>
                 <button 
                     onClick={() => setActiveTab('overtime')}
-                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'overtime' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                    className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap text-center ${activeTab === 'overtime' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                 >
-                    ⏱️ Overtime Registry
+                    ⏱️ Overtime
                 </button>
                 <button 
                     onClick={() => setActiveTab('labour-bills')}
-                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'labour-bills' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                    className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap text-center ${activeTab === 'labour-bills' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                 >
-                    🚚 Labour & Transport Bills
+                    🚚 Labour & Transport
                 </button>
             </div>
 
@@ -798,7 +798,130 @@ const AdminFinance = () => {
                     </div>
 
                     <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
-                        <div className="overflow-x-auto">
+                        {/* Mobile Cards View (block lg:hidden) */}
+                        <div className="block lg:hidden p-4 space-y-4">
+                            {staffList.length === 0 ? (
+                                <p className="py-8 text-center text-slate-400 font-bold text-xs uppercase tracking-wider">No active staff list loaded.</p>
+                            ) : staffList.map(staff => {
+                                const draft = payrollDrafts[staff._id];
+                                const locked = payrollRecords.find(p => p.staffId?._id === staff._id || p.staffId === staff._id);
+                                const record = locked || draft;
+                                
+                                const baseSal = staff.base_salary || 0;
+                                const totalEarned = record ? (record.totalEarnedSalary ?? record.netSalary ?? baseSal) : baseSal;
+                                const alreadyPaid = record ? (record.salaryAlreadyPaid ?? 0) : 0;
+                                const advancePaid = record ? (record.salaryAdvance ?? staff.advanceAmount ?? 0) : (staff.advanceAmount ?? 0);
+                                const remainingBalance = record ? (record.remainingBalance ?? (totalEarned - alreadyPaid)) : (totalEarned - alreadyPaid);
+                                const outstandingAmount = record ? (record.outstandingAmount ?? 0) : 0;
+                                const statusText = record ? (record.paymentStatus ?? 'DRAFT') : 'DRAFT';
+
+                                return (
+                                    <div key={staff._id} className="bg-slate-50/80 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-700 space-y-3">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <h4 className="font-extrabold text-slate-900 dark:text-white text-base leading-tight">{staff.name}</h4>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{staff.staff_id} • {staff.designation}</p>
+                                                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 mt-1 inline-block">
+                                                    {staff.salaryType || 'Monthly'} (₹ {baseSal.toLocaleString()})
+                                                </span>
+                                            </div>
+                                            <span className={`inline-flex px-2.5 py-1 rounded-lg font-black uppercase tracking-wider text-[9px] shrink-0 ${
+                                                statusText === 'paid' ? 'bg-emerald-50 text-emerald-700' : 
+                                                statusText === 'partially_paid' ? 'bg-amber-50 text-amber-700' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                                            }`}>
+                                                {statusText}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 text-xs bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/50 dark:border-slate-700">
+                                            <div>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Total Earned</p>
+                                                <p className="font-bold text-slate-900 dark:text-white">₹ {totalEarned.toLocaleString()}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Paid / Adv</p>
+                                                <p className="font-semibold text-slate-700 dark:text-slate-300">₹ {alreadyPaid.toLocaleString()} / ₹ {advancePaid.toLocaleString()}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Remaining</p>
+                                                <p className="font-black text-indigo-600">₹ {remainingBalance.toLocaleString()}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Outstanding</p>
+                                                <p className="font-bold text-rose-600">₹ {outstandingAmount.toLocaleString()}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                                            <button 
+                                                onClick={() => handleOpenPaymentModal(staff, record)}
+                                                className="flex-1 min-h-[38px] px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition"
+                                            >
+                                                <Banknote className="w-4 h-4" /> Disburse
+                                            </button>
+
+                                            {draft && !locked && (
+                                                <button 
+                                                    disabled={actionLoading}
+                                                    onClick={() => handleSavePayroll(draft)}
+                                                    className="min-h-[38px] px-3 py-2 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-black transition"
+                                                >
+                                                    Lock Sheet
+                                                </button>
+                                            )}
+
+                                            <button 
+                                                title="Edit Modifiers / Salary Details"
+                                                onClick={() => {
+                                                    setSelectedStaffForEdit(staff);
+                                                    setEditStaffFinanceForm({
+                                                        base_salary: staff.base_salary || 0,
+                                                        salaryType: staff.salaryType || 'Monthly',
+                                                        overtimeRate: staff.overtimeRate || 0,
+                                                        bonusAmount: staff.bonusAmount || 0,
+                                                        advanceAmount: staff.advanceAmount || 0,
+                                                        deductionAmount: staff.deductionAmount || 0,
+                                                        upi_id: staff.upi_id || '',
+                                                        bank_name: staff.bank_name || '',
+                                                        account_number: staff.account_number || '',
+                                                        ifsc_code: staff.ifsc_code || '',
+                                                        standardWorkingHoursPerDay: staff.standardWorkingHoursPerDay || 8,
+                                                        workingDaysPerMonth: staff.workingDaysPerMonth || 26,
+                                                        autoSalaryCalculation: staff.autoSalaryCalculation !== false,
+                                                        otApprovalRequired: staff.otApprovalRequired !== false
+                                                    });
+                                                    setShowEditStaffModal(true);
+                                                }}
+                                                className="min-h-[38px] p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl transition"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </button>
+
+                                            <button 
+                                                title="View Payment History"
+                                                onClick={() => handleOpenHistoryModal(staff, record)}
+                                                className="min-h-[38px] p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl transition"
+                                            >
+                                                <Activity className="w-4 h-4" />
+                                            </button>
+
+                                            {locked && (
+                                                <button 
+                                                    title="Download salary slip"
+                                                    onClick={() => generateSalaryPDF(locked, staff)}
+                                                    className="min-h-[38px] p-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl transition"
+                                                >
+                                                    <Download className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Desktop Table View (hidden lg:block overflow-x-auto) */}
+                        <div className="hidden lg:block overflow-x-auto">
                             <table className="w-full border-collapse text-left text-xs min-w-[1200px]">
                                 <thead>
                                     <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
@@ -971,8 +1094,98 @@ const AdminFinance = () => {
                     </div>
 
                     <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse text-left text-xs">
+                        {/* Mobile Overtime Cards (block md:hidden) */}
+                        <div className="block md:hidden p-4 space-y-3">
+                            {otRecords.length === 0 ? (
+                                <p className="py-8 text-center text-slate-400 font-bold text-xs uppercase tracking-wider">No overtime records found for this cycle.</p>
+                            ) : otRecords.map(ot => {
+                                const staff = ot.staffId || {};
+                                return (
+                                    <div key={ot._id} className="bg-slate-50/80 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-700 space-y-2.5">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">{staff.name || 'Unknown'}</h4>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{staff.staff_id || 'N/A'} • {staff.designation || 'Staff'}</p>
+                                                <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">Date: {ot.date}</p>
+                                            </div>
+                                            <span className={`inline-flex px-2.5 py-1 rounded-lg font-black uppercase tracking-wider text-[9px] shrink-0 ${
+                                                ot.status === 'Approved' ? 'bg-emerald-50 text-emerald-700' :
+                                                ot.status === 'Rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700 animate-pulse'
+                                            }`}>
+                                                {ot.status || 'Pending'}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-2 text-xs bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/50 dark:border-slate-700 text-center">
+                                            <div>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Hours</p>
+                                                <p className="font-bold text-slate-800 dark:text-slate-200">{ot.hours} hrs</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Rate</p>
+                                                <p className="font-semibold text-slate-600 dark:text-slate-400">₹ {ot.ratePerHour || staff.overtimeRate || 0}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Yield</p>
+                                                <p className="font-black text-indigo-600">₹ {ot.totalAmount?.toLocaleString()}</p>
+                                            </div>
+                                        </div>
+
+                                        {ot.remarks && (
+                                            <p className="text-xs text-slate-600 dark:text-slate-400 italic bg-white/50 dark:bg-slate-900/50 p-2 rounded-lg">
+                                                "{ot.remarks}"
+                                            </p>
+                                        )}
+
+                                        <div className="flex flex-wrap items-center justify-end gap-1.5 pt-2 border-t border-slate-200/50 dark:border-slate-700/50">
+                                            {ot.status === 'Pending' && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleOtApproveReject(ot._id, 'Approved')}
+                                                        className="px-3 py-1.5 bg-emerald-600 text-white font-black rounded-xl text-[10px] uppercase tracking-wider hover:bg-emerald-700 transition"
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleOtApproveReject(ot._id, 'Rejected')}
+                                                        className="px-3 py-1.5 bg-rose-600 text-white font-black rounded-xl text-[10px] uppercase tracking-wider hover:bg-rose-700 transition"
+                                                    >
+                                                        Reject
+                                                    </button>
+                                                </>
+                                            )}
+                                            <button 
+                                                onClick={() => {
+                                                    setEditingOt(ot);
+                                                    setOtForm({
+                                                        staffId: staff._id || ot.staffId,
+                                                        date: ot.date,
+                                                        hours: ot.hours.toString(),
+                                                        remarks: ot.remarks || ''
+                                                    });
+                                                    setShowOtModal(true);
+                                                }}
+                                                className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl transition"
+                                                title="Edit Entry"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleOtDelete(ot._id)}
+                                                className="p-2 bg-red-50 hover:bg-red-500 hover:text-white text-red-500 rounded-xl transition"
+                                                title="Delete Entry"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Desktop Table View (hidden md:block overflow-x-auto) */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full border-collapse text-left text-xs min-w-[750px]">
                                 <thead>
                                     <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
                                         <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Employee Details</th>
@@ -1623,51 +1836,90 @@ const AdminFinance = () => {
                             
                             <div className="p-6 space-y-4 max-h-[500px] overflow-y-auto">
                                 {historyList.length === 0 ? (
-                                    <div className="text-center py-12 text-slate-400 font-bold">
+                                    <div className="text-center py-12 text-slate-400 font-bold text-xs uppercase tracking-wider">
                                         No transaction logs recorded for this payroll cycle.
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto w-full">
-                                        <table className="w-full border-collapse text-left text-xs min-w-[500px]">
-                                        <thead>
-                                            <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-                                                <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Date & Time</th>
-                                                <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Type</th>
-                                                <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Method</th>
-                                                <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Amount</th>
-                                                <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Remarks</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
+                                    <>
+                                        {/* Mobile Cards for History (block sm:hidden) */}
+                                        <div className="block sm:hidden space-y-2.5">
                                             {historyList.map((tx, idx) => (
-                                                <tr key={tx._id || idx} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
-                                                    <td className="px-4 py-3 font-medium text-slate-500 dark:text-slate-400">
-                                                        {new Date(tx.createdAt).toLocaleString()}
-                                                    </td>
-                                                    <td className="px-4 py-3">
-                                                        <span className={`inline-flex px-2 py-0.5 rounded font-black text-[9px] uppercase tracking-wider ${
-                                                            tx.type === 'Advance' ? 'bg-amber-50 text-amber-700' :
-                                                            tx.type === 'Overpayment' ? 'bg-rose-50 text-rose-700' : 'bg-indigo-50 text-indigo-700'
-                                                        }`}>
-                                                            {tx.type}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">{tx.paymentMethod}</td>
-                                                    <td className="px-4 py-3 font-extrabold text-slate-900 dark:text-white">₹{tx.amount.toLocaleString()}</td>
-                                                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
-                                                        <p>{tx.notes || '-'}</p>
-                                                        {tx.exceededAllowed && (
-                                                            <div className="mt-1 bg-rose-50 text-rose-700 p-1.5 rounded border border-rose-100 text-[9px] font-semibold">
-                                                                Overpayment Approved By: {tx.approvedBy}<br/>
-                                                                Reason: {tx.reason}
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                </tr>
+                                                <div key={tx._id || idx} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200/70 dark:border-slate-700 space-y-2 text-xs">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div>
+                                                            <span className={`inline-flex px-2 py-0.5 rounded font-black text-[9px] uppercase tracking-wider ${
+                                                                tx.type === 'Advance' ? 'bg-amber-50 text-amber-700' :
+                                                                tx.type === 'Overpayment' ? 'bg-rose-50 text-rose-700' : 'bg-indigo-50 text-indigo-700'
+                                                            }`}>
+                                                                {tx.type}
+                                                            </span>
+                                                            <p className="text-[10px] text-slate-400 font-medium mt-1">
+                                                                {new Date(tx.createdAt).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="font-extrabold text-slate-900 dark:text-white text-sm">₹{tx.amount.toLocaleString()}</p>
+                                                            <span className="text-[10px] text-slate-500 uppercase font-bold">{tx.paymentMethod}</span>
+                                                        </div>
+                                                    </div>
+                                                    {tx.notes && (
+                                                        <p className="text-[11px] text-slate-600 dark:text-slate-400 italic bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                                                            "{tx.notes}"
+                                                        </p>
+                                                    )}
+                                                    {tx.exceededAllowed && (
+                                                        <div className="bg-rose-50 text-rose-700 p-2 rounded-lg border border-rose-100 text-[10px] font-semibold">
+                                                            Overpayment Approved By: {tx.approvedBy}<br/>
+                                                            Reason: {tx.reason}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             ))}
-                                        </tbody>
-                                    </table>
-                                    </div>
+                                        </div>
+
+                                        {/* Desktop Table View (hidden sm:block) */}
+                                        <div className="hidden sm:block overflow-x-auto w-full">
+                                            <table className="w-full border-collapse text-left text-xs min-w-[500px]">
+                                                <thead>
+                                                    <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                                                        <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Date & Time</th>
+                                                        <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Type</th>
+                                                        <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Method</th>
+                                                        <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Amount</th>
+                                                        <th className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">Remarks</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {historyList.map((tx, idx) => (
+                                                        <tr key={tx._id || idx} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
+                                                            <td className="px-4 py-3 font-medium text-slate-500 dark:text-slate-400">
+                                                                {new Date(tx.createdAt).toLocaleString()}
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <span className={`inline-flex px-2 py-0.5 rounded font-black text-[9px] uppercase tracking-wider ${
+                                                                    tx.type === 'Advance' ? 'bg-amber-50 text-amber-700' :
+                                                                    tx.type === 'Overpayment' ? 'bg-rose-50 text-rose-700' : 'bg-indigo-50 text-indigo-700'
+                                                                }`}>
+                                                                    {tx.type}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-4 py-3 font-bold text-slate-600 dark:text-slate-400">{tx.paymentMethod}</td>
+                                                            <td className="px-4 py-3 font-extrabold text-slate-900 dark:text-white">₹{tx.amount.toLocaleString()}</td>
+                                                            <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
+                                                                <p>{tx.notes || '-'}</p>
+                                                                {tx.exceededAllowed && (
+                                                                    <div className="mt-1 bg-rose-50 text-rose-700 p-1.5 rounded border border-rose-100 text-[9px] font-semibold">
+                                                                        Overpayment Approved By: {tx.approvedBy}<br/>
+                                                                        Reason: {tx.reason}
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         </motion.div>

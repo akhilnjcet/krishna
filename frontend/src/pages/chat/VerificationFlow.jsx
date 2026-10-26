@@ -55,22 +55,50 @@ const VerificationFlow = ({ onComplete }) => {
 
     const submitRequest = async () => {
         try {
-            await addDoc(collection(db, "chatRequests"), {
-                userId: userId,
-                userName: name,
-                userEmail: email,
-                userRole: role,
-                requestType: role === 'staff' ? 'staff-reference' : 'support',
-                projectId: selectedProject._id || "",
-                projectTitle: selectedProject.title || "",
-                reason: (selectedReason === "Other (technical detail)" || selectedReason === "Other (internal ref)") ? otherReason : selectedReason,
-                status: 'pending',
-                createdAt: serverTimestamp()
-            });
+            const finalReason = (selectedReason === "Other (technical detail)" || selectedReason === "Other (internal ref)") ? otherReason : selectedReason;
+            
+            // 1. Create document in Firestore for live chat synchronization
+            let firestoreId = '';
+            try {
+                const docRef = await addDoc(collection(db, "chatRequests"), {
+                    userId: userId,
+                    userName: name,
+                    userEmail: email,
+                    userRole: role,
+                    requestType: role === 'staff' ? 'staff-reference' : 'support',
+                    projectId: selectedProject._id || "",
+                    projectTitle: selectedProject.title || "",
+                    reason: finalReason,
+                    description: otherReason || '',
+                    status: 'pending',
+                    createdAt: serverTimestamp()
+                });
+                firestoreId = docRef.id;
+            } catch (fsErr) {
+                console.warn("Firestore sync notice:", fsErr.message);
+            }
+
+            // 2. Dispatch backend operation: logs to MongoDB, sends Admin email alert, and triggers admin sound chime
+            try {
+                await api.post('/support/requests', {
+                    projectId: selectedProject._id || "",
+                    projectTitle: selectedProject.title || "",
+                    reason: finalReason,
+                    description: otherReason || '',
+                    firestoreId: firestoreId,
+                    userName: name,
+                    userEmail: email,
+                    userRole: role,
+                    userId: userId
+                });
+            } catch (apiErr) {
+                console.warn("Backend support alert dispatch warning:", apiErr.message);
+            }
+
             setStep(3);
         } catch (err) {
-            console.error(err);
-            alert("Administrative Error: Channel Request Failed");
+            console.error("Support submission error:", err);
+            alert("Administrative Error: Channel Request Failed: " + (err.message || 'Please try again'));
         }
     };
 

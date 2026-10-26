@@ -274,18 +274,18 @@ const AttendanceLogs = () => {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex bg-slate-200/50 p-1.5 rounded-2xl w-fit border border-slate-200 dark:border-slate-700">
+            <div className="flex flex-wrap sm:flex-nowrap bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-2xl w-full sm:w-fit border border-slate-200 dark:border-slate-700 gap-1">
                 <button 
                     onClick={() => setActiveTab('hub')}
-                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'hub' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                    className={`flex-1 sm:flex-initial text-center px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'hub' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                 >
-                    📅 Attendance Grid Calendar
+                    📅 Attendance Grid
                 </button>
                 <button 
                     onClick={() => setActiveTab('logs')}
-                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'logs' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                    className={`flex-1 sm:flex-initial text-center px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${activeTab === 'logs' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
                 >
-                    🔍 Biometric scan logs
+                    🔍 Biometric Logs
                 </button>
             </div>
 
@@ -504,7 +504,63 @@ const AttendanceLogs = () => {
                     </div>
 
                     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
-                        <div className="overflow-x-auto">
+                        {/* Mobile Logs Cards (block sm:hidden) */}
+                        <div className="block sm:hidden p-3 space-y-3">
+                            {loadingLogs ? (
+                                <div className="p-12 text-center text-slate-400">
+                                    <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-3" />
+                                    <p className="text-xs font-bold">Reading terminal biometric history...</p>
+                                </div>
+                            ) : biometricLogs.length === 0 ? (
+                                <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-xs font-bold">
+                                    No attendance biometric activity logs found.
+                                </div>
+                            ) : (
+                                biometricLogs.filter(log => 
+                                    log.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                    log.staff_id?.staff_id?.toLowerCase().includes(searchQuery.toLowerCase())
+                                ).map(log => (
+                                    <div key={`m-log-${log._id}`} className="p-4 bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 space-y-2.5">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <h4 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">{log.full_name}</h4>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                                    {log.staff_id?.staff_id || 'N/A'} • {log.date}
+                                                </p>
+                                            </div>
+                                            <span className={`inline-flex px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider shrink-0 whitespace-nowrap ${
+                                                log.status === 'success' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-rose-50 text-rose-700'
+                                            }`}>
+                                                {log.status === 'success' ? 'SUCCESS' : 'FAILED'}
+                                            </span>
+                                        </div>
+                                        <div className="text-xs bg-white dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                            <div className="space-y-0.5">
+                                                <p className="text-emerald-600 font-bold text-[11px]">IN: {log.login_time ? new Date(log.login_time).toLocaleTimeString() : 'N/A'}</p>
+                                                <p className="text-rose-500 font-bold text-[11px]">OUT: {log.check_out ? new Date(log.check_out).toLocaleTimeString() : '--:--'}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-[10px] text-slate-400 font-bold uppercase block">Duration</span>
+                                                <span className="font-mono font-black text-xs text-slate-700 dark:text-slate-300">
+                                                    {log.duration_minutes ? `${Math.floor(log.duration_minutes / 60)}h ${log.duration_minutes % 60}m` : '--'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                                            <button 
+                                                onClick={() => handleDeleteBiometric(log._id)}
+                                                className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-xl transition text-xs font-bold flex items-center gap-1.5"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" /> Delete Entry
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Desktop Table View (hidden sm:block) */}
+                        <div className="hidden sm:block overflow-x-auto">
                             <table className="w-full border-collapse text-left">
                                 <thead>
                                     <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">

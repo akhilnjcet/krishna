@@ -293,11 +293,11 @@ const StaffAttendanceHub = () => {
             </div>
 
             {/* ATTENDANCE HISTORY TABLE & CONTROLS */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm space-y-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm space-y-4">
                 {/* Search & Filter Bar */}
-                <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/50">
-                    <div className="flex items-center gap-3 flex-1">
-                        <div className="relative flex-1 max-w-xs">
+                <div className="p-3 sm:p-4 md:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 bg-slate-50/50 dark:bg-slate-800/50">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1 flex-wrap sm:flex-nowrap">
+                        <div className="relative flex-1 min-w-[180px] sm:max-w-xs">
                             <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                             <input 
                                 type="text"
@@ -332,28 +332,92 @@ const StaffAttendanceHub = () => {
                         </div>
                     </div>
 
-                    <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-4">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold flex items-center justify-between sm:justify-start gap-4">
                         <span>Total Records: <strong className="text-slate-900 dark:text-white">{filteredLogs.length}</strong></span>
-                        <span>Overtime Total: <strong className="text-indigo-600">{totalOvertimeHours} hrs</strong></span>
+                        <span>Overtime: <strong className="text-indigo-600">{totalOvertimeHours} hrs</strong></span>
                     </div>
                 </div>
 
-                {/* Table Component */}
-                <div className="mobile-table-scroll">
-                    <table className="w-full text-left border-collapse">
+                {/* Mobile View: Cards */}
+                <div className="block sm:hidden p-3 space-y-3">
+                    {loading ? (
+                        <div className="p-8 text-center text-slate-400 text-xs">
+                            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-600" />
+                            Fetching daily attendance records...
+                        </div>
+                    ) : paginatedLogs.length > 0 ? (
+                        paginatedLogs.map((log) => (
+                            <div key={log._id || log.date} className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="font-black text-slate-800 dark:text-slate-200 text-xs">
+                                        {log.date}
+                                    </div>
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase border whitespace-nowrap ${getStatusBadge(log.status)}`}>
+                                        {log.status}
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 text-[11px] bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                    <div>
+                                        <span className="text-[9px] text-slate-400 font-black uppercase block">Shift Clock</span>
+                                        <div className="font-bold text-slate-700 dark:text-slate-300 mt-0.5">
+                                            In: {log.checkIn || '--'}
+                                        </div>
+                                        <div className="font-bold text-slate-700 dark:text-slate-300">
+                                            Out: {log.checkOut || '--'}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span className="text-[9px] text-slate-400 font-black uppercase block">Hours / OT</span>
+                                        <div className="font-black text-slate-900 dark:text-white mt-0.5">
+                                            {log.workedHours || 0} hrs worked
+                                        </div>
+                                        <div className="font-bold text-indigo-600">
+                                            +{overtimeMap[log.date] || 0} hrs OT
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {(log.location || log.remarks) && (
+                                    <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400 pt-0.5">
+                                        {log.location && (
+                                            <span className="flex items-center gap-1 truncate">
+                                                <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                                                <span className="truncate">{log.location}</span>
+                                            </span>
+                                        )}
+                                        {log.remarks && (
+                                            <span className="italic truncate text-right">
+                                                "{log.remarks}"
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="p-8 text-center text-slate-400 font-bold italic text-xs">
+                            No attendance logs found for {selectedMonth}.
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop View: Table */}
+                <div className="hidden sm:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
                             <tr className="bg-slate-50 dark:bg-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                                <th className="px-6 py-4">Date</th>
-                                <th className="px-6 py-4">Check-In Time</th>
-                                <th className="px-6 py-4">Check-Out Time</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4 text-center">Working Hours</th>
-                                <th className="px-6 py-4 text-center">Overtime</th>
-                                <th className="px-6 py-4">Location</th>
-                                <th className="px-6 py-4">Remarks</th>
+                                <th className="px-4 lg:px-6 py-4">Date</th>
+                                <th className="px-4 lg:px-6 py-4">Check-In</th>
+                                <th className="px-4 lg:px-6 py-4">Check-Out</th>
+                                <th className="px-4 lg:px-6 py-4">Status</th>
+                                <th className="px-4 lg:px-6 py-4 text-center">Working Hours</th>
+                                <th className="px-4 lg:px-6 py-4 text-center">Overtime</th>
+                                <th className="px-4 lg:px-6 py-4">Location</th>
+                                <th className="px-4 lg:px-6 py-4">Remarks</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        <tbody className="divide-y divide-slate-50 dark:divide-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400">
                             {loading ? (
                                 <tr>
                                     <td colSpan="8" className="p-12 text-center text-slate-400">
@@ -363,32 +427,32 @@ const StaffAttendanceHub = () => {
                                 </tr>
                             ) : paginatedLogs.length > 0 ? (
                                 paginatedLogs.map((log) => (
-                                    <tr key={log._id || log.date} className="hover:bg-slate-50/60 dark:bg-slate-800/60 transition">
-                                        <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                                    <tr key={log._id || log.date} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60 transition">
+                                        <td className="px-4 lg:px-6 py-4 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                                             {log.date}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                        <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                             {log.checkIn || '--'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                        <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                             {log.checkOut || '--'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                                             <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase border ${getStatusBadge(log.status)}`}>
                                                 {log.status}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-center font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                                        <td className="px-4 lg:px-6 py-4 text-center font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                                             {log.workedHours || 0} hrs
                                         </td>
-                                        <td className="px-6 py-4 text-center font-bold text-indigo-600 whitespace-nowrap">
+                                        <td className="px-4 lg:px-6 py-4 text-center font-bold text-indigo-600 whitespace-nowrap">
                                             {overtimeMap[log.date] || 0} hrs
                                         </td>
-                                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap flex items-center gap-1">
+                                        <td className="px-4 lg:px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap flex items-center gap-1">
                                             <MapPin className="w-3.5 h-3.5 text-slate-400" />
                                             {log.location || 'Factory / Site'}
                                         </td>
-                                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400 italic max-w-xs truncate">
+                                        <td className="px-4 lg:px-6 py-4 text-slate-500 dark:text-slate-400 italic max-w-xs truncate">
                                             {log.remarks || 'Standard Shift Logged'}
                                         </td>
                                     </tr>

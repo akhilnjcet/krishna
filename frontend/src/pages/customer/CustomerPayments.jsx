@@ -894,14 +894,14 @@ const CustomerPayments = () => {
 
                         {/* Desktop/Tablet Table (sm:block) */}
                         <div className="hidden sm:block overflow-x-auto -mx-2 sm:mx-0">
-                            <table className="w-full text-left border-collapse">
+                            <table className="w-full text-left border-collapse min-w-[480px]">
                                 <thead>
                                     <tr className="border-b border-slate-100 dark:border-slate-800 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase">
-                                        <th className="py-3 px-2">#</th>
-                                        <th className="py-3 px-2">Transaction ID</th>
-                                        <th className="py-3 px-2">Date & Time</th>
-                                        <th className="py-3 px-2">Amount</th>
-                                        <th className="py-3 px-2 text-right">Status</th>
+                                        <th className="py-3 px-2 whitespace-nowrap">#</th>
+                                        <th className="py-3 px-2 whitespace-nowrap">Transaction ID</th>
+                                        <th className="py-3 px-2 whitespace-nowrap">Date & Time</th>
+                                        <th className="py-3 px-2 whitespace-nowrap">Amount</th>
+                                        <th className="py-3 px-2 text-right whitespace-nowrap">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/60 text-xs">
@@ -929,28 +929,28 @@ const CustomerPayments = () => {
                                                     className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
                                                     title={isPaid ? "Click to download official receipt" : ""}
                                                 >
-                                                    <td className="py-3 px-2 text-slate-400 font-medium">
+                                                    <td className="py-3 px-2 text-slate-400 font-medium whitespace-nowrap">
                                                         {index + 1}
                                                     </td>
-                                                    <td className="py-3 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 transition-colors truncate max-w-[120px]">
+                                                    <td className="py-3 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 transition-colors whitespace-nowrap">
                                                         {txId}
                                                     </td>
-                                                    <td className="py-3 px-2">
+                                                    <td className="py-3 px-2 whitespace-nowrap">
                                                         <p className="font-semibold text-slate-700 dark:text-slate-300 leading-tight">{date}</p>
                                                         <p className="text-[10px] text-slate-400 leading-tight">{time}</p>
                                                     </td>
                                                     <td className="py-3 px-2 font-bold text-slate-900 dark:text-white whitespace-nowrap">
                                                         ₹{p.amount?.toLocaleString()}
                                                     </td>
-                                                    <td className="py-3 px-2 text-right">
-                                                        <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                                                    <td className="py-3 px-2 text-right whitespace-nowrap">
+                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${
                                                             isPaid 
                                                                 ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40' 
                                                                 : isFailed 
                                                                 ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900/40' 
                                                                 : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900/40'
                                                         }`}>
-                                                            {isPaid ? 'Paid' : isFailed ? 'Failed' : 'Pending'}
+                                                            {isPaid ? 'Paid' : isFailed ? 'Failed' : 'Payment Verification'}
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -983,29 +983,30 @@ const CustomerPayments = () => {
                                             onClick={() => isPaid && generatePaymentReceiptPDF(p, user)}
                                             className="p-3.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/60 rounded-xl space-y-2 cursor-pointer active:scale-[0.99] transition-all"
                                         >
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[170px]">{txId}</span>
-                                                <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 truncate flex-1 min-w-0">{txId}</span>
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold whitespace-nowrap shrink-0 ${
                                                     isPaid 
                                                         ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40' 
                                                         : isFailed 
                                                         ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900/40' 
                                                         : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900/40'
                                                 }`}>
-                                                    {isPaid ? 'Paid' : isFailed ? 'Failed' : 'Pending'}
+                                                    {isPaid ? 'Paid' : isFailed ? 'Failed' : 'Payment Verification'}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center justify-between text-xs">
-                                                <span className="text-slate-500 dark:text-slate-400 font-medium">{date} • {time}</span>
-                                                <span className="font-bold text-sm text-slate-900 dark:text-white">₹{p.amount?.toLocaleString()}</span>
+                                            <div className="flex items-center justify-between text-xs gap-2">
+                                                <span className="text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">{date} • {time}</span>
+                                                <span className="font-bold text-sm text-slate-900 dark:text-white whitespace-nowrap">₹{p.amount?.toLocaleString()}</span>
                                             </div>
-                                            {isPaid && (
-                                                <div className="pt-1 flex justify-end">
-                                                    <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                                                        <Download className="w-3.5 h-3.5" /> Download Receipt
+                                            <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/40 dark:border-slate-700/40">
+                                                <span className="text-slate-400 font-semibold uppercase">{p.method || 'Online'}</span>
+                                                {isPaid && (
+                                                    <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1 whitespace-nowrap">
+                                                        <Download className="w-3 h-3" /> Download Receipt
                                                     </span>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })
@@ -1019,12 +1020,12 @@ const CustomerPayments = () => {
 
             {/* ── VIEW ALL TRANSACTIONS MODAL ── */}
             {viewAllModal && (
-                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-3xl w-full max-h-[90vh] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col animate-in fade-in zoom-in-95 duration-150">
+                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-7 max-w-3xl w-full max-h-[92vh] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col animate-in fade-in zoom-in-95 duration-150">
                         
-                        <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100 dark:border-slate-800">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
                                     All Transaction Records
                                 </h3>
                                 <p className="text-xs text-slate-500">
@@ -1040,7 +1041,7 @@ const CustomerPayments = () => {
                         </div>
 
                         {/* Search & Filter Bar */}
-                        <div className="py-4">
+                        <div className="py-3 sm:py-4">
                             <div className="relative">
                                 <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                                 <input
@@ -1053,18 +1054,72 @@ const CustomerPayments = () => {
                             </div>
                         </div>
 
-                        {/* Full Table */}
-                        <div className="flex-1 overflow-y-auto">
-                            <table className="w-full text-left border-collapse">
+                        {/* Mobile Cards for All Transactions (sm:hidden) */}
+                        <div className="block sm:hidden flex-1 overflow-y-auto space-y-2.5 pr-0.5">
+                            {filteredPayments.length === 0 ? (
+                                <div className="text-center py-10 text-slate-400 text-xs">
+                                    No transaction records found matching "{searchQuery}"
+                                </div>
+                            ) : (
+                                filteredPayments.map((p, idx) => {
+                                    const { date, time } = formatDateTime(p.createdAt || p.paymentDate);
+                                    const isPaid = p.status === 'Completed' || p.status === 'verified' || p.status === 'paid' || p.status === 'PAID';
+                                    const isFailed = p.status === 'Failed' || p.status === 'rejected' || p.status === 'FAILED';
+                                    const txId = p.cfOrderId 
+                                        ? `#${p.cfOrderId}`
+                                        : (p.referenceId ? `#${p.referenceId}` : `#CF${p._id.slice(-8).toUpperCase()}`);
+
+                                    return (
+                                        <div key={p._id} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-slate-700/70 space-y-2 text-xs">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs truncate">{txId}</p>
+                                                    <p className="text-[10px] text-slate-400 mt-0.5 whitespace-nowrap">{date} • {time}</p>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <p className="font-black text-slate-900 dark:text-white text-sm whitespace-nowrap">₹{p.amount?.toLocaleString()}</p>
+                                                    <span className="text-[9px] font-bold uppercase text-slate-500 dark:text-slate-400 whitespace-nowrap">{p.method || 'Online'}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold whitespace-nowrap shrink-0 ${
+                                                    isPaid 
+                                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40' 
+                                                        : isFailed 
+                                                        ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-100 dark:border-rose-900/40' 
+                                                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-100 dark:border-amber-900/40'
+                                                }`}>
+                                                    {isPaid ? 'Paid' : isFailed ? 'Failed' : 'Payment Verification'}
+                                                </span>
+
+                                                {isPaid && (
+                                                    <button
+                                                        onClick={() => generatePaymentReceiptPDF(p, user)}
+                                                        className="px-2.5 py-1 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 rounded-lg inline-flex items-center gap-1 text-[11px] font-bold transition whitespace-nowrap cursor-pointer"
+                                                    >
+                                                        <Download className="w-3 h-3" /> Receipt
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+
+                        {/* Full Table for Desktop & Tablet (hidden sm:block) */}
+                        <div className="hidden sm:block flex-1 overflow-y-auto overflow-x-auto">
+                            <table className="w-full text-left border-collapse min-w-[620px]">
                                 <thead className="sticky top-0 bg-white dark:bg-slate-900">
                                     <tr className="border-b border-slate-100 dark:border-slate-800 text-[11px] font-bold text-slate-400 uppercase">
-                                        <th className="py-2.5 px-3">#</th>
-                                        <th className="py-2.5 px-3">Transaction ID</th>
-                                        <th className="py-2.5 px-3">Date</th>
-                                        <th className="py-2.5 px-3">Method</th>
-                                        <th className="py-2.5 px-3">Amount</th>
-                                        <th className="py-2.5 px-3">Status</th>
-                                        <th className="py-2.5 px-3 text-right">Receipt</th>
+                                        <th className="py-2.5 px-3 whitespace-nowrap">#</th>
+                                        <th className="py-2.5 px-3 whitespace-nowrap">Transaction ID</th>
+                                        <th className="py-2.5 px-3 whitespace-nowrap">Date</th>
+                                        <th className="py-2.5 px-3 whitespace-nowrap">Method</th>
+                                        <th className="py-2.5 px-3 whitespace-nowrap">Amount</th>
+                                        <th className="py-2.5 px-3 whitespace-nowrap">Status</th>
+                                        <th className="py-2.5 px-3 text-right whitespace-nowrap">Receipt</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
@@ -1078,30 +1133,31 @@ const CustomerPayments = () => {
 
                                         return (
                                             <tr key={p._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                                <td className="py-3 px-3 text-slate-400">{idx + 1}</td>
-                                                <td className="py-3 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">{txId}</td>
-                                                <td className="py-3 px-3">
-                                                    <p className="font-semibold text-slate-700 dark:text-slate-300">{date}</p>
-                                                    <p className="text-[10px] text-slate-400">{time}</p>
+                                                <td className="py-3 px-3 text-slate-400 whitespace-nowrap">{idx + 1}</td>
+                                                <td className="py-3 px-3 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">{txId}</td>
+                                                <td className="py-3 px-3 whitespace-nowrap">
+                                                    <p className="font-semibold text-slate-700 dark:text-slate-300 leading-tight">{date}</p>
+                                                    <p className="text-[10px] text-slate-400 leading-tight">{time}</p>
                                                 </td>
-                                                <td className="py-3 px-3 text-slate-500 uppercase font-semibold text-[11px]">{p.method}</td>
-                                                <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">₹{p.amount?.toLocaleString()}</td>
-                                                <td className="py-3 px-3">
-                                                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                                <td className="py-3 px-3 text-slate-500 uppercase font-semibold text-[11px] whitespace-nowrap">{p.method}</td>
+                                                <td className="py-3 px-3 font-bold text-slate-900 dark:text-white whitespace-nowrap">₹{p.amount?.toLocaleString()}</td>
+                                                <td className="py-3 px-3 whitespace-nowrap">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${
                                                         isPaid 
-                                                            ? 'bg-emerald-50 text-emerald-700' 
+                                                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' 
                                                             : isFailed 
-                                                            ? 'bg-rose-50 text-rose-700' 
-                                                            : 'bg-amber-50 text-amber-700'
+                                                            ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400' 
+                                                            : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
                                                     }`}>
-                                                        {isPaid ? 'Paid' : isFailed ? 'Failed' : 'Pending'}
+                                                        {isPaid ? 'Paid' : isFailed ? 'Failed' : 'Payment Verification'}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 px-3 text-right">
+                                                <td className="py-3 px-3 text-right whitespace-nowrap">
                                                     {isPaid && (
                                                         <button
                                                             onClick={() => generatePaymentReceiptPDF(p, user)}
-                                                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg inline-flex items-center gap-1 text-xs font-semibold"
+                                                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-800 rounded-lg inline-flex items-center gap-1 text-xs font-semibold cursor-pointer"
+                                                            title="Download Receipt"
                                                         >
                                                             <Download className="w-3.5 h-3.5" />
                                                         </button>

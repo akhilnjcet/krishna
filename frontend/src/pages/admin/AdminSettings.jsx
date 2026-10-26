@@ -6,14 +6,16 @@ import {
     MapPin, Phone, Mail, Globe, Share2, AlignLeft, 
     Terminal, Cpu, Radio, Activity, Zap, TrendingUp,
     BarChart3, Info, ImageIcon, FileText, Building, CreditCard,
-    RotateCcw, Sliders, ShieldAlert, AlertTriangle, Sparkles
+    RotateCcw, Sliders, ShieldAlert, AlertTriangle, Sparkles, Bell
 } from 'lucide-react';
 import api from '../../services/api';
 import MasterResetHub from '../../components/admin/MasterResetHub';
+import NotificationAlertSettingsHub from '../../components/admin/NotificationAlertSettingsHub';
 
 const AdminSettings = () => {
     const [searchParams, setSearchParams] = useSearchParams();
-    const activeTab = searchParams.get('tab') === 'reset' ? 'reset' : 'directives';
+    const currentTabParam = searchParams.get('tab');
+    const activeTab = currentTabParam === 'reset' ? 'reset' : currentTabParam === 'alerts' ? 'alerts' : 'directives';
     const setActiveTab = (tab) => {
         setSearchParams(tab === 'directives' ? {} : { tab });
     };
@@ -262,6 +264,17 @@ const AdminSettings = () => {
                         System Directives & Branding
                     </button>
                     <button
+                        onClick={() => setActiveTab('alerts')}
+                        className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                            activeTab === 'alerts'
+                                ? 'bg-blue-600 dark:bg-brand-accent text-white dark:text-black shadow-md'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/40 dark:hover:bg-white/5'
+                        }`}
+                    >
+                        <Bell className="w-4 h-4" />
+                        Notification & Alert Settings
+                    </button>
+                    <button
                         onClick={() => setActiveTab('reset')}
                         className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
                             activeTab === 'reset'
@@ -276,6 +289,10 @@ const AdminSettings = () => {
                         </span>
                     </button>
                 </div>
+
+                {activeTab === 'alerts' && (
+                    <NotificationAlertSettingsHub />
+                )}
 
                 {activeTab === 'reset' && (
                     <MasterResetHub />

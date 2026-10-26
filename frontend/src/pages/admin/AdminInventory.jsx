@@ -572,9 +572,131 @@ const AdminInventory = () => {
 
             {/* ══════════════ TAB 1: TOOLS SECTION ══════════════ */}
             {activeTab === 'tools' && (
-                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse text-xs">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+                    {/* Mobile View: Cards */}
+                    <div className="block md:hidden p-3 sm:p-4 space-y-3">
+                        {tools.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400 font-bold text-xs">
+                                No tools found matching your current filter. Click "+ Add New Tool" to register machinery.
+                            </div>
+                        ) : (
+                            tools.map(tool => {
+                                const isOverdue = tool.status === 'Assigned' && tool.currentAssignment?.returnByDate && (new Date(tool.currentAssignment.returnByDate) < new Date());
+
+                                return (
+                                    <div key={tool._id} className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0">
+                                                <div className="font-black text-slate-900 dark:text-white text-sm leading-tight">{tool.name}</div>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className="font-mono text-[11px] text-indigo-600 dark:text-indigo-400 font-bold">{tool.code}</span>
+                                                    {tool.brand && <span className="text-[10px] text-slate-400">· {tool.brand}</span>}
+                                                </div>
+                                                {tool.location && <div className="text-[10px] text-slate-400 mt-0.5">{tool.location}</div>}
+                                            </div>
+                                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider shrink-0 whitespace-nowrap ${
+                                                tool.condition === 'New' || tool.condition === 'Good'
+                                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                                    : tool.condition === 'Needs Repair'
+                                                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                                                    : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                                            }`}>
+                                                {tool.condition}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 text-xs bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                            <div>
+                                                <span className="text-[10px] text-slate-400 font-black uppercase block">Status</span>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className={`w-2 h-2 rounded-full shrink-0 ${
+                                                        tool.status === 'Available' ? 'bg-emerald-500' : tool.status === 'Assigned' ? 'bg-indigo-500 animate-pulse' : tool.status === 'In Repair' ? 'bg-amber-500' : 'bg-slate-400'
+                                                    }`}></span>
+                                                    <span className="font-black text-xs uppercase truncate">{tool.status}</span>
+                                                </div>
+                                                {tool.status === 'Assigned' && tool.currentAssignment && (
+                                                    <div className="text-[10px] text-slate-600 dark:text-slate-300 font-bold flex items-center gap-1 mt-0.5 truncate">
+                                                        <User className="w-3 h-3 text-indigo-500 shrink-0" />
+                                                        <span className="truncate">{tool.currentAssignment.staffName}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <span className="text-[10px] text-slate-400 font-black uppercase block">Return-By</span>
+                                                {tool.status === 'Assigned' && tool.currentAssignment?.returnByDate ? (
+                                                    <div className="mt-0.5">
+                                                        <div className={`font-bold text-xs ${isOverdue ? 'text-rose-600 font-black' : 'text-slate-700 dark:text-slate-300'}`}>
+                                                            {new Date(tool.currentAssignment.returnByDate).toLocaleDateString()}
+                                                        </div>
+                                                        {isOverdue && (
+                                                            <span className="text-[8px] font-black uppercase text-rose-600 bg-rose-50 dark:bg-rose-950/50 px-1 py-0.2 rounded border border-rose-200">
+                                                                Overdue
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-400 mt-0.5 block">—</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-1.5 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                                            <div className="flex items-center gap-1.5 flex-1">
+                                                {tool.status === 'Available' && (
+                                                    <button
+                                                        onClick={() => handleOpenAssign(tool)}
+                                                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider text-center shadow-sm"
+                                                    >
+                                                        Assign
+                                                    </button>
+                                                )}
+
+                                                {tool.status === 'Assigned' && (
+                                                    <button
+                                                        onClick={() => handleOpenReturn(tool)}
+                                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider text-center shadow-sm"
+                                                    >
+                                                        Record Return
+                                                    </button>
+                                                )}
+
+                                                {tool.status !== 'In Repair' && tool.status !== 'Total Loss' && (
+                                                    <button
+                                                        onClick={() => handleOpenRepair(tool)}
+                                                        className="bg-amber-100 hover:bg-amber-200 dark:bg-amber-950 dark:hover:bg-amber-900 text-amber-800 dark:text-amber-300 p-2 rounded-xl font-bold text-xs"
+                                                        title="Send to repair"
+                                                    >
+                                                        <Hammer className="w-4 h-4" />
+                                                    </button>
+                                                )}
+
+                                                <button
+                                                    onClick={() => { setHistoryItem(tool); setShowHistoryModal(true); }}
+                                                    className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 p-2 rounded-xl font-bold text-xs"
+                                                    title="History"
+                                                >
+                                                    <History className="w-4 h-4" />
+                                                </button>
+                                            </div>
+
+                                            <button
+                                                onClick={() => handleDeleteItem(tool._id, tool.name)}
+                                                className="text-slate-400 hover:text-rose-600 p-2 transition"
+                                                title="Delete tool"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+
+                    {/* Desktop View: Table */}
+                    <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs min-w-[750px]">
                             <thead>
                                 <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-400">
                                     <th className="p-4">Tool & Code</th>
@@ -709,9 +831,80 @@ const AdminInventory = () => {
 
             {/* ══════════════ TAB 2: MATERIALS / PRODUCTS SECTION ══════════════ */}
             {activeTab === 'materials' && (
-                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse text-xs">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+                    {/* Mobile View: Cards */}
+                    <div className="block md:hidden p-3 sm:p-4 space-y-3">
+                        {materials.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400 font-bold text-xs">
+                                No materials or fabricated products registered yet. Click "+ Add Material / Product" above.
+                            </div>
+                        ) : (
+                            materials.map(mat => {
+                                const isLowStock = (mat.quantity || 0) <= (mat.minThreshold || 0);
+
+                                return (
+                                    <div key={mat._id} className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0">
+                                                <div className="font-black text-slate-900 dark:text-white text-sm leading-tight">{mat.name}</div>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className="font-mono text-[11px] text-slate-400 font-bold">{mat.code}</span>
+                                                    {mat.location && <span className="text-[10px] text-slate-400">· {mat.location}</span>}
+                                                </div>
+                                            </div>
+                                            <span className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 shrink-0">
+                                                {mat.category}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 text-xs bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                            <div>
+                                                <span className="text-[10px] text-slate-400 font-black uppercase block">In-Stock</span>
+                                                <div className={`text-base font-black ${isLowStock ? 'text-rose-600' : 'text-slate-900 dark:text-white'}`}>
+                                                    {mat.quantity} <span className="text-xs font-normal text-slate-500">{mat.unit}</span>
+                                                </div>
+                                                {isLowStock && (
+                                                    <span className="text-[8px] font-black uppercase text-rose-600 bg-rose-50 dark:bg-rose-950/60 px-1 py-0.2 rounded border border-rose-200 inline-block mt-0.5">
+                                                        Low Stock
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <span className="text-[10px] text-slate-400 font-black uppercase block">Rate / Threshold</span>
+                                                <div className="font-bold text-slate-900 dark:text-white text-xs mt-0.5">
+                                                    {formatCurrencyINR(mat.unitPrice)} / {mat.unit}
+                                                </div>
+                                                <div className="text-[10px] text-slate-400 font-bold mt-0.5">
+                                                    Min: {mat.minThreshold} {mat.unit}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                                            <button
+                                                onClick={() => handleOpenStock(mat)}
+                                                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm"
+                                            >
+                                                <ArrowRightLeft className="w-3.5 h-3.5" /> Adjust Stock
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteItem(mat._id, mat.name)}
+                                                className="text-slate-400 hover:text-rose-600 p-2 transition"
+                                                title="Delete material"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+
+                    {/* Desktop View: Table */}
+                    <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs min-w-[700px]">
                             <thead>
                                 <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-400">
                                     <th className="p-4">Material / Product</th>
@@ -789,9 +982,90 @@ const AdminInventory = () => {
 
             {/* ══════════════ TAB 3: TOOL REPAIRS SECTION ══════════════ */}
             {activeTab === 'repairs' && (
-                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse text-xs">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+                    {/* Mobile View: Cards */}
+                    <div className="block md:hidden p-3 sm:p-4 space-y-3">
+                        {repairs.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400 font-bold text-xs">
+                                No repair tickets logged. When tools are damaged or sent to service, they appear here.
+                            </div>
+                        ) : (
+                            repairs.map(rep => {
+                                return (
+                                    <div key={rep._id} className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0">
+                                                <div className="font-black text-slate-900 dark:text-white text-sm leading-tight">{rep.toolName}</div>
+                                                <div className="font-mono text-[11px] text-indigo-600 dark:text-indigo-400 font-bold mt-0.5">{rep.toolCode || '—'}</div>
+                                            </div>
+                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shrink-0 whitespace-nowrap ${
+                                                rep.status === 'Repaired' 
+                                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' 
+                                                    : rep.status === 'Total loss'
+                                                    ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                                            }`}>
+                                                {rep.status}
+                                            </span>
+                                        </div>
+
+                                        <p className="text-xs text-slate-800 dark:text-slate-200 font-bold bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                            {rep.issueDescription}
+                                        </p>
+
+                                        <div className="grid grid-cols-2 gap-2 text-xs bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                            <div>
+                                                <span className="text-[10px] text-slate-400 font-black uppercase block">Workshop / Cost</span>
+                                                <div className="font-bold text-slate-700 dark:text-slate-300 text-xs truncate">
+                                                    {rep.repairVendor || 'In-House'}
+                                                </div>
+                                                <div className="font-black text-slate-900 dark:text-white text-xs mt-0.5">
+                                                    {formatCurrencyINR(rep.repairCost || 0)}
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <span className="text-[10px] text-slate-400 font-black uppercase block">Final Outcome</span>
+                                                {rep.outcome === 'Repaired' ? (
+                                                    <span className="text-emerald-600 font-black text-xs flex items-center gap-1 mt-0.5">
+                                                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> Repaired
+                                                    </span>
+                                                ) : rep.outcome === 'Total loss' ? (
+                                                    <span className="text-rose-600 font-black text-xs flex items-center gap-1 mt-0.5">
+                                                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Total Loss
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-amber-600 font-bold text-xs mt-0.5 block">
+                                                        Pending
+                                                    </span>
+                                                )}
+                                                <span className="text-[9px] text-slate-400 block mt-0.5">
+                                                    {new Date(rep.reportedDate).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-1">
+                                            <button
+                                                onClick={() => handleOpenResolve(rep)}
+                                                className={`w-full py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider text-center shadow-sm ${
+                                                    rep.outcome === 'Pending'
+                                                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                                                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                                }`}
+                                            >
+                                                {rep.outcome === 'Pending' ? 'Update / Finalize Outcome' : 'Edit Repair Record'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+
+                    {/* Desktop View: Table */}
+                    <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs min-w-[750px]">
                             <thead>
                                 <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-400">
                                     <th className="p-4">Tool / Asset</th>

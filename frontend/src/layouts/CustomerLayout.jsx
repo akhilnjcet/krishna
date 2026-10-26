@@ -3,12 +3,13 @@ import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-d
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Layers, BookOpen, FileText,
-    MessageSquare, HelpCircle, User, LogOut, Bell, Menu, X, ChevronLeft, Wallet, Home, Briefcase
+    MessageSquare, HelpCircle, User, LogOut, Bell, Menu, X, ChevronLeft, Wallet, Home, Briefcase, CheckCircle
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import ThemeToggle from '../components/ThemeToggle';
+import { getSocket } from '../utils/socket';
 
-const SIDEBAR_W = 'w-[280px]';
+const SIDEBAR_W = 'w-[280px] max-w-[85vw]';
 
 const navItems = [
     { name: 'My Dashboard', path: '/customer', icon: LayoutDashboard },
@@ -110,6 +111,41 @@ const CustomerLayout = () => {
     const navigate = useNavigate();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [desktopOpen, setDesktopOpen] = useState(true);
+    const [supportApprovalAlert, setSupportApprovalAlert] = useState(null);
+
+    React.useEffect(() => {
+        if (!user) return;
+        const socket = getSocket();
+        socket.connect();
+
+        const myId = (user._id || user.id || '').toString();
+        const myEmail = (user.email || '').toLowerCase();
+
+        socket.emit('join-room', `user_${myId}`);
+        socket.emit('join-room', 'customer');
+
+        const handleApproval = (data) => {
+            console.log("🔔 Inbound Client Support Approval Notification:", data);
+            if (
+                (data.targetUserId && data.targetUserId === myId) ||
+                (data.clientEmail && data.clientEmail.toLowerCase() === myEmail) ||
+                !data.targetUserId
+            ) {
+                // Display in-app visual notification; NO sound played on client device
+                setSupportApprovalAlert({
+                    projectId: data.projectId,
+                    projectTitle: data.projectTitle,
+                    supportLink: data.supportLink
+                });
+            }
+        };
+
+        socket.on('technical-support-approved', handleApproval);
+
+        return () => {
+            socket.off('technical-support-approved', handleApproval);
+        };
+    }, [user]);
 
     React.useEffect(() => {
         if (mobileOpen) {
@@ -218,6 +254,62 @@ const CustomerLayout = () => {
                         <Outlet />
                     </div>
                 </main>
+
+                {/* ── Client Portal Support Approval Notification Banner ── */}
+                <AnimatePresence>
+                    {supportApprovalAlert && (
+                        <div className="fixed bottom-6 right-6 z-[80] max-w-md w-full p-4 pointer-events-auto">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                className="bg-emerald-950 border-2 border-emerald-500 text-white rounded-3xl p-5 shadow-2xl shadow-emerald-950/60 space-y-3"
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2.5 bg-emerald-600 rounded-xl text-white shadow-md">
+                                            <CheckCircle className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                                                Support Request Approved
+                                            </div>
+                                            <h4 className="text-sm font-bold text-white leading-tight">
+                                                {supportApprovalAlert.projectTitle}
+                                            </h4>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setSupportApprovalAlert(null)}
+                                        className="text-emerald-400 hover:text-white p-1 bg-transparent border-none cursor-pointer"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <p className="text-xs text-emerald-200 leading-relaxed">
+                                    Your Technical Support inquiry has been approved by engineering command. A secure consultation channel is active.
+                                </p>
+                                <div className="flex gap-2 pt-1">
+                                    <button
+                                        onClick={() => setSupportApprovalAlert(null)}
+                                        className="flex-1 py-2.5 bg-emerald-900/80 hover:bg-emerald-900 text-emerald-300 text-xs font-bold rounded-xl border-none cursor-pointer"
+                                    >
+                                        Dismiss
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setSupportApprovalAlert(null);
+                                            navigate('/customer/support');
+                                        }}
+                                        className="flex-[2] py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 border-none cursor-pointer shadow-lg shadow-emerald-500/20"
+                                    >
+                                        <MessageSquare className="w-3.5 h-3.5 fill-current" /> Enter Live Support
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );
