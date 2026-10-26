@@ -4,12 +4,36 @@ const mongoose = require('mongoose');
 
 exports.submitPayment = async (req, res) => {
     try {
-        const { amount, method, referenceId, paymentDate, projectId, quoteId, notes, name, bookingId, roomId, uploadedProof, status } = req.body;
+        const { amount, method, referenceId, paymentDate, projectId, quoteId, notes, name, bookingId, roomId, uploadedProof } = req.body;
         const customerId = req.user._id || req.user.id;
         
         if (!customerId) {
             return res.status(400).json({ message: 'Authentication error: user ID not found.' });
         }
+
+        // Enforce ownership: verify user owns the project if projectId provided
+        if (projectId) {
+            const Project = require('../models/Project');
+            const project = await Project.findById(projectId);
+            if (!project) return res.status(404).json({ message: 'Project not found.' });
+            if (req.user.role !== 'admin' && project.customerId.toString() !== customerId.toString()) {
+                return res.status(403).json({ message: 'Access denied: You do not own this project.' });
+            }
+        }
+
+        // Enforce ownership: verify tenant owns the booking if bookingId provided
+        if (bookingId) {
+            const BookingLodge = require('../models/BookingLodge');
+            const booking = await BookingLodge.findById(bookingId);
+            if (!booking) return res.status(404).json({ message: 'Booking not found.' });
+            const bookingOwnerId = (booking.userId?._id || booking.userId || '').toString();
+            if (req.user.role !== 'admin' && bookingOwnerId !== customerId.toString()) {
+                return res.status(403).json({ message: 'Access denied: You do not own this booking.' });
+            }
+        }
+
+        // Security: Non-admins can NEVER submit pre-verified or completed payments
+        const paymentStatus = req.user.role === 'admin' && req.body.status ? req.body.status : 'WAITING_FOR_VERIFICATION';
 
         const newPayment = await Payment.create({
             customerId,
@@ -26,7 +50,7 @@ exports.submitPayment = async (req, res) => {
             tenantName: name || req.user.name,
             notes,
             name,
-            status: status || 'WAITING_FOR_VERIFICATION'
+            status: paymentStatus
         });
 
         // Broadcast status update to sockets
@@ -36,7 +60,7 @@ exports.submitPayment = async (req, res) => {
             io.emit('payment-status-changed', newPayment);
         }
 
-        if (projectId) {
+        if (projectId && paymentStatus === 'Completed') {
             const { recalculateProjectPaymentStatus } = require('../utils/projectHelper');
             await recalculateProjectPaymentStatus(projectId);
         }
@@ -226,6 +250,27 @@ exports.createCashfreeOrder = async (req, res) => {
 
         if (!amount || parseFloat(amount) <= 0) {
             return res.status(400).json({ message: 'Valid payment amount is required.' });
+        }
+
+        // Enforce ownership: verify user owns the project or booking if authenticated
+        if (req.user && req.user.role !== 'admin') {
+            if (projectId) {
+                const Project = require('../models/Project');
+                const project = await Project.findById(projectId);
+                if (!project) return res.status(404).json({ message: 'Project not found.' });
+                if (project.customerId.toString() !== req.user._id.toString()) {
+                    return res.status(403).json({ message: 'Access denied: You do not own this project.' });
+                }
+            }
+            if (bookingId) {
+                const BookingLodge = require('../models/BookingLodge');
+                const booking = await BookingLodge.findById(bookingId);
+                if (!booking) return res.status(404).json({ message: 'Booking not found.' });
+                const bOwner = (booking.userId?._id || booking.userId || '').toString();
+                if (bOwner !== req.user._id.toString()) {
+                    return res.status(403).json({ message: 'Access denied: You do not own this booking.' });
+                }
+            }
         }
 
         const orderId = `KE_${Date.now()}_${Math.floor(100 + Math.random() * 900)}`;

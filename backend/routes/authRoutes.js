@@ -21,15 +21,19 @@ const {
     adminUpdateUser, 
     adminDeleteUser 
 } = require('../controllers/authController');
-const { protect, admin, optionalProtect } = require('../middleware/authMiddleware');
+const { protect, admin, authorize, optionalProtect } = require('../middleware/authMiddleware');
+const { honeypotProtection } = require('../middleware/abuseProtection');
+const { validateObjectIdParam } = require('../utils/validateInputs');
 
-router.post('/register', register);
+router.param('id', validateObjectIdParam('id'));
+
+router.post('/register', honeypotProtection, register);
 router.post('/login', login);
 router.post('/logout', protect, logout);
 router.post('/verify-face', verifyFace);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
-router.get('/users', protect, getUsersByRole);
+router.get('/users', protect, authorize('admin', 'staff'), getUsersByRole);
 router.put('/:id/admin-edit', protect, admin, adminEditUser);
 
 // Admin User Management Routes

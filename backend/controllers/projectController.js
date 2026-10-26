@@ -45,6 +45,24 @@ exports.getProjects = async (req, res) => {
 
 exports.updateProject = async (req, res) => {
     try {
+        const existingProject = await Project.findById(req.params.id);
+        if (!existingProject) return res.status(404).json({ message: 'Project not found' });
+
+        // If staff, verify assignment and restrict editable fields
+        if (req.user.role === 'staff') {
+            const isAssigned = existingProject.assignedStaff.some(s => s.toString() === req.user.id);
+            if (!isAssigned) {
+                return res.status(403).json({ message: 'Access denied: You are not assigned to this project.' });
+            }
+            // Staff can only update operational fields
+            const allowedFields = ['progress', 'status', 'updateNotes', 'nextNotes'];
+            Object.keys(req.body).forEach(key => {
+                if (!allowedFields.includes(key)) {
+                    delete req.body[key];
+                }
+            });
+        }
+
         const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('customerId');
         if (!project) return res.status(404).json({ message: 'Project not found' });
 
@@ -132,6 +150,11 @@ exports.requestAdditionalWork = async (req, res) => {
         if (!project) return res.status(404).json({ message: "Project not found" });
 
         const isCustomer = req.user.role === 'customer';
+        // Enforce ownership: customer can only request additional work on their own project
+        if (isCustomer && project.customerId.toString() !== req.user.id.toString()) {
+            return res.status(403).json({ message: "Access denied: You do not own this project." });
+        }
+
         const workItem = {
             title,
             description,
@@ -148,7 +171,7 @@ exports.requestAdditionalWork = async (req, res) => {
 
         res.status(201).json(finalProject);
     } catch (error) {
-        res.status(550).json({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
 

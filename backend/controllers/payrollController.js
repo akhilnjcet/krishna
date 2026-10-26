@@ -87,7 +87,12 @@ exports.getPayrollRecords = async (req, res) => {
         let query = {};
 
         if (month) query.month = month;
-        if (staffId) query.staffId = staffId;
+        // Enforce role isolation: staff can ONLY query their own payroll
+        if (req.user.role === 'staff') {
+            query.staffId = req.user.id;
+        } else if (staffId) {
+            query.staffId = staffId;
+        }
 
         const records = await Salary.find(query)
             .populate('staffId', 'name email staff_id department designation upi_id bank_name account_number ifsc_code joiningDate phone')

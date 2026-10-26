@@ -7,6 +7,9 @@ const {
     createApplication
 } = require('../controllers/applicationController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { validateObjectIdParam } = require('../utils/validateInputs');
+
+router.param('id', validateObjectIdParam('id'));
 
 router.get('/', protect, authorize('admin', 'staff'), getApplications);
 router.post('/', protect, authorize('staff'), createApplication);

@@ -21,6 +21,11 @@ exports.saveDocument = async (req, res) => {
             return res.status(401).json({ message: 'Authentication required to save document history.' });
         }
 
+        // Only Admin and Staff can manage document histories
+        if (req.user.role !== 'admin' && req.user.role !== 'staff') {
+            return res.status(403).json({ message: 'Access denied: You are not authorized to save document history.' });
+        }
+
         // Check if document already exists
         let document = await DocumentHistory.findOne({ documentType, documentNumber });
 
@@ -288,6 +293,14 @@ exports.getDocumentById = async (req, res) => {
         // Security check
         if (req.user.role === 'customer' && String(document.customerId?._id || document.customerId) !== req.user.id) {
             return res.status(403).json({ message: 'Unauthorized to view this document.' });
+        }
+
+        if (req.user.role === 'staff') {
+            const isCreator = String(document.createdBy?._id || document.createdBy) === req.user.id;
+            const isGeneralReport = ['General Report', 'Attendance Report', 'Labour Bill', 'Transport Bill', 'Rental Bill'].includes(document.documentType);
+            if (!isCreator && !isGeneralReport) {
+                return res.status(403).json({ message: 'Unauthorized to view this document.' });
+            }
         }
 
         res.status(200).json(document);

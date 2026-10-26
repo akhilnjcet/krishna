@@ -11,6 +11,12 @@ const {
     addPortfolioLinks
 } = require('../controllers/portfolioController');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { validateObjectIdParam } = require('../utils/validateInputs');
+
+// Validate all :id and :imageId route parameters
+router.param('id', validateObjectIdParam('id'));
+router.param('imageId', validateObjectIdParam('imageId'));
+
 const upload = require('../config/cloudinary');
 
 // Public routes

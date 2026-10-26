@@ -131,40 +131,42 @@ const CustomerLayout = () => {
     const currentPage = navItems.find(i => i.path === location.pathname)?.name || 'Client Module';
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex font-sans overflow-x-hidden transition-colors duration-250">
+        <div className="min-h-[100dvh] bg-[#F8FAFC] dark:bg-slate-950 flex font-sans overflow-x-hidden transition-colors duration-250">
 
             {/* ── Desktop Sidebar ─────────────────────── */}
-            <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-40 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
+            <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-[var(--z-header,10)] border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
                 {desktopOpen && <SidebarContent location={location} user={user} onNavClick={() => { }} onLogout={handleLogout} />}
             </aside>
 
             {/* ── Mobile Sidebar (Direct Render for Stability) ──────────────── */}
             {mobileOpen && (
-                <div className="fixed inset-0 z-[60] md:hidden">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
-                    <aside className={`fixed top-0 left-0 h-full h-[100dvh] max-h-[100dvh] bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-[70] flex flex-col border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl ${SIDEBAR_W}`}>
+                <div className="fixed inset-0 z-[var(--z-modal,100)] md:hidden">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-xs" onClick={closeMobile} />
+                    <aside className={`fixed top-0 left-0 h-full h-[100dvh] max-h-[100dvh] bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-[var(--z-modal,100)] flex flex-col border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl ${SIDEBAR_W}`}>
                         <SidebarContent location={location} user={user} onNavClick={closeMobile} onLogout={handleLogout} onClose={closeMobile} />
                     </aside>
                 </div>
             )}
 
             {/* ── Main Content ────────────────────────── */}
-            <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-[280px]' : 'md:ml-0'}`}>
+            <div className={`flex-1 flex flex-col min-h-[100dvh] min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-[280px]' : 'md:ml-0'}`}>
 
-                {/* Header */}
-                <header className="sticky top-0 z-30 h-16 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-3 sm:px-4 md:px-6 flex items-center justify-between gap-1.5 sm:gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
+                {/* Header with Safe Area Inset Support */}
+                <header className="sticky top-0 z-[var(--z-header,10)] min-h-[4rem] pt-[env(safe-area-inset-top,0px)] bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-3 sm:px-4 md:px-6 flex items-center justify-between gap-1.5 sm:gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
                     <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}
-                            className="p-2 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:hover:bg-slate-800/70 transition-all border border-white/10 shrink-0"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:hover:bg-slate-800/70 transition-all border border-white/10 shrink-0 cursor-pointer active:scale-95"
                             title="Toggle Menu"
+                            aria-label="Toggle navigation menu"
                         >
                             <Menu className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => navigate(-1)}
-                            className="p-2 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:hover:bg-slate-800/70 transition-all border border-white/10 flex items-center justify-center shrink-0"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 bg-white/10 dark:bg-slate-800/50 rounded-xl text-white hover:bg-white/20 dark:hover:bg-slate-800/70 transition-all border border-white/10 shrink-0 cursor-pointer active:scale-95"
                             title="Go Back"
+                            aria-label="Navigate back"
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>
@@ -175,24 +177,34 @@ const CustomerLayout = () => {
 
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         <ThemeToggle darkNavbar={true} />
-                        <button className="relative p-2 text-blue-100 hover:bg-white/10 dark:bg-slate-800/50 rounded-xl transition-all">
+                        <button 
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center relative p-2.5 text-blue-100 hover:bg-white/10 dark:bg-slate-800/50 rounded-xl transition-all cursor-pointer"
+                            title="Notifications"
+                            aria-label="View notifications"
+                        >
                             <Bell className="w-5 h-5" />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full border-2 border-blue-700" />
+                            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-yellow-400 rounded-full border-2 border-blue-700" />
                         </button>
-                        <Link to="/customer/support" className="hidden sm:flex items-center gap-1.5 p-2 text-blue-100 hover:bg-white/10 dark:bg-slate-800/50 rounded-xl transition-all">
+                        <Link 
+                            to="/customer/support" 
+                            className="hidden sm:flex min-w-[44px] min-h-[44px] items-center gap-1.5 p-2.5 text-blue-100 hover:bg-white/10 dark:bg-slate-800/50 rounded-xl transition-all"
+                            title="Support Hub"
+                            aria-label="Get technical support"
+                        >
                             <HelpCircle className="w-5 h-5" />
                             <span className="text-xs font-bold uppercase tracking-wider hidden md:inline">Support</span>
                         </Link>
                         <div className="flex items-center gap-2">
                             <p className="text-sm font-bold text-white hidden sm:block truncate max-w-[100px]">{user?.name}</p>
-                            <div className="w-8 h-8 bg-white/20 dark:bg-slate-800/70 rounded-xl border border-white/20 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                            <div className="w-9 h-9 bg-white/20 dark:bg-slate-800/70 rounded-xl border border-white/20 flex items-center justify-center text-white text-sm font-bold shrink-0">
                                 {user?.name?.charAt(0)?.toUpperCase() || <User className="w-4 h-4" />}
                             </div>
                         </div>
                         <button
                             onClick={handleLogout}
-                            className="p-2 text-white/90 hover:text-white bg-white/10 hover:bg-rose-500/80 rounded-xl transition-all border border-white/10 flex items-center gap-1.5 shrink-0"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 text-white/90 hover:text-white bg-white/10 hover:bg-rose-500/80 rounded-xl transition-all border border-white/10 gap-1.5 shrink-0 cursor-pointer active:scale-95"
                             title="Log Out"
+                            aria-label="Log out of client portal"
                         >
                             <LogOut className="w-4 h-4" />
                             <span className="text-xs font-bold hidden sm:inline">Logout</span>
@@ -200,12 +212,12 @@ const CustomerLayout = () => {
                     </div>
                 </header>
 
-                {/* Page */}
-                <div className="flex-1 p-2.5 sm:p-4 md:p-8 pb-8 overflow-x-hidden">
-                    <div className="max-w-[1400px] mx-auto">
+                {/* Page with Safe Area Inset Support */}
+                <main className="flex-1 p-3 sm:p-4 md:p-8 pb-[max(2rem,env(safe-area-inset-bottom,2rem))] overflow-x-hidden min-w-0">
+                    <div className="max-w-[1400px] mx-auto w-full">
                         <Outlet />
                     </div>
-                </div>
+                </main>
             </div>
         </div>
     );

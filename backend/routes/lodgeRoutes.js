@@ -5,6 +5,9 @@ const DriveLink = require('../models/DriveLink');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { listarArquivosDaPasta, extrairFolderId } = require('../utils/driveHelper');
 const lodgeController = require('../controllers/lodgeController');
+const { validateObjectIdParam } = require('../utils/validateInputs');
+
+router.param('id', validateObjectIdParam('id'));
 
 let cachedFallbackImages = null;
 let lastFallbackFetchTime = 0;
@@ -44,8 +47,8 @@ const getFallbackImages = async () => {
     }
 };
 
-router.get('/sync', protect, lodgeController.getLodgeData);
-router.post('/sync', protect, lodgeController.syncLodgeData);
+router.get('/sync', protect, admin, lodgeController.getLodgeData);
+router.post('/sync', protect, admin, lodgeController.syncLodgeData);
 
 router.get('/', async (req, res) => {
   try {

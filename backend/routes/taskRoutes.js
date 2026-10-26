@@ -11,6 +11,11 @@ const {
     getTaskStats
 } = require('../controllers/taskController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { validateObjectIdParam } = require('../utils/validateInputs');
+
+// Validate all :id route parameters
+router.param('id', validateObjectIdParam('id'));
+
 
 router.route('/')
     .get(protect, getTasks)

@@ -55,9 +55,9 @@ exports.getBills = async (req, res) => {
 
     const query = {};
 
-    // Role-based visibility
-    if (req.user.role === 'customer') {
-      query.userId = req.user.id;
+    // Role-based visibility: only admin can view all bills; other users only see their own
+    if (req.user.role !== 'admin') {
+      query.userId = req.user.id || req.user._id;
     }
 
     query.archived = archived === 'true';

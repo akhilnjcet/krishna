@@ -3,7 +3,10 @@ const router = express.Router();
 const BookingLodge = require('../models/BookingLodge');
 const LodgeBillingSetting = require('../models/LodgeBillingSetting');
 const Payment = require('../models/Payment');
+const LodgeData = require('../models/LodgeData');
 const { protect } = require('../middleware/authMiddleware');
+const { logTenantAccess } = require('../utils/securityLogger');
+const { isValidObjectId } = require('../utils/validateInputs');
 
 // Helper: Check if room dates overlap with an active booking
 const checkRoomOverlap = async (roomId, checkIn, checkOut, excludeBookingId = null) => {
@@ -26,11 +29,27 @@ router.post('/', protect, async (req, res) => {
   try {
     const { lodgeId, roomId, checkIn, checkOut, totalAmount, securityDeposit } = req.body;
 
+    if (!roomId || !isValidObjectId(roomId)) {
+      return res.status(400).json({ message: 'A valid roomId is required.' });
+    }
+    if (lodgeId && !isValidObjectId(lodgeId)) {
+      return res.status(400).json({ message: 'A valid lodgeId is required.' });
+    }
+
     const start = new Date(checkIn);
     const end = new Date(checkOut);
 
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({ message: 'Check-in and check-out dates must be valid calendar dates.' });
+    }
+
     if (start >= end) {
       return res.status(400).json({ message: 'Check-out date must be after check-in date' });
+    }
+
+    const parsedAmount = Number(totalAmount);
+    if (isNaN(parsedAmount) || parsedAmount < 0) {
+      return res.status(400).json({ message: 'Total amount must be a valid non-negative number.' });
     }
 
     // Overlap validation
@@ -134,28 +153,48 @@ router.get('/room-schedule/:roomId', protect, async (req, res) => {
       .populate('userId', 'name email phone phoneNumber')
       .sort({ checkIn: 1 });
 
-    const schedule = bookings.map(b => ({
-      _id: b._id,
-      agreementNumber: b.agreementNumber,
-      tenantName: b.userId?.name || 'Resident',
-      tenantPhone: b.userId?.phone || b.userId?.phoneNumber || '',
-      checkIn: b.checkIn,
-      checkOut: b.checkOut,
-      status: b.status,
-      totalAmount: b.totalAmount,
-      securityDeposit: b.securityDeposit
-    }));
+    const isAdmin = req.user.role === 'admin';
+    const currentUserId = (req.user.id || req.user._id || '').toString();
+
+    const schedule = bookings.map(b => {
+      const isOwner = (b.userId?._id || b.userId || '').toString() === currentUserId;
+      if (isAdmin || isOwner) {
+        return {
+          _id: b._id,
+          agreementNumber: b.agreementNumber,
+          tenantName: b.userId?.name || 'Resident',
+          tenantPhone: b.userId?.phone || b.userId?.phoneNumber || '',
+          checkIn: b.checkIn,
+          checkOut: b.checkOut,
+          status: b.status,
+          totalAmount: b.totalAmount,
+          securityDeposit: b.securityDeposit
+        };
+      }
+      // Mask other residents' personal data
+      return {
+        _id: b._id,
+        checkIn: b.checkIn,
+        checkOut: b.checkOut,
+        status: b.status,
+        tenantName: 'Reserved',
+        isBooked: true
+      };
+    });
 
     res.json({
       roomId,
       schedule,
-      unavailableIntervals: bookings.filter(b => b.status === 'active').map(b => ({
-        start: b.checkIn,
-        end: b.checkOut,
-        bookingId: b._id,
-        tenantName: b.userId?.name || 'Resident',
-        agreementNumber: b.agreementNumber
-      }))
+      unavailableIntervals: bookings.filter(b => b.status === 'active').map(b => {
+        const isOwner = (b.userId?._id || b.userId || '').toString() === currentUserId;
+        return {
+          start: b.checkIn,
+          end: b.checkOut,
+          bookingId: b._id,
+          tenantName: (isAdmin || isOwner) ? (b.userId?.name || 'Resident') : 'Reserved',
+          agreementNumber: (isAdmin || isOwner) ? b.agreementNumber : undefined
+        };
+      })
     });
   } catch (err) {
     res.status(500).json({ message: 'Server Error', error: err.message });
@@ -683,4 +722,58 @@ router.get('/:id/verify', async (req, res) => {
   }
 });
 
+// @route   POST /api/bookings/verify-access
+// @desc    Verify tenant PIN for room dashboard access
+// @access  Public (Rate-limited, logged)
+router.post('/verify-access', async (req, res) => {
+  try {
+    const { roomNumber, pin } = req.body;
+    if (!roomNumber || !pin) {
+      logTenantAccess(req, { roomNumber: roomNumber || 'unknown', success: false, reason: 'Missing room number or PIN' });
+      return res.status(400).json({ success: false, message: 'Room number and PIN are required' });
+    }
+
+    const cleanRoom = String(roomNumber).trim();
+    const cleanPin = String(pin).trim();
+
+    if (!/^[a-zA-Z0-9_\-\s]{1,20}$/.test(cleanRoom)) {
+      logTenantAccess(req, { roomNumber: 'invalid_format', success: false, reason: 'Invalid room number characters' });
+      return res.status(400).json({ success: false, message: 'Invalid room number format' });
+    }
+
+    if (!/^[0-9]{4,8}$/.test(cleanPin)) {
+      logTenantAccess(req, { roomNumber: cleanRoom, success: false, reason: 'Invalid PIN format (expected 4-8 digits)' });
+      return res.status(400).json({ success: false, message: 'Room access PIN must be between 4 and 8 digits' });
+    }
+
+    // Look up room PIN from LodgeData
+    const lodgeData = await LodgeData.findOne().lean();
+    let matchedRoom = null;
+    if (lodgeData && Array.isArray(lodgeData.rooms)) {
+      matchedRoom = lodgeData.rooms.find(r => 
+        String(r.number).trim() === cleanRoom || 
+        String(r.roomNumber).trim() === cleanRoom
+      );
+    }
+
+    const isValidPin = matchedRoom && String(matchedRoom.pin).trim() === cleanPin;
+
+    if (!isValidPin) {
+      logTenantAccess(req, { 
+        roomNumber: cleanRoom, 
+        success: false, 
+        reason: matchedRoom ? 'Incorrect room PIN' : 'Room not found in lodge database' 
+      });
+      return res.status(401).json({ success: false, message: 'Invalid room number or PIN' });
+    }
+
+    logTenantAccess(req, { roomNumber: cleanRoom, success: true, reason: 'Valid tenant room PIN entered' });
+    return res.json({ success: true, roomNumber: cleanRoom });
+  } catch (err) {
+    console.error('[TENANT-VERIFY-ERROR]', err);
+    return res.status(500).json({ success: false, message: 'Server error verifying tenant access' });
+  }
+});
+
 module.exports = router;
+

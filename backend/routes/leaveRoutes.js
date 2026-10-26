@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { applyLeave, getLeaves, updateLeaveStatus } = require('../controllers/leaveController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { validateObjectIdParam } = require('../utils/validateInputs');
+
+router.param('id', validateObjectIdParam('id'));
 
 router.route('/')
     .post(protect, authorize('staff'), applyLeave)

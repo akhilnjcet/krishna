@@ -4,8 +4,25 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+:root {
+  --z-content: 1;
+  --z-header: 10;
+  --z-dropdown: 50;
+  --z-modal: 100;
+  --z-toast: 200;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+}
+
 @layer base {
-  * {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -20,6 +37,7 @@
 
   html, body, #root {
     @apply w-full max-w-[100vw] overflow-x-hidden m-0 p-0;
+    min-height: 100dvh;
   }
   
   body {
@@ -189,9 +207,10 @@ button {
     overflow-y: auto !important;
   }
 
-  /* Input sizing on mobile */
+  /* Input sizing on mobile (16px prevents iOS Safari auto-zoom) */
   input, select, textarea {
     width: 100% !important;
+    font-size: 16px !important;
   }
 
   /* Button height and sizing */
@@ -204,42 +223,115 @@ button {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm;
+    margin: 8mm 6mm;
   }
 
+  *, *:before, *:after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-sizing: border-box !important;
+  }
+
+  html,
   body {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
     background: #ffffff !important;
-    color: #000000 !important;
+    color: #0f172a !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
   }
 
-  /* Hide navigation, sidebars, controls, forms, footers */
-  nav, header, footer, sidebar, .no-print, button, input[type="file"], select, textarea {
+  /* Hide navigation, sidebars, controls, forms, footers, modals, floating buttons */
+  aside,
+  nav,
+  header,
+  footer,
+  sidebar,
+  .no-print,
+  button,
+  input,
+  select,
+  textarea,
+  .modal-responsive,
+  [role="dialog"],
+  [role="alert"],
+  .fixed,
+  .toast {
     display: none !important;
+  }
+
+  /* Reset outer layout wrappers */
+  #root,
+  main,
+  .min-h-screen,
+  .max-w-\[1500px\],
+  .max-w-4xl,
+  .grid {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    position: static !important;
+  }
+
+  .sticky {
+    position: static !important;
+    top: auto !important;
+  }
+
+  .md\:ml-\[280px\] {
+    margin-left: 0 !important;
   }
 
   /* Ensure only the printable document container is rendered */
   .print-document-container {
-    position: static !important;
+    display: block !important;
+    position: relative !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 auto !important;
-    padding: 0 !important;
+    padding: 4px 0 !important;
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
     background: #ffffff !important;
-    color: #000000 !important;
+    color: #0f172a !important;
     overflow: visible !important;
+    transform: none !important;
+    zoom: 1 !important;
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
-  /* Page Break Safety */
+  /* Prevent page breaks inside all key components */
   .print-document-container tr,
   .print-document-container table,
   .print-document-container .break-inside-avoid {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
+  }
+
+  /* Compact table row padding in print mode to ensure 1-page fit */
+  .print-document-container table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .print-document-container th,
+  .print-document-container td {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
   }
 }

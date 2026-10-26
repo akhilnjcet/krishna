@@ -44,6 +44,9 @@ exports.createBooking = async (req, res) => {
 
 exports.getUserBookings = async (req, res) => {
     try {
+        if (req.user && req.user.role !== 'admin' && req.user.id !== req.params.user_id) {
+            return res.status(403).json({ error: 'Access denied: You cannot view other users\' bookings.' });
+        }
         const bookings = await Booking.find({ userId: req.params.user_id })
             .populate('roomId')
             .sort({ checkIn: -1 });
@@ -55,7 +58,9 @@ exports.getUserBookings = async (req, res) => {
 
 exports.getAllBookings = async (req, res) => {
     try {
-        // Admin only
+        if (req.user && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied: Admin privileges required.' });
+        }
         const bookings = await Booking.find()
             .populate('roomId')
             .populate('userId', 'name email mobile')
@@ -68,6 +73,9 @@ exports.getAllBookings = async (req, res) => {
 
 exports.updateBookingStatus = async (req, res) => {
     try {
+        if (req.user && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied: Admin privileges required.' });
+        }
         const { status } = req.body;
         const update = { bookingStatus: status };
 

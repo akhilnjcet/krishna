@@ -2,10 +2,15 @@ const express = require('express');
 const router = express.Router();
 const lodgePaymentController = require('../controllers/lodgePaymentController');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { validateObjectIdParam } = require('../utils/validateInputs');
+
+router.param('id', validateObjectIdParam('id'));
+router.param('bookingId', validateObjectIdParam('bookingId'));
+router.param('paymentId', validateObjectIdParam('paymentId'));
 
 // Settings
 router.get('/settings', lodgePaymentController.getSettings);
-router.post('/settings', protect, lodgePaymentController.saveSettings);
+router.post('/settings', protect, admin, lodgePaymentController.saveSettings);
 
 // Tenant Actions
 router.post('/submit', protect, lodgePaymentController.submitPayment);
@@ -19,9 +24,9 @@ router.get('/stats', protect, admin, lodgePaymentController.getPaymentStats);
 
 // Financial Breakdown, Deposit Adjustments & Extra Charges
 router.get('/booking-financials/:bookingId', protect, lodgePaymentController.getBookingFinancials);
-router.post('/manage-deposit', protect, lodgePaymentController.manageSecurityDeposit);
-router.post('/adjust-deposit', protect, lodgePaymentController.adjustRentFromDeposit);
-router.post('/add-extra-charge', protect, lodgePaymentController.addExtraCharge);
+router.post('/manage-deposit', protect, admin, lodgePaymentController.manageSecurityDeposit);
+router.post('/adjust-deposit', protect, admin, lodgePaymentController.adjustRentFromDeposit);
+router.post('/add-extra-charge', protect, admin, lodgePaymentController.addExtraCharge);
 
 // Admin Direct Payment, Corrections & Refunds
 router.post('/record-admin-payment', protect, admin, lodgePaymentController.recordAdminPayment);

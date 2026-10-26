@@ -3,9 +3,13 @@ const router = express.Router();
 const Room = require('../models/Room');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { listarArquivosDaPasta, extrairFolderId } = require('../utils/driveHelper');
+const { isValidObjectId } = require('../utils/validateInputs');
 
 router.get('/lodge/:lodgeId', async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.lodgeId)) {
+      return res.status(400).json({ message: 'Invalid lodgeId format' });
+    }
     const rooms = await Room.find({ lodgeId: req.params.lodgeId, isActive: true }).lean();
     res.json(rooms);
   } catch (err) {
@@ -15,6 +19,9 @@ router.get('/lodge/:lodgeId', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
     try {
+      if (!isValidObjectId(req.params.id)) {
+        return res.status(400).json({ message: 'Invalid roomId format' });
+      }
       const room = await Room.findById(req.params.id);
       if (!room) return res.status(404).json({ message: 'Room not found' });
       
@@ -72,6 +79,9 @@ const roomUploadFields = [
 
 router.put('/:id', protect, admin, upload.fields(roomUploadFields), async (req, res) => {
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid roomId format' });
+        }
         let updateData = { ...req.body };
         if (req.body.roomNumber !== undefined) updateData.roomNumber = String(req.body.roomNumber).trim();
         if (req.body.name !== undefined) updateData.name = String(req.body.name).trim();
@@ -162,15 +172,23 @@ router.post('/', protect, admin, upload.fields(roomUploadFields), async (req, re
   try {
     const { lodgeId, type, price, rentCycle, maxGuests, description, amenities, videoUrl, roomNumber, name, building, floor } = req.body;
 
-    if (!lodgeId || !type || !price || !maxGuests) {
+    if (!lodgeId || !type || price === undefined || maxGuests === undefined) {
       return res.status(400).json({ 
         message: 'Missing required fields: lodgeId, type, price, and maxGuests are mandatory.' 
       });
     }
 
-    const mongoose = require('mongoose');
-    if (!mongoose.Types.ObjectId.isValid(lodgeId)) {
+    if (!isValidObjectId(lodgeId)) {
       return res.status(400).json({ message: 'Invalid lodgeId format (must be a valid MongoDB ObjectId).' });
+    }
+
+    const numPrice = Number(price);
+    const numMaxGuests = parseInt(maxGuests, 10);
+    if (isNaN(numPrice) || numPrice < 0) {
+      return res.status(400).json({ message: 'Price must be a valid non-negative number.' });
+    }
+    if (isNaN(numMaxGuests) || numMaxGuests <= 0) {
+      return res.status(400).json({ message: 'maxGuests must be a positive integer.' });
     }
 
     let interiorPhotos = [];
@@ -260,6 +278,9 @@ router.post('/', protect, admin, upload.fields(roomUploadFields), async (req, re
 });
 router.delete('/:id/photo', protect, admin, async (req, res) => {
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid roomId format' });
+        }
         const { photoUrl } = req.body;
         const room = await Room.findById(req.params.id);
         if (!room) return res.status(404).json({ message: 'Room not found' });
@@ -278,6 +299,9 @@ router.delete('/:id/photo', protect, admin, async (req, res) => {
 
 router.delete('/:id', protect, admin, async (req, res) => {
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid roomId format' });
+        }
         const room = await Room.findById(req.params.id);
         if (!room) return res.status(404).json({ message: 'Room not found' });
 

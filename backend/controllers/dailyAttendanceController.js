@@ -131,7 +131,10 @@ exports.getDailyAttendance = async (req, res) => {
             await autoGenerateAbsentLogs(month);
         }
 
-        if (staffId) {
+        // Enforce role isolation: staff can ONLY query their own attendance
+        if (req.user.role === 'staff') {
+            query.staffId = req.user.id;
+        } else if (staffId) {
             query.staffId = staffId;
         }
 
@@ -156,7 +159,8 @@ exports.getDailyAttendance = async (req, res) => {
 exports.getStaffDailyAttendanceSummary = async (req, res) => {
     try {
         const { staffId, month } = req.query; // month Format: YYYY-MM
-        const targetStaffId = staffId || req.user.id;
+        // Enforce role isolation: staff cannot query another staff member's summary
+        const targetStaffId = req.user.role === 'staff' ? req.user.id : (staffId || req.user.id);
 
         if (!month) {
             return res.status(400).json({ message: "Month (Format: YYYY-MM) is required." });

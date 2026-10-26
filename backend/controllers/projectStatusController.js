@@ -246,6 +246,48 @@ exports.updateProjectStatus = async (req, res) => {
     }
 };
 
+// Fetch Project Status & Timeline History (Admin, Assigned Staff, or Owner Customer)
+exports.getProjectTimeline = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const project = await Project.findById(id);
+        if (!project) {
+            return res.status(404).json({ message: "Project not found." });
+        }
+
+        // Ownership / Authorization Check
+        if (req.user.role === 'customer') {
+            if (project.customerId?.toString() !== req.user.id.toString()) {
+                return res.status(403).json({ message: "Access denied: You do not own this project." });
+            }
+        } else if (req.user.role === 'staff') {
+            const isAssigned = project.assignedStaff.some(s => s.toString() === req.user.id);
+            if (!isAssigned) {
+                return res.status(403).json({ message: "Access denied: You are not assigned to this project." });
+            }
+        }
+
+        const history = await ProjectStatusHistory.find({ projectId: id })
+            .populate('reportedBy', 'name email role')
+            .sort({ reportedAt: -1 });
+
+        res.json({
+            success: true,
+            project: {
+                _id: project._id,
+                title: project.title,
+                status: project.status,
+                progress: project.progress,
+                timeline: project.timeline,
+                timelineStatus: project.timelineStatus
+            },
+            history
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // 2. Fetch admin notifications history (Admin Only)
 exports.getAdminNotifications = async (req, res) => {
     try {

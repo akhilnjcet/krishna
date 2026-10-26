@@ -8,6 +8,9 @@ const {
     approveRejectOvertime
 } = require('../controllers/overtimeController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { validateObjectIdParam } = require('../utils/validateInputs');
+
+router.param('id', validateObjectIdParam('id'));
 
 router.route('/')
     .post(protect, authorize('admin', 'manager'), addOvertime)

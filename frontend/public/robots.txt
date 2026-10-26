@@ -8,4 +8,26 @@ Allow: /blog
 Allow: /privacy
 Allow: /terms
 
+# Disallow automated bots and crawlers from scraping internal APIs and admin portals
+Disallow: /api/
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /admin-login
+Disallow: /lodge/room/
+Disallow: /staff/*
+
+# Disallow aggressive automated AI scraping engines from internal resources
+User-agent: GPTBot
+Disallow: /api/
+Disallow: /admin/
+
+User-agent: CCBot
+Disallow: /api/
+Disallow: /admin/
+
+User-agent: Bytespider
+Disallow: /api/
+Disallow: /admin/
+
 Sitemap: https://krishna-engineering.vercel.app/sitemap.xml
+

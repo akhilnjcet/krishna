@@ -72,4 +72,22 @@ router.get('/', protect, async (req, res) => {
     }
 });
 
+// @route   GET /api/drive-link/folder-files/:folderId
+// @desc    Secure server-side expansion of Google Drive folder images (keeps API key on backend)
+// @access  Public
+router.get('/folder-files/:folderId', async (req, res) => {
+    try {
+        const { folderId } = req.params;
+        if (!folderId || !/^[a-zA-Z0-9_-]+$/.test(folderId)) {
+            return res.status(400).json({ message: 'Invalid folder ID format' });
+        }
+        const files = await listarArquivosDaPasta(folderId);
+        res.json({ files });
+    } catch (err) {
+        console.error('[DRIVE-EXPAND-ERROR]', err.message);
+        res.status(500).json({ message: 'Failed to expand folder images', error: err.message });
+    }
+});
+
 module.exports = router;
+

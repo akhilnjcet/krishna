@@ -71,7 +71,8 @@ export const expandGoogleDriveFolders = async (images) => {
     if (!images || images.length === 0) return [];
     
     const expanded = [];
-    const apiKey = 'AIzaSyBI74NjzwHDCvxT08KExFV1p8ISO61M_nI';
+    const clientApiKey = import.meta.env.VITE_DRIVE_API_KEY;
+    const apiUrl = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
 
     for (const img of images) {
         const url = typeof img === 'string' ? img : img?.url;
@@ -80,30 +81,39 @@ export const expandGoogleDriveFolders = async (images) => {
         const folderId = extrairFolderId(url);
         if (folderId && (url.includes('/folders/') || url.includes('/drive/folders/'))) {
             try {
-                const response = await fetch(
-                    `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'&key=${apiKey}&fields=files(id)&pageSize=100`
-                );
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.files && data.files.length > 0) {
-                        data.files.forEach(file => {
-                            if (typeof img === 'string') {
-                                expanded.push(`https://drive.google.com/file/d/${file.id}/view`);
-                            } else {
-                                expanded.push({
-                                    ...img,
-                                    url: `https://drive.google.com/file/d/${file.id}/view`,
-                                    _id: file.id
-                                });
-                            }
-                        });
-                        continue;
+                // If client API key is configured, query directly; otherwise securely delegate to backend proxy
+                let fileLinks = [];
+                if (clientApiKey) {
+                    const response = await fetch(
+                        `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'&key=${clientApiKey}&fields=files(id)&pageSize=100`
+                    );
+                    if (response.ok) {
+                        const data = await response.json();
+                        fileLinks = (data.files || []).map(f => `https://drive.google.com/file/d/${f.id}/view`);
                     }
                 } else {
-                    console.warn('Google Drive API directory list error response status:', response.status);
+                    const response = await fetch(`${apiUrl}/drive-link/folder-files/${folderId}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        fileLinks = data.files || [];
+                    }
+                }
+
+                if (fileLinks.length > 0) {
+                    fileLinks.forEach(fileUrl => {
+                        if (typeof img === 'string') {
+                            expanded.push(fileUrl);
+                        } else {
+                            expanded.push({
+                                ...img,
+                                url: fileUrl
+                            });
+                        }
+                    });
+                    continue;
                 }
             } catch (err) {
-                console.error('Client-side Google Drive folder expansion failed for:', url, err);
+                console.error('Google Drive folder expansion failed for:', url, err);
             }
         }
         expanded.push(img);

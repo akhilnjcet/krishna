@@ -128,12 +128,26 @@ exports.getTasks = async (req, res) => {
     }
 };
 
+// Helper to verify task update permissions
+const canModifyTask = (task, user) => {
+    if (user.role === 'admin') return true;
+    if (user.role === 'staff') {
+        const staffList = Array.isArray(task.assignedStaff) ? task.assignedStaff : [task.assignedStaff];
+        return staffList.some(s => s && s.toString() === user.id.toString());
+    }
+    return false;
+};
+
 // 3. Update Status (Staff & Admin)
 exports.updateTaskStatus = async (req, res) => {
     try {
         const { status } = req.body;
         const task = await Task.findById(req.params.id);
         if (!task) return res.status(404).json({ message: 'Task not found' });
+
+        if (!canModifyTask(task, req.user)) {
+            return res.status(403).json({ message: 'Access denied: You are not assigned to this task.' });
+        }
 
         task.status = status;
         if (status === 'Completed') {
@@ -154,6 +168,10 @@ exports.updateTaskProgress = async (req, res) => {
         const { progressPercentage, note, workPhotos } = req.body;
         const task = await Task.findById(req.params.id);
         if (!task) return res.status(404).json({ message: 'Task not found' });
+
+        if (!canModifyTask(task, req.user)) {
+            return res.status(403).json({ message: 'Access denied: You are not assigned to this task.' });
+        }
 
         if (progressPercentage !== undefined) {
             task.progressPercentage = Number(progressPercentage);
@@ -192,6 +210,10 @@ exports.reportTaskDelay = async (req, res) => {
         const { delayReason, delayRemarks } = req.body;
         const task = await Task.findById(req.params.id);
         if (!task) return res.status(404).json({ message: 'Task not found' });
+
+        if (!canModifyTask(task, req.user)) {
+            return res.status(403).json({ message: 'Access denied: You are not assigned to this task.' });
+        }
 
         task.status = 'Delayed';
         task.delayReason = delayReason;

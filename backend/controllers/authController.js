@@ -14,6 +14,7 @@ const {
     sendPasswordChangeConfirmation,
     sendEmailVerificationOTP
 } = require('../services/emailService');
+const { logAuthSuccess, logAuthFailure } = require('../utils/securityLogger');
 
 const BCRYPT_SALT_ROUNDS = 12;
 
@@ -142,6 +143,7 @@ exports.login = async (req, res) => {
     try {
         const { username, email, password } = req.body;
         if (!password || (!username && !email)) {
+            logAuthFailure(req, { identifier: 'missing_credentials', reason: 'Username or email and password are required', statusCode: 400 });
             return res.status(400).json({ message: 'Username or email and password are required.' });
         }
 
@@ -153,12 +155,14 @@ exports.login = async (req, res) => {
         });
 
         if (!user) {
+            logAuthFailure(req, { identifier, reason: 'Invalid credentials - account not found', statusCode: 401 });
             return res.status(401).json({ message: 'Invalid credentials.' });
         }
 
         // Check if account is currently locked out from too many failed attempts
         if (user.isLocked()) {
             const minutesLeft = Math.ceil((user.lockUntil - Date.now()) / (60 * 1000));
+            logAuthFailure(req, { identifier, reason: `Account is temporarily locked (${minutesLeft}m remaining)`, statusCode: 423 });
             return res.status(423).json({ 
                 message: `Account is temporarily locked due to 5 consecutive failed login attempts. Please wait ${minutesLeft} minute(s) or reset your password.` 
             });
@@ -166,6 +170,7 @@ exports.login = async (req, res) => {
 
         // Check active status
         if (user.status === 'inactive' || user.deletionStatus === 'deleted') {
+            logAuthFailure(req, { identifier, reason: 'Account is inactive or deleted', statusCode: 403 });
             return res.status(403).json({ message: 'Account is inactive. Please contact administrator.' });
         }
 
@@ -181,11 +186,13 @@ exports.login = async (req, res) => {
 
             const attemptsRemaining = Math.max(0, 5 - user.failedLoginAttempts);
             if (attemptsRemaining === 0) {
+                logAuthFailure(req, { identifier, reason: 'Account locked due to 5 consecutive failed login attempts', statusCode: 423 });
                 return res.status(423).json({ 
                     message: 'Account is temporarily locked due to 5 consecutive failed login attempts. Please wait 15 minutes or reset your password.' 
                 });
             }
 
+            logAuthFailure(req, { identifier, reason: `Invalid password (${user.failedLoginAttempts}/5 attempts)`, statusCode: 401 });
             return res.status(401).json({ message: 'Invalid credentials.' });
         }
 
@@ -207,6 +214,8 @@ exports.login = async (req, res) => {
 
         const role = user.role || 'customer';
         const token = generateToken(user._id.toString(), role);
+
+        logAuthSuccess(req, { identifier, userId: user._id, role });
 
         return res.json({
             _id: user._id, 
@@ -372,6 +381,8 @@ exports.verifyFace = async (req, res) => {
                 IP_address: req.ip || req.headers['x-forwarded-for']
             });
 
+            logAuthSuccess(req, { identifier: bestMatch.name || bestMatch.username, userId: bestMatch._id, role: bestMatch.role });
+
             if (bestMatch.email) {
                 sendLoginNotification(bestMatch.email, bestMatch.name || bestMatch.username).catch(err => console.error('Face Login Notify Error:', err));
             }
@@ -393,6 +404,7 @@ exports.verifyFace = async (req, res) => {
                 reason: 'Unauthorized Face - Face Not Registered',
                 IP_address: req.ip || req.headers['x-forwarded-for']
             });
+            logAuthFailure(req, { identifier: 'face_recognition', reason: 'Face not registered', statusCode: 401 });
             return res.status(401).json({ message: 'Face not registered. Please contact the administrator.' });
         }
     } catch (error) {
@@ -440,7 +452,11 @@ exports.updateProfile = async (req, res) => {
 exports.getUsersByRole = async (req, res) => {
     try {
         const { role } = req.query;
-        const users = await User.find(role ? { role } : {}).select('_id name email role phone staff_id base_salary isEmailVerified');
+        const isAdmin = req.user && req.user.role === 'admin';
+        const fields = isAdmin 
+            ? '_id name email role phone staff_id base_salary isEmailVerified'
+            : '_id name email role phone staff_id isEmailVerified';
+        const users = await User.find(role ? { role } : {}).select(fields);
         res.json(users);
     } catch (error) { 
         res.status(500).json({ message: error.message }); 
@@ -685,6 +701,7 @@ exports.loginWithOTP = async (req, res) => {
                         (user.resetOTP && user.resetOTP === String(otp).trim());
 
         if (!isMatch) {
+            logAuthFailure(req, { identifier: normalizedEmail, reason: 'Invalid OTP provided', statusCode: 401 });
             return res.status(401).json({ message: 'Invalid or expired OTP.' });
         }
 
@@ -701,6 +718,8 @@ exports.loginWithOTP = async (req, res) => {
 
         const role = user.role || 'customer';
         const token = generateToken(user._id.toString(), role);
+
+        logAuthSuccess(req, { identifier: normalizedEmail, userId: user._id, role });
 
         res.json({
             _id: user._id,

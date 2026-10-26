@@ -1,4 +1,7 @@
 require('dotenv').config();
+const validateEnv = require('./config/validateEnv');
+validateEnv();
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -11,6 +14,27 @@ const PORT = process.env.PORT || 5000;
 // Trust Vercel / reverse proxy X-Forwarded-For so rate limiter uses the real client IP
 // Without this, ALL users share one Vercel proxy IP and hit rate limits together
 app.set('trust proxy', 1);
+
+// Security & Abuse Protection Middleware Imports
+const { enforceHttps, detectSuspiciousTraffic } = require('./middleware/securityMiddleware');
+const { logApiError } = require('./utils/securityLogger');
+const {
+    apiLimiter,
+    loginLimiter,
+    tenantPinLimiter,
+    registerLimiter,
+    otpLimiter,
+    contentScrapingLimiter,
+    preventBadBots,
+    detectRapidScraping
+} = require('./middleware/abuseProtection');
+
+// 1. Enforce HTTPS in production reverse-proxy environments
+app.use(enforceHttps);
+
+// 2. Prevent Automated Bad Bots, Vulnerability Scanners & Headless Scrapers
+app.use(preventBadBots);
+
 
 // Initialize Socket.io
 const isVercel = process.env.VERCEL === '1';
@@ -27,9 +51,16 @@ const sanitizeMiddleware = require('./middleware/sanitizeMiddleware');
 // Enable Gzip Compression for fast response delivery
 app.use(compression());
 
-// Security Headers via Helmet
+// Security Headers via Helmet (HSTS, nosniff, secure referrer)
 app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" }
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    hsts: {
+        maxAge: 31536000, // 1 year strict HTTPS enforcement
+        includeSubDomains: true,
+        preload: true
+    },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    noSniff: true
 }));
 
 // Enable CORS first so options preflight and rate limit responses carry CORS headers
@@ -49,59 +80,39 @@ app.use(express.json({
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(sanitizeMiddleware);
 
-// Rate Limiter — uses real client IP via X-Forwarded-For (trust proxy must be set above)
-const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,       // 15 minutes
-    max: 1000,                        // 1000 requests per real IP per 15 min
-    standardHeaders: true,
-    legacyHeaders: false,
-    // Always return JSON — never HTML — so frontend can parse the error
-    handler: (req, res) => {
-        res.status(429).json({ message: 'Too many requests from this IP, please try again after 15 minutes.' });
-    }
-});
+// 2. Proactive Vulnerability Scanner, Path Traversal & Suspicious Traffic Filter
+app.use(detectSuspiciousTraffic);
 
-// Granular Authentication Rate Limiters for Brute-Force & Credential Stuffing Defense
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,         // 15 minutes
-    max: 10,                          // Max 10 login attempts per IP per 15 min
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: (req, res) => {
-        res.status(429).json({ message: 'Too many login attempts. Please wait 15 minutes before trying again.' });
-    }
-});
-
-const registerLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000,         // 1 hour
-    max: 10,                          // Max 10 account creations per IP per hour
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: (req, res) => {
-        res.status(429).json({ message: 'Too many account registrations from this IP. Please try again later.' });
-    }
-});
-
-const otpLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,         // 15 minutes
-    max: 5,                           // Max 5 OTP verification attempts per IP per 15 min
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: (req, res) => {
-        res.status(429).json({ message: 'Too many OTP requests or verification attempts. Please wait 15 minutes.' });
-    }
-});
-
+// 4. Rate Limiting — Granular Multi-Tier Abuse Protection
+// Global API Limiter (300 requests per 15 min per real IP)
 app.use('/api/', apiLimiter);
+
+// Authentication & Brute-Force Rate Limits (10 attempts / 15 min)
 app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/verify-face', loginLimiter);
+app.use('/api/auth/login-otp/verify', loginLimiter);
+
+// Account Creation Rate Limits (5 accounts / 1 hr per IP)
 app.use('/api/auth/register', registerLimiter);
+app.use('/api/auth/admin/users', registerLimiter);
+
+// Password Reset & OTP Rate Limits (5 requests / 15 min per IP)
 app.use('/api/auth/forgot-password', otpLimiter);
 app.use('/api/auth/verify-otp', otpLimiter);
 app.use('/api/auth/reset-password', otpLimiter);
 app.use('/api/auth/login-otp/request', otpLimiter);
-app.use('/api/auth/login-otp/verify', otpLimiter);
 app.use('/api/auth/email-verification/request', otpLimiter);
 app.use('/api/auth/email-verification/verify', otpLimiter);
+
+// Tenant PIN Authentication Limiter (10 attempts / 15 min per IP)
+app.use('/api/bookings/verify-access', tenantPinLimiter);
+
+// Anti-Scraping Protection on Public Content Routes (60 req / 1 min + burst detector)
+app.use('/api/portfolio', contentScrapingLimiter, detectRapidScraping);
+app.use('/api/blogs', contentScrapingLimiter, detectRapidScraping);
+app.use('/api/rooms', contentScrapingLimiter, detectRapidScraping);
+app.use('/api/lodge', contentScrapingLimiter, detectRapidScraping);
+
 
 
 const path = require('path');
@@ -186,8 +197,9 @@ app.get('/api/debug/error', (req, res) => {
     res.json({ status: 'Operational', msg: 'System monitoring active.' });
 });
 
-// Temporary Route to clean Sunday absent logs
-app.get('/api/debug/cleanup-sundays', async (req, res) => {
+// Admin Route to clean Sunday absent logs
+const { protect: serverProtect, admin: serverAdmin } = require('./middleware/authMiddleware');
+app.get('/api/debug/cleanup-sundays', serverProtect, serverAdmin, async (req, res) => {
     try {
         const DailyAttendance = require('./models/DailyAttendance');
         const records = await DailyAttendance.find({ status: 'Absent' });
@@ -206,7 +218,7 @@ app.get('/api/debug/cleanup-sundays', async (req, res) => {
     }
 });
 
-// Public WhatsApp Health Check
+// WhatsApp Health Check
 app.get('/api/health/whatsapp', async (req, res) => {
     try {
         const { getWhatsAppStatus, ensureWhatsApp } = require('./services/whatsappService');
@@ -235,7 +247,6 @@ app.get('/api/health/whatsapp', async (req, res) => {
             : path.join(__dirname, 'whatsapp_auth_info/creds.json');
         
         const fileExists = fs.existsSync(credsPath);
-        const fileSize = fileExists ? fs.statSync(credsPath).size : 0;
         
         res.json({ 
             connected: status.connected, 
@@ -244,13 +255,10 @@ app.get('/api/health/whatsapp', async (req, res) => {
             qr: status.qr,
             provider: status.provider,
             database: {
-                hasCreds: !!dbCreds,
-                credsLength: dbCreds ? dbCreds.value.length : 0
+                hasCreds: !!dbCreds
             },
             fileSystem: {
-                exists: fileExists,
-                size: fileSize,
-                path: credsPath
+                exists: fileExists
             },
             timestamp: new Date().toISOString()
         });
@@ -303,14 +311,32 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     });
 }
 
-// Global JSON Error Handler (Prevents generic 500 HTML crashes)
+// Global JSON Error Handler (Logs security incidents and prevents stack trace leakage)
 app.use((err, req, res, next) => {
-    console.error('SERVER CRASH:', err);
-    res.status(500).json({ 
+    // Handle Multer upload errors (size limit, disallowed files)
+    if (err.name === 'MulterError') {
+        const msg = err.code === 'LIMIT_FILE_SIZE'
+            ? 'Uploaded file exceeds the maximum allowed size limit of 10MB.'
+            : `Upload error: ${err.message}`;
+        return res.status(400).json({ error: true, message: msg });
+    }
+
+    // Handle strict file upload validation errors
+    if (err.message && (err.message.includes('Invalid file') || err.message.includes('Security Violation') || err.message.includes('MIME type'))) {
+        return res.status(400).json({ error: true, message: err.message });
+    }
+
+    const statusCode = err.status || (res.statusCode && res.statusCode >= 400 ? res.statusCode : 500);
+    logApiError(req, err, { statusCode });
+
+    res.status(statusCode).json({ 
         error: true,
-        message: err.message || 'Internal Signal Breach',
-        details: process.env.NODE_ENV !== 'production' ? err.stack : 'Telemetry active'
+        message: process.env.NODE_ENV === 'production' 
+            ? 'An internal error occurred while processing your request. This event has been securely logged.' 
+            : (err.message || 'Internal Signal Breach'),
+        details: process.env.NODE_ENV !== 'production' ? err.stack : undefined
     });
 });
+
 
 module.exports = app;

@@ -53,8 +53,27 @@ exports.handleChat = async (req, res) => {
         const { messages } = req.body;
 
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
-            return res.status(400).json({ error: "Invalid messages array payload." });
+            return res.status(400).json({ error: "Invalid messages payload: expected non-empty array." });
         }
+
+        // Strict validation: constrain message array length and item contents
+        if (messages.length > 25) {
+            return res.status(400).json({ error: "Chat message history exceeds maximum allowed limit (25 messages)." });
+        }
+
+        for (let i = 0; i < messages.length; i++) {
+            const m = messages[i];
+            if (!m || typeof m !== 'object') {
+                return res.status(400).json({ error: `Message at index ${i} must be an object.` });
+            }
+            if (typeof m.content !== 'string' || !m.content.trim()) {
+                return res.status(400).json({ error: `Message at index ${i} must contain non-empty string content.` });
+            }
+            if (m.content.length > 2500) {
+                return res.status(400).json({ error: `Message at index ${i} exceeds maximum allowed length (2500 characters).` });
+            }
+        }
+
 
         // 1. Fetch System Settings & Admin Chatbot Contact Settings
         const [settingsRaw, contactSettings, faqs] = await Promise.all([
@@ -84,9 +103,9 @@ exports.handleChat = async (req, res) => {
         }
 
         const lastUserMsg = messages[messages.length - 1].content;
-        const fallbackGroqKey = ['gs', 'k_', '4q62Rvdb', 'EMQybOsI', 'MxIRWGdy', 'b3FYLDnG', 't9IcWvcX', 'uJHLaEm2', '2YQk'].join('');
-        const groqKey = process.env.GROQ_API_KEY || settings.groq_api_key || fallbackGroqKey;
+        const groqKey = process.env.GROQ_API_KEY || settings.groq_api_key;
         const geminiKey = process.env.GEMINI_API_KEY;
+
 
         // Diagnostic Ping for Admin verification
         if (lastUserMsg === 'SYSTEM_DIAGNOSTIC_PING') {
@@ -285,8 +304,23 @@ exports.getChatHistory = async (req, res) => {
 exports.captureLead = async (req, res) => {
     try {
         const { name, phone, message } = req.body;
-        if (!phone) return res.status(400).json({ error: "Phone number is required." });
-        const newLead = new Lead({ name: name || 'Unknown', phone, message });
+        if (!phone || typeof phone !== 'string' || !phone.trim()) {
+            return res.status(400).json({ error: "A valid contact phone number is required." });
+        }
+
+        const cleanPhone = phone.trim().slice(0, 20);
+        if (!/^[+0-9\s\-()]{7,20}$/.test(cleanPhone)) {
+            return res.status(400).json({ error: "Invalid phone number format." });
+        }
+
+        const cleanName = (typeof name === 'string' ? name.trim() : 'Unknown').slice(0, 100);
+        const cleanMessage = (typeof message === 'string' ? message.trim() : '').slice(0, 2000);
+
+        const newLead = new Lead({ 
+            name: cleanName || 'Unknown', 
+            phone: cleanPhone, 
+            message: cleanMessage 
+        });
         await newLead.save();
         res.json({ success: true, message: "Lead captured successfully!" });
     } catch (err) {
@@ -294,3 +328,4 @@ exports.captureLead = async (req, res) => {
         res.status(500).json({ error: 'Failed to capture lead' });
     }
 };
+

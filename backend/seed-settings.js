@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const SystemSetting = require('./models/SystemSetting');
 require('dotenv').config();
 
-const MONGO_URI = "mongodb://8594030186:123@ac-ct6axle-shard-00-00.9vipymx.mongodb.net:27017,ac-ct6axle-shard-00-01.9vipymx.mongodb.net:27017,ac-ct6axle-shard-00-02.9vipymx.mongodb.net:27017/gf?ssl=true&replicaSet=atlas-df9pyq-shard-0&authSource=admin&retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/krishna-erp";
 
 const settings = [
     {

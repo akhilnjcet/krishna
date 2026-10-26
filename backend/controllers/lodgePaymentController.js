@@ -78,6 +78,18 @@ exports.submitPayment = async (req, res) => {
       return res.status(400).json({ message: 'Invalid payment amount specified.' });
     }
 
+    // Enforce ownership: verify tenant owns the booking if bookingId provided
+    if (bookingId) {
+      const bookingCheck = await BookingLodge.findById(bookingId);
+      if (!bookingCheck) {
+        return res.status(404).json({ message: 'Booking not found.' });
+      }
+      const bookingOwnerId = (bookingCheck.userId?._id || bookingCheck.userId || '').toString();
+      if (req.user.role !== 'admin' && bookingOwnerId !== customerId.toString()) {
+        return res.status(403).json({ message: 'Access denied: You do not own this booking.' });
+      }
+    }
+
     const payloadRaw = JSON.stringify(req.body);
 
     const payment = await Payment.create({
@@ -416,6 +428,13 @@ exports.getBookingFinancials = async (req, res) => {
 
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found.' });
+    }
+
+    // Ownership check: only admin or the booking's resident can view financials
+    const bookingOwnerId = (booking.userId?._id || booking.userId || '').toString();
+    const callerId = (req.user._id || req.user.id || '').toString();
+    if (req.user.role !== 'admin' && bookingOwnerId !== callerId) {
+      return res.status(403).json({ message: 'Access denied: You are not authorized to view financials for this booking.' });
     }
 
     // Rent

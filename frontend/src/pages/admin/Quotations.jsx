@@ -602,15 +602,76 @@ const Quotations = () => {
         }
     };
 
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
     const handlePrint = async () => {
         await handleSaveToHistory('print');
         window.print();
     };
 
+    const handleDownloadPDF = async () => {
+        setIsGeneratingPdf(true);
+        try {
+            await handleSaveToHistory('pdf_download');
+            const container = document.getElementById('quotation-print-container');
+            if (!container) {
+                window.print();
+                return;
+            }
 
+            const { default: html2canvas } = await import('html2canvas');
+            const { jsPDF } = await import('jspdf');
+
+            const canvas = await html2canvas(container, {
+                scale: 2.5,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                windowWidth: 1200
+            });
+
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const pageWidth = 210;
+            const pageHeight = 297;
+            const marginX = 8;
+            const marginY = 8;
+            const maxContentWidth = pageWidth - (marginX * 2); // 194 mm
+            const maxContentHeight = pageHeight - (marginY * 2); // 281 mm
+
+            const canvasAspect = canvas.height / canvas.width;
+            let renderWidth = maxContentWidth;
+            let renderHeight = renderWidth * canvasAspect;
+
+            if (renderHeight > maxContentHeight) {
+                renderHeight = maxContentHeight;
+                renderWidth = renderHeight / canvasAspect;
+            }
+
+            const posX = marginX + ((maxContentWidth - renderWidth) / 2);
+            const posY = marginY + ((maxContentHeight - renderHeight) / 2);
+
+            const imgData = canvas.toDataURL('image/png');
+            pdf.addImage(imgData, 'PNG', posX, posY, renderWidth, renderHeight, undefined, 'FAST');
+
+            const fileName = `${quotationNumber || 'Cost_Estimate'}.pdf`;
+            pdf.save(fileName);
+            showToast(`✓ Downloaded ${fileName} (1 Page A4).`, 'saved');
+        } catch (err) {
+            console.error('Direct PDF export fallback to window.print():', err);
+            window.print();
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    };
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-slate-950 p-4 md:p-8 font-sans">
+        <div className="min-h-screen bg-slate-100 dark:bg-slate-950 p-4 md:p-8 font-sans print:min-h-0 print:bg-white print:p-0 print:m-0">
             {/* Toast Notification */}
             <AnimatePresence>
                 {(saveState === 'saved' || saveState === 'error') && toastMsg && (
@@ -773,11 +834,23 @@ const Quotations = () => {
                         </button>
                     </div>
 
+                    {/* Download PDF Button */}
+                    <button
+                        id="download-pdf-btn"
+                        onClick={handleDownloadPDF}
+                        disabled={isGeneratingPdf}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg transition disabled:opacity-50"
+                        title="Download 1-page A4 PDF directly"
+                    >
+                        <FileText className="w-4 h-4" /> {isGeneratingPdf ? 'Generating...' : 'PDF'}
+                    </button>
+
                     {/* Print Button */}
                     <button
                         id="print-quotation-btn"
                         onClick={handlePrint}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
+                        title="Print or Save via System Print Dialog"
                     >
                         <Printer className="w-4 h-4" /> Print
                     </button>
@@ -785,7 +858,7 @@ const Quotations = () => {
             </div>
 
             {/* Main Studio Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 print:block print:gap-0 print:m-0 print:p-0">
                 {/* LEFT: Controls & Form */}
                 {workspaceViewMode !== 'preview' && (
                     <div className={`no-print space-y-6 ${workspaceViewMode === 'editor' ? 'col-span-12' : 'lg:col-span-7 xl:col-span-7'}`}>
@@ -1220,16 +1293,25 @@ const Quotations = () => {
                             </button>
                             <button
                                 type="button"
+                                onClick={handleDownloadPDF}
+                                disabled={isGeneratingPdf}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition disabled:opacity-50"
+                                title="Download 1-page A4 PDF"
+                            >
+                                <FileText className="w-4 h-4" /> {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
+                            </button>
+                            <button
+                                type="button"
                                 onClick={handlePrint}
                                 className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
                             >
-                                <Printer className="w-4 h-4" /> Print / PDF
+                                <Printer className="w-4 h-4" /> Print / System PDF
                             </button>
                             <button
                                 type="button"
                                 onClick={() => handleSaveToHistory('manual')}
                                 disabled={saveState === 'saving'}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
+                                className="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
                             >
                                 <Save className="w-4 h-4" /> {saveState === 'saving' ? 'Saving...' : 'Save Quotation'}
                             </button>
@@ -1239,82 +1321,45 @@ const Quotations = () => {
             )}
 
             {/* RIGHT: Real-time Live Document Preview */}
-            {workspaceViewMode !== 'editor' && (
-                <div className={workspaceViewMode === 'preview' ? 'col-span-12 max-w-4xl mx-auto' : 'lg:col-span-5 xl:col-span-5'}>
-                    <div className="sticky top-6">
-                        {/* Live Badge */}
-                        <div className="no-print flex items-center justify-between bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800">
-                            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400">
-                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                Live Quotation Preview ({theme})
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setWorkspaceViewMode('editor')}
-                                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow"
-                                >
-                                    <FileText className="w-3.5 h-3.5" /> Back to Line Items
-                                </button>
-                                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold hidden sm:inline">Keystroke Synced</span>
-                            </div>
+            <div className={`${workspaceViewMode === 'editor' ? 'hidden print:block' : ''} ${workspaceViewMode === 'preview' ? 'col-span-12 max-w-4xl mx-auto' : 'lg:col-span-5 xl:col-span-5'} print:block print:w-full print:max-w-none print:m-0 print:p-0`}>
+                <div className="sticky top-6 print:static print:top-auto print:m-0 print:p-0">
+                    {/* Live Badge */}
+                    <div className="no-print flex items-center justify-between bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800">
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Live Quotation Preview ({theme})
                         </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setWorkspaceViewMode('editor')}
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow"
+                            >
+                                <FileText className="w-3.5 h-3.5" /> Back to Line Items
+                            </button>
+                            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold hidden sm:inline">Keystroke Synced</span>
+                        </div>
+                    </div>
 
-                        {/* Proposal Document */}
-                        <div 
-                            className="print-document-container bg-white dark:bg-slate-900 p-8 md:p-12 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans"
-                            style={{ '--theme-color': themeColor }}
-                        >
-                            {/* Header Rendering */}
-                            {theme === 'Modern' ? (
-                                <div 
-                                    className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden"
-                                    style={{ backgroundColor: themeColor }}
-                                >
-                                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
-                                        <div className="flex items-center gap-4 flex-wrap">
-                                            {brandingSettings.company_logo && (
-                                                <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white p-1 rounded-xl shadow-md" />
-                                            )}
-                                            <div>
-                                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
-                                                {showTagline && (
-                                                    <div>
-                                                        <input
-                                                            type="text"
-                                                            value={tagline}
-                                                            onChange={(e) => setTagline(e.target.value)}
-                                                            placeholder="Click to edit tagline..."
-                                                            title="Click to edit tagline directly"
-                                                            className="no-print text-xs opacity-90 font-medium bg-transparent hover:bg-white/10 focus:bg-black/20 text-white placeholder-white/60 border border-transparent hover:border-white/30 focus:border-white/60 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
-                                                        />
-                                                        <p className="hidden print:block text-xs opacity-90 font-medium">
-                                                            {tagline}
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="text-left sm:text-right">
-                                            <span className="bg-white/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
-                                                QUOTATION
-                                            </span>
-                                            <p className="text-sm font-black">{quotationNumber}</p>
-                                            <p className="text-xs opacity-80">Date: {quotationDate}</p>
-                                            {showValidityDate && proposalValidityDate && (
-                                                <p className="text-xs opacity-80">Valid Until: {proposalValidityDate}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : theme === 'Minimalist' ? (
-                                <div className="border-b-2 border-slate-900 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0">
-                                    <div className="flex items-center gap-3 flex-wrap">
+                    {/* Proposal Document */}
+                    <div 
+                        id="quotation-print-container"
+                        className="print-document-container bg-white dark:bg-slate-900 p-8 md:p-12 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans print:p-3 print:shadow-none print:border-none print:rounded-none print:bg-white print:text-slate-900 print:w-full print:max-w-none"
+                        style={{ '--theme-color': themeColor }}
+                    >
+                        {/* Header Rendering */}
+                        {theme === 'Modern' ? (
+                            <div 
+                                className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden print:p-3 print:mb-2.5 print:rounded-xl"
+                                style={{ backgroundColor: themeColor }}
+                            >
+                                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0 print:flex-row print:justify-between print:items-start">
+                                    <div className="flex items-center gap-4 flex-wrap print:gap-3">
                                         {brandingSettings.company_logo && (
-                                            <img src={brandingSettings.company_logo} alt="Company Logo" className="h-10 w-auto object-contain" />
+                                            <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white p-1 rounded-xl shadow-md print:h-10 print:rounded-lg" />
                                         )}
                                         <div>
-                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                            <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider company-name print:text-lg">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
                                             {showTagline && (
                                                 <div>
                                                     <input
@@ -1323,236 +1368,272 @@ const Quotations = () => {
                                                         onChange={(e) => setTagline(e.target.value)}
                                                         placeholder="Click to edit tagline..."
                                                         title="Click to edit tagline directly"
-                                                        className="no-print text-xs text-slate-500 dark:text-slate-400 font-medium bg-transparent hover:bg-slate-100 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                        className="no-print text-xs opacity-90 font-medium bg-transparent hover:bg-white/10 focus:bg-black/20 text-white placeholder-white/60 border border-transparent hover:border-white/30 focus:border-white/60 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
                                                     />
-                                                    <p className="hidden print:block text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                                    <p className="hidden print:block text-xs opacity-90 font-medium print:text-[11px]">
                                                         {tagline}
                                                     </p>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="text-left sm:text-right">
-                                        <h2 className="text-2xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>QUOTATION</h2>
-                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{quotationNumber}</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">Date: {quotationDate}</p>
-                                        {showValidityDate && proposalValidityDate && (
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Valid Until: {proposalValidityDate}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            ) : (
-                                /* Classic Theme */
-                                <div className="border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
-                                    <div className="flex items-center gap-4 flex-wrap">
-                                        {brandingSettings.company_logo && (
-                                            <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900 rounded-xl shadow p-1" />
-                                        )}
-                                        <div>
-                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white company-name">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
-                                            {showTagline && (
-                                                <div>
-                                                    <input
-                                                        type="text"
-                                                        value={tagline}
-                                                        onChange={(e) => setTagline(e.target.value)}
-                                                        placeholder="Click to edit tagline..."
-                                                        title="Click to edit tagline directly"
-                                                        className="no-print text-xs text-slate-500 dark:text-slate-400 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
-                                                    />
-                                                    <p className="hidden print:block text-xs text-slate-500 dark:text-slate-400">
-                                                        {tagline}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            <p className="text-[11px] text-slate-400 font-medium mt-0.5 whitespace-pre-wrap break-all">
-                                                Phone: {brandingSettings?.company_phone || brandingSettings?.footer_phone || '+91 9447940835'} | Email: {brandingSettings?.company_email || brandingSettings?.footer_email || 'contact@krishnaengg.com'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="text-left sm:text-right">
-                                        <span 
-                                            className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm cost-badge"
-                                            style={{ backgroundColor: themeColor }}
-                                        >
-                                            COST ESTIMATE
+                                    <div className="text-left sm:text-right print:text-right">
+                                        <span className="bg-white/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1 print:px-3 print:py-0.5 print:text-[10px]">
+                                            QUOTATION
                                         </span>
-                                        <p className="text-xs font-black text-slate-900 dark:text-white">{quotationNumber}</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">Date: {quotationDate}</p>
+                                        <p className="text-sm font-black print:text-xs">{quotationNumber}</p>
+                                        <p className="text-xs opacity-80 print:text-[10px]">Date: {quotationDate}</p>
                                         {showValidityDate && proposalValidityDate && (
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Valid Until: {proposalValidityDate}</p>
+                                            <p className="text-xs opacity-80 print:text-[10px]">Valid Until: {proposalValidityDate}</p>
                                         )}
                                     </div>
+                                </div>
+                            </div>
+                        ) : theme === 'Minimalist' ? (
+                            <div className="border-b-2 border-slate-900 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0 print:pb-2.5 print:mb-2.5 print:flex-row print:justify-between">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    {brandingSettings.company_logo && (
+                                        <img src={brandingSettings.company_logo} alt="Company Logo" className="h-10 w-auto object-contain print:h-8" />
+                                    )}
+                                    <div>
+                                        <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white company-name print:text-base">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                        {showTagline && (
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    value={tagline}
+                                                    onChange={(e) => setTagline(e.target.value)}
+                                                    placeholder="Click to edit tagline..."
+                                                    title="Click to edit tagline directly"
+                                                    className="no-print text-xs text-slate-500 dark:text-slate-400 font-medium bg-transparent hover:bg-slate-100 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                />
+                                                <p className="hidden print:block text-xs text-slate-500 dark:text-slate-400 font-medium print:text-[11px]">
+                                                    {tagline}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="text-left sm:text-right print:text-right">
+                                    <h2 className="text-2xl font-black uppercase tracking-tighter print:text-lg" style={{ color: themeColor }}>QUOTATION</h2>
+                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 print:text-[11px]">{quotationNumber}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 print:text-[10px]">Date: {quotationDate}</p>
+                                    {showValidityDate && proposalValidityDate && (
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 print:text-[10px]">Valid Until: {proposalValidityDate}</p>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            /* Classic Theme */
+                            <div className="border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0 print:pb-2.5 print:mb-2.5 print:flex-row print:justify-between print:items-start print:border-slate-300">
+                                <div className="flex items-center gap-4 flex-wrap print:gap-3">
+                                    {brandingSettings.company_logo && (
+                                        <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900 rounded-xl shadow p-1 print:h-10 print:shadow-none" />
+                                    )}
+                                    <div>
+                                        <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white company-name print:text-base">{brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}</h1>
+                                        {showTagline && (
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    value={tagline}
+                                                    onChange={(e) => setTagline(e.target.value)}
+                                                    placeholder="Click to edit tagline..."
+                                                    title="Click to edit tagline directly"
+                                                    className="no-print text-xs text-slate-500 dark:text-slate-400 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                />
+                                                <p className="hidden print:block text-xs text-slate-500 dark:text-slate-400 print:text-[11px] print:text-slate-600">
+                                                    {tagline}
+                                                </p>
+                                            </div>
+                                        )}
+                                        <p className="text-[11px] text-slate-400 font-medium mt-0.5 whitespace-pre-wrap break-all print:text-[10px] print:text-slate-500">
+                                            Phone: {brandingSettings?.company_phone || brandingSettings?.footer_phone || '+91 9447940835'} | Email: {brandingSettings?.company_email || brandingSettings?.footer_email || 'contact@krishnaengg.com'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="text-left sm:text-right print:text-right">
+                                    <span 
+                                        className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm cost-badge print:px-3 print:py-1 print:mb-1 print:text-[10.5px]"
+                                        style={{ backgroundColor: themeColor }}
+                                    >
+                                        COST ESTIMATE
+                                    </span>
+                                    <p className="text-xs font-black text-slate-900 dark:text-white print:text-[11px] print:text-slate-900">{quotationNumber}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 print:text-[10px] print:text-slate-600">Date: {quotationDate}</p>
+                                    {showValidityDate && proposalValidityDate && (
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 print:text-[10px] print:text-slate-600">Valid Until: {proposalValidityDate}</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Client Block */}
+                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0 print:p-2.5 print:mb-2.5 print:rounded-xl print:flex-row print:justify-between print:bg-slate-50 print:border-slate-200">
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5 print:text-[9px]">PROPOSAL PREPARED FOR:</span>
+                                <h3 className="font-black text-slate-900 dark:text-white print:text-slate-900 text-sm uppercase print:text-xs">{clientName || 'Valued Client'}</h3>
+                                <p className="text-xs text-slate-600 dark:text-slate-400 print:text-slate-700 mt-0.5 whitespace-pre-line print:text-[11px]">{clientAddress || 'Client Location'}</p>
+                                {clientPhone && <p className="text-xs text-slate-600 dark:text-slate-400 print:text-slate-700 mt-0.5 print:text-[10px]">Ph: {clientPhone}</p>}
+                                {clientGstin && <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 print:text-slate-800 mt-0.5 print:text-[10px]">GSTIN: {clientGstin} ({clientState})</p>}
+                            </div>
+                            {showValidityDate && proposalValidityDate && (
+                                <div className="text-left sm:text-right print:text-right">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5 print:text-[9px]">VALIDITY DATE:</span>
+                                    <span className="text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 px-3 py-1 rounded-lg inline-block print:py-0.5 print:px-2 print:text-[10.5px]">
+                                        {proposalValidityDate}
+                                    </span>
                                 </div>
                             )}
+                        </div>
 
-                            {/* Client Block */}
-                            <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
-                                <div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">PROPOSAL PREPARED FOR:</span>
-                                    <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase">{clientName || 'Valued Client'}</h3>
-                                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-line">{clientAddress || 'Client Location'}</p>
-                                    {clientPhone && <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Ph: {clientPhone}</p>}
-                                    {clientGstin && <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mt-1">GSTIN: {clientGstin} ({clientState})</p>}
-                                </div>
-                                {showValidityDate && proposalValidityDate && (
-                                    <div className="text-left sm:text-right">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">VALIDITY DATE:</span>
-                                        <span className="text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 px-3 py-1 rounded-lg inline-block">
-                                            {proposalValidityDate}
-                                        </span>
+                        {/* Quotation Table */}
+                        <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 print:mb-2.5 print:rounded-lg print:border-slate-300 print:overflow-visible">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr 
+                                        className="text-[10px] font-black uppercase tracking-wider text-white"
+                                        style={{ backgroundColor: themeColor }}
+                                    >
+                                        <th className="p-3 w-12 text-left print:py-1.5 print:px-2 print:text-[9px]">Sr.</th>
+                                        <th className="p-3 text-left print:py-1.5 print:px-2 print:text-[9px]">Item / Service & Description</th>
+                                        {showQuantity && <th className="p-3 text-center print:py-1.5 print:px-2 print:text-[9px]">Qty</th>}
+                                        {showUnitPrice && <th className="p-3 text-right print:py-1.5 print:px-2 print:text-[9px]">Unit Rate</th>}
+                                        <th className="p-3 text-right print:py-1.5 print:px-2 print:text-[9px]">Total</th>
+                                    </tr>
+                                </thead>
+                                <CombinedBillTableBody
+                                    items={items}
+                                    combinedTotals={combinedTotals}
+                                    theme={theme.toLowerCase()}
+                                    tableBorderColor="#e2e8f0"
+                                    textColor={theme === 'Minimalist' ? '#0f172a' : 'inherit'}
+                                    enableUnitPrice={showUnitPrice}
+                                    enableQuantity={showQuantity}
+                                />
+                            </table>
+                        </div>
+
+                        {/* Summary & Disclaimers */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:mb-2 print:pb-2 print:gap-4 print:flex-row print:justify-between print:border-slate-200">
+                            <div className="flex-1 space-y-4 print:space-y-1.5">
+                                {showNotes && timelines && (
+                                    <div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5 print:text-[9px]">ESTIMATED TIMELINE:</span>
+                                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 print:text-slate-800 bg-slate-50 dark:bg-slate-800 print:bg-slate-50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 print:p-1.5 print:rounded-lg print:text-[10px]">
+                                            {timelines}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {showNotes && projectNotes && (
+                                    <div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5 print:text-[9px]">PROJECT NOTES:</span>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 print:text-slate-700 bg-slate-50 dark:bg-slate-800 print:bg-slate-50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 print:p-1.5 print:rounded-lg whitespace-pre-line font-medium print:text-[10px]">
+                                            {projectNotes}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {showTerms && disclaimers && (
+                                    <div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5 print:text-[9px]">TERMS & CONDITIONS:</span>
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 print:text-slate-600 whitespace-pre-line leading-relaxed font-medium print:text-[9.5px] print:leading-normal">
+                                            {disclaimers}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {showPaymentTerms && paymentTerms && (
+                                    <div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5 print:text-[9px]">PAYMENT TERMS:</span>
+                                        <p className="text-[11px] text-slate-600 dark:text-slate-400 print:text-slate-700 bg-slate-50 dark:bg-slate-800 print:bg-slate-50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 print:p-1.5 print:text-[9.5px] font-medium">
+                                            {paymentTerms}
+                                        </p>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Quotation Table */}
-                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr 
-                                            className="text-[10px] font-black uppercase tracking-wider text-white"
-                                            style={{ backgroundColor: themeColor }}
-                                        >
-                                            <th className="p-3 w-12 text-left">Sr.</th>
-                                            <th className="p-3 text-left">Item / Service & Description</th>
-                                            {showQuantity && <th className="p-3 text-center">Qty</th>}
-                                            {showUnitPrice && <th className="p-3 text-right">Unit Rate</th>}
-                                            <th className="p-3 text-right">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <CombinedBillTableBody
-                                        items={items}
-                                        combinedTotals={combinedTotals}
-                                        theme={theme.toLowerCase()}
-                                        tableBorderColor="#e2e8f0"
-                                        textColor={theme === 'Minimalist' ? '#0f172a' : 'inherit'}
-                                        enableUnitPrice={showUnitPrice}
-                                        enableQuantity={showQuantity}
-                                    />
-                                </table>
-                            </div>
-
-                            {/* Summary & Disclaimers */}
-                            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6">
-                                <div className="flex-1 space-y-4">
-                                    {showNotes && timelines && (
-                                        <div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">ESTIMATED TIMELINE:</span>
-                                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                                                {timelines}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {showNotes && projectNotes && (
-                                        <div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">PROJECT NOTES:</span>
-                                            <p className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 whitespace-pre-line font-medium">
-                                                {projectNotes}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {showTerms && disclaimers && (
-                                        <div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">TERMS & CONDITIONS:</span>
-                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-pre-line leading-relaxed font-medium">
-                                                {disclaimers}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {showPaymentTerms && paymentTerms && (
-                                        <div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">PAYMENT TERMS:</span>
-                                            <p className="text-[11px] text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-800 font-medium">
-                                                {paymentTerms}
-                                            </p>
-                                        </div>
-                                    )}
+                            <div className="w-full sm:w-72 space-y-2 text-xs print:w-64 print:space-y-1 print:text-[10.5px]">
+                                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 print:border-slate-200">
+                                    <span className="font-bold text-slate-500 dark:text-slate-400 print:text-slate-600">Subtotal:</span>
+                                    <span className="font-bold text-slate-900 dark:text-white print:text-slate-900">{formatCurrencyINR(financials.subtotal)}</span>
                                 </div>
 
-                                <div className="w-full sm:w-72 space-y-2 text-xs">
-                                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                                        <span className="font-bold text-slate-500 dark:text-slate-400">Subtotal:</span>
-                                        <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(financials.subtotal)}</span>
+                                {financials.discountAmount > 0 && (
+                                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 print:border-slate-200 text-rose-600 font-bold">
+                                        <span>Discount ({discountType === 'percent' ? `${discountValue}%` : 'Fixed'}):</span>
+                                        <span>-{formatCurrencyINR(financials.discountAmount)}</span>
                                     </div>
+                                )}
 
-                                    {financials.discountAmount > 0 && (
-                                        <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-rose-600 font-bold">
-                                            <span>Discount ({discountType === 'percent' ? `${discountValue}%` : 'Fixed'}):</span>
-                                            <span>-{formatCurrencyINR(financials.discountAmount)}</span>
+                                {showTax && (
+                                    <>
+                                        <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 print:border-slate-200 text-slate-600 dark:text-slate-400 print:text-slate-600">
+                                            <span>Taxable Subtotal:</span>
+                                            <span className="font-bold">{formatCurrencyINR(financials.taxableAmount)}</span>
                                         </div>
-                                    )}
-
-                                    {showTax && (
-                                        <>
-                                            <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                                                <span>Taxable Subtotal:</span>
-                                                <span className="font-bold">{formatCurrencyINR(financials.taxableAmount)}</span>
-                                            </div>
-                                            {taxType === 'GST_SPLIT' ? (
-                                                <>
-                                                    <div className="flex justify-between py-0.5 text-slate-500 text-[11px]">
-                                                        <span>CGST ({(taxPercentage / 2).toFixed(1)}%):</span>
-                                                        <span>{formatCurrencyINR(financials.taxAmount / 2)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between py-0.5 text-slate-500 text-[11px] border-b border-slate-100 dark:border-slate-800">
-                                                        <span>SGST ({(taxPercentage / 2).toFixed(1)}%):</span>
-                                                        <span>{formatCurrencyINR(financials.taxAmount / 2)}</span>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                                                    <span>IGST ({taxPercentage}%):</span>
-                                                    <span>{formatCurrencyINR(financials.taxAmount)}</span>
+                                        {taxType === 'GST_SPLIT' ? (
+                                            <>
+                                                <div className="flex justify-between py-0.5 text-slate-500 text-[11px] print:text-[9.5px]">
+                                                    <span>CGST ({(taxPercentage / 2).toFixed(1)}%):</span>
+                                                    <span>{formatCurrencyINR(financials.taxAmount / 2)}</span>
                                                 </div>
-                                            )}
-                                        </>
-                                    )}
+                                                <div className="flex justify-between py-0.5 text-slate-500 text-[11px] print:text-[9.5px] border-b border-slate-100 dark:border-slate-800 print:border-slate-200">
+                                                    <span>SGST ({(taxPercentage / 2).toFixed(1)}%):</span>
+                                                    <span>{formatCurrencyINR(financials.taxAmount / 2)}</span>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 print:border-slate-200 text-slate-600 dark:text-slate-400 print:text-slate-600">
+                                                <span>IGST ({taxPercentage}%):</span>
+                                                <span>{formatCurrencyINR(financials.taxAmount)}</span>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
 
-                                    <div className="flex justify-between py-2 text-base font-black text-slate-900 dark:text-white border-t-2 border-slate-900 dark:border-slate-100 pt-2">
-                                        <span>Estimated Total:</span>
-                                        <span style={{ color: themeColor }}>{formatCurrencyINR(financials.grandTotal)}</span>
-                                    </div>
+                                <div className="flex justify-between py-2 text-base font-black text-slate-900 dark:text-white print:text-slate-900 border-t-2 border-slate-900 dark:border-slate-100 print:border-slate-900 pt-2 print:py-1 print:text-sm print:pt-1">
+                                    <span>Estimated Total:</span>
+                                    <span style={{ color: themeColor }}>{formatCurrencyINR(financials.grandTotal)}</span>
+                                </div>
 
-                                    <div className="pt-2 text-[10px] text-slate-500 dark:text-slate-400 italic">
-                                        Amount in Words: {financials.amountInWords}
-                                    </div>
+                                <div className="pt-2 text-[10px] text-slate-500 dark:text-slate-400 print:text-slate-600 italic print:pt-1 print:text-[9px]">
+                                    Amount in Words: {financials.amountInWords}
                                 </div>
                             </div>
-
-                            {/* Signatures */}
-                            {showSignature && (
-                                <div className="flex justify-between items-end pt-4">
-                                    <div className="text-left text-[10px] text-slate-400 font-medium">
-                                        <p>Proposal Ref: {quotationNumber}</p>
-                                        <p>Subject to Final Technical Site Audit</p>
-                                    </div>
-                                    <div className="text-right border-t border-slate-300 dark:border-slate-600 pt-3 w-52">
-                                        {brandingSettings.company_signature && (
-                                            <img src={brandingSettings.company_signature} alt="Digital Signature" className="h-10 w-auto object-contain ml-auto mb-1" />
-                                        )}
-                                        <div className="flex items-center justify-end gap-1 text-emerald-600 mb-1">
-                                            <ShieldCheck className="w-3.5 h-3.5" />
-                                            <span className="text-[9px] font-black uppercase">Verified Proposal</span>
-                                        </div>
-                                        <p className="text-xs font-black uppercase text-slate-900 dark:text-white">Authorized Signatory</p>
-                                        <p className="text-[10px] text-slate-400 font-medium">Krishna Engineering Works</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Footer remarks */}
-                            {showFooter && footerRemarks && (
-                                <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 text-center text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-                                    {footerRemarks}
-                                </div>
-                            )}
                         </div>
+
+                        {/* Signatures */}
+                        {showSignature && (
+                            <div className="flex justify-between items-end pt-4 print:pt-1.5">
+                                <div className="text-left text-[10px] text-slate-400 print:text-slate-500 font-medium print:text-[9px]">
+                                    <p>Proposal Ref: {quotationNumber}</p>
+                                    <p>Subject to Final Technical Site Audit</p>
+                                </div>
+                                <div className="text-right border-t border-slate-300 dark:border-slate-600 print:border-slate-300 pt-3 w-52 print:pt-1.5 print:w-48">
+                                    {brandingSettings.company_signature && (
+                                        <img src={brandingSettings.company_signature} alt="Digital Signature" className="h-10 w-auto object-contain ml-auto mb-1 print:h-8" />
+                                    )}
+                                    <div className="flex items-center justify-end gap-1 text-emerald-600 mb-1 print:mb-0.5">
+                                        <ShieldCheck className="w-3.5 h-3.5" />
+                                        <span className="text-[9px] font-black uppercase">Verified Proposal</span>
+                                    </div>
+                                    <p className="text-xs font-black uppercase text-slate-900 dark:text-white print:text-slate-900 print:text-[11px]">Authorized Signatory</p>
+                                    <p className="text-[10px] text-slate-400 print:text-slate-500 font-medium print:text-[9px]">Krishna Engineering Works</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Footer remarks */}
+                        {showFooter && footerRemarks && (
+                            <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 print:border-slate-200 text-center text-[10px] text-slate-400 print:text-slate-500 uppercase tracking-widest font-bold print:mt-2 print:pt-1.5 print:text-[8.5px]">
+                                {footerRemarks}
+                            </div>
+                        )}
                     </div>
                 </div>
-            )}
+            </div>
             </div>
 
             {/* Catalog Selector Modal */}

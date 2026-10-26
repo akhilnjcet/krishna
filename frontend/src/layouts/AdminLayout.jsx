@@ -419,15 +419,15 @@ const AdminLayout = () => {
     const closeMobile = () => setMobileOpen(false);
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex font-sans overflow-x-hidden transition-colors duration-250">
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex font-sans overflow-x-hidden transition-colors duration-250 print:min-h-0 print:bg-white">
             {/* ── Desktop Sidebar ─────────────────────── */}
-            <aside className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-40 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
+            <aside className={`no-print hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-40 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl transition-all duration-300 ${desktopOpen ? SIDEBAR_W : 'w-0 overflow-hidden'}`}>
                 {desktopOpen && <SidebarContent location={location} user={user} onNavClick={() => { }} onLogout={handleLogout} />}
             </aside>
 
             {/* ── Mobile Sidebar (Direct Render for Stability) ──────────────── */}
             {mobileOpen && (
-                <div className="fixed inset-0 z-[60] md:hidden">
+                <div className="no-print fixed inset-0 z-[60] md:hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
                     <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:bg-slate-950 text-slate-800 dark:text-slate-200 dark:text-white z-[70] flex flex-col border-r border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-2xl ${SIDEBAR_W} transition-transform`}>
                         <div className="absolute top-4 right-4 z-[80]">
@@ -441,7 +441,7 @@ const AdminLayout = () => {
             )}
 
             {/* ── Main Content ────────────────────────── */}
-            <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-[280px]' : 'md:ml-0'}`}>
+            <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-[280px]' : 'md:ml-0'} print:ml-0 print:min-h-0 print:p-0`}>
                 <header className="sticky top-0 z-30 h-16 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-3 sm:px-4 md:px-6 flex items-center justify-between gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
                     <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
                         <button
@@ -544,8 +544,8 @@ const AdminLayout = () => {
                     </div>
                 </header>
 
-                <main className="flex-1 p-2.5 sm:p-4 md:p-8 pb-8 overflow-x-hidden">
-                    <div className="max-w-[1500px] mx-auto">
+                <main className="flex-1 p-2.5 sm:p-4 md:p-8 pb-8 overflow-x-hidden print:p-0 print:m-0 print:overflow-visible">
+                    <div className="max-w-[1500px] mx-auto print:max-w-none print:m-0 print:p-0">
                         <Outlet />
                     </div>
                 </main>

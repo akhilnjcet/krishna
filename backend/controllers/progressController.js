@@ -7,6 +7,19 @@ exports.createProgress = async (req, res) => {
     try {
         const { projectId, title, description, progressPercentage, status, materialsUsed, issues, nextPlan, notes } = req.body;
 
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found.' });
+        }
+
+        // Enforce assignment: staff can only log progress for assigned projects
+        if (req.user.role === 'staff') {
+            const isAssigned = project.assignedStaff.some(s => s.toString() === req.user.id);
+            if (!isAssigned) {
+                return res.status(403).json({ message: 'Access denied: You are not assigned to this project.' });
+            }
+        }
+
         // Process uploaded photos if any
         const photos = req.files ? req.files.map(file => ({
             url: file.path,
@@ -67,9 +80,26 @@ exports.getAllProgress = async (req, res) => {
     }
 };
 
-// Admin/Customer: Get progress for specific project
+// Admin/Staff/Customer: Get progress for specific project with authorization
 exports.getProjectProgress = async (req, res) => {
     try {
+        const project = await Project.findById(req.params.projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found.' });
+        }
+
+        // Enforce ownership check
+        if (req.user.role === 'customer') {
+            if (project.customerId?.toString() !== req.user.id.toString()) {
+                return res.status(403).json({ message: 'Access denied: You do not own this project.' });
+            }
+        } else if (req.user.role === 'staff') {
+            const isAssigned = project.assignedStaff.some(s => s.toString() === req.user.id);
+            if (!isAssigned) {
+                return res.status(403).json({ message: 'Access denied: You are not assigned to this project.' });
+            }
+        }
+
         const updates = await WorkProgress.find({ projectId: req.params.projectId })
             .populate('staffId', 'name profilePhoto')
             .sort({ date: -1 });

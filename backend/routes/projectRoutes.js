@@ -12,6 +12,12 @@ const {
     deleteAdditionalWork
 } = require('../controllers/projectController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { validateObjectIdParam } = require('../utils/validateInputs');
+
+// Validate all :id and :workId route parameters
+router.param('id', validateObjectIdParam('id'));
+router.param('workId', validateObjectIdParam('workId'));
+
 
 router.route('/')
     .post(protect, authorize('admin'), createProject)

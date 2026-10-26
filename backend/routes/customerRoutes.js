@@ -3,6 +3,11 @@ const router = express.Router();
 const Project = require('../models/Project');
 const WorkProgress = require('../models/WorkProgress');
 const { protect } = require('../middleware/authMiddleware');
+const { validateObjectIdParam } = require('../utils/validateInputs');
+
+// Validate all :projectId route parameters
+router.param('projectId', validateObjectIdParam('projectId'));
+
 
 // @desc    Get all projects for the logged in customer
 // @route   GET /api/customer/projects

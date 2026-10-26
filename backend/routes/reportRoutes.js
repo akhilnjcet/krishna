@@ -4,7 +4,7 @@ const { submitReport, getReports, deleteReport } = require('../controllers/repor
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.route('/')
-    .get(protect, getReports)
+    .get(protect, authorize('admin', 'manager', 'staff'), getReports)
     .post(protect, authorize('staff'), submitReport);
 
 router.route('/:id')
