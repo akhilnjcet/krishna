@@ -5,6 +5,7 @@ import {
     XCircle, Loader2, AlertCircle, Phone, MapPin 
 } from 'lucide-react';
 import { generateQuotePDF } from '../../services/pdfService';
+import WorksiteLocationCard from '../../components/WorksiteLocationCard';
 
 const CustomerQuotes = () => {
     const [quotes, setQuotes] = useState([]);
@@ -23,6 +24,10 @@ const CustomerQuotes = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleQuoteLocationUpdated = (updatedQuote) => {
+        setQuotes(prev => prev.map(q => q._id === updatedQuote._id ? updatedQuote : q));
     };
 
     const handleDownload = (quote) => {
@@ -79,6 +84,7 @@ const CustomerQuotes = () => {
                                 <h3 className="text-2xl font-black text-brand-950 uppercase tracking-tighter italic mb-6">{quote.serviceType} Report</h3>
                                 
                                 <div className="space-y-4 mb-8">
+                                    {/* Existing site coordinate overview */}
                                     <div className="flex items-start gap-4 p-4 bg-brand-50 border-2 border-brand-100">
                                         <div className="p-2 bg-white dark:bg-slate-900 rounded-lg"><MapPin className="w-4 h-4" /></div>
                                         <div>
@@ -86,6 +92,13 @@ const CustomerQuotes = () => {
                                             <p className="text-xs font-bold text-brand-950 uppercase">{quote.location}</p>
                                         </div>
                                     </div>
+
+                                    {/* Dedicated Worksite Location (GPS Map Tag) Section */}
+                                    <WorksiteLocationCard 
+                                        quote={quote} 
+                                        onLocationUpdated={handleQuoteLocationUpdated}
+                                        canEdit={true}
+                                    />
                                     
                                     {/* FLIPKART-STYLE VERTICAL TRACKING TIMELINE */}
                                     <div className="py-6 mb-6">

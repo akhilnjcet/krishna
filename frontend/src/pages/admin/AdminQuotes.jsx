@@ -3,9 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import { 
     FileText, Check, X, Loader2, AlertCircle, Phone, MapPin, 
-    Trash2, Edit, Save, Terminal, ShieldAlert, Download 
+    Trash2, Edit, Save, Terminal, ShieldAlert, Download,
+    ExternalLink, Copy, CheckCircle2, ShieldCheck, Crosshair
 } from 'lucide-react';
 import { generateQuotePDF } from '../../services/pdfService';
+import WorksiteLocationPicker from '../../components/WorksiteLocationPicker';
 
 import Quotations from './Quotations';
 
@@ -159,7 +161,7 @@ const AdminQuotes = () => {
                                 <div>
                                     <h3 className="font-black text-2xl uppercase tracking-tighter text-slate-900 dark:text-white mb-4">{quote.name}</h3>
                                     
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                         <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <div className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Contact Details</div>
                                             <div className="flex flex-col gap-1">
@@ -170,6 +172,66 @@ const AdminQuotes = () => {
                                         <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <div className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Service Type</div>
                                             <div className="font-black text-slate-900 dark:text-white uppercase">{quote.serviceType}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Worksite Location Map Details */}
+                                    <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/80">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] uppercase font-black tracking-widest text-indigo-500 flex items-center gap-1.5">
+                                                <MapPin className="w-3.5 h-3.5 text-indigo-600" /> Worksite Location
+                                            </span>
+                                            {quote.worksiteLocation?.source === 'gps' && (
+                                                <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-300 dark:border-emerald-700">
+                                                    <ShieldCheck className="w-3 h-3 text-emerald-600" /> GPS Tagged {quote.worksiteLocation?.accuracy ? `(±${quote.worksiteLocation.accuracy}m)` : ''}
+                                                </span>
+                                            )}
+                                            {quote.worksiteLocation?.source === 'manual' && quote.worksiteLocation?.latitude && (
+                                                <span className="text-[9px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950/70 text-indigo-800 dark:text-indigo-300 px-2 py-0.5 rounded-full flex items-center gap-1 border border-indigo-300 dark:border-indigo-700">
+                                                    <MapPin className="w-3 h-3 text-indigo-600" /> Map Pinned
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
+                                            {quote.worksiteLocation?.address || quote.location}
+                                        </p>
+                                        <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                                            {quote.worksiteLocation?.latitude !== null && quote.worksiteLocation?.latitude !== undefined ? (
+                                                <span className="font-mono text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                                                    {quote.worksiteLocation.latitude.toFixed(6)}° N, {quote.worksiteLocation.longitude.toFixed(6)}° E
+                                                </span>
+                                            ) : (
+                                                <span className="text-[11px] text-slate-400 italic">No GPS coordinates attached</span>
+                                            )}
+                                            <div className="flex items-center gap-2">
+                                                {quote.worksiteLocation?.latitude !== null && quote.worksiteLocation?.latitude !== undefined && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(`${quote.worksiteLocation.latitude}, ${quote.worksiteLocation.longitude}`);
+                                                            alert('Coordinates copied to clipboard!');
+                                                        }}
+                                                        className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-lg hover:border-indigo-500 text-slate-700 dark:text-slate-200 flex items-center gap-1"
+                                                    >
+                                                        <Copy className="w-3 h-3" /> Copy Coords
+                                                    </button>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const lat = quote.worksiteLocation?.latitude;
+                                                        const lng = quote.worksiteLocation?.longitude;
+                                                        if (lat !== null && lat !== undefined && lng !== null && lng !== undefined) {
+                                                            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank', 'noopener,noreferrer');
+                                                        } else {
+                                                            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(quote.location)}`, '_blank', 'noopener,noreferrer');
+                                                        }
+                                                    }}
+                                                    className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold rounded-lg flex items-center gap-1 shadow-sm"
+                                                >
+                                                    <ExternalLink className="w-3 h-3" /> View Map
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -274,28 +336,45 @@ const AdminQuotes = () => {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Site Coordinates (Location)</label>
-                                        <input 
-                                            value={editingQuote.location}
-                                            onChange={(e) => editField('location', e.target.value)}
-                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none"
-                                        />
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Service Category</label>
+                                    <select 
+                                        value={editingQuote.serviceType}
+                                        onChange={(e) => editField('serviceType', e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none uppercase"
+                                    >
+                                        <option value="welding">Welding Service</option>
+                                        <option value="roofing">Metal Roofing</option>
+                                        <option value="truss">Truss Assembly</option>
+                                        <option value="fabrication">Fabrication</option>
+                                    </select>
+                                </div>
+
+                                {/* Worksite Location Interactive Picker */}
+                                <div className="space-y-3 p-5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2">
+                                            <MapPin className="w-4 h-4 text-indigo-600" /> Worksite Location (GPS Map Tag)
+                                        </label>
+                                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                            Interactive Admin Pin
+                                        </span>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Service Category</label>
-                                        <select 
-                                            value={editingQuote.serviceType}
-                                            onChange={(e) => editField('serviceType', e.target.value)}
-                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none uppercase"
-                                        >
-                                            <option value="welding">Welding Service</option>
-                                            <option value="roofing">Metal Roofing</option>
-                                            <option value="truss">Truss Assembly</option>
-                                            <option value="fabrication">Fabrication</option>
-                                        </select>
-                                    </div>
+                                    <WorksiteLocationPicker
+                                        value={editingQuote.worksiteLocation || {
+                                            address: editingQuote.location || '',
+                                            latitude: editingQuote.worksiteLocation?.latitude ?? null,
+                                            longitude: editingQuote.worksiteLocation?.longitude ?? null,
+                                            source: editingQuote.worksiteLocation?.source || 'none'
+                                        }}
+                                        onChange={(loc) => {
+                                            setEditingQuote(prev => ({
+                                                ...prev,
+                                                worksiteLocation: loc,
+                                                location: loc.address || prev.location
+                                            }));
+                                        }}
+                                    />
                                 </div>
 
                                 <div className="space-y-2">

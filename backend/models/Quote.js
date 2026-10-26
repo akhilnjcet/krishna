@@ -6,6 +6,14 @@ const quoteSchema = new mongoose.Schema({
     location: { type: String, required: true },
     serviceType: { type: String, required: true },
     description: { type: String, required: true },
+    worksiteLocation: {
+        address: { type: String, default: '' },
+        latitude: { type: Number, default: null },
+        longitude: { type: Number, default: null },
+        source: { type: String, enum: ['gps', 'manual', 'search', 'none'], default: 'none' },
+        accuracy: { type: Number, default: null },
+        capturedAt: { type: Date, default: null }
+    },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Tracking association
     image: { type: String }, // URL from cloudinary
     estimatedCost: { type: Number },

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import useAuthStore from '../stores/authStore';
+import WorksiteLocationPicker from '../components/WorksiteLocationPicker';
 
 const Quote = () => {
     const [searchParams] = useSearchParams();
@@ -16,6 +17,14 @@ const Quote = () => {
         location: '',
         serviceType: initialService,
         description: '',
+        worksiteLocation: {
+            address: '',
+            latitude: null,
+            longitude: null,
+            source: 'none',
+            accuracy: null,
+            capturedAt: null
+        }
     });
 
     useEffect(() => {
@@ -28,6 +37,14 @@ const Quote = () => {
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
 
+    const handleWorksiteLocationChange = (loc) => {
+        setFormData(prev => ({
+            ...prev,
+            location: loc.address || prev.location,
+            worksiteLocation: loc
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -35,7 +52,11 @@ const Quote = () => {
 
         try {
             // Send the request to admin (backend stores it)
-            await api.post('/quotes', formData);
+            const payload = {
+                ...formData,
+                location: formData.location || formData.worksiteLocation.address || 'Unspecified Worksite'
+            };
+            await api.post('/quotes', payload);
             setSuccess(true);
         } catch (err) {
             setError(err.response?.data?.message || 'An error occurred while submitting the operation request.');
@@ -123,7 +144,7 @@ const Quote = () => {
                             </div>}
 
                             <form onSubmit={handleSubmit} className="space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
                                     <div>
                                         <label className="block text-xs uppercase font-black text-brand-950 mb-2 tracking-widest">Client Name</label>
                                         <input
@@ -142,20 +163,6 @@ const Quote = () => {
                                             name="phone"
                                             required
                                             value={formData.phone}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border-2 border-brand-300 focus:border-brand-950 focus:ring-0 transition-colors bg-white dark:bg-slate-900 font-medium text-brand-900 rounded-none shadow-[2px_2px_0_0_#d4d4d4]"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                    <div>
-                                        <label className="block text-xs uppercase font-black text-brand-950 mb-2 tracking-widest">Site Location</label>
-                                        <input
-                                            type="text"
-                                            name="location"
-                                            required
-                                            value={formData.location}
                                             onChange={handleChange}
                                             className="w-full px-4 py-3 border-2 border-brand-300 focus:border-brand-950 focus:ring-0 transition-colors bg-white dark:bg-slate-900 font-medium text-brand-900 rounded-none shadow-[2px_2px_0_0_#d4d4d4]"
                                         />
@@ -180,6 +187,27 @@ const Quote = () => {
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Worksite Location Interactive Map Tag */}
+                                <div className="border-t-2 border-b-2 border-brand-950/20 py-6 my-2 bg-slate-50/50 p-4 border-l-4 border-l-brand-accent">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-xs uppercase font-black text-brand-950 tracking-widest flex items-center gap-2">
+                                            <span className="w-2.5 h-2.5 bg-brand-accent inline-block"></span>
+                                            Worksite Location
+                                        </label>
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-brand-700 bg-brand-100 px-2.5 py-1 border border-brand-300">
+                                            GPS Pinned Map Tag
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-brand-700 mb-4 font-semibold">
+                                        Pin the exact worksite location for material delivery and engineer inspection. You can search, drag the pin, or click <strong>Use Current Location</strong>.
+                                    </p>
+
+                                    <WorksiteLocationPicker
+                                        value={formData.worksiteLocation}
+                                        onChange={handleWorksiteLocationChange}
+                                    />
                                 </div>
 
                                 <div>

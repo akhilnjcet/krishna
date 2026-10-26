@@ -358,17 +358,40 @@ export const generateQuotePDF = async (quote) => {
 
     startY += 14;
 
+    const worksite = quote.worksiteLocation || {};
+    const worksiteAddress = worksite.address || quote.location || 'N/A';
+    const hasCoordinates = worksite.latitude !== null && worksite.latitude !== undefined &&
+                           worksite.longitude !== null && worksite.longitude !== undefined;
+    
+    let coordsText = 'Not Tagged (Manual Location)';
+    let mapUrl = '';
+    if (hasCoordinates) {
+        const lat = Number(worksite.latitude).toFixed(6);
+        const lng = Number(worksite.longitude).toFixed(6);
+        const sourceLabel = worksite.source === 'gps' 
+            ? `(GPS Verified${worksite.accuracy ? ` ±${worksite.accuracy}m` : ''})` 
+            : '(Map Pinned)';
+        coordsText = `${lat}° N, ${lng}° E ${sourceLabel}`;
+        mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+    } else if (quote.location) {
+        mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(quote.location)}`;
+    }
+
+    const tableBody = [
+        ['CLIENT NAME', (quote.name || 'Valued Client').toUpperCase()],
+        ['CONTACT PHONE', quote.phone || 'N/A'],
+        ['WORKSITE ADDRESS', worksiteAddress.toUpperCase()],
+        ['GPS COORDINATES', coordsText],
+        ['GOOGLE MAPS LINK', mapUrl ? 'Click here to open exact location in Google Maps' : 'N/A'],
+        ['OPERATION TYPE', (quote.serviceType || 'General').toUpperCase()],
+        ['WORK DESCRIPTION', quote.description || 'No description provided.'],
+    ];
+
     autoTable(doc, {
         startY,
         margin: { left: 15, right: 15, bottom: 20 },
         head: [['Project Parameter', 'Specification Details']],
-        body: [
-            ['CLIENT NAME', (quote.name || 'Valued Client').toUpperCase()],
-            ['CONTACT PHONE', quote.phone || 'N/A'],
-            ['SITE LOCATION', (quote.location || 'N/A').toUpperCase()],
-            ['OPERATION TYPE', (quote.serviceType || 'General').toUpperCase()],
-            ['WORK DESCRIPTION', quote.description || 'No description provided.'],
-        ],
+        body: tableBody,
         theme: 'grid',
         showHead: 'everyPage',
         headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold', fontSize: 9 },
@@ -376,10 +399,30 @@ export const generateQuotePDF = async (quote) => {
         columnStyles: { 
             0: { fontStyle: 'bold', fillColor: [249, 250, 251], width: 55, halign: 'left' },
             1: { halign: 'left' }
+        },
+        didParseCell: (data) => {
+            if (data.section === 'body' && data.row.index === 4 && data.column.index === 1 && mapUrl) {
+                data.cell.styles.textColor = [37, 99, 235];
+                data.cell.styles.fontStyle = 'bold';
+            }
+        },
+        didDrawCell: (data) => {
+            if (data.section === 'body' && data.row.index === 4 && data.column.index === 1 && mapUrl) {
+                doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: mapUrl });
+            }
         }
     });
 
-    const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : startY + 60) + 12;
+    const tableFinalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : startY + 70;
+
+    if (mapUrl) {
+        doc.setTextColor(37, 99, 235);
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        doc.textWithLink('-> Click here to open exact worksite coordinates in Google Maps', 15, tableFinalY + 6, { url: mapUrl });
+    }
+
+    const finalY = tableFinalY + (mapUrl ? 14 : 10);
     fitTextIntoBox(doc, 'Total Estimated Project Cost (INR):', quote.estimatedCost || 0, 15, finalY, 180, 22);
 
     addSignatureAndSeal(doc, finalY + 25);

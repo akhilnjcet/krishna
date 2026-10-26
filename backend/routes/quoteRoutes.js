@@ -13,7 +13,7 @@ router.route('/')
 router.get('/my-quotes', protect, getMyQuotes);
 
 router.route('/:id')
-    .put(protect, authorize('admin', 'staff'), updateQuote)
+    .put(protect, updateQuote)
     .delete(protect, authorize('admin', 'staff'), deleteQuote);
 
 module.exports = router;
