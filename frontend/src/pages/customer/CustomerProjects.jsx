@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Briefcase, Calendar, DollarSign, User, Mail, Phone, Clock, 
     CheckCircle2, AlertCircle, RefreshCw, FileText, ChevronRight,
-    MapPin, Users, IndianRupee, Wallet, CheckCircle, XCircle, Plus, X, Wrench, Send, Sparkles, ArrowRight
+    MapPin, Users, IndianRupee, Wallet, CheckCircle, XCircle, Plus, X, Wrench, Send, Sparkles, ArrowRight,
+    Copy, Check, Building2, Upload, Image as ImageIcon, Download, ShieldCheck
 } from 'lucide-react';
 import { getSocket } from '../../utils/socket';
 import { getDirectImageUrl } from '../../utils/imageUtils';
@@ -17,13 +18,19 @@ const CustomerProjects = () => {
     const [selectedProject, setSelectedProject] = useState(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [cashfreeLoading, setCashfreeLoading] = useState(false);
+    const [bankSettings, setBankSettings] = useState({});
+    const [showQR, setShowQR] = useState(false);
+    const [copiedField, setCopiedField] = useState(null);
+    const [screenshotPreview, setScreenshotPreview] = useState(null);
+    const [paymentResult, setPaymentResult] = useState(null);
     const [paymentForm, setPaymentForm] = useState({
         amount: '',
         method: 'cashfree',
         referenceId: '',
         paymentDate: new Date().toISOString().split('T')[0],
         name: '',
-        notes: ''
+        notes: '',
+        uploadedProof: ''
     });
     const [showAdditionalWorkForm, setShowAdditionalWorkForm] = useState(false);
     const [additionalWorkForm, setAdditionalWorkForm] = useState({ title: '', description: '' });
@@ -32,6 +39,25 @@ const CustomerProjects = () => {
     useEffect(() => {
         fetchProjects();
         fetchPayments();
+
+        // Fetch bank details from settings
+        api.get('/settings/public').then(res => {
+            const obj = {};
+            (res.data || []).forEach(s => obj[s.key] = s.value);
+            setBankSettings(obj);
+        }).catch(() => {});
+
+        // Check for return redirect from Cashfree
+        const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
+        const searchParams = new URLSearchParams(window.location.search || hashQuery);
+        const cfOrderId = searchParams.get('cf_order_id') || searchParams.get('order_id');
+        if (cfOrderId) {
+            if (window.history && window.history.replaceState) {
+                const cleanUrl = window.location.pathname + (window.location.hash ? window.location.hash.split('?')[0] : '');
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
+            verifyCashfreeProjectPayment(cfOrderId);
+        }
 
         const socket = getSocket();
         socket.connect();
@@ -84,6 +110,24 @@ const CustomerProjects = () => {
         };
     }, []);
 
+    const copyToClipboard = (text, field) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        setCopiedField(field);
+        setTimeout(() => setCopiedField(null), 2000);
+    };
+
+    const handleFileUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            setScreenshotPreview(event.target.result);
+            setPaymentForm(prev => ({ ...prev, uploadedProof: event.target.result }));
+        };
+        reader.readAsDataURL(file);
+    };
+
     const fetchProjects = async () => {
         setLoading(true);
         try {
@@ -109,18 +153,72 @@ const CustomerProjects = () => {
         }
     };
 
+    const verifyCashfreeProjectPayment = async (orderId) => {
+        try {
+            const verifyRes = await api.post('/payments/cashfree/verify', { orderId });
+            if (verifyRes.data.success) {
+                setShowPaymentModal(false);
+                setPaymentForm({
+                    amount: '',
+                    method: 'cashfree',
+                    referenceId: '',
+                    paymentDate: new Date().toISOString().split('T')[0],
+                    name: '',
+                    notes: '',
+                    uploadedProof: ''
+                });
+                setScreenshotPreview(null);
+                fetchPayments();
+                fetchProjects();
+                setPaymentResult({
+                    show: true,
+                    success: true,
+                    amount: verifyRes.data.verifiedAmount || 0,
+                    orderId: orderId,
+                    cfPaymentId: verifyRes.data.cfPaymentId,
+                    status: verifyRes.data.paymentStatus || 'PAID',
+                    message: verifyRes.data.message || 'Payment successfully verified by Cashfree and credited to your project.'
+                });
+            } else {
+                setPaymentResult({
+                    show: true,
+                    success: false,
+                    amount: 0,
+                    orderId: orderId,
+                    status: verifyRes.data.orderStatus || 'INCOMPLETE',
+                    message: verifyRes.data.message || `Cashfree reported status: ${verifyRes.data.orderStatus}.`
+                });
+            }
+        } catch (err) {
+            console.error('Cashfree Verification Error:', err);
+            setPaymentResult({
+                show: true,
+                success: false,
+                amount: 0,
+                orderId: orderId,
+                status: 'VERIFY_ERROR',
+                message: err.response?.data?.message || err.message || 'Verification could not be completed.'
+            });
+        }
+    };
+
     const handleCashfreeProjectPay = async () => {
         const amt = parseFloat(paymentForm.amount);
         if (!amt || amt <= 0) return alert('Please enter a valid payment amount.');
         setCashfreeLoading(true);
         try {
+            const returnUrl = typeof window !== 'undefined'
+                ? `${window.location.origin}${window.location.pathname}#/customer/projects?cf_order_id={order_id}&project_id=${selectedProject?._id || ''}`
+                : undefined;
+
             const orderRes = await api.post('/payments/cashfree/create-order', {
                 amount: amt,
                 projectId: selectedProject._id,
                 name: paymentForm.name || `Project Milestone: ${selectedProject.title}`,
                 orderNote: `Payment for Project: ${selectedProject.title} (${selectedProject.projectCode || ''})`,
                 paymentType: 'Project Contract',
-                chargeCategory: 'Engineering Project'
+                chargeCategory: 'Engineering Project',
+                returnUrl
             });
 
             const { paymentSessionId, orderId, environment } = orderRes.data;
@@ -134,30 +232,28 @@ const CustomerProjects = () => {
             }).then(async (result) => {
                 if (result.error) {
                     console.warn('Cashfree checkout modal closed / error:', result.error);
-                    alert(result.error.message || 'Payment was not completed. You can retry anytime.');
+                    setPaymentResult({
+                        show: true,
+                        success: false,
+                        amount: amt,
+                        orderId,
+                        status: 'CANCELLED_OR_FAILED',
+                        message: result.error.message || 'Payment was not completed. You can retry anytime.'
+                    });
                 } else if (result.paymentDetails) {
-                    const verifyRes = await api.post('/payments/cashfree/verify', { orderId });
-                    if (verifyRes.data.success) {
-                        alert('Payment successful! Verified by Cashfree and applied to your project.');
-                        setShowPaymentModal(false);
-                        setPaymentForm({
-                            amount: '',
-                            method: 'cashfree',
-                            referenceId: '',
-                            paymentDate: new Date().toISOString().split('T')[0],
-                            name: '',
-                            notes: ''
-                        });
-                        fetchPayments();
-                        fetchProjects();
-                    } else {
-                        alert(`Cashfree status: ${verifyRes.data.orderStatus}`);
-                    }
+                    await verifyCashfreeProjectPayment(orderId);
                 }
             });
         } catch (err) {
             console.error('Cashfree Project Payment Error:', err);
-            alert(err.response?.data?.message || err.message || 'Failed to initialize Cashfree Gateway.');
+            setPaymentResult({
+                show: true,
+                success: false,
+                amount: amt,
+                orderId: 'N/A',
+                status: 'INITIATION_ERROR',
+                message: err.response?.data?.message || err.message || 'Failed to initialize Cashfree Gateway.'
+            });
         } finally {
             setCashfreeLoading(false);
         }
@@ -175,13 +271,13 @@ const CustomerProjects = () => {
         if (!paymentForm.paymentDate) return alert('Please select a Payment Date.');
         
         try {
-            await api.post('/payments/submit', {
+            const res = await api.post('/payments/submit', {
                 ...paymentForm,
                 amount: parseFloat(paymentForm.amount),
                 projectId: selectedProject._id,
-                name: paymentForm.name || `Payment for ${selectedProject.title}`
+                name: paymentForm.name || `Payment for ${selectedProject.title}`,
+                uploadedProof: paymentForm.uploadedProof || undefined
             });
-            alert('Payment Acknowledgement Submitted successfully! Awaiting Admin Verification.');
             setShowPaymentModal(false);
             setPaymentForm({
                 amount: '',
@@ -189,10 +285,20 @@ const CustomerProjects = () => {
                 referenceId: '',
                 paymentDate: new Date().toISOString().split('T')[0],
                 name: '',
-                notes: ''
+                notes: '',
+                uploadedProof: ''
             });
+            setScreenshotPreview(null);
             fetchPayments();
             fetchProjects();
+            setPaymentResult({
+                show: true,
+                success: true,
+                amount: parseFloat(res.data.amount || 0),
+                orderId: res.data.referenceId || res.data._id,
+                status: 'WAITING_FOR_VERIFICATION',
+                message: 'Payment acknowledgement submitted successfully! Awaiting Admin Verification.'
+            });
         } catch (err) {
             alert('Failed to submit payment: ' + (err.response?.data?.message || err.message));
         }
@@ -822,33 +928,47 @@ const CustomerProjects = () => {
                             <form onSubmit={handleProjectPaymentSubmit} className="space-y-5">
                                 <div>
                                     <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Payment Method *</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                        {[
-                                            { id: 'cashfree', name: 'Cashfree Gateway', sub: 'Cards, UPI, NetBank', badge: 'Instant' },
-                                            { id: 'upi', name: 'Manual UPI QR', sub: 'Scan & Manual UTR', badge: null },
-                                            { id: 'bank_transfer', name: 'Bank Transfer', sub: 'NEFT / RTGS Wire', badge: null }
-                                        ].map(m => (
-                                            <button
-                                                key={m.id}
-                                                type="button"
-                                                onClick={() => setPaymentForm({ ...paymentForm, method: m.id })}
-                                                className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                                                    paymentForm.method === m.id
-                                                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-650 dark:text-indigo-300 shadow-sm'
-                                                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50'
-                                                }`}
-                                            >
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <span className="font-black text-xs">{m.name}</span>
-                                                    {m.badge && (
-                                                        <span className="px-1.5 py-0.5 bg-amber-400 text-slate-950 font-black text-[8px] uppercase rounded">
-                                                            {m.badge}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className="text-[9px] text-slate-400">{m.sub}</p>
-                                            </button>
-                                        ))}
+                                    {/* 2-OPTION SELECTOR: ONLY Cashfree Gateway vs Bank Details & UPI */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentForm({ ...paymentForm, method: 'cashfree' })}
+                                            className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                                                paymentForm.method === 'cashfree'
+                                                    ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 shadow-sm ring-2 ring-emerald-500/20'
+                                                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="font-black text-xs flex items-center gap-1.5">
+                                                    <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Cashfree Gateway
+                                                </span>
+                                                <span className="px-1.5 py-0.5 bg-emerald-400 text-slate-950 font-black text-[8px] uppercase rounded">
+                                                    Instant
+                                                </span>
+                                            </div>
+                                            <p className="text-[9px] text-slate-400">Cards, UPI (GPay/PhonePe), NetBanking, Wallets</p>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentForm({ ...paymentForm, method: 'bank_transfer' })}
+                                            className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                                                paymentForm.method === 'bank_transfer'
+                                                    ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 shadow-sm ring-2 ring-indigo-500/20'
+                                                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="font-black text-xs flex items-center gap-1.5">
+                                                    <Building2 className="w-3.5 h-3.5 text-blue-500" /> Bank Details & UPI
+                                                </span>
+                                                <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-black text-[8px] uppercase rounded">
+                                                    Direct Info
+                                                </span>
+                                            </div>
+                                            <p className="text-[9px] text-slate-400">Direct Wire / UPI (Optional Screenshot)</p>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -876,7 +996,7 @@ const CustomerProjects = () => {
                                     </div>
                                 </div>
 
-                                {/* Cashfree Highlights */}
+                                {/* Option 1: Cashfree Highlights */}
                                 {paymentForm.method === 'cashfree' && (
                                     <div className="bg-gradient-to-br from-indigo-950 to-slate-900 text-white p-5 rounded-2xl border border-indigo-800 space-y-3">
                                         <div className="flex items-center justify-between">
@@ -894,28 +1014,148 @@ const CustomerProjects = () => {
                                     </div>
                                 )}
 
-                                {/* Manual UTR & Date fields only for manual transfers */}
-                                {paymentForm.method !== 'cashfree' && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Transaction ID / UTR *</label>
-                                            <input 
-                                                required 
-                                                value={paymentForm.referenceId} 
-                                                onChange={e => setPaymentForm({...paymentForm, referenceId: e.target.value})} 
-                                                className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs text-slate-900 dark:text-white" 
-                                                placeholder="Enter UPI Ref / UTR number" 
-                                            />
+                                {/* Option 2: Bank Details & UPI Card with Optional Screenshot */}
+                                {paymentForm.method === 'bank_transfer' && (
+                                    <div className="space-y-4">
+                                        {/* Bank Details Display */}
+                                        <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 space-y-3">
+                                            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                                    <Building2 className="w-3.5 h-3.5 text-blue-500" /> Authorized Account Details
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowQR(!showQR)}
+                                                    className="text-[9px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                                                >
+                                                    {showQR ? 'Hide QR' : 'Show QR'}
+                                                </button>
+                                            </div>
+
+                                            {showQR && (
+                                                <div className="flex flex-col items-center p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+                                                    <img 
+                                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=${bankSettings.payment_upi_id || '9447940835@okbizaxis'}&pn=${encodeURIComponent(bankSettings.payment_payee_name || 'Krishna Engineering')}&am=${paymentForm.amount || '0'}&cu=INR`} 
+                                                        alt="UPI QR Code" 
+                                                        className="w-32 h-32 rounded-lg border border-slate-200 mb-1"
+                                                    />
+                                                    <p className="text-[9px] font-mono text-slate-400">Scan via any UPI App</p>
+                                                </div>
+                                            )}
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                                <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                    <div>
+                                                        <span className="text-[8px] font-bold uppercase text-slate-400 block">UPI ID</span>
+                                                        <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">{bankSettings.payment_upi_id || '9447940835@okbizaxis'}</span>
+                                                    </div>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => copyToClipboard(bankSettings.payment_upi_id || '9447940835@okbizaxis', 'proj_upi')}
+                                                        className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-bold flex items-center gap-1 text-slate-700 dark:text-slate-300"
+                                                    >
+                                                        {copiedField === 'proj_upi' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                                        <span>{copiedField === 'proj_upi' ? 'Copied' : 'Copy'}</span>
+                                                    </button>
+                                                </div>
+
+                                                <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                    <div>
+                                                        <span className="text-[8px] font-bold uppercase text-slate-400 block">Account Number</span>
+                                                        <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">{bankSettings.payment_bank_account || '123456789012'}</span>
+                                                    </div>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => copyToClipboard(bankSettings.payment_bank_account || '123456789012', 'proj_acc')}
+                                                        className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-bold flex items-center gap-1 text-slate-700 dark:text-slate-300"
+                                                    >
+                                                        {copiedField === 'proj_acc' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                                        <span>{copiedField === 'proj_acc' ? 'Copied' : 'Copy'}</span>
+                                                    </button>
+                                                </div>
+
+                                                <div className="flex justify-between items-center p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                    <div>
+                                                        <span className="text-[8px] font-bold uppercase text-slate-400 block">IFSC Code</span>
+                                                        <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">{bankSettings.payment_bank_ifsc || 'SBIN0001234'}</span>
+                                                    </div>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => copyToClipboard(bankSettings.payment_bank_ifsc || 'SBIN0001234', 'proj_ifsc')}
+                                                        className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-bold flex items-center gap-1 text-slate-700 dark:text-slate-300"
+                                                    >
+                                                        {copiedField === 'proj_ifsc' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                                        <span>{copiedField === 'proj_ifsc' ? 'Copied' : 'Copy'}</span>
+                                                    </button>
+                                                </div>
+
+                                                <div className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                    <span className="text-[8px] font-bold uppercase text-slate-400 block">Bank & Branch</span>
+                                                    <span className="font-bold text-slate-900 dark:text-white text-xs truncate block">{bankSettings.payment_bank_name || 'State Bank of India'}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Payment Date *</label>
-                                            <input 
-                                                required 
-                                                type="date"
-                                                value={paymentForm.paymentDate} 
-                                                onChange={e => setPaymentForm({...paymentForm, paymentDate: e.target.value})} 
-                                                className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs text-slate-900 dark:text-white" 
-                                            />
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Transaction ID / UTR *</label>
+                                                <input 
+                                                    required 
+                                                    value={paymentForm.referenceId} 
+                                                    onChange={e => setPaymentForm({...paymentForm, referenceId: e.target.value})} 
+                                                    className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs text-slate-900 dark:text-white font-mono" 
+                                                    placeholder="Enter UPI Ref / UTR number" 
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Payment Date *</label>
+                                                <input 
+                                                    required 
+                                                    type="date"
+                                                    value={paymentForm.paymentDate} 
+                                                    onChange={e => setPaymentForm({...paymentForm, paymentDate: e.target.value})} 
+                                                    className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs text-slate-900 dark:text-white" 
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Optional Screenshot Upload */}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                                    <Upload className="w-3.5 h-3.5 text-blue-500" /> Payment Screenshot
+                                                </label>
+                                                <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">Optional</span>
+                                            </div>
+
+                                            {screenshotPreview ? (
+                                                <div className="relative p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-3">
+                                                    <img src={screenshotPreview} alt="Payment Proof" className="w-14 h-14 object-cover rounded-xl border border-slate-300 dark:border-slate-600" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate">Payment Receipt Attached</p>
+                                                        <p className="text-[9px] text-slate-400">Ready for admin verification</p>
+                                                    </div>
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={() => { setScreenshotPreview(null); setPaymentForm({...paymentForm, uploadedProof: ''}); }}
+                                                        className="p-2 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <label className="flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-blue-500 rounded-2xl cursor-pointer bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 transition-all">
+                                                    <ImageIcon className="w-5 h-5 text-slate-400 mb-1" />
+                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Upload Transfer Screenshot</span>
+                                                    <span className="text-[8px] text-slate-400 mt-0.5">JPG, PNG (Optional proof)</span>
+                                                    <input 
+                                                        type="file" 
+                                                        accept="image/*" 
+                                                        onChange={handleFileUpload} 
+                                                        className="hidden" 
+                                                    />
+                                                </label>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -965,6 +1205,64 @@ const CustomerProjects = () => {
                     </div>
                 )}
             </AnimatePresence>
+
+            {/* Project Payment Result Modal */}
+            {paymentResult && paymentResult.show && (
+                <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800 text-center animate-in fade-in zoom-in-95 duration-200">
+                        <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${
+                            paymentResult.success ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400'
+                        }`}>
+                            {paymentResult.success ? <CheckCircle2 className="w-9 h-9" /> : <AlertCircle className="w-9 h-9" />}
+                        </div>
+
+                        <h3 className={`text-xl font-black mb-1 ${
+                            paymentResult.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                        }`}>
+                            {paymentResult.success ? 'Payment Verified & Confirmed' : 'Payment Incomplete or Failed'}
+                        </h3>
+                        
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">
+                            {paymentResult.message}
+                        </p>
+
+                        <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200 dark:border-slate-700/60 mb-5 text-left text-xs space-y-2.5">
+                            <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700">
+                                <span className="text-slate-500 dark:text-slate-400 font-semibold">Verified Amount:</span>
+                                <span className="text-sm font-black text-slate-900 dark:text-white">₹{paymentResult.amount?.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-slate-500 dark:text-slate-400 font-semibold">Transaction Status:</span>
+                                <span className={`px-2 py-0.5 rounded font-black text-[10px] tracking-wider uppercase ${
+                                    paymentResult.success ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                                }`}>
+                                    {paymentResult.status}
+                                </span>
+                            </div>
+                            {paymentResult.cfPaymentId && (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-500 dark:text-slate-400 font-semibold">Cashfree Ref ID:</span>
+                                    <span className="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">{paymentResult.cfPaymentId}</span>
+                                </div>
+                            )}
+                            {paymentResult.orderId && (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-500 dark:text-slate-400 font-semibold">Order / Ref ID:</span>
+                                    <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400">{paymentResult.orderId}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setPaymentResult(null)}
+                            className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition cursor-pointer"
+                        >
+                            Dismiss & View Updated Project
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

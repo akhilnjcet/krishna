@@ -436,7 +436,20 @@ exports.getBookingFinancials = async (req, res) => {
 
     // Sum paid amounts by category - ONLY count strictly verified/completed payments!
     const VERIFIED_STATUSES = ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'];
-    const validPayments = payments.filter(p => VERIFIED_STATUSES.includes(p.status));
+    const validPayments = payments.filter(p => VERIFIED_STATUSES.includes(p.status) && p.status !== 'WAITING_FOR_VERIFICATION');
+
+    // Deduplicate valid payments by cfPaymentId and order/reference ID to prevent duplicate counts
+    const seenTxKeys = new Set();
+    const uniqueValidPayments = [];
+    for (const p of validPayments) {
+      const txKey = p.cfPaymentId 
+        ? `cf:${p.cfPaymentId}` 
+        : (p.referenceId && !['CASH', 'MANUAL'].includes(p.referenceId) ? `ref:${p.referenceId}` : `id:${p._id}`);
+      if (!seenTxKeys.has(txKey)) {
+        seenTxKeys.add(txKey);
+        uniqueValidPayments.push(p);
+      }
+    }
 
     let rentPaid = 0;
     let depositPaid = 0;
@@ -446,7 +459,7 @@ exports.getBookingFinancials = async (req, res) => {
     const extraChargesPaidMap = {};
     const refundsList = [];
 
-    validPayments.forEach(p => {
+    uniqueValidPayments.forEach(p => {
       const type = (p.paymentType || '').toLowerCase();
       const amt = parseFloat(p.amount) || 0;
       if (type.includes('refund')) {

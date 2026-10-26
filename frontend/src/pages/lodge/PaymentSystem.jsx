@@ -48,6 +48,10 @@ const PaymentSystem = () => {
         const cfOrderId = searchParams.get('cf_order_id') || searchParams.get('order_id');
         
         if (cfOrderId) {
+            if (window.history && window.history.replaceState) {
+                const cleanUrl = window.location.pathname + (window.location.hash ? window.location.hash.split('?')[0] : '');
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
             verifyCashfreeReturn(cfOrderId);
         }
     }, []);
@@ -151,6 +155,10 @@ const PaymentSystem = () => {
         }
         setProcessing(true);
         try {
+            const returnUrl = typeof window !== 'undefined'
+                ? `${window.location.origin}${window.location.pathname}?cf_order_id={order_id}&room_id=${room?.id || ''}`
+                : undefined;
+
             const orderRes = await api.post('/payments/cashfree/create-order', {
                 amount: payAmt,
                 roomId: room?.id,
@@ -158,7 +166,8 @@ const PaymentSystem = () => {
                 name: room?.tenant || 'Guest Tenant',
                 paymentType: type === 'rent' ? 'Rent' : 'Additional Charge',
                 chargeCategory: type,
-                orderNote: `${type.toUpperCase()} payment for Room ${roomNumber}`
+                orderNote: `${type.toUpperCase()} payment for Room ${roomNumber}`,
+                returnUrl
             });
 
             const { paymentSessionId, orderId, environment } = orderRes.data;

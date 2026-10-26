@@ -96,13 +96,38 @@ exports.verifyPayment = async (req, res) => {
             );
         }
 
-        // Settle LodgeRentBill if approved
-        if ((status === 'Completed' || status === 'APPROVED') && payment.roomId) {
+        // Settle LodgeRentBill if approved with accurate balance reconciliation
+        if ((status === 'Completed' || status === 'APPROVED') && (payment.roomId || payment.billId)) {
             const LodgeRentBill = require('../models/LodgeRentBill');
-            await LodgeRentBill.findOneAndUpdate(
-                { roomId: payment.roomId, userId: payment.customerId, status: 'Due' },
-                { status: 'Paid', paymentDate: Date.now(), paymentMethod: payment.method, transactionId: payment.referenceId, outstandingAmount: 0 }
-            );
+            let bill = null;
+            if (payment.billId) {
+                bill = await LodgeRentBill.findById(payment.billId);
+            } else if (payment.roomId) {
+                bill = await LodgeRentBill.findOne({
+                    roomId: payment.roomId,
+                    archived: false,
+                    status: { $in: ['Due', 'Unpaid', 'Partially Paid'] }
+                }).sort({ dueDate: 1 });
+            }
+
+            if (bill) {
+                const verifiedPayments = await Payment.find({
+                    $or: [
+                        { billId: bill._id },
+                        { roomId: payment.roomId, paymentType: 'Rent' },
+                        { bookingId: payment.bookingId, paymentType: 'Rent' }
+                    ],
+                    status: { $in: ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'] }
+                });
+                const totalPaidForBill = verifiedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                const rem = Math.max(0, bill.totalAmount - totalPaidForBill);
+                bill.outstandingAmount = rem;
+                bill.status = rem === 0 ? 'Paid' : (totalPaidForBill > 0 ? 'Partially Paid' : 'Due');
+                if (rem === 0) bill.paymentDate = new Date();
+                bill.paymentMethod = payment.method;
+                bill.transactionId = payment.referenceId || payment.cfPaymentId;
+                await bill.save();
+            }
         }
 
         // Recalculate project payment details
@@ -209,6 +234,9 @@ exports.createCashfreeOrder = async (req, res) => {
         const customerEmail = email || customer.email || 'customer@krishnaengg.com';
         const customerPhone = phone || customer.phone || customer.phoneNumber || '9447940835';
 
+        const fallbackOrigin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : 'https://krishnaengineering.vercel.app');
+        const effectiveReturnUrl = returnUrl || `${fallbackOrigin}/#/customer/payments?cf_order_id=${orderId}`;
+
         const orderResult = await cashfreeService.createOrder({
             orderId,
             orderAmount: parseFloat(amount),
@@ -217,7 +245,7 @@ exports.createCashfreeOrder = async (req, res) => {
             customerEmail,
             customerPhone,
             orderNote: orderNote || `${paymentType} Online Payment for Krishna Engineering / Lodge`,
-            returnUrl
+            returnUrl: effectiveReturnUrl
         });
 
         const rawCustId = customer._id || customer.id || req.body.customerId;
@@ -230,6 +258,7 @@ exports.createCashfreeOrder = async (req, res) => {
             method: 'cashfree',
             referenceId: orderId,
             transactionReference: orderId,
+            cfOrderId: orderId,
             paymentDate: new Date(),
             projectId: projectId || undefined,
             quoteId: quoteId || undefined,
@@ -259,8 +288,12 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
     const orderId = orderData.order_id;
     const paymentsList = await cashfreeService.getOrderPayments(orderId);
     const successfulPayment = Array.isArray(paymentsList) 
-        ? paymentsList.find(p => (p.payment_status || '').toUpperCase() === 'SUCCESS') || paymentsList[0]
+        ? paymentsList.find(p => (p.payment_status || '').toUpperCase() === 'SUCCESS')
         : null;
+
+    if (!successfulPayment && (orderData.order_status || '').toUpperCase() !== 'PAID') {
+        throw new Error(`Order ${orderId} has no successful payment record.`);
+    }
 
     const verifiedAmount = successfulPayment?.payment_amount !== undefined 
         ? parseFloat(successfulPayment.payment_amount) 
@@ -275,8 +308,9 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
     // Find existing initiated payment record or create one
     let payment = await Payment.findOne({ 
         $or: [
-            { referenceId: orderId },
             { cfPaymentId: cfPaymentId },
+            { referenceId: orderId },
+            { cfOrderId: orderId },
             { transactionReference: orderId }
         ] 
     });
@@ -317,7 +351,75 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
         await recalculateProjectPaymentStatus(payment.projectId);
     }
 
-    // Settle Lodge Rent Bill with exact remaining balance calculation
+    // Accurate Ledger Reconciliation for Booking & Room
+    let remainingBalance = 0;
+    let targetBooking = null;
+
+    if (payment.bookingId || payment.roomId) {
+        const BookingLodge = require('../models/BookingLodge');
+        if (payment.bookingId) {
+            targetBooking = await BookingLodge.findById(payment.bookingId).populate('roomId');
+        }
+        if (!targetBooking && payment.roomId) {
+            targetBooking = await BookingLodge.findOne({
+                roomId: payment.roomId,
+                status: { $nin: ['cancelled', 'checked_out'] }
+            }).populate('roomId').sort({ createdAt: -1 });
+        }
+    }
+
+    if (targetBooking) {
+        const rentDue = parseFloat(targetBooking.roomId?.price || targetBooking.totalAmount || 0);
+        const originalDeposit = parseFloat(targetBooking.securityDeposit || targetBooking.roomId?.securityDeposit || 0);
+        const depositAdjustments = Array.isArray(targetBooking.depositAdjustments) ? targetBooking.depositAdjustments : [];
+        const totalDepositAdjusted = depositAdjustments.reduce((sum, adj) => sum + (parseFloat(adj.amount) || 0), 0);
+
+        const VERIFIED_STATUSES = ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'];
+        const verifiedPayments = await Payment.find({
+            bookingId: targetBooking._id,
+            status: { $in: VERIFIED_STATUSES }
+        });
+
+        // Deduplicate payments by cfPaymentId or transaction reference
+        const seenTx = new Set();
+        const uniquePayments = [];
+        for (const vp of verifiedPayments) {
+            const k = vp.cfPaymentId 
+                ? `cf:${vp.cfPaymentId}` 
+                : (vp.referenceId && !['CASH', 'MANUAL'].includes(vp.referenceId) ? `ref:${vp.referenceId}` : `id:${vp._id}`);
+            if (!seenTx.has(k)) {
+                seenTx.add(k);
+                uniquePayments.push(vp);
+            }
+        }
+
+        let rentPaid = 0;
+        let depositPaid = 0;
+        uniquePayments.forEach(vp => {
+            const t = (vp.paymentType || '').toLowerCase();
+            const amt = parseFloat(vp.amount) || 0;
+            if (t.includes('refund')) {
+                // Refund
+            } else if (t.includes('rent') && !t.includes('adjustment')) {
+                rentPaid += amt;
+            } else if (t.includes('deposit') && !t.includes('adjustment')) {
+                depositPaid += amt;
+            } else if (!t.includes('adjustment')) {
+                rentPaid += amt;
+            }
+        });
+
+        const pType = (payment.paymentType || '').toLowerCase();
+        if (pType.includes('deposit')) {
+            remainingBalance = Math.max(0, originalDeposit - depositPaid);
+        } else {
+            // Rent
+            const effectiveRentSettled = rentPaid + totalDepositAdjusted;
+            remainingBalance = Math.max(0, rentDue - effectiveRentSettled);
+        }
+    }
+
+    // Settle Lodge Rent Bill if present
     let bill = null;
     const LodgeRentBill = require('../models/LodgeRentBill');
     if (payment.billId) {
@@ -334,20 +436,29 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
         }).sort({ dueDate: 1 });
     }
 
-    let remainingBillBalance = 0;
     if (bill) {
-        // Sum all verified/completed payments for this bill or room rent
-        const verifiedPayments = await Payment.find({
+        const verifiedBillPayments = await Payment.find({
             $or: [
                 { billId: bill._id },
                 { bookingId: payment.bookingId, paymentType: 'Rent' },
                 { roomId: payment.roomId, paymentType: 'Rent' }
             ],
-            status: { $in: ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED'] }
+            status: { $in: ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'] }
         });
-        const totalPaidForBill = verifiedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-        remainingBillBalance = Math.max(0, bill.totalAmount - totalPaidForBill);
-        
+
+        const seenBillTx = new Set();
+        let totalPaidForBill = 0;
+        for (const vbp of verifiedBillPayments) {
+            const k = vbp.cfPaymentId 
+                ? `cf:${vbp.cfPaymentId}` 
+                : (vbp.referenceId && !['CASH', 'MANUAL'].includes(vbp.referenceId) ? `ref:${vbp.referenceId}` : `id:${vbp._id}`);
+            if (!seenBillTx.has(k)) {
+                seenBillTx.add(k);
+                totalPaidForBill += (parseFloat(vbp.amount) || 0);
+            }
+        }
+
+        const remainingBillBalance = Math.max(0, bill.totalAmount - totalPaidForBill);
         bill.outstandingAmount = remainingBillBalance;
         bill.status = remainingBillBalance === 0 ? 'Paid' : (totalPaidForBill > 0 ? 'Partially Paid' : 'Due');
         if (remainingBillBalance === 0) {
@@ -356,6 +467,10 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
         bill.paymentMethod = 'cashfree';
         bill.transactionId = cfPaymentId;
         await bill.save();
+
+        if (!targetBooking) {
+            remainingBalance = remainingBillBalance;
+        }
     }
 
     // Socket.IO real-time notification
@@ -366,7 +481,16 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
         io.emit('lodge-payment-updated', payment);
     }
 
-    return { payment, verifiedAmount, cfPaymentId, remainingBillBalance, bill };
+    return { 
+        payment, 
+        verifiedAmount, 
+        cfPaymentId, 
+        remainingBalance, 
+        remainingBillBalance: remainingBalance, 
+        status: remainingBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID',
+        bill, 
+        booking: targetBooking 
+    };
 }
 
 /**
@@ -383,9 +507,10 @@ exports.verifyCashfreePayment = async (req, res) => {
         const orderStatus = (orderData.order_status || '').toUpperCase(); // PAID, ACTIVE, EXPIRED, TERMINATED
 
         if (orderStatus === 'PAID') {
-            const { payment, verifiedAmount, cfPaymentId, remainingBillBalance, bill } = 
+            const { payment, verifiedAmount, cfPaymentId, remainingBalance, bill } = 
                 await processConfirmedCashfreeOrder(orderData, req.user, 'Cashfree Gateway Verification');
 
+            const finalStatus = remainingBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID';
             return res.json({ 
                 success: true, 
                 verified: true,
@@ -393,7 +518,9 @@ exports.verifyCashfreePayment = async (req, res) => {
                 payment,
                 cfPaymentId,
                 verifiedAmount,
-                remainingBillBalance,
+                remainingBalance,
+                remainingBillBalance: remainingBalance,
+                status: finalStatus,
                 order: orderData 
             });
         }

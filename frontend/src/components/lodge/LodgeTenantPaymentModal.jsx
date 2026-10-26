@@ -203,14 +203,19 @@ export default function LodgeTenantPaymentModal({
       api.post('/payments/cashfree/verify', { orderId: redirectOrderId })
         .then(res => {
           if (res.data.success) {
+            const remBalance = res.data.remainingBalance !== undefined 
+              ? res.data.remainingBalance 
+              : res.data.remainingBillBalance;
+            const finalBadge = remBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID';
+
             setPaymentResultModal({
               show: true,
               success: true,
               amount: res.data.verifiedAmount,
               cfPaymentId: res.data.cfPaymentId,
               orderId: redirectOrderId,
-              remainingBalance: res.data.remainingBillBalance,
-              status: res.data.remainingBillBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID',
+              remainingBalance: remBalance,
+              status: finalBadge,
               message: `Payment of ₹${res.data.verifiedAmount} verified and recorded successfully.`
             });
             fetchBookingFinancials();
@@ -337,6 +342,7 @@ export default function LodgeTenantPaymentModal({
       const paymentType = paymentTarget === 'ALL' ? 'Rent' : (paymentTarget === 'DEPOSIT' ? 'Security Deposit' : (paymentTarget === 'EXTRA' ? 'Additional Charge' : 'Rent'));
       const chargeCategory = paymentTarget === 'ALL' ? 'Combined Settlement' : (paymentTarget === 'DEPOSIT' ? 'Security Deposit' : (paymentTarget === 'EXTRA' ? 'Additional Charges' : 'Rent'));
 
+      const returnUrl = `${window.location.origin}${window.location.pathname}${window.location.hash.split('?')[0]}?cf_order_id={order_id}&booking_id=${booking._id}`;
       const orderRes = await api.post('/payments/cashfree/create-order', {
         amount: activePayAmount,
         bookingId: booking._id,
@@ -346,7 +352,8 @@ export default function LodgeTenantPaymentModal({
         phone: booking.tenantPhone || user?.phone || user?.phoneNumber || '9447940835',
         paymentType,
         chargeCategory,
-        orderNote: `Lodge Settlement: Room ${room.roomNumber || 'Suite'} - ${targetTitle}`
+        orderNote: `Lodge Settlement: Room ${room.roomNumber || 'Suite'} - ${targetTitle}`,
+        returnUrl
       });
 
       const { paymentSessionId, orderId, environment } = orderRes.data;
@@ -375,14 +382,19 @@ export default function LodgeTenantPaymentModal({
         try {
           const verifyRes = await api.post('/payments/cashfree/verify', { orderId });
           if (verifyRes.data.success) {
+            const remBalance = verifyRes.data.remainingBalance !== undefined 
+              ? verifyRes.data.remainingBalance 
+              : verifyRes.data.remainingBillBalance;
+            const finalBadge = remBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID';
+
             setPaymentResultModal({
               show: true,
               success: true,
               amount: verifyRes.data.verifiedAmount,
               cfPaymentId: verifyRes.data.cfPaymentId,
               orderId,
-              remainingBalance: verifyRes.data.remainingBillBalance,
-              status: verifyRes.data.remainingBillBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID',
+              remainingBalance: remBalance,
+              status: finalBadge,
               message: verifyRes.data.message || `Payment of ₹${verifyRes.data.verifiedAmount} verified successfully.`
             });
             setLastPaymentReceipt({
@@ -390,8 +402,8 @@ export default function LodgeTenantPaymentModal({
               targetTitle,
               lineItemsSnapshot: financials?.lineItems,
               overallSnapshot: financials?.overall,
-              newRemaining: verifyRes.data.remainingBillBalance,
-              resultStatus: verifyRes.data.remainingBillBalance === 0 ? 'Fully Paid' : 'Partially Paid'
+              newRemaining: remBalance,
+              resultStatus: remBalance === 0 ? 'Fully Paid' : 'Partially Paid'
             });
             setSubmittedSuccess(true);
             await fetchBookingFinancials();

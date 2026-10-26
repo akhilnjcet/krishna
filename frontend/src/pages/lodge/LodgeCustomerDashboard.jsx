@@ -68,6 +68,25 @@ export default function LodgeCustomerDashboard() {
             setPayments(allPayments);
             setMyComplaints(compRes.data || []);
             setProfile({ ...userRes.data, password: '' });
+
+            // If returning from Cashfree redirect, auto-open the settlement modal for the relevant booking
+            const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
+            const searchParams = new URLSearchParams(window.location.search || hashQuery);
+            const redirectOrderId = searchParams.get('order_id') || searchParams.get('cf_order_id');
+            const redirectBookingId = searchParams.get('booking_id');
+
+            if (redirectOrderId && bookRes.data && bookRes.data.length > 0) {
+                const targetBooking = (redirectBookingId && bookRes.data.find(b => b._id === redirectBookingId)) || bookRes.data[0];
+                if (targetBooking) {
+                    setPayModalState({
+                        show: true,
+                        booking: targetBooking,
+                        isPayMore: false,
+                        initialTarget: 'ALL',
+                        initialTab: 'PAY'
+                    });
+                }
+            }
         } catch (err) {
             console.error(err);
         } finally {
