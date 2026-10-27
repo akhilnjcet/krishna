@@ -40,6 +40,8 @@ const AdminProjects = () => {
     const [showNotifyModal, setShowNotifyModal] = useState(false);
     const [selectedProject, setSelectedProject] = useState(null);
     const [notificationText, setNotificationText] = useState({ title: '', message: '' });
+    const [isTransmitting, setIsTransmitting] = useState(false);
+    const [transmitFeedback, setTransmitFeedback] = useState({ type: null, message: '' });
     const [activeTab, setActiveTab] = useState('payments');
     const [payments, setPayments] = useState([]);
     const [paymentsLoading, setPaymentsLoading] = useState(false);
@@ -140,21 +142,79 @@ const AdminProjects = () => {
         }
     };
 
+    const handleOpenNotifyModal = (prj) => {
+        setSelectedProject(prj);
+        setNotificationText({ title: '', message: '' });
+        setTransmitFeedback({ type: null, message: '' });
+        setShowNotifyModal(true);
+    };
+
     const handlePostUpdate = async (e) => {
         e.preventDefault();
+        setTransmitFeedback({ type: null, message: '' });
+
+        const targetId = selectedProject?._id || selectedProject?.id;
+        if (!targetId) {
+            setTransmitFeedback({
+                type: 'error',
+                message: 'Target project archive identifier is missing. Please select a valid project.'
+            });
+            return;
+        }
+
+        if (!notificationText.title.trim()) {
+            setTransmitFeedback({
+                type: 'error',
+                message: 'Subject heading is required for transmission.'
+            });
+            return;
+        }
+
+        if (!notificationText.message.trim()) {
+            setTransmitFeedback({
+                type: 'error',
+                message: 'Core intelligence message content is required.'
+            });
+            return;
+        }
+
+        setIsTransmitting(true);
         try {
             await api.post('/progress', { 
-                projectId: selectedProject._id, 
-                title: notificationText.title,
-                description: notificationText.message,
-                progressPercentage: selectedProject.progress, // Maintain current progress
+                projectId: targetId, 
+                title: notificationText.title.trim(),
+                description: notificationText.message.trim(),
+                progressPercentage: selectedProject?.progress ?? 0,
                 status: 'In Progress'
             });
-            setShowNotifyModal(false);
-            setNotificationText({ title: '', message: '' });
-            alert("Technical alert successfully broadcasted to client portal.");
+
+            setTransmitFeedback({
+                type: 'success',
+                message: 'Intelligence pulse successfully broadcasted to client portal.'
+            });
+
+            // Update in local projects list
+            setProjects(prev => prev.map(p => {
+                if (p._id === targetId) {
+                    return { ...p, updateNotes: notificationText.message.trim() };
+                }
+                return p;
+            }));
+
+            setTimeout(() => {
+                setShowNotifyModal(false);
+                setNotificationText({ title: '', message: '' });
+                setTransmitFeedback({ type: null, message: '' });
+            }, 1200);
         } catch (err) {
-            alert("Failed to transmit intelligence: " + (err.response?.data?.message || err.message));
+            console.error('Pulse transmit error:', err);
+            const errMsg = err.response?.data?.message || err.message || 'Request failed';
+            setTransmitFeedback({
+                type: 'error',
+                message: `Failed to transmit intelligence: ${errMsg}`
+            });
+        } finally {
+            setIsTransmitting(false);
         }
     };
     const [formData, setFormData] = useState({
@@ -912,7 +972,7 @@ const AdminProjects = () => {
                                         {/* Actions Grid */}
                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
                                             <button 
-                                                onClick={() => { setSelectedProject(prj); setShowNotifyModal(true); }}
+                                                onClick={() => handleOpenNotifyModal(prj)}
                                                 className="flex items-center justify-center gap-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white py-2 px-2 rounded-xl text-[11px] font-bold transition"
                                                 title="Message Client"
                                             >
@@ -1129,7 +1189,7 @@ const AdminProjects = () => {
                                             <td className="p-6 text-right">
                                                 <div className="flex justify-end items-center gap-1.5 flex-wrap">
                                                     <button 
-                                                        onClick={() => { setSelectedProject(prj); setShowNotifyModal(true); }}
+                                                        onClick={() => handleOpenNotifyModal(prj)}
                                                         className="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-600 hover:text-white transition"
                                                         title="Transmit sudden info to customer"
                                                     >
@@ -1510,26 +1570,54 @@ const AdminProjects = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl mb-8 border border-slate-100 dark:border-slate-800">
+                            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl mb-6 border border-slate-100 dark:border-slate-800">
                                 <div className="text-[9px] font-black uppercase text-slate-400 mb-1">Target Project Archive</div>
-                                <div className="text-sm font-black text-slate-900 dark:text-white uppercase">{selectedProject?.title}</div>
+                                <div className="text-sm font-black text-slate-900 dark:text-white uppercase">{selectedProject?.title || 'Unknown Project'}</div>
                             </div>
+
+                            {/* In-app Feedback Banner */}
+                            {transmitFeedback.message && (
+                                <div className={`p-4 rounded-2xl mb-6 flex items-start gap-3 border animate-in fade-in duration-300 ${
+                                    transmitFeedback.type === 'success'
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+                                        : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'
+                                }`}>
+                                    {transmitFeedback.type === 'success' ? (
+                                        <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                                    ) : (
+                                        <AlertTriangle className="w-5 h-5 flex-shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+                                    )}
+                                    <div className="text-xs font-bold leading-relaxed">
+                                        {transmitFeedback.message}
+                                    </div>
+                                </div>
+                            )}
 
                             <form onSubmit={handlePostUpdate} className="space-y-6">
                                 <div>
                                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Subject Heading</label>
-                                    <input required value={notificationText.title} onChange={e => setNotificationText({...notificationText, title: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none uppercase text-xs" placeholder="TECHNICAL ALERT / SAFETY MILESTONE" />
+                                    <input required disabled={isTransmitting} value={notificationText.title} onChange={e => setNotificationText({...notificationText, title: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none uppercase text-xs disabled:opacity-50" placeholder="TECHNICAL ALERT / SAFETY MILESTONE" />
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Core Intelligence Message</label>
-                                    <textarea required rows={4} value={notificationText.message} onChange={e => setNotificationText({...notificationText, message: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs" placeholder="Detail the structural update or sudden site information..." />
+                                    <textarea required rows={4} disabled={isTransmitting} value={notificationText.message} onChange={e => setNotificationText({...notificationText, message: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs disabled:opacity-50" placeholder="Detail the structural update or sudden site information..." />
                                 </div>
-                                <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100 mb-4">
-                                    <AlertTriangle className="w-5 h-5 text-amber-500" />
-                                    <p className="text-[9px] font-black text-amber-700 uppercase tracking-tight italic">This update will be broadcasted live to the customer's secure dashboard matrix immediately.</p>
+                                <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-100 dark:border-amber-900/40 mb-4">
+                                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                                    <p className="text-[9px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-tight italic">This update will be broadcasted live to the customer's secure dashboard matrix immediately.</p>
                                 </div>
-                                <button type="submit" className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition flex items-center justify-center gap-4 group">
-                                    Initiate Intelligence Uplink <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                <button type="submit" disabled={isTransmitting} className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition flex items-center justify-center gap-4 group disabled:opacity-50 disabled:cursor-not-allowed">
+                                    {isTransmitting ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            <span>Transmitting Intelligence...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>Initiate Intelligence Uplink</span>
+                                            <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                        </>
+                                    )}
                                 </button>
                             </form>
                         </motion.div>
