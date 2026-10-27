@@ -6,6 +6,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -155,6 +156,7 @@ app.use('/api/attendance', require('./routes/attendanceRoutes'));
 app.use('/api/leave', require('./routes/leaveRoutes'));
 app.use('/api/invoices', require('./routes/invoiceRoutes'));
 app.use('/api/uploads', require('./routes/uploadRoutes'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/staff', require('./routes/staffRoutes'));
 app.use('/api/tasks', require('./routes/taskRoutes'));
@@ -228,7 +230,9 @@ app.get('/api/health/whatsapp', async (req, res) => {
         const path = require('path');
         
         // Check DB first
-        const dbCreds = await SystemSetting.findOne({ key: 'whatsapp_creds' });
+        const dbCreds = await SystemSetting.findOne({ 
+            key: { $in: ['whatsapp_creds', 'whatsapp_auth_bundle'] } 
+        });
         
         await ensureWhatsApp();
         

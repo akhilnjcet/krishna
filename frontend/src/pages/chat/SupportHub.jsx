@@ -10,8 +10,12 @@ import {
 } from 'firebase/firestore';
 import { 
     MessageSquare, ShieldAlert, History, ShieldCheck, ChevronRight,
-    CheckCircle, XCircle, Clock, Plus, ArrowLeft
+    CheckCircle, XCircle, Clock, Plus, ArrowLeft, Trash2
 } from 'lucide-react';
+import { 
+    deleteSupportTicket, 
+    clearAllClosedTickets 
+} from '../../services/supportChatService';
 
 const SupportHub = () => {
     const { user } = useAuthStore();
@@ -27,6 +31,8 @@ const SupportHub = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('active');
     const [chatType, setChatType] = useState('support'); // 'support' or 'staff-reference'
+    const [deletingTicketId, setDeletingTicketId] = useState(null);
+    const [clearingArchive, setClearingArchive] = useState(false);
 
     useEffect(() => {
         if (!user) {
@@ -91,6 +97,41 @@ const SupportHub = () => {
             setView('entry');
         } catch (err) {
             console.error("Closure protocol failure:", err);
+        }
+    };
+
+    const handleDeleteTicket = async (ticketId, roomId) => {
+        if (!window.confirm("Permanently delete this closed support record and its chat messages? This action cannot be undone.")) {
+            return;
+        }
+        setDeletingTicketId(ticketId);
+        try {
+            await deleteSupportTicket(ticketId, roomId);
+        } catch (err) {
+            console.error("Failed to delete support ticket:", err);
+            alert("Failed to delete support ticket: " + (err.message || 'Error occurred'));
+        } finally {
+            setDeletingTicketId(null);
+        }
+    };
+
+    const handleClearAllArchive = async () => {
+        if (closedTickets.length === 0) {
+            alert("No closed support records found to clear.");
+            return;
+        }
+        if (!window.confirm(`Permanently delete all ${closedTickets.length} closed support records and their chat messages? This action cannot be undone.`)) {
+            return;
+        }
+        setClearingArchive(true);
+        try {
+            const count = await clearAllClosedTickets(closedTickets);
+            alert(`Successfully deleted ${count} closed support ticket(s).`);
+        } catch (err) {
+            console.error("Failed to clear closed support records:", err);
+            alert("Failed to clear some records: " + (err.message || 'Error occurred'));
+        } finally {
+            setClearingArchive(false);
         }
     };
 
@@ -208,25 +249,39 @@ const SupportHub = () => {
                 )}
             </header>
 
-            <div className="flex items-center gap-6 border-b-2 border-slate-100 dark:border-slate-800 mb-10">
-                <button 
-                    onClick={() => setActiveTab('active')}
-                    className={`pb-4 px-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative ${
-                        activeTab === 'active' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600 dark:text-slate-400'
-                    }`}
-                >
-                    Live Operations ({activeTickets.length})
-                    {activeTab === 'active' && <div className="absolute bottom-[-2px] left-0 right-0 h-1 bg-indigo-600 rounded-t-full"></div>}
-                </button>
-                <button 
-                    onClick={() => setActiveTab('closed')}
-                    className={`pb-4 px-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative ${
-                        activeTab === 'closed' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600 dark:text-slate-400'
-                    }`}
-                >
-                    Archive ({closedTickets.length})
-                    {activeTab === 'closed' && <div className="absolute bottom-[-2px] left-0 right-0 h-1 bg-indigo-600 rounded-t-full"></div>}
-                </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-slate-100 dark:border-slate-800 mb-10 pb-2">
+                <div className="flex items-center gap-6">
+                    <button 
+                        onClick={() => setActiveTab('active')}
+                        className={`pb-4 px-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative ${
+                            activeTab === 'active' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600 dark:text-slate-400'
+                        }`}
+                    >
+                        Live Operations ({activeTickets.length})
+                        {activeTab === 'active' && <div className="absolute bottom-[-2px] left-0 right-0 h-1 bg-indigo-600 rounded-t-full"></div>}
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('closed')}
+                        className={`pb-4 px-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative ${
+                            activeTab === 'closed' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600 dark:text-slate-400'
+                        }`}
+                    >
+                        Archive ({closedTickets.length})
+                        {activeTab === 'closed' && <div className="absolute bottom-[-2px] left-0 right-0 h-1 bg-indigo-600 rounded-t-full"></div>}
+                    </button>
+                </div>
+
+                {activeTab === 'closed' && role === 'admin' && closedTickets.length > 0 && (
+                    <button
+                        type="button"
+                        onClick={handleClearAllArchive}
+                        disabled={clearingArchive}
+                        className="self-end sm:self-auto px-4 py-2 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-sm active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        <span>{clearingArchive ? 'Purging Archive...' : `Clear All Archive (${closedTickets.length})`}</span>
+                    </button>
+                )}
             </div>
 
             {loading ? (
@@ -328,8 +383,25 @@ const SupportHub = () => {
                                         </div>
                                     )
                                 ) : ticket.status === 'closed' && (
-                                    <div className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-400 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 border-2 border-slate-300 dark:border-slate-600 italic">
-                                        <CheckCircle className="w-5 h-5" /> Resolved • {ticket.closedAt ? new Date(ticket.closedAt.toDate()).toLocaleDateString() : 'Historical'}
+                                    <div className="flex items-center gap-3 w-full">
+                                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-400 py-5 px-4 rounded-2xl text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 border-2 border-slate-300 dark:border-slate-600 italic">
+                                            <CheckCircle className="w-5 h-5 text-emerald-500" /> Resolved • {ticket.closedAt ? new Date(ticket.closedAt.toDate()).toLocaleDateString() : 'Historical'}
+                                        </div>
+                                        {role === 'admin' && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteTicket(ticket.id, ticket.chatId)}
+                                                disabled={deletingTicketId === ticket.id}
+                                                className="w-16 h-16 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-2xl transition-all flex items-center justify-center border-2 border-rose-300 hover:border-rose-600 shadow-md active:scale-95 shrink-0 cursor-pointer disabled:opacity-50"
+                                                title="Delete closed ticket & conversation messages"
+                                            >
+                                                {deletingTicketId === ticket.id ? (
+                                                    <div className="w-5 h-5 border-2 border-rose-600 border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                    <Trash2 className="w-6 h-6" />
+                                                )}
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>

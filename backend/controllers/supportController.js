@@ -403,3 +403,67 @@ exports.testAlertEmail = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
+
+/**
+ * Admin Deletes a Single Support Request by Mongo _id, firestoreId, or chatId
+ */
+exports.deleteSupportRequest = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await SupportRequest.deleteMany({
+            $or: [
+                { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null },
+                { firestoreId: id },
+                { chatId: id }
+            ].filter(Boolean)
+        });
+
+        res.json({
+            success: true,
+            message: "Support request record deleted successfully.",
+            deletedCount: result.deletedCount
+        });
+    } catch (err) {
+        console.error("deleteSupportRequest Error:", err);
+        res.status(500).json({ message: err.message || "Failed to delete support request." });
+    }
+};
+
+/**
+ * Admin Clears All Closed Support Requests
+ */
+exports.clearClosedSupportRequests = async (req, res) => {
+    try {
+        const result = await SupportRequest.deleteMany({
+            status: { $in: ['closed', 'rejected', 'archived'] }
+        });
+
+        res.json({
+            success: true,
+            message: "Closed and rejected support requests cleared successfully.",
+            deletedCount: result.deletedCount
+        });
+    } catch (err) {
+        console.error("clearClosedSupportRequests Error:", err);
+        res.status(500).json({ message: err.message || "Failed to clear closed support requests." });
+    }
+};
+
+/**
+ * Admin Deletes Support Request associated with a chat room ID
+ */
+exports.deleteRoomSupportRequests = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const result = await SupportRequest.deleteMany({ chatId });
+
+        res.json({
+            success: true,
+            message: "Room support records deleted.",
+            deletedCount: result.deletedCount
+        });
+    } catch (err) {
+        console.error("deleteRoomSupportRequests Error:", err);
+        res.status(500).json({ message: err.message || "Failed to delete room support records." });
+    }
+};

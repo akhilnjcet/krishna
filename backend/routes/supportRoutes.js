@@ -10,6 +10,9 @@ router.post('/requests', protect, supportController.createSupportRequest);
 router.get('/requests', protect, admin, supportController.getSupportRequests);
 router.put('/requests/:id/approve', protect, admin, supportController.approveSupportRequest);
 router.put('/requests/:id/reject', protect, admin, supportController.rejectSupportRequest);
+router.delete('/requests/closed/all', protect, admin, supportController.clearClosedSupportRequests);
+router.delete('/requests/:id', protect, admin, supportController.deleteSupportRequest);
+router.delete('/rooms/:chatId', protect, admin, supportController.deleteRoomSupportRequests);
 
 // Alert settings endpoints (Admin)
 router.get('/settings', protect, admin, supportController.getAlertSettings);

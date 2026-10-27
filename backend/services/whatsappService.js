@@ -5,17 +5,63 @@ const fs = require('fs');
 const pino = require('pino');
 
 // State variables
-let sock;
+let sock = null;
 let isConnecting = false;
 let baileys = null;
 let connectionPromise = null;
 let openResolver = null;
+let heartbeatTimer = null;
+let authSaveTimer = null;
+let reconnectAttempts = 0;
 
 // Completely silent logs to see only our messages
 const logger = pino({ level: 'silent' });
 
 /**
- * Load/Save Credentials from MongoDB for persistence on Vercel
+ * Back up all session auth files (creds.json + all Signal keys) to MongoDB.
+ * Preserves the entire cryptographic key store across server restarts and 24-hour cycles.
+ */
+function debouncedSaveFullAuth(authPath) {
+    if (authSaveTimer) clearTimeout(authSaveTimer);
+    authSaveTimer = setTimeout(async () => {
+        try {
+            if (!fs.existsSync(authPath)) return;
+            const files = fs.readdirSync(authPath);
+            const bundle = {};
+            for (const file of files) {
+                const filePath = path.join(authPath, file);
+                try {
+                    const stats = fs.statSync(filePath);
+                    if (stats.isFile() && stats.size < 1024 * 1024) { // < 1MB per file
+                        bundle[file] = fs.readFileSync(filePath, 'utf-8');
+                    }
+                } catch (e) {}
+            }
+
+            if (bundle['creds.json']) {
+                const SystemSetting = require('../models/SystemSetting');
+                // Save legacy key for backward compatibility
+                await SystemSetting.findOneAndUpdate(
+                    { key: 'whatsapp_creds' },
+                    { value: bundle['creds.json'], updatedAt: Date.now() },
+                    { upsert: true }
+                ).exec();
+
+                // Save complete auth bundle (all pre-keys and app state sync keys)
+                await SystemSetting.findOneAndUpdate(
+                    { key: 'whatsapp_auth_bundle' },
+                    { value: bundle, updatedAt: Date.now() },
+                    { upsert: true }
+                ).exec();
+            }
+        } catch (err) {
+            console.error('[WhatsApp Relay] Auth bundle sync failed:', err.message);
+        }
+    }, 2000);
+}
+
+/**
+ * Load/Restore Full Authentication State (creds + all Signal keys) from MongoDB
  */
 async function syncCredsWithDb(authPath, isVercel) {
     const connectDB = require('../config/database');
@@ -24,33 +70,46 @@ async function syncCredsWithDb(authPath, isVercel) {
     const SystemSetting = require('../models/SystemSetting');
     const credsPath = path.join(authPath, 'creds.json');
 
-    console.log(`🔍 Checking for session at: ${credsPath}`);
+    if (!fs.existsSync(authPath)) {
+        fs.mkdirSync(authPath, { recursive: true });
+    }
 
-    // Load from DB if file doesn't exist (e.g. fresh Vercel instance)
-    if (!fs.existsSync(credsPath)) {
+    const localFiles = fs.readdirSync(authPath);
+
+    // If local auth is missing or only has 1 file (missing signal keys), restore complete bundle
+    if (!fs.existsSync(credsPath) || localFiles.length < 2) {
         try {
-            console.log('📦 Session file missing. Querying MongoDB...');
-            const setting = await SystemSetting.findOne({ key: 'whatsapp_creds' });
-            
-            if (setting && setting.value) {
-                console.log('✅ Found session data in MongoDB.');
-                
-                // Ensure directory exists again just in case
-                if (!fs.existsSync(authPath)) {
-                    fs.mkdirSync(authPath, { recursive: true });
-                }
+            console.log('📦 Local WhatsApp session incomplete. Querying MongoDB for complete auth bundle...');
+            const bundleSetting = await SystemSetting.findOne({ key: 'whatsapp_auth_bundle' });
 
+            if (bundleSetting && bundleSetting.value && typeof bundleSetting.value === 'object') {
+                const bundle = bundleSetting.value;
+                let restoredCount = 0;
+                for (const [fileName, fileData] of Object.entries(bundle)) {
+                    if (typeof fileData === 'string' && fileName) {
+                        fs.writeFileSync(path.join(authPath, fileName), fileData, 'utf-8');
+                        restoredCount++;
+                    }
+                }
+                console.log(`✅ Successfully restored complete WhatsApp auth bundle (${restoredCount} files) from MongoDB.`);
+                return;
+            }
+
+            // Fallback for older single-file records
+            const setting = await SystemSetting.findOne({ key: 'whatsapp_creds' });
+            if (setting && setting.value) {
                 const rawData = typeof setting.value === 'string' ? setting.value : JSON.stringify(setting.value);
-                fs.writeFileSync(credsPath, rawData);
-                console.log(`🚀 Successfully restored 'creds.json' to ${authPath} (${rawData.length} bytes)`);
+                fs.writeFileSync(credsPath, rawData, 'utf-8');
+                console.log(`🚀 Successfully restored legacy 'creds.json' from MongoDB.`);
             } else {
-                console.log('⚠️ No "whatsapp_creds" found in MongoDB. Pair manually.');
+                console.log('⚠️ No WhatsApp session found in MongoDB. QR scan required.');
             }
         } catch (err) {
             console.error('❌ Failed to restore session from DB:', err.message);
         }
     } else {
-        console.log('✅ Session file already exists locally.');
+        console.log(`✅ Session intact (${localFiles.length} files found locally).`);
+        debouncedSaveFullAuth(authPath);
     }
 }
 
@@ -60,6 +119,15 @@ async function startWhatsAppConnection() {
 
     connectionPromise = (async () => {
         try {
+            // Clean up any existing socket before creating a new one to prevent 440 (connectionReplaced)
+            if (sock) {
+                try {
+                    sock.ev.removeAllListeners();
+                    sock.end();
+                } catch (e) {}
+                sock = null;
+            }
+
             // Dynamic import for ESM module in CJS environment
             if (!baileys) {
                 baileys = await import('@whiskeysockets/baileys');
@@ -89,7 +157,7 @@ async function startWhatsAppConnection() {
             
             // Use latest version to prevent rejection from WA servers
             const { version } = await fetchLatestBaileysVersion();
-            console.log(`Using WA version v${version.join('.')}`);
+            console.log(`[WhatsApp Relay] Using WA protocol v${version.join('.')}`);
 
             sock = makeWASocket({
                 version,
@@ -99,34 +167,25 @@ async function startWhatsAppConnection() {
                 },
                 logger: logger,
                 printQRInTerminal: false,
-                browser: Browsers.macOS('Desktop'),
-                syncFullHistory: false, // Critical for Vercel (Disables massive history downloads)
-                fireInitQueries: false, // Don't fire initial search queries to save time/ram
-                shouldSyncHistoryMessage: () => false, // Absolutely no history sync
-                markOnlineOnConnect: false,
+                browser: Browsers.windows('Desktop'),
+                syncFullHistory: false, // Don't download massive chats
+                generateHighQualityLinkPreview: false,
+                markOnlineOnConnect: false, // Keep phone notifications active
                 connectTimeoutMs: 60000, 
                 defaultQueryTimeoutMs: 60000,
-                keepAliveIntervalMs: 10000,
+                keepAliveIntervalMs: 30000, // Standard 30s ping keeps connection alive
+                retryRequestDelayMs: 3000,
                 mobile: false,
                 getMessage: async (key) => ({ conversation: 'Success' })
             });
 
-            // Extreme Persistence: Save credentials the INSTANT they are updated
+            // Extreme Persistence: Save credentials AND all key rotations to disk and MongoDB
             sock.ev.on('creds.update', async () => {
-                const SystemSetting = require('../models/SystemSetting');
                 try {
                     await saveCreds(); 
-                    const credsFilePath = path.join(authPath, 'creds.json');
-                    if (fs.existsSync(credsFilePath)) {
-                        const credsData = fs.readFileSync(credsFilePath, 'utf-8');
-                        await SystemSetting.findOneAndUpdate(
-                            { key: 'whatsapp_creds' },
-                            { value: credsData, updatedAt: Date.now() },
-                            { upsert: true }
-                        ).exec();
-                    }
+                    debouncedSaveFullAuth(authPath);
                 } catch (err) {
-                    console.error('Persistence Fail:', err.message);
+                    console.error('[WhatsApp Relay] Persistence Fail on creds.update:', err.message);
                 }
             });
 
@@ -148,6 +207,29 @@ async function startWhatsAppConnection() {
                     const SystemSetting = require('../models/SystemSetting');
                     SystemSetting.deleteOne({ key: 'whatsapp_qr' }).catch(() => {}); 
                     isConnecting = false;
+                    reconnectAttempts = 0;
+                    console.log('✅ [WhatsApp Relay] Connection opened successfully and authenticated.');
+
+                    // Sync complete bundle to MongoDB
+                    debouncedSaveFullAuth(authPath);
+
+                    // 24/7 Heartbeat Watchdog: Every 5 minutes, send light presence frame and verify socket
+                    if (heartbeatTimer) clearInterval(heartbeatTimer);
+                    heartbeatTimer = setInterval(async () => {
+                        try {
+                            if (sock && sock.user) {
+                                // Keeps WebSocket pipeline authenticated on WhatsApp edge without showing 'online'
+                                await sock.sendPresenceUpdate('unavailable').catch(() => {});
+                                debouncedSaveFullAuth(authPath);
+                            } else if (!isConnecting) {
+                                console.log('⚠️ [WhatsApp Relay] Heartbeat detected idle socket. Restoring connection...');
+                                startWhatsAppConnection().catch(() => {});
+                            }
+                        } catch (hbErr) {
+                            console.warn('[WhatsApp Relay] Heartbeat ping warning:', hbErr.message);
+                        }
+                    }, 5 * 60 * 1000);
+
                     if (openResolver) {
                         openResolver(sock);
                         openResolver = null;
@@ -156,24 +238,49 @@ async function startWhatsAppConnection() {
 
                 if (connection === 'close') {
                     isConnecting = false;
-                    const statusCode = (lastDisconnect?.error instanceof Boom) ? lastDisconnect.error.output.statusCode : 0;
-                    
+                    connectionPromise = null;
+                    const statusCode = (lastDisconnect?.error instanceof Boom) 
+                        ? lastDisconnect.error.output?.statusCode 
+                        : (lastDisconnect?.error?.code || 0);
+
+                    console.log(`⚠️ [WhatsApp Relay] Connection closed (code: ${statusCode}, reason: ${lastDisconnect?.error?.message || 'unknown'})`);
+
+                    // Clean up socket instance
+                    if (sock) {
+                        try {
+                            sock.ev.removeAllListeners();
+                            sock.end();
+                        } catch (e) {}
+                        sock = null;
+                    }
+
                     if (openResolver) {
-                        if (statusCode === 401 || statusCode === 403) {
+                        if (statusCode === 401) {
                             openResolver(null);
                             openResolver = null;
                         }
                     }
-                    
-                    if (statusCode === 401 || statusCode === 403 || statusCode === 440) {
+
+                    // Only DisconnectReason.loggedOut (401) represents a real user unpair from phone
+                    if (statusCode === baileys.DisconnectReason.loggedOut || statusCode === 401) {
+                        console.warn('❌ [WhatsApp Relay] Device logged out / unlinked from WhatsApp. Scan QR code to re-link.');
+                        if (heartbeatTimer) {
+                            clearInterval(heartbeatTimer);
+                            heartbeatTimer = null;
+                        }
                         return;
                     }
 
-                    if (statusCode !== baileys.DisconnectReason.loggedOut) {
-                        setTimeout(() => {
-                            startWhatsAppConnection().catch(() => {});
-                        }, 5000);
-                    }
+                    // For all other codes (428 Connection Closed, 515 Restart Required, 408 Timed Out, 440 Replaced, etc.):
+                    // Reconnect automatically with backoff to prevent permanent logout after 24 hours
+                    reconnectAttempts++;
+                    const reconnectDelay = statusCode === 440 ? 10000 : 5000;
+                    console.log(`🔄 [WhatsApp Relay] Auto-reconnecting in ${reconnectDelay / 1000}s (Attempt #${reconnectAttempts})...`);
+                    setTimeout(() => {
+                        startWhatsAppConnection().catch(err => {
+                            console.error('[WhatsApp Relay] Auto-reconnect error:', err.message);
+                        });
+                    }, reconnectDelay);
                 }
             });
 
@@ -319,14 +426,25 @@ async function getWhatsAppStatus() {
 
 async function logoutWhatsApp() {
     try {
+        if (heartbeatTimer) {
+            clearInterval(heartbeatTimer);
+            heartbeatTimer = null;
+        }
+        if (authSaveTimer) {
+            clearTimeout(authSaveTimer);
+            authSaveTimer = null;
+        }
         if (sock) {
-            await sock.logout().catch(() => {});
-            sock.end();
+            try {
+                await sock.logout().catch(() => {});
+                sock.ev.removeAllListeners();
+                sock.end();
+            } catch (e) {}
             sock = null;
         }
 
         const SystemSetting = require('../models/SystemSetting');
-        await SystemSetting.deleteMany({ key: { $in: ['whatsapp_creds', 'whatsapp_qr'] } });
+        await SystemSetting.deleteMany({ key: { $in: ['whatsapp_creds', 'whatsapp_auth_bundle', 'whatsapp_qr'] } });
 
         const isVercel = process.env.VERCEL === '1';
         const authPath = isVercel 
@@ -340,6 +458,7 @@ async function logoutWhatsApp() {
 
         isConnecting = false;
         connectionPromise = null;
+        reconnectAttempts = 0;
         return { success: true };
     } catch (err) {
         console.error('Logout Fail:', err);
