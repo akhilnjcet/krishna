@@ -4,6 +4,7 @@
  */
 
 let audioCtx = null;
+let isAudioGloballyUnlocked = false;
 
 const getAudioContext = () => {
     if (typeof window === 'undefined') return null;
@@ -13,23 +14,107 @@ const getAudioContext = () => {
             audioCtx = new AudioCtxClass();
         }
     }
-    if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume().catch(() => {});
-    }
     return audioCtx;
 };
 
 /**
- * Call on any user click to pre-unlock AudioContext on iOS Safari & Chrome
+ * Call on any user click/tap to pre-unlock AudioContext on Google Chrome & iOS Safari
  */
-export const unlockAudio = () => {
+export const unlockAudio = async () => {
     try {
         const ctx = getAudioContext();
-        if (ctx && ctx.state === 'suspended') {
-            ctx.resume();
+        if (ctx) {
+            if (ctx.state === 'suspended') {
+                await ctx.resume();
+            }
+            // Play a 1-sample silent sound through a buffer source to truly unlock Chrome's audio engine
+            const buffer = ctx.createBuffer(1, 1, 22050);
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            source.start(0);
+            isAudioGloballyUnlocked = true;
         }
     } catch (e) {
         // Ignore silent failure
+    }
+};
+
+// Automatically listen to the very first user interaction anywhere on the window
+// to permanently satisfy Chrome's strict Autoplay Policy
+if (typeof window !== 'undefined') {
+    const handleFirstUserGesture = () => {
+        unlockAudio();
+    };
+    ['click', 'pointerdown', 'keydown', 'touchstart'].forEach(eventName => {
+        window.addEventListener(eventName, handleFirstUserGesture, { capture: true, passive: true });
+    });
+}
+
+/**
+ * Synthesizes an in-memory WAV Audio Blob to provide a bulletproof HTML5 Audio fallback
+ * when Chrome temporarily suspends Web Audio (e.g. background tab or pre-gesture state)
+ */
+const createChimeWavBlob = () => {
+    const sampleRate = 22050;
+    const duration = 0.55;
+    const numSamples = Math.floor(sampleRate * duration);
+    const buffer = new ArrayBuffer(44 + numSamples * 2);
+    const view = new DataView(buffer);
+
+    const writeString = (offset, string) => {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    };
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + numSamples * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM format
+    view.setUint16(22, 1, true); // Mono
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, numSamples * 2, true);
+
+    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+    for (let i = 0; i < numSamples; i++) {
+        const t = i / sampleRate;
+        let s = 0;
+        notes.forEach((freq, idx) => {
+            const start = idx * 0.11;
+            if (t >= start) {
+                const nt = t - start;
+                s += Math.sin(2 * Math.PI * freq * nt) * Math.exp(-nt * 7);
+            }
+        });
+        const clamped = Math.max(-1, Math.min(1, s * 0.65));
+        view.setInt16(44 + i * 2, clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF, true);
+    }
+    return new Blob([buffer], { type: 'audio/wav' });
+};
+
+let cachedFallbackAudioUrl = null;
+const playFallbackSound = (volumePercent = 80) => {
+    try {
+        if (!cachedFallbackAudioUrl && typeof window !== 'undefined') {
+            const blob = createChimeWavBlob();
+            cachedFallbackAudioUrl = URL.createObjectURL(blob);
+        }
+        if (cachedFallbackAudioUrl) {
+            const audio = new Audio(cachedFallbackAudioUrl);
+            audio.volume = Math.max(0, Math.min(1, (volumePercent / 100) * 0.8));
+            audio.play().catch(err => {
+                console.warn("Fallback audio blocked by browser policy:", err.message);
+            });
+        }
+    } catch (err) {
+        console.warn("Fallback sound generation failed:", err.message);
     }
 };
 
@@ -149,10 +234,24 @@ const playModernPop = (ctx, masterGain) => {
  * @param {string} tone - 'chime' | 'bell' | 'ding' | 'modern'
  * @param {number} volumePercent - 0 to 100
  */
-export const playNotificationSound = (tone = 'chime', volumePercent = 80) => {
+export const playNotificationSound = async (tone = 'chime', volumePercent = 80) => {
     try {
         const ctx = getAudioContext();
-        if (!ctx) return;
+        if (!ctx) {
+            playFallbackSound(volumePercent);
+            return;
+        }
+
+        // Resume suspended context if blocked by Chrome
+        if (ctx.state === 'suspended') {
+            try {
+                await ctx.resume();
+            } catch (resumeErr) {
+                console.warn("AudioContext resume failed, falling back to HTML5 Audio:", resumeErr.message);
+                playFallbackSound(volumePercent);
+                return;
+            }
+        }
 
         // Ensure volume is between 0 and 1
         const normalizedVol = Math.max(0, Math.min(100, Number(volumePercent) || 80)) / 100;
@@ -178,7 +277,8 @@ export const playNotificationSound = (tone = 'chime', volumePercent = 80) => {
                 break;
         }
     } catch (err) {
-        console.warn("Audio notification chime unavailable:", err.message);
+        console.warn("Audio notification chime unavailable, attempting fallback:", err.message);
+        playFallbackSound(volumePercent);
     }
 };
 
@@ -186,10 +286,16 @@ export const playNotificationSound = (tone = 'chime', volumePercent = 80) => {
  * 5. WhatsApp-Style Sent Message Sound
  * Subtle, soft pop/click confirming outgoing message dispatch
  */
-export const playSentMessageSound = (volumePercent = 70) => {
+export const playSentMessageSound = async (volumePercent = 70) => {
     try {
         const ctx = getAudioContext();
         if (!ctx) return;
+
+        if (ctx.state === 'suspended') {
+            try {
+                await ctx.resume();
+            } catch (e) {}
+        }
 
         const vol = (Math.max(0, Math.min(100, Number(volumePercent) || 70)) / 100) * 0.35;
         if (vol <= 0.001) return;
@@ -221,10 +327,16 @@ export const playSentMessageSound = (volumePercent = 70) => {
  * 6. WhatsApp-Style Received Message Sound
  * Short, pleasant dual-tone droplet chime for incoming messages
  */
-export const playReceivedMessageSound = (volumePercent = 80) => {
+export const playReceivedMessageSound = async (volumePercent = 80) => {
     try {
         const ctx = getAudioContext();
         if (!ctx) return;
+
+        if (ctx.state === 'suspended') {
+            try {
+                await ctx.resume();
+            } catch (e) {}
+        }
 
         const vol = (Math.max(0, Math.min(100, Number(volumePercent) || 80)) / 100) * 0.45;
         if (vol <= 0.001) return;

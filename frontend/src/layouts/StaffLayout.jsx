@@ -10,6 +10,7 @@ import { getSocket } from '../utils/socket';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import ThemeToggle from '../components/ThemeToggle';
+import { playNotificationSound } from '../utils/soundService';
 
 const SIDEBAR_W = 'w-64 max-w-[85vw]';
 
@@ -125,6 +126,7 @@ const StaffLayout = () => {
         socket.on('new-task-assigned', (taskData) => {
             console.log("🔔 New Task Assigned Socket Event:", taskData);
             setTaskPopup({ show: true, task: taskData });
+            playNotificationSound('bell', 80);
         });
 
         return () => {

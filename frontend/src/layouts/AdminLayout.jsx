@@ -277,6 +277,7 @@ const AdminLayout = () => {
     };
 
     useEffect(() => {
+        unlockAudio();
         fetchAllAlertState();
         registerPushSubscription();
 
@@ -290,6 +291,24 @@ const AdminLayout = () => {
             setUnreadCount(prev => prev + 1);
             setNotifications(prev => [notif, ...prev.slice(0, 9)]);
             fetchActiveAlerts();
+
+            // Play notification sound chime for inbound alert
+            if (!isMuted && notif.soundEnabled !== false) {
+                playNotificationSound(notif.selectedTone || 'chime', notif.soundVolume ?? 85);
+            }
+
+            // Desktop native notification
+            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                try {
+                    new Notification(notif.title || 'New Admin Notification', {
+                        body: notif.message || notif.projectName || 'A new system update was received.',
+                        icon: '/logo512.png',
+                        badge: '/logo512.png'
+                    });
+                } catch (e) {
+                    console.warn("Desktop notification trigger failed:", e);
+                }
+            }
 
             // Open priority popup modal for Critical/High/Medium priority alerts
             if (['Critical', 'High', 'Medium'].includes(notif.priority)) {

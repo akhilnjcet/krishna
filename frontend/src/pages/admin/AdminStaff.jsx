@@ -4,7 +4,7 @@ import FaceCapture from '../../components/FaceCapture';
 import StaffIdCardModal from '../../components/StaffIdCardModal';
 import { 
   Users, UserPlus, Search, Filter, Mail, Phone, Briefcase, 
-  Trash2, Edit, Camera, X, Check, Loader2, AlertCircle, ChevronRight,
+  Trash2, Edit, Edit3, Camera, X, Check, Loader2, AlertCircle, ChevronRight,
   Banknote, BadgeIndianRupee, Download, CreditCard, RefreshCw
 } from 'lucide-react';
 import { generateGeneralReportPDF } from '../../services/pdfService';

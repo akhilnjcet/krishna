@@ -1490,14 +1490,14 @@ const AdminProjects = () => {
             {/* Broadcast Terminal Modal */}
             <AnimatePresence>
                 {showNotifyModal && (
-                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
                         <motion.div 
                             initial={{ scale: 0.9, y: 20, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl sm:rounded-[2.5rem] shadow-2xl p-5 sm:p-10 relative border-t-[12px] border-indigo-600 max-h-[92vh] sm:max-h-[85vh] overflow-y-auto my-auto"
                         >
-                            <button onClick={() => setShowNotifyModal(false)} className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-full">
-                                <X className="w-6 h-6 text-slate-400" />
+                            <button onClick={() => setShowNotifyModal(false)} className="absolute right-4 top-4 sm:right-8 sm:top-8 p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-full cursor-pointer">
+                                <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
                             </button>
 
                             <div className="flex items-center gap-4 mb-6">
@@ -1540,18 +1540,18 @@ const AdminProjects = () => {
             {/* Commission Modal */}
             <AnimatePresence>
                 {showModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
                         <motion.div 
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-[2.5rem] shadow-2xl p-10 relative"
+                            className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-3xl sm:rounded-[2.5rem] shadow-2xl p-5 sm:p-10 relative max-h-[92vh] sm:max-h-[85vh] overflow-y-auto my-auto"
                         >
-                            <button onClick={() => setShowModal(false)} className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-full">
-                                <X className="w-6 h-6 text-slate-400" />
+                            <button onClick={() => setShowModal(false)} className="absolute right-4 top-4 sm:right-8 sm:top-8 p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-full transition-colors cursor-pointer">
+                                <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
                             </button>
 
-                            <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-2">Commission Project</h2>
-                            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">Initialize a new industrial contract in the registry.</p>
+                            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-1 sm:mb-2">Commission Project</h2>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm mb-6 sm:mb-8">Initialize a new industrial contract in the registry.</p>
 
                             <form onSubmit={handleCreateProject} className="space-y-6">
                                 <div>
@@ -1636,7 +1636,9 @@ const AdminProjects = () => {
                                     </div>
                                 </div>
 
-                                <button type="submit" className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition">Commence Operations</button>
+                                <div className="pt-2 pb-6 sm:pb-0">
+                                    <button type="submit" className="w-full bg-indigo-600 text-white font-black py-4 sm:py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition cursor-pointer">Commence Operations</button>
+                                </div>
                             </form>
                         </motion.div>
                     </div>
@@ -1646,24 +1648,24 @@ const AdminProjects = () => {
             {/* Staff Assignment Modal */}
             <AnimatePresence>
                 {showStaffModal && selectedProject && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
                         <motion.div 
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl sm:rounded-[2.5rem] shadow-2xl p-5 sm:p-10 relative border-t-[12px] border-indigo-600 max-h-[92vh] sm:max-h-[85vh] overflow-y-auto my-auto"
                         >
                             <button 
                                 onClick={() => {
                                     setShowStaffModal(false);
                                     setSelectedProject(null);
                                 }} 
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-full"
+                                className="absolute right-4 top-4 sm:right-8 sm:top-8 p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-full cursor-pointer"
                             >
-                                <X className="w-6 h-6 text-slate-400" />
+                                <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
                             </button>
 
-                            <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-2">Assign Staff</h2>
-                            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8 font-sans">Manage staff assigned to: <span className="font-black text-indigo-600 uppercase">{selectedProject.title}</span></p>
+                            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-1 sm:mb-2">Assign Staff</h2>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm mb-6 sm:mb-8 font-sans">Manage staff assigned to: <span className="font-black text-indigo-600 uppercase">{selectedProject.title}</span></p>
 
                             <form onSubmit={handleUpdateStaffAssignment} className="space-y-6">
                                 <div className="space-y-2">
@@ -1693,7 +1695,9 @@ const AdminProjects = () => {
                                         })}
                                     </div>
                                 </div>
-                                <button type="submit" className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition">Update Assignments</button>
+                                <div className="pt-2 pb-6 sm:pb-0">
+                                    <button type="submit" className="w-full bg-indigo-600 text-white font-black py-4 sm:py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition cursor-pointer">Update Assignments</button>
+                                </div>
                             </form>
                         </motion.div>
                     </div>
@@ -1703,21 +1707,21 @@ const AdminProjects = () => {
             {/* Timeline Management Modal */}
             <AnimatePresence>
                 {showTimelineModal && selectedProject && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
                         <motion.div 
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-10 relative border-t-[12px] border-indigo-600"
+                            className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl sm:rounded-[2.5rem] shadow-2xl p-5 sm:p-10 relative border-t-[12px] border-indigo-600 max-h-[92vh] sm:max-h-[85vh] overflow-y-auto my-auto"
                         >
                             <button 
                                 onClick={() => {
                                     setShowTimelineModal(false);
                                     setSelectedProject(null);
                                 }} 
-                                className="absolute right-8 top-8 p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-full"
+                                className="absolute right-4 top-4 sm:right-8 sm:top-8 p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-full cursor-pointer"
                             >
-                                <X className="w-6 h-6 text-slate-400" />
+                                <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
                             </button>
 
                             <div className="flex items-center gap-3 mb-6">

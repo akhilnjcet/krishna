@@ -122,15 +122,17 @@ const AIChatWidget = () => {
 
     const clampPosition = (x, y) => {
         if (typeof window === 'undefined') return { x, y };
-        const buttonSize = 56;
+        const isMobile = window.innerWidth < 640;
+        const buttonSize = isMobile ? 48 : 56;
         const margin = 12;
-        const baseOffset = 24; // styles bottom: 24px, right: 24px
-        // Negative x moves left from right:24px
-        const minX = -(window.innerWidth - buttonSize - baseOffset - margin);
-        const maxX = baseOffset - margin;
-        // Negative y moves up from bottom:24px
-        const minY = -(window.innerHeight - buttonSize - baseOffset - margin);
-        const maxY = baseOffset - margin;
+        const baseOffsetY = isMobile ? 96 : 24;
+        const baseOffsetX = isMobile ? 16 : 24;
+        // Negative x moves left from right
+        const minX = -(window.innerWidth - buttonSize - baseOffsetX - margin);
+        const maxX = baseOffsetX - margin;
+        // Negative y moves up from bottom
+        const minY = -(window.innerHeight - buttonSize - baseOffsetY - margin);
+        const maxY = baseOffsetY - margin;
 
         return {
             x: Math.min(maxX, Math.max(minX, x)),
@@ -285,10 +287,8 @@ const AIChatWidget = () => {
 
     return (
         <div 
-            className="fixed z-[100] font-sans"
+            className="fixed z-40 font-sans bottom-24 right-4 sm:bottom-6 sm:right-6 pointer-events-auto"
             style={{ 
-                bottom: '20px', 
-                right: '16px',
                 transform: `translate(${position.x}px, ${position.y}px)`,
                 touchAction: 'none'
             }}
@@ -477,13 +477,13 @@ const AIChatWidget = () => {
                 style={{ touchAction: 'none' }}
                 title="Drag freely to move, click to chat, double-click to reset"
                 aria-label="AI Assistant (Draggable)"
-                className="w-14 h-14 bg-brand-900 border-2 border-brand-accent hover:bg-black text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105 active:scale-95 z-50 relative group cursor-grab active:cursor-grabbing select-none touch-none"
+                className="w-12 h-12 sm:w-14 sm:h-14 bg-brand-900 border-2 border-brand-accent hover:bg-black text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105 active:scale-95 z-50 relative group cursor-grab active:cursor-grabbing select-none touch-none"
             >
-                {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+                {isOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" />}
                 {!isOpen && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 pointer-events-none">
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 sm:h-4 sm:w-4 pointer-events-none">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white"></span>
+                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 sm:h-4 sm:w-4 bg-red-500 border-2 border-white"></span>
                     </span>
                 )}
             </button>
