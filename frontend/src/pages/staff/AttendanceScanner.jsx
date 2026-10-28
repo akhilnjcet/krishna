@@ -62,7 +62,11 @@ const AttendanceScanner = () => {
 
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
-                await videoRef.current.play();
+                try {
+                    await videoRef.current.play();
+                } catch (playErr) {
+                    console.warn('Video play interrupted or waiting for gesture:', playErr);
+                }
             }
             const camDuration = performance.now() - camStart;
             console.log(`[PERF] Camera initialization: ${camDuration.toFixed(2)}ms`);
@@ -86,7 +90,7 @@ const AttendanceScanner = () => {
 
         if (!modelsReady) {
             setStatus('error');
-            setMessage('AI Biometrics initialization failed.');
+            setMessage('AI Biometrics initialization failed. Click Retry to reload.');
             stopCamera();
             isInitializingRef.current = false;
             return;
@@ -332,11 +336,12 @@ const AttendanceScanner = () => {
                         {/* Video Element */}
                         <video
                             ref={videoRef}
+                            autoPlay
+                            playsInline
+                            muted
                             style={{ transform: 'scaleX(-1)' }}
                             className={`w-full h-full object-cover transition-opacity duration-700 
                                 ${['scanning', 'verifying', 'success'].includes(status) ? 'opacity-100' : 'opacity-20'}`}
-                            muted
-                            playsInline
                         />
 
                         {/* Canvas for Detections */}

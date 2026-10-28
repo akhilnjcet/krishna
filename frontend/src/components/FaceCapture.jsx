@@ -93,7 +93,11 @@ const FaceCapture = ({ onCapture, loading }) => {
 
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
-                await videoRef.current.play();
+                try {
+                    await videoRef.current.play();
+                } catch (playErr) {
+                    console.warn('Video play interrupted or waiting for gesture:', playErr);
+                }
             }
 
             setStatus('scanning');
