@@ -83,7 +83,13 @@ const Login = () => {
                 }
             }
         } catch (err) {
-            setError(err.response?.data?.message || err.message || 'Identity verification failed.');
+            const raw = err.response?.data;
+            const message = raw?.message || raw?.error || (typeof raw === 'string' && !raw.includes('<!DOCTYPE') && !raw.includes('FUNCTION_INVOCATION_FAILED') ? raw : null);
+            if (err.response?.status === 500 || (typeof raw === 'string' && raw.includes('FUNCTION_INVOCATION_FAILED'))) {
+                setError(message || 'The server encountered an internal issue. Please try again shortly.');
+            } else {
+                setError(message || err.message || 'Identity verification failed.');
+            }
         } finally {
             setLoading(false);
         }

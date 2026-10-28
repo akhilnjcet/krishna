@@ -116,7 +116,6 @@ app.use('/api/lodge', contentScrapingLimiter, detectRapidScraping);
 
 
 
-const path = require('path');
 app.use('/uploads', express.static(isVercel ? '/tmp/uploads' : path.join(__dirname, 'uploads')));
 
 // Institutional Security Headers (Anti-Caching for Sensitive Data)

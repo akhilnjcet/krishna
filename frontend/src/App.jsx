@@ -227,6 +227,13 @@ const Layout = ({ children }) => {
                       location.pathname.startsWith('/customer') ||
                       location.pathname.startsWith('/lodge');
 
+  const isAuthPage = location.pathname === '/login' || 
+                     location.pathname === '/register' || 
+                     location.pathname === '/forgot-password' || 
+                     location.pathname === '/staff-login';
+
+  const hidePublicChrome = isDashboard || isAuthPage;
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
@@ -277,12 +284,12 @@ const Layout = ({ children }) => {
           </motion.div>
         )}
       </AnimatePresence>
-      {!isDashboard && <Navbar />}
+      {!hidePublicChrome && <Navbar />}
       <main className="flex-grow">
         {children}
       </main>
-      {!isDashboard && <Footer />}
-      {!location.pathname.startsWith('/lodge') && (!Capacitor.isNativePlatform() || location.pathname !== '/') && <AIChatWidget />}
+      {!hidePublicChrome && <Footer />}
+      {!hidePublicChrome && (!Capacitor.isNativePlatform() || location.pathname !== '/') && <AIChatWidget />}
     </div>
   );
 };
