@@ -9,7 +9,11 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/((?!api|assets|models|icons|favicon.ico|manifest.json|sw.js|robots.txt|sitemap.xml|logo|ads.txt|google46b2c645ce392a67\\.html).*)",
+      "source": "/uploads/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/((?!api|uploads|assets|models|icons|favicon.ico|manifest.json|sw.js|robots.txt|sitemap.xml|logo|ads.txt|google46b2c645ce392a67\\.html).*)",
       "destination": "/index.html"
     }
   ],

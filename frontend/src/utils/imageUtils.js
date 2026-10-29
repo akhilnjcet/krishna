@@ -16,8 +16,29 @@ export const getDirectImageUrl = (url) => {
             relativePath = `/${url}`;
         }
         
-        const apiUrl = import.meta.env.VITE_API_URL || useSignalStore.getState().getApiUrl();
-        const origin = apiUrl.includes('/api') ? apiUrl.split('/api')[0] : apiUrl;
+        let origin = '';
+        if (typeof window !== 'undefined') {
+            const isNative = Boolean(
+                window.Capacitor?.isNativePlatform?.() || 
+                window.location.protocol === 'capacitor:' || 
+                window.location.protocol === 'ionic:'
+            );
+            const isLocal = Boolean(
+                (window.location.hostname === 'localhost' || 
+                 window.location.hostname === '127.0.0.1' || 
+                 window.location.hostname.startsWith('192.168.')) && !isNative
+            );
+
+            if (isLocal) {
+                const envUrl = import.meta.env.VITE_API_URL;
+                origin = envUrl && envUrl.includes('/api') ? envUrl.split('/api')[0] : 'http://localhost:5000';
+            } else if (isNative) {
+                const cloudUrl = useSignalStore.getState().cloudUrl || 'https://krishna-akhilnjcets-projects.vercel.app/api';
+                origin = cloudUrl.includes('/api') ? cloudUrl.split('/api')[0] : cloudUrl;
+            } else {
+                origin = window.location.origin;
+            }
+        }
         return `${origin}${relativePath}`;
     }
 
@@ -120,4 +141,3 @@ export const expandGoogleDriveFolders = async (images) => {
     }
     return expanded;
 };
-

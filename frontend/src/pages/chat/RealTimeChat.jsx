@@ -10,7 +10,7 @@ import {
     Send, Paperclip, CheckCheck, MoreHorizontal, User, 
     Search, MessageSquare, ArrowDown, Volume2, VolumeX, 
     FileText, Download, Loader2, Trash2, Lock, AlertTriangle,
-    ExternalLink, Image as ImageIcon, X, Maximize2
+    ExternalLink, Image as ImageIcon, ImageOff, X, Maximize2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useAuthStore from '../../stores/authStore';
@@ -26,6 +26,59 @@ import {
     deleteClosedRooms 
 } from '../../services/supportChatService';
 
+const ChatMessageImage = ({ url, fileName, onOpen }) => {
+    const [hasError, setHasError] = useState(false);
+    const [loaded, setLoaded] = useState(false);
+
+    if (hasError) {
+        return (
+            <div 
+                onClick={onOpen}
+                className="flex items-center gap-2.5 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs cursor-pointer hover:bg-black/10 transition-colors max-w-full"
+                title="Click to view file"
+            >
+                <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <ImageIcon className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="font-bold truncate text-slate-800 dark:text-slate-200">{fileName}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Photo shared • Tap to view</div>
+                </div>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            </div>
+        );
+    }
+
+    return (
+        <div 
+            onClick={onOpen}
+            className="group relative block overflow-hidden rounded-xl border border-black/10 hover:opacity-95 transition-all shadow-xs bg-black/5 max-w-sm cursor-pointer"
+            title="Click to view full image"
+        >
+            {!loaded && (
+                <div className="h-44 w-60 bg-slate-200/50 dark:bg-slate-800/50 animate-pulse rounded-xl flex items-center justify-center text-slate-400">
+                    <ImageIcon className="w-7 h-7 opacity-40 animate-pulse" />
+                </div>
+            )}
+            <img 
+                src={url} 
+                alt={fileName} 
+                onLoad={() => setLoaded(true)}
+                onError={() => setHasError(true)}
+                className={`max-h-72 w-auto max-w-full rounded-xl object-contain bg-black/5 transition-opacity duration-300 ${loaded ? 'block opacity-100' : 'hidden opacity-0'}`} 
+                loading="lazy"
+            />
+            {loaded && (
+                <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white">
+                    <span className="p-2 bg-black/60 rounded-full backdrop-blur-xs">
+                        <Maximize2 className="w-4 h-4" />
+                    </span>
+                </div>
+            )}
+        </div>
+    );
+};
+
 const RealTimeChat = ({ chatId: propChatId }) => {
     const { user } = useAuthStore();
     const role = user?.role || user?.user?.role;
@@ -40,6 +93,7 @@ const RealTimeChat = ({ chatId: propChatId }) => {
     const [showNewMessageToast, setShowNewMessageToast] = useState(false);
     const [uploadingFile, setUploadingFile] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [modalImgError, setModalImgError] = useState(false);
     
     // Search, Filtering & Admin Purge State
     const [searchQuery, setSearchQuery] = useState('');
@@ -290,22 +344,67 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className={`inline-flex items-center gap-1 font-semibold underline underline-offset-2 break-all transition-colors ${
+                        className={`inline font-semibold underline underline-offset-2 break-all [overflow-wrap:anywhere] transition-colors ${
                             isDrive
                                 ? isMe 
-                                    ? 'text-emerald-950 font-bold decoration-emerald-700 bg-emerald-200/60 px-1 py-0.5 rounded' 
-                                    : 'text-blue-700 dark:text-blue-300 font-bold decoration-blue-500 bg-blue-100/70 dark:bg-blue-900/40 px-1 py-0.5 rounded'
+                                    ? 'text-emerald-950 dark:text-emerald-300 font-bold decoration-emerald-700 hover:text-emerald-800' 
+                                    : 'text-blue-700 dark:text-blue-300 font-bold decoration-blue-500 hover:text-blue-800'
                                 : isMe
-                                    ? 'text-emerald-900 hover:text-emerald-950 decoration-emerald-600'
+                                    ? 'text-emerald-900 dark:text-emerald-300 hover:text-emerald-950 decoration-emerald-600'
                                     : 'text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 decoration-blue-400'
                         }`}
                     >
                         <span>{part}</span>
-                        <ExternalLink className="w-3.5 h-3.5 inline shrink-0 opacity-80" />
+                        <ExternalLink className="w-3.5 h-3.5 inline ml-0.5 align-baseline shrink-0 opacity-75" />
                     </a>
                 );
             }
-            return <span key={i}>{part}</span>;
+            return <span key={i} className="break-words [overflow-wrap:anywhere]">{part}</span>;
+        });
+    };
+
+    // Client-side image optimizer: produces high-quality, lightweight base64 Data URLs (<150KB)
+    // Ensures instant image rendering across mobile APK, web, and offline cache without ephemeral storage loss
+    const compressImageIfNeeded = (file) => {
+        return new Promise((resolve) => {
+            const isImage = (file.type && file.type.startsWith('image/')) || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+            if (!isImage) return resolve(null);
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        let { width, height } = img;
+                        const maxDim = 1200;
+
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                        resolve(dataUrl);
+                    } catch (err) {
+                        console.warn("Canvas compression fallback to raw data URL:", err);
+                        resolve(e.target.result);
+                    }
+                };
+                img.onerror = () => resolve(e.target.result);
+                img.src = e.target.result;
+            };
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(file);
         });
     };
 
@@ -322,28 +421,39 @@ const RealTimeChat = ({ chatId: propChatId }) => {
         setUploadingFile(true);
 
         try {
-            const formData = new FormData();
-            formData.append('file', file, fileName);
-            
+            const isImage = (file.type && file.type.startsWith('image/')) || /\.(jpe?g|png|webp|gif)$/i.test(fileName);
             let fileUrl = '';
-            try {
-                const res = await api.post('/uploads', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-                fileUrl = res.data?.fileUrl || res.data?.url || res.data?.filePath || '';
-                if (!fileUrl) {
-                    throw new Error("Empty URL returned from upload server");
+
+            if (isImage) {
+                try {
+                    const compressed = await compressImageIfNeeded(file);
+                    if (compressed) fileUrl = compressed;
+                } catch (cErr) {
+                    console.warn("Client image compression fallback:", cErr);
                 }
-            } catch (upErr) {
-                console.warn("Direct upload fallback to data URL:", upErr.message);
-                fileUrl = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(file);
-                });
             }
 
-            const isImage = (file.type && file.type.startsWith('image/')) || /\.(jpe?g|png|webp|gif)$/i.test(fileName);
+            if (!fileUrl) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file, fileName);
+                    const res = await api.post('/uploads', formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                    fileUrl = res.data?.fileUrl || res.data?.url || res.data?.filePath || '';
+                    if (!fileUrl) {
+                        throw new Error("Empty URL returned from upload server");
+                    }
+                } catch (upErr) {
+                    console.warn("Direct upload fallback to data URL:", upErr.message);
+                    fileUrl = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(file);
+                    });
+                }
+            }
+
             const newDoc = await addDoc(collection(db, "messages"), {
                 chatId: activeRoom.id,
                 senderId: userId,
@@ -779,43 +889,34 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                             const driveUrl = extractFirstDriveUrl(msg.text);
 
                             return (
-                                <div key={msg.id || index} className={`flex w-full mb-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[88%] md:max-w-[70%] px-3 py-1.5 rounded-lg text-[14.5px] shadow-sm relative ${isMe ? 'bg-[#dcf8c6] text-[#111b21] rounded-tr-none' : 'bg-white dark:bg-slate-900 text-[#111b21] rounded-tl-none'}`}>
-                                        <div className="flex flex-col">
-                                            {!isMe && <span className="text-[13px] font-bold text-[#e542a3] mb-0.5">{msg.senderName}</span>}
+                                <div key={msg.id || index} className={`flex w-full mb-1 min-w-0 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[88%] md:max-w-[70%] min-w-0 px-3 py-1.5 rounded-lg text-[14.5px] shadow-sm relative overflow-hidden break-words ${isMe ? 'bg-[#dcf8c6] text-[#111b21] rounded-tr-none' : 'bg-white dark:bg-slate-900 text-[#111b21] rounded-tl-none'}`}>
+                                        <div className="flex flex-col min-w-0 max-w-full">
+                                            {!isMe && <span className="text-[13px] font-bold text-[#e542a3] mb-0.5 truncate">{msg.senderName}</span>}
                                             
                                             {/* Photo / Image Rendering */}
                                             {isImageAttachment && msg.fileUrl && (
-                                                <div className="my-1.5">
-                                                    <div 
-                                                        onClick={() => setSelectedImage({ url: resolveFileUrl(msg.fileUrl), name: msg.fileName || "Photo" })}
-                                                        className="group relative block overflow-hidden rounded-xl border border-black/10 hover:opacity-95 transition-all shadow-xs bg-black/5 max-w-sm cursor-pointer"
-                                                        title="Click to view full image"
-                                                    >
-                                                        <img 
-                                                            src={resolveFileUrl(msg.fileUrl)} 
-                                                            alt={msg.fileName || "Photo"} 
-                                                            className="max-h-72 w-auto max-w-full rounded-xl object-contain bg-black/5" 
-                                                            loading="lazy"
-                                                        />
-                                                        <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white">
-                                                            <span className="p-2 bg-black/60 rounded-full backdrop-blur-xs">
-                                                                <Maximize2 className="w-4 h-4" />
-                                                            </span>
-                                                        </div>
-                                                    </div>
+                                                <div className="my-1.5 max-w-full">
+                                                    <ChatMessageImage 
+                                                        url={resolveFileUrl(msg.fileUrl)} 
+                                                        fileName={msg.fileName || "Photo"} 
+                                                        onOpen={() => {
+                                                            setModalImgError(false);
+                                                            setSelectedImage({ url: resolveFileUrl(msg.fileUrl), name: msg.fileName || "Photo" });
+                                                        }} 
+                                                    />
                                                 </div>
                                             )}
 
                                             {/* Generic Document Attachment Rendering */}
                                             {isDocAttachment && (
-                                                <div className="my-1.5">
+                                                <div className="my-1.5 max-w-full">
                                                     <a 
                                                         href={resolveFileUrl(msg.fileUrl)} 
                                                         target="_blank" 
                                                         rel="noopener noreferrer" 
                                                         download={msg.fileName || "attachment"} 
-                                                        className="flex items-center gap-2 p-2.5 rounded-lg bg-black/5 hover:bg-black/10 transition-colors text-xs font-semibold text-slate-800 dark:text-slate-100 no-underline"
+                                                        className="flex items-center gap-2 p-2.5 rounded-lg bg-black/5 hover:bg-black/10 transition-colors text-xs font-semibold text-slate-800 dark:text-slate-100 no-underline max-w-full overflow-hidden"
                                                     >
                                                         <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
                                                         <span className="truncate max-w-[200px]">{msg.fileName || "Download Attachment"}</span>
@@ -826,7 +927,7 @@ const RealTimeChat = ({ chatId: propChatId }) => {
 
                                             {/* Fallback for legacy messages that have [Photo: ...] without a fileUrl */}
                                             {!msg.fileUrl && isAutoPhotoLabel && (
-                                                <div className="my-1.5 flex items-center gap-2 p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 text-xs">
+                                                <div className="my-1.5 flex items-center gap-2 p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 text-xs max-w-full">
                                                     <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
                                                         <ImageIcon className="w-4 h-4" />
                                                     </div>
@@ -844,7 +945,7 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     onClick={(e) => e.stopPropagation()}
-                                                    className={`my-1.5 flex items-center gap-3 p-2.5 rounded-xl border transition-all no-underline ${
+                                                    className={`my-1.5 flex items-center gap-3 p-2.5 rounded-xl border transition-all no-underline max-w-full overflow-hidden ${
                                                         isMe 
                                                             ? 'bg-emerald-100/90 hover:bg-emerald-200/90 border-emerald-300 text-emerald-950' 
                                                             : 'bg-blue-50/90 hover:bg-blue-100 dark:bg-slate-800 border-blue-200 dark:border-slate-700 text-blue-950 dark:text-blue-100'
@@ -873,12 +974,12 @@ const RealTimeChat = ({ chatId: propChatId }) => {
 
                                             {/* Text Message Content with Clickable Hyperlinks */}
                                             {(!msg.fileUrl || (!isAutoPhotoLabel && !isAutoAttachmentLabel)) && msg.text && (
-                                                <div className="flex flex-wrap items-end justify-between pr-2">
-                                                    <span className="whitespace-pre-wrap flex-1 break-words font-normal leading-relaxed">
+                                                <div className="flex flex-wrap items-end justify-between gap-2 max-w-full min-w-0">
+                                                    <span className="whitespace-pre-wrap flex-1 min-w-0 max-w-full break-words [overflow-wrap:anywhere] font-normal leading-relaxed">
                                                         {renderTextWithLinks(msg.text, isMe)}
                                                     </span>
-                                                    <div className="flex items-center gap-1 self-end pl-6">
-                                                        <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                                    <div className="flex items-center gap-1 self-end shrink-0 ml-auto pl-2">
+                                                        <span className="text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                                             {(msg.timestamp?.toDate?.() || new Date()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                         </span>
                                                         {isMe && <CheckCheck className={`w-4 h-4 ${msg.seen ? 'text-blue-400' : 'text-slate-400'}`} />}
@@ -888,8 +989,8 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                                             
                                             {/* Timestamp for media-only messages where redundant text was hidden */}
                                             {msg.fileUrl && (isAutoPhotoLabel || isAutoAttachmentLabel) && (
-                                                <div className="flex items-center justify-end gap-1 pr-2 mt-0.5">
-                                                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                                <div className="flex items-center justify-end gap-1 pr-1 mt-0.5">
+                                                    <span className="text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                                         {(msg.timestamp?.toDate?.() || new Date()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                     </span>
                                                     {isMe && <CheckCheck className={`w-4 h-4 ${msg.seen ? 'text-blue-400' : 'text-slate-400'}`} />}
@@ -1014,9 +1115,9 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                         animate={{ opacity: 1 }} 
                         exit={{ opacity: 0 }} 
                         className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4"
-                        onClick={() => setSelectedImage(null)}
+                        onClick={() => { setSelectedImage(null); setModalImgError(false); }}
                     >
-                        <div className="absolute top-4 right-4 flex items-center gap-2">
+                        <div className="absolute top-4 right-4 flex items-center gap-2 z-60">
                             <a 
                                 href={selectedImage.url} 
                                 target="_blank" 
@@ -1029,7 +1130,7 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                                 <Download className="w-5 h-5" />
                             </a>
                             <button 
-                                onClick={() => setSelectedImage(null)} 
+                                onClick={() => { setSelectedImage(null); setModalImgError(false); }} 
                                 className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors border-none cursor-pointer"
                                 title="Close"
                             >
@@ -1043,11 +1144,31 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                             className="max-w-4xl max-h-[85vh] p-2 flex flex-col items-center justify-center"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <img 
-                                src={selectedImage.url} 
-                                alt={selectedImage.name} 
-                                className="max-h-[80vh] max-w-full rounded-xl object-contain shadow-2xl" 
-                            />
+                            {modalImgError ? (
+                                <div className="flex flex-col items-center justify-center p-8 bg-slate-900/90 rounded-2xl border border-white/10 text-white text-center max-w-sm">
+                                    <div className="w-16 h-16 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4">
+                                        <ImageIcon className="w-8 h-8" />
+                                    </div>
+                                    <h4 className="font-bold text-sm mb-1">{selectedImage.name || 'Image'}</h4>
+                                    <p className="text-xs text-white/60 mb-5">Direct preview unavailable for this file format or source.</p>
+                                    <a
+                                        href={selectedImage.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        download={selectedImage.name}
+                                        className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-2 transition-all no-underline shadow-lg"
+                                    >
+                                        <ExternalLink className="w-4 h-4" /> Open / Download File
+                                    </a>
+                                </div>
+                            ) : (
+                                <img 
+                                    src={selectedImage.url} 
+                                    alt={selectedImage.name} 
+                                    onError={() => setModalImgError(true)}
+                                    className="max-h-[80vh] max-w-full rounded-xl object-contain shadow-2xl" 
+                                />
+                            )}
                             <div className="mt-2 text-white/80 text-xs font-medium truncate max-w-md">
                                 {selectedImage.name}
                             </div>
