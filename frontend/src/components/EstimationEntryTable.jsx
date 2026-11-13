@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Split, Link as LinkIcon, Zap, LayoutGrid, Table as TableIcon, Package, Hash } from 'lucide-react';
-import { computeItemSectionMeta } from '../utils/combinedBillHelper';
+import { computeItemSectionMeta, PRECONFIGURED_CATALOG } from '../utils/combinedBillHelper';
 
 /**
  * Reusable Estimation & Billing Entry Table with adaptive layouts:
@@ -52,6 +52,14 @@ export const EstimationEntryTable = ({
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Autocomplete datalist for Item Name */}
+      <datalist id={dataListId}>
+        {(products && products.length > 0 ? products : PRECONFIGURED_CATALOG).map((p, pIdx) => (
+          <option key={p.id || pIdx} value={p.name}>
+            {p.description ? `${p.description} (₹${p.price || p.rate || 0})` : ''}
+          </option>
+        ))}
+      </datalist>
       {/* Top Controls Toolbar: View Switcher & Document-Level Toggles */}
       <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-slate-50 dark:bg-slate-850/80 rounded-2xl border border-slate-200 dark:border-slate-800">
         {/* View Mode Switcher */}
@@ -146,7 +154,8 @@ export const EstimationEntryTable = ({
             sectionMeta.map((meta, index) => {
               const prevItem = index > 0 ? items[index - 1] : null;
               const prevIsCombined = prevItem && Boolean(prevItem.isCombinedMode ?? prevItem.isCombined);
-              const currentName = meta.description || meta.productName || meta.name || meta.workDescription || meta.itemName || '';
+              const itemNameVal = meta.name !== undefined ? meta.name : (meta.description || '');
+              const itemDescVal = meta.description ?? '';
               const qty = (enableQuantity !== false && meta.hasQuantity !== false) ? (parseFloat(meta.quantity || 1) || 1) : 1;
               const rate = (enableUnitPrice !== false && meta.hasUnitPrice !== false) ? (parseFloat(meta.price ?? meta.rate ?? 0) || 0) : 0;
               const rowCalculated = qty * rate;
@@ -169,11 +178,10 @@ export const EstimationEntryTable = ({
                     <input
                       type="text"
                       className="flex-1 min-w-0 bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 transition"
-                      required
-                      value={currentName}
-                      onChange={(e) => onUpdateItem(index, 'description', e.target.value)}
+                      value={itemNameVal}
+                      onChange={(e) => onUpdateItem(index, 'name', e.target.value)}
                       list={dataListId}
-                      placeholder="Item or service name..."
+                      placeholder="Item name (e.g. MS Beam, Crane)..."
                     />
 
                     <button
@@ -186,18 +194,16 @@ export const EstimationEntryTable = ({
                     </button>
                   </div>
 
-                  {/* Optional subDescription note */}
-                  {meta.subDescription !== undefined && (
-                    <div className="mt-1 pl-7">
-                      <input
-                        type="text"
-                        className="w-full bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 rounded-lg px-2 py-1 text-[11px] text-slate-600 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500"
-                        value={meta.subDescription || ''}
-                        onChange={(e) => onUpdateItem(index, 'subDescription', e.target.value)}
-                        placeholder="Optional detail/note..."
-                      />
-                    </div>
-                  )}
+                  {/* Line 2: Description Input */}
+                  <div className="mt-1 pl-7">
+                    <input
+                      type="text"
+                      className="w-full bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 rounded-lg px-2 py-1 text-[11px] text-slate-600 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500"
+                      value={itemDescVal}
+                      onChange={(e) => onUpdateItem(index, 'description', e.target.value)}
+                      placeholder="Description / specification / notes..."
+                    />
+                  </div>
 
                   {/* Line 2: Compact Numbers Strip (Qty, Unit, Rate, Combine, Amount) */}
                   <div className="flex flex-wrap items-center justify-between gap-1.5 pt-2 mt-1.5 border-t border-slate-100 dark:border-slate-800/70 text-xs">
@@ -408,7 +414,8 @@ export const EstimationEntryTable = ({
             sectionMeta.map((meta, index) => {
               const prevItem = index > 0 ? items[index - 1] : null;
               const prevIsCombined = prevItem && Boolean(prevItem.isCombinedMode ?? prevItem.isCombined);
-              const currentName = meta.description || meta.productName || meta.name || meta.workDescription || meta.itemName || '';
+              const itemNameVal = meta.name !== undefined ? meta.name : (meta.description || '');
+              const itemDescVal = meta.description ?? '';
               const qty = (enableQuantity !== false && meta.hasQuantity !== false) ? (parseFloat(meta.quantity || 1) || 1) : 1;
               const rate = (enableUnitPrice !== false && meta.hasUnitPrice !== false) ? (parseFloat(meta.price ?? meta.rate ?? 0) || 0) : 0;
               const rowCalculated = qty * rate;
@@ -445,27 +452,34 @@ export const EstimationEntryTable = ({
                     </button>
                   </div>
 
-                  {/* Item Description */}
-                  <div className="space-y-1.5 mb-3">
-                    <input
-                      type="text"
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 transition"
-                      required
-                      value={currentName}
-                      onChange={(e) => onUpdateItem(index, 'description', e.target.value)}
-                      list={dataListId}
-                      placeholder="Item or service name..."
-                    />
-
-                    {meta.subDescription !== undefined && (
+                  {/* Item Name & Description */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                        Item Name
+                      </label>
                       <input
                         type="text"
-                        className="w-full bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 rounded-xl px-3 py-1.5 text-[11px] text-slate-600 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500"
-                        value={meta.subDescription || ''}
-                        onChange={(e) => onUpdateItem(index, 'subDescription', e.target.value)}
-                        placeholder="Optional specification / dimension / note..."
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 transition"
+                        value={itemNameVal}
+                        onChange={(e) => onUpdateItem(index, 'name', e.target.value)}
+                        list={dataListId}
+                        placeholder="Item name (e.g. MS Beam, Crane)..."
                       />
-                    )}
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                        Description / Specifications
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500"
+                        value={itemDescVal}
+                        onChange={(e) => onUpdateItem(index, 'description', e.target.value)}
+                        placeholder="Specification / dimension / note..."
+                      />
+                    </div>
                   </div>
 
                   {/* 2-Column Quantity & Rate Fields */}
@@ -691,8 +705,11 @@ export const EstimationEntryTable = ({
                 <th style={{ padding: '0.65rem 0.35rem', textAlign: 'center', width: '38px', fontSize: '0.75rem', fontWeight: '800' }}>
                   #
                 </th>
-                <th style={{ padding: '0.65rem 0.5rem', fontSize: '0.75rem', fontWeight: '800', minWidth: '130px' }}>
-                  Item Description
+                <th style={{ padding: '0.65rem 0.5rem', fontSize: '0.75rem', fontWeight: '800', minWidth: '135px', width: '22%' }}>
+                  Item Name
+                </th>
+                <th style={{ padding: '0.65rem 0.5rem', fontSize: '0.75rem', fontWeight: '800', minWidth: '150px' }}>
+                  Description
                 </th>
                 <th style={{ padding: '0.65rem 0.25rem', textAlign: 'center', width: '115px', fontSize: '0.75rem', fontWeight: '800' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}>
@@ -747,7 +764,7 @@ export const EstimationEntryTable = ({
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B', fontSize: '0.85rem' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B', fontSize: '0.85rem' }}>
                     No items added yet. Click "+ Add Item" below to start.
                   </td>
                 </tr>
@@ -755,7 +772,8 @@ export const EstimationEntryTable = ({
                 sectionMeta.map((meta, index) => {
                   const prevItem = index > 0 ? items[index - 1] : null;
                   const prevIsCombined = prevItem && Boolean(prevItem.isCombinedMode ?? prevItem.isCombined);
-                  const currentName = meta.description || meta.productName || meta.name || meta.workDescription || meta.itemName || '';
+                  const itemNameVal = meta.name !== undefined ? meta.name : (meta.description || '');
+                  const itemDescVal = meta.description ?? '';
 
                   return (
                     <tr 
@@ -771,26 +789,27 @@ export const EstimationEntryTable = ({
                         {index + 1}
                       </td>
 
-                      {/* Item Description */}
-                      <td style={{ padding: '0.5rem 0.75rem' }}>
+                      {/* Item Name */}
+                      <td style={{ padding: '0.5rem 0.5rem' }}>
                         <input
                           type="text"
                           className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
-                          required
-                          value={currentName}
-                          onChange={(e) => onUpdateItem(index, 'description', e.target.value)}
+                          value={itemNameVal}
+                          onChange={(e) => onUpdateItem(index, 'name', e.target.value)}
                           list={dataListId}
-                          placeholder="Item or service name..."
+                          placeholder="Item name..."
                         />
-                        {meta.subDescription !== undefined && (
-                          <input
-                            type="text"
-                            className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-600 dark:text-slate-400 mt-1 focus:outline-none"
-                            value={meta.subDescription || ''}
-                            onChange={(e) => onUpdateItem(index, 'subDescription', e.target.value)}
-                            placeholder="Optional detail/note..."
-                          />
-                        )}
+                      </td>
+
+                      {/* Description */}
+                      <td style={{ padding: '0.5rem 0.5rem' }}>
+                        <input
+                          type="text"
+                          className="w-full bg-slate-50/70 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 placeholder:text-slate-400"
+                          value={itemDescVal}
+                          onChange={(e) => onUpdateItem(index, 'description', e.target.value)}
+                          placeholder="Description / specification..."
+                        />
                       </td>
 
                       {/* Qty */}

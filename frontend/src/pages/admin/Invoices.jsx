@@ -198,6 +198,23 @@ const Invoices = () => {
         setItems(prev => {
             const next = [...prev];
             next[index] = { ...next[index], [field]: value };
+            if (field === 'price') next[index].rate = value;
+            if (field === 'rate') next[index].price = value;
+            if (field === 'name') {
+                const matched = PRECONFIGURED_CATALOG.find(c => c.name.toLowerCase() === (value || '').trim().toLowerCase());
+                if (matched) {
+                    if (!next[index].description || next[index].description === next[index].name) {
+                        next[index].description = matched.description;
+                    }
+                    if (!next[index].price && matched.price) {
+                        next[index].price = matched.price;
+                        next[index].rate = matched.price;
+                    }
+                    if (matched.unit) {
+                        next[index].unit = matched.unit;
+                    }
+                }
+            }
             return synchronizeItemSections(next);
         });
     };
@@ -205,7 +222,7 @@ const Invoices = () => {
     const handleAddItem = () => {
         setItems(prev => [
             ...prev,
-            { id: Date.now() + Math.random(), description: '', price: 0, quantity: 1, unit: 'Units', hasQuantity: true, hasUnitPrice: true, isCombined: false }
+            { id: Date.now() + Math.random(), name: '', description: '', price: 0, rate: 0, quantity: 1, unit: 'Units', hasQuantity: true, hasUnitPrice: true, isCombined: false }
         ]);
     };
 
@@ -214,7 +231,7 @@ const Invoices = () => {
         setCombinedTotals(prev => ({ ...prev, [secId]: 0 }));
         setItems(prev => [
             ...prev,
-            { id: Date.now() + Math.random(), description: '', price: 0, quantity: 1, unit: 'Units', hasQuantity: true, hasUnitPrice: true, isCombined: true, isCombinedMode: true, combinedSectionId: secId, isNewSectionStart: true }
+            { id: Date.now() + Math.random(), name: '', description: '', price: 0, rate: 0, quantity: 1, unit: 'Units', hasQuantity: true, hasUnitPrice: true, isCombined: true, isCombinedMode: true, combinedSectionId: secId, isNewSectionStart: true }
         ]);
     };
 

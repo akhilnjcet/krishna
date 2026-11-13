@@ -91,7 +91,7 @@ export const CombinedBillTableBody = ({
           : '#FFFFFF';
 
         const unitLabel = meta.unit === 'Kg' ? 'Kg' : (meta.unit || 'Units');
-        const itemName = meta.description || meta.productName || meta.name || meta.workDescription || meta.itemName || 'Billed Item';
+        const itemName = meta.name || meta.productName || meta.itemName || meta.description || meta.workDescription || 'Billed Item';
 
         return (
           <tr 

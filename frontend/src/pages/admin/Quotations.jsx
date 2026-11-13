@@ -191,8 +191,21 @@ const Quotations = () => {
             next[index] = { ...next[index], [field]: value };
             if (field === 'price') next[index].rate = value;
             if (field === 'rate') next[index].price = value;
-            if (field === 'description') next[index].name = value;
-            if (field === 'name') next[index].description = value;
+            if (field === 'name') {
+                const matched = PRECONFIGURED_CATALOG.find(c => c.name.toLowerCase() === (value || '').trim().toLowerCase());
+                if (matched) {
+                    if (!next[index].description || next[index].description === next[index].name) {
+                        next[index].description = matched.description;
+                    }
+                    if (!next[index].price && matched.price) {
+                        next[index].price = matched.price;
+                        next[index].rate = matched.price;
+                    }
+                    if (matched.unit) {
+                        next[index].unit = matched.unit;
+                    }
+                }
+            }
             return synchronizeItemSections(next);
         });
     };
