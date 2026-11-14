@@ -19,7 +19,7 @@ const AttendanceScanner = () => {
     const canvasRef = useRef(null);
     const streamRef = useRef(null);
     const scanActiveRef = useRef(false);
-    const [stats, setStats] = useState({ blinkCount: 0, quality: 0 });
+    const [stats, setStats] = useState({ blinkCount: 0, quality: 0, livenessVerified: false, livenessProgress: 0 });
     const stopCamera = () => {
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
@@ -124,21 +124,20 @@ const AttendanceScanner = () => {
                     if (!result || result.noFace) {
                         steadyFrames = 0;
                         setMessage('Align face within the secure perimeter.');
-                        setStats(prev => ({ ...prev, quality: 0 }));
+                        setStats(prev => ({ ...prev, quality: 0, livenessVerified: false, livenessProgress: 0 }));
                     } else if (result.multipleFaces) {
                         steadyFrames = 0;
                         setMessage('Multiple faces detected. Please stand alone in front of the camera.');
-                        setStats(prev => ({ ...prev, quality: 0 }));
+                        setStats(prev => ({ ...prev, quality: 0, livenessVerified: false, livenessProgress: 0 }));
                     } else if (result.invalid) {
                         steadyFrames = 0;
                         setMessage(result.reason);
-                        setStats(prev => ({ ...prev, quality: 0 }));
+                        setStats(prev => ({ ...prev, quality: 0, livenessVerified: false, livenessProgress: 0 }));
                     } else if (result.detection) {
-                        setStats(prev => ({ ...prev, quality: Math.round(result.score * 100) }));
+                        const quality = Math.round(result.score * 100);
 
                         if (!blinkDetected && result.isBlinking) {
                             blinkDetected = true;
-                            setStats(prev => ({ ...prev, blinkCount: 1 }));
                         }
 
                         if (result.score >= 0.65) {
@@ -151,20 +150,30 @@ const AttendanceScanner = () => {
                             steadyFrames = Math.max(0, steadyFrames - 1);
                         }
 
-                        // Trigger verification on blink OR upon holding steady for ~7-8 frames (~0.8s)
-                        const isReady = (blinkDetected && bestDescriptor && highestScore >= 0.68) || 
-                                        (steadyFrames >= 7 && (bestDescriptor || result.descriptor));
+                        const livenessProgress = blinkDetected ? 100 : Math.min(100, Math.round((steadyFrames / 6) * 100));
+                        const livenessVerified = blinkDetected || steadyFrames >= 5;
+
+                        setStats({
+                            blinkCount: blinkDetected ? 1 : 0,
+                            quality,
+                            livenessVerified,
+                            livenessProgress
+                        });
+
+                        // Trigger verification on blink OR upon holding steady for ~5-6 frames (~0.5s)
+                        const isReady = (blinkDetected && bestDescriptor && highestScore >= 0.65) || 
+                                        (steadyFrames >= 6 && (bestDescriptor || result.descriptor));
 
                         if (isReady) {
                             scanActiveRef.current = false;
+                            setStats(prev => ({ ...prev, livenessVerified: true, livenessProgress: 100 }));
                             verifyIdentity(bestDescriptor || result.descriptor);
                             return;
                         } else {
                             if (blinkDetected) {
                                 setMessage('Liveness verified. Aligning face match...');
-                            } else if (steadyFrames >= 3) {
-                                const progress = Math.min(100, Math.round((steadyFrames / 7) * 100));
-                                setMessage(`Holding steady... [${progress}%] (or blink)`);
+                            } else if (steadyFrames >= 2) {
+                                setMessage(`Holding steady... [${livenessProgress}%] (or blink)`);
                             } else {
                                 setMessage('Face detected. Look straight or blink to verify...');
                             }
@@ -215,7 +224,7 @@ const AttendanceScanner = () => {
                 if (streamRef.current) {
                     setStatus('scanning');
                     setMessage('Resuming biometric scan...');
-                    setStats({ blinkCount: 0, quality: 0 });
+                    setStats({ blinkCount: 0, quality: 0, livenessVerified: false, livenessProgress: 0 });
                     runDetectionLoop();
                 }
             }, 3000);
@@ -281,10 +290,10 @@ const AttendanceScanner = () => {
                             <span className="text-lg font-black text-slate-900 dark:text-white">{stats.quality}%</span>
                         </div>
                         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center">
-                            <ShieldCheck className={`w-5 h-5 mb-2 ${stats.blinkCount > 0 ? 'text-emerald-500' : 'text-slate-300'}`} />
+                            <ShieldCheck className={`w-5 h-5 mb-2 ${stats.livenessVerified ? 'text-emerald-500' : stats.quality > 0 ? 'text-amber-500 animate-pulse' : 'text-slate-300'}`} />
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Liveness</span>
-                            <span className={`text-lg font-black ${stats.blinkCount > 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-white'}`}>
-                                {stats.blinkCount > 0 ? 'Verified' : 'Pending'}
+                            <span className={`text-lg font-black ${stats.livenessVerified ? 'text-emerald-600' : stats.quality > 0 ? 'text-amber-500' : 'text-slate-900 dark:text-white'}`}>
+                                {stats.livenessVerified ? 'Verified' : stats.quality > 0 ? `${stats.livenessProgress || 25}%` : 'Pending'}
                             </span>
                         </div>
                     </div>

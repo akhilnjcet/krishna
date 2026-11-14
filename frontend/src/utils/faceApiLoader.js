@@ -3,6 +3,34 @@ import * as faceapi from 'face-api.js';
 let modelsLoaded = false;
 let loadingPromise = null;
 
+const CACHE_NAME = 'krishna-biometric-models-v1';
+
+// Persistent CacheStorage interceptor: caches manifests and binary shards permanently on local disk
+if (typeof window !== 'undefined' && 'caches' in window && !window.__FACE_CACHE_INTERCEPTED__) {
+    window.__FACE_CACHE_INTERCEPTED__ = true;
+    const originalFetch = window.fetch;
+    window.fetch = async (input, init) => {
+        const url = typeof input === 'string' ? input : input?.url;
+        if (url && (url.includes('/models/') || url.includes('weights/') || url.includes('face_landmark') || url.includes('tiny_face') || url.includes('face_recognition') || url.includes('ssd_mobilenet'))) {
+            try {
+                const cache = await caches.open(CACHE_NAME);
+                const cachedResponse = await cache.match(input);
+                if (cachedResponse) {
+                    return cachedResponse;
+                }
+                const networkResponse = await originalFetch(input, init);
+                if (networkResponse && networkResponse.status === 200) {
+                    cache.put(input, networkResponse.clone()).catch(() => {});
+                }
+                return networkResponse;
+            } catch {
+                return originalFetch(input, init);
+            }
+        }
+        return originalFetch(input, init);
+    };
+}
+
 // Official face-api.js weights repository mirror and fast CDN fallbacks
 const JSDELIVR_CDN_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights/';
 const GITHUB_CDN_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights/';
@@ -31,52 +59,35 @@ export const loadFaceModels = async () => {
             console.log(`[FACE-API] Attempting Biometric Model Load: ${url}`);
             try {
                 const timeout = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error(`Model loading timeout (${url})`)), 15000)
+                    setTimeout(() => reject(new Error(`Model loading timeout (${url})`)), 7000)
                 );
 
                 await Promise.race([
                     (async () => {
-                        // 1. Mandatory facial landmark & recognition nets (essential for 128-d descriptor extraction)
-                        const essentialTasks = [];
+                        // Load TinyFaceDetector, landmark, and recognition nets in parallel (skips heavy SSD MobileNet)
+                        const primaryTasks = [];
+                        if (!faceapi.nets.tinyFaceDetector?.isLoaded) {
+                            primaryTasks.push(faceapi.nets.tinyFaceDetector.loadFromUri(url));
+                        }
                         if (!faceapi.nets.faceLandmark68Net?.isLoaded) {
-                            essentialTasks.push(faceapi.nets.faceLandmark68Net.loadFromUri(url));
+                            primaryTasks.push(faceapi.nets.faceLandmark68Net.loadFromUri(url));
                         }
                         if (!faceapi.nets.faceRecognitionNet?.isLoaded) {
-                            essentialTasks.push(faceapi.nets.faceRecognitionNet.loadFromUri(url));
-                        }
-                        if (essentialTasks.length > 0) {
-                            await Promise.all(essentialTasks);
+                            primaryTasks.push(faceapi.nets.faceRecognitionNet.loadFromUri(url));
                         }
 
-                        // 2. Face Detector (try TinyFaceDetector and SsdMobilenetv1; at least one must succeed)
-                        const detectorTasks = [];
-                        if (!faceapi.nets.tinyFaceDetector?.isLoaded) {
-                            detectorTasks.push(
-                                faceapi.nets.tinyFaceDetector.loadFromUri(url)
-                                    .then(() => true)
-                                    .catch(err => {
-                                        console.warn(`[FACE-API] tinyFaceDetector unavailable at ${url}:`, err.message);
-                                        return false;
-                                    })
-                            );
+                        if (primaryTasks.length > 0) {
+                            await Promise.all(primaryTasks);
                         }
-                        if (!faceapi.nets.ssdMobilenetv1?.isLoaded) {
-                            detectorTasks.push(
-                                faceapi.nets.ssdMobilenetv1.loadFromUri(url)
-                                    .then(() => true)
-                                    .catch(err => {
-                                        console.warn(`[FACE-API] ssdMobilenetv1 unavailable at ${url}:`, err.message);
-                                        return false;
-                                    })
-                            );
-                        }
-                        if (detectorTasks.length > 0) {
-                            await Promise.all(detectorTasks);
+
+                        // Fallback detector if tinyFaceDetector somehow failed
+                        if (!faceapi.nets.tinyFaceDetector?.isLoaded && !faceapi.nets.ssdMobilenetv1?.isLoaded) {
+                            await faceapi.nets.ssdMobilenetv1.loadFromUri(url);
                         }
 
                         const detectorReady = Boolean(faceapi.nets.tinyFaceDetector?.isLoaded || faceapi.nets.ssdMobilenetv1?.isLoaded);
                         if (!detectorReady) {
-                            throw new Error(`No face detector (TinyFaceDetector or SSD) could be loaded from ${url}`);
+                            throw new Error(`No face detector could be loaded from ${url}`);
                         }
 
                         return true;
@@ -138,6 +149,20 @@ export const loadFaceModels = async () => {
                     modelsLoaded = true;
                     if (typeof window !== 'undefined') window.__FACE_MODELS_LOADED__ = true;
                     console.log(`[FACE-API] Biometric engine successfully initialized from: ${path}`);
+
+                    // Fast GPU Warm-Up: compile shaders in advance on a tiny 64x64 canvas
+                    try {
+                        if (typeof document !== 'undefined' && faceapi.nets.tinyFaceDetector?.isLoaded) {
+                            const dummyCanvas = document.createElement('canvas');
+                            dummyCanvas.width = 64;
+                            dummyCanvas.height = 64;
+                            await faceapi.detectAllFaces(dummyCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.5 }));
+                            console.log('[FACE-API] GPU Shader Warm-Up Complete.');
+                        }
+                    } catch (wErr) {
+                        console.warn('[FACE-API] GPU Warm-Up skipped:', wErr.message);
+                    }
+
                     loadingPromise = null;
                     return true;
                 }
@@ -158,6 +183,14 @@ export const loadFaceModels = async () => {
 
 export const preloadFaceModels = () => {
     if (!isModelsLoaded()) {
-        loadFaceModels().catch(err => console.warn('[FACE-API] Background preload error:', err));
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            window.requestIdleCallback(() => {
+                loadFaceModels().catch(err => console.warn('[FACE-API] Background preload error:', err));
+            });
+        } else {
+            setTimeout(() => {
+                loadFaceModels().catch(err => console.warn('[FACE-API] Background preload error:', err));
+            }, 1000);
+        }
     }
 };

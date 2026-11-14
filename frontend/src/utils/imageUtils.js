@@ -36,7 +36,12 @@ export const getDirectImageUrl = (url) => {
                 const cloudUrl = useSignalStore.getState().cloudUrl || 'https://krishna-akhilnjcets-projects.vercel.app/api';
                 origin = cloudUrl.includes('/api') ? cloudUrl.split('/api')[0] : cloudUrl;
             } else {
-                origin = window.location.origin;
+                const envUrl = import.meta.env.VITE_API_URL;
+                if (envUrl && envUrl.startsWith('http') && envUrl.includes('/api')) {
+                    origin = envUrl.split('/api')[0];
+                } else {
+                    origin = window.location.origin;
+                }
             }
         }
         return `${origin}${relativePath}`;

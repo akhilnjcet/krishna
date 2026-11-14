@@ -11,6 +11,7 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import ThemeToggle from '../components/ThemeToggle';
 import { playNotificationSound } from '../utils/soundService';
+import { preloadFaceModels } from '../utils/faceApiLoader';
 
 const SIDEBAR_W = 'w-64 max-w-[85vw]';
 
@@ -98,6 +99,11 @@ const StaffLayout = () => {
     const navigate = useNavigate();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [desktopOpen, setDesktopOpen] = useState(true);
+    
+    // Silently pre-cache and warm up AI Biometric models in the background when staff accesses portal
+    useEffect(() => {
+        preloadFaceModels();
+    }, []);
     
     useEffect(() => {
         if (mobileOpen) {

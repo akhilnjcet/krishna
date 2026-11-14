@@ -19,7 +19,7 @@ export const detectBlink = (landmarks) => {
     const rightEAR = calculateEAR(rightEye);
     const avgEAR = (leftEAR + rightEAR) / 2.0;
 
-    return avgEAR < 0.26;
+    return avgEAR < 0.28;
 };
 
 // Measure image blur using Laplacian variance

@@ -29,6 +29,19 @@ import {
 const ChatMessageImage = ({ url, fileName, onOpen }) => {
     const [hasError, setHasError] = useState(false);
     const [loaded, setLoaded] = useState(false);
+    const imgRef = useRef(null);
+
+    useEffect(() => {
+        setHasError(false);
+        // Fast-path: Check if already loaded/cached (e.g., base64 data URLs or browser cache)
+        if (imgRef.current) {
+            if (imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+                setLoaded(true);
+            } else if (imgRef.current.complete && imgRef.current.naturalWidth === 0) {
+                setHasError(true);
+            }
+        }
+    }, [url]);
 
     if (hasError) {
         return (
@@ -52,25 +65,29 @@ const ChatMessageImage = ({ url, fileName, onOpen }) => {
     return (
         <div 
             onClick={onOpen}
-            className="group relative block overflow-hidden rounded-xl border border-black/10 hover:opacity-95 transition-all shadow-xs bg-black/5 max-w-sm cursor-pointer"
+            className="group relative block overflow-hidden rounded-xl border border-black/10 hover:opacity-95 transition-all shadow-xs bg-black/5 max-w-[260px] sm:max-w-sm cursor-pointer select-none"
             title="Click to view full image"
         >
             {!loaded && (
-                <div className="h-44 w-60 bg-slate-200/50 dark:bg-slate-800/50 animate-pulse rounded-xl flex items-center justify-center text-slate-400">
+                <div className="h-40 sm:h-48 w-56 sm:w-64 max-w-full bg-slate-200/60 dark:bg-slate-800/60 animate-pulse rounded-xl flex flex-col items-center justify-center text-slate-400 gap-1.5 p-4">
                     <ImageIcon className="w-7 h-7 opacity-40 animate-pulse" />
+                    <span className="text-[10px] font-bold text-slate-400 tracking-wider">PHOTO</span>
                 </div>
             )}
             <img 
+                ref={imgRef}
                 src={url} 
-                alt={fileName} 
+                alt={fileName || 'Photo'} 
                 onLoad={() => setLoaded(true)}
                 onError={() => setHasError(true)}
-                className={`max-h-72 w-auto max-w-full rounded-xl object-contain bg-black/5 transition-opacity duration-300 ${loaded ? 'block opacity-100' : 'hidden opacity-0'}`} 
-                loading="lazy"
+                decoding="async"
+                className={`max-h-64 sm:max-h-72 w-auto max-w-full rounded-xl object-contain bg-black/5 transition-opacity duration-200 ${
+                    loaded ? 'block opacity-100' : 'absolute inset-0 w-full h-full opacity-0 pointer-events-none'
+                }`} 
             />
             {loaded && (
-                <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white">
-                    <span className="p-2 bg-black/60 rounded-full backdrop-blur-xs">
+                <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white pointer-events-none">
+                    <span className="p-2 bg-black/60 rounded-full backdrop-blur-xs shadow-md">
                         <Maximize2 className="w-4 h-4" />
                     </span>
                 </div>
@@ -878,7 +895,16 @@ const RealTimeChat = ({ chatId: propChatId }) => {
                         
                         {messages.length > 0 ? messages.map((msg, index) => {
                             const isMe = msg.senderId === userId;
-                            const isImageAttachment = msg.fileType === 'image' || msg.type === 'image' || (msg.fileUrl && /\.(jpe?g|png|webp|gif)($|\?)/i.test(msg.fileUrl)) || (msg.fileUrl && msg.fileUrl.startsWith('data:image/'));
+                            const hasImageExt = (str) => typeof str === 'string' && /\.(jpe?g|png|webp|gif|bmp|svg|heic|heif)($|\?)/i.test(str);
+                            const isImageAttachment = Boolean(
+                                msg.fileUrl && (
+                                    msg.fileType === 'image' || 
+                                    msg.type === 'image' || 
+                                    msg.fileUrl.startsWith('data:image/') || 
+                                    hasImageExt(msg.fileUrl) || 
+                                    hasImageExt(msg.fileName)
+                                )
+                            );
                             const isDocAttachment = msg.fileUrl && !isImageAttachment;
                             
                             // Check if text is just an auto-generated label like [Photo: ...] or [Attachment: ...]

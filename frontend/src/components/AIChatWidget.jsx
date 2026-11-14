@@ -133,8 +133,8 @@ const AIChatWidget = () => {
         const mobile = window.innerWidth < 640;
         const buttonSize = mobile ? 48 : 56;
         const margin = 12;
-        const baseOffsetY = mobile ? 96 : 24;
-        const baseOffsetX = mobile ? 16 : 24;
+        const baseOffsetY = mobile ? 20 : 24;
+        const baseOffsetX = mobile ? 14 : 24;
         // Negative x moves left from right
         const minX = -(window.innerWidth - buttonSize - baseOffsetX - margin);
         const maxX = baseOffsetX - margin;
@@ -298,7 +298,7 @@ const AIChatWidget = () => {
         <>
             {/* Draggable Launcher Button Container */}
             <div 
-                className="fixed z-40 font-sans bottom-24 right-4 sm:bottom-6 sm:right-6 pointer-events-auto"
+                className="fixed z-40 font-sans bottom-5 right-3.5 sm:bottom-6 sm:right-6 pointer-events-auto"
                 style={{ 
                     transform: `translate(${position.x}px, ${position.y}px)`,
                     touchAction: 'none'
@@ -331,7 +331,7 @@ const AIChatWidget = () => {
                 <AnimatePresence>
                     {isOpen && (
                         <div
-                            className={`fixed z-50 font-sans pointer-events-none ${
+                            className={`fixed z-[100] font-sans pointer-events-none ${
                                 isMobile 
                                     ? 'inset-x-0 bottom-0 top-0' 
                                     : 'bottom-6 right-6'

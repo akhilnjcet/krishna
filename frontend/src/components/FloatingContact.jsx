@@ -60,17 +60,18 @@ const FloatingContact = () => {
     ];
 
     return (
-        <div className="fixed bottom-24 right-3 sm:right-6 md:bottom-10 md:right-10 z-[90] flex flex-col gap-2.5 sm:gap-3 pointer-events-none group items-end">
+        <div className="fixed bottom-20 right-3.5 sm:bottom-[92px] sm:right-6 md:bottom-10 md:right-10 z-40 flex flex-col gap-3 sm:gap-3 pointer-events-none group items-end">
             <AnimatePresence>
                 {contacts.map((contact, idx) => (
                     <motion.a
                         key={contact.id}
                         href={contact.link}
                         initial={{ opacity: 0, x: 50, scale: 0.8 }}
-                        animate={{ opacity: 0.8, x: 0, scale: 1 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
                         whileHover={{ opacity: 1, scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         transition={{ delay: 0.2 + idx * 0.1, duration: 0.4 }}
-                        className={`pointer-events-auto flex items-center justify-center md:justify-start gap-0 md:gap-4 w-12 h-12 md:w-auto md:h-auto p-0 md:p-4 rounded-full md:rounded-2xl shadow-2xl relative overflow-hidden transition-all md:hover:pr-12 ${contact.color} ${contact.textColor} border-2 border-black/10 backdrop-blur-md`}
+                        className={`pointer-events-auto flex items-center justify-center md:justify-start gap-0 md:gap-4 w-12 h-12 md:w-auto md:h-auto p-0 md:p-4 rounded-full md:rounded-2xl shadow-2xl relative overflow-hidden transition-all md:hover:pr-12 ${contact.color} ${contact.textColor} border-2 border-black/10 backdrop-blur-md active:scale-95`}
                     >
                         {/* Glow effect */}
                         <div className="absolute inset-0 bg-gradient-to-l from-transparent via-white/20 to-transparent translate-x-full group-hover:-translate-x-full transition-transform duration-700" />
