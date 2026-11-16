@@ -86,30 +86,53 @@ const AdminCareers = () => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const formData = new FormData();
-        formData.append('file', file);
+        if (file.size > 10 * 1024 * 1024) {
+            return showNotification('error', 'File size exceeds 10MB limit.');
+        }
 
         if (target === 'circular') setUploadingFile(true);
         if (target === 'banner') setUploadingBanner(true);
 
-        try {
-            const res = await api.post('/uploads', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+        // Helper to read file as Base64 Data URL as reliable persistent fallback
+        const readAsBase64 = (f) => new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(f);
+        });
 
-            const uploadedUrl = res.data?.fileUrl || res.data?.url;
-            if (!uploadedUrl) throw new Error('File URL not returned by server.');
+        try {
+            const clientDataUrl = await readAsBase64(file);
+            let finalUrl = clientDataUrl;
+
+            // Attempt server upload
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                const res = await api.post('/uploads', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+
+                const uploadedUrl = res.data?.fileUrl || res.data?.url;
+                if (uploadedUrl && !uploadedUrl.startsWith('/tmp/')) {
+                    finalUrl = uploadedUrl;
+                }
+            } catch (netErr) {
+                console.warn('Server upload fallback to client Data URL:', netErr.message);
+            }
+
+            if (!finalUrl) throw new Error('File could not be processed.');
 
             if (target === 'circular') {
                 const isPdf = file.name.toLowerCase().endsWith('.pdf');
                 setVacancyForm(prev => ({
                     ...prev,
-                    circularUrl: uploadedUrl,
+                    circularUrl: finalUrl,
                     circularType: isPdf ? 'pdf' : 'image'
                 }));
                 showNotification('success', `Circular ${file.name} uploaded successfully!`);
             } else if (target === 'banner') {
-                setBanner(prev => ({ ...prev, imageUrl: uploadedUrl }));
+                setBanner(prev => ({ ...prev, imageUrl: finalUrl }));
                 showNotification('success', 'Banner image uploaded successfully!');
             }
         } catch (err) {

@@ -7,6 +7,9 @@ import { getDirectImageUrl, getCandidateImageUrls } from '../utils/imageUtils';
 // High-resolution fallback banner for industrial precision engineering
 const DEFAULT_FALLBACK_BANNER = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=1920';
 
+// Embedded vector blueprint banner fallback - guaranteed 100% offline & zero network dependency
+const INDUSTRIAL_SVG_BANNER = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%23090d16"/><stop offset="50%" stop-color="%231e1b4b"/><stop offset="100%" stop-color="%230f172a"/></linearGradient><radialGradient id="r" cx="20%" cy="30%" r="60%"><stop offset="0%" stop-color="%233b82f6" stop-opacity="0.35"/><stop offset="100%" stop-color="%23000000" stop-opacity="0"/></radialGradient><radialGradient id="r2" cx="80%" cy="70%" r="50%"><stop offset="0%" stop-color="%23f59e0b" stop-opacity="0.3"/><stop offset="100%" stop-color="%23000000" stop-opacity="0"/></radialGradient><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="%23334155" stroke-width="0.75" stroke-opacity="0.35"/></pattern></defs><rect width="100%" height="100%" fill="url(%23g)"/><rect width="100%" height="100%" fill="url(%23grid)"/><circle cx="240" cy="200" r="300" fill="url(%23r)"/><circle cx="960" cy="200" r="280" fill="url(%23r2)"/><g stroke="%2360a5fa" stroke-width="1.5" stroke-opacity="0.3" fill="none"><circle cx="1050" cy="200" r="90"/><circle cx="1050" cy="200" r="60"/><circle cx="1050" cy="200" r="30"/><line x1="1050" y1="90" x2="1050" y2="310"/><line x1="940" y1="200" x2="1160" y2="200"/></g></svg>`;
+
 const VacancyAdBanner = () => {
     const [banner, setBanner] = useState(null);
     const [dismissed, setDismissed] = useState(false);
@@ -36,12 +39,20 @@ const VacancyAdBanner = () => {
 
     useEffect(() => {
         if (banner?.imageUrl) {
-            const list = getCandidateImageUrls(banner.imageUrl);
+            const raw = banner.imageUrl.trim();
+            const isDefunctTmp = raw.startsWith('/tmp/') || raw.includes('/tmp/uploads/');
+            const list = [];
+            if (!isDefunctTmp) {
+                const candidatesFromUtil = getCandidateImageUrls(raw);
+                list.push(...candidatesFromUtil);
+            }
             list.push(DEFAULT_FALLBACK_BANNER);
-            setCandidates(list);
+            list.push(INDUSTRIAL_SVG_BANNER);
+            const unique = [...new Set(list.filter(Boolean))];
+            setCandidates(unique);
             setCandidateIndex(0);
         } else if (banner) {
-            setCandidates([DEFAULT_FALLBACK_BANNER]);
+            setCandidates([DEFAULT_FALLBACK_BANNER, INDUSTRIAL_SVG_BANNER]);
             setCandidateIndex(0);
         }
     }, [banner]);
@@ -57,12 +68,15 @@ const VacancyAdBanner = () => {
     };
 
     const handleImgError = () => {
-        if (candidateIndex + 1 < candidates.length) {
-            setCandidateIndex(prev => prev + 1);
-        }
+        setCandidateIndex((prev) => {
+            if (prev + 1 < candidates.length) {
+                return prev + 1;
+            }
+            return prev;
+        });
     };
 
-    const currentImg = candidates[candidateIndex] || getDirectImageUrl(banner.imageUrl) || DEFAULT_FALLBACK_BANNER;
+    const currentImg = candidates[candidateIndex] || DEFAULT_FALLBACK_BANNER || INDUSTRIAL_SVG_BANNER;
 
     return (
         <>

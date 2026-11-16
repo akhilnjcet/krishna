@@ -204,12 +204,30 @@ exports.login = async (req, res) => {
         user.last_login = new Date();
         await user.save();
 
-        // Non-blocking security notifications
-        if (user.email) {
-            sendLoginNotification(user.email, user.name || user.username).catch(e => console.error('Email Fail:', e));
-        }
-        if (user.phoneNumber || user.phone) {
-            sendWhatsAppLoginAlert(user).catch(e => console.error('WA Fail:', e));
+        // Security notifications (Awaited with timeout to ensure delivery before serverless freeze)
+        try {
+            const dispatchTasks = [];
+            const cleanEmail = (user.email || '').trim().toLowerCase();
+            if (cleanEmail && cleanEmail.includes('@')) {
+                const timeStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+                dispatchTasks.push(
+                    sendLoginNotification(cleanEmail, user.name || user.username, { timeStr }).catch(e => console.error('Email Fail:', e.message))
+                );
+            }
+            if (user.phoneNumber || user.phone) {
+                dispatchTasks.push(
+                    sendWhatsAppLoginAlert(user).catch(e => console.error('WA Fail:', e.message))
+                );
+            }
+
+            if (dispatchTasks.length > 0) {
+                await Promise.race([
+                    Promise.allSettled(dispatchTasks),
+                    new Promise(resolve => setTimeout(resolve, 3500))
+                ]);
+            }
+        } catch (secErr) {
+            console.warn('Security dispatch notice:', secErr.message);
         }
 
         const role = user.role || 'customer';
@@ -403,11 +421,28 @@ exports.verifyFace = async (req, res) => {
 
             logAuthSuccess(req, { identifier: bestMatch.name || bestMatch.username, userId: bestMatch._id, role: bestMatch.role });
 
-            if (bestMatch.email) {
-                sendLoginNotification(bestMatch.email, bestMatch.name || bestMatch.username).catch(err => console.error('Face Login Notify Error:', err));
-            }
-            if (bestMatch.phoneNumber || bestMatch.phone) {
-                sendWhatsAppLoginAlert(bestMatch).catch(err => console.error('Face WhatsApp Notify Error:', err));
+            try {
+                const dispatchTasks = [];
+                const cleanEmail = (bestMatch.email || '').trim().toLowerCase();
+                if (cleanEmail && cleanEmail.includes('@')) {
+                    const timeStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+                    dispatchTasks.push(
+                        sendLoginNotification(cleanEmail, bestMatch.name || bestMatch.username, { timeStr }).catch(err => console.error('Face Login Notify Error:', err.message))
+                    );
+                }
+                if (bestMatch.phoneNumber || bestMatch.phone) {
+                    dispatchTasks.push(
+                        sendWhatsAppLoginAlert(bestMatch).catch(err => console.error('Face WhatsApp Notify Error:', err.message))
+                    );
+                }
+                if (dispatchTasks.length > 0) {
+                    await Promise.race([
+                        Promise.allSettled(dispatchTasks),
+                        new Promise(resolve => setTimeout(resolve, 3500))
+                    ]);
+                }
+            } catch (notifyErr) {
+                console.warn('Face login notify notice:', notifyErr.message);
             }
 
             return res.json({ 
@@ -734,7 +769,30 @@ exports.loginWithOTP = async (req, res) => {
         user.last_login = new Date();
         await user.save();
 
-        sendLoginNotification(user.email, user.name || user.username).catch(err => console.error('Notify fail:', err));
+        try {
+            const dispatchTasks = [];
+            const cleanEmail = (user.email || '').trim().toLowerCase();
+            if (cleanEmail && cleanEmail.includes('@')) {
+                const timeStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+                dispatchTasks.push(
+                    sendLoginNotification(cleanEmail, user.name || user.username, { timeStr }).catch(e => console.error('Email Fail:', e.message))
+                );
+            }
+            if (user.phoneNumber || user.phone) {
+                dispatchTasks.push(
+                    sendWhatsAppLoginAlert(user).catch(e => console.error('WA Fail:', e.message))
+                );
+            }
+
+            if (dispatchTasks.length > 0) {
+                await Promise.race([
+                    Promise.allSettled(dispatchTasks),
+                    new Promise(resolve => setTimeout(resolve, 3500))
+                ]);
+            }
+        } catch (secErr) {
+            console.warn('Security dispatch notice:', secErr.message);
+        }
 
         const role = user.role || 'customer';
         const token = generateToken(user._id.toString(), role);

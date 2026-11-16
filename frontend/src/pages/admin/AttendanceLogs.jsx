@@ -362,35 +362,39 @@ const AttendanceLogs = () => {
                 </div>
             </div>
 
-            {/* Navigation Tabs (Mobile Scrollable & Responsive) */}
-            <div className="w-full overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-                <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 w-max min-w-full">
+            {/* Navigation Tabs (Fully Responsive - Never overflows mobile screen) */}
+            <div className="w-full border-b border-slate-200 dark:border-slate-800 pb-2">
+                <div className="grid grid-cols-3 gap-1.5 sm:flex sm:items-center sm:gap-2 w-full">
                     <button
                         type="button"
                         onClick={() => setActiveTab('logs')}
-                        className={`flex-shrink-0 whitespace-nowrap px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition flex items-center gap-2 ${
+                        className={`min-w-0 px-2 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider transition flex items-center justify-center gap-1 sm:gap-2 text-center ${
                             activeTab === 'logs'
                                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
                                 : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
                         }`}
+                        title="Biometric & Location Logs"
                     >
-                        <History className="w-4 h-4 flex-shrink-0" />
-                        <span>Biometric & Location Logs</span>
+                        <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="hidden sm:inline">Biometric & Location Logs</span>
+                        <span className="sm:hidden truncate">Logs</span>
                     </button>
 
                     <button
                         type="button"
                         onClick={() => setActiveTab('exceptions')}
-                        className={`flex-shrink-0 whitespace-nowrap px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition flex items-center gap-2 relative ${
+                        className={`min-w-0 px-2 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider transition flex items-center justify-center gap-1 sm:gap-2 text-center relative ${
                             activeTab === 'exceptions'
                                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
                                 : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
                         }`}
+                        title="Exceptions & Corrections"
                     >
-                        <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                        <span>Exceptions & Corrections</span>
+                        <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 flex-shrink-0" />
+                        <span className="hidden sm:inline">Exceptions & Corrections</span>
+                        <span className="sm:hidden truncate">Exceptions</span>
                         {pendingExceptionsCount > 0 && (
-                            <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full ml-1">
+                            <span className="bg-rose-500 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.2 sm:py-0.5 rounded-full ml-0.5">
                                 {pendingExceptionsCount}
                             </span>
                         )}
@@ -399,14 +403,16 @@ const AttendanceLogs = () => {
                     <button
                         type="button"
                         onClick={() => setActiveTab('hub')}
-                        className={`flex-shrink-0 whitespace-nowrap px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition flex items-center gap-2 ${
+                        className={`min-w-0 px-2 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider transition flex items-center justify-center gap-1 sm:gap-2 text-center ${
                             activeTab === 'hub'
                                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
                                 : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
                         }`}
+                        title="Monthly Roster Matrix"
                     >
-                        <Calendar className="w-4 h-4 flex-shrink-0" />
-                        <span>Monthly Roster Matrix</span>
+                        <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="hidden sm:inline">Monthly Roster Matrix</span>
+                        <span className="sm:hidden truncate">Roster</span>
                     </button>
                 </div>
             </div>

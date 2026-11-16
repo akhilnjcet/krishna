@@ -250,16 +250,31 @@ exports.recordAttendance = async (req, res) => {
                     dateTimeStr: formattedDateTime
                 };
 
-                // Asynchronously dispatch WhatsApp notification
-                sendStaffAttendanceNotification(staffUser, notificationPayload).catch(err => {
-                    console.warn('WhatsApp staff attendance alert notice:', err.message);
-                });
+                const dispatchTasks = [];
 
-                // Asynchronously dispatch Email notification
-                if (staffUser.email) {
-                    sendStaffAttendanceEmail(staffUser.email, staffUser.name, notificationPayload).catch(err => {
-                        console.warn('Email staff attendance alert notice:', err.message);
-                    });
+                // 1. WhatsApp notification
+                dispatchTasks.push(
+                    sendStaffAttendanceNotification(staffUser, notificationPayload).catch(err => {
+                        console.warn('WhatsApp staff attendance alert notice:', err.message);
+                    })
+                );
+
+                // 2. Email notification
+                const targetEmail = (staffUser.email || '').trim().toLowerCase();
+                if (targetEmail && targetEmail.includes('@')) {
+                    dispatchTasks.push(
+                        sendStaffAttendanceEmail(targetEmail, staffUser.name, notificationPayload).catch(err => {
+                            console.warn('Email staff attendance alert notice:', err.message);
+                        })
+                    );
+                }
+
+                // Await delivery with a 3.5s timeout so cloud/serverless environments do not freeze before sockets finish sending
+                if (dispatchTasks.length > 0) {
+                    await Promise.race([
+                        Promise.allSettled(dispatchTasks),
+                        new Promise(resolve => setTimeout(resolve, 3500))
+                    ]);
                 }
             } catch (notifyErr) {
                 console.warn('Attendance notification dispatch notice:', notifyErr.message);

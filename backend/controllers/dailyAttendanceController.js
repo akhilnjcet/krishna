@@ -114,6 +114,51 @@ exports.markDailyAttendance = async (req, res) => {
             console.warn("Socket notification warning:", sErr.message);
         }
 
+        // Dispatch Attendance Notifications (WhatsApp + Email) with serverless-safe timeout
+        try {
+            const { sendStaffAttendanceNotification } = require('../services/whatsappService');
+            const { sendStaffAttendanceEmail } = require('../services/emailService');
+
+            const attendanceType = status === 'Present' ? (checkOut ? 'Check-out' : 'Check-in') : (status === 'Half Day' ? 'Half-Day' : status);
+            const formattedTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+            const dateTimeStr = `${date} at ${formattedTime}`;
+
+            const notificationPayload = {
+                type: attendanceType,
+                dateTimeStr
+            };
+
+            const dispatchTasks = [];
+            if (staff.phoneNumber || staff.phone) {
+                dispatchTasks.push(
+                    sendStaffAttendanceNotification(staff, notificationPayload).catch(err => {
+                        console.warn('WhatsApp daily attendance alert notice:', err.message);
+                    })
+                );
+            }
+
+            const targetEmail = (staff.email || '').trim().toLowerCase();
+            if (targetEmail && targetEmail.includes('@')) {
+                dispatchTasks.push(
+                    sendStaffAttendanceEmail(targetEmail, staff.name, {
+                        ...notificationPayload,
+                        method: 'Admin Registry Update'
+                    }).catch(err => {
+                        console.warn('Email daily attendance alert notice:', err.message);
+                    })
+                );
+            }
+
+            if (dispatchTasks.length > 0) {
+                await Promise.race([
+                    Promise.allSettled(dispatchTasks),
+                    new Promise(resolve => setTimeout(resolve, 3500))
+                ]);
+            }
+        } catch (notifyErr) {
+            console.warn('Daily attendance notification dispatch notice:', notifyErr.message);
+        }
+
         console.log(`✅ Daily Attendance & Salary updated for ${staff.name} on ${date}: ${status}`);
         res.json({ message: "Attendance and salary updated successfully.", attendance });
     } catch (error) {

@@ -1,21 +1,43 @@
 const nodemailer = require('nodemailer');
 
+let poolTransporter = null;
+
 const createTransporter = () => {
-    return nodemailer.createTransport({
+    if (poolTransporter) return poolTransporter;
+
+    const user = (process.env.EMAIL_USER || '').trim();
+    // Strip all whitespace/spaces from Google App Password (e.g. "abcd efgh ijkl mnop" -> "abcdefghijklmnop")
+    const pass = (process.env.EMAIL_PASS || '').replace(/\s+/g, '');
+
+    poolTransporter = nodemailer.createTransport({
         service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        pool: true,
+        maxConnections: 5,
+        maxMessages: 100,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
         auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
+            user,
+            pass
         }
     });
+
+    return poolTransporter;
 };
 
 const sendWelcomeEmail = async (email, name) => {
     try {
+        const cleanEmail = (email || '').trim().toLowerCase();
+        if (!cleanEmail || !cleanEmail.includes('@')) return false;
+
         const transporter = createTransporter();
         const mailOptions = {
             from: `"Krishna Engineering Works" <${process.env.EMAIL_USER}>`,
-            to: email,
+            to: cleanEmail,
             subject: 'Welcome to Krishna Engineering Works',
             text: `Hello ${name || 'User'},
 
@@ -30,17 +52,20 @@ We are happy to have you with us!
         console.log('Welcome email sent: ' + info.response);
         return true;
     } catch (error) {
-        console.error('Error sending welcome email:', error);
+        console.error('Error sending welcome email:', error.message);
         return false;
     }
 };
 
 const sendPasswordResetOTP = async (email, otp) => {
     try {
+        const cleanEmail = (email || '').trim().toLowerCase();
+        if (!cleanEmail || !cleanEmail.includes('@')) return false;
+
         const transporter = createTransporter();
         const mailOptions = {
             from: `"Krishna Engineering Works Support" <${process.env.EMAIL_USER}>`,
-            to: email,
+            to: cleanEmail,
             subject: 'Password Reset OTP',
             text: `Your OTP for password reset is: ${otp}
 
@@ -51,29 +76,107 @@ Valid for 5 minutes. Do not share this OTP.`
         console.log('Reset OTP email sent: ' + info.response);
         return true;
     } catch (error) {
-        console.error('Error sending reset OTP email:', error);
+        console.error('Error sending reset OTP email:', error.message);
         return false;
     }
 };
 
-const sendLoginNotification = async (email, name) => {
+const sendLoginNotification = async (email, name, options = {}) => {
     try {
+        const cleanEmail = (email || '').trim().toLowerCase();
+        if (!cleanEmail || !cleanEmail.includes('@')) {
+            console.warn('Skipping sendLoginNotification: invalid email address', email);
+            return false;
+        }
+
         const transporter = createTransporter();
+        const timeStr = (options && typeof options === 'object' && options.timeStr) 
+            ? options.timeStr 
+            : new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
         const mailOptions = {
-            from: `"Krishna Engineering Works" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: 'Login Alert: Krishna Engineering Portal',
-            text: `Hello ${name},
+            from: `"Krishna Engineering Portal" <${process.env.EMAIL_USER}>`,
+            to: cleanEmail,
+            subject: '🔔 Krishna Engineering Portal — Login Alert',
+            text: `🔔 Krishna Engineering Portal — Login Alert
+
+Hello ${name || 'User'},
 
 Your account was just logged into on the Krishna Engineering Works Portal.
 
-If this was you, you can safely ignore this message.
-If you do not recognize this activity, please contact support immediately.`
+🕒 Time: ${timeStr}
+🔒 Status: Authorized Access
+
+If you believe this login was unauthorized, please contact support immediately or reset your password.
+
+– Krishna Engineering Works`,
+            html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 540px; margin: 20px auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.06);">
+                <div style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); padding: 26px 30px; text-align: left;">
+                    <div style="display: inline-block; padding: 4px 10px; background: rgba(255,255,255,0.15); border-radius: 20px; font-size: 11px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+                        🔔 Security Notification
+                    </div>
+                    <h2 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.5px;">
+                        Krishna Engineering Portal
+                    </h2>
+                    <p style="color: #bfdbfe; margin: 3px 0 0 0; font-size: 12px; font-weight: 600;">
+                        Account Login Alert
+                    </p>
+                </div>
+                
+                <div style="padding: 30px; color: #1e293b;">
+                    <p style="font-size: 16px; margin: 0 0 14px 0; font-weight: 700; color: #0f172a;">
+                        Hello ${name || 'User'},
+                    </p>
+                    
+                    <p style="font-size: 14px; color: #475569; margin: 0 0 22px 0; line-height: 1.6;">
+                        Your account was just logged into on the Krishna Engineering Works Portal.
+                    </p>
+                    
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 22px; margin-bottom: 24px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px 0; font-size: 14px; font-weight: 700; color: #0f172a; width: 35%;">
+                                    🕒 Time:
+                                </td>
+                                <td style="padding: 8px 0; font-size: 14px; font-weight: 600; color: #334155;">
+                                    ${timeStr}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; font-size: 14px; font-weight: 700; color: #0f172a;">
+                                    🔒 Status:
+                                </td>
+                                <td style="padding: 8px 0; font-size: 14px; font-weight: 700; color: #16a34a;">
+                                    Authorized Access
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <p style="font-size: 13px; color: #64748b; margin: 0 0 20px 0; line-height: 1.6;">
+                        If this was you, you can safely disregard this email. If you did not make this request, please contact support or reset your password immediately.
+                    </p>
+                    
+                    <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 24px; text-align: center;">
+                        <p style="font-size: 12px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">
+                            Krishna Engineering Works
+                        </p>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">
+                            Industrial Area, Thiruvazhiyode, Palakkad, Kerala<br/>
+                            Support: +91 9447940835 • contact@krishnaengg.com
+                        </p>
+                    </div>
+                </div>
+            </div>
+            `
         };
-        await transporter.sendMail(mailOptions);
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Login notification email dispatched successfully:', info.messageId);
         return true;
     } catch (error) {
-        console.error('Error sending login notification:', error);
+        console.error('Error sending login notification:', error.message);
         return false;
     }
 };
@@ -1046,12 +1149,20 @@ const sendTestSupportAlertEmail = async (targetEmail) => {
     }
 };
 
-const sendStaffAttendanceEmail = async (email, name, { type, dateTimeStr }) => {
+const sendStaffAttendanceEmail = async (email, name, options = {}) => {
     try {
+        const cleanEmail = (email || '').trim().toLowerCase();
+        if (!cleanEmail || !cleanEmail.includes('@')) {
+            console.warn('Skipping sendStaffAttendanceEmail: invalid email address', email);
+            return { success: false, error: 'Invalid recipient email' };
+        }
+
+        const { type = 'Check in', dateTimeStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) } = options || {};
+
         const transporter = createTransporter();
         const mailOptions = {
             from: `"Krishna Engineering Portal" <${process.env.EMAIL_USER}>`,
-            to: email,
+            to: cleanEmail,
             subject: `🔔 Krishna Engineering Portal — Attendance Update`,
             text: `🔔 Krishna Engineering Portal — Attendance Update
 

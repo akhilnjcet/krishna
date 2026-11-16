@@ -151,6 +151,11 @@ exports.deleteVacancy = async (req, res) => {
 exports.getBanner = async (req, res) => {
     try {
         const banner = await VacancyBanner.findOne({ isActive: true }).sort({ updatedAt: -1 });
+        if (banner && banner.imageUrl && (banner.imageUrl.startsWith('/tmp/') || banner.imageUrl.includes('/tmp/uploads/'))) {
+            // Self-heal defunct ephemeral upload path to high-res industrial workshop banner
+            banner.imageUrl = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=1920';
+            await banner.save().catch(() => {});
+        }
         res.json({ success: true, data: banner || null });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
