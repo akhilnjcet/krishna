@@ -1,21 +1,39 @@
 import axios from 'axios';
 import useAuthStore from '../stores/authStore';
-
 import useSignalStore from '../stores/signalStore';
+import { Capacitor } from '@capacitor/core';
 
-// Determine the correct base URL:
-// - On production (Vercel), always use the cloud URL regardless of VITE_API_URL
-// - On localhost, use VITE_API_URL if set, else fall back to signalStore
-const isLocalhost = typeof window !== 'undefined' && (
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname.startsWith('192.168.')
-);
+// Check if running inside native Android / iOS Capacitor app
+const isNativePlatform = () => {
+  if (typeof window === 'undefined') return false;
+  return Boolean(
+    Capacitor?.isNativePlatform?.() ||
+    window.Capacitor?.isNativePlatform?.() ||
+    window.location.protocol === 'capacitor:' ||
+    window.location.protocol === 'ionic:'
+  );
+};
+
+// Only true for local desktop web browser (e.g. Chrome on PC during npm run dev)
+// MUST BE FALSE inside native mobile APK wrapper!
+const isLocalBrowser = () => {
+  if (typeof window === 'undefined') return false;
+  if (isNativePlatform()) return false;
+  return Boolean(
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.')
+  );
+};
 
 const resolveBaseUrl = () => {
+  // If running inside native mobile APK, ALWAYS use signalStore / cloud API
+  if (isNativePlatform()) {
+    return useSignalStore.getState().getApiUrl();
+  }
   const envUrl = import.meta.env.VITE_API_URL;
   // If VITE_API_URL points to localhost but we're on production → ignore it
-  if (envUrl && isLocalhost) return envUrl;
+  if (envUrl && isLocalBrowser()) return envUrl;
   return useSignalStore.getState().getApiUrl();
 };
 

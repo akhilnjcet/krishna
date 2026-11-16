@@ -10,7 +10,7 @@ export const getSocket = () => {
     connectionAttempted = true;
 
     // Retrieve the base API URL
-    const apiUrl = import.meta.env.VITE_API_URL || useSignalStore.getState().getApiUrl() || 'http://localhost:5000';
+    const apiUrl = useSignalStore.getState().getApiUrl() || import.meta.env.VITE_API_URL || 'https://krishna-akhilnjcets-projects.vercel.app/api';
     
     // Normalize url for websocket server (removing trailing slash or /api)
     const socketUrl = apiUrl.replace(/\/api\/?$/, '');

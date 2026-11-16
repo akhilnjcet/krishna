@@ -67,11 +67,13 @@ app.use(helmet({
 // Secure CORS Configuration: Whitelist explicitly trusted frontend origins and mobile apps
 const allowedOrigins = [
     'http://localhost:5173',
+    'http://localhost:4173',
     'http://localhost:3000',
     'http://localhost:5000',
     'capacitor://localhost',
     'ionic://localhost',
-    'http://localhost'
+    'http://localhost',
+    'https://localhost'
 ];
 if (process.env.FRONTEND_URL) {
     allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ''));
@@ -79,17 +81,23 @@ if (process.env.FRONTEND_URL) {
 
 const corsOptions = {
     origin: (origin, callback) => {
-        // Allow requests with no origin (e.g. native Capacitor mobile apps, postman, server-to-server)
+        // Allow requests with no origin (e.g. native Capacitor mobile apps, mobile webviews, postman, server-to-server)
         if (!origin) return callback(null, true);
 
         const cleanOrigin = origin.replace(/\/$/, '');
         if (
             allowedOrigins.includes(cleanOrigin) ||
             cleanOrigin.endsWith('.vercel.app') ||
-            cleanOrigin.startsWith('http://localhost:') ||
-            cleanOrigin.startsWith('http://127.0.0.1:') ||
+            cleanOrigin.startsWith('http://localhost') ||
+            cleanOrigin.startsWith('https://localhost') ||
+            cleanOrigin.startsWith('capacitor://') ||
+            cleanOrigin.startsWith('ionic://') ||
+            cleanOrigin.startsWith('http://127.0.0.1') ||
+            cleanOrigin.startsWith('https://127.0.0.1') ||
             cleanOrigin.startsWith('http://192.168.') ||
-            cleanOrigin.startsWith('http://10.')
+            cleanOrigin.startsWith('https://192.168.') ||
+            cleanOrigin.startsWith('http://10.') ||
+            cleanOrigin.startsWith('https://10.')
         ) {
             return callback(null, true);
         }
