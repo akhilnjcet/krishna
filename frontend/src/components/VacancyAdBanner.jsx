@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { X, Flame, ExternalLink, Download, FileText, ChevronRight } from 'lucide-react';
+import { X, Flame, ExternalLink, Download, FileText, ChevronRight, Briefcase } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
-import { getDirectImageUrl } from '../utils/imageUtils';
+import { getDirectImageUrl, getCandidateImageUrls } from '../utils/imageUtils';
+
+// High-resolution fallback banner for industrial precision engineering
+const DEFAULT_FALLBACK_BANNER = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=1920';
 
 const VacancyAdBanner = () => {
     const [banner, setBanner] = useState(null);
     const [dismissed, setDismissed] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [candidateIndex, setCandidateIndex] = useState(0);
+    const [candidates, setCandidates] = useState([]);
 
     useEffect(() => {
         const isDismissed = sessionStorage.getItem('vacancy_banner_dismissed');
@@ -29,7 +34,19 @@ const VacancyAdBanner = () => {
         fetchBanner();
     }, []);
 
-    if (dismissed || !banner || !banner.imageUrl) {
+    useEffect(() => {
+        if (banner?.imageUrl) {
+            const list = getCandidateImageUrls(banner.imageUrl);
+            list.push(DEFAULT_FALLBACK_BANNER);
+            setCandidates(list);
+            setCandidateIndex(0);
+        } else if (banner) {
+            setCandidates([DEFAULT_FALLBACK_BANNER]);
+            setCandidateIndex(0);
+        }
+    }, [banner]);
+
+    if (dismissed || !banner) {
         return null;
     }
 
@@ -39,7 +56,13 @@ const VacancyAdBanner = () => {
         sessionStorage.setItem('vacancy_banner_dismissed', 'true');
     };
 
-    const directImg = getDirectImageUrl(banner.imageUrl);
+    const handleImgError = () => {
+        if (candidateIndex + 1 < candidates.length) {
+            setCandidateIndex(prev => prev + 1);
+        }
+    };
+
+    const currentImg = candidates[candidateIndex] || getDirectImageUrl(banner.imageUrl) || DEFAULT_FALLBACK_BANNER;
 
     return (
         <>
@@ -49,22 +72,24 @@ const VacancyAdBanner = () => {
                     className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-orange-500/10 shadow-xl hover:shadow-2xl transition-all duration-300 dark:border-amber-400/20"
                 >
                     {/* Glowing highlight animation */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10 pointer-events-none"></div>
 
                     {/* Banner Image Container */}
-                    <div className="relative w-full h-36 sm:h-52 md:h-64 overflow-hidden bg-slate-900 flex items-center justify-center">
+                    <div className="relative w-full h-44 sm:h-56 md:h-64 overflow-hidden bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 flex items-center justify-center">
                         <img 
-                            src={directImg} 
+                            src={currentImg} 
                             alt={banner.title || "Urgent Vacancy Circular"}
-                            className="w-full h-full object-cover sm:object-contain group-hover:scale-[1.02] transition-transform duration-500"
-                            loading="lazy"
+                            onError={handleImgError}
+                            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
+                            loading="eager"
                         />
                         
-                        {/* Overlay Gradient for readability */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/30 pointer-events-none"></div>
+                        {/* Overlay Gradients for readability */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-black/30 pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-transparent to-slate-950/60 pointer-events-none"></div>
 
                         {/* Top Badges & Dismiss Button */}
-                        <div className="absolute top-2.5 left-3 sm:top-4 sm:left-4 flex items-center gap-2">
+                        <div className="absolute top-2.5 left-3 sm:top-4 sm:left-4 flex items-center gap-2 z-20">
                             {banner.isUrgent && (
                                 <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-rose-600 text-white shadow-lg shadow-rose-600/40 animate-pulse">
                                     <Flame className="w-3.5 h-3.5" />
@@ -79,7 +104,7 @@ const VacancyAdBanner = () => {
                         {/* Close / Dismiss button */}
                         <button
                             onClick={handleDismiss}
-                            className="absolute top-2.5 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 rounded-full bg-black/60 hover:bg-black text-white/80 hover:text-white backdrop-blur-md transition-all shadow-lg z-10"
+                            className="absolute top-2.5 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 rounded-full bg-black/60 hover:bg-black text-white/80 hover:text-white backdrop-blur-md transition-all shadow-lg z-20"
                             title="Close ad banner"
                             aria-label="Close ad banner"
                         >
@@ -87,9 +112,9 @@ const VacancyAdBanner = () => {
                         </button>
 
                         {/* Bottom Information & Action Bar */}
-                        <div className="absolute bottom-2.5 left-3 right-3 sm:bottom-4 sm:left-6 sm:right-6 flex items-end justify-between gap-3">
+                        <div className="absolute bottom-2.5 left-3 right-3 sm:bottom-4 sm:left-6 sm:right-6 flex items-end justify-between gap-3 z-20">
                             <div className="max-w-[70%]">
-                                <h3 className="text-white text-sm sm:text-lg md:text-xl font-black drop-shadow-md truncate">
+                                <h3 className="text-white text-base sm:text-lg md:text-xl font-black drop-shadow-md truncate">
                                     {banner.title || "We are Hiring! Multiple Openings"}
                                 </h3>
                                 {banner.description && (
@@ -157,8 +182,10 @@ const VacancyAdBanner = () => {
                                     </a>
                                 )}
                                 <a
-                                    href={directImg}
+                                    href={currentImg}
                                     download="Krishna_Vacancy_Banner.jpg"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
                                 >
                                     <Download className="w-3.5 h-3.5" />
@@ -174,10 +201,11 @@ const VacancyAdBanner = () => {
                         </div>
 
                         {/* Modal Image Body */}
-                        <div className="flex-1 overflow-auto p-2 bg-slate-950 flex items-center justify-center">
+                        <div className="flex-1 overflow-auto p-2 bg-slate-950 flex items-center justify-center min-h-[250px]">
                             <img 
-                                src={directImg} 
+                                src={currentImg} 
                                 alt={banner.title} 
+                                onError={handleImgError}
                                 className="max-w-full max-h-[70vh] object-contain rounded-lg"
                             />
                         </div>

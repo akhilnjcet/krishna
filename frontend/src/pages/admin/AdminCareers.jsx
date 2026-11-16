@@ -785,7 +785,7 @@ const AdminCareers = () => {
                                 {/* Image URL / Upload */}
                                 <div className="sm:col-span-2 space-y-2">
                                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
-                                        Banner Image * (Upload or paste Image URL)
+                                        Banner Image * (Upload, paste Image/Drive URL, or choose preset)
                                     </label>
                                     <div className="flex flex-col sm:flex-row items-center gap-3">
                                         <input
@@ -793,7 +793,7 @@ const AdminCareers = () => {
                                             required
                                             placeholder="Paste image URL (Cloudinary, web, or Drive direct URL)..."
                                             value={banner.imageUrl}
-                                            onChange={(e) => setBanner({ ...banner, imageUrl: e.target.value })}
+                                            onChange={(e) => setBanner({ ...banner, imageUrl: getDirectImageUrl(e.target.value) })}
                                             className="w-full sm:flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono"
                                         />
                                         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -807,6 +807,32 @@ const AdminCareers = () => {
                                                 <span className="text-xs text-blue-600 animate-pulse font-bold">Uploading...</span>
                                             )}
                                         </div>
+                                    </div>
+
+                                    {/* Quick Banner Presets */}
+                                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                                        <span className="text-[11px] font-bold text-slate-400">Sample High-Def Presets:</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setBanner({ ...banner, imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=1920' })}
+                                            className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                                        >
+                                            Precision Workshop
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setBanner({ ...banner, imageUrl: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&q=80&w=1920' })}
+                                            className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                                        >
+                                            CNC Machining
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setBanner({ ...banner, imageUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1920' })}
+                                            className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                                        >
+                                            Industrial Plant
+                                        </button>
                                     </div>
                                 </div>
 
@@ -888,6 +914,10 @@ const AdminCareers = () => {
                                         src={getDirectImageUrl(banner.imageUrl)} 
                                         alt="Preview" 
                                         className="w-full h-48 object-cover"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=1920';
+                                        }}
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4">
                                         <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black w-max uppercase mb-1">

@@ -29,12 +29,15 @@ export const getDirectImageUrl = (url) => {
                  window.location.hostname.startsWith('192.168.')) && !isNative
             );
 
-            if (isLocal) {
+            const signalState = useSignalStore?.getState?.();
+            const isCloudSignal = signalState?.activeSignal === 'cloud';
+            const cloudOrigin = (signalState?.cloudUrl || 'https://krishna-akhilnjcets-projects.vercel.app/api').split('/api')[0];
+
+            if (isNative || isCloudSignal) {
+                origin = cloudOrigin;
+            } else if (isLocal) {
                 const envUrl = import.meta.env.VITE_API_URL;
                 origin = envUrl && envUrl.includes('/api') ? envUrl.split('/api')[0] : 'http://localhost:5000';
-            } else if (isNative) {
-                const cloudUrl = useSignalStore.getState().cloudUrl || 'https://krishna-akhilnjcets-projects.vercel.app/api';
-                origin = cloudUrl.includes('/api') ? cloudUrl.split('/api')[0] : cloudUrl;
             } else {
                 const envUrl = import.meta.env.VITE_API_URL;
                 if (envUrl && envUrl.startsWith('http') && envUrl.includes('/api')) {
@@ -47,19 +50,21 @@ export const getDirectImageUrl = (url) => {
         return `${origin}${relativePath}`;
     }
 
-    // If it's already a direct lh3 link, just return it
-    if (url.includes('googleusercontent.com')) return url;
+    // Direct data URI or pre-formatted thumbnail URL
+    if (url.startsWith('data:image/') || url.includes('drive.google.com/thumbnail')) {
+        return url;
+    }
 
     // Handle Google Drive links
-    if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+    if (url.includes('drive.google.com') || url.includes('docs.google.com') || url.includes('googleusercontent.com')) {
         let fileId = '';
         
-        // Match /file/d/ID/view or /file/d/ID
-        const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        // Match /file/d/ID/view or /file/d/ID or /d/ID
+        const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
         if (fileIdMatch && fileIdMatch[1]) {
             fileId = fileIdMatch[1];
         } else {
-            // Match ?id=ID
+            // Match ?id=ID or &id=ID
             const idParamMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
             if (idParamMatch && idParamMatch[1]) {
                 fileId = idParamMatch[1];
@@ -67,11 +72,42 @@ export const getDirectImageUrl = (url) => {
         }
 
         if (fileId) {
-            return `https://lh3.googleusercontent.com/d/${fileId}`;
+            // Google Drive thumbnail endpoint renders full high-resolution images & PDFs without 403 hotlink blocks
+            return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1920`;
         }
     }
 
     return url;
+};
+
+/**
+ * Returns an array of progressive candidate URLs for an image to ensure maximum resilience
+ * across network types, Google Drive policy changes, and localhost/cloud transitions.
+ */
+export const getCandidateImageUrls = (url) => {
+    if (!url) return [];
+    const direct = getDirectImageUrl(url);
+    const candidates = [direct];
+
+    // Google Drive variations
+    if (url.includes('drive.google.com') || url.includes('docs.google.com') || url.includes('googleusercontent.com')) {
+        const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (fileIdMatch && fileIdMatch[1]) {
+            const id = fileIdMatch[1];
+            candidates.push(`https://drive.google.com/thumbnail?id=${id}&sz=w1920`);
+            candidates.push(`https://drive.google.com/uc?export=view&id=${id}`);
+            candidates.push(`https://lh3.googleusercontent.com/d/${id}`);
+        }
+    }
+
+    // Relative /uploads/ fallback to production cloud URL if local endpoint fails
+    if (url.includes('/uploads/')) {
+        const relativePath = url.substring(url.indexOf('/uploads/'));
+        candidates.push(`https://krishna-akhilnjcets-projects.vercel.app${relativePath}`);
+        candidates.push(`https://krishna-akhilnjcets-projects.vercel.app/api${relativePath}`);
+    }
+
+    return [...new Set(candidates.filter(Boolean))];
 };
 
 /**
