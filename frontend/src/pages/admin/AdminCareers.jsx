@@ -302,43 +302,45 @@ const AdminCareers = () => {
                 </div>
             )}
 
-            {/* Navigation Tabs */}
-            <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-2 sm:space-x-4">
-                <button
-                    onClick={() => setActiveTab('vacancies')}
-                    className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
-                        activeTab === 'vacancies'
-                            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                    }`}
-                >
-                    <Briefcase className="w-4 h-4" />
-                    <span>Job Vacancies ({vacancies.length})</span>
-                </button>
+            {/* Navigation Tabs (Mobile Scrollable) */}
+            <div className="w-full overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-2 sm:space-x-4 w-max min-w-full pb-1">
+                    <button
+                        onClick={() => setActiveTab('vacancies')}
+                        className={`flex-shrink-0 whitespace-nowrap pb-3 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
+                            activeTab === 'vacancies'
+                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                        }`}
+                    >
+                        <Briefcase className="w-4 h-4 flex-shrink-0" />
+                        <span>Job Vacancies ({vacancies.length})</span>
+                    </button>
 
-                <button
-                    onClick={() => setActiveTab('banner')}
-                    className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
-                        activeTab === 'banner'
-                            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                    }`}
-                >
-                    <Flame className="w-4 h-4 text-amber-500" />
-                    <span>Urgent Vacancy Ad Banner</span>
-                </button>
+                    <button
+                        onClick={() => setActiveTab('banner')}
+                        className={`flex-shrink-0 whitespace-nowrap pb-3 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
+                            activeTab === 'banner'
+                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                        }`}
+                    >
+                        <Flame className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                        <span>Urgent Vacancy Ad Banner</span>
+                    </button>
 
-                <button
-                    onClick={() => setActiveTab('announcements')}
-                    className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
-                        activeTab === 'announcements'
-                            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                    }`}
-                >
-                    <Megaphone className="w-4 h-4 text-indigo-500" />
-                    <span>Scrolling Announcements ({announcements.length})</span>
-                </button>
+                    <button
+                        onClick={() => setActiveTab('announcements')}
+                        className={`flex-shrink-0 whitespace-nowrap pb-3 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
+                            activeTab === 'announcements'
+                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                        }`}
+                    >
+                        <Megaphone className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                        <span>Scrolling Announcements ({announcements.length})</span>
+                    </button>
+                </div>
             </div>
 
             {/* ═════════════════════════════════════════════════════════════════════ */}

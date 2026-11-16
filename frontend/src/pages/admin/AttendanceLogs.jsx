@@ -362,48 +362,53 @@ const AttendanceLogs = () => {
                 </div>
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('logs')}
-                    className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition flex items-center gap-2 ${
-                        activeTab === 'logs'
-                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
-                    }`}
-                >
-                    <History className="w-4 h-4" /> Biometric & Location Logs
-                </button>
+            {/* Navigation Tabs (Mobile Scrollable & Responsive) */}
+            <div className="w-full overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 w-max min-w-full">
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('logs')}
+                        className={`flex-shrink-0 whitespace-nowrap px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition flex items-center gap-2 ${
+                            activeTab === 'logs'
+                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+                        }`}
+                    >
+                        <History className="w-4 h-4 flex-shrink-0" />
+                        <span>Biometric & Location Logs</span>
+                    </button>
 
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('exceptions')}
-                    className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition flex items-center gap-2 relative ${
-                        activeTab === 'exceptions'
-                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
-                    }`}
-                >
-                    <AlertCircle className="w-4 h-4 text-amber-500" /> Exceptions & Corrections
-                    {pendingExceptionsCount > 0 && (
-                        <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full ml-1">
-                            {pendingExceptionsCount}
-                        </span>
-                    )}
-                </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('exceptions')}
+                        className={`flex-shrink-0 whitespace-nowrap px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition flex items-center gap-2 relative ${
+                            activeTab === 'exceptions'
+                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+                        }`}
+                    >
+                        <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                        <span>Exceptions & Corrections</span>
+                        {pendingExceptionsCount > 0 && (
+                            <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full ml-1">
+                                {pendingExceptionsCount}
+                            </span>
+                        )}
+                    </button>
 
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('hub')}
-                    className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition flex items-center gap-2 ${
-                        activeTab === 'hub'
-                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
-                    }`}
-                >
-                    <Calendar className="w-4 h-4" /> Monthly Roster Matrix
-                </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('hub')}
+                        className={`flex-shrink-0 whitespace-nowrap px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition flex items-center gap-2 ${
+                            activeTab === 'hub'
+                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+                        }`}
+                    >
+                        <Calendar className="w-4 h-4 flex-shrink-0" />
+                        <span>Monthly Roster Matrix</span>
+                    </button>
+                </div>
             </div>
 
             {/* TAB 1: Biometric & Location Logs */}
