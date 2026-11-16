@@ -23,6 +23,7 @@ const DEFAULT_HEADER = {
     phone: '+91 94479 40835',
     email: 'contact@krishnaengg.com',
     website: 'www.krishnaengg.com',
+    logoUrl: '/logo512.png',
     dateText: `Date: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`,
     footerText: 'ISO 9001:2015 Certified  ◆  Registered MSME Enterprise  ◆  Precision Structural Fabrication & Industrial Engineering'
 };
@@ -157,13 +158,38 @@ const DigitalLetterPad = () => {
         pushSnapshot(getCurrentState());
     };
 
-    // Initial History & LocalStorage Load
+    // Initial History & LocalStorage Load + Dynamic Branding Fetch
     useEffect(() => {
+        const fetchBranding = async () => {
+            try {
+                const res = await api.get('/settings/public');
+                if (Array.isArray(res.data)) {
+                    const map = {};
+                    res.data.forEach(item => { map[item.key] = item.value; });
+                    setHeaderData(prev => ({
+                        ...prev,
+                        logoUrl: prev.logoUrl && prev.logoUrl !== '/logo512.png' ? prev.logoUrl : (map.company_logo || '/logo512.png'),
+                        companyName: prev.companyName || map.company_name || 'KRISHNA ENGINEERING',
+                        address: prev.address || map.company_address || map.footer_address || prev.address,
+                        phone: prev.phone || map.company_phone || map.phone || prev.phone,
+                        email: prev.email || map.company_email || map.email || prev.email,
+                        website: prev.website || map.company_website || map.website || prev.website
+                    }));
+                }
+            } catch (_) {}
+        };
+
         try {
             const cached = localStorage.getItem(DRAFT_STORAGE_KEY);
             if (cached) {
                 const parsed = JSON.parse(cached);
-                if (parsed.headerData) setHeaderData(parsed.headerData);
+                if (parsed.headerData) {
+                    setHeaderData({
+                        ...DEFAULT_HEADER,
+                        ...parsed.headerData,
+                        logoUrl: parsed.headerData.logoUrl || '/logo512.png'
+                    });
+                }
                 if (Array.isArray(parsed.textBlocks)) setTextBlocks(parsed.textBlocks);
                 if (parsed.hasAddressBlock !== undefined) setHasAddressBlock(parsed.hasAddressBlock);
                 if (parsed.addressData) setAddressData(parsed.addressData);
@@ -182,6 +208,8 @@ const DigitalLetterPad = () => {
         } catch (err) {
             console.warn('Failed to load letterpad draft:', err);
         }
+
+        fetchBranding();
     }, []);
 
     // Auto-save debounced (1.5s)
@@ -1126,85 +1154,187 @@ const DigitalLetterPad = () => {
                             style={{ backgroundColor: '#ffffff' }}
                         >
                             {/* ── TOP HEADER SECTION ── */}
-                            <div className="pt-8 px-10 pb-4">
-                                <div className="flex items-start justify-between gap-6">
-                                    {/* Left: Blue Gear & Amber Rising Arrow Logo + Brand Title */}
-                                    <div className="flex items-center gap-4">
-                                        {/* Precision SVG Logo */}
-                                        <svg viewBox="0 0 100 100" className="w-16 h-16 shrink-0" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            {/* Navy Blue Gear (Industrial Teeth & Hub) */}
-                                            <g fill="#1E3A8A">
-                                                <rect x="44" y="6" width="12" height="12" rx="2" />
-                                                <rect x="44" y="82" width="12" height="12" rx="2" />
-                                                <rect x="6" y="44" width="12" height="12" rx="2" />
-                                                <rect x="82" y="44" width="12" height="12" rx="2" />
-                                                <rect x="17" y="17" width="12" height="12" rx="2" transform="rotate(45 23 23)" />
-                                                <rect x="71" y="17" width="12" height="12" rx="2" transform="rotate(45 77 23)" />
-                                                <rect x="17" y="71" width="12" height="12" rx="2" transform="rotate(45 23 77)" />
-                                                <rect x="71" y="71" width="12" height="12" rx="2" transform="rotate(45 77 77)" />
-                                                <circle cx="50" cy="50" r="36" />
-                                            </g>
-                                            {/* Inner White Cutout */}
-                                            <circle cx="50" cy="50" r="22" fill="#ffffff" />
-                                            {/* Center Gear Ring */}
-                                            <circle cx="50" cy="50" r="12" fill="#1E3A8A" />
-                                            <circle cx="50" cy="50" r="5" fill="#ffffff" />
-                                            
-                                            {/* Amber Rising Arrow */}
-                                            <path 
-                                                d="M 16 82 C 30 76, 42 64, 58 42 L 52 42 L 78 18 L 80 44 L 72 44 C 60 58, 44 72, 20 86 Z" 
-                                                fill="url(#amberGrad)" 
+                            <div className="pt-8 px-10 pb-3">
+                                <div className="flex items-start justify-between gap-4">
+                                    {/* Left: Official Krishna Engineering Logo + Brand Title */}
+                                    <div className="flex items-center gap-3.5">
+                                        {/* Official Brand Logo */}
+                                        <div className="relative group shrink-0">
+                                            <img
+                                                src={headerData.logoUrl || '/logo512.png'}
+                                                alt="Krishna Engineering Logo"
+                                                className="w-16 h-16 object-contain rounded-xl shadow-sm border border-slate-200/80 bg-white p-1"
+                                                onError={(e) => {
+                                                    if (!e.target.src.endsWith('/logo512.png')) {
+                                                        e.target.src = '/logo512.png';
+                                                    }
+                                                }}
                                             />
-                                            <defs>
-                                                <linearGradient id="amberGrad" x1="16" y1="84" x2="80" y2="18" gradientUnits="userSpaceOnUse">
-                                                    <stop stopColor="#F59E0B" />
-                                                    <stop offset="0.6" stopColor="#D97706" />
-                                                    <stop offset="1" stopColor="#B45309" />
-                                                </linearGradient>
-                                            </defs>
-                                        </svg>
+                                            <label 
+                                                className="no-print absolute inset-0 bg-blue-900/70 text-white rounded-xl flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition text-[9px] font-bold"
+                                                title="Click to change logo"
+                                            >
+                                                <span>Change</span>
+                                                <input 
+                                                    type="file" 
+                                                    accept="image/*" 
+                                                    className="hidden" 
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            const reader = new FileReader();
+                                                            reader.onload = (ev) => {
+                                                                setHeaderData(prev => ({ ...prev, logoUrl: ev.target.result }));
+                                                                recordChange();
+                                                            };
+                                                            reader.readAsDataURL(file);
+                                                        }
+                                                    }}
+                                                />
+                                            </label>
+                                        </div>
 
-                                        {/* Company Name & Subtitle */}
+                                        {/* Company Name & Subtitle - Directly Editable */}
                                         <div>
-                                            <h1 className="text-[26px] font-black uppercase tracking-wider text-[#0F172A] leading-none">
+                                            <h1 
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                onBlur={(e) => {
+                                                    const val = e.currentTarget.textContent?.trim();
+                                                    if (val) {
+                                                        setHeaderData(prev => ({ ...prev, companyName: val }));
+                                                        recordChange();
+                                                    }
+                                                }}
+                                                className="text-[25px] font-black uppercase tracking-wider text-[#0F172A] leading-none outline-none hover:ring-1 hover:ring-blue-400 focus:ring-2 focus:ring-blue-600 rounded px-1 transition cursor-text"
+                                                title="Click to edit company name directly"
+                                            >
                                                 {headerData.companyName}
                                             </h1>
-                                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#D97706] mt-1.5 max-w-sm">
+                                            <p 
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                onBlur={(e) => {
+                                                    setHeaderData(prev => ({ ...prev, subtitle: e.currentTarget.textContent?.trim() || '' }));
+                                                    recordChange();
+                                                }}
+                                                className="text-[9px] font-black uppercase tracking-[0.18em] text-[#D97706] mt-1.5 max-w-sm outline-none hover:ring-1 hover:ring-blue-400 focus:ring-2 focus:ring-blue-600 rounded px-1 transition cursor-text"
+                                                title="Click to edit subtitle directly"
+                                            >
                                                 {headerData.subtitle}
                                             </p>
                                         </div>
                                     </div>
 
-                                    {/* Right: Contact Details with Small Icons */}
-                                    <div className="text-right space-y-1 text-[10px] text-slate-700 font-semibold leading-tight pt-1">
-                                        <div className="flex items-center justify-end gap-1.5">
-                                            <span className="truncate max-w-[280px]">{headerData.address}</span>
-                                            <MapPin className="w-3 h-3 text-[#1E3A8A] shrink-0" />
+                                    {/* Right: Contact Details with Small Icons - Directly Editable & Full Address */}
+                                    <div className="text-right space-y-1 text-[10px] text-slate-700 font-semibold leading-tight pt-0.5 max-w-[380px] shrink-0">
+                                        <div className="flex items-start justify-end gap-1.5">
+                                            <span 
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                onBlur={(e) => {
+                                                    setHeaderData(prev => ({ ...prev, address: e.currentTarget.textContent?.trim() || '' }));
+                                                    recordChange();
+                                                }}
+                                                className="text-right leading-snug break-words outline-none hover:ring-1 hover:ring-blue-400 focus:ring-2 focus:ring-blue-600 rounded px-1 transition cursor-text max-w-[340px]"
+                                                title="Click to edit address (shows fully without cut-off)"
+                                            >
+                                                {headerData.address}
+                                            </span>
+                                            <MapPin className="w-3 h-3 text-[#1E3A8A] shrink-0 mt-0.5" />
                                         </div>
                                         <div className="flex items-center justify-end gap-1.5">
-                                            <span>Phone: {headerData.phone}</span>
+                                            <span className="text-slate-500">Phone:</span>
+                                            <span 
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                onBlur={(e) => {
+                                                    setHeaderData(prev => ({ ...prev, phone: e.currentTarget.textContent?.trim() || '' }));
+                                                    recordChange();
+                                                }}
+                                                className="outline-none hover:ring-1 hover:ring-blue-400 focus:ring-2 focus:ring-blue-600 rounded px-1 transition cursor-text"
+                                                title="Click to edit phone directly"
+                                            >
+                                                {headerData.phone}
+                                            </span>
                                             <Phone className="w-3 h-3 text-[#1E3A8A] shrink-0" />
                                         </div>
                                         <div className="flex items-center justify-end gap-1.5">
-                                            <span>Email: {headerData.email}</span>
+                                            <span className="text-slate-500">Email:</span>
+                                            <span 
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                onBlur={(e) => {
+                                                    setHeaderData(prev => ({ ...prev, email: e.currentTarget.textContent?.trim() || '' }));
+                                                    recordChange();
+                                                }}
+                                                className="outline-none hover:ring-1 hover:ring-blue-400 focus:ring-2 focus:ring-blue-600 rounded px-1 transition cursor-text"
+                                                title="Click to edit email directly"
+                                            >
+                                                {headerData.email}
+                                            </span>
                                             <Mail className="w-3 h-3 text-[#1E3A8A] shrink-0" />
                                         </div>
                                         <div className="flex items-center justify-end gap-1.5">
-                                            <span className="font-bold text-[#1E3A8A]">{headerData.website}</span>
+                                            <span 
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                onBlur={(e) => {
+                                                    setHeaderData(prev => ({ ...prev, website: e.currentTarget.textContent?.trim() || '' }));
+                                                    recordChange();
+                                                }}
+                                                className="font-bold text-[#1E3A8A] outline-none hover:ring-1 hover:ring-blue-400 focus:ring-2 focus:ring-blue-600 rounded px-1 transition cursor-text"
+                                                title="Click to edit website directly"
+                                            >
+                                                {headerData.website}
+                                            </span>
                                             <Globe className="w-3 h-3 text-[#1E3A8A] shrink-0" />
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Thin Navy Divider with Short Amber Accent */}
-                                <div className="mt-4 relative">
+                                <div className="mt-3.5 relative">
                                     <div className="w-full h-[2px] bg-[#0F172A]"></div>
                                     <div className="w-24 h-[4px] bg-[#F59E0B] absolute -top-[1px] left-0 rounded-full"></div>
                                 </div>
 
-                                {/* Preset Date, Right-Aligned Below the Divider */}
-                                <div className="flex justify-end pt-2 text-xs font-bold text-[#0F172A]">
-                                    <span>{headerData.dateText}</span>
+                                {/* Customizable Date, Right-Aligned Below the Divider */}
+                                <div className="flex items-center justify-end gap-2 pt-2 text-xs font-bold text-[#0F172A]">
+                                    <div 
+                                        contentEditable
+                                        suppressContentEditableWarning
+                                        onBlur={(e) => {
+                                            setHeaderData(prev => ({ ...prev, dateText: e.currentTarget.textContent?.trim() || '' }));
+                                            recordChange();
+                                        }}
+                                        className="outline-none hover:ring-1 hover:ring-blue-400 focus:ring-2 focus:ring-blue-600 rounded px-1.5 py-0.5 cursor-text transition"
+                                        title="Click to edit date text directly (e.g. Date: 17 November 2026)"
+                                    >
+                                        {headerData.dateText}
+                                    </div>
+                                    <div className="no-print relative inline-flex items-center">
+                                        <label 
+                                            htmlFor="letterpad-date-picker" 
+                                            className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer rounded hover:bg-slate-100 transition"
+                                            title="Pick date from calendar"
+                                        >
+                                            <Calendar className="w-3.5 h-3.5" />
+                                        </label>
+                                        <input 
+                                            id="letterpad-date-picker"
+                                            type="date"
+                                            onChange={(e) => {
+                                                if (e.target.value) {
+                                                    const d = new Date(e.target.value);
+                                                    const formatted = `Date: ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+                                                    setHeaderData(prev => ({ ...prev, dateText: formatted }));
+                                                    recordChange();
+                                                }
+                                            }}
+                                            className="sr-only"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
@@ -1440,7 +1570,53 @@ const DigitalLetterPad = () => {
                             </button>
                         </div>
 
-                        <div className="space-y-3 text-xs">
+                        <div className="space-y-3.5 text-xs max-h-[70vh] overflow-y-auto pr-1">
+                            {/* Logo Customization */}
+                            <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <img 
+                                        src={headerData.logoUrl || '/logo512.png'} 
+                                        alt="Logo Preview" 
+                                        className="w-12 h-12 object-contain bg-white rounded-xl p-1 border border-slate-200 shadow-sm"
+                                        onError={(e) => { e.target.src = '/logo512.png'; }}
+                                    />
+                                    <div>
+                                        <p className="font-bold text-slate-800 dark:text-slate-200">Company Logo</p>
+                                        <p className="text-[10px] text-slate-500">Official Krishna Engineering Logo</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <label className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300 font-bold rounded-lg cursor-pointer transition text-[11px]">
+                                        Upload Logo
+                                        <input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            className="hidden" 
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onload = (ev) => {
+                                                        setHeaderData({ ...headerData, logoUrl: ev.target.result });
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                    {headerData.logoUrl && headerData.logoUrl !== '/logo512.png' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setHeaderData({ ...headerData, logoUrl: '/logo512.png' })}
+                                            className="px-2 py-1.5 text-slate-500 hover:text-slate-800 text-[11px] font-semibold"
+                                            title="Reset to default official logo"
+                                        >
+                                            Reset
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
                             <div>
                                 <label className="font-bold text-slate-600 dark:text-slate-400 block mb-1">Company Name</label>
                                 <input
@@ -1489,30 +1665,69 @@ const DigitalLetterPad = () => {
                                 />
                             </div>
                             <div>
-                                <label className="font-bold text-slate-600 dark:text-slate-400 block mb-1">Company Address</label>
-                                <input
-                                    type="text"
+                                <label className="font-bold text-slate-600 dark:text-slate-400 block mb-1">Company Address (Shows fully on letterhead)</label>
+                                <textarea
+                                    rows={2}
                                     value={headerData.address}
                                     onChange={(e) => setHeaderData({ ...headerData, address: e.target.value })}
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-bold outline-none"
+                                    placeholder="Full address..."
                                 />
                             </div>
                             <div>
-                                <label className="font-bold text-slate-600 dark:text-slate-400 block mb-1">Letter Date Text</label>
-                                <input
-                                    type="text"
-                                    value={headerData.dateText}
-                                    onChange={(e) => setHeaderData({ ...headerData, dateText: e.target.value })}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-bold outline-none"
-                                />
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="font-bold text-slate-600 dark:text-slate-400 block">Letter Date Text</label>
+                                    <button 
+                                        type="button"
+                                        onClick={() => {
+                                            const todayStr = `Date: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+                                            setHeaderData({ ...headerData, dateText: todayStr });
+                                        }}
+                                        className="text-[10px] text-blue-600 dark:text-blue-400 font-bold hover:underline"
+                                    >
+                                        Set to Today
+                                    </button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={headerData.dateText}
+                                        onChange={(e) => setHeaderData({ ...headerData, dateText: e.target.value })}
+                                        className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-bold outline-none"
+                                        placeholder="e.g. Date: 17 November 2026"
+                                    />
+                                    <input
+                                        type="date"
+                                        onChange={(e) => {
+                                            if (e.target.value) {
+                                                const d = new Date(e.target.value);
+                                                const formatted = `Date: ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+                                                setHeaderData({ ...headerData, dateText: formatted });
+                                            }
+                                        }}
+                                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 font-bold outline-none cursor-pointer"
+                                        title="Pick date from calendar"
+                                    />
+                                </div>
                             </div>
                             <div>
-                                <label className="font-bold text-slate-600 dark:text-slate-400 block mb-1">Footer Remarks (Use ◆ as separator)</label>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="font-bold text-slate-600 dark:text-slate-400 block">Footer Remarks</label>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setHeaderData(prev => ({ ...prev, footerText: prev.footerText + '  ◆  ' }))}
+                                        className="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800 flex items-center gap-1"
+                                        title="Insert diamond separator"
+                                    >
+                                        <span>+ Insert ◆</span>
+                                    </button>
+                                </div>
                                 <textarea
                                     rows={2}
                                     value={headerData.footerText}
                                     onChange={(e) => setHeaderData({ ...headerData, footerText: e.target.value })}
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-bold outline-none"
+                                    placeholder="Enter footer terms or certifications..."
                                 />
                             </div>
                         </div>
