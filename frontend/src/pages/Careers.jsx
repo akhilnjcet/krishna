@@ -15,10 +15,29 @@ const Careers = () => {
     const [selectedDept, setSelectedDept] = useState('All');
     const [previewCircular, setPreviewCircular] = useState(null);
     const [applyModalVacancy, setApplyModalVacancy] = useState(null);
+    const [careerContact, setCareerContact] = useState({
+        whatsappNumber: '+91 9447940835',
+        phoneNumber: '+91 9447940835',
+        email: 'contact@krishnaengg.com',
+        walkInAddress: 'Krishna Engineering Works, Industrial Area, Thiruvazhiyode, Palakkad.',
+        headingNote: 'Reach our hiring desk directly via WhatsApp, Phone, or Email with your resume.'
+    });
 
     useEffect(() => {
         fetchVacancies();
+        fetchContact();
     }, []);
+
+    const fetchContact = async () => {
+        try {
+            const res = await api.get('/vacancies/contact');
+            if (res.data?.success && res.data.data) {
+                setCareerContact(prev => ({ ...prev, ...res.data.data }));
+            }
+        } catch (err) {
+            // Silently fallback to defaults
+        }
+    };
 
     const fetchVacancies = async () => {
         setLoading(true);
@@ -397,55 +416,63 @@ const Careers = () => {
                                 Apply for {applyModalVacancy.title}
                             </h3>
                             <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">
-                                Reach our hiring desk directly via WhatsApp, Phone, or Email with your resume.
+                                {careerContact.headingNote || 'Reach our hiring desk directly via WhatsApp, Phone, or Email with your resume.'}
                             </p>
                         </div>
 
                         <div className="space-y-3">
                             {/* WhatsApp Direct */}
-                            <a
-                                href={`https://wa.me/919447940835?text=${encodeURIComponent(`Hi, I am interested in applying for the position of "${applyModalVacancy.title}" at Krishna Engineering Works.`)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-between p-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <MessageCircle className="w-5 h-5" />
-                                    <span>Apply via WhatsApp</span>
-                                </div>
-                                <span className="text-xs opacity-90">+91 9447940835</span>
-                            </a>
+                            {careerContact.whatsappNumber && (
+                                <a
+                                    href={`https://wa.me/${(careerContact.whatsappNumber || '919447940835').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi, I am interested in applying for the position of "${applyModalVacancy.title}" at Krishna Engineering Works.`)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-between p-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <MessageCircle className="w-5 h-5" />
+                                        <span>Apply via WhatsApp</span>
+                                    </div>
+                                    <span className="text-xs opacity-90">{careerContact.whatsappNumber}</span>
+                                </a>
+                            )}
 
                             {/* Direct Call */}
-                            <a
-                                href="tel:+919447940835"
-                                className="flex items-center justify-between p-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-600/20 transition-all"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <Phone className="w-5 h-5" />
-                                    <span>Call HR Desk</span>
-                                </div>
-                                <span className="text-xs opacity-90">+91 9447940835</span>
-                            </a>
+                            {careerContact.phoneNumber && (
+                                <a
+                                    href={`tel:${(careerContact.phoneNumber || '+91 9447940835').replace(/[^0-9+]/g, '')}`}
+                                    className="flex items-center justify-between p-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-600/20 transition-all"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Phone className="w-5 h-5" />
+                                        <span>Call HR Desk</span>
+                                    </div>
+                                    <span className="text-xs opacity-90">{careerContact.phoneNumber}</span>
+                                </a>
+                            )}
 
                             {/* Email Resume */}
-                            <a
-                                href={`mailto:contact@krishnaengg.com?subject=${encodeURIComponent(`Job Application: ${applyModalVacancy.title}`)}&body=${encodeURIComponent(`Dear Hiring Manager,\n\nI am writing to express my interest in the position of ${applyModalVacancy.title} at Krishna Engineering Works.\n\nPlease find my resume attached.\n\nThank you,\n`)}`}
-                                className="flex items-center justify-between p-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 rounded-2xl font-bold text-sm border border-slate-200 dark:border-slate-700 transition-all"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <Mail className="w-5 h-5 text-blue-500" />
-                                    <span>Email Resume</span>
-                                </div>
-                                <span className="text-xs text-slate-500">contact@krishnaengg.com</span>
-                            </a>
+                            {careerContact.email && (
+                                <a
+                                    href={`mailto:${careerContact.email}?subject=${encodeURIComponent(`Job Application: ${applyModalVacancy.title}`)}&body=${encodeURIComponent(`Dear Hiring Manager,\n\nI am writing to express my interest in the position of ${applyModalVacancy.title} at Krishna Engineering Works.\n\nPlease find my resume attached.\n\nThank you,\n`)}`}
+                                    className="flex items-center justify-between p-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 rounded-2xl font-bold text-sm border border-slate-200 dark:border-slate-700 transition-all"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Mail className="w-5 h-5 text-blue-500" />
+                                        <span>Email Resume</span>
+                                    </div>
+                                    <span className="text-xs text-slate-500">{careerContact.email}</span>
+                                </a>
+                            )}
                         </div>
 
-                        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
-                            <p className="text-[11px] text-slate-400">
-                                Walk-in: Krishna Engineering Works, Industrial Area, Thiruvazhiyode, Palakkad.
-                            </p>
-                        </div>
+                        {careerContact.walkInAddress && (
+                            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
+                                <p className="text-[11px] text-slate-400">
+                                    Walk-in: {careerContact.walkInAddress}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

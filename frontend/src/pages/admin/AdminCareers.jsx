@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
     Briefcase, Plus, Trash2, Edit3, Eye, FileText, Download,
     ExternalLink, Upload, AlertTriangle, Megaphone, Flame,
-    Check, X, Image as ImageIcon, Save, RefreshCw, Sparkles, Clock, MapPin
+    Check, X, Image as ImageIcon, Save, RefreshCw, Sparkles, Clock, MapPin,
+    Phone, Mail, MessageCircle, PhoneCall
 } from 'lucide-react';
 import api from '../../services/api';
 import { getDirectImageUrl } from '../../utils/imageUtils';
 
 const AdminCareers = () => {
-    const [activeTab, setActiveTab] = useState('vacancies'); // 'vacancies' | 'banner' | 'announcements'
+    const [activeTab, setActiveTab] = useState('vacancies'); // 'vacancies' | 'banner' | 'announcements' | 'contact'
     const [vacancies, setVacancies] = useState([]);
     const [announcements, setAnnouncements] = useState([]);
     const [banner, setBanner] = useState({
@@ -20,6 +21,14 @@ const AdminCareers = () => {
         isActive: true,
         isUrgent: true
     });
+    const [careerContact, setCareerContact] = useState({
+        whatsappNumber: '+91 9447940835',
+        phoneNumber: '+91 9447940835',
+        email: 'contact@krishnaengg.com',
+        walkInAddress: 'Krishna Engineering Works, Industrial Area, Thiruvazhiyode, Palakkad.',
+        headingNote: 'Reach our hiring desk directly via WhatsApp, Phone, or Email with your resume.'
+    });
+    const [savingContact, setSavingContact] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [uploadingFile, setUploadingFile] = useState(false);
@@ -58,16 +67,20 @@ const AdminCareers = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [vacRes, annRes, banRes] = await Promise.all([
+            const [vacRes, annRes, banRes, contactRes] = await Promise.all([
                 api.get('/vacancies/admin'),
                 api.get('/announcements/admin'),
-                api.get('/vacancies/banner')
+                api.get('/vacancies/banner'),
+                api.get('/vacancies/contact')
             ]);
 
             if (vacRes.data?.success) setVacancies(vacRes.data.data);
             if (annRes.data?.success) setAnnouncements(annRes.data.data);
             if (banRes.data?.success && banRes.data.data) {
                 setBanner(banRes.data.data);
+            }
+            if (contactRes.data?.success && contactRes.data.data) {
+                setCareerContact(prev => ({ ...prev, ...contactRes.data.data }));
             }
         } catch (err) {
             console.error('Error fetching admin career data:', err);
@@ -286,6 +299,25 @@ const AdminCareers = () => {
         }
     };
 
+    // ─── Career Contact Settings Actions ─────────────────────────────────────────
+    const handleSaveContact = async (e) => {
+        e.preventDefault();
+        setSavingContact(true);
+        try {
+            const res = await api.post('/vacancies/contact', careerContact);
+            if (res.data?.success) {
+                showNotification('success', 'Hiring contact details updated successfully!');
+                if (res.data.data) {
+                    setCareerContact(prev => ({ ...prev, ...res.data.data }));
+                }
+            }
+        } catch (err) {
+            showNotification('error', err.response?.data?.message || err.message);
+        } finally {
+            setSavingContact(false);
+        }
+    };
+
     return (
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
             {/* Header Banner */}
@@ -358,6 +390,17 @@ const AdminCareers = () => {
                     >
                         <Megaphone className="w-4 h-4 text-indigo-500 flex-shrink-0" />
                         <span>Scrolling Announcements ({announcements.length})</span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('contact')}
+                        className={`flex-shrink-0 whitespace-nowrap pb-3 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${activeTab === 'contact'
+                            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                            }`}
+                    >
+                        <PhoneCall className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                        <span>Hiring Contact Details</span>
                     </button>
                 </div>
             </div>
@@ -1073,6 +1116,233 @@ const AdminCareers = () => {
                                 ))}
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* ═════════════════════════════════════════════════════════════════════ */}
+            {/* TAB 4: HIRING CONTACT DETAILS EDIT                                    */}
+            {/* ═════════════════════════════════════════════════════════════════════ */}
+            {activeTab === 'contact' && (
+                <div className="space-y-6">
+                    {/* Intro */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                        <div>
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                                <PhoneCall className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                                <span>Hiring Desk Contact Settings</span>
+                            </h3>
+                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                                Configure the official WhatsApp, phone, email, and walk-in address shown when candidates click "Apply Now" on any vacancy.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                        {/* Editor Form */}
+                        <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+                            <form onSubmit={handleSaveContact} className="space-y-5">
+                                {/* WhatsApp Number */}
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2">
+                                        <MessageCircle className="w-4 h-4 text-emerald-500" />
+                                        <span>WhatsApp Business / HR Number *</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="+91 9447940835"
+                                        value={careerContact.whatsappNumber}
+                                        onChange={(e) => setCareerContact(prev => ({ ...prev, whatsappNumber: e.target.value }))}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    />
+                                    <p className="text-[11px] text-slate-400 mt-1">
+                                        Candidates clicking this open WhatsApp with an auto-drafted job application message. Include country code (e.g. +91).
+                                    </p>
+                                </div>
+
+                                {/* Phone Call Number */}
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2">
+                                        <Phone className="w-4 h-4 text-blue-500" />
+                                        <span>HR Desk Phone Number *</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="+91 9447940835"
+                                        value={careerContact.phoneNumber}
+                                        onChange={(e) => setCareerContact(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                    />
+                                    <p className="text-[11px] text-slate-400 mt-1">
+                                        Shown on the "Call HR Desk" button. Triggers a direct phone call when tapped on mobile.
+                                    </p>
+                                </div>
+
+                                {/* Application Email */}
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2">
+                                        <Mail className="w-4 h-4 text-indigo-500" />
+                                        <span>Official Recruitment Email *</span>
+                                    </label>
+                                    <input
+                                        type="email"
+                                        required
+                                        placeholder="contact@krishnaengg.com"
+                                        value={careerContact.email}
+                                        onChange={(e) => setCareerContact(prev => ({ ...prev, email: e.target.value }))}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    />
+                                    <p className="text-[11px] text-slate-400 mt-1">
+                                        Candidates clicking "Email Resume" will compose an email to this address with the job title in the subject line.
+                                    </p>
+                                </div>
+
+                                {/* Heading Note / Instruction */}
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2">
+                                        <FileText className="w-4 h-4 text-amber-500" />
+                                        <span>Modal Subtitle / Candidate Instruction</span>
+                                    </label>
+                                    <textarea
+                                        rows={2}
+                                        placeholder="Reach our hiring desk directly via WhatsApp, Phone, or Email with your resume."
+                                        value={careerContact.headingNote}
+                                        onChange={(e) => setCareerContact(prev => ({ ...prev, headingNote: e.target.value }))}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                    />
+                                </div>
+
+                                {/* Walk-in Address */}
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2">
+                                        <MapPin className="w-4 h-4 text-rose-500" />
+                                        <span>Walk-in Physical Office Address</span>
+                                    </label>
+                                    <textarea
+                                        rows={2}
+                                        placeholder="Krishna Engineering Works, Industrial Area, Thiruvazhiyode, Palakkad."
+                                        value={careerContact.walkInAddress}
+                                        onChange={(e) => setCareerContact(prev => ({ ...prev, walkInAddress: e.target.value }))}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                    />
+                                    <p className="text-[11px] text-slate-400 mt-1">
+                                        Displayed at the bottom of the candidate application modal for in-person applicants.
+                                    </p>
+                                </div>
+
+                                <div className="pt-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCareerContact({
+                                            whatsappNumber: '+91 9447940835',
+                                            phoneNumber: '+91 9447940835',
+                                            email: 'contact@krishnaengg.com',
+                                            walkInAddress: 'Krishna Engineering Works, Industrial Area, Thiruvazhiyode, Palakkad.',
+                                            headingNote: 'Reach our hiring desk directly via WhatsApp, Phone, or Email with your resume.'
+                                        })}
+                                        className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                                    >
+                                        Reset to Defaults
+                                    </button>
+
+                                    <button
+                                        type="submit"
+                                        disabled={savingContact}
+                                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-400 text-white rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-blue-600/30 transition-all flex items-center gap-2 cursor-pointer"
+                                    >
+                                        {savingContact ? (
+                                            <>
+                                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                                <span>Saving...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="w-4 h-4" />
+                                                <span>Save Contact Details</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* Live Candidate Modal Preview */}
+                        <div className="lg:col-span-5 space-y-3">
+                            <div className="flex items-center justify-between px-2">
+                                <span className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                                    <Eye className="w-4 h-4 text-blue-500" />
+                                    <span>Live Candidate Preview</span>
+                                </span>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
+                                    Auto-Updates
+                                </span>
+                            </div>
+
+                            {/* Simulated Modal Container */}
+                            <div className="bg-slate-900/5 dark:bg-black/40 p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 flex items-center justify-center">
+                                <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                                    {/* Icon & Title Header */}
+                                    <div className="text-center">
+                                        <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
+                                            <Briefcase className="w-6 h-6" />
+                                        </div>
+                                        <h4 className="text-lg font-black text-slate-900 dark:text-white">
+                                            Apply for Senior Fabricator
+                                        </h4>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                                            {careerContact.headingNote || 'Reach our hiring desk directly via WhatsApp, Phone, or Email with your resume.'}
+                                        </p>
+                                    </div>
+
+                                    {/* Modal Action Buttons */}
+                                    <div className="space-y-2.5 pt-2">
+                                        {/* WhatsApp */}
+                                        <div className="flex items-center justify-between p-3 bg-emerald-500 text-white rounded-2xl font-bold text-xs shadow-md shadow-emerald-500/20">
+                                            <div className="flex items-center gap-2.5">
+                                                <MessageCircle className="w-4 h-4" />
+                                                <span>Apply via WhatsApp</span>
+                                            </div>
+                                            <span className="text-[11px] opacity-90 font-mono">
+                                                {careerContact.whatsappNumber || '+91 9447940835'}
+                                            </span>
+                                        </div>
+
+                                        {/* Phone */}
+                                        <div className="flex items-center justify-between p-3 bg-blue-600 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20">
+                                            <div className="flex items-center gap-2.5">
+                                                <Phone className="w-4 h-4" />
+                                                <span>Call HR Desk</span>
+                                            </div>
+                                            <span className="text-[11px] opacity-90 font-mono">
+                                                {careerContact.phoneNumber || '+91 9447940835'}
+                                            </span>
+                                        </div>
+
+                                        {/* Email */}
+                                        <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl font-bold text-xs border border-slate-200 dark:border-slate-700">
+                                            <div className="flex items-center gap-2.5">
+                                                <Mail className="w-4 h-4 text-blue-500" />
+                                                <span>Email Resume</span>
+                                            </div>
+                                            <span className="text-[11px] text-slate-500 truncate max-w-[130px]">
+                                                {careerContact.email || 'contact@krishnaengg.com'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Walk-in Footer */}
+                                    {careerContact.walkInAddress && (
+                                        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
+                                            <p className="text-[10px] text-slate-400 leading-tight">
+                                                <strong className="text-slate-500 dark:text-slate-300">Walk-in:</strong> {careerContact.walkInAddress}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

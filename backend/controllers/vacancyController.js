@@ -1,5 +1,14 @@
 const Vacancy = require('../models/Vacancy');
 const VacancyBanner = require('../models/VacancyBanner');
+const CareerContactSetting = require('../models/CareerContactSetting');
+
+const DEFAULT_CAREER_CONTACT = {
+    whatsappNumber: '+91 9447940835',
+    phoneNumber: '+91 9447940835',
+    email: 'contact@krishnaengg.com',
+    walkInAddress: 'Krishna Engineering Works, Industrial Area, Thiruvazhiyode, Palakkad.',
+    headingNote: 'Reach our hiring desk directly via WhatsApp, Phone, or Email with your resume.'
+};
 
 // @desc    Get active vacancies for public view
 // @route   GET /api/vacancies
@@ -213,6 +222,58 @@ exports.deleteBanner = async (req, res) => {
     try {
         await VacancyBanner.deleteMany({});
         res.json({ success: true, message: 'Vacancy Ad Banner removed successfully.' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// ─── Career Contact Settings ───────────────────────────────────────────────────
+
+// @desc    Get hiring contact details
+// @route   GET /api/vacancies/contact
+// @access  Public
+exports.getCareerContact = async (req, res) => {
+    try {
+        let contact = await CareerContactSetting.findOne();
+        if (!contact) {
+            contact = DEFAULT_CAREER_CONTACT;
+        }
+        res.json({ success: true, data: contact });
+    } catch (error) {
+        res.status(500).json({ success: false, data: DEFAULT_CAREER_CONTACT, message: error.message });
+    }
+};
+
+// @desc    Save/Update hiring contact details
+// @route   POST /api/vacancies/contact
+// @access  Private/Admin
+exports.saveCareerContact = async (req, res) => {
+    try {
+        const { whatsappNumber, phoneNumber, email, walkInAddress, headingNote } = req.body;
+        let contact = await CareerContactSetting.findOne();
+
+        if (contact) {
+            contact.whatsappNumber = whatsappNumber !== undefined ? String(whatsappNumber).trim() : contact.whatsappNumber;
+            contact.phoneNumber = phoneNumber !== undefined ? String(phoneNumber).trim() : contact.phoneNumber;
+            contact.email = email !== undefined ? String(email).trim() : contact.email;
+            contact.walkInAddress = walkInAddress !== undefined ? String(walkInAddress).trim() : contact.walkInAddress;
+            contact.headingNote = headingNote !== undefined ? String(headingNote).trim() : contact.headingNote;
+            contact.updatedAt = new Date();
+            contact.updatedBy = req.user?._id;
+            await contact.save();
+        } else {
+            contact = await CareerContactSetting.create({
+                whatsappNumber: whatsappNumber || DEFAULT_CAREER_CONTACT.whatsappNumber,
+                phoneNumber: phoneNumber || DEFAULT_CAREER_CONTACT.phoneNumber,
+                email: email || DEFAULT_CAREER_CONTACT.email,
+                walkInAddress: walkInAddress || DEFAULT_CAREER_CONTACT.walkInAddress,
+                headingNote: headingNote || DEFAULT_CAREER_CONTACT.headingNote,
+                updatedAt: new Date(),
+                updatedBy: req.user?._id
+            });
+        }
+
+        res.json({ success: true, data: contact, message: 'Hiring contact details updated successfully.' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
