@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Briefcase, MapPin, Clock, Users, FileText, Download, 
     ExternalLink, Search, Flame, Sparkles, Phone, Mail, 
-    MessageCircle, ChevronRight, X, Eye, CheckCircle2, AlertCircle, Building2
+    MessageCircle, ChevronRight, ChevronDown, ChevronUp, X, Eye, CheckCircle2, AlertCircle, Building2
 } from 'lucide-react';
 import api from '../services/api';
 import { getDirectImageUrl } from '../utils/imageUtils';
@@ -15,6 +15,14 @@ const Careers = () => {
     const [selectedDept, setSelectedDept] = useState('All');
     const [previewCircular, setPreviewCircular] = useState(null);
     const [applyModalVacancy, setApplyModalVacancy] = useState(null);
+    const [expandedVacancies, setExpandedVacancies] = useState({});
+
+    const toggleRequirements = (id) => {
+        setExpandedVacancies(prev => ({
+            ...prev,
+            [id]: !prev[id]
+        }));
+    };
     const [careerContact, setCareerContact] = useState({
         whatsappNumber: '+91 9447940835',
         phoneNumber: '+91 9447940835',
@@ -242,24 +250,62 @@ const Careers = () => {
                                         </p>
 
                                         {/* Requirements List */}
-                                        {Array.isArray(vacancy.requirements) && vacancy.requirements.length > 0 && (
-                                            <div className="mb-6 space-y-1.5">
-                                                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
-                                                    Key Requirements:
-                                                </p>
-                                                {vacancy.requirements.slice(0, 3).map((req, rIdx) => (
-                                                    <div key={rIdx} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
-                                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                                                        <span className="truncate">{req}</span>
+                                        {Array.isArray(vacancy.requirements) && vacancy.requirements.length > 0 && (() => {
+                                            const isExpanded = !!expandedVacancies[vacancy._id];
+                                            const displayReqs = isExpanded ? vacancy.requirements : vacancy.requirements.slice(0, 3);
+                                            const hasMore = vacancy.requirements.length > 3;
+
+                                            return (
+                                                <div className="mb-6 space-y-2 bg-slate-50/70 dark:bg-slate-800/40 p-3 sm:p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 transition-all">
+                                                    <div className="flex items-center justify-between">
+                                                        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                                            Key Requirements ({vacancy.requirements.length}):
+                                                        </p>
+                                                        {hasMore && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => toggleRequirements(vacancy._id)}
+                                                                className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition-colors cursor-pointer"
+                                                            >
+                                                                <span>{isExpanded ? 'Show Less' : `View All (${vacancy.requirements.length})`}</span>
+                                                                {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                                            </button>
+                                                        )}
                                                     </div>
-                                                ))}
-                                                {vacancy.requirements.length > 3 && (
-                                                    <p className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold pl-5">
-                                                        + {vacancy.requirements.length - 3} more criteria
-                                                    </p>
-                                                )}
-                                            </div>
-                                        )}
+
+                                                    <div className="space-y-1.5 pt-1">
+                                                        {displayReqs.map((req, rIdx) => (
+                                                            <div key={rIdx} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-200">
+                                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                                                                <span className="leading-snug break-words">{req}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    {hasMore && (
+                                                        <div className="pt-2 border-t border-slate-200/60 dark:border-slate-750">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => toggleRequirements(vacancy._id)}
+                                                                className="w-full py-1.5 px-3 rounded-xl text-center text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/40 cursor-pointer shadow-sm"
+                                                            >
+                                                                {isExpanded ? (
+                                                                    <>
+                                                                        <span>Show fewer criteria</span>
+                                                                        <ChevronUp className="w-3.5 h-3.5" />
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <span>+ {vacancy.requirements.length - 3} more criteria (Tap to View)</span>
+                                                                        <ChevronDown className="w-3.5 h-3.5" />
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
 
                                     {/* Action Footers: Circular Buttons & Apply */}
@@ -408,7 +454,7 @@ const Careers = () => {
                             <X className="w-5 h-5" />
                         </button>
 
-                        <div className="text-center mb-6">
+                        <div className="text-center mb-5">
                             <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-3">
                                 <Briefcase className="w-7 h-7" />
                             </div>
@@ -419,6 +465,28 @@ const Careers = () => {
                                 {careerContact.headingNote || 'Reach our hiring desk directly via WhatsApp, Phone, or Email with your resume.'}
                             </p>
                         </div>
+
+                        {/* Requirements Preview in Apply Modal */}
+                        {Array.isArray(applyModalVacancy.requirements) && applyModalVacancy.requirements.length > 0 && (
+                            <div className="mb-5 p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800 text-left">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        Role Requirements ({applyModalVacancy.requirements.length})
+                                    </span>
+                                    <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold">
+                                        All Criteria
+                                    </span>
+                                </div>
+                                <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                                    {applyModalVacancy.requirements.map((req, idx) => (
+                                        <div key={idx} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
+                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                                            <span className="leading-snug break-words">{req}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="space-y-3">
                             {/* WhatsApp Direct */}
