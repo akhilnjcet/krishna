@@ -16,6 +16,7 @@ const Navbar = () => {
 
     const navLinks = [
         { name: 'Home', path: '/' },
+        { name: 'Careers', path: '/careers', badge: 'Hiring' },
         { name: 'Lodge Manager', path: '/lodge' },
         { name: 'About', path: '/about' },
         { name: 'Services', path: '/services' },
@@ -61,12 +62,17 @@ const Navbar = () => {
                                         <Link
                                             key={link.name}
                                             to={link.path}
-                                            className={`text-sm font-semibold tracking-tight px-5 py-2.5 rounded-xl transition-all duration-300 ${isActive
+                                            className={`text-sm font-semibold tracking-tight px-4 py-2 rounded-xl transition-all duration-300 inline-flex items-center gap-1.5 ${isActive
                                                     ? 'bg-blue-50 text-cta dark:bg-slate-800 dark:text-blue-400'
                                                     : 'text-textMain/80 hover:bg-slate-50 dark:bg-slate-800 hover:text-primary dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
                                                 }`}
                                         >
-                                            {link.name}
+                                            <span>{link.name}</span>
+                                            {link.badge && (
+                                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-amber-500 text-white shadow-sm">
+                                                    {link.badge}
+                                                </span>
+                                            )}
                                         </Link>
                                     );
                                 })}
@@ -141,13 +147,18 @@ const Navbar = () => {
                                     <Link
                                         key={link.name}
                                         to={link.path}
-                                        className={`block px-4 py-3 text-sm font-bold rounded-xl transition-all ${location.pathname === link.path
+                                        className={`flex items-center justify-between px-4 py-3 text-sm font-bold rounded-xl transition-all ${location.pathname === link.path
                                                 ? 'bg-blue-50 text-cta dark:bg-slate-800 dark:text-blue-400'
                                                 : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
                                             }`}
                                         onClick={() => setIsOpen(false)}
                                     >
-                                        {link.name}
+                                        <span>{link.name}</span>
+                                        {link.badge && (
+                                            <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full bg-amber-500 text-white shadow-sm">
+                                                {link.badge}
+                                            </span>
+                                        )}
                                     </Link>
                                 ))}
                                 <div className="pt-3 pb-2 space-y-2.5">

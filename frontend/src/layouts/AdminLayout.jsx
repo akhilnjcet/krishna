@@ -6,7 +6,7 @@ import {
     Calculator, Receipt, TrendingUp, Settings, LogOut, Menu, X, Bell,
     Search, HelpCircle, ChevronRight, User, Filter, LayoutGrid, Activity,
     Clock, AlertCircle, Radio, MessageCircle, ChevronLeft, CheckSquare, Truck,
-    ShieldCheck, KeyRound, Package, Building2
+    ShieldCheck, KeyRound, Package, Building2, Briefcase
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,6 +40,7 @@ const SIDEBAR_ITEMS = [
     { name: 'Intelligence Feed', path: '/admin/blog',        icon: BookOpen },
     { name: 'Technical Chat',  path: '/admin/live-chat',    icon: MessageSquare },
     { name: 'AI Command Center', path: '/admin/ai-chat',     icon: Calculator },
+    { name: 'Careers & Notices', path: '/admin/careers', icon: Briefcase },
     { name: 'Applications',    path: '/admin/applications', icon: LayoutGrid },
     { name: 'Analytics Hub',   path: '/admin/analytics',    icon: BarChart3 },
     { name: 'WhatsApp Relay',  path: '/admin/whatsapp',     icon: Radio },

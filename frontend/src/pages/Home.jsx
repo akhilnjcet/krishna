@@ -4,13 +4,14 @@ import { Link } from 'react-router-dom';
 import {
     Phone, MessageCircle, MapPin, CheckCircle,
     ArrowRight, Wrench, Shield, Zap, Settings, Award, Layers, Users,
-    ChevronLeft, ChevronRight, Quote, Star, Clock
+    ChevronLeft, ChevronRight, Quote, Star, Clock, Briefcase
 } from 'lucide-react';
 import FloatingContact from '../components/FloatingContact';
 import api from '../services/api';
 import AdBanner from '../components/AdBanner';
 import DriveImage from '../components/DriveImage';
 import GoogleReviewSection from '../components/GoogleReviewSection';
+import VacancyAdBanner from '../components/VacancyAdBanner';
 
 /* ─── Animation Variants ─────────────────────────────────────────── */
 const fadeUp = {
@@ -217,6 +218,7 @@ const Home = () => {
             <FloatingContact />
 
             <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 overflow-x-hidden">
+                <VacancyAdBanner />
 
                 {/* ════════════════════════════════════════
                     1. HERO SECTION — Immersive Animated 
@@ -303,6 +305,10 @@ const Home = () => {
                                     <Phone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                     Speak with Experts
                                 </a>
+                                <Link to="/careers" className="px-6 py-4 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-bold rounded-2xl border border-amber-200 dark:border-amber-800/60 flex items-center gap-2.5 transition-all hover:-translate-y-1 text-base shadow-sm">
+                                    <Briefcase className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                                    <span>Careers & Vacancies</span>
+                                </Link>
                             </motion.div>
 
                             {/* ── PERFORMANCE METRICS ── */}

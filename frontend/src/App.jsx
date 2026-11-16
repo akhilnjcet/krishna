@@ -44,6 +44,7 @@ import { AlertTriangle, WifiOff } from 'lucide-react';
 import api from './services/api';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollingAnnouncement from './components/ScrollingAnnouncement';
 import Home from './pages/Home';
 import About from './pages/About';
 import Services from './pages/Services';
@@ -57,6 +58,8 @@ import StaffLogin from './pages/StaffLogin';
 import LegalPage from './pages/LegalPage';
 import PolicyViewer from './pages/PolicyViewer';
 
+const Careers = lazy(() => import('./pages/Careers'));
+const AdminCareers = lazy(() => import('./pages/admin/AdminCareers'));
 const AdminLegalPolicies = lazy(() => import('./pages/admin/AdminLegalPolicies'));
 const ReviewsPage = lazy(() => import('./pages/ReviewsPage'));
 
@@ -284,6 +287,7 @@ const Layout = ({ children }) => {
           </motion.div>
         )}
       </AnimatePresence>
+      {!hidePublicChrome && <ScrollingAnnouncement />}
       {!hidePublicChrome && <Navbar />}
       <main className="flex-grow">
         {children}
@@ -460,6 +464,10 @@ const App = () => {
                   <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/engineering" element={<Home />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/career" element={<Careers />} />
+            <Route path="/jobs" element={<Careers />} />
+            <Route path="/vacancies" element={<Careers />} />
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
             <Route path="/projects" element={<Projects />} />
@@ -518,6 +526,7 @@ const App = () => {
               <Route path="inventory" element={<AdminInventory />} />
               <Route path="document-history" element={<DocumentHistory />} />
               <Route path="legal-policies" element={<AdminLegalPolicies />} />
+              <Route path="careers" element={<AdminCareers />} />
             </Route>
 
             {/* Staff Routes */}

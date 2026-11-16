@@ -220,6 +220,8 @@ app.use('/api/policies', require('./routes/policyRoutes'));
 app.use('/api/admin/reset', require('./routes/resetRoutes'));
 app.use('/api/inventory', require('./routes/inventoryRoutes'));
 app.use('/api/feedback', require('./routes/feedbackRoutes'));
+app.use('/api/vacancies', require('./routes/vacancyRoutes'));
+app.use('/api/announcements', require('./routes/announcementRoutes'));
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
 });
