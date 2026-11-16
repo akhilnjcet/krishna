@@ -1,26 +1,92 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Camera, ShieldCheck, CheckCircle2, AlertCircle, 
-    Loader2, UserCheck, Timer, Fingerprint, Scan,
-    ArrowRight, Info, RefreshCw
+    Loader2, UserCheck, Fingerprint, Scan,
+    ArrowRight, Info, RefreshCw, MapPin, Eye,
+    Send, HelpCircle, ShieldAlert, WifiOff, Check,
+    Clock, Building, User, LogIn, ChevronRight, Phone
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import hapticService from '../../services/hapticService';
 import useAuthStore from '../../stores/authStore';
 import { loadFaceModels } from '../../utils/faceApiLoader';
 import { detectFaceAndLiveness } from '../../utils/faceApiUtils';
 
+const OFFLINE_QUEUE_KEY = 'krishna_offline_attendance_queue';
+
 const AttendanceScanner = () => {
-    const { user, login } = useAuthStore();
-    const [status, setStatus] = useState('idle'); // idle, checking, loading_models, scanning, verifying, success, error
-    const [message, setMessage] = useState('');
+    const { user } = useAuthStore();
+
+    // Workflow steps: 'consent' | 'idle' | 'scanning' | 'verifying' | 'success' | 'error'
+    const [step, setStep] = useState('consent');
+    const [action, setAction] = useState('Check in'); // 'Check in' | 'Check out'
+    const [statusMessage, setStatusMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+
+    // Biometric & Camera refs
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const streamRef = useRef(null);
     const scanActiveRef = useRef(false);
+    const isInitializingRef = useRef(false);
+
+    // Live Detection Stats
     const [stats, setStats] = useState({ blinkCount: 0, quality: 0, livenessVerified: false, livenessProgress: 0 });
+
+    // Location state
+    const [locationData, setLocationData] = useState({
+        latitude: null,
+        longitude: null,
+        accuracy: null,
+        address: '',
+        loading: false,
+        error: null
+    });
+
+    // Confirmation details upon success
+    const [confirmedRecord, setConfirmedRecord] = useState(null);
+
+    // Correction Modal
+    const [showCorrectionModal, setShowCorrectionModal] = useState(false);
+    const [correctionReason, setCorrectionReason] = useState('');
+    const [correctionNotes, setCorrectionNotes] = useState('');
+    const [correctionSubmitting, setCorrectionSubmitting] = useState(false);
+    const [correctionSuccessMsg, setCorrectionSuccessMsg] = useState('');
+
+    // Offline Queue state
+    const [offlineQueue, setOfflineQueue] = useState(() => {
+        try {
+            const raw = localStorage.getItem(OFFLINE_QUEUE_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch {
+            return [];
+        }
+    });
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [syncingOffline, setSyncingOffline] = useState(false);
+
+    // Listen to online/offline network transitions
+    useEffect(() => {
+        const handleOnline = () => {
+            setIsOnline(true);
+            syncOfflineQueue();
+        };
+        const handleOffline = () => setIsOnline(false);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    // Stop camera helper
     const stopCamera = () => {
+        scanActiveRef.current = false;
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
@@ -30,33 +96,87 @@ const AttendanceScanner = () => {
         }
     };
 
-    const isInitializingRef = useRef(false);
-
+    // Clean up camera on unmount
     useEffect(() => {
-        startScan();
-
         return () => {
-            scanActiveRef.current = false;
             stopCamera();
         };
     }, []);
 
-    const startScan = async () => {
+    // Fetch GPS location on-demand
+    const acquireLocation = useCallback(async () => {
+        if (!('geolocation' in navigator)) {
+            setLocationData(prev => ({ ...prev, error: 'Geolocation not supported by device' }));
+            return null;
+        }
+
+        setLocationData(prev => ({ ...prev, loading: true, error: null }));
+
+        return new Promise((resolve) => {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude, accuracy } = position.coords;
+                    let address = `Coordinates: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+
+                    // Attempt reverse geocoding via OpenStreetMap Nominatim
+                    try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 4000);
+                        const res = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+                            { signal: controller.signal, headers: { 'Accept-Language': 'en' } }
+                        );
+                        clearTimeout(timeoutId);
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data && data.display_name) {
+                                // Shorten address for clean mobile display
+                                const parts = data.display_name.split(', ');
+                                address = parts.slice(0, 3).join(', ');
+                            }
+                        }
+                    } catch {
+                        // Fallback to coordinates on network timeout or CORS
+                    }
+
+                    const result = { latitude, longitude, accuracy, address, loading: false, error: null };
+                    setLocationData(result);
+                    resolve(result);
+                },
+                (err) => {
+                    console.warn('Geolocation acquisition error:', err.message);
+                    const errorMsg = err.code === 1 
+                        ? 'Location permission denied by user' 
+                        : 'Unable to acquire accurate GPS position';
+                    const fallback = { latitude: null, longitude: null, accuracy: null, address: 'Location unavailable', loading: false, error: errorMsg };
+                    setLocationData(fallback);
+                    resolve(fallback);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            );
+        });
+    }, []);
+
+    // Start on-demand camera scanning after consent is granted
+    const startAttendanceScan = async () => {
         if (isInitializingRef.current) return;
         isInitializingRef.current = true;
 
         hapticService.light();
-        setStatus('loading_models');
-        setMessage('Synchronizing AI Biometrics...');
+        setStep('scanning');
+        setStatusMessage('Initializing Camera & AI Biometrics...');
+        setErrorMessage('');
 
-        // Step 1: Preload models in the background
+        // Step 1: Preload AI face models
         const modelPromise = loadFaceModels();
 
-        // Step 2: Initialize camera immediately in parallel
-        const camStart = performance.now();
+        // Step 2: Acquire location concurrently
+        acquireLocation();
+
+        // Step 3: Request camera on-demand
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } 
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
             });
             streamRef.current = stream;
 
@@ -65,32 +185,23 @@ const AttendanceScanner = () => {
                 try {
                     await videoRef.current.play();
                 } catch (playErr) {
-                    console.warn('Video play interrupted or waiting for gesture:', playErr);
+                    console.warn('Video playback notice:', playErr);
                 }
             }
-            const camDuration = performance.now() - camStart;
-            console.log(`[PERF] Camera initialization: ${camDuration.toFixed(2)}ms`);
-
-            // Immediately display camera preview while models finish loading in the background
-            setStatus('scanning');
-            setMessage('Optical link active. Synchronizing AI...');
+            setStatusMessage('Align your face within the frame.');
         } catch (camErr) {
-            console.error('Camera initialization failed:', camErr);
-            setStatus('error');
-            setMessage('Optical Hardware Access Denied.');
+            console.error('Camera access error:', camErr);
+            setStep('error');
+            setErrorMessage('Camera access was denied or device camera is unavailable. Please check browser permissions.');
             isInitializingRef.current = false;
             return;
         }
 
-        // Step 3: Wait for face models to finish loading
-        const modelStart = performance.now();
+        // Step 4: Ensure models are ready before detection loop
         const modelsReady = await modelPromise;
-        const modelDuration = performance.now() - modelStart;
-        console.log(`[PERF] Model loading: ${modelDuration.toFixed(2)}ms`);
-
         if (!modelsReady) {
-            setStatus('error');
-            setMessage('AI Biometrics initialization failed. Click Retry to reload.');
+            setStep('error');
+            setErrorMessage('Biometric AI models failed to load. Please check your connection and retry.');
             stopCamera();
             isInitializingRef.current = false;
             return;
@@ -100,6 +211,7 @@ const AttendanceScanner = () => {
         runDetectionLoop();
     };
 
+    // Detection & Liveness Loop
     const runDetectionLoop = () => {
         scanActiveRef.current = true;
         let blinkDetected = false;
@@ -108,7 +220,7 @@ const AttendanceScanner = () => {
         let lastAnalysisTime = 0;
         let steadyFrames = 0;
         let isProcessing = false;
-        const ANALYSIS_INTERVAL = 100; // 100ms ultra-responsive cycle
+        const ANALYSIS_INTERVAL = 100;
 
         const scanLoop = async () => {
             if (!scanActiveRef.current) return;
@@ -123,15 +235,15 @@ const AttendanceScanner = () => {
 
                     if (!result || result.noFace) {
                         steadyFrames = 0;
-                        setMessage('Align face within the secure perimeter.');
+                        setStatusMessage('Align face inside the frame.');
                         setStats(prev => ({ ...prev, quality: 0, livenessVerified: false, livenessProgress: 0 }));
                     } else if (result.multipleFaces) {
                         steadyFrames = 0;
-                        setMessage('Multiple faces detected. Please stand alone in front of the camera.');
+                        setStatusMessage('Multiple faces detected. Please stand alone in frame.');
                         setStats(prev => ({ ...prev, quality: 0, livenessVerified: false, livenessProgress: 0 }));
                     } else if (result.invalid) {
                         steadyFrames = 0;
-                        setMessage(result.reason);
+                        setStatusMessage(result.reason);
                         setStats(prev => ({ ...prev, quality: 0, livenessVerified: false, livenessProgress: 0 }));
                     } else if (result.detection) {
                         const quality = Math.round(result.score * 100);
@@ -160,30 +272,33 @@ const AttendanceScanner = () => {
                             livenessProgress
                         });
 
-                        // Trigger verification on blink OR upon holding steady for ~5-6 frames (~0.5s)
-                        const isReady = (blinkDetected && bestDescriptor && highestScore >= 0.65) || 
+                        // Trigger verification when ready
+                        const isReady = (blinkDetected && bestDescriptor && highestScore >= 0.65) ||
                                         (steadyFrames >= 6 && (bestDescriptor || result.descriptor));
 
                         if (isReady) {
                             scanActiveRef.current = false;
                             setStats(prev => ({ ...prev, livenessVerified: true, livenessProgress: 100 }));
-                            verifyIdentity(bestDescriptor || result.descriptor);
+                            
+                            // Capture snapshot for authorized administrative verification
+                            const snapshot = captureSnapshot();
+                            submitAttendance(bestDescriptor || result.descriptor, snapshot);
                             return;
                         } else {
                             if (blinkDetected) {
-                                setMessage('Liveness verified. Aligning face match...');
+                                setStatusMessage('Liveness verified! Hold still to complete scan...');
                             } else if (steadyFrames >= 2) {
-                                setMessage(`Holding steady... [${livenessProgress}%] (or blink)`);
+                                setStatusMessage(`Hold still... (${livenessProgress}%) or blink`);
                             } else {
-                                setMessage('Face detected. Look straight or blink to verify...');
+                                setStatusMessage('Face detected. Look straight or blink to verify.');
                             }
                         }
                     }
                 } catch (err) {
-                    console.error('Face detection failure:', err);
+                    console.error('Detection loop exception:', err);
                     scanActiveRef.current = false;
-                    setStatus('error');
-                    setMessage('Face recognition model error. Please retry.');
+                    setStep('error');
+                    setErrorMessage('Face detection encountered an issue. Tap retry to restart.');
                     return;
                 } finally {
                     isProcessing = false;
@@ -196,195 +311,660 @@ const AttendanceScanner = () => {
         scanLoop();
     };
 
-    const verifyIdentity = async (descriptor) => {
-        setStatus('verifying');
-        setMessage('Matching high-fidelity descriptor...');
+    // Capture small compressed JPEG snapshot from video
+    const captureSnapshot = () => {
+        try {
+            if (!videoRef.current) return null;
+            const video = videoRef.current;
+            const snapCanvas = document.createElement('canvas');
+            snapCanvas.width = 320;
+            snapCanvas.height = 240;
+            const ctx = snapCanvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, 320, 240);
+            return snapCanvas.toDataURL('image/jpeg', 0.65);
+        } catch (err) {
+            console.warn('Snapshot capture warning:', err);
+            return null;
+        }
+    };
+
+    // Submit attendance payload to backend
+    const submitAttendance = async (descriptor, faceImage) => {
+        setStep('verifying');
+        setStatusMessage('Verifying facial biometric template & recording location...');
+
+        // Ensure location is ready or fallback
+        const loc = locationData.latitude ? locationData : await acquireLocation();
+
+        const payload = {
+            action,
+            descriptor,
+            face_image: faceImage,
+            location: {
+                latitude: loc?.latitude,
+                longitude: loc?.longitude,
+                accuracy: loc?.accuracy,
+                address: loc?.address || ''
+            },
+            device_info: navigator.userAgent,
+            consent_acknowledged: true
+        };
+
+        // If offline, queue immediately
+        if (!navigator.onLine) {
+            queueOfflineAttendance(payload);
+            stopCamera();
+            setStep('success');
+            setConfirmedRecord({
+                action,
+                full_name: user?.name || 'Staff Member',
+                login_time: new Date(),
+                location: payload.location,
+                is_offline: true
+            });
+            return;
+        }
 
         try {
-            const device = navigator.userAgent;
-            const res = await api.post('/auth/verify-face', { descriptor, device });
-
+            const res = await api.post('/attendance/record', payload);
             if (res.data.success) {
-                const matchedUser = res.data.user;
-                if (!user) login(matchedUser, matchedUser.token);
-                
                 stopCamera();
                 hapticService.success();
-                setStatus('success');
-                setMessage(`${res.data.logType === 'IN' ? 'SHIFT IN' : 'SHIFT OUT'} REGISTERED: ${matchedUser.name}`);
+                setStep('success');
+                setConfirmedRecord(res.data.record);
             }
-        } catch (error) {
+        } catch (err) {
+            console.error('Attendance recording failed:', err);
+            stopCamera();
             hapticService.error();
-            setStatus('error');
-            const serverMsg = error.response?.data?.message;
-            setMessage(serverMsg || 'Face verification failed. Unauthorized person detected.');
-            
-            // Re-use active camera stream: automatically resume detection loop after 3 seconds on verification failure
+
+            // Check if network error => queue offline
+            if (!err.response && !navigator.onLine) {
+                queueOfflineAttendance(payload);
+                setStep('success');
+                setConfirmedRecord({
+                    action,
+                    full_name: user?.name || 'Staff Member',
+                    login_time: new Date(),
+                    location: payload.location,
+                    is_offline: true
+                });
+                return;
+            }
+
+            const errorText = err.response?.data?.message || 'Face verification failed or face not registered.';
+            setStep('error');
+            setErrorMessage(errorText);
+        }
+    };
+
+    // Save attendance payload to offline storage queue
+    const queueOfflineAttendance = (payload) => {
+        const item = {
+            id: Date.now(),
+            payload,
+            timestamp: new Date().toISOString()
+        };
+        const nextQueue = [...offlineQueue, item];
+        setOfflineQueue(nextQueue);
+        try {
+            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(nextQueue));
+        } catch (e) {
+            console.warn('Failed to save offline queue to storage', e);
+        }
+    };
+
+    // Synchronize pending offline records when network recovers
+    const syncOfflineQueue = async () => {
+        if (!navigator.onLine || offlineQueue.length === 0 || syncingOffline) return;
+        setSyncingOffline(true);
+
+        const remaining = [];
+        for (const item of offlineQueue) {
+            try {
+                await api.post('/attendance/record', item.payload);
+            } catch (err) {
+                console.warn('Failed to sync offline item', err);
+                remaining.push(item);
+            }
+        }
+
+        setOfflineQueue(remaining);
+        try {
+            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(remaining));
+        } catch (e) {
+            console.warn('Failed to update offline storage', e);
+        }
+        setSyncingOffline(false);
+    };
+
+    // Submit manual correction request
+    const handleCorrectionSubmit = async (e) => {
+        e.preventDefault();
+        if (!correctionReason.trim()) return;
+
+        setCorrectionSubmitting(true);
+        try {
+            await api.post('/attendance/request-correction', {
+                requested_action: action,
+                reason: correctionReason,
+                location_notes: correctionNotes || locationData.address || 'Reported from scanner view'
+            });
+            setCorrectionSuccessMsg('Correction request successfully submitted to administrators.');
             setTimeout(() => {
-                if (streamRef.current) {
-                    setStatus('scanning');
-                    setMessage('Resuming biometric scan...');
-                    setStats({ blinkCount: 0, quality: 0, livenessVerified: false, livenessProgress: 0 });
-                    runDetectionLoop();
-                }
-            }, 3000);
+                setShowCorrectionModal(false);
+                setCorrectionSuccessMsg('');
+                setCorrectionReason('');
+                setCorrectionNotes('');
+            }, 2500);
+        } catch (err) {
+            console.error('Correction submission failed:', err);
+            alert(err.response?.data?.message || 'Failed to submit correction request.');
+        } finally {
+            setCorrectionSubmitting(false);
         }
     };
 
     return (
-        <div className="min-h-[calc(100vh-100px)] p-6 lg:p-12 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
-            <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-                
-                {/* Left Side: Status & Controls */}
-                <div className="lg:col-span-5 space-y-8 order-2 lg:order-1">
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-3 text-indigo-600 font-black text-xs uppercase tracking-[0.3em]">
-                            <Fingerprint className="w-4 h-4" /> Secure Auth Node
-                        </div>
-                        <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
-                            BIOMETRIC <span className="text-indigo-600">RECOGNITION.</span>
-                        </h1>
-                        <p className="text-slate-500 dark:text-slate-400 font-medium">Verify your identity to log shift attendance using enterprise-grade facial recognition.</p>
-                    </div>
+        <div className="min-h-[calc(100vh-80px)] p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+            <div className="max-w-4xl w-full space-y-6">
 
-                    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 dark:border-slate-800 space-y-6">
-                        <div className="flex items-center gap-4 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
-                            <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
-                                <Info className="w-6 h-6" />
-                            </div>
-                            <div className="text-sm">
-                                <p className="font-black text-indigo-900 uppercase tracking-widest text-[10px] mb-1">Scanning Guidelines</p>
-                                <p className="text-indigo-600/80 font-bold leading-tight">Remove glasses, stand in good light, and blink once instructed.</p>
-                            </div>
+                {/* Offline Banner Indicator */}
+                {!isOnline && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -10 }} 
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 p-4 rounded-2xl flex items-center justify-between text-amber-900 dark:text-amber-200 text-xs font-bold shadow-sm"
+                    >
+                        <div className="flex items-center gap-2">
+                            <WifiOff className="w-4 h-4 text-amber-600" />
+                            <span>You are currently offline. Attendance scans will be securely queued and synced when connection returns.</span>
                         </div>
-
-                        <div className="space-y-4">
-                            <button
-                                onClick={startScan}
-                                disabled={['loading_models', 'scanning', 'verifying', 'success'].includes(status)}
-                                className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg ${
-                                    status === 'success' 
-                                    ? 'bg-emerald-500 text-white shadow-emerald-500/30' 
-                                    : 'bg-slate-900 text-white hover:bg-black shadow-slate-900/40'
-                                } disabled:opacity-70 disabled:cursor-not-allowed`}
-                            >
-                                {status === 'idle' && <><Camera className="w-5 h-5" /> Initialize Scanner</>}
-                                {status === 'loading_models' && <><Loader2 className="w-5 h-5 animate-spin" /> Loading AI...</>}
-                                {status === 'scanning' && <><Scan className="w-5 h-5 animate-pulse" /> Scanning...</>}
-                                {status === 'verifying' && <><UserCheck className="w-5 h-5 animate-bounce" /> Verifying...</>}
-                                {status === 'success' && <><CheckCircle2 className="w-5 h-5" /> Logged In</>}
-                                {status === 'error' && <><RefreshCw className="w-5 h-5" /> Retry Scan</>}
-                            </button>
-
-                            {status === 'success' && (
-                                <p className="text-center text-emerald-600 font-black uppercase tracking-widest text-[10px]">Shift timestamp recorded successfully.</p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Stats Widget */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center">
-                            <Timer className="w-5 h-5 text-indigo-500 mb-2" />
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quality</span>
-                            <span className="text-lg font-black text-slate-900 dark:text-white">{stats.quality}%</span>
-                        </div>
-                        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center">
-                            <ShieldCheck className={`w-5 h-5 mb-2 ${stats.livenessVerified ? 'text-emerald-500' : stats.quality > 0 ? 'text-amber-500 animate-pulse' : 'text-slate-300'}`} />
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Liveness</span>
-                            <span className={`text-lg font-black ${stats.livenessVerified ? 'text-emerald-600' : stats.quality > 0 ? 'text-amber-500' : 'text-slate-900 dark:text-white'}`}>
-                                {stats.livenessVerified ? 'Verified' : stats.quality > 0 ? `${stats.livenessProgress || 25}%` : 'Pending'}
+                        {offlineQueue.length > 0 && (
+                            <span className="bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 px-2 py-0.5 rounded-full text-[10px]">
+                                {offlineQueue.length} queued
                             </span>
+                        )}
+                    </motion.div>
+                )}
+
+                {/* Top Header Card: User Account Badge */}
+                <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-black text-lg">
+                            {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-6 h-6" />}
                         </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                                    Signed in Staff Account
+                                </span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            </div>
+                            <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                                {user?.name || 'Staff Member'}
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                ID: {user?.staff_id || user?._id || 'STF-KEW'} • {user?.designation || user?.department || 'Operations'}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Quick navigation to personal logs */}
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <Link 
+                            to="/staff/attendance-hub"
+                            className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                        >
+                            <Clock className="w-3.5 h-3.5 text-indigo-500" /> Attendance History
+                        </Link>
                     </div>
                 </div>
 
-                {/* Right Side: Camera Viewport */}
-                <div className="lg:col-span-7 relative order-1 lg:order-2">
-                    <div className="relative w-full aspect-square md:aspect-[4/3] bg-slate-900 rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white ring-1 ring-slate-200 group">
-                        
-                        {/* Interactive UI Overlays */}
-                        <AnimatePresence>
-                            {(status === 'scanning' || status === 'verifying') && (
-                                <motion.div 
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                    className="absolute inset-0 z-10 pointer-events-none"
-                                >
-                                    {/* Scanning frame corners */}
-                                    <div className="absolute top-10 left-10 w-20 h-20 border-t-4 border-l-4 border-indigo-400 rounded-tl-3xl opacity-60"></div>
-                                    <div className="absolute top-10 right-10 w-20 h-20 border-t-4 border-r-4 border-indigo-400 rounded-tr-3xl opacity-60"></div>
-                                    <div className="absolute bottom-10 left-10 w-20 h-20 border-b-4 border-l-4 border-indigo-400 rounded-bl-3xl opacity-60"></div>
-                                    <div className="absolute bottom-10 right-10 w-20 h-20 border-b-4 border-r-4 border-indigo-400 rounded-br-3xl opacity-60"></div>
-                                    
-                                    {/* Scanning line animation */}
-                                    <motion.div 
-                                        animate={{ top: ['10%', '90%', '10%'] }}
-                                        transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                                        className="absolute left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-transparent via-indigo-400 to-transparent shadow-[0_0_15px_rgba(129,140,248,0.8)]"
-                                    />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                {/* STEP 1: Pre-Scan Privacy Notice & Consent Card */}
+                {step === 'consent' && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl space-y-6"
+                    >
+                        <div className="space-y-2 border-b border-slate-100 dark:border-slate-800 pb-4">
+                            <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider">
+                                <ShieldCheck className="w-3.5 h-3.5" /> Privacy & Consent Policy
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                                Staff Biometric & Location Attendance Policy
+                            </h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                                Please review how your camera, face scan, and location information are handled before recording attendance.
+                            </p>
+                        </div>
 
-                        {/* Status Message Overlay */}
-                        <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 w-[80%]">
-                            <motion.div 
-                                layout
-                                className={`px-6 py-3 rounded-2xl backdrop-blur-md border shadow-xl flex items-center justify-center gap-3 text-center
-                                    ${status === 'error' ? 'bg-red-500/90 border-red-400 text-white' : 
-                                      status === 'success' ? 'bg-emerald-500/90 border-emerald-400 text-white' : 
-                                      'bg-black/60 border-white/20 text-white'}`}
+                        {/* Privacy Details Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-1.5">
+                                <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase">
+                                    <Camera className="w-4 h-4" /> Camera Access
+                                </div>
+                                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                    Camera is activated on-demand solely for identity verification during check in and check out. No background video is ever recorded.
+                                </p>
+                            </div>
+
+                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-1.5">
+                                <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase">
+                                    <MapPin className="w-4 h-4" /> Single Location Stamp
+                                </div>
+                                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                    Your location is captured once when you submit attendance to confirm work yard presence. Continuous tracking is never enabled.
+                                </p>
+                            </div>
+
+                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-1.5">
+                                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase">
+                                    <Eye className="w-4 h-4" /> Admin Audit Access
+                                </div>
+                                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                    Captured face snapshots may only be viewed by authorized administrators for verification audits. Each view is logged in an immutable audit trail.
+                                </p>
+                            </div>
+
+                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-1.5">
+                                <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase">
+                                    <ShieldAlert className="w-4 h-4" /> Admin Deletion & Retention
+                                </div>
+                                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                    Only administrators control deletion of captured face images per organizational retention policy. Staff cannot delete audit images directly.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Action Selection & Consent Button */}
+                        <div className="space-y-4 pt-2">
+                            <label className="text-xs font-black uppercase tracking-wider text-slate-500 block">
+                                Select Action
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setAction('Check in')}
+                                    className={`py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border transition flex items-center justify-center gap-2 ${
+                                        action === 'Check in'
+                                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
+                                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-500'
+                                    }`}
+                                >
+                                    <CheckCircle2 className="w-4 h-4" /> Check in (Shift Start)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setAction('Check out')}
+                                    className={`py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border transition flex items-center justify-center gap-2 ${
+                                        action === 'Check out'
+                                            ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-500/20'
+                                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-500'
+                                    }`}
+                                >
+                                    <Clock className="w-4 h-4" /> Check out (Shift End)
+                                </button>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={startAttendanceScan}
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition cursor-pointer"
                             >
-                                {status === 'verifying' && <Loader2 className="w-4 h-4 animate-spin" />}
-                                {status === 'error' && <AlertCircle className="w-4 h-4" />}
-                                {status === 'success' && <CheckCircle2 className="w-4 h-4" />}
-                                <span className="text-[10px] font-black uppercase tracking-widest">{message || 'System Standby'}</span>
+                                <Scan className="w-4 h-4" /> I Understand & Consent — Start Face Scan
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* STEP 2: Live Scanning & Biometric Verification */}
+                {(step === 'scanning' || step === 'verifying') && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl space-y-6"
+                    >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+                            <div>
+                                <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${
+                                    action === 'Check in' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                                }`}>
+                                    Target Action: {action}
+                                </span>
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1">
+                                    Face Scan & Liveness Check
+                                </h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setAction(prev => prev === 'Check in' ? 'Check out' : 'Check in')}
+                                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                                >
+                                    Switch to {action === 'Check in' ? 'Check out' : 'Check in'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Camera Viewport & Face Guide HUD */}
+                        <div className="relative max-w-md mx-auto aspect-4/3 rounded-3xl overflow-hidden bg-slate-950 shadow-inner border-2 border-indigo-500/30 flex items-center justify-center">
+                            <video
+                                ref={videoRef}
+                                playsInline
+                                muted
+                                className="w-full h-full object-cover transform -scale-x-100"
+                            />
+                            <canvas
+                                ref={canvasRef}
+                                className="absolute inset-0 w-full h-full pointer-events-none transform -scale-x-100"
+                            />
+
+                            {/* Circular / Rounded Face Perimeter Outline */}
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className={`w-56 h-72 rounded-[45%] border-2 transition-all duration-300 ${
+                                    stats.livenessVerified 
+                                        ? 'border-emerald-400 shadow-[0_0_30px_rgba(52,211,153,0.4)]'
+                                        : stats.quality > 50
+                                        ? 'border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.3)] animate-pulse'
+                                        : 'border-white/30 border-dashed'
+                                }`} />
+                            </div>
+
+                            {/* Top HUD: Status Message */}
+                            <div className="absolute top-4 inset-x-4 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-4 py-2 rounded-2xl text-center shadow-lg">
+                                {statusMessage}
+                            </div>
+
+                            {/* Bottom HUD: Liveness & Progress */}
+                            <div className="absolute bottom-4 inset-x-4 bg-black/70 backdrop-blur-md p-3 rounded-2xl text-white space-y-2">
+                                <div className="flex items-center justify-between text-[11px] font-bold">
+                                    <span className="flex items-center gap-1.5">
+                                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                                        {stats.livenessVerified ? 'Liveness Confirmed' : 'Liveness Progress'}
+                                    </span>
+                                    <span>{stats.livenessProgress}%</span>
+                                </div>
+                                <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
+                                    <div 
+                                        className={`h-full transition-all duration-200 ${
+                                            stats.livenessVerified ? 'bg-emerald-400' : 'bg-indigo-400'
+                                        }`}
+                                        style={{ width: `${stats.livenessProgress}%` }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Location Preview Indicator */}
+                        <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                                <MapPin className="w-4 h-4 text-indigo-500 shrink-0" />
+                                <span className="font-medium truncate max-w-sm">
+                                    {locationData.loading 
+                                        ? 'Acquiring GPS location...' 
+                                        : locationData.address || 'Location ready'}
+                                </span>
+                            </div>
+                            {locationData.accuracy && (
+                                <span className="text-[10px] text-slate-400 font-bold">
+                                    ±{Math.round(locationData.accuracy)}m
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Cancel or switch back */}
+                        <div className="flex justify-between items-center pt-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    stopCamera();
+                                    setStep('consent');
+                                }}
+                                className="text-xs font-bold text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                                Cancel Scan
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowCorrectionModal(true)}
+                                className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
+                            >
+                                Camera issue? Request Manual Correction
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* STEP 3: Success Confirmation Screen */}
+                {step === 'success' && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl space-y-6 text-center"
+                    >
+                        <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-md">
+                            <CheckCircle2 className="w-8 h-8" />
+                        </div>
+
+                        <div className="space-y-1">
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+                                {confirmedRecord?.action || action} Successfully Recorded!
+                            </h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                Your attendance and location have been verified and submitted into the staff registry.
+                            </p>
+                        </div>
+
+                        {/* Confirmation summary card */}
+                        <div className="max-w-md mx-auto bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 text-left space-y-3">
+                            <div className="flex justify-between text-xs">
+                                <span className="text-slate-400 font-bold uppercase">Staff Member</span>
+                                <span className="font-bold text-slate-900 dark:text-white">{confirmedRecord?.full_name || user?.name}</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                                <span className="text-slate-400 font-bold uppercase">Timestamp</span>
+                                <span className="font-bold text-slate-900 dark:text-white">
+                                    {new Date(confirmedRecord?.login_time || Date.now()).toLocaleTimeString()} ({new Date().toLocaleDateString()})
+                                </span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                                <span className="text-slate-400 font-bold uppercase">Verification Result</span>
+                                <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                    <ShieldCheck className="w-3.5 h-3.5" /> 
+                                    Biometric Match {confirmedRecord?.face_match_confidence ? `(${confirmedRecord.face_match_confidence}%)` : ''}
+                                </span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                                <span className="text-slate-400 font-bold uppercase">Recorded Location</span>
+                                <span className="font-bold text-slate-700 dark:text-slate-300 text-right truncate max-w-[200px]" title={confirmedRecord?.location?.address || locationData.address}>
+                                    {confirmedRecord?.location?.address || locationData.address || 'Yard Coordinates Logged'}
+                                </span>
+                            </div>
+                            {confirmedRecord?.is_offline && (
+                                <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 text-[11px] font-bold">
+                                    Stored in offline queue. Will sync automatically when connection recovers.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setStep('consent');
+                                    setConfirmedRecord(null);
+                                }}
+                                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider transition"
+                            >
+                                Record Another Scan
+                            </button>
+                            <Link
+                                to="/staff/attendance-hub"
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg transition inline-flex items-center justify-center gap-1.5"
+                            >
+                                View My Attendance Records <ChevronRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* STEP 4: Error / Mismatch Screen */}
+                {step === 'error' && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-rose-200 dark:border-rose-900/40 shadow-xl space-y-6 text-center"
+                    >
+                        <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-md">
+                            <AlertCircle className="w-8 h-8" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+                                Verification Unsuccessful
+                            </h3>
+                            <p className="text-xs text-rose-600 dark:text-rose-400 font-bold max-w-md mx-auto">
+                                {errorMessage}
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                                Don't worry — no automated disciplinary decisions are made from technical or recognition mismatches. You can retry or submit a manual attendance correction for administrator approval.
+                            </p>
+                        </div>
+
+                        {/* Buttons to retry or request manual correction */}
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                            <button
+                                type="button"
+                                onClick={startAttendanceScan}
+                                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2"
+                            >
+                                <RefreshCw className="w-4 h-4" /> Retry Scan
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowCorrectionModal(true)}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg transition flex items-center justify-center gap-2"
+                            >
+                                <Send className="w-4 h-4" /> Request Manual Attendance Correction
+                            </button>
+                        </div>
+
+                        {/* Safe Contact Admin fallback */}
+                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 flex items-center justify-center gap-4">
+                            <span className="flex items-center gap-1.5">
+                                <Phone className="w-3.5 h-3.5" /> Support: +91 9447940835
+                            </span>
+                            <span>•</span>
+                            <Link to="/staff/support" className="text-indigo-600 hover:underline">
+                                Help Center
+                            </Link>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* MODAL: Manual Attendance Correction Request */}
+                <AnimatePresence>
+                    {showCorrectionModal && (
+                        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="bg-white dark:bg-slate-900 max-w-lg w-full rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6"
+                            >
+                                <div className="space-y-1">
+                                    <div className="inline-flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-wider">
+                                        <Send className="w-3.5 h-3.5" /> Manual Attendance Exception
+                                    </div>
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                                        Request Attendance Correction
+                                    </h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        Experiencing camera, GPS, or device errors? Submit a manual attendance correction. An administrator will review and verify your request.
+                                    </p>
+                                </div>
+
+                                {correctionSuccessMsg ? (
+                                    <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-bold text-center">
+                                        {correctionSuccessMsg}
+                                    </div>
+                                ) : (
+                                    <form onSubmit={handleCorrectionSubmit} className="space-y-4">
+                                        <div>
+                                            <label className="text-xs font-black uppercase tracking-wider text-slate-500 block mb-1">
+                                                Intended Action
+                                            </label>
+                                            <select
+                                                value={action}
+                                                onChange={(e) => setAction(e.target.value)}
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                            >
+                                                <option value="Check in">Check in (Shift Start)</option>
+                                                <option value="Check out">Check out (Shift End)</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-xs font-black uppercase tracking-wider text-slate-500 block mb-1">
+                                                Reason for Manual Correction *
+                                            </label>
+                                            <select
+                                                required
+                                                value={correctionReason}
+                                                onChange={(e) => setCorrectionReason(e.target.value)}
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none mb-2"
+                                            >
+                                                <option value="">Select a reason...</option>
+                                                <option value="Camera hardware failure / lens damaged">Camera hardware failure / lens damaged</option>
+                                                <option value="Camera permission blocked by browser or OS">Camera permission blocked by browser or OS</option>
+                                                <option value="GPS location acquisition timed out or inaccurate">GPS location acquisition timed out or inaccurate</option>
+                                                <option value="Face mismatch due to lighting / temporary facial injury">Face mismatch due to lighting / temporary facial injury</option>
+                                                <option value="Remote site network / device malfunction">Remote site network / device malfunction</option>
+                                                <option value="Other technical issue">Other technical issue</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-xs font-black uppercase tracking-wider text-slate-500 block mb-1">
+                                                Additional Details & Work Location Notes
+                                            </label>
+                                            <textarea
+                                                rows={3}
+                                                value={correctionNotes}
+                                                onChange={(e) => setCorrectionNotes(e.target.value)}
+                                                placeholder="Provide your location or shift details (e.g., Working at Thiruvazhiyode yard gate since 09:00 AM)..."
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none"
+                                            />
+                                        </div>
+
+                                        <div className="flex justify-end gap-3 pt-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCorrectionModal(false)}
+                                                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={correctionSubmitting || !correctionReason}
+                                                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider shadow transition cursor-pointer flex items-center gap-2"
+                                            >
+                                                {correctionSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                                                Submit to Administrator
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
                             </motion.div>
                         </div>
+                    )}
+                </AnimatePresence>
 
-                        {/* Video Element */}
-                        <video
-                            ref={videoRef}
-                            autoPlay
-                            playsInline
-                            muted
-                            style={{ transform: 'scaleX(-1)' }}
-                            className={`w-full h-full object-cover transition-opacity duration-700 
-                                ${['scanning', 'verifying', 'success'].includes(status) ? 'opacity-100' : 'opacity-20'}`}
-                        />
-
-                        {/* Canvas for Detections */}
-                        <canvas 
-                            ref={canvasRef} 
-                            style={{ transform: 'scaleX(-1)' }}
-                            className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none" 
-                        />
-
-                        {/* Idle / Success Overlays */}
-                        {status === 'idle' && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
-                                <div className="w-24 h-24 rounded-full bg-indigo-600/10 border border-indigo-600/20 flex items-center justify-center">
-                                    <Camera className="w-10 h-10 text-indigo-600 animate-pulse" />
-                                </div>
-                                <div className="flex flex-col items-center">
-                                    <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[10px] mb-2">Sensor Standby</p>
-                                    <div className="w-1 h-12 bg-gradient-to-b from-indigo-600 to-transparent"></div>
-                                </div>
-                            </div>
-                        )}
-
-                        {status === 'success' && (
-                            <div className="absolute inset-0 bg-emerald-600/20 backdrop-blur-sm flex flex-col items-center justify-center z-30">
-                                <motion.div 
-                                    initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }}
-                                    className="w-32 h-32 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center shadow-2xl"
-                                >
-                                    <CheckCircle2 className="w-20 h-20 text-emerald-500" />
-                                </motion.div>
-                            </div>
-                        )}
-                    </div>
-                </div>
             </div>
         </div>
     );

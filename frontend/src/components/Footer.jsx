@@ -132,7 +132,10 @@ const Footer = () => {
             </div>
 
             {/* Heavy bottom bar */}
-            <div className="bg-slate-200 dark:bg-slate-900 py-6 border-t border-slate-300 dark:border-slate-800">
+            <div 
+                className="bg-slate-200 dark:bg-slate-900 py-6 border-t border-slate-300 dark:border-slate-800"
+                style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
+            >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center md:text-left gap-4">
                     <div>
                         <p>&copy; {new Date().getFullYear()} {settings.footer_copyright}</p>

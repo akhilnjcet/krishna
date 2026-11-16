@@ -68,11 +68,10 @@ export const EstimationEntryTable = ({
             type="button"
             onClick={() => handleViewChange('one-line')}
             title="One-Line view: High density compact rows, no horizontal scrolling"
-            className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
-              viewMode === 'one-line'
+            className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition ${viewMode === 'one-line'
                 ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-black'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             <Zap size={13} className="text-amber-500" />
             <span>One-Line</span>
@@ -82,11 +81,10 @@ export const EstimationEntryTable = ({
             type="button"
             onClick={() => handleViewChange('cards')}
             title="Cards view: Touch cards with spacious layout for mobile"
-            className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
-              viewMode === 'cards'
+            className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition ${viewMode === 'cards'
                 ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-black'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             <LayoutGrid size={13} className="text-indigo-500" />
             <span>Cards</span>
@@ -96,11 +94,10 @@ export const EstimationEntryTable = ({
             type="button"
             onClick={() => handleViewChange('table')}
             title="Full spreadsheet table view"
-            className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
-              viewMode === 'table'
+            className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition ${viewMode === 'table'
                 ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-black'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             <TableIcon size={13} className="text-emerald-500" />
             <span>Table</span>
@@ -163,11 +160,10 @@ export const EstimationEntryTable = ({
               return (
                 <div
                   key={meta.id || index}
-                  className={`p-2.5 rounded-2xl border transition-all ${
-                    meta.isCombined
+                  className={`p-2.5 rounded-2xl border transition-all ${meta.isCombined
                       ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200/80 dark:border-amber-900/50 shadow-xs'
                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-300 dark:hover:border-indigo-700'
-                  }`}
+                    }`}
                 >
                   {/* Line 1: Sl No + Item Name Input + Delete Button */}
                   <div className="flex items-center gap-1.5">
@@ -380,7 +376,6 @@ export const EstimationEntryTable = ({
                             value={meta.total ?? meta.price ?? ''}
                             onChange={(e) => {
                               onUpdateItem(index, 'total', e.target.value);
-                              onUpdateItem(index, 'price', e.target.value);
                             }}
                             placeholder="0.00"
                             className="w-16 bg-white dark:bg-slate-900 border border-emerald-400 rounded-lg px-1.5 py-0.5 text-xs font-black text-right text-emerald-600 dark:text-emerald-400 focus:outline-none"
@@ -423,11 +418,10 @@ export const EstimationEntryTable = ({
               return (
                 <div
                   key={meta.id || index}
-                  className={`p-3.5 rounded-2xl border transition-all ${
-                    meta.isCombined
+                  className={`p-3.5 rounded-2xl border transition-all ${meta.isCombined
                       ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900/60 shadow-sm'
                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm'
-                  }`}
+                    }`}
                 >
                   {/* Card Header: Item Badge, Combined Tag, Delete */}
                   <div className="flex items-center justify-between gap-2 mb-2">
@@ -661,7 +655,6 @@ export const EstimationEntryTable = ({
                                 value={meta.total ?? meta.price ?? ''}
                                 onChange={(e) => {
                                   onUpdateItem(index, 'total', e.target.value);
-                                  onUpdateItem(index, 'price', e.target.value);
                                 }}
                                 placeholder="0.00"
                                 className="w-24 bg-white dark:bg-slate-900 border border-emerald-400 rounded-lg pl-6 pr-2 py-1 text-xs font-black text-right text-emerald-600 dark:text-emerald-400 focus:outline-none"
@@ -690,11 +683,11 @@ export const EstimationEntryTable = ({
       {/* VIEW 3: FULL SPREADSHEET TABLE (Horizontal scrollable for desktop)   */}
       {/* ==================================================================== */}
       {viewMode === 'table' && (
-        <div 
-          className="table-responsive" 
-          style={{ 
-            overflowX: 'auto', 
-            borderRadius: '16px', 
+        <div
+          className="table-responsive"
+          style={{
+            overflowX: 'auto',
+            borderRadius: '16px',
             border: '1px solid var(--glass-border, rgba(226, 232, 240, 0.8))',
             background: 'var(--card-bg, rgba(255, 255, 255, 0.03))'
           }}
@@ -715,7 +708,7 @@ export const EstimationEntryTable = ({
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}>
                     <span style={{ color: enableQuantity ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>Qty</span>
                     {onToggleEnableQuantity && (
-                      <label 
+                      <label
                         title={enableQuantity ? "Quantity enabled (Click to disable)" : "Quantity disabled (Click to enable)"}
                         style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', margin: 0 }}
                       >
@@ -733,7 +726,7 @@ export const EstimationEntryTable = ({
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.2rem' }}>
                     <span style={{ color: enableUnitPrice ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>Rate (₹)</span>
                     {onToggleEnableUnitPrice && (
-                      <label 
+                      <label
                         title={enableUnitPrice ? "Unit Price enabled (Click to disable)" : "Unit Price disabled (Click to enable)"}
                         style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', margin: 0 }}
                       >
@@ -747,7 +740,7 @@ export const EstimationEntryTable = ({
                     )}
                   </div>
                 </th>
-                <th 
+                <th
                   title="Combine consecutive items into a package with curly brace"
                   style={{ padding: '0.65rem 0.3rem', textAlign: 'center', width: '70px', fontSize: '0.72rem', fontWeight: '800', background: 'rgba(217, 119, 6, 0.2)', color: '#FBBF24' }}
                 >
@@ -776,9 +769,9 @@ export const EstimationEntryTable = ({
                   const itemDescVal = meta.description ?? '';
 
                   return (
-                    <tr 
+                    <tr
                       key={meta.id || index}
-                      style={{ 
+                      style={{
                         borderBottom: '1px solid rgba(226, 232, 240, 0.6)',
                         background: meta.isCombined ? 'rgba(217, 119, 6, 0.03)' : 'transparent',
                         transition: 'background 0.15s ease'
@@ -815,12 +808,12 @@ export const EstimationEntryTable = ({
                       {/* Qty */}
                       <td style={{ padding: '0.45rem 0.5rem', textAlign: 'center' }}>
                         {!enableQuantity ? (
-                          <div 
-                            style={{ 
-                              padding: '0.45rem 0.4rem', 
-                              background: 'rgba(0, 0, 0, 0.03)', 
-                              borderRadius: '6px', 
-                              color: '#94A3B8', 
+                          <div
+                            style={{
+                              padding: '0.45rem 0.4rem',
+                              background: 'rgba(0, 0, 0, 0.03)',
+                              borderRadius: '6px',
+                              color: '#94A3B8',
                               textAlign: 'center',
                               fontSize: '0.8rem',
                               border: '1px dashed rgba(148, 163, 184, 0.4)',
@@ -833,7 +826,7 @@ export const EstimationEntryTable = ({
                           </div>
                         ) : (
                           <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
-                            <label 
+                            <label
                               title={meta.hasQuantity !== false ? "Quantity enabled for this item" : "Quantity disabled for this item"}
                               style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', margin: 0 }}
                             >
@@ -876,12 +869,12 @@ export const EstimationEntryTable = ({
                                 </select>
                               </div>
                             ) : (
-                              <span 
-                                style={{ 
+                              <span
+                                style={{
                                   display: 'inline-block',
                                   padding: '0.2rem 0.4rem',
-                                  color: '#94A3B8', 
-                                  fontSize: '0.8rem', 
+                                  color: '#94A3B8',
+                                  fontSize: '0.8rem',
                                   fontWeight: 'bold',
                                   border: '1px dashed rgba(148, 163, 184, 0.4)',
                                   borderRadius: '4px',
@@ -899,12 +892,12 @@ export const EstimationEntryTable = ({
                       {/* Unit Price (₹) */}
                       <td style={{ padding: '0.45rem 0.4rem', textAlign: 'right' }}>
                         {!enableUnitPrice ? (
-                          <div 
-                            style={{ 
-                              padding: '0.45rem 0.5rem', 
-                              background: 'rgba(0, 0, 0, 0.03)', 
-                              borderRadius: '6px', 
-                              color: '#94A3B8', 
+                          <div
+                            style={{
+                              padding: '0.45rem 0.5rem',
+                              background: 'rgba(0, 0, 0, 0.03)',
+                              borderRadius: '6px',
+                              color: '#94A3B8',
                               textAlign: 'center',
                               fontSize: '0.8rem',
                               border: '1px dashed rgba(148, 163, 184, 0.4)'
@@ -915,7 +908,7 @@ export const EstimationEntryTable = ({
                           </div>
                         ) : (
                           <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem', width: '100%' }}>
-                            <label 
+                            <label
                               title={meta.hasUnitPrice !== false ? "Unit price enabled for this item" : "Unit price disabled for this item"}
                               style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', margin: 0 }}
                             >
@@ -929,12 +922,12 @@ export const EstimationEntryTable = ({
 
                             {meta.hasUnitPrice !== false ? (
                               meta.isCombined ? (
-                                <div 
-                                  style={{ 
-                                    padding: '0.3rem 0.4rem', 
-                                    background: 'rgba(0, 0, 0, 0.02)', 
-                                    borderRadius: '6px', 
-                                    color: '#94A3B8', 
+                                <div
+                                  style={{
+                                    padding: '0.3rem 0.4rem',
+                                    background: 'rgba(0, 0, 0, 0.02)',
+                                    borderRadius: '6px',
+                                    color: '#94A3B8',
                                     textAlign: 'center',
                                     fontSize: '0.8rem',
                                     border: '1px dashed rgba(148, 163, 184, 0.4)',
@@ -956,12 +949,12 @@ export const EstimationEntryTable = ({
                                 />
                               )
                             ) : (
-                              <span 
-                                style={{ 
+                              <span
+                                style={{
                                   display: 'inline-block',
                                   padding: '0.2rem 0.4rem',
-                                  color: '#94A3B8', 
-                                  fontSize: '0.8rem', 
+                                  color: '#94A3B8',
+                                  fontSize: '0.8rem',
                                   fontWeight: 'bold',
                                   border: '1px dashed rgba(148, 163, 184, 0.4)',
                                   borderRadius: '4px',
@@ -980,11 +973,11 @@ export const EstimationEntryTable = ({
                       {/* Combine with other items Checkbox */}
                       <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center', verticalAlign: 'middle', background: 'rgba(217, 119, 6, 0.03)' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
-                          <label 
-                            style={{ 
-                              display: 'inline-flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'center', 
+                          <label
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
                               cursor: 'pointer',
                               margin: 0,
                               userSelect: 'none'
@@ -1094,7 +1087,6 @@ export const EstimationEntryTable = ({
                               value={meta.total ?? meta.price ?? ''}
                               onChange={(e) => {
                                 onUpdateItem(index, 'total', e.target.value);
-                                onUpdateItem(index, 'price', e.target.value);
                               }}
                               title="Direct item amount (Unit price disabled)"
                             />
@@ -1127,18 +1119,18 @@ export const EstimationEntryTable = ({
       {/* Row Control Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 pt-1">
         <div className="flex flex-wrap gap-2">
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="flex-1 sm:flex-initial bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm border border-indigo-100 dark:border-indigo-900/50"
-            onClick={onAddItem} 
+            onClick={onAddItem}
           >
             <Plus size={15} /> Add Item
           </button>
-          
-          <button 
-            type="button" 
+
+          <button
+            type="button"
             className="flex-1 sm:flex-initial bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm border border-amber-100 dark:border-amber-900/50"
-            onClick={onAddNewCombinedSection} 
+            onClick={onAddNewCombinedSection}
           >
             <Plus size={15} /> Add Combined Section
           </button>

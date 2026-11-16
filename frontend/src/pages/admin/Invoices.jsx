@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Printer, Save, Plus, Trash2, User, Building, Phone, Calendar, Hash, 
@@ -33,6 +33,7 @@ const Invoices = () => {
     const [companyGstin, setCompanyGstin] = useState('');
     const [showCompanyGstin, setShowCompanyGstin] = useState(true);
     const [companyState, setCompanyState] = useState('Kerala (32)');
+    const [companyAddress, setCompanyAddress] = useState('Industrial Area, Thiruvazhiyode, Palakkad, Kerala 679514');
     
     // Customer Selector & Autofill
     const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -41,6 +42,10 @@ const Invoices = () => {
     const [phone, setPhone] = useState('');
     const [gstin, setGstin] = useState('');
     const [customerState, setCustomerState] = useState('Kerala (32)');
+    const [showNameSuggestions, setShowNameSuggestions] = useState(false);
+    const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+    const nameDropdownRef = useRef(null);
+    const addressDropdownRef = useRef(null);
 
     // Combined Billing Mode & Items
     const [isCombinedMode, setIsCombinedMode] = useState(false);
@@ -138,6 +143,9 @@ const Invoices = () => {
                 if (map.company_gstin) {
                     setCompanyGstin(prev => prev || map.company_gstin);
                 }
+                if (map.company_address || map.footer_address || map.address) {
+                    setCompanyAddress(prev => (prev === 'Industrial Area, Thiruvazhiyode, Palakkad, Kerala 679514' ? (map.company_address || map.footer_address || map.address) : prev));
+                }
                 if (map.show_company_gstin !== undefined) {
                     setShowCompanyGstin(map.show_company_gstin !== false && map.show_company_gstin !== 'false');
                 }
@@ -149,19 +157,182 @@ const Invoices = () => {
         }
     };
 
+    const CUSTOMERS_STORAGE_KEY = 'krishna_saved_billing_customers';
+
+    const getStoredCustomCustomers = () => {
+        try {
+            const data = localStorage.getItem(CUSTOMERS_STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        } catch {
+            return [];
+        }
+    };
+
+    // Close autocomplete popups on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (nameDropdownRef.current && !nameDropdownRef.current.contains(e.target)) {
+                setShowNameSuggestions(false);
+            }
+            if (addressDropdownRef.current && !addressDropdownRef.current.contains(e.target)) {
+                setShowAddressSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const fetchCustomers = async () => {
         setLoadingCustomers(true);
         try {
             const res = await api.get('/auth/admin/users');
-            if (Array.isArray(res.data)) {
-                setCustomers(res.data);
+            const dbUsers = Array.isArray(res.data) ? res.data : [];
+            const localUsers = getStoredCustomCustomers();
+
+            const norm = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const seen = new Set();
+            const combined = [];
+
+            for (const c of localUsers) {
+                const key = norm(c.name) || norm(c.phone) || c._id;
+                if (key && !seen.has(key)) {
+                    seen.add(key);
+                    combined.push(c);
+                }
             }
+
+            for (const c of dbUsers) {
+                const key = norm(c.name) || norm(c.phone) || c._id;
+                if (key && !seen.has(key)) {
+                    seen.add(key);
+                    combined.push(c);
+                }
+            }
+
+            setCustomers(combined);
         } catch (err) {
             console.error("Failed to fetch customers for billing", err);
+            setCustomers(getStoredCustomCustomers());
         } finally {
             setLoadingCustomers(false);
         }
     };
+
+    const saveCustomerToList = (custData) => {
+        const name = (custData?.name || customerName || '').trim();
+        if (!name || name.length < 2) return;
+        if (['valued client', 'client', 'unnamed client'].includes(name.toLowerCase())) return;
+
+        const addr = (custData?.billingAddress ?? billingAddress ?? '').trim();
+        const ph = (custData?.phone ?? phone ?? '').trim();
+        const gst = (custData?.gstin ?? gstin ?? '').trim();
+        const state = (custData?.customerState ?? customerState ?? 'Kerala (32)').trim();
+
+        const norm = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        const existingStored = getStoredCustomCustomers();
+        const matchIdx = existingStored.findIndex(c => {
+            const sameName = norm(c.name) === norm(name);
+            const samePhone = ph && norm(c.phone) && norm(c.phone) === norm(ph);
+            const sameGst = gst && norm(c.gstin) && norm(c.gstin) === norm(gst);
+            return sameName || samePhone || sameGst;
+        });
+
+        let updatedStored;
+        let savedCustId;
+
+        if (matchIdx >= 0) {
+            updatedStored = [...existingStored];
+            savedCustId = updatedStored[matchIdx]._id;
+            updatedStored[matchIdx] = {
+                ...updatedStored[matchIdx],
+                name: name,
+                address: addr || updatedStored[matchIdx].address || '',
+                billingAddress: addr || updatedStored[matchIdx].billingAddress || '',
+                phone: ph || updatedStored[matchIdx].phone || '',
+                gstin: gst || updatedStored[matchIdx].gstin || '',
+                state: state || updatedStored[matchIdx].state || 'Kerala (32)',
+                updatedAt: new Date().toISOString()
+            };
+        } else {
+            savedCustId = `manual_cust_${Date.now()}`;
+            const newCust = {
+                _id: savedCustId,
+                name: name,
+                address: addr,
+                billingAddress: addr,
+                phone: ph,
+                gstin: gst,
+                state: state,
+                isManualSaved: true,
+                createdAt: new Date().toISOString()
+            };
+            updatedStored = [newCust, ...existingStored];
+        }
+
+        try {
+            localStorage.setItem(CUSTOMERS_STORAGE_KEY, JSON.stringify(updatedStored));
+        } catch (e) {
+            console.warn('Failed to save customer to local storage:', e);
+        }
+
+        setCustomers(prev => {
+            const prevNorms = new Set();
+            const result = [];
+            const targetCustomer = updatedStored.find(c => c._id === savedCustId);
+            if (targetCustomer) {
+                const key = norm(targetCustomer.name) || norm(targetCustomer.phone) || targetCustomer._id;
+                result.push(targetCustomer);
+                prevNorms.add(key);
+            }
+            for (const c of prev) {
+                const key = norm(c.name) || norm(c.phone) || c._id;
+                if (key && !prevNorms.has(key)) {
+                    prevNorms.add(key);
+                    result.push(c);
+                }
+            }
+            return result;
+        });
+
+        if (savedCustId && !selectedCustomerId) {
+            setSelectedCustomerId(savedCustId);
+        }
+    };
+
+    const applyCustomerDetails = (cust) => {
+        if (!cust) return;
+        setCustomerName(cust.name || '');
+        setBillingAddress(cust.address || cust.billingAddress || 'Industrial Park, Sector 4, Kerala');
+        setPhone(cust.phone || cust.phoneNumber || '');
+        setGstin(cust.gstin || cust.taxId || '32AAAAA0000A1Z5');
+        setCustomerState(cust.state || cust.customerState || 'Kerala (32)');
+        if (cust._id) setSelectedCustomerId(cust._id);
+        setShowNameSuggestions(false);
+        setShowAddressSuggestions(false);
+    };
+
+    const matchingCustomersByName = useMemo(() => {
+        if (!customerName || !customerName.trim()) return [];
+        const q = customerName.toLowerCase().trim();
+        return customers.filter(c => {
+            const nameMatch = c.name && c.name.toLowerCase().includes(q);
+            const phoneMatch = (c.phone || c.phoneNumber || '').includes(q);
+            const gstinMatch = (c.gstin || c.taxId || '').toLowerCase().includes(q);
+            const addrMatch = (c.address || c.billingAddress || '').toLowerCase().includes(q);
+            return nameMatch || phoneMatch || gstinMatch || addrMatch;
+        }).slice(0, 8);
+    }, [customers, customerName]);
+
+    const matchingCustomersByAddress = useMemo(() => {
+        if (!billingAddress || !billingAddress.trim() || billingAddress.trim().length < 2) return [];
+        const q = billingAddress.toLowerCase().trim();
+        return customers.filter(c => {
+            const addr = (c.address || c.billingAddress || '').toLowerCase();
+            const name = (c.name || '').toLowerCase();
+            return addr.includes(q) || name.includes(q);
+        }).slice(0, 8);
+    }, [customers, billingAddress]);
 
     const checkDuplicatedDoc = () => {
         try {
@@ -186,11 +357,7 @@ const Invoices = () => {
         if (!id) return;
         const cust = customers.find(c => c._id === id);
         if (cust) {
-            setCustomerName(cust.name || '');
-            setBillingAddress(cust.address || cust.billingAddress || 'Industrial Park, Sector 4, Kerala');
-            setPhone(cust.phone || cust.phoneNumber || '');
-            setGstin(cust.gstin || cust.taxId || '32AAAAA0000A1Z5');
-            setCustomerState(cust.state || 'Kerala (32)');
+            applyCustomerDetails(cust);
         }
     };
 
@@ -200,6 +367,7 @@ const Invoices = () => {
             next[index] = { ...next[index], [field]: value };
             if (field === 'price') next[index].rate = value;
             if (field === 'rate') next[index].price = value;
+            if (field === 'total') next[index].autoCalculate = false;
             if (field === 'name') {
                 const matched = PRECONFIGURED_CATALOG.find(c => c.name.toLowerCase() === (value || '').trim().toLowerCase());
                 if (matched) {
@@ -353,6 +521,7 @@ const Invoices = () => {
         setShowNetDays(true);
         setTagline(brandingSettings?.company_tagline || brandingSettings?.tagline || 'Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication');
         setShowTagline(true);
+        setCompanyAddress(brandingSettings?.company_address || brandingSettings?.footer_address || brandingSettings?.address || 'Industrial Area, Thiruvazhiyode, Palakkad, Kerala 679514');
         setSelectedCustomerId('');
         setCustomerName('');
         setBillingAddress('');
@@ -425,6 +594,7 @@ const Invoices = () => {
         if (data.companyGstin) setCompanyGstin(data.companyGstin);
         if (data.showCompanyGstin !== undefined) setShowCompanyGstin(data.showCompanyGstin);
         if (data.companyState) setCompanyState(data.companyState);
+        if (data.companyAddress !== undefined) setCompanyAddress(data.companyAddress);
         if (data.termsText) setTermsText(data.termsText);
         if (data.invoiceNotes) setInvoiceNotes(data.invoiceNotes);
         if (data.footerRemarks) setFooterRemarks(data.footerRemarks);
@@ -444,6 +614,7 @@ const Invoices = () => {
         companyGstin,
         showCompanyGstin,
         companyState,
+        companyAddress,
         selectedCustomerId,
         customerName,
         billingAddress,
@@ -556,6 +727,9 @@ const Invoices = () => {
             if (!autoSilent) alert("Invoice number is required.");
             return;
         }
+        if (customerName.trim()) {
+            saveCustomerToList();
+        }
         setSavingHistory(true);
         try {
             const fullInvoiceData = {
@@ -570,6 +744,7 @@ const Invoices = () => {
                 companyGstin,
                 showCompanyGstin,
                 companyState,
+                companyAddress,
                 selectedCustomerId,
                 customerName,
                 billingAddress,
@@ -639,6 +814,9 @@ const Invoices = () => {
     };
 
     const handlePrint = () => {
+        if (customerName.trim()) {
+            saveCustomerToList();
+        }
         handleSaveToHistory(true);
         window.print();
     };
@@ -960,6 +1138,17 @@ const Invoices = () => {
                             />
                         </div>
 
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Company Address</label>
+                            <input
+                                type="text"
+                                value={companyAddress}
+                                onChange={(e) => setCompanyAddress(e.target.value)}
+                                placeholder="e.g. Industrial Area, Thiruvazhiyode, Palakkad, Kerala 679514"
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition"
+                            />
+                        </div>
+
                         {/* Partial Payment Amount Input */}
                         {status === 'Partially Paid' && (
                             <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl space-y-2">
@@ -986,7 +1175,12 @@ const Invoices = () => {
                             <User className="w-4 h-4 text-indigo-500" /> Customer Auto-fill & Consignee Details
                         </h2>
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Select Customer from Database</label>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Customer from Database</label>
+                                {loadingCustomers && (
+                                    <span className="text-[10px] text-indigo-500 font-bold animate-pulse">Loading...</span>
+                                )}
+                            </div>
                             <select
                                 value={selectedCustomerId}
                                 onChange={handleSelectCustomer}
@@ -994,32 +1188,160 @@ const Invoices = () => {
                             >
                                 <option value="">-- Choose Existing Customer or Type Manually --</option>
                                 {customers.map(c => (
-                                    <option key={c._id} value={c._id}>{c.name} ({c.email || c.phone || 'Client'})</option>
+                                    <option key={c._id || c.name} value={c._id}>
+                                        {c.name} ({c.phone || c.email || 'Client'}{c.isManualSaved ? ' • Saved' : ''})
+                                    </option>
                                 ))}
                             </select>
                         </div>
 
                         <div className="space-y-3 pt-1">
-                            <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Customer / Organization Name</label>
-                                <input
-                                    type="text"
-                                    value={customerName}
-                                    onChange={(e) => setCustomerName(e.target.value)}
-                                    placeholder="Enter Customer Name"
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                />
+                            <div className="relative" ref={nameDropdownRef}>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                    Customer / Organization Name
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={customerName}
+                                        onChange={(e) => {
+                                            setCustomerName(e.target.value);
+                                            setShowNameSuggestions(true);
+                                        }}
+                                        onFocus={() => {
+                                            if (customerName.trim().length > 0) setShowNameSuggestions(true);
+                                        }}
+                                        onBlur={() => {
+                                            if (customerName.trim()) saveCustomerToList();
+                                        }}
+                                        placeholder="Enter Customer Name"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+                                    />
+                                    {customerName && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setCustomerName('');
+                                                setSelectedCustomerId('');
+                                                setShowNameSuggestions(false);
+                                            }}
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs p-0.5"
+                                            title="Clear name"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Autocomplete Dropdown for Name */}
+                                {showNameSuggestions && matchingCustomersByName.length > 0 && (
+                                    <div className="absolute left-0 right-0 top-full mt-1.5 z-[100] max-h-64 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-1.5 space-y-1">
+                                        <div className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+                                            <span>Matching Saved Customers</span>
+                                            <span className="text-slate-400 font-semibold">{matchingCustomersByName.length} found</span>
+                                        </div>
+                                        {matchingCustomersByName.map((cust) => (
+                                            <button
+                                                key={cust._id || cust.name}
+                                                type="button"
+                                                onClick={() => applyCustomerDetails(cust)}
+                                                className="w-full text-left p-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-slate-800 transition flex items-start gap-2.5 group"
+                                            >
+                                                <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-black text-xs flex-shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                                                    {cust.name ? cust.name.charAt(0).toUpperCase() : <User className="w-3.5 h-3.5" />}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate">
+                                                            {cust.name}
+                                                        </span>
+                                                        {cust.phone && (
+                                                            <span className="text-[10px] text-slate-400 font-medium flex-shrink-0">
+                                                                {cust.phone}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {(cust.address || cust.billingAddress) && (
+                                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                                                            {cust.address || cust.billingAddress}
+                                                        </p>
+                                                    )}
+                                                    {cust.gstin && (
+                                                        <span className="inline-block mt-1 text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded">
+                                                            GSTIN: {cust.gstin}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                            <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Billing & Delivery Address</label>
+
+                            <div className="relative" ref={addressDropdownRef}>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                    Billing & Delivery Address
+                                </label>
                                 <textarea
                                     rows="2"
                                     value={billingAddress}
-                                    onChange={(e) => setBillingAddress(e.target.value)}
+                                    onChange={(e) => {
+                                        setBillingAddress(e.target.value);
+                                        setShowAddressSuggestions(true);
+                                    }}
+                                    onFocus={() => {
+                                        if (billingAddress.trim().length > 1) setShowAddressSuggestions(true);
+                                    }}
+                                    onBlur={() => {
+                                        if (customerName.trim()) saveCustomerToList();
+                                    }}
                                     placeholder="Full street and location address"
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none resize-none"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 resize-none"
                                 />
+
+                                {/* Autocomplete Dropdown for Address */}
+                                {showAddressSuggestions && matchingCustomersByAddress.length > 0 && (
+                                    <div className="absolute left-0 right-0 top-full mt-1.5 z-[100] max-h-60 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-1.5 space-y-1">
+                                        <div className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+                                            <span>Select Matching Saved Customer</span>
+                                            <span className="text-slate-400 font-semibold">{matchingCustomersByAddress.length} found</span>
+                                        </div>
+                                        {matchingCustomersByAddress.map((cust) => (
+                                            <button
+                                                key={cust._id || cust.name}
+                                                type="button"
+                                                onClick={() => applyCustomerDetails(cust)}
+                                                className="w-full text-left p-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-slate-800 transition flex items-start gap-2.5 group"
+                                            >
+                                                <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xs flex-shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                                                    <Building className="w-3.5 h-3.5" />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate">
+                                                            {cust.name}
+                                                        </span>
+                                                        {cust.phone && (
+                                                            <span className="text-[10px] text-slate-400 font-medium flex-shrink-0">
+                                                                {cust.phone}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                                                        {cust.address || cust.billingAddress}
+                                                    </p>
+                                                    {cust.gstin && (
+                                                        <span className="inline-block mt-1 text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded">
+                                                            GSTIN: {cust.gstin}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
+
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Phone</label>
@@ -1027,8 +1349,11 @@ const Invoices = () => {
                                         type="text"
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
+                                        onBlur={() => {
+                                            if (customerName.trim()) saveCustomerToList();
+                                        }}
                                         placeholder="Phone"
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                     />
                                 </div>
                                 <div>
@@ -1037,8 +1362,11 @@ const Invoices = () => {
                                         type="text"
                                         value={gstin}
                                         onChange={(e) => setGstin(e.target.value)}
+                                        onBlur={() => {
+                                            if (customerName.trim()) saveCustomerToList();
+                                        }}
                                         placeholder="GSTIN"
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                                     />
                                 </div>
                             </div>
@@ -1312,7 +1640,7 @@ const Invoices = () => {
                     {/* Bottom Action Bar */}
                     <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg flex flex-wrap items-center justify-between gap-4">
                         <div className="text-xs font-bold text-slate-500">
-                            Total: <span className="text-base font-black text-indigo-600 dark:text-indigo-400">{formatCurrencyINR(totals.finalTotal)}</span> ({items.length} items)
+                            Total: <span className="text-base font-black text-indigo-600 dark:text-indigo-400">{formatCurrencyINR(totals.finalTotal ?? totals.totalAmount)}</span> ({items.length} items)
                         </div>
                         <div className="flex items-center gap-3">
                             <button
@@ -1400,6 +1728,19 @@ const Invoices = () => {
                                                 <p className="text-xs opacity-80 font-medium">
                                                     {showTax ? 'Tax Invoice / Supply of Goods & Engineering Services' : 'Invoice / Supply of Goods & Engineering Services'}
                                                 </p>
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        value={companyAddress}
+                                                        onChange={(e) => setCompanyAddress(e.target.value)}
+                                                        placeholder="Enter company address..."
+                                                        title="Click to edit Company Address directly"
+                                                        className="no-print text-xs opacity-90 font-medium bg-transparent hover:bg-white/10 focus:bg-black/20 text-white placeholder-white/60 border border-transparent hover:border-white/30 focus:border-white/60 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                    />
+                                                    <p className="hidden print:block text-xs opacity-90 font-medium">
+                                                        {companyAddress}
+                                                    </p>
+                                                </div>
                                                 {showCompanyGstin && (
                                                     <div className="text-[11px] opacity-85 font-medium mt-1">
                                                         <div className="no-print flex items-center gap-1.5 flex-wrap">
@@ -1472,6 +1813,19 @@ const Invoices = () => {
                                                     </p>
                                                 </div>
                                             )}
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    value={companyAddress}
+                                                    onChange={(e) => setCompanyAddress(e.target.value)}
+                                                    placeholder="Enter company address..."
+                                                    title="Click to edit Company Address directly"
+                                                    className="no-print text-xs text-slate-500 dark:text-slate-400 font-medium bg-transparent hover:bg-slate-100 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                />
+                                                <p className="hidden print:block text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                                    {companyAddress}
+                                                </p>
+                                            </div>
                                             {showCompanyGstin && (
                                                 <div className="text-xs text-slate-500 font-medium">
                                                     <div className="no-print flex items-center gap-1.5 flex-wrap">
@@ -1535,7 +1889,19 @@ const Invoices = () => {
                                                     </p>
                                                 </div>
                                             )}
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Industrial Area, Thiruvazhiyode, Palakkad, Kerala 679514</p>
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    value={companyAddress}
+                                                    onChange={(e) => setCompanyAddress(e.target.value)}
+                                                    placeholder="Enter company address..."
+                                                    title="Click to edit Company Address directly"
+                                                    className="no-print text-xs text-slate-500 dark:text-slate-400 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-full max-w-lg transition"
+                                                />
+                                                <p className="hidden print:block text-xs text-slate-500 dark:text-slate-400">
+                                                    {companyAddress}
+                                                </p>
+                                            </div>
                                             {showCompanyGstin && (
                                                 <div className="text-[11px] text-slate-400 font-medium mt-0.5">
                                                     <div className="no-print flex items-center gap-1.5 flex-wrap">

@@ -289,7 +289,7 @@ const Layout = ({ children }) => {
         {children}
       </main>
       {!hidePublicChrome && <Footer />}
-      {!hidePublicChrome && (!Capacitor.isNativePlatform() || location.pathname !== '/') && <AIChatWidget />}
+      {!hidePublicChrome && <AIChatWidget />}
     </div>
   );
 };

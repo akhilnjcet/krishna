@@ -191,6 +191,7 @@ const Quotations = () => {
             next[index] = { ...next[index], [field]: value };
             if (field === 'price') next[index].rate = value;
             if (field === 'rate') next[index].price = value;
+            if (field === 'total') next[index].autoCalculate = false;
             if (field === 'name') {
                 const matched = PRECONFIGURED_CATALOG.find(c => c.name.toLowerCase() === (value || '').trim().toLowerCase());
                 if (matched) {
@@ -1294,7 +1295,7 @@ const Quotations = () => {
                     {/* Bottom Action Bar */}
                     <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg flex flex-wrap items-center justify-between gap-4">
                         <div className="text-xs font-bold text-slate-500">
-                            Total: <span className="text-base font-black text-indigo-600 dark:text-indigo-400">{formatCurrencyINR(totals.finalTotal)}</span> ({items.length} items)
+                            Total: <span className="text-base font-black text-indigo-600 dark:text-indigo-400">{formatCurrencyINR(totals.finalTotal ?? totals.totalAmount)}</span> ({items.length} items)
                         </div>
                         <div className="flex items-center gap-3">
                             <button

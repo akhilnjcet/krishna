@@ -180,8 +180,9 @@ const AIChatWidget = () => {
 
         const dx = e.clientX - dragRef.current.startX;
         const dy = e.clientY - dragRef.current.startY;
+        const threshold = isMobile ? 10 : 4;
 
-        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+        if (Math.abs(dx) > threshold || Math.abs(dy) > threshold) {
             dragRef.current.hasMoved = true;
         }
 
@@ -298,8 +299,10 @@ const AIChatWidget = () => {
         <>
             {/* Draggable Launcher Button Container */}
             <div 
-                className="fixed z-40 font-sans bottom-5 right-3.5 sm:bottom-6 sm:right-6 pointer-events-auto"
+                className="fixed z-[60] font-sans pointer-events-auto"
                 style={{ 
+                    bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
+                    right: 'max(0.875rem, env(safe-area-inset-right, 0.875rem))',
                     transform: `translate(${position.x}px, ${position.y}px)`,
                     touchAction: 'none'
                 }}
@@ -352,8 +355,9 @@ const AIChatWidget = () => {
                                 }`}
                                 style={isMobile ? {
                                     bottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))',
-                                    maxHeight: 'calc(100dvh - 2rem - env(safe-area-inset-bottom, 0px))',
-                                    height: 'min(580px, calc(100dvh - 2rem - env(safe-area-inset-bottom, 0px)))'
+                                    top: 'max(1rem, env(safe-area-inset-top, 1rem))',
+                                    maxHeight: 'calc(100dvh - 2rem - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px))',
+                                    height: 'min(580px, calc(100dvh - 2rem - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px)))'
                                 } : undefined}
                             >
                                 {/* Header (Draggable on Desktop, Fixed on Mobile) */}

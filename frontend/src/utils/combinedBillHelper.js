@@ -358,7 +358,7 @@ export const computeItemSectionMeta = (items = [], combinedTotals = {}, enableQu
                 isSectionFollower: false,
                 combinedAmount: null,
                 displayPrice: hasPriceFlag && price > 0 ? price : null,
-                displayTotal: directTotal !== null && price === 0 ? directTotal : calculatedTotal
+                displayTotal: directTotal !== null && (price === 0 || item.autoCalculate === false || item.hasUnitPrice === false) ? directTotal : calculatedTotal
             });
             i++;
         } else {
@@ -533,7 +533,11 @@ export const synchronizeItemSections = (items = []) => {
             item.isNewSectionStart = false;
             const qty = Number(item.quantity) || 1;
             const price = Number(item.price ?? item.rate ?? item.dailyRate ?? 0) || 0;
-            item.total = item.autoCalculate !== false ? qty * price : price;
+            if (item.hasUnitPrice === false || item.autoCalculate === false) {
+                item.total = item.total !== undefined && item.total !== null && item.total !== '' ? Number(item.total) : price;
+            } else {
+                item.total = qty * price;
+            }
         }
 
         result[i] = item;

@@ -3,8 +3,9 @@ import api from '../../services/api';
 import { 
     Calendar, CheckCircle2, XCircle, Clock, AlertCircle, Loader2, 
     Download, Eye, Search, Filter, ArrowLeft, ArrowRight, ShieldCheck, 
-    Sparkles, RefreshCw, FileText, MapPin, Award, Activity
+    Sparkles, RefreshCw, FileText, MapPin, Award, Activity, UserCheck
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import useAuthStore from '../../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSocket } from '../../utils/socket';
@@ -187,6 +188,13 @@ const StaffAttendanceHub = () => {
 
                 {/* Toolbar Controls */}
                 <div className="flex items-center gap-3 flex-wrap">
+                    <Link
+                        to="/staff/attendance"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition"
+                    >
+                        <UserCheck className="w-4 h-4" /> Scan Attendance
+                    </Link>
+
                     {/* Month Picker */}
                     <div className="flex items-center gap-2 bg-slate-800/80 px-4 py-2.5 rounded-2xl border border-slate-700">
                         <Calendar className="w-4 h-4 text-indigo-400" />

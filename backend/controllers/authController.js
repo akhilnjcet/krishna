@@ -313,6 +313,16 @@ exports.verifyFace = async (req, res) => {
                 attendance.duration_minutes = durationMins;
                 attendance.face_match_confidence = faceMatchConfidence;
                 attendance.type = 'OUT';
+                attendance.action = 'Check out';
+                if (req.body.location) attendance.location = req.body.location;
+                if (req.body.face_image) attendance.face_image = req.body.face_image;
+                attendance.audit_trail.push({
+                    action: 'RECORDED',
+                    performed_by: bestMatch._id,
+                    performed_by_name: bestMatch.name,
+                    timestamp: now,
+                    details: 'Shift OUT recorded via facial recognition and location'
+                });
                 await attendance.save();
 
                 const workedHours = parseFloat((durationMins / 60).toFixed(2));
@@ -335,7 +345,17 @@ exports.verifyFace = async (req, res) => {
                     face_verified: true,
                     face_match_confidence: faceMatchConfidence,
                     device_ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
-                    type: 'IN'
+                    type: 'IN',
+                    action: 'Check in',
+                    location: req.body.location || {},
+                    face_image: req.body.face_image || null,
+                    audit_trail: [{
+                        action: 'RECORDED',
+                        performed_by: bestMatch._id,
+                        performed_by_name: bestMatch.name,
+                        timestamp: now,
+                        details: 'Shift IN recorded via facial recognition and location'
+                    }]
                 });
 
                 await DailyAttendance.findOneAndUpdate(

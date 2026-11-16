@@ -60,7 +60,13 @@ const FloatingContact = () => {
     ];
 
     return (
-        <div className="fixed bottom-20 right-3.5 sm:bottom-[92px] sm:right-6 md:bottom-10 md:right-10 z-40 flex flex-col gap-3 sm:gap-3 pointer-events-none group items-end">
+        <div 
+            className="fixed z-40 flex flex-col gap-3 sm:gap-3 pointer-events-none group items-end"
+            style={{
+                bottom: 'calc(5.25rem + env(safe-area-inset-bottom, 0px))',
+                right: 'max(0.875rem, env(safe-area-inset-right, 0.875rem))'
+            }}
+        >
             <AnimatePresence>
                 {contacts.map((contact, idx) => (
                     <motion.a

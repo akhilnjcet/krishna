@@ -47,7 +47,9 @@ api.interceptors.response.use(
             !error.config.url.includes('/admin/reset')
         ) {
             useAuthStore.getState().logout();
-            window.location.href = '/login';
+            if (window.location.hash !== '#/login') {
+                window.location.hash = '#/login';
+            }
         }
         return Promise.reject(error);
     }

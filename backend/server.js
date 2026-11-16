@@ -64,13 +64,43 @@ app.use(helmet({
     noSniff: true
 }));
 
-// Enable CORS first so options preflight and rate limit responses carry CORS headers
-app.use(cors({
-    origin: true,
+// Secure CORS Configuration: Whitelist explicitly trusted frontend origins and mobile apps
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:5000',
+    'capacitor://localhost',
+    'ionic://localhost',
+    'http://localhost'
+];
+if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ''));
+}
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. native Capacitor mobile apps, postman, server-to-server)
+        if (!origin) return callback(null, true);
+
+        const cleanOrigin = origin.replace(/\/$/, '');
+        if (
+            allowedOrigins.includes(cleanOrigin) ||
+            cleanOrigin.endsWith('.vercel.app') ||
+            cleanOrigin.startsWith('http://localhost:') ||
+            cleanOrigin.startsWith('http://127.0.0.1:') ||
+            cleanOrigin.startsWith('http://192.168.') ||
+            cleanOrigin.startsWith('http://10.')
+        ) {
+            return callback(null, true);
+        }
+        return callback(new Error(`CORS blocked request from untrusted origin: ${origin}`));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['X-CSRF-Token', 'X-Requested-With', 'Accept', 'Accept-Version', 'Content-Length', 'Content-MD5', 'Content-Type', 'Date', 'X-Api-Version', 'Authorization']
-}));
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json({ 
     limit: '50mb',
@@ -201,27 +231,9 @@ app.get('/api/debug/error', (req, res) => {
 
 // Admin Route to clean Sunday absent logs
 const { protect: serverProtect, admin: serverAdmin } = require('./middleware/authMiddleware');
-app.get('/api/debug/cleanup-sundays', serverProtect, serverAdmin, async (req, res) => {
-    try {
-        const DailyAttendance = require('./models/DailyAttendance');
-        const records = await DailyAttendance.find({ status: 'Absent' });
-        
-        let deletedCount = 0;
-        for (const r of records) {
-            const dateObj = new Date(r.date);
-            if (dateObj.getDay() === 0) { // Sunday
-                await DailyAttendance.deleteOne({ _id: r._id });
-                deletedCount++;
-            }
-        }
-        res.json({ success: true, checked: records.length, deleted: deletedCount });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
-// WhatsApp Health Check
-app.get('/api/health/whatsapp', async (req, res) => {
+// WhatsApp Health Check (Admin Only to prevent disclosing phone / connection state)
+app.get('/api/health/whatsapp', serverProtect, serverAdmin, async (req, res) => {
     try {
         const { getWhatsAppStatus, ensureWhatsApp } = require('./services/whatsappService');
         const SystemSetting = require('./models/SystemSetting');
@@ -271,7 +283,7 @@ app.get('/api/health/whatsapp', async (req, res) => {
     }
 });
 
-app.post('/api/health/whatsapp/logout', async (req, res) => {
+app.post('/api/health/whatsapp/logout', serverProtect, serverAdmin, async (req, res) => {
     try {
         const { logoutWhatsApp } = require('./services/whatsappService');
         await logoutWhatsApp();
@@ -281,7 +293,7 @@ app.post('/api/health/whatsapp/logout', async (req, res) => {
     }
 });
 
-app.get('/api/health/email', async (req, res) => {
+app.get('/api/health/email', serverProtect, serverAdmin, async (req, res) => {
     try {
         const { sendWelcomeEmail } = require('./services/emailService');
         const success = await sendWelcomeEmail(process.env.EMAIL_USER, "System Health Check");
@@ -291,6 +303,26 @@ app.get('/api/health/email', async (req, res) => {
             passSet: !!process.env.EMAIL_PASS,
             timestamp: new Date().toISOString() 
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin Route to clean Sunday absent logs
+app.get('/api/debug/cleanup-sundays', serverProtect, serverAdmin, async (req, res) => {
+    try {
+        const DailyAttendance = require('./models/DailyAttendance');
+        const records = await DailyAttendance.find({ status: 'Absent' });
+        
+        let deletedCount = 0;
+        for (const r of records) {
+            const dateObj = new Date(r.date);
+            if (dateObj.getDay() === 0) { // Sunday
+                await DailyAttendance.deleteOne({ _id: r._id });
+                deletedCount++;
+            }
+        }
+        res.json({ success: true, checked: records.length, deleted: deletedCount });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
