@@ -1046,6 +1046,95 @@ const sendTestSupportAlertEmail = async (targetEmail) => {
     }
 };
 
+const sendStaffAttendanceEmail = async (email, name, { type, dateTimeStr }) => {
+    try {
+        const transporter = createTransporter();
+        const mailOptions = {
+            from: `"Krishna Engineering Portal" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: `🔔 Krishna Engineering Portal — Attendance Update`,
+            text: `🔔 Krishna Engineering Portal — Attendance Update
+
+Hello ${name || 'Staff Member'},
+
+Your attendance was just marked by staff.
+
+🕒 Type: ${type}
+📅 Time: ${dateTimeStr}
+
+If you believe this record is incorrect, please contact support.
+
+– Krishna Engineering Works`,
+            html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 540px; margin: 20px auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.06);">
+                <div style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); padding: 26px 30px; text-align: left;">
+                    <div style="display: inline-block; padding: 4px 10px; background: rgba(255,255,255,0.15); border-radius: 20px; font-size: 11px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+                        🔔 System Notification
+                    </div>
+                    <h2 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.5px;">
+                        Krishna Engineering Portal
+                    </h2>
+                    <p style="color: #bfdbfe; margin: 3px 0 0 0; font-size: 12px; font-weight: 600;">
+                        Attendance Update
+                    </p>
+                </div>
+                
+                <div style="padding: 30px; color: #1e293b;">
+                    <p style="font-size: 16px; margin: 0 0 14px 0; font-weight: 700; color: #0f172a;">
+                        Hello ${name || 'Staff Member'},
+                    </p>
+                    
+                    <p style="font-size: 14px; color: #475569; margin: 0 0 22px 0; line-height: 1.6;">
+                        Your attendance was just marked by staff.
+                    </p>
+                    
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 22px; margin-bottom: 24px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px 0; font-size: 14px; font-weight: 700; color: #0f172a; width: 35%;">
+                                    🕒 Type:
+                                </td>
+                                <td style="padding: 8px 0; font-size: 15px; font-weight: 800; color: ${type === 'Check-in' ? '#16a34a' : '#d97706'};">
+                                    ${type}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; font-size: 14px; font-weight: 700; color: #0f172a;">
+                                    📅 Time:
+                                </td>
+                                <td style="padding: 8px 0; font-size: 14px; font-weight: 600; color: #334155;">
+                                    ${dateTimeStr}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <p style="font-size: 13px; color: #64748b; margin: 0 0 20px 0; line-height: 1.6;">
+                        If you believe this record is incorrect, please contact support.
+                    </p>
+                    
+                    <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 24px; text-align: center;">
+                        <p style="font-size: 12px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">
+                            Krishna Engineering Works
+                        </p>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">
+                            Industrial Area, Thiruvazhiyode, Palakkad, Kerala<br/>
+                            Support: +91 9447940835 • contact@krishnaengg.com
+                        </p>
+                    </div>
+                </div>
+            </div>
+            `
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        return { success: true, messageId: info.messageId };
+    } catch (error) {
+        console.error('Error sending staff attendance email:', error.message);
+        return { success: false, error: error.message };
+    }
+};
+
 module.exports = {
     sendWelcomeEmail,
     sendPasswordResetOTP,
@@ -1060,6 +1149,7 @@ module.exports = {
     sendProjectTimelineUpdateEmail,
     sendAdminSupportRequestEmail,
     sendClientSupportApprovedEmail,
-    sendTestSupportAlertEmail
+    sendTestSupportAlertEmail,
+    sendStaffAttendanceEmail
 };
 

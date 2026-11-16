@@ -363,6 +363,25 @@ async function sendAttendanceAlert(staff, attendance) {
     }
 }
 
+async function sendStaffAttendanceNotification(staff, { type, dateTimeStr }) {
+    const staffPhone = staff.phoneNumber || staff.phone;
+    if (!staffPhone) return;
+
+    const message = 
+`🔔 *Krishna Engineering Portal — Attendance Update*
+
+Hello ${staff.name || 'Staff Member'},
+
+Your attendance was just marked by staff.
+
+🕒 *Type:* ${type}
+📅 *Time:* ${dateTimeStr}
+
+If you believe this record is incorrect, please contact support.`;
+
+    await sendWhatsAppMessage(staffPhone, message);
+}
+
 async function sendTaskAssignment(staff, task) {
     const staffPhone = staff.phoneNumber || staff.phone;
     if (!staffPhone) return;
@@ -471,6 +490,7 @@ module.exports = {
     sendWhatsAppMessage,
     sendProgressUpdate,
     sendAttendanceAlert,
+    sendStaffAttendanceNotification,
     sendAbsentAlert,
     sendTaskAssignment,
     sendDailyReport,

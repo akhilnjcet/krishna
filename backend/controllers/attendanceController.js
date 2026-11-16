@@ -229,6 +229,42 @@ exports.recordAttendance = async (req, res) => {
                 console.warn('Socket notification notice:', sockErr.message);
             }
 
+            // Dispatch WhatsApp & Email attendance confirmation notifications to staff member
+            try {
+                const { sendStaffAttendanceNotification } = require('../services/whatsappService');
+                const { sendStaffAttendanceEmail } = require('../services/emailService');
+
+                const formattedDateTime = now.toLocaleString('en-IN', {
+                    timeZone: 'Asia/Kolkata',
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                const notificationPayload = {
+                    type: normalizedAction,
+                    dateTimeStr: formattedDateTime
+                };
+
+                // Asynchronously dispatch WhatsApp notification
+                sendStaffAttendanceNotification(staffUser, notificationPayload).catch(err => {
+                    console.warn('WhatsApp staff attendance alert notice:', err.message);
+                });
+
+                // Asynchronously dispatch Email notification
+                if (staffUser.email) {
+                    sendStaffAttendanceEmail(staffUser.email, staffUser.name, notificationPayload).catch(err => {
+                        console.warn('Email staff attendance alert notice:', err.message);
+                    });
+                }
+            } catch (notifyErr) {
+                console.warn('Attendance notification dispatch notice:', notifyErr.message);
+            }
+
             return res.status(200).json({
                 success: true,
                 message: `${normalizedAction} recorded successfully.`,
