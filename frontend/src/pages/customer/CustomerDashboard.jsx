@@ -3,11 +3,12 @@ import api from '../../services/api';
 import {
     TrendingUp, Wallet, ShieldCheck, Activity, ChevronRight, Search, Bed, CalendarX,
     CheckCircle2, Plus, X, AlertTriangle, Construction, Zap, Clock, Sparkles, ArrowRight,
-    Building2, Upload, Copy, Check, AlertCircle, Image as ImageIcon
+    Building2, Upload, Copy, Check, AlertCircle, Image as ImageIcon, Store, Printer, MapPin, RefreshCw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReportHeader from '../../components/ReportHeader';
 import { initializeCashfree } from '../../utils/cashfreeLoader';
+import { generateCashCounterChallanPDF } from '../../services/pdfService';
 
 const CustomerDashboard = () => {
     const [projects, setProjects] = useState([]);
@@ -221,21 +222,31 @@ const CustomerDashboard = () => {
     };
 
     const submitPayment = async (e) => {
-        e.preventDefault();
-        if (!payModal.name) return alert('Please enter payment name.');
-        if (!payModal.referenceId) return alert('Please enter Transaction ID/UTR Number.');
+        if (e && e.preventDefault) e.preventDefault();
+        const isCash = payModal.method === 'cash_counter';
+        let refId = payModal.referenceId;
+        if (isCash && !refId) {
+            refId = `CC-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+        } else if (!isCash && !refId) {
+            return alert('Please enter Transaction ID/UTR Number.');
+        }
         
         try {
             const res = await api.post('/payments/submit', {
                 amount: parseFloat(payModal.amount),
-                method: 'Bank Transfer / UPI',
-                referenceId: payModal.referenceId,
-                name: payModal.name,
-                notes: payModal.notes,
+                method: isCash ? 'cash_counter' : 'Bank Transfer / UPI',
+                referenceId: refId,
+                name: payModal.name || (isCash ? 'Cash Counter Handover' : 'Direct Payment'),
+                notes: payModal.notes || (isCash ? 'Cash payment to be deposited at office counter' : undefined),
                 bookingId: payModal.bookingId,
                 roomId: payModal.roomId,
                 uploadedProof: screenshotPreview || undefined
             });
+
+            if (isCash) {
+                generateCashCounterChallanPDF(res.data);
+            }
+
             setPayModal({ show: false, bookingId: null, roomId: null, amount: 0, name: '', notes: '', referenceId: '', method: 'cashfree' });
             setScreenshotPreview(null);
             fetchDashboardData();
@@ -245,10 +256,12 @@ const CustomerDashboard = () => {
                 amount: parseFloat(res.data.amount || 0),
                 orderId: res.data.referenceId || res.data._id,
                 status: 'WAITING_FOR_VERIFICATION',
-                message: 'Payment report submitted successfully! Awaiting Admin Verification.'
+                message: isCash
+                    ? `Cash Counter Token ${refId} created! Deposit slip downloaded. Please present this slip with cash at our accounts desk.`
+                    : 'Payment report submitted successfully! Awaiting Admin Verification.'
             });
         } catch(err) { 
-            console.error('Lodge payment error:', err);
+            console.error('Payment error:', err);
             alert('Failed to submit payment: ' + (err.response?.data?.message || err.message)); 
         }
     };
@@ -417,12 +430,12 @@ const CustomerDashboard = () => {
                            <span className="text-lg font-black font-poppins text-emerald-600 dark:text-emerald-400">₹ {payModal.amount?.toLocaleString()}</span>
                        </div>
 
-                       {/* 2-Option Selector: Cashfree vs Bank Details & UPI */}
-                       <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
+                       {/* 3-Option Selector: Cashfree vs Bank Details & UPI vs Cash Counter */}
+                       <div className="grid grid-cols-3 gap-1.5 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
                            <button
                                type="button"
                                onClick={() => setPayModal({...payModal, method: 'cashfree'})}
-                               className={`py-3 px-2 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 ${
+                               className={`py-3 px-1.5 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1 ${
                                    payModal.method === 'cashfree'
                                        ? 'bg-emerald-600 text-white shadow-md'
                                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -434,14 +447,29 @@ const CustomerDashboard = () => {
                            <button
                                type="button"
                                onClick={() => setPayModal({...payModal, method: 'bank_transfer'})}
-                               className={`py-3 px-2 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 ${
+                               className={`py-3 px-1.5 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1 ${
                                    payModal.method === 'bank_transfer'
                                        ? 'bg-blue-600 text-white shadow-md'
                                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                                }`}
                            >
                                <Building2 className="w-3.5 h-3.5 text-blue-300" />
-                               <span>Bank & UPI Details</span>
+                               <span>Bank/UPI</span>
+                           </button>
+                           <button
+                               type="button"
+                               onClick={() => {
+                                   const autoToken = `CC-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+                                   setPayModal({...payModal, method: 'cash_counter', referenceId: autoToken});
+                               }}
+                               className={`py-3 px-1.5 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1 ${
+                                   payModal.method === 'cash_counter'
+                                       ? 'bg-emerald-600 text-white shadow-md'
+                                       : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                               }`}
+                           >
+                               <Store className="w-3.5 h-3.5 text-emerald-300" />
+                               <span>Counter</span>
                            </button>
                        </div>
 
@@ -615,6 +643,62 @@ const CustomerDashboard = () => {
 
                                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer">Submit Manual Report</button>
                            </form>
+                       )}
+
+                       {/* OPTION 3: CASH COUNTER DESK */}
+                       {payModal.method === 'cash_counter' && (
+                           <div className="bg-gradient-to-br from-emerald-50/60 to-teal-50/40 dark:from-emerald-950/30 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl p-4 space-y-3 text-left">
+                               <div className="flex items-start justify-between gap-3 border-b border-emerald-200/60 dark:border-emerald-900/40 pb-2.5">
+                                   <div className="flex items-center gap-2.5">
+                                       <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                                           <Store className="w-4 h-4" />
+                                       </div>
+                                       <div>
+                                           <h5 className="text-xs font-black text-slate-900 dark:text-white">Main Accounts Counter</h5>
+                                           <p className="text-[10px] text-slate-500 dark:text-slate-400">Industrial Area, Thiruvazhiyode, Palakkad - 679514</p>
+                                       </div>
+                                   </div>
+                                   <span className="text-[9px] font-black uppercase text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded">
+                                       9 AM - 6 PM
+                                   </span>
+                               </div>
+
+                               <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-emerald-200/80 dark:border-slate-700 flex items-center justify-between">
+                                   <div>
+                                       <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block">
+                                           Cash Deposit Token ID
+                                       </span>
+                                       <span className="font-mono text-sm font-black text-slate-900 dark:text-white">
+                                           {payModal.referenceId || 'CC-2026-TOKEN'}
+                                       </span>
+                                   </div>
+                                   <button
+                                       type="button"
+                                       onClick={() => generateCashCounterChallanPDF({ ...payModal, amount: parseFloat(payModal.amount) || 0, createdAt: new Date() })}
+                                       className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-sm transition cursor-pointer"
+                                   >
+                                       <Printer className="w-3.5 h-3.5" />
+                                       Print Challan
+                                   </button>
+                               </div>
+
+                               <form onSubmit={submitPayment} className="space-y-3 pt-1">
+                                   <input 
+                                       type="text" 
+                                       value={payModal.name} 
+                                       onChange={e => setPayModal({...payModal, name: e.target.value})} 
+                                       placeholder="Depositor Name" 
+                                       className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500" 
+                                   />
+                                   <button 
+                                       type="submit" 
+                                       className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2"
+                                   >
+                                       <Store className="w-4 h-4" />
+                                       <span>Generate Token & Confirm Cash Pay</span>
+                                   </button>
+                               </form>
+                           </div>
                        )}
                     </div>
                 </div>

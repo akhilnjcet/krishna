@@ -5,11 +5,12 @@ import {
     Briefcase, Calendar, DollarSign, User, Mail, Phone, Clock, 
     CheckCircle2, AlertCircle, RefreshCw, FileText, ChevronRight,
     MapPin, Users, IndianRupee, Wallet, CheckCircle, XCircle, Plus, X, Wrench, Send, Sparkles, ArrowRight,
-    Copy, Check, Building2, Upload, Image as ImageIcon, Download, ShieldCheck
+    Copy, Check, Building2, Upload, Image as ImageIcon, Download, ShieldCheck, Store, Printer
 } from 'lucide-react';
 import { getSocket } from '../../utils/socket';
 import { getDirectImageUrl } from '../../utils/imageUtils';
 import { initializeCashfree } from '../../utils/cashfreeLoader';
+import { generateCashCounterChallanPDF, generatePaymentReceiptPDF } from '../../services/pdfService';
 
 const CustomerProjects = () => {
     const [projects, setProjects] = useState([]);
@@ -267,17 +268,32 @@ const CustomerProjects = () => {
             return handleCashfreeProjectPay();
         }
 
-        if (!paymentForm.referenceId) return alert('Please enter Transaction ID/UTR Number.');
+        const isCash = paymentForm.method === 'cash_counter';
+        let refId = paymentForm.referenceId;
+        if (isCash && !refId) {
+            refId = `CC-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+        } else if (!isCash && !refId) {
+            return alert('Please enter Transaction ID/UTR Number.');
+        }
+
         if (!paymentForm.paymentDate) return alert('Please select a Payment Date.');
         
         try {
             const res = await api.post('/payments/submit', {
                 ...paymentForm,
                 amount: parseFloat(paymentForm.amount),
+                method: isCash ? 'cash_counter' : paymentForm.method,
+                referenceId: refId,
                 projectId: selectedProject._id,
-                name: paymentForm.name || `Payment for ${selectedProject.title}`,
+                name: paymentForm.name || (isCash ? `Cash Counter Deposit for ${selectedProject.title}` : `Payment for ${selectedProject.title}`),
+                notes: paymentForm.notes || (isCash ? 'Cash deposit at office billing counter' : 'Direct payment'),
                 uploadedProof: paymentForm.uploadedProof || undefined
             });
+
+            if (isCash) {
+                generateCashCounterChallanPDF(res.data);
+            }
+
             setShowPaymentModal(false);
             setPaymentForm({
                 amount: '',
@@ -297,7 +313,9 @@ const CustomerProjects = () => {
                 amount: parseFloat(res.data.amount || 0),
                 orderId: res.data.referenceId || res.data._id,
                 status: 'WAITING_FOR_VERIFICATION',
-                message: 'Payment acknowledgement submitted successfully! Awaiting Admin Verification.'
+                message: isCash
+                    ? `Cash Counter Token ${refId} created! Deposit slip downloaded. Please present this slip with cash at our billing desk.`
+                    : 'Payment acknowledgement submitted successfully! Awaiting Admin Verification.'
             });
         } catch (err) {
             alert('Failed to submit payment: ' + (err.response?.data?.message || err.message));
@@ -982,8 +1000,8 @@ const CustomerProjects = () => {
                             <form onSubmit={handleProjectPaymentSubmit} className="space-y-5">
                                 <div>
                                     <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Payment Method *</label>
-                                    {/* 2-OPTION SELECTOR: ONLY Cashfree Gateway vs Bank Details & UPI */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    {/* 3-OPTION SELECTOR: Cashfree Gateway vs Bank Details & UPI vs Cash Counter */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                         <button
                                             type="button"
                                             onClick={() => setPaymentForm({ ...paymentForm, method: 'cashfree' })}
@@ -1001,7 +1019,7 @@ const CustomerProjects = () => {
                                                     Instant
                                                 </span>
                                             </div>
-                                            <p className="text-[9px] text-slate-400">Cards, UPI (GPay/PhonePe), NetBanking, Wallets</p>
+                                            <p className="text-[9px] text-slate-400">Cards, UPI (GPay/PhonePe), NetBanking</p>
                                         </button>
 
                                         <button
@@ -1021,7 +1039,30 @@ const CustomerProjects = () => {
                                                     Direct Info
                                                 </span>
                                             </div>
-                                            <p className="text-[9px] text-slate-400">Direct Wire / UPI (Optional Screenshot)</p>
+                                            <p className="text-[9px] text-slate-400">Direct Wire / UPI (Optional Proof)</p>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const autoToken = `CC-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+                                                setPaymentForm({ ...paymentForm, method: 'cash_counter', referenceId: autoToken });
+                                            }}
+                                            className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                                                paymentForm.method === 'cash_counter'
+                                                    ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 shadow-sm ring-2 ring-emerald-500/20'
+                                                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="font-black text-xs flex items-center gap-1.5">
+                                                    <Store className="w-3.5 h-3.5 text-emerald-600" /> Cash Counter
+                                                </span>
+                                                <span className="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-black text-[8px] uppercase rounded">
+                                                    Office Desk
+                                                </span>
+                                            </div>
+                                            <p className="text-[9px] text-slate-400">Pay cash at desk • Instant Challan</p>
                                         </button>
                                     </div>
                                 </div>
@@ -1214,6 +1255,49 @@ const CustomerProjects = () => {
                                     </div>
                                 )}
 
+                                {/* Option 3: Cash Counter / Office Desk */}
+                                {paymentForm.method === 'cash_counter' && (
+                                    <div className="bg-gradient-to-br from-emerald-50/60 to-teal-50/40 dark:from-emerald-950/30 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl p-4 space-y-3">
+                                        <div className="flex items-start justify-between gap-3 border-b border-emerald-200/60 dark:border-emerald-900/40 pb-2.5">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                                                    <Store className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <h5 className="text-xs font-black text-slate-900 dark:text-white">Main Accounts Counter</h5>
+                                                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Industrial Area, Thiruvazhiyode, Palakkad - 679514</p>
+                                                </div>
+                                            </div>
+                                            <span className="text-[9px] font-black uppercase text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded">
+                                                9 AM - 6 PM
+                                            </span>
+                                        </div>
+
+                                        <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-emerald-200/80 dark:border-slate-700 flex items-center justify-between">
+                                            <div>
+                                                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block">
+                                                    Cash Deposit Token ID
+                                                </span>
+                                                <span className="font-mono text-sm font-black text-slate-900 dark:text-white">
+                                                    {paymentForm.referenceId || 'CC-2026-TOKEN'}
+                                                </span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => generateCashCounterChallanPDF({ ...paymentForm, amount: parseFloat(paymentForm.amount) || 0, createdAt: new Date(), projectId: selectedProject })}
+                                                className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-sm transition"
+                                            >
+                                                <Printer className="w-3.5 h-3.5" />
+                                                Print Challan
+                                            </button>
+                                        </div>
+
+                                        <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">
+                                            📌 Present this Token ID along with cash at our accounts desk. The cashier will sign and hand over the official physical receipt.
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div>
                                     <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Notes / Details (Optional)</label>
                                     <input 
@@ -1238,6 +1322,8 @@ const CustomerProjects = () => {
                                         className={`flex-[2] text-white font-black py-4 rounded-2xl shadow-xl transition flex items-center justify-center gap-2 text-xs uppercase tracking-widest border-none cursor-pointer ${
                                             paymentForm.method === 'cashfree'
                                                 ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-600/30'
+                                                : paymentForm.method === 'cash_counter'
+                                                ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
                                                 : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/30'
                                         }`}
                                     >
@@ -1247,6 +1333,12 @@ const CustomerProjects = () => {
                                             <>
                                                 <Sparkles className="w-4 h-4 text-amber-300" />
                                                 <span>Pay Online via Cashfree</span>
+                                                <ArrowRight className="w-4 h-4" />
+                                            </>
+                                        ) : paymentForm.method === 'cash_counter' ? (
+                                            <>
+                                                <Store className="w-4 h-4" />
+                                                <span>Generate Token & Confirm Cash Pay</span>
                                                 <ArrowRight className="w-4 h-4" />
                                             </>
                                         ) : (

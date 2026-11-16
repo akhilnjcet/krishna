@@ -801,3 +801,82 @@ export const generatePaymentReceiptPDF = async (payment, user) => {
     };
     savePDF(doc, `Receipt_${rcptId}.pdf`, historyMetadata);
 };
+
+export const generateCashCounterChallanPDF = async (payment, user) => {
+    if (!payment) return;
+    await getBrandingSettings();
+    const doc = new jsPDF();
+    doc.setCharSpace(0);
+    const headerHeight = addHeader(doc, 'Cash Counter Deposit Challan / Token Slip');
+
+    const startY = headerHeight + 8;
+    const tokenId = payment.referenceId || `CC-${new Date().getFullYear()}-${payment._id?.slice(-6).toUpperCase() || 'TOKEN'}`;
+
+    doc.setTextColor(...THEME.textDark);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Challan / Token ID: ${tokenId}`, 15, startY, { charSpace: 0 });
+    doc.text(`Generated Date: ${new Date(payment.createdAt || Date.now()).toLocaleDateString()}`, 15, startY + 6, { charSpace: 0 });
+    
+    doc.text(`Depositor (Client) Details:`, 125, startY, { charSpace: 0 });
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Name: ${user?.name?.toUpperCase() || payment.name?.toUpperCase() || 'CLIENT'}`, 125, startY + 6, { charSpace: 0 });
+    doc.text(`Phone: ${user?.phone || user?.phoneNumber || payment.notes || 'N/A'}`, 125, startY + 11, { charSpace: 0 });
+    doc.text(`Email: ${user?.email || 'N/A'}`, 125, startY + 16, { charSpace: 0 });
+
+    autoTable(doc, {
+        startY: startY + 22,
+        margin: { left: 15, right: 15, bottom: 20 },
+        head: [['DEPOSIT PARAMETER', 'DETAILS / COUNTER INSTRUCTIONS']],
+        body: [
+            ['Token / Challan Number', tokenId],
+            ['Payment Channel', 'CASH COUNTER (DIRECT OFFICE DEPOSIT)'],
+            ['Counter Location', 'Main Billing Counter, Krishna Engineering Works, Industrial Area, Thiruvazhiyode, Palakkad - 679514'],
+            ['Counter Operating Hours', 'Monday to Saturday: 9:00 AM - 6:00 PM (Closed on Sundays)'],
+            ['Associated Bill / Service', payment.projectId?.title || payment.quoteId?.serviceType || 'Engineering Fabrication / Project Invoicing'],
+            ['Challan Status', (payment.status || 'WAITING_FOR_VERIFICATION').toUpperCase()],
+            ['Amount Payable in Cash', `INR ${parseFloat(payment.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ],
+        theme: 'grid',
+        showHead: 'everyPage',
+        headStyles: { fillColor: THEME.primary, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+        columnStyles: {
+            0: { fontStyle: 'bold', halign: 'left', width: 65 },
+            1: { halign: 'left' }
+        }
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+    fitTextIntoBox(doc, 'Total Cash Payable:', payment.amount || 0, 110, finalY, 85, 20);
+
+    // Cashier Verification Box
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...THEME.textDark);
+    doc.text('CASHIER HANDOVER ACKNOWLEDGMENT (OFFICE USE ONLY):', 15, finalY + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('Received Rs: __________________________ in Cash.', 15, finalY + 12);
+    doc.text('Cashier Name: _______________________ Date: ___________________', 15, finalY + 18);
+    doc.text('Cashier Signature & Seal: _____________________________________', 15, finalY + 24);
+
+    doc.setFontSize(7.5);
+    doc.setTextColor(...THEME.textMuted);
+    const instructions = "Instructions: Present this challan at our billing counter with cash. The cashier will sign and provide the authorized seal.";
+    doc.text(instructions, 15, finalY + 33, { charSpace: 0 });
+
+    addSignatureAndSeal(doc, finalY + 20);
+    addFooter(doc);
+
+    const historyMetadata = {
+        documentType: 'Cash Counter Challan',
+        documentNumber: tokenId,
+        customerId: payment.customerId?._id || payment.customerId || null,
+        projectId: payment.projectId?._id || payment.projectId || null,
+        totalAmount: payment.amount || 0,
+        status: payment.status || 'Pending Verification',
+        data: payment
+    };
+    savePDF(doc, `Challan_${tokenId}.pdf`, historyMetadata);
+};
