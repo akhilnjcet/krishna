@@ -95,6 +95,7 @@ const LabourBillsTab = lazy(() => import('./pages/admin/LabourBillsTab'));
 const RentalBills = lazy(() => import('./pages/admin/RentalBills'));
 const DocumentHistory = lazy(() => import('./pages/admin/DocumentHistory'));
 const AdminInventory = lazy(() => import('./pages/admin/AdminInventory'));
+const DigitalLetterPad = lazy(() => import('./pages/admin/DigitalLetterPad'));
 
 // Staff Pages (Lazy loaded on demand)
 const StaffDashboard = lazy(() => import('./pages/staff/StaffDashboard'));
@@ -525,6 +526,8 @@ const App = () => {
               <Route path="rental-bills" element={<RentalBills />} />
               <Route path="inventory" element={<AdminInventory />} />
               <Route path="document-history" element={<DocumentHistory />} />
+              <Route path="letter-pad" element={<DigitalLetterPad />} />
+              <Route path="letterpad" element={<DigitalLetterPad />} />
               <Route path="legal-policies" element={<AdminLegalPolicies />} />
               <Route path="careers" element={<AdminCareers />} />
             </Route>

@@ -6,7 +6,7 @@ import {
     Calculator, Receipt, TrendingUp, Settings, LogOut, Menu, X, Bell,
     Search, HelpCircle, ChevronRight, User, Filter, LayoutGrid, Activity,
     Clock, AlertCircle, Radio, MessageCircle, ChevronLeft, CheckSquare, Truck,
-    ShieldCheck, KeyRound, Package, Building2, Briefcase
+    ShieldCheck, KeyRound, Package, Building2, Briefcase, PenTool
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -36,6 +36,7 @@ const SIDEBAR_ITEMS = [
     { name: 'Lodge Manager',   path: '/admin/lodge-manager', icon: Building2 },
     { name: 'Inventory & Tools', path: '/admin/inventory',    icon: Package },
     { name: 'Document History', path: '/admin/document-history', icon: FileText },
+    { name: 'Digital Letter Pad', path: '/admin/letter-pad', icon: PenTool },
     { name: 'Project Timeline', path: '/admin/progress',     icon: Activity },
     { name: 'Intelligence Feed', path: '/admin/blog',        icon: BookOpen },
     { name: 'Technical Chat',  path: '/admin/live-chat',    icon: MessageSquare },
