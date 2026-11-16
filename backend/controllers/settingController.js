@@ -45,7 +45,8 @@ exports.getPublicSettings = async (req, res) => {
             'stat_years', 'stat_projects', 'stat_tons', 'stat_safety',
             'stat_clients', 'stat_satisfaction',
             'about_title', 'about_content', 'about_image',
-            'payment_upi_id', 'payment_bank_name', 'payment_bank_account', 'payment_bank_ifsc',
+            'payment_upi_id', 'payment_payee_name', 'payment_bank_name', 'payment_bank_account', 'payment_bank_ifsc', 'payment_bank_branch',
+            'company_name', 'company_tagline', 'company_gstin', 'company_address',
             'company_logo', 'company_signature', 'company_seal', 'company_stamp', 'show_logo', 'show_signature'
         ];
         const settings = await SystemSetting.find({ key: { $in: publicKeys } });

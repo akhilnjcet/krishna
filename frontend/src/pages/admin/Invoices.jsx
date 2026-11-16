@@ -4,7 +4,7 @@ import {
     Printer, Save, Plus, Trash2, User, Building, Phone, Calendar, Hash, 
     FileText, CheckCircle2, Clock, AlertTriangle, Eye, Palette, Check, Sparkles, 
     RefreshCw, Copy, RotateCcw, History, Search, X, Tag, DollarSign, Layers,
-    ShieldCheck, QrCode, Columns, Maximize2, Minimize2
+    ShieldCheck, QrCode, Columns, Maximize2, Minimize2, CreditCard, Edit3, Landmark
 } from 'lucide-react';
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
@@ -88,6 +88,18 @@ const Invoices = () => {
     const [footerRemarks, setFooterRemarks] = useState('Krishna Engineering Works — Excellence in Pre-Engineered Buildings & Industrial Heavy Fabrication');
     const [brandingSettings, setBrandingSettings] = useState({ company_logo: '', company_signature: '' });
 
+    // UPI & Bank Settlement Customization
+    const [invoiceUpiId, setInvoiceUpiId] = useState('');
+    const [invoicePayeeName, setInvoicePayeeName] = useState('');
+    const [invoiceBankName, setInvoiceBankName] = useState('');
+    const [invoiceAccountNumber, setInvoiceAccountNumber] = useState('');
+    const [invoiceIfscCode, setInvoiceIfscCode] = useState('');
+    const [invoiceBankBranch, setInvoiceBankBranch] = useState('');
+    const [showBankDetails, setShowBankDetails] = useState(false);
+    const [showUpiModal, setShowUpiModal] = useState(false);
+    const [savingUpiDefaults, setSavingUpiDefaults] = useState(false);
+    const [upiFeedbackMsg, setUpiFeedbackMsg] = useState('');
+
     // Catalog & History Modals
     const [showCatalogModal, setShowCatalogModal] = useState(false);
     const [catalogSearch, setCatalogSearch] = useState('');
@@ -151,9 +163,52 @@ const Invoices = () => {
                 }
                 if (map.show_logo !== undefined) setShowLogo(map.show_logo !== false && map.show_logo !== 'false');
                 if (map.show_signature !== undefined) setShowSignature(map.show_signature !== false && map.show_signature !== 'false');
+
+                // Populate UPI & Payment details from system settings if not already set
+                if (map.payment_upi_id || map.upi_id) {
+                    setInvoiceUpiId(prev => prev || map.payment_upi_id || map.upi_id || '9447940835@sbi');
+                }
+                if (map.payment_payee_name || map.company_name) {
+                    setInvoicePayeeName(prev => prev || map.payment_payee_name || map.company_name || 'Krishna Engineering Works');
+                }
+                if (map.payment_bank_name) {
+                    setInvoiceBankName(prev => prev || map.payment_bank_name || 'State Bank of India');
+                }
+                if (map.payment_bank_account) {
+                    setInvoiceAccountNumber(prev => prev || map.payment_bank_account);
+                }
+                if (map.payment_bank_ifsc) {
+                    setInvoiceIfscCode(prev => prev || map.payment_bank_ifsc);
+                }
+                if (map.payment_bank_branch) {
+                    setInvoiceBankBranch(prev => prev || map.payment_bank_branch);
+                }
             }
         } catch (err) {
             console.warn("Branding fetch error:", err);
+        }
+    };
+
+    const handleSaveUpiDefaults = async () => {
+        setSavingUpiDefaults(true);
+        setUpiFeedbackMsg('');
+        try {
+            await api.post('/settings', {
+                settings: {
+                    payment_upi_id: (invoiceUpiId || '').trim(),
+                    payment_payee_name: (invoicePayeeName || '').trim(),
+                    payment_bank_name: (invoiceBankName || '').trim(),
+                    payment_bank_account: (invoiceAccountNumber || '').trim(),
+                    payment_bank_ifsc: (invoiceIfscCode || '').trim(),
+                    payment_bank_branch: (invoiceBankBranch || '').trim()
+                }
+            });
+            setUpiFeedbackMsg('✅ Saved as system default payment details!');
+            setTimeout(() => setUpiFeedbackMsg(''), 4000);
+        } catch (err) {
+            setUpiFeedbackMsg('❌ Failed to update default settings: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setSavingUpiDefaults(false);
         }
     };
 
@@ -598,6 +653,13 @@ const Invoices = () => {
         if (data.termsText) setTermsText(data.termsText);
         if (data.invoiceNotes) setInvoiceNotes(data.invoiceNotes);
         if (data.footerRemarks) setFooterRemarks(data.footerRemarks);
+        if (data.invoiceUpiId !== undefined) setInvoiceUpiId(data.invoiceUpiId);
+        if (data.invoicePayeeName !== undefined) setInvoicePayeeName(data.invoicePayeeName);
+        if (data.invoiceBankName !== undefined) setInvoiceBankName(data.invoiceBankName);
+        if (data.invoiceAccountNumber !== undefined) setInvoiceAccountNumber(data.invoiceAccountNumber);
+        if (data.invoiceIfscCode !== undefined) setInvoiceIfscCode(data.invoiceIfscCode);
+        if (data.invoiceBankBranch !== undefined) setInvoiceBankBranch(data.invoiceBankBranch);
+        if (data.showBankDetails !== undefined) setShowBankDetails(data.showBankDetails);
         setShowHistoryModal(false);
     };
 
@@ -644,7 +706,14 @@ const Invoices = () => {
         showLogo,
         termsText,
         invoiceNotes,
-        footerRemarks
+        footerRemarks,
+        invoiceUpiId,
+        invoicePayeeName,
+        invoiceBankName,
+        invoiceAccountNumber,
+        invoiceIfscCode,
+        invoiceBankBranch,
+        showBankDetails
     });
 
     // Auto-save to localStorage on change (debounced 1.2s)
@@ -777,6 +846,13 @@ const Invoices = () => {
                 termsText,
                 invoiceNotes,
                 footerRemarks,
+                invoiceUpiId,
+                invoicePayeeName,
+                invoiceBankName,
+                invoiceAccountNumber,
+                invoiceIfscCode,
+                invoiceBankBranch,
+                showBankDetails,
                 subtotal: financials.subtotal,
                 taxAmount: financials.taxAmount,
                 grandTotal: financials.grandTotal,
@@ -833,14 +909,18 @@ const Invoices = () => {
         return groups;
     }, [items, isCombinedMode]);
 
+    // Effective UPI ID and Payee Name with safe fallbacks
+    const effectiveUpiId = (invoiceUpiId || brandingSettings?.payment_upi_id || brandingSettings?.upi_id || '9447940835@sbi').trim();
+    const effectivePayeeName = (invoicePayeeName || brandingSettings?.payment_payee_name || brandingSettings?.company_name || 'Krishna Engineering Works').trim();
+
     // QR Code Payment URI using buildUPILink
     const upiLink = buildUPILink({
-        pa: brandingSettings?.upi_id || '9447940835@sbi',
-        pn: brandingSettings?.company_name || 'Krishna Engineering Works',
+        pa: effectiveUpiId,
+        pn: effectivePayeeName,
         am: calculatedBalanceDue.toFixed(2),
         tn: `Invoice ${invoiceNumber}`,
         cu: 'INR'
-    }) || `upi://pay?pa=9447940835@sbi&pn=Krishna%20Engineering%20Works&am=${calculatedBalanceDue.toFixed(2)}&cu=INR&tn=Invoice%20${invoiceNumber}`;
+    }) || `upi://pay?pa=${encodeURIComponent(effectiveUpiId)}&pn=${encodeURIComponent(effectivePayeeName)}&am=${calculatedBalanceDue.toFixed(2)}&cu=INR&tn=Invoice%20${encodeURIComponent(invoiceNumber)}`;
     const upiQrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiLink)}`;
 
     return (
@@ -1505,6 +1585,125 @@ const Invoices = () => {
                         </div>
                     </div>
 
+                    {/* UPI & Bank Details Card */}
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                            <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                <CreditCard className="w-4 h-4 text-emerald-500" /> UPI ID & Bank Settlement Details
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={handleSaveUpiDefaults}
+                                disabled={savingUpiDefaults}
+                                className="text-[10px] font-black uppercase tracking-wider text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 flex items-center gap-1 transition cursor-pointer"
+                                title="Save these details as global default in System Settings"
+                            >
+                                {savingUpiDefaults ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                <span>Save as Default</span>
+                            </button>
+                        </div>
+
+                        {upiFeedbackMsg && (
+                            <div className="p-2.5 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                {upiFeedbackMsg}
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                    Integrated UPI ID (VPA) *
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. 9447940835@sbi"
+                                    value={invoiceUpiId}
+                                    onChange={(e) => setInvoiceUpiId(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-1">This UPI ID is encoded into the payment QR code.</p>
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                    Recipient Payee / Business Name
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Krishna Engineering Works"
+                                    value={invoicePayeeName}
+                                    onChange={(e) => setInvoicePayeeName(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-1">Displayed in GPay/PhonePe/Paytm upon scanning.</p>
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                    Bank Name (Optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. State Bank of India"
+                                    value={invoiceBankName}
+                                    onChange={(e) => setInvoiceBankName(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                    Bank Account Number (Optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. 38291048291"
+                                    value={invoiceAccountNumber}
+                                    onChange={(e) => setInvoiceAccountNumber(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-medium text-slate-800 dark:text-slate-200 focus:outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                    IFSC Code (Optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. SBIN0001234"
+                                    value={invoiceIfscCode}
+                                    onChange={(e) => setInvoiceIfscCode(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono uppercase font-medium text-slate-800 dark:text-slate-200 focus:outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                    Bank Branch (Optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Thiruvazhiyode / Palakkad"
+                                    value={invoiceBankBranch}
+                                    onChange={(e) => setInvoiceBankBranch(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="pt-2">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={showBankDetails}
+                                    onChange={(e) => setShowBankDetails(e.target.checked)}
+                                    className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span>Print Bank Account Transfer Details alongside UPI QR on Invoice</span>
+                            </label>
+                        </div>
+                    </div>
+
                     {/* Theme & Toggles */}
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
                         <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
@@ -2038,17 +2237,50 @@ const Invoices = () => {
 
                                     {/* QR Code for Instant UPI Payment */}
                                     {showQrCode && calculatedBalanceDue > 0 && (
-                                        <div className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-fit">
-                                            <img src={upiQrImgUrl} alt="UPI QR" className="w-20 h-20 rounded-xl bg-white p-1 border shadow-sm" />
-                                            <div>
-                                                <div className="flex items-center gap-1.5 text-xs font-black uppercase text-indigo-600 dark:text-indigo-400">
-                                                    <QrCode className="w-4 h-4" /> Scan & Pay via UPI
+                                        <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-sm relative group">
+                                            <div className="flex items-center gap-3">
+                                                <img src={upiQrImgUrl} alt="UPI QR" className="w-20 h-20 rounded-xl bg-white p-1 border shadow-sm flex-shrink-0" />
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-1.5 text-xs font-black uppercase text-indigo-600 dark:text-indigo-400">
+                                                            <QrCode className="w-4 h-4 flex-shrink-0" /> Scan & Pay via UPI
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowUpiModal(true)}
+                                                            className="no-print p-1 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition cursor-pointer"
+                                                            title="Edit UPI ID & Payment Details"
+                                                        >
+                                                            <Edit3 className="w-3.5 h-3.5" />
+                                                            <span>Edit</span>
+                                                        </button>
+                                                    </div>
+                                                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">Google Pay / PhonePe / Paytm / BHIM</p>
+                                                    <p className="text-[11px] font-mono font-bold text-slate-800 dark:text-slate-200 mt-0.5 truncate">
+                                                        UPI: <span className="text-indigo-600 dark:text-indigo-400 font-extrabold">{effectiveUpiId}</span>
+                                                    </p>
+                                                    <p className="text-xs font-black text-slate-900 dark:text-white mt-0.5">
+                                                        Amount: {formatCurrencyINR(calculatedBalanceDue)}
+                                                    </p>
                                                 </div>
-                                                <p className="text-[10px] text-slate-500 mt-0.5">Google Pay / PhonePe / Paytm / BHIM</p>
-                                                <p className="text-xs font-black text-slate-900 dark:text-white mt-1">
-                                                    Amount: {formatCurrencyINR(calculatedBalanceDue)}
-                                                </p>
                                             </div>
+
+                                            {/* Bank Account Details below QR if enabled */}
+                                            {showBankDetails && (invoiceAccountNumber || invoiceIfscCode) && (
+                                                <div className="mt-2.5 pt-2 border-t border-slate-200/80 dark:border-slate-700/80 text-[10px] space-y-0.5">
+                                                    <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                                                        <span className="font-bold uppercase tracking-wider">Bank Details:</span>
+                                                        <span className="font-semibold">{invoiceBankName || 'State Bank of India'}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between font-mono">
+                                                        <span className="text-slate-600 dark:text-slate-300">A/C: <strong>{invoiceAccountNumber}</strong></span>
+                                                        <span className="text-slate-600 dark:text-slate-300">IFSC: <strong>{invoiceIfscCode}</strong></span>
+                                                    </div>
+                                                    {invoiceBankBranch && (
+                                                        <p className="text-[9px] text-slate-400">Branch: {invoiceBankBranch}</p>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -2320,6 +2552,160 @@ const Invoices = () => {
                                         </div>
                                     ))
                                 )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Quick UPI & Payment Details Edit Modal (Accessible directly from Invoice Preview) */}
+            <AnimatePresence>
+                {showUpiModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[300] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0.95 }}
+                            className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-5"
+                        >
+                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                                <div>
+                                    <h3 className="text-base font-black uppercase text-slate-900 dark:text-white flex items-center gap-2">
+                                        <CreditCard className="w-5 h-5 text-emerald-500" /> Customize UPI & Payment Details
+                                    </h3>
+                                    <p className="text-xs text-slate-500">Edit the UPI ID, business name, and bank settlement details for this invoice.</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowUpiModal(false)}
+                                    className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {upiFeedbackMsg && (
+                                <div className="p-3 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                    {upiFeedbackMsg}
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="sm:col-span-2">
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                        Integrated UPI ID (VPA) *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. 9447940835@sbi"
+                                        value={invoiceUpiId}
+                                        onChange={(e) => setInvoiceUpiId(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                    />
+                                    <p className="text-[10px] text-slate-400 mt-1">Clients scanning the QR will transfer funds directly to this UPI address.</p>
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                        Payee / Merchant Business Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Krishna Engineering Works"
+                                        value={invoicePayeeName}
+                                        onChange={(e) => setInvoicePayeeName(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                        Bank Name (Optional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. State Bank of India"
+                                        value={invoiceBankName}
+                                        onChange={(e) => setInvoiceBankName(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                        Account Number (Optional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. 38291048291"
+                                        value={invoiceAccountNumber}
+                                        onChange={(e) => setInvoiceAccountNumber(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-medium text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                        IFSC Code (Optional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. SBIN0001234"
+                                        value={invoiceIfscCode}
+                                        onChange={(e) => setInvoiceIfscCode(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono uppercase font-medium text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                        Bank Branch (Optional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Thiruvazhiyode / Palakkad"
+                                        value={invoiceBankBranch}
+                                        onChange={(e) => setInvoiceBankBranch(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-2">
+                                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={showBankDetails}
+                                        onChange={(e) => setShowBankDetails(e.target.checked)}
+                                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                    />
+                                    <span>Print Bank Transfer Account details alongside UPI QR on Invoice</span>
+                                </label>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
+                                <button
+                                    type="button"
+                                    onClick={handleSaveUpiDefaults}
+                                    disabled={savingUpiDefaults}
+                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                                    title="Save as system default for all future invoices"
+                                >
+                                    {savingUpiDefaults ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                    <span>Save as Default</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setShowUpiModal(false)}
+                                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-indigo-600/20 transition cursor-pointer"
+                                >
+                                    Apply & Close
+                                </button>
                             </div>
                         </motion.div>
                     </motion.div>
