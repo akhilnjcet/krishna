@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    Briefcase, Plus, Trash2, Edit3, Eye, FileText, Download, 
-    ExternalLink, Upload, AlertTriangle, Megaphone, Flame, 
+import {
+    Briefcase, Plus, Trash2, Edit3, Eye, FileText, Download,
+    ExternalLink, Upload, AlertTriangle, Megaphone, Flame,
     Check, X, Image as ImageIcon, Save, RefreshCw, Sparkles, Clock, MapPin
 } from 'lucide-react';
 import api from '../../services/api';
@@ -313,11 +313,10 @@ const AdminCareers = () => {
 
             {/* Notification Toast */}
             {feedbackMsg.text && (
-                <div className={`p-4 rounded-2xl flex items-center justify-between text-sm font-bold shadow-md transition-all ${
-                    feedbackMsg.type === 'success' 
-                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' 
-                        : 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30'
-                }`}>
+                <div className={`p-4 rounded-2xl flex items-center justify-between text-sm font-bold shadow-md transition-all ${feedbackMsg.type === 'success'
+                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
+                    : 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30'
+                    }`}>
                     <span>{feedbackMsg.text}</span>
                     <button onClick={() => setFeedbackMsg({ type: '', text: '' })} className="opacity-70 hover:opacity-100">
                         <X className="w-4 h-4" />
@@ -330,11 +329,10 @@ const AdminCareers = () => {
                 <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-2 sm:space-x-4 w-max min-w-full pb-1">
                     <button
                         onClick={() => setActiveTab('vacancies')}
-                        className={`flex-shrink-0 whitespace-nowrap pb-3 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
-                            activeTab === 'vacancies'
-                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                        }`}
+                        className={`flex-shrink-0 whitespace-nowrap pb-3 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${activeTab === 'vacancies'
+                            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                            }`}
                     >
                         <Briefcase className="w-4 h-4 flex-shrink-0" />
                         <span>Job Vacancies ({vacancies.length})</span>
@@ -342,11 +340,10 @@ const AdminCareers = () => {
 
                     <button
                         onClick={() => setActiveTab('banner')}
-                        className={`flex-shrink-0 whitespace-nowrap pb-3 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
-                            activeTab === 'banner'
-                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                        }`}
+                        className={`flex-shrink-0 whitespace-nowrap pb-3 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${activeTab === 'banner'
+                            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                            }`}
                     >
                         <Flame className="w-4 h-4 text-amber-500 flex-shrink-0" />
                         <span>Urgent Vacancy Ad Banner</span>
@@ -354,11 +351,10 @@ const AdminCareers = () => {
 
                     <button
                         onClick={() => setActiveTab('announcements')}
-                        className={`flex-shrink-0 whitespace-nowrap pb-3 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
-                            activeTab === 'announcements'
-                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                        }`}
+                        className={`flex-shrink-0 whitespace-nowrap pb-3 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${activeTab === 'announcements'
+                            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                            }`}
                     >
                         <Megaphone className="w-4 h-4 text-indigo-500 flex-shrink-0" />
                         <span>Scrolling Announcements ({announcements.length})</span>
@@ -634,17 +630,16 @@ const AdminCareers = () => {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                             {vacancies.map((vacancy) => (
-                                <div 
+                                <div
                                     key={vacancy._id}
                                     className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between"
                                 >
                                     <div>
                                         <div className="flex items-center justify-between gap-2 mb-2">
-                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                                                vacancy.status === 'open' 
-                                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400' 
-                                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-800'
-                                            }`}>
+                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${vacancy.status === 'open'
+                                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400'
+                                                : 'bg-slate-100 text-slate-500 dark:bg-slate-800'
+                                                }`}>
                                                 {vacancy.status}
                                             </span>
 
@@ -670,7 +665,7 @@ const AdminCareers = () => {
                                         {/* Attachments indicators */}
                                         <div className="flex flex-wrap items-center gap-2 mb-4">
                                             {vacancy.circularUrl && (
-                                                <a 
+                                                <a
                                                     href={getDirectImageUrl(vacancy.circularUrl)}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
@@ -681,7 +676,7 @@ const AdminCareers = () => {
                                                 </a>
                                             )}
                                             {vacancy.driveUrl && (
-                                                <a 
+                                                <a
                                                     href={vacancy.driveUrl}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
@@ -933,9 +928,9 @@ const AdminCareers = () => {
                                     Live Banner Preview:
                                 </h4>
                                 <div className="rounded-2xl overflow-hidden border border-slate-700 shadow-xl max-w-3xl bg-slate-900 relative">
-                                    <img 
-                                        src={getDirectImageUrl(banner.imageUrl)} 
-                                        alt="Preview" 
+                                    <img
+                                        src={getDirectImageUrl(banner.imageUrl)}
+                                        alt="Preview"
                                         className="w-full h-48 object-cover"
                                         onError={(e) => {
                                             e.target.onerror = null;
@@ -1043,12 +1038,11 @@ const AdminCareers = () => {
                                 {announcements.map((ann) => (
                                     <div key={ann._id} className="py-3.5 flex items-center justify-between gap-4">
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase flex-shrink-0 ${
-                                                ann.type === 'urgent' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400' :
+                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase flex-shrink-0 ${ann.type === 'urgent' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400' :
                                                 ann.type === 'maintenance' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-400' :
-                                                ann.type === 'warning' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400' :
-                                                'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400'
-                                            }`}>
+                                                    ann.type === 'warning' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400' :
+                                                        'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400'
+                                                }`}>
                                                 {ann.type}
                                             </span>
                                             <p className={`text-sm truncate ${ann.isActive ? 'text-slate-900 dark:text-white font-semibold' : 'text-slate-400 line-through'}`}>
@@ -1059,11 +1053,10 @@ const AdminCareers = () => {
                                         <div className="flex items-center gap-2 flex-shrink-0">
                                             <button
                                                 onClick={() => handleToggleAnnouncement(ann)}
-                                                className={`px-3 py-1 rounded-xl text-xs font-bold transition-colors ${
-                                                    ann.isActive 
-                                                        ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40' 
-                                                        : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
-                                                }`}
+                                                className={`px-3 py-1 rounded-xl text-xs font-bold transition-colors ${ann.isActive
+                                                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40'
+                                                    : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+                                                    }`}
                                             >
                                                 {ann.isActive ? 'Active' : 'Disabled'}
                                             </button>

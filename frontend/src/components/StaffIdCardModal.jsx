@@ -185,6 +185,10 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                                             src={getDirectImageUrl(staff.profilePhoto) || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200'} 
                                             alt={staff.name}
                                             className="w-full h-full object-cover rounded-full"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200';
+                                            }}
                                         />
                                     </div>
                                     <h3 className="font-extrabold text-sm text-slate-950 uppercase tracking-tight">{staff.name}</h3>

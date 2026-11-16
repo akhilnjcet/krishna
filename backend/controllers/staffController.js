@@ -8,60 +8,45 @@ const cloudinary = require('cloudinary').v2;
 /**
  * Normalizes and stores a staff profile photo:
  * - If empty/null/undefined: returns empty string
- * - If hosted URL or /uploads/ path: preserves URL
- * - If Base64 data URI (data:image/...): uploads to Cloudinary or saves to local uploads directory
+ * - If hosted URL: preserves remote URL
+ * - If Base64 data URI (data:image/...): uploads to Cloudinary if configured;
+ *   otherwise stores Base64 Data URI directly in MongoDB (NEVER writes to ephemeral /tmp/uploads on Vercel)
  */
 const processProfilePhoto = async (photo) => {
     if (!photo || typeof photo !== 'string') return '';
     const trimmed = photo.trim();
     if (!trimmed) return '';
 
-    // If it's already a hosted or relative URL, return as-is
-    if (!trimmed.startsWith('data:image/')) {
+    // Handle Base64 Data URI
+    if (trimmed.startsWith('data:image/')) {
+        const isMock = !process.env.CLOUDINARY_API_KEY || process.env.CLOUDINARY_API_KEY.includes('mock');
+        if (!isMock && process.env.CLOUDINARY_CLOUD_NAME) {
+            try {
+                cloudinary.config({
+                    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+                    api_key: process.env.CLOUDINARY_API_KEY,
+                    api_secret: process.env.CLOUDINARY_API_SECRET
+                });
+                const cloudRes = await cloudinary.uploader.upload(trimmed, {
+                    folder: 'krishna-erp/profile_photos',
+                    resource_type: 'image',
+                    transformation: [{ width: 400, height: 400, crop: 'limit', quality: 'auto' }]
+                });
+                if (cloudRes?.secure_url) {
+                    return cloudRes.secure_url;
+                }
+            } catch (cloudErr) {
+                console.error('[STAFF_PHOTO] Cloudinary upload error:', cloudErr.message);
+            }
+        }
+        // In serverless / mock environments (e.g. Vercel), store the Base64 Data URI directly in MongoDB.
+        // This guarantees the photo permanently survives serverless freezes, logouts, and page refreshes.
         return trimmed;
     }
 
-    // Handle Base64 Data URI
-    const isMock = !process.env.CLOUDINARY_API_KEY || process.env.CLOUDINARY_API_KEY.includes('mock');
-    if (!isMock && process.env.CLOUDINARY_CLOUD_NAME) {
-        try {
-            cloudinary.config({
-                cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-                api_key: process.env.CLOUDINARY_API_KEY,
-                api_secret: process.env.CLOUDINARY_API_SECRET
-            });
-            const cloudRes = await cloudinary.uploader.upload(trimmed, {
-                folder: 'krishna-erp/profile_photos',
-                resource_type: 'image',
-                transformation: [{ width: 600, height: 600, crop: 'limit', quality: 'auto' }]
-            });
-            if (cloudRes?.secure_url) {
-                return cloudRes.secure_url;
-            }
-        } catch (cloudErr) {
-            console.error('[STAFF_PHOTO] Cloudinary upload error:', cloudErr.message);
-        }
-    }
-
-    // Local Disk Fallback
-    try {
-        const matches = trimmed.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
-        if (matches) {
-            let ext = matches[1].toLowerCase();
-            if (ext === 'jpeg') ext = 'jpg';
-            const buffer = Buffer.from(matches[2], 'base64');
-            const safeName = `staff-profile-${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${ext}`;
-            const isVercel = process.env.VERCEL === '1';
-            const uploadDir = isVercel ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads');
-            if (!fs.existsSync(uploadDir)) {
-                fs.mkdirSync(uploadDir, { recursive: true });
-            }
-            const filePath = path.join(uploadDir, safeName);
-            fs.writeFileSync(filePath, buffer);
-            return `/uploads/${safeName}`;
-        }
-    } catch (fsErr) {
-        console.error('[STAFF_PHOTO] Local filesystem save error:', fsErr.message);
+    // Preserve remote hosted URLs (Cloudinary, Google Drive direct, CDN)
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        return trimmed;
     }
 
     return trimmed;

@@ -724,7 +724,15 @@ const CustomerProjects = () => {
                                                 <div key={staff._id} className="bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-3xl p-5 hover:bg-slate-100/50 dark:bg-slate-800/80 transition-colors flex items-start gap-4">
                                                     <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg border border-indigo-200 flex-shrink-0">
                                                         {staff.profilePhoto ? (
-                                                            <img src={getDirectImageUrl(staff.profilePhoto)} alt={staff.name} className="w-full h-full object-cover rounded-2xl" />
+                                                            <img 
+                                                                src={getDirectImageUrl(staff.profilePhoto)} 
+                                                                alt={staff.name} 
+                                                                className="w-full h-full object-cover rounded-2xl" 
+                                                                onError={(e) => {
+                                                                    e.target.onerror = null;
+                                                                    e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200';
+                                                                }}
+                                                            />
                                                         ) : (
                                                             staff.name.charAt(0).toUpperCase()
                                                         )}

@@ -116,18 +116,62 @@ const AdminStaff = () => {
         setUploadingPhoto(true);
         setPhotoUploadError('');
 
+        // Helper: Compress image to an optimized Data URI (max 400x400 @ 85% JPEG)
+        // Stored permanently in MongoDB so it never gets lost on serverless restarts or logouts
+        const compressToDataUrl = (f) => new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (loadEvt) => {
+                const img = new Image();
+                img.onload = () => {
+                    const maxDim = 400;
+                    let { width, height } = img;
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.85));
+                };
+                img.onerror = () => resolve(loadEvt.target.result);
+                img.src = loadEvt.target.result;
+            };
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(f);
+        });
+
         try {
-            const uploadData = new FormData();
-            uploadData.append('file', file);
+            const clientDataUrl = await compressToDataUrl(file);
+            let finalPhotoUrl = clientDataUrl;
 
-            const res = await api.post('/uploads', uploadData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            // Optional upload attempt to backend /uploads
+            try {
+                const uploadData = new FormData();
+                uploadData.append('file', file);
+                const res = await api.post('/uploads', uploadData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                const serverUrl = res.data?.fileUrl || res.data?.url;
+                if (serverUrl && (serverUrl.startsWith('http://') || serverUrl.startsWith('https://'))) {
+                    finalPhotoUrl = serverUrl;
+                } else if (serverUrl && serverUrl.startsWith('data:image/')) {
+                    finalPhotoUrl = serverUrl;
+                }
+            } catch (netErr) {
+                console.warn("Backend /uploads fallback to compressed Data URL:", netErr.message);
+            }
 
-            const uploadedUrl = res.data?.fileUrl || res.data?.url;
-            if (!uploadedUrl) throw new Error("Image upload did not return a valid URL.");
+            if (!finalPhotoUrl) throw new Error("Could not process photo file.");
 
-            setFormData(prev => ({ ...prev, profilePhoto: uploadedUrl }));
+            setFormData(prev => ({ ...prev, profilePhoto: finalPhotoUrl }));
         } catch (err) {
             console.error("Photo upload failed:", err);
             const msg = err.response?.data?.message || err.message || "Failed to upload photo.";

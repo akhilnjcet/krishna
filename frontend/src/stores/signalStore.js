@@ -18,7 +18,7 @@ const isLocalBrowser = () => {
   if (typeof window === 'undefined') return false;
   if (isNativePlatform()) return false; // Native APK is NEVER a local desktop browser
   return Boolean(
-    window.location.hostname.includes('localhost') || 
+    window.location.hostname.includes('localhost') ||
     window.location.hostname.includes('127.0.0.1') ||
     window.location.hostname.includes('192.168.')
   );
@@ -41,10 +41,10 @@ const useSignalStore = create(
       getApiUrl: () => {
         const state = get();
         const isNative = isNativePlatform();
-        
+
         // Self-heal stale / defunct cloud URLs (e.g. old krishna-eng.vercel.app)
-        const activeCloudUrl = (!state.cloudUrl || state.cloudUrl.includes('krishna-eng.vercel.app')) 
-          ? CLOUD_URL 
+        const activeCloudUrl = (!state.cloudUrl || state.cloudUrl.includes('krishna-eng.vercel.app'))
+          ? CLOUD_URL
           : state.cloudUrl;
 
         // 1. In native mobile APK:
