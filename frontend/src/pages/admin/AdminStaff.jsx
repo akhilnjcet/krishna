@@ -21,6 +21,10 @@ const AdminStaff = () => {
     const [showIdCardModal, setShowIdCardModal] = useState(false);
     const [selectedStaff, setSelectedStaff] = useState(null);
 
+    // Profile Photo Upload State
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    const [photoUploadError, setPhotoUploadError] = useState('');
+
     const [searchQuery, setSearchQuery] = useState('');
     const [filterDept, setFilterDept] = useState('');
     const [payAmount, setPayAmount] = useState('');
@@ -90,8 +94,57 @@ const AdminStaff = () => {
     }, [fetchStaff]);
 
 
+    const handlePhotoUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        if (!validTypes.includes(file.type.toLowerCase())) {
+            const err = "Please upload a valid image file (JPG, PNG, or WEBP).";
+            setPhotoUploadError(err);
+            alert(err);
+            return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            const err = "Image exceeds the 10MB limit. Please upload a smaller photo.";
+            setPhotoUploadError(err);
+            alert(err);
+            return;
+        }
+
+        setUploadingPhoto(true);
+        setPhotoUploadError('');
+
+        try {
+            const uploadData = new FormData();
+            uploadData.append('file', file);
+
+            const res = await api.post('/uploads', uploadData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            const uploadedUrl = res.data?.fileUrl || res.data?.url;
+            if (!uploadedUrl) throw new Error("Image upload did not return a valid URL.");
+
+            setFormData(prev => ({ ...prev, profilePhoto: uploadedUrl }));
+        } catch (err) {
+            console.error("Photo upload failed:", err);
+            const msg = err.response?.data?.message || err.message || "Failed to upload photo.";
+            setPhotoUploadError(msg);
+            alert(`Photo upload failed: ${msg}`);
+        } finally {
+            setUploadingPhoto(false);
+            if (e.target) e.target.value = '';
+        }
+    };
+
     const handleAddStaff = async (e) => {
         e.preventDefault();
+        if (uploadingPhoto) {
+            alert("Please wait for the photo upload to complete before saving.");
+            return;
+        }
         setLoading(true);
         try {
             await api.post('/staff', formData);
@@ -99,7 +152,7 @@ const AdminStaff = () => {
             setShowAddModal(false);
             resetForm();
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to add staff.");
+            alert(err.response?.data?.message || err.message || "Failed to add staff.");
         } finally {
             setLoading(false);
         }
@@ -107,6 +160,14 @@ const AdminStaff = () => {
 
     const handleEditStaff = async (e) => {
         e.preventDefault();
+        if (uploadingPhoto) {
+            alert("Please wait for the photo upload to complete before saving.");
+            return;
+        }
+        if (!selectedStaff?._id) {
+            alert("No staff member selected for update.");
+            return;
+        }
         setLoading(true);
         try {
             await api.put(`/staff/${selectedStaff._id}`, formData);
@@ -114,7 +175,7 @@ const AdminStaff = () => {
             setShowEditModal(false);
             resetForm();
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to update staff.");
+            alert(err.response?.data?.message || err.message || "Failed to update staff.");
         } finally {
             setLoading(false);
         }
@@ -133,6 +194,8 @@ const AdminStaff = () => {
             profilePhoto: ''
         });
         setSelectedStaff(null);
+        setUploadingPhoto(false);
+        setPhotoUploadError('');
     };
 
     const handleDelete = async (id) => {
@@ -392,7 +455,22 @@ const AdminStaff = () => {
                     ) : (
                         safeStaff.map((member) => (
                             <div key={`m-staff-${member._id}`} className="p-4 bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 space-y-3">
-                                <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="w-11 h-11 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 flex-shrink-0 flex items-center justify-center shadow-xs">
+                                        {member.profilePhoto ? (
+                                            <img 
+                                                src={getDirectImageUrl(member.profilePhoto)} 
+                                                alt={member.name} 
+                                                className="w-full h-full object-cover" 
+                                                onError={(e) => {
+                                                    e.target.onerror = null;
+                                                    e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200';
+                                                }}
+                                            />
+                                        ) : (
+                                            <Users className="w-5 h-5 text-slate-400" />
+                                        )}
+                                    </div>
                                     <div className="min-w-0 flex-1">
                                         <p className="text-xs font-mono text-indigo-600 font-bold">{member.staff_id}</p>
                                         <h4 className="text-base font-bold text-slate-900 dark:text-white capitalize truncate">{member.name}</h4>
@@ -476,7 +554,8 @@ const AdminStaff = () => {
                                                 bonusAmount: member.bonusAmount || 0,
                                                 advanceAmount: member.advanceAmount || 0,
                                                 deductionAmount: member.deductionAmount || 0,
-                                                leavesAllowed: member.leavesAllowed || 2
+                                                leavesAllowed: member.leavesAllowed || 2,
+                                                profilePhoto: member.profilePhoto || ''
                                             });
                                             setShowEditModal(true); 
                                         }}
@@ -522,9 +601,26 @@ const AdminStaff = () => {
                             ) : safeStaff.map((member) => (
                                 <tr key={member._id} className="hover:bg-indigo-50/30 transition-colors group">
                                     <td className="px-6 py-4">
-                                        <div>
-                                            <p className="text-sm font-mono text-indigo-600 font-bold">{member.staff_id}</p>
-                                            <p className="text-lg font-bold text-slate-900 dark:text-white capitalize leading-tight mt-1">{member.name}</p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 flex-shrink-0 flex items-center justify-center shadow-xs">
+                                                {member.profilePhoto ? (
+                                                    <img 
+                                                        src={getDirectImageUrl(member.profilePhoto)} 
+                                                        alt={member.name} 
+                                                        className="w-full h-full object-cover" 
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200';
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <Users className="w-5 h-5 text-slate-400" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-mono text-indigo-600 font-bold">{member.staff_id}</p>
+                                                <p className="text-base font-bold text-slate-900 dark:text-white capitalize leading-tight mt-0.5">{member.name}</p>
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -726,33 +822,61 @@ const AdminStaff = () => {
                                     <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-4">Profile Parameters</h4>
                                 </div>
                                 <div className="md:col-span-2 space-y-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Profile Photo (JPG / PNG / Google Drive Link)</label>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                                            Profile Photo (JPG / PNG / Google Drive Link)
+                                        </label>
+                                        {formData.profilePhoto && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({ ...prev, profilePhoto: '' }))}
+                                                className="text-xs text-rose-600 hover:text-rose-700 font-bold hover:underline flex items-center gap-1 transition"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" /> Remove Photo
+                                            </button>
+                                        )}
+                                    </div>
                                     
                                     <div className="flex flex-col sm:flex-row gap-4 items-center">
-                                        <div className="w-20 h-20 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 flex-shrink-0 flex items-center justify-center">
+                                        <div className="relative w-20 h-20 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 flex-shrink-0 flex items-center justify-center shadow-inner">
                                             {formData.profilePhoto ? (
-                                                <img src={getDirectImageUrl(formData.profilePhoto)} alt="Preview" className="w-full h-full object-cover" />
+                                                <img 
+                                                    src={getDirectImageUrl(formData.profilePhoto)} 
+                                                    alt="Preview" 
+                                                    className="w-full h-full object-cover" 
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200';
+                                                    }}
+                                                />
                                             ) : (
                                                 <Users className="w-8 h-8 text-slate-300" />
+                                            )}
+                                            {uploadingPhoto && (
+                                                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center">
+                                                    <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                                </div>
                                             )}
                                         </div>
 
                                         <div className="flex-1 w-full space-y-2">
                                             <input 
                                                 type="file" 
-                                                accept="image/png, image/jpeg, image/jpg" 
-                                                className="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                                                onChange={(e) => {
-                                                    const file = e.target.files[0];
-                                                    if (file) {
-                                                        const reader = new FileReader();
-                                                        reader.onloadend = () => {
-                                                            setFormData({ ...formData, profilePhoto: reader.result });
-                                                        };
-                                                        reader.readAsDataURL(file);
-                                                    }
-                                                }}
+                                                accept="image/png, image/jpeg, image/jpg, image/webp" 
+                                                disabled={uploadingPhoto}
+                                                className="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer disabled:opacity-50"
+                                                onChange={handlePhotoUpload}
                                             />
+                                            {uploadingPhoto && (
+                                                <p className="text-[11px] text-indigo-600 font-bold flex items-center gap-1">
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading image to storage...
+                                                </p>
+                                            )}
+                                            {photoUploadError && (
+                                                <p className="text-[11px] text-rose-600 font-medium">
+                                                    {photoUploadError}
+                                                </p>
+                                            )}
                                             <input 
                                                 type="text" 
                                                 placeholder="Or paste direct image URL / Google Drive link" 

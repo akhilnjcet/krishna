@@ -1,5 +1,71 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+const cloudinary = require('cloudinary').v2;
+
+/**
+ * Normalizes and stores a staff profile photo:
+ * - If empty/null/undefined: returns empty string
+ * - If hosted URL or /uploads/ path: preserves URL
+ * - If Base64 data URI (data:image/...): uploads to Cloudinary or saves to local uploads directory
+ */
+const processProfilePhoto = async (photo) => {
+    if (!photo || typeof photo !== 'string') return '';
+    const trimmed = photo.trim();
+    if (!trimmed) return '';
+
+    // If it's already a hosted or relative URL, return as-is
+    if (!trimmed.startsWith('data:image/')) {
+        return trimmed;
+    }
+
+    // Handle Base64 Data URI
+    const isMock = !process.env.CLOUDINARY_API_KEY || process.env.CLOUDINARY_API_KEY.includes('mock');
+    if (!isMock && process.env.CLOUDINARY_CLOUD_NAME) {
+        try {
+            cloudinary.config({
+                cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+                api_key: process.env.CLOUDINARY_API_KEY,
+                api_secret: process.env.CLOUDINARY_API_SECRET
+            });
+            const cloudRes = await cloudinary.uploader.upload(trimmed, {
+                folder: 'krishna-erp/profile_photos',
+                resource_type: 'image',
+                transformation: [{ width: 600, height: 600, crop: 'limit', quality: 'auto' }]
+            });
+            if (cloudRes?.secure_url) {
+                return cloudRes.secure_url;
+            }
+        } catch (cloudErr) {
+            console.error('[STAFF_PHOTO] Cloudinary upload error:', cloudErr.message);
+        }
+    }
+
+    // Local Disk Fallback
+    try {
+        const matches = trimmed.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+        if (matches) {
+            let ext = matches[1].toLowerCase();
+            if (ext === 'jpeg') ext = 'jpg';
+            const buffer = Buffer.from(matches[2], 'base64');
+            const safeName = `staff-profile-${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${ext}`;
+            const isVercel = process.env.VERCEL === '1';
+            const uploadDir = isVercel ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            const filePath = path.join(uploadDir, safeName);
+            fs.writeFileSync(filePath, buffer);
+            return `/uploads/${safeName}`;
+        }
+    } catch (fsErr) {
+        console.error('[STAFF_PHOTO] Local filesystem save error:', fsErr.message);
+    }
+
+    return trimmed;
+};
 
 exports.getStaff = async (req, res) => {
     try {
@@ -59,6 +125,8 @@ exports.addStaff = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        const processedPhoto = await processProfilePhoto(profilePhoto);
+
         const staff = await User.create({
             staff_id,
             name: name || full_name,
@@ -88,7 +156,7 @@ exports.addStaff = async (req, res) => {
             workingDaysPerMonth: workingDaysPerMonth !== undefined ? Number(workingDaysPerMonth) : 26,
             autoSalaryCalculation: autoSalaryCalculation !== undefined ? (autoSalaryCalculation === true || autoSalaryCalculation === 'true') : true,
             otApprovalRequired: otApprovalRequired !== undefined ? (otApprovalRequired === true || otApprovalRequired === 'true') : true,
-            profilePhoto
+            profilePhoto: processedPhoto
         });
 
         // Send Welcome Message via WhatsApp
@@ -105,27 +173,68 @@ exports.addStaff = async (req, res) => {
 
 exports.updateStaff = async (req, res) => {
     try {
-        const staff = await User.findOne({ _id: req.params.id, role: 'staff' });
-        if (!staff) return res.status(404).json({ message: 'Staff member not found' });
+        const staff = await User.findById(req.params.id);
+        if (!staff) {
+            return res.status(404).json({ message: 'Staff member not found with the requested ID.' });
+        }
 
         const { 
-            full_name, name, phone_number, phone, email, 
+            staff_id, username, full_name, name, phone_number, phone, email, 
             department, designation, status, role,
             upi_id, bank_name, account_number, ifsc_code, base_salary,
             joiningDate, address, emergencyContact, salaryType, overtimeRate,
             bonusAmount, advanceAmount, deductionAmount,
             standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired,
-            profilePhoto
+            profilePhoto, password
         } = req.body;
 
-        staff.name = name || full_name || staff.name;
-        staff.phone = phone || phone_number || staff.phone;
-        staff.phoneNumber = phone || phone_number || staff.phoneNumber;
-        staff.email = email || staff.email;
-        staff.department = department || staff.department;
-        staff.designation = designation || staff.designation;
-        staff.status = status || staff.status;
-        staff.role = role || staff.role;
+        // Verify and prevent email collision
+        if (email && email.toLowerCase().trim() !== (staff.email || '').toLowerCase()) {
+            const existingEmail = await User.findOne({ 
+                email: email.toLowerCase().trim(), 
+                _id: { $ne: staff._id } 
+            });
+            if (existingEmail) {
+                return res.status(400).json({ message: `Email "${email}" is already used by another account.` });
+            }
+            staff.email = email.toLowerCase().trim();
+        }
+
+        // Verify and prevent username collision
+        if (username && username.trim() !== staff.username) {
+            const existingUsername = await User.findOne({ 
+                username: username.trim(), 
+                _id: { $ne: staff._id } 
+            });
+            if (existingUsername) {
+                return res.status(400).json({ message: `Username "${username}" is already in use.` });
+            }
+            staff.username = username.trim();
+        }
+
+        // Verify and prevent staff_id collision
+        if (staff_id && staff_id.trim() !== staff.staff_id) {
+            const existingId = await User.findOne({ 
+                staff_id: staff_id.trim(), 
+                _id: { $ne: staff._id } 
+            });
+            if (existingId) {
+                return res.status(400).json({ message: `Staff ID "${staff_id}" is already assigned to another staff member.` });
+            }
+            staff.staff_id = staff_id.trim();
+        }
+
+        if (name || full_name) staff.name = (name || full_name).trim();
+        if (phone || phone_number) {
+            const cleanPhone = (phone || phone_number).trim();
+            staff.phone = cleanPhone;
+            staff.phoneNumber = cleanPhone;
+        }
+        if (department) staff.department = department.trim();
+        if (designation) staff.designation = designation.trim();
+        if (status) staff.status = status;
+        if (role) staff.role = role;
+
         staff.upi_id = upi_id !== undefined ? upi_id : staff.upi_id;
         staff.bank_name = bank_name !== undefined ? bank_name : staff.bank_name;
         staff.account_number = account_number !== undefined ? account_number : staff.account_number;
@@ -146,8 +255,15 @@ exports.updateStaff = async (req, res) => {
         staff.autoSalaryCalculation = autoSalaryCalculation !== undefined ? (autoSalaryCalculation === true || autoSalaryCalculation === 'true') : staff.autoSalaryCalculation;
         staff.otApprovalRequired = otApprovalRequired !== undefined ? (otApprovalRequired === true || otApprovalRequired === 'true') : staff.otApprovalRequired;
         
+        // Handle profile photo update (URL, Base64 data URI, or cleared string)
         if (profilePhoto !== undefined) {
-            staff.profilePhoto = profilePhoto;
+            staff.profilePhoto = await processProfilePhoto(profilePhoto);
+        }
+
+        // Optional password update if admin provided new password
+        if (password && typeof password === 'string' && password.trim().length > 0) {
+            const salt = await bcrypt.genSalt(10);
+            staff.password = await bcrypt.hash(password.trim(), salt);
         }
 
         const updatedStaff = await staff.save();
@@ -159,12 +275,15 @@ exports.updateStaff = async (req, res) => {
             const { recalculateSalary } = require('../utils/salaryCalculator');
             await recalculateSalary(updatedStaff._id, currentMonthStr);
         } catch (recalcErr) {
-            console.error("Failed to automatically recalculate salary after profile update:", recalcErr);
+            console.error("Failed to automatically recalculate salary after profile update:", recalcErr.message);
         }
 
-        res.json(updatedStaff);
+        const safeStaffResponse = updatedStaff.toObject();
+        delete safeStaffResponse.password;
+        return res.json(safeStaffResponse);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error("Failed to update staff:", error);
+        return res.status(500).json({ message: error.message || 'Failed to update staff profile.' });
     }
 };
 
