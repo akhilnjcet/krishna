@@ -23,6 +23,7 @@ const salarySchema = new mongoose.Schema({
     halfDays: { type: Number, default: 0 },
     leaveDays: { type: Number, default: 0 },
     holidays: { type: Number, default: 0 },
+    totalWorkedHours: { type: Number, default: 0 },
     overtimeHours: { type: Number, default: 0 },
     overtimeEarnings: { type: Number, default: 0 },
     bonus: { type: Number, default: 0 },

@@ -473,10 +473,11 @@ const StaffFinance = () => {
                                 <div className="bg-slate-900 text-white px-4 py-2 font-black uppercase tracking-wider text-[10px]">
                                     Attendance Summary
                                 </div>
-                                <div className="p-4 grid grid-cols-3 sm:grid-cols-6 gap-2 text-center bg-slate-50 dark:bg-slate-800">
+                                <div className="p-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 text-center bg-slate-50 dark:bg-slate-800">
                                     <div><span className="text-[9px] text-slate-400 font-bold block">WORKING</span><span className="font-black text-slate-800 dark:text-slate-200">{selectedSlipForView.totalWorkingDays || 26}</span></div>
                                     <div><span className="text-[9px] text-slate-400 font-bold block">PRESENT</span><span className="font-black text-emerald-600">{selectedSlipForView.presentDays || 0}</span></div>
                                     <div><span className="text-[9px] text-slate-400 font-bold block">HALF DAYS</span><span className="font-black text-amber-600">{selectedSlipForView.halfDays || 0}</span></div>
+                                    <div><span className="text-[9px] text-slate-400 font-bold block">WORK HOURS</span><span className="font-black text-slate-800 dark:text-slate-200">{(selectedSlipForView.totalWorkedHours !== undefined && selectedSlipForView.totalWorkedHours !== null && selectedSlipForView.totalWorkedHours > 0 ? selectedSlipForView.totalWorkedHours : ((selectedSlipForView.presentDays || 0) * 8 + ((selectedSlipForView.halfDays || 0) * 4))).toFixed(1)} hrs</span></div>
                                     <div><span className="text-[9px] text-slate-400 font-bold block">LEAVES</span><span className="font-black text-purple-600">{selectedSlipForView.leaveDays || 0}</span></div>
                                     <div><span className="text-[9px] text-slate-400 font-bold block">HOLIDAYS</span><span className="font-black text-blue-600">{selectedSlipForView.holidays || 0}</span></div>
                                     <div><span className="text-[9px] text-slate-400 font-bold block">OVERTIME</span><span className="font-black text-indigo-600">{selectedSlipForView.overtimeHours || 0} hrs</span></div>

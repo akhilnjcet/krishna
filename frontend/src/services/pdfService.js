@@ -490,7 +490,7 @@ export const generateSalaryPDF = async (salary, user) => {
             margin: { left: 15, right: 15, bottom: 20 },
             head: [['ATTENDANCE SUMMARY', 'OVERTIME SUMMARY']],
             body: [
-                [`Working Days: ${salary.totalWorkingDays || 26}\nPresent Days: ${salary.presentDays || 0}\nHalf Days: ${salary.halfDays || 0}\nLeave Days: ${salary.leaveDays || 0}\nHolidays: ${salary.holidays || 0}`,
+                [`Working Days: ${salary.totalWorkingDays || 26}\nPresent Days: ${salary.presentDays || 0}\nHalf Days: ${salary.halfDays || 0}\nLeave Days: ${salary.leaveDays || 0}\nHolidays: ${salary.holidays || 0}\nWorked Hours: ${(salary.totalWorkedHours !== undefined && salary.totalWorkedHours !== null && salary.totalWorkedHours > 0 ? salary.totalWorkedHours : ((salary.presentDays || 0) * (emp.standardWorkingHoursPerDay || 8) + ((salary.halfDays || 0) * ((emp.standardWorkingHoursPerDay || 8) / 2)))).toFixed(1)} hrs`,
                  `Overtime Hours: ${salary.overtimeHours || 0} hrs\nOT Rate/Hr: ${formatCurrencyINR(salary.overtimeRate || emp.overtimeRate || user?.overtimeRate || 0)}\nOvertime Earnings: ${formatCurrencyINR(salary.overtimeEarnings || 0)}`]
             ],
             theme: 'grid',

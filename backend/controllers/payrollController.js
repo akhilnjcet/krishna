@@ -41,9 +41,10 @@ exports.calculateDraftPayroll = async (req, res) => {
             halfDays: result.salaryRecord.halfDays,
             leaveDays: result.salaryRecord.leaveDays,
             holidays: result.salaryRecord.holidays,
-            overtimeHours: result.salaryRecord.overtimeHours,
+            overtimeHours: result.overtimeHours ?? result.salaryRecord.overtimeHours,
             overtimeEarnings: result.approvedOvertime,
             pendingOvertime: result.pendingOvertime,
+            pendingOvertimeHours: result.pendingOvertimeHours || 0,
             bonus: result.salaryRecord.bonus,
             deductions: result.salaryRecord.deductions,
             advanceRecovery: result.salaryRecord.advanceRecovery,
@@ -95,10 +96,21 @@ exports.getPayrollRecords = async (req, res) => {
         }
 
         const records = await Salary.find(query)
-            .populate('staffId', 'name email staff_id department designation upi_id bank_name account_number ifsc_code joiningDate phone')
+            .populate('staffId', 'name email staff_id department designation upi_id bank_name account_number ifsc_code joiningDate phone standardWorkingHoursPerDay workingDaysPerMonth salaryType base_salary')
             .sort({ month: -1 });
 
-        res.json(records);
+        // Ensure totalWorkedHours is calculated and populated even for legacy records
+        const enrichedRecords = records.map(rec => {
+            const doc = rec.toObject ? rec.toObject() : { ...rec };
+            const staff = doc.staffId || {};
+            const stdHours = staff.standardWorkingHoursPerDay || 8;
+            if ((doc.totalWorkedHours === undefined || doc.totalWorkedHours === null || doc.totalWorkedHours === 0) && (doc.presentDays || doc.halfDays)) {
+                doc.totalWorkedHours = parseFloat(((doc.presentDays || 0) * stdHours + ((doc.halfDays || 0) * (stdHours / 2))).toFixed(2));
+            }
+            return doc;
+        });
+
+        res.json(enrichedRecords);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

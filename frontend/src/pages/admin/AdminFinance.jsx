@@ -94,22 +94,48 @@ const AdminFinance = () => {
     const [historyList, setHistoryList] = useState([]);
 
     const handleOpenPaymentModal = (staff, record) => {
-        const baseSalary = record ? (record.baseSalary || 0) : (staff.base_salary || 0);
+        const draft = payrollDrafts[staff._id];
+        const activeRecord = record || draft;
+        const baseSalary = activeRecord ? (activeRecord.baseSalary || 0) : (staff.base_salary || 0);
         const workingDays = staff.workingDaysPerMonth || 26;
         const workingHours = staff.standardWorkingHoursPerDay || 8;
         const hourlyRate = parseFloat((baseSalary / (workingDays * workingHours)).toFixed(2));
         
-        const presentDays = record ? (record.presentDays || 0) : 0;
-        const workedHours = record ? (record.totalWorkedHours || record.workedHours || 0) : 0;
-        const earnedSalary = record ? (record.totalEarnedSalary || 0) : 0;
-        const approvedOT = record ? (record.overtimeEarnings || 0) : 0;
-        const pendingOT = record ? (record.pendingOvertime || 0) : 0;
-        const bonus = record ? (record.bonus || 0) : (staff.bonusAmount || 0);
-        const advancePaid = record ? (record.salaryAdvance || 0) : (staff.advanceAmount || 0);
-        const deductions = record ? (record.deductions || 0) : (staff.deductionAmount || 0);
+        const presentDays = activeRecord ? (activeRecord.presentDays || 0) : 0;
+        const halfDays = activeRecord ? (activeRecord.halfDays || 0) : 0;
+        const fallbackHours = (presentDays * workingHours) + (halfDays * (workingHours / 2));
+        const workedHours = (activeRecord && (activeRecord.totalWorkedHours || activeRecord.workedHours))
+            ? (activeRecord.totalWorkedHours || activeRecord.workedHours)
+            : (draft?.totalWorkedHours || fallbackHours);
+
+        const earnedSalary = activeRecord ? (activeRecord.totalEarnedSalary || 0) : 0;
+
+        // Overtime calculations from record, draft, or live overtime log
+        const staffOtApproved = otRecords.filter(o => (o.staffId?._id === staff._id || o.staffId === staff._id) && o.status === 'Approved');
+        const staffOtPending = otRecords.filter(o => (o.staffId?._id === staff._id || o.staffId === staff._id) && o.status === 'Pending');
+
+        const approvedOT = (activeRecord?.overtimeEarnings !== undefined && activeRecord.overtimeEarnings > 0)
+            ? activeRecord.overtimeEarnings
+            : (draft?.overtimeEarnings || staffOtApproved.reduce((sum, o) => sum + (o.totalAmount || 0), 0));
+
+        const overtimeHours = (activeRecord?.overtimeHours !== undefined && activeRecord.overtimeHours > 0)
+            ? activeRecord.overtimeHours
+            : (draft?.overtimeHours || staffOtApproved.reduce((sum, o) => sum + (o.hours || 0), 0));
+
+        const pendingOT = (activeRecord?.pendingOvertime !== undefined && activeRecord.pendingOvertime > 0)
+            ? activeRecord.pendingOvertime
+            : (draft?.pendingOvertime || staffOtPending.reduce((sum, o) => sum + (o.totalAmount || 0), 0));
+
+        const pendingOtHours = (activeRecord?.pendingOvertimeHours !== undefined && activeRecord.pendingOvertimeHours > 0)
+            ? activeRecord.pendingOvertimeHours
+            : (draft?.pendingOvertimeHours || staffOtPending.reduce((sum, o) => sum + (o.hours || 0), 0));
+
+        const bonus = activeRecord ? (activeRecord.bonus || 0) : (staff.bonusAmount || 0);
+        const advancePaid = activeRecord ? (activeRecord.salaryAdvance || 0) : (staff.advanceAmount || 0);
+        const deductions = activeRecord ? (activeRecord.deductions || 0) : (staff.deductionAmount || 0);
         
-        const netPayable = record ? (record.netSalary || 0) : Math.max(0, earnedSalary + approvedOT + bonus - deductions - advancePaid);
-        const alreadyPaid = record ? (record.salaryAlreadyPaid || 0) : 0;
+        const netPayable = activeRecord ? (activeRecord.netSalary || 0) : Math.max(0, earnedSalary + approvedOT + bonus - deductions - advancePaid);
+        const alreadyPaid = activeRecord ? (activeRecord.salaryAlreadyPaid || 0) : 0;
         const remBalance = Math.max(0, netPayable - alreadyPaid);
 
         setPaymentForm({
@@ -120,6 +146,8 @@ const AdminFinance = () => {
             hourlyRate,
             presentDays,
             workedHours,
+            overtimeHours,
+            pendingOtHours,
             totalEarnedSalary: earnedSalary,
             approvedOT,
             pendingOT,
@@ -348,6 +376,7 @@ const AdminFinance = () => {
                 halfDays: draft.halfDays,
                 leaveDays: draft.leaveDays,
                 holidays: draft.holidays,
+                totalWorkedHours: draft.totalWorkedHours,
                 overtimeHours: draft.overtimeHours,
                 overtimeEarnings: draft.overtimeEarnings,
                 bonus: draft.bonus,
@@ -356,9 +385,8 @@ const AdminFinance = () => {
                 netSalary: draft.netSalary
             });
             alert("Payroll successfully locked and recorded.");
-            // Refresh payroll records
-            const payrollRes = await api.get(`/payroll?month=${selectedMonth}`);
-            setPayrollRecords(Array.isArray(payrollRes.data) ? payrollRes.data : []);
+            // Refresh payroll records and global data
+            await fetchGlobalData();
         } catch (err) {
             console.error(err);
             alert("Failed to lock payroll record.");
@@ -815,6 +843,21 @@ const AdminFinance = () => {
                                 const outstandingAmount = record ? (record.outstandingAmount ?? 0) : 0;
                                 const statusText = record ? (record.paymentStatus ?? 'DRAFT') : 'DRAFT';
 
+                                const workingHours = staff.standardWorkingHoursPerDay || 8;
+                                const presentDays = record?.presentDays || 0;
+                                const halfDays = record?.halfDays || 0;
+                                const workedHours = (record && (record.totalWorkedHours !== undefined && record.totalWorkedHours !== null && record.totalWorkedHours > 0))
+                                    ? record.totalWorkedHours
+                                    : ((presentDays * workingHours) + (halfDays * (workingHours / 2)));
+
+                                const staffOtApproved = otRecords.filter(o => (o.staffId?._id === staff._id || o.staffId === staff._id) && o.status === 'Approved');
+                                const otHours = (record && record.overtimeHours !== undefined && record.overtimeHours > 0)
+                                    ? record.overtimeHours
+                                    : (draft?.overtimeHours || staffOtApproved.reduce((sum, o) => sum + (o.hours || 0), 0));
+                                const otEarnings = (record && record.overtimeEarnings !== undefined && record.overtimeEarnings > 0)
+                                    ? record.overtimeEarnings
+                                    : (draft?.overtimeEarnings || staffOtApproved.reduce((sum, o) => sum + (o.totalAmount || 0), 0));
+
                                 return (
                                     <div key={staff._id} className="bg-slate-50/80 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-700 space-y-3">
                                         <div className="flex items-start justify-between gap-2">
@@ -835,6 +878,12 @@ const AdminFinance = () => {
 
                                         <div className="grid grid-cols-2 gap-2 text-xs bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/50 dark:border-slate-700">
                                             <div>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Worked & OT</p>
+                                                <p className="font-bold text-slate-900 dark:text-white">
+                                                    {Number(workedHours).toFixed(1)} hrs {otHours > 0 ? <span className="text-emerald-600 text-[10px] font-extrabold">(+{otHours}h OT)</span> : <span className="text-slate-400 text-[10px]">(0h OT)</span>}
+                                                </p>
+                                            </div>
+                                            <div>
                                                 <p className="text-[9px] font-bold text-slate-400 uppercase">Total Earned</p>
                                                 <p className="font-bold text-slate-900 dark:text-white">₹ {totalEarned.toLocaleString()}</p>
                                             </div>
@@ -845,10 +894,6 @@ const AdminFinance = () => {
                                             <div>
                                                 <p className="text-[9px] font-bold text-slate-400 uppercase">Remaining</p>
                                                 <p className="font-black text-indigo-600">₹ {remainingBalance.toLocaleString()}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Outstanding</p>
-                                                <p className="font-bold text-rose-600">₹ {outstandingAmount.toLocaleString()}</p>
                                             </div>
                                         </div>
 
@@ -927,6 +972,7 @@ const AdminFinance = () => {
                                     <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
                                         <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Employee Details</th>
                                         <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Type / Base</th>
+                                        <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Hours & OT</th>
                                         <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Total Earned</th>
                                         <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Already Paid</th>
                                         <th className="px-6 py-5 font-bold text-slate-600 dark:text-slate-400">Salary Advance</th>
@@ -939,7 +985,7 @@ const AdminFinance = () => {
                                 <tbody className="divide-y divide-slate-100">
                                     {staffList.length === 0 ? (
                                         <tr>
-                                            <td colSpan={9} className="py-12 text-center text-slate-400 font-bold">No active staff list loaded.</td>
+                                            <td colSpan={10} className="py-12 text-center text-slate-400 font-bold">No active staff list loaded.</td>
                                         </tr>
                                     ) : staffList.map(staff => {
                                         const draft = payrollDrafts[staff._id];
@@ -954,6 +1000,21 @@ const AdminFinance = () => {
                                         const outstandingAmount = record ? (record.outstandingAmount ?? 0) : 0;
                                         const statusText = record ? (record.paymentStatus ?? 'DRAFT') : 'DRAFT';
 
+                                        const workingHours = staff.standardWorkingHoursPerDay || 8;
+                                        const presentDays = record?.presentDays || 0;
+                                        const halfDays = record?.halfDays || 0;
+                                        const workedHours = (record && (record.totalWorkedHours !== undefined && record.totalWorkedHours !== null && record.totalWorkedHours > 0))
+                                            ? record.totalWorkedHours
+                                            : ((presentDays * workingHours) + (halfDays * (workingHours / 2)));
+
+                                        const staffOtApproved = otRecords.filter(o => (o.staffId?._id === staff._id || o.staffId === staff._id) && o.status === 'Approved');
+                                        const otHours = (record && record.overtimeHours !== undefined && record.overtimeHours > 0)
+                                            ? record.overtimeHours
+                                            : (draft?.overtimeHours || staffOtApproved.reduce((sum, o) => sum + (o.hours || 0), 0));
+                                        const otEarnings = (record && record.overtimeEarnings !== undefined && record.overtimeEarnings > 0)
+                                            ? record.overtimeEarnings
+                                            : (draft?.overtimeEarnings || staffOtApproved.reduce((sum, o) => sum + (o.totalAmount || 0), 0));
+
                                         return (
                                             <tr key={staff._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
                                                 <td className="px-6 py-5">
@@ -966,6 +1027,23 @@ const AdminFinance = () => {
                                                     <div>
                                                         <span className="font-bold text-slate-700 dark:text-slate-300">{staff.salaryType || 'Monthly'}</span>
                                                         <p className="font-bold text-indigo-600 mt-0.5">₹ {baseSal.toLocaleString()}</p>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    <div>
+                                                        <p className="font-extrabold text-slate-800 dark:text-slate-200">
+                                                            {Number(workedHours).toFixed(1)} hrs
+                                                            <span className="text-[10px] text-slate-400 font-semibold ml-1.5">({presentDays}d)</span>
+                                                        </p>
+                                                        <p className="text-[11px] font-bold mt-0.5">
+                                                            {otHours > 0 ? (
+                                                                <span className="text-emerald-600 dark:text-emerald-400">
+                                                                    +{otHours} hrs OT (+₹{otEarnings.toLocaleString()})
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-slate-400 font-medium">0 hrs OT (₹0)</span>
+                                                            )}
+                                                        </p>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-5 font-bold text-slate-900 dark:text-white">
@@ -1602,11 +1680,11 @@ const AdminFinance = () => {
                                             <span>₹ {paymentForm.totalEarnedSalary?.toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between items-center text-xs font-bold text-slate-655">
-                                            <span>Approved Overtime (OT):</span>
+                                            <span>Approved Overtime (OT{paymentForm.overtimeHours > 0 ? ` • ${paymentForm.overtimeHours} hrs` : ''}):</span>
                                             <span className="text-emerald-600 font-extrabold">+ ₹ {paymentForm.approvedOT?.toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between items-center text-xs font-bold text-slate-655">
-                                            <span>Pending Overtime:</span>
+                                            <span>Pending Overtime{paymentForm.pendingOtHours > 0 ? ` (${paymentForm.pendingOtHours} hrs)` : ''}:</span>
                                             <span className="text-amber-500 font-extrabold">₹ {paymentForm.pendingOT?.toLocaleString()} (Excluded)</span>
                                         </div>
                                         <div className="flex justify-between items-center text-xs font-bold text-slate-655">

@@ -55,6 +55,7 @@ async function recalculateSalary(staffId, month) {
         let approvedOvertime = 0;
         let pendingOvertime = 0;
         let overtimeHours = 0;
+        let pendingOvertimeHours = 0;
 
         overtimeRecords.forEach(ot => {
             if (ot.status === 'Approved') {
@@ -62,6 +63,7 @@ async function recalculateSalary(staffId, month) {
                 overtimeHours += ot.hours || 0;
             } else if (ot.status === 'Pending') {
                 pendingOvertime += ot.totalAmount || 0;
+                pendingOvertimeHours += ot.hours || 0;
             }
         });
 
@@ -130,8 +132,9 @@ async function recalculateSalary(staffId, month) {
                 halfDays,
                 leaveDays,
                 holidays,
-                overtimeHours,
-                overtimeEarnings: approvedOvertime,
+                totalWorkedHours: parseFloat(totalWorkedHours.toFixed(2)),
+                overtimeHours: parseFloat(overtimeHours.toFixed(2)),
+                overtimeEarnings: parseFloat(approvedOvertime.toFixed(2)),
                 bonus,
                 deductions,
                 advanceRecovery: advancePaid,
@@ -155,7 +158,9 @@ async function recalculateSalary(staffId, month) {
             earnedSalary,
             approvedOvertime,
             pendingOvertime,
-            totalWorkedHours,
+            totalWorkedHours: parseFloat(totalWorkedHours.toFixed(2)),
+            overtimeHours: parseFloat(overtimeHours.toFixed(2)),
+            pendingOvertimeHours: parseFloat(pendingOvertimeHours.toFixed(2)),
             netPayable,
             remainingBalance
         };
