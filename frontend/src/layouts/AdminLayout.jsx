@@ -50,23 +50,23 @@ const SIDEBAR_ITEMS = [
 
 /* ── Shared Sidebar Content ─────────────────────────────────────── */
 const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-900 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
         {/* Logo Section */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700/80 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50 flex flex-col items-center gap-3 flex-shrink-0">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col items-center gap-3 flex-shrink-0">
             <Link to="/" onClick={onNavClick} className="flex flex-col items-center gap-3 group">
-                <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-lg group-hover:scale-105 transition-transform border border-slate-100 dark:border-slate-800 dark:border-transparent">
-                    <p className="text-blue-600 font-black text-xl">K</p>
+                <div className="bg-white dark:bg-slate-800 p-2 rounded-2xl shadow-lg group-hover:scale-105 transition-transform border border-slate-100 dark:border-slate-700">
+                    <p className="text-blue-600 dark:text-blue-400 font-black text-xl">K</p>
                 </div>
                 <div className="text-center">
                     <p className="text-lg font-black text-slate-900 dark:text-white font-poppins tracking-tighter">KRISHNA ENGG</p>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-500 mt-1 opacity-80 italic">Admin Terminal</p>
+                    <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-400 mt-1 opacity-80 italic">Admin Terminal</p>
                 </div>
             </Link>
         </div>
 
         {/* Navigation Section */}
         <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-hide">
-            <p className="px-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-600 dark:text-slate-400 mb-3">Enterprise Control</p>
+            <p className="px-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500 mb-3">Enterprise Control</p>
             {SIDEBAR_ITEMS.map(item => {
                 const active = location.pathname === item.path || (item.path !== '/admin' && location.pathname.startsWith(item.path));
                 return (
@@ -75,10 +75,10 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
                         to={item.path}
                         onClick={onNavClick}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-semibold transition-all ${
-                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 hover:text-slate-900 dark:text-white dark:hover:bg-slate-900 dark:hover:text-white'
+                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
-                        <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`} />
+                        <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
                         <span className="truncate">{item.name}</span>
                     </Link>
                 );
@@ -86,24 +86,24 @@ const SidebarContent = ({ location, user, onNavClick, onLogout }) => (
         </nav>
 
         {/* Footer / Account Section */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50 space-y-3 flex-shrink-0">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 space-y-3 flex-shrink-0">
             <Link 
                 to="/admin/profile" 
                 onClick={onNavClick} 
-                className="flex items-center gap-3 px-3 py-2.5 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-250 dark:hover:bg-slate-800/60 transition-colors rounded-2xl border border-slate-200 dark:border-slate-700/50 dark:border-slate-800/50 group"
+                className="flex items-center gap-3 px-3 py-2.5 bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors rounded-2xl border border-slate-200 dark:border-slate-700/50 group"
             >
                 <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xs shadow-lg group-hover:scale-110 transition-transform">
                     {user?.name?.charAt(0)?.toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate leading-none mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-450 transition-colors">{user?.name || "Administrator"}</p>
-                    <p className="text-[10px] text-blue-600 dark:text-blue-500 font-black uppercase tracking-widest leading-none">System Root</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate leading-none mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{user?.name || "Administrator"}</p>
+                    <p className="text-[10px] text-blue-600 dark:text-blue-400 font-black uppercase tracking-widest leading-none">System Root</p>
                 </div>
             </Link>
             
             <button 
                 onClick={onLogout} 
-                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:border-slate-800 hover:border-rose-500/50 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-450 text-slate-500 dark:text-slate-400 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all group"
+                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-rose-500/50 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 text-slate-600 dark:text-slate-300 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all group"
             >
                 <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 Logout Session
