@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema({
     joiningDate: { type: Date, default: Date.now },
     address: { type: String },
     emergencyContact: { type: String },
+    bloodGroup: { type: String, default: '' },
 
     createdAt: { type: Date, default: Date.now },
     last_login: { type: Date },

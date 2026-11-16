@@ -27,7 +27,8 @@ const AdminUsers = () => {
         staff_id: '',
         department: '',
         designation: '',
-        base_salary: ''
+        base_salary: '',
+        bloodGroup: ''
     });
 
     const fetchUsers = useCallback(async () => {
@@ -98,7 +99,8 @@ const AdminUsers = () => {
             staff_id: '',
             department: '',
             designation: '',
-            base_salary: ''
+            base_salary: '',
+            bloodGroup: ''
         });
         setSelectedUser(null);
     };
@@ -116,7 +118,8 @@ const AdminUsers = () => {
             staff_id: user.staff_id || '',
             department: user.department || '',
             designation: user.designation || '',
-            base_salary: user.base_salary || ''
+            base_salary: user.base_salary || '',
+            bloodGroup: user.bloodGroup || ''
         });
         setShowEditModal(true);
     };
@@ -257,11 +260,18 @@ const AdminUsers = () => {
                                                             <Briefcase className="w-3.5 h-3.5 text-indigo-500" />
                                                             {user.designation || 'Staff'} ({user.department || 'General'})
                                                         </p>
-                                                        {user.staff_id && (
-                                                            <p className="text-[10px] text-slate-500 dark:text-slate-400 dark:text-dark-muted font-mono">
-                                                                ID: {user.staff_id}
-                                                            </p>
-                                                        )}
+                                                        <div className="flex items-center gap-2">
+                                                            {user.staff_id && (
+                                                                <p className="text-[10px] text-slate-500 dark:text-slate-400 dark:text-dark-muted font-mono">
+                                                                    ID: {user.staff_id}
+                                                                </p>
+                                                            )}
+                                                            {user.bloodGroup && (
+                                                                <span className="text-[9px] font-black uppercase px-2 py-0.2 rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40">
+                                                                    🩸 {user.bloodGroup}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 ) : (
                                                     <span className="text-xs text-slate-400 dark:text-dark-muted italic">Non-Staff Account</span>
@@ -341,6 +351,12 @@ const AdminUsers = () => {
                                                 <div className="flex justify-between text-xs">
                                                     <span className="text-slate-400 dark:text-dark-muted">Staff ID:</span>
                                                     <span className="font-mono text-slate-700 dark:text-slate-300 dark:text-dark-text">{user.staff_id}</span>
+                                                </div>
+                                            )}
+                                            {user.bloodGroup && (
+                                                <div className="flex justify-between text-xs">
+                                                    <span className="text-slate-400 dark:text-dark-muted">Blood Group:</span>
+                                                    <span className="font-bold text-rose-600 dark:text-rose-400">{user.bloodGroup}</span>
                                                 </div>
                                             )}
                                         </>
@@ -550,6 +566,28 @@ const AdminUsers = () => {
                                                         placeholder="0"
                                                     />
                                                 </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 flex items-center justify-between">
+                                                    <span>Blood Group</span>
+                                                    <span className="text-[9px] font-bold text-rose-500 uppercase">ID Card & Emergency</span>
+                                                </label>
+                                                <select 
+                                                    value={formData.bloodGroup}
+                                                    onChange={(e) => setFormData({...formData, bloodGroup: e.target.value})}
+                                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg border border-[#E2E8F0] dark:border-dark-border rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 dark:text-dark-text focus:ring-2 focus:ring-blue-500"
+                                                >
+                                                    <option value="">Select Blood Group</option>
+                                                    <option value="A+">A+ (A Positive)</option>
+                                                    <option value="A-">A- (A Negative)</option>
+                                                    <option value="B+">B+ (B Positive)</option>
+                                                    <option value="B-">B- (B Negative)</option>
+                                                    <option value="AB+">AB+ (AB Positive)</option>
+                                                    <option value="AB-">AB- (AB Negative)</option>
+                                                    <option value="O+">O+ (O Positive)</option>
+                                                    <option value="O-">O- (O Negative)</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </motion.div>

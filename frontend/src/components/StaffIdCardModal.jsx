@@ -62,7 +62,7 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                     </div>
                     <div class="info-block">
                         <strong>BLOOD GROUP:</strong>
-                        <p>${staff.bloodGroup || 'O+ positive'}</p>
+                        <p>${staff.bloodGroup || 'O+ Positive'}</p>
                     </div>
                     <div class="info-block">
                         <strong>OFFICE ADDRESS:</strong>

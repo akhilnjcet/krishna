@@ -69,6 +69,7 @@ const AdminStaff = () => {
         joiningDate: new Date().toISOString().split('T')[0],
         address: '',
         emergencyContact: '',
+        bloodGroup: '',
         salaryType: 'Monthly',
         overtimeRate: 0,
         bonusAmount: 0,
@@ -233,7 +234,7 @@ const AdminStaff = () => {
             upi_id: '', bank_name: '', account_number: '', 
             ifsc_code: '', base_salary: '',
             joiningDate: new Date().toISOString().split('T')[0],
-            address: '', emergencyContact: '', salaryType: 'Monthly',
+            address: '', emergencyContact: '', bloodGroup: '', salaryType: 'Monthly',
             overtimeRate: 0, bonusAmount: 0, advanceAmount: 0, deductionAmount: 0,
             profilePhoto: ''
         });
@@ -593,6 +594,7 @@ const AdminStaff = () => {
                                                 joiningDate: member.joiningDate ? new Date(member.joiningDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                                                 address: member.address || '',
                                                 emergencyContact: member.emergencyContact || '',
+                                                bloodGroup: member.bloodGroup || '',
                                                 salaryType: member.salaryType || 'Monthly',
                                                 overtimeRate: member.overtimeRate || 0,
                                                 bonusAmount: member.bonusAmount || 0,
@@ -758,6 +760,7 @@ const AdminStaff = () => {
                                                         joiningDate: member.joiningDate ? new Date(member.joiningDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                                                         address: member.address || '',
                                                         emergencyContact: member.emergencyContact || '',
+                                                        bloodGroup: member.bloodGroup || '',
                                                         salaryType: member.salaryType || 'Monthly',
                                                         overtimeRate: member.overtimeRate || 0,
                                                         bonusAmount: member.bonusAmount || 0,
@@ -946,6 +949,27 @@ const AdminStaff = () => {
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Emergency Contact</label>
                                     <input type="text" placeholder="Contact Name & Phone" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.emergencyContact} onChange={e => setFormData({...formData, emergencyContact: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider flex items-center justify-between">
+                                        <span>Blood Group</span>
+                                        <span className="text-[10px] text-rose-500 font-bold lowercase">for ID card</span>
+                                    </label>
+                                    <select 
+                                        className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" 
+                                        value={formData.bloodGroup || ''} 
+                                        onChange={e => setFormData({...formData, bloodGroup: e.target.value})}
+                                    >
+                                        <option value="">Select Blood Group</option>
+                                        <option value="A+">A+ (A Positive)</option>
+                                        <option value="A-">A- (A Negative)</option>
+                                        <option value="B+">B+ (B Positive)</option>
+                                        <option value="B-">B- (B Negative)</option>
+                                        <option value="AB+">AB+ (AB Positive)</option>
+                                        <option value="AB-">AB- (AB Negative)</option>
+                                        <option value="O+">O+ (O Positive)</option>
+                                        <option value="O-">O- (O Negative)</option>
+                                    </select>
                                 </div>
                                 <div className="md:col-span-2 space-y-2">
                                     <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Address</label>

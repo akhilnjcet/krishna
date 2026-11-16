@@ -916,7 +916,7 @@ exports.adminCreateUser = async (req, res) => {
     try {
         const { 
             name, email, username, password, role, phone, 
-            staff_id, department, designation, status, base_salary 
+            staff_id, department, designation, status, base_salary, bloodGroup 
         } = req.body;
 
         if (!name || !email || !password || !role) {
@@ -955,6 +955,7 @@ exports.adminCreateUser = async (req, res) => {
             department,
             designation,
             status: status || 'active',
+            bloodGroup: bloodGroup ? bloodGroup.trim() : '',
             base_salary: parseFloat(base_salary) || 0,
             isEmailVerified: true // Admin created users are pre-verified
         });
@@ -981,7 +982,7 @@ exports.adminUpdateUser = async (req, res) => {
 
         const { 
             name, email, username, password, role, phone, 
-            staff_id, department, designation, status, base_salary 
+            staff_id, department, designation, status, base_salary, bloodGroup 
         } = req.body;
 
         if (email && email !== user.email) {
@@ -1025,6 +1026,7 @@ exports.adminUpdateUser = async (req, res) => {
             if (designation !== undefined) user.designation = designation;
             if (base_salary !== undefined) user.base_salary = parseFloat(base_salary) || 0;
             if (staff_id) user.staff_id = staff_id;
+            if (bloodGroup !== undefined) user.bloodGroup = bloodGroup.trim();
         } else {
             user.department = undefined;
             user.designation = undefined;

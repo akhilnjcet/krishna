@@ -96,7 +96,7 @@ exports.addStaff = async (req, res) => {
             staff_id, full_name, name, phone_number, phone, email, 
             department, designation, username, password, role, status,
             upi_id, bank_name, account_number, ifsc_code, base_salary,
-            joiningDate, address, emergencyContact, salaryType, overtimeRate,
+            joiningDate, address, emergencyContact, bloodGroup, salaryType, overtimeRate,
             bonusAmount, advanceAmount, deductionAmount,
             standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired,
             profilePhoto
@@ -132,6 +132,7 @@ exports.addStaff = async (req, res) => {
             joiningDate: joiningDate || Date.now(),
             address,
             emergencyContact,
+            bloodGroup: bloodGroup ? bloodGroup.trim() : '',
             salaryType: salaryType || 'Monthly',
             overtimeRate: parseFloat(overtimeRate) || 0,
             bonusAmount: parseFloat(bonusAmount) || 0,
@@ -167,7 +168,7 @@ exports.updateStaff = async (req, res) => {
             staff_id, username, full_name, name, phone_number, phone, email, 
             department, designation, status, role,
             upi_id, bank_name, account_number, ifsc_code, base_salary,
-            joiningDate, address, emergencyContact, salaryType, overtimeRate,
+            joiningDate, address, emergencyContact, bloodGroup, salaryType, overtimeRate,
             bonusAmount, advanceAmount, deductionAmount,
             standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired,
             profilePhoto, password
@@ -229,6 +230,7 @@ exports.updateStaff = async (req, res) => {
         staff.joiningDate = joiningDate !== undefined ? joiningDate : staff.joiningDate;
         staff.address = address !== undefined ? address : staff.address;
         staff.emergencyContact = emergencyContact !== undefined ? emergencyContact : staff.emergencyContact;
+        staff.bloodGroup = bloodGroup !== undefined ? bloodGroup.trim() : staff.bloodGroup;
         staff.salaryType = salaryType !== undefined ? salaryType : staff.salaryType;
         staff.overtimeRate = overtimeRate !== undefined ? parseFloat(overtimeRate) : staff.overtimeRate;
         staff.bonusAmount = bonusAmount !== undefined ? parseFloat(bonusAmount) : staff.bonusAmount;
