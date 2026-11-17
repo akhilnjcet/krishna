@@ -13,6 +13,7 @@ import hapticService from '../../services/hapticService';
 import useAuthStore from '../../stores/authStore';
 import { loadFaceModels } from '../../utils/faceApiLoader';
 import { detectFaceAndLiveness } from '../../utils/faceApiUtils';
+import { formatTimeIST } from '../../utils/dateTimeUtil';
 
 const OFFLINE_QUEUE_KEY = 'krishna_offline_attendance_queue';
 
@@ -31,6 +32,7 @@ const AttendanceScanner = () => {
     const streamRef = useRef(null);
     const scanActiveRef = useRef(false);
     const isInitializingRef = useRef(false);
+    const isSubmittingRef = useRef(false);
 
     // Live Detection Stats
     const [stats, setStats] = useState({ blinkCount: 0, quality: 0, livenessVerified: false, livenessProgress: 0 });
@@ -328,8 +330,13 @@ const AttendanceScanner = () => {
         }
     };
 
-    // Submit attendance payload to backend
+    // Submit attendance payload to backend with concurrency lock
     const submitAttendance = async (descriptor, faceImage) => {
+        if (isSubmittingRef.current) return;
+        isSubmittingRef.current = true;
+        scanActiveRef.current = false;
+        stopCamera();
+
         setStep('verifying');
         setStatusMessage('Verifying facial biometric template & recording location...');
 
@@ -353,7 +360,6 @@ const AttendanceScanner = () => {
         // If offline, queue immediately
         if (!navigator.onLine) {
             queueOfflineAttendance(payload);
-            stopCamera();
             setStep('success');
             setConfirmedRecord({
                 action,
@@ -362,20 +368,24 @@ const AttendanceScanner = () => {
                 location: payload.location,
                 is_offline: true
             });
+            isSubmittingRef.current = false;
             return;
         }
 
         try {
             const res = await api.post('/attendance/record', payload);
             if (res.data.success) {
-                stopCamera();
                 hapticService.success();
                 setStep('success');
-                setConfirmedRecord(res.data.record);
+                setConfirmedRecord({
+                    ...res.data.record,
+                    already_marked: res.data.already_marked,
+                    already_checked_out: res.data.already_checked_out,
+                    server_message: res.data.message
+                });
             }
         } catch (err) {
             console.error('Attendance recording failed:', err);
-            stopCamera();
             hapticService.error();
 
             // Check if network error => queue offline
@@ -389,19 +399,28 @@ const AttendanceScanner = () => {
                     location: payload.location,
                     is_offline: true
                 });
+                isSubmittingRef.current = false;
                 return;
             }
 
             const errorText = err.response?.data?.message || 'Face verification failed or face not registered.';
             setStep('error');
             setErrorMessage(errorText);
+        } finally {
+            isSubmittingRef.current = false;
         }
     };
 
-    // Save attendance payload to offline storage queue
+    // Save attendance payload to offline storage queue (deduplicated by action and date)
     const queueOfflineAttendance = (payload) => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        // Check if an item for same action already queued
+        const exists = offlineQueue.some(item => item.payload?.action === payload.action && item.dateStr === todayStr);
+        if (exists) return;
+
         const item = {
             id: Date.now(),
+            dateStr: todayStr,
             payload,
             timestamp: new Date().toISOString()
         };
@@ -420,10 +439,23 @@ const AttendanceScanner = () => {
         setSyncingOffline(true);
 
         const remaining = [];
+        const seenActions = new Set();
+
         for (const item of offlineQueue) {
+            const actionKey = `${item.dateStr || ''}_${item.payload?.action || ''}`;
+            if (seenActions.has(actionKey)) {
+                // Skip duplicate offline item
+                continue;
+            }
+            seenActions.add(actionKey);
+
             try {
                 await api.post('/attendance/record', item.payload);
             } catch (err) {
+                // If already marked, it's satisfied!
+                if (err.response?.status === 200 || err.response?.data?.already_marked) {
+                    continue;
+                }
                 console.warn('Failed to sync offline item', err);
                 remaining.push(item);
             }
@@ -750,8 +782,8 @@ const AttendanceScanner = () => {
                         </div>
 
                         <div className="space-y-1">
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-                                {confirmedRecord?.action || action} Successfully Recorded!
+                            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                                {confirmedRecord?.server_message || `${confirmedRecord?.action || action} Successfully Recorded!`}
                             </h3>
                             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                                 Your attendance and location have been verified and submitted into the staff registry.
@@ -765,9 +797,9 @@ const AttendanceScanner = () => {
                                 <span className="font-bold text-slate-900 dark:text-white">{confirmedRecord?.full_name || user?.name}</span>
                             </div>
                             <div className="flex justify-between text-xs">
-                                <span className="text-slate-400 font-bold uppercase">Timestamp</span>
+                                <span className="text-slate-400 font-bold uppercase">Timestamp (IST)</span>
                                 <span className="font-bold text-slate-900 dark:text-white">
-                                    {new Date(confirmedRecord?.login_time || Date.now()).toLocaleTimeString()} ({new Date().toLocaleDateString()})
+                                    {formatTimeIST(confirmedRecord?.login_time || Date.now())}
                                 </span>
                             </div>
                             <div className="flex justify-between text-xs">

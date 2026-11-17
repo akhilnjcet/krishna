@@ -1,6 +1,8 @@
 const DailyAttendance = require('../models/DailyAttendance');
+const Attendance = require('../models/Attendance');
 const User = require('../models/User');
 const { autoGenerateAbsentLogs } = require('../utils/attendanceHelper');
+const { getISTDate, getISTTimeString, calculateDuration } = require('../utils/dateTimeUtil');
 
 // Mark/Update Daily Attendance status
 exports.markDailyAttendance = async (req, res) => {
@@ -30,13 +32,12 @@ exports.markDailyAttendance = async (req, res) => {
             const actualCheckOut = checkOut || defaultCheckOut;
             const actualBreakTime = breakTime !== undefined ? Number(breakTime) : 0;
 
-            // Compute worked hours
-            const [inH, inM] = actualCheckIn.split(':').map(Number);
-            const [outH, outM] = actualCheckOut.split(':').map(Number);
-            const totalMins = (outH * 60 + outM) - (inH * 60 + inM) - actualBreakTime;
-            workedHours = Math.max(0, parseFloat((totalMins / 60).toFixed(2)));
+            const durationCalc = calculateDuration(actualCheckIn, actualCheckOut, actualBreakTime);
+            workedHours = durationCalc.hours;
 
             // Compute late/early minutes relative to standard shift 9 AM to 5 PM
+            const [inH, inM] = actualCheckIn.split(':').map(Number);
+            const [outH, outM] = actualCheckOut.split(':').map(Number);
             const stdInMins = 9 * 60; // 09:00
             const stdOutMins = 17 * 60; // 17:00
 
@@ -63,6 +64,19 @@ exports.markDailyAttendance = async (req, res) => {
             },
             { upsert: true, new: true }
         );
+
+        // Keep Attendance biometric audit log in sync
+        try {
+            const biometricLog = await Attendance.findOne({ staff_id: staffId, date });
+            if (biometricLog) {
+                if (workedHours > 0) {
+                    biometricLog.duration_minutes = Math.round(workedHours * 60);
+                }
+                await biometricLog.save();
+            }
+        } catch (syncErr) {
+            console.warn('Biometric log sync notice:', syncErr.message);
+        }
 
         // Generate / Update Overtime record if workedHours > standard working hours per day
         const stdHours = staff.standardWorkingHoursPerDay || 8;
@@ -227,7 +241,7 @@ exports.getStaffDailyAttendanceSummary = async (req, res) => {
         const records = await DailyAttendance.find({
             staffId: targetStaffId,
             date: { $regex: `^${month}` }
-        });
+        }).sort({ date: 1 });
 
         const summary = {
             present: 0,

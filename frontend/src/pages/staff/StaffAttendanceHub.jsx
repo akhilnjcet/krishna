@@ -10,6 +10,7 @@ import useAuthStore from '../../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSocket } from '../../utils/socket';
 import { generateGeneralReportPDF } from '../../services/pdfService';
+import { formatTimeIST } from '../../utils/dateTimeUtil';
 
 const StaffAttendanceHub = () => {
     const { user } = useAuthStore();
@@ -367,12 +368,12 @@ const StaffAttendanceHub = () => {
 
                                 <div className="grid grid-cols-2 gap-2 text-[11px] bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
                                     <div>
-                                        <span className="text-[9px] text-slate-400 font-black uppercase block">Shift Clock</span>
+                                        <span className="text-[9px] text-slate-400 font-black uppercase block">Shift Clock (IST)</span>
                                         <div className="font-bold text-slate-700 dark:text-slate-300 mt-0.5">
-                                            In: {log.checkIn || '--'}
+                                            In: {formatTimeIST(log.checkIn, false)}
                                         </div>
                                         <div className="font-bold text-slate-700 dark:text-slate-300">
-                                            Out: {log.checkOut || '--'}
+                                            Out: {formatTimeIST(log.checkOut, false)}
                                         </div>
                                     </div>
                                     <div>
@@ -440,10 +441,10 @@ const StaffAttendanceHub = () => {
                                             {log.date}
                                         </td>
                                         <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                                            {log.checkIn || '--'}
+                                            {formatTimeIST(log.checkIn, false)}
                                         </td>
                                         <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                                            {log.checkOut || '--'}
+                                            {formatTimeIST(log.checkOut, false)}
                                         </td>
                                         <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                                             <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase border ${getStatusBadge(log.status)}`}>

@@ -2,6 +2,7 @@ const Attendance = require('../models/Attendance');
 const DailyAttendance = require('../models/DailyAttendance');
 const User = require('../models/User');
 const FaceData = require('../models/FaceData');
+const { getISTDate, getISTTimeString, formatISTDisplay, calculateDuration } = require('../utils/dateTimeUtil');
 
 // Helper: Euclidean distance between two 128-d vectors
 const getEuclideanDistance = (v1, v2) => {
@@ -39,12 +40,66 @@ exports.recordAttendance = async (req, res) => {
             return res.status(404).json({ message: 'Staff user profile not found.' });
         }
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = getISTDate(new Date());
         const now = new Date();
-        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const timeStr = getISTTimeString(now);
         const isCheckOut = action === 'Check out' || action === 'OUT';
         const normalizedAction = isCheckOut ? 'Check out' : 'Check in';
         const normalizedType = isCheckOut ? 'OUT' : 'IN';
+
+        // ── IDEMPOTENT CHECK-IN & SESSION VALIDATION ─────────────────────────
+        if (!isCheckOut) {
+            // Check if user already has an attendance session for today
+            const existingSession = await Attendance.findOne({
+                staff_id: staffUser._id,
+                date: today,
+                status: 'success'
+            }).sort({ login_time: 1 });
+
+            if (existingSession) {
+                // If user has already checked out today
+                if (existingSession.check_out) {
+                    return res.status(200).json({
+                        success: true,
+                        already_marked: true,
+                        already_checked_out: true,
+                        message: `Shift already completed for today (Checked in: ${formatISTDisplay(existingSession.login_time)}, Checked out: ${formatISTDisplay(existingSession.check_out)}).`,
+                        record: existingSession
+                    });
+                }
+
+                // If user has already checked in (shift in progress)
+                return res.status(200).json({
+                    success: true,
+                    already_marked: true,
+                    message: `Attendance is already marked for today at ${formatISTDisplay(existingSession.login_time)}. Your shift is currently in progress.`,
+                    record: existingSession
+                });
+            }
+        } else {
+            // Check-out: Must have an active check-in session for today
+            const activeSession = await Attendance.findOne({
+                staff_id: staffUser._id,
+                date: today,
+                status: 'success'
+            }).sort({ login_time: 1 });
+
+            if (!activeSession) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cannot check out: No active check-in record found for today. Please check in first.'
+                });
+            }
+
+            if (activeSession.check_out) {
+                return res.status(200).json({
+                    success: true,
+                    already_checked_out: true,
+                    message: `You have already checked out today at ${formatISTDisplay(activeSession.check_out)}.`,
+                    record: activeSession
+                });
+            }
+        }
 
         // Retrieve registered face template for this staff member
         let registeredDescriptor = staffUser.faceDescriptor && staffUser.faceDescriptor.length === 128 
@@ -113,66 +168,53 @@ exports.recordAttendance = async (req, res) => {
         };
 
         const overallStatus = isFaceMatched ? 'success' : 'fail';
+        let attendanceRecord = null;
 
-        // Create Attendance record
-        const attendanceRecord = new Attendance({
-            staff_id: staffUser._id,
-            full_name: staffUser.name,
-            login_time: now,
-            date: today,
-            type: normalizedType,
-            action: normalizedAction,
-            face_verified: isFaceMatched,
-            face_match_confidence: confidenceScore,
-            status: overallStatus,
-            verification_reason: verificationReason,
-            verification_result: verificationResult,
-            face_image: face_image || null,
-            face_image_deleted: false,
-            location: validatedLocation,
-            device_ip: req.ip || req.headers['x-forwarded-for'] || '',
-            device_info: device_info || req.headers['user-agent'] || '',
-            audit_trail: [{
-                action: 'RECORDED',
-                performed_by: staffUser._id,
-                performed_by_name: staffUser.name,
-                timestamp: now,
-                details: `${normalizedAction} recorded via face scan (Confidence: ${confidenceScore}%) and location`,
-                ip_address: req.ip || req.headers['x-forwarded-for'] || ''
-            }]
-        });
+        if (isCheckOut) {
+            // Find the active check-in record for today
+            const activeSession = await Attendance.findOne({
+                staff_id: staffUser._id,
+                date: today,
+                status: 'success'
+            }).sort({ login_time: 1 });
 
-        await attendanceRecord.save();
+            if (!activeSession) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cannot check out: No active check-in session found for today. Please check in first.'
+                });
+            }
 
-        // If face verification succeeded, update DailyAttendance and payroll
-        if (overallStatus === 'success') {
-            if (isCheckOut) {
-                // Look for existing Check In today to compute duration
-                const checkInLog = await Attendance.findOne({
-                    staff_id: staffUser._id,
-                    date: today,
-                    action: { $in: ['Check in', 'IN'] },
-                    status: 'success'
-                }).sort({ login_time: -1 });
+            if (overallStatus === 'success') {
+                const durationCalc = calculateDuration(activeSession.login_time, now);
+                const workedHours = durationCalc.hours;
+                const durationMins = durationCalc.minutes;
 
-                let workedHours = 8;
-                let durationMins = 480;
+                activeSession.check_out = now;
+                activeSession.action = 'Check in / Check out';
+                activeSession.duration_minutes = durationMins;
+                activeSession.location = validatedLocation;
+                activeSession.audit_trail.push({
+                    action: 'RECORDED',
+                    performed_by: staffUser._id,
+                    performed_by_name: staffUser.name,
+                    timestamp: now,
+                    details: `Check out recorded via face scan (Confidence: ${confidenceScore}%) and location. Duration: ${durationCalc.formatted}.`,
+                    ip_address: req.ip || req.headers['x-forwarded-for'] || ''
+                });
 
-                if (checkInLog && checkInLog.login_time) {
-                    durationMins = Math.max(1, Math.round((now - new Date(checkInLog.login_time)) / 60000));
-                    workedHours = parseFloat((durationMins / 60).toFixed(2));
-                    checkInLog.check_out = now;
-                    checkInLog.duration_minutes = durationMins;
-                    await checkInLog.save();
-                }
+                await activeSession.save();
+                attendanceRecord = activeSession;
 
-                attendanceRecord.duration_minutes = durationMins;
-                await attendanceRecord.save();
+                // Sync DailyAttendance
+                const checkInTimeStr = getISTTimeString(activeSession.login_time);
+                const dailyStatus = workedHours >= 7.5 ? 'Present' : (workedHours >= 4 ? 'Half Day' : 'Half Day');
 
                 await DailyAttendance.findOneAndUpdate(
                     { staffId: staffUser._id, date: today },
                     {
-                        status: 'Present',
+                        status: dailyStatus,
+                        checkIn: checkInTimeStr,
                         checkOut: timeStr,
                         workedHours,
                         isApproved: true,
@@ -180,12 +222,80 @@ exports.recordAttendance = async (req, res) => {
                     },
                     { upsert: true, new: true }
                 );
+
+                // Overtime calculation
+                const stdHours = staffUser.standardWorkingHoursPerDay || 8;
+                const Overtime = require('../models/Overtime');
+                if (workedHours > stdHours) {
+                    const otHours = parseFloat((workedHours - stdHours).toFixed(2));
+                    const otRate = staffUser.overtimeRate || 0;
+                    const otAmount = parseFloat((otHours * otRate).toFixed(2));
+                    const otStatus = staffUser.otApprovalRequired ? 'Pending' : 'Approved';
+
+                    await Overtime.findOneAndUpdate(
+                        { staffId: staffUser._id, date: today },
+                        {
+                            staffId: staffUser._id,
+                            date: today,
+                            hours: otHours,
+                            ratePerHour: otRate,
+                            totalAmount: otAmount,
+                            regularHours: stdHours,
+                            checkIn: checkInTimeStr,
+                            checkOut: timeStr,
+                            status: otStatus,
+                            addedBy: staffUser._id,
+                            createdAt: now
+                        },
+                        { upsert: true }
+                    );
+                }
             } else {
+                return res.status(422).json({
+                    success: false,
+                    message: verificationReason || 'Face verification failed during checkout.',
+                    can_request_correction: true
+                });
+            }
+        } else {
+            // Check-In flow: Create single canonical attendance record
+            attendanceRecord = new Attendance({
+                staff_id: staffUser._id,
+                full_name: staffUser.name,
+                login_time: now,
+                date: today,
+                type: normalizedType,
+                action: normalizedAction,
+                face_verified: isFaceMatched,
+                face_match_confidence: confidenceScore,
+                status: overallStatus,
+                verification_reason: verificationReason,
+                verification_result: verificationResult,
+                face_image: face_image || null,
+                face_image_deleted: false,
+                location: validatedLocation,
+                device_ip: req.ip || req.headers['x-forwarded-for'] || '',
+                device_info: device_info || req.headers['user-agent'] || '',
+                audit_trail: [{
+                    action: 'RECORDED',
+                    performed_by: staffUser._id,
+                    performed_by_name: staffUser.name,
+                    timestamp: now,
+                    details: `${normalizedAction} recorded via face scan (Confidence: ${confidenceScore}%) and location`,
+                    ip_address: req.ip || req.headers['x-forwarded-for'] || ''
+                }]
+            });
+
+            await attendanceRecord.save();
+
+            if (overallStatus === 'success') {
                 await DailyAttendance.findOneAndUpdate(
                     { staffId: staffUser._id, date: today },
                     {
                         status: 'Present',
                         checkIn: timeStr,
+                        checkOut: '',
+                        workedHours: 0,
                         markedBy: staffUser._id,
                         isApproved: true,
                         updatedAt: now
@@ -193,6 +303,10 @@ exports.recordAttendance = async (req, res) => {
                     { upsert: true, new: true }
                 );
             }
+        }
+
+        // If face verification succeeded, handle payroll and notifications
+        if (overallStatus === 'success' && attendanceRecord) {
 
             // Real-time salary recalculation
             try {
@@ -371,20 +485,135 @@ exports.getAttendanceLogs = async (req, res) => {
  * Get current staff user's own logs
  * GET /api/attendance/my-logs
  */
+/**
+ * GET /api/attendance/my-logs
+ * Single source of truth for Staff Timesheet.
+ * Synchronized with DailyAttendance, deduplicating accidental rapid scans,
+ * and sorted in ascending chronological order (oldest date first, newest date last).
+ */
 exports.getStaffLogs = async (req, res) => {
     try {
+        const targetStaffId = req.user._id || req.user.id;
         const { month } = req.query;
-        let query = { staff_id: req.user._id || req.user.id };
+        const Overtime = require('../models/Overtime');
+
+        let biometricQuery = { staff_id: targetStaffId };
+        let dailyQuery = { staffId: targetStaffId };
+
         if (month) {
-            query.date = { $regex: `^${month}` };
+            biometricQuery.date = { $regex: `^${month}` };
+            dailyQuery.date = { $regex: `^${month}` };
+            await require('../utils/attendanceHelper').autoGenerateAbsentLogs(month);
         }
 
-        const logs = await Attendance.find(query)
-            .sort({ login_time: -1 })
-            .limit(100);
+        // Fetch raw biometric logs, daily register records, and overtime records concurrently
+        const [rawLogs, dailyRecords, otRecords] = await Promise.all([
+            Attendance.find(biometricQuery).sort({ date: 1, login_time: 1 }),
+            DailyAttendance.find(dailyQuery).sort({ date: 1 }),
+            Overtime.find(dailyQuery)
+        ]);
 
-        res.json(logs);
+        const dailyMap = new Map();
+        dailyRecords.forEach(d => dailyMap.set(d.date, d));
+
+        const otMap = new Map();
+        otRecords.forEach(o => otMap.set(o.date, o));
+
+        // Group biometric logs by date
+        const biometricByDate = new Map();
+        rawLogs.forEach(log => {
+            const dateStr = log.date;
+            if (!biometricByDate.has(dateStr)) {
+                biometricByDate.set(dateStr, []);
+            }
+            biometricByDate.get(dateStr).push(log);
+        });
+
+        // Collect all distinct dates from both sources
+        const allDates = Array.from(new Set([
+            ...dailyRecords.map(d => d.date),
+            ...rawLogs.map(l => l.date)
+        ])).sort(); // Ascending chronological order (YYYY-MM-DD)
+
+        const todayStr = getISTDate(new Date());
+
+        const consolidatedTimesheets = allDates.map(dateStr => {
+            const dateBiometrics = biometricByDate.get(dateStr) || [];
+            const daily = dailyMap.get(dateStr);
+            const ot = otMap.get(dateStr);
+
+            // Determine earliest login_time and latest check_out among biometric logs
+            let earliestLogin = null;
+            let latestCheckOut = null;
+            let totalDurationMins = 0;
+            let bestLog = dateBiometrics[0] || null;
+
+            dateBiometrics.forEach(item => {
+                if (item.status === 'success') {
+                    if (!earliestLogin || new Date(item.login_time) < new Date(earliestLogin)) {
+                        earliestLogin = item.login_time;
+                        bestLog = item;
+                    }
+                    if (item.check_out) {
+                        if (!latestCheckOut || new Date(item.check_out) > new Date(latestCheckOut)) {
+                            latestCheckOut = item.check_out;
+                        }
+                    }
+                    if (item.duration_minutes > totalDurationMins) {
+                        totalDurationMins = item.duration_minutes;
+                    }
+                }
+            });
+
+            // Calculate duration if check_out exists
+            if (earliestLogin && latestCheckOut && totalDurationMins === 0) {
+                totalDurationMins = Math.max(1, Math.round((new Date(latestCheckOut) - new Date(earliestLogin)) / 60000));
+            }
+
+            // Sync with DailyAttendance checkIn / checkOut strings
+            const checkInTimeStr = daily?.checkIn || (earliestLogin ? getISTTimeString(earliestLogin) : '--');
+            const checkOutTimeStr = daily?.checkOut || (latestCheckOut ? getISTTimeString(latestCheckOut) : '--');
+
+            const workedHours = daily?.workedHours !== undefined ? daily.workedHours : parseFloat((totalDurationMins / 60).toFixed(2));
+
+            // Determine canonical status
+            let canonicalStatus = 'Absent';
+            if (daily?.status) {
+                canonicalStatus = daily.status;
+            } else if (earliestLogin) {
+                if (!latestCheckOut && dateStr === todayStr) {
+                    canonicalStatus = 'Present';
+                } else if (workedHours >= 7.5 || totalDurationMins >= 450) {
+                    canonicalStatus = 'Present';
+                } else if (workedHours >= 4 || totalDurationMins >= 240) {
+                    canonicalStatus = 'Half Day';
+                } else {
+                    canonicalStatus = 'Present';
+                }
+            }
+
+            return {
+                _id: bestLog?._id || `daily-${dateStr}`,
+                staff_id: targetStaffId,
+                full_name: bestLog?.full_name || req.user.name,
+                date: dateStr,
+                login_time: earliestLogin,
+                check_out: latestCheckOut,
+                checkInStr: checkInTimeStr,
+                checkOutStr: checkOutTimeStr,
+                duration_minutes: totalDurationMins,
+                workedHours,
+                status: canonicalStatus,
+                overtimeHours: ot?.hours || 0,
+                location: bestLog?.location || null,
+                rawAttemptsCount: dateBiometrics.length,
+                is_active_shift: (!latestCheckOut && dateStr === todayStr && !!earliestLogin)
+            };
+        });
+
+        res.json(consolidatedTimesheets);
     } catch (error) {
+        console.error('Error in getStaffLogs:', error);
         res.status(500).json({ message: error.message });
     }
 };
