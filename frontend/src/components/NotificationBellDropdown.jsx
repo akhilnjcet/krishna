@@ -350,14 +350,14 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
                                                     <p className={`text-xs font-semibold truncate ${
                                                         !item.read ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'
                                                     }`}>
-                                                        {item.title}
+                                                        {typeof item.title === 'object' ? (item.title?.text || item.title?.message || JSON.stringify(item.title)) : String(item.title || '')}
                                                     </p>
                                                     <span className="text-[10px] text-slate-400 shrink-0">
                                                         {formatTimeAgo(item.createdAt)}
                                                     </span>
                                                 </div>
                                                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">
-                                                    {item.message}
+                                                    {typeof item.message === 'object' ? (item.message?.text || item.message?.message || JSON.stringify(item.message)) : String(item.message || '')}
                                                 </p>
                                                 {item.link && (
                                                     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-blue-400 mt-1">

@@ -593,11 +593,11 @@ const DigitalLetterPad = () => {
         }, 150);
     };
 
-    // Download PDF Handler (html2canvas + jsPDF)
+    // Download PDF Handler (isolated iframe + html2canvas + jsPDF)
     const handleDownloadPDF = async () => {
         setIsGeneratingPdf(true);
         setSelectedBlockId(null);
-        let sandbox = null;
+        let iframe = null;
         try {
             const container = document.getElementById('letterpad-print-container');
             if (!container) {
@@ -608,18 +608,61 @@ const DigitalLetterPad = () => {
             const { default: html2canvas } = await import('html2canvas');
             const { jsPDF } = await import('jspdf');
 
-            // Create an isolated off-screen sandbox with exact standard A4 pixel dimensions (794px x 1123px)
-            sandbox = document.createElement('div');
-            sandbox.style.position = 'fixed';
-            sandbox.style.left = '-10000px';
-            sandbox.style.top = '0';
-            sandbox.style.width = '794px';
-            sandbox.style.height = '1123px';
-            sandbox.style.zIndex = '-9999';
-            sandbox.style.overflow = 'hidden';
-            sandbox.style.backgroundColor = '#ffffff';
-            sandbox.style.margin = '0';
-            sandbox.style.padding = '0';
+            // Create an isolated hidden iframe with exact standard A4 dimensions (794px x 1123px)
+            iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.left = '-9999px';
+            iframe.style.top = '0';
+            iframe.style.width = '794px';
+            iframe.style.height = '1123px';
+            iframe.style.border = 'none';
+            iframe.style.zIndex = '-9999';
+            iframe.style.opacity = '0';
+            iframe.style.pointerEvents = 'none';
+            document.body.appendChild(iframe);
+
+            const iframeDoc = iframe.contentWindow.document;
+            iframeDoc.open();
+            // Clone style/link tags so Tailwind and Google Fonts are available inside the iframe
+            const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+                .map(el => el.outerHTML)
+                .join('\n');
+
+            iframeDoc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <title>LetterPad PDF Export</title>
+                    <meta name="viewport" content="width=794, initial-scale=1">
+                    ${styles}
+                    <style>
+                        html, body {
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            width: 794px !important;
+                            height: 1123px !important;
+                            min-width: 794px !important;
+                            min-height: 1123px !important;
+                            max-width: 794px !important;
+                            max-height: 1123px !important;
+                            background: #ffffff !important;
+                            overflow: hidden !important;
+                            box-sizing: border-box !important;
+                        }
+                        * {
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                            box-sizing: border-box !important;
+                        }
+                        .no-print { display: none !important; }
+                    </style>
+                </head>
+                <body style="margin: 0; padding: 0; background: #ffffff; width: 794px; height: 1123px; overflow: hidden;">
+                </body>
+                </html>
+            `);
+            iframeDoc.close();
 
             // Deep clone the letterpad container
             const clone = container.cloneNode(true);
@@ -635,6 +678,8 @@ const DigitalLetterPad = () => {
             clone.style.maxHeight = '1123px';
             clone.style.minWidth = '794px';
             clone.style.minHeight = '1123px';
+            clone.style.margin = '0';
+            clone.style.padding = '0';
             clone.style.boxShadow = 'none';
             clone.style.border = 'none';
             clone.style.backgroundColor = '#ffffff';
@@ -656,11 +701,10 @@ const DigitalLetterPad = () => {
                 el.style.boxShadow = 'none';
             });
 
-            sandbox.appendChild(clone);
-            document.body.appendChild(sandbox);
+            iframeDoc.body.appendChild(clone);
 
-            // Wait a tiny tick for layout/fonts in sandbox
-            await new Promise(resolve => setTimeout(resolve, 50));
+            // Wait for fonts/layout inside iframe
+            await new Promise(resolve => setTimeout(resolve, 150));
 
             // Render at high resolution (scale: 2 = 1588x2246 px, crisp for 300 DPI A4 print quality)
             const canvas = await html2canvas(clone, {
@@ -671,8 +715,12 @@ const DigitalLetterPad = () => {
                 logging: false,
                 width: 794,
                 height: 1123,
-                windowWidth: 1200,
-                windowHeight: 1600
+                windowWidth: 794,
+                windowHeight: 1123,
+                x: 0,
+                y: 0,
+                scrollX: 0,
+                scrollY: 0
             });
 
             const pdf = new jsPDF({
@@ -716,8 +764,8 @@ const DigitalLetterPad = () => {
             console.error('PDF generation error, fallback to print:', err);
             window.print();
         } finally {
-            if (sandbox && sandbox.parentNode) {
-                sandbox.parentNode.removeChild(sandbox);
+            if (iframe && iframe.parentNode) {
+                iframe.parentNode.removeChild(iframe);
             }
             setIsGeneratingPdf(false);
         }
@@ -731,85 +779,78 @@ const DigitalLetterPad = () => {
 
                 @media print {
                     @page {
-                        size: A4 portrait;
+                        size: 210mm 297mm;
                         margin: 0mm;
+                    }
+                    *, *::before, *::after {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                        box-shadow: none !important;
+                        text-shadow: none !important;
                     }
                     html, body {
                         width: 210mm !important;
                         height: 297mm !important;
+                        max-width: 210mm !important;
+                        max-height: 297mm !important;
                         margin: 0 !important;
                         padding: 0 !important;
                         background: #ffffff !important;
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
                         overflow: visible !important;
                     }
-                    nav, aside, header, .no-print, [role="navigation"] {
+                    nav, aside, header, footer, .no-print, [role="navigation"], button, input, select {
                         display: none !important;
                     }
-                    .letterpad-page-root {
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        background: #ffffff !important;
-                        min-height: 0 !important;
-                        height: 297mm !important;
-                        width: 210mm !important;
+                    #root, #root > div, .min-h-screen, main, .max-w-\[1500px\], .letterpad-page-root, .letterpad-workspace-root, .letterpad-scaled-wrapper {
                         display: block !important;
-                    }
-                    .letterpad-workspace-root {
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        background: #ffffff !important;
-                        width: 210mm !important;
-                        height: 297mm !important;
-                        display: block !important;
-                        overflow: visible !important;
-                    }
-                    .letterpad-scaled-wrapper {
+                        position: static !important;
                         width: 210mm !important;
                         height: 297mm !important;
                         min-width: 210mm !important;
                         min-height: 297mm !important;
                         max-width: 210mm !important;
                         max-height: 297mm !important;
-                        margin: 0 auto !important;
+                        margin: 0 !important;
                         padding: 0 !important;
-                        position: static !important;
-                        display: block !important;
-                        transform: none !important;
                         background: #ffffff !important;
-                        border: none !important;
+                        overflow: visible !important;
+                        transform: none !important;
                         box-shadow: none !important;
+                        border: none !important;
                     }
                     #letterpad-print-container {
-                        box-shadow: none !important;
-                        border: none !important;
-                        margin: 0 auto !important;
-                        padding: 0 !important;
+                        display: block !important;
+                        position: absolute !important;
+                        top: 0 !important;
+                        left: 0 !important;
                         width: 210mm !important;
                         height: 297mm !important;
                         min-width: 210mm !important;
                         min-height: 297mm !important;
                         max-width: 210mm !important;
                         max-height: 297mm !important;
-                        position: relative !important;
-                        top: 0 !important;
-                        left: 0 !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: #ffffff !important;
+                        box-shadow: none !important;
+                        border: none !important;
                         transform: none !important;
                         overflow: hidden !important;
-                        background: #ffffff !important;
                         page-break-inside: avoid !important;
                         page-break-after: avoid !important;
                         break-inside: avoid !important;
-                        display: block !important;
+                        break-after: avoid !important;
+                        z-index: 99999 !important;
                     }
                     #letterpad-print-container * {
                         box-shadow: none !important;
                         text-shadow: none !important;
                     }
-                    .ring-1, .ring-2, .ring-blue-500, .hover\\:ring-1, .focus\\:ring-2 {
+                    .ring-1, .ring-2, .ring-blue-500, .hover\\:ring-1, .hover\\:ring-slate-300, .hover\\:ring-blue-400, .focus\\:ring-2, .focus\\:ring-blue-600, .bg-blue-50\\/10, .bg-blue-50\\/20 {
                         outline: none !important;
                         box-shadow: none !important;
+                        border-color: transparent !important;
+                        background-color: transparent !important;
                     }
                 }
             `}</style>
@@ -1536,7 +1577,7 @@ const DigitalLetterPad = () => {
                                     </div>
 
                                     {/* Right: Contact Details with Small Icons - Directly Editable & Full Address */}
-                                    <div className="text-right space-y-1 text-[10px] text-slate-700 font-semibold leading-tight pt-0.5 max-w-[380px] shrink-0">
+                                    <div className="text-right space-y-1 text-[9.5px] text-slate-700 font-semibold leading-tight pt-0.5 max-w-[280px] shrink-0">
                                         <div className="flex items-start justify-end gap-1.5">
                                             <span 
                                                 contentEditable
@@ -1545,7 +1586,7 @@ const DigitalLetterPad = () => {
                                                     setHeaderData(prev => ({ ...prev, address: e.currentTarget.textContent?.trim() || '' }));
                                                     recordChange();
                                                 }}
-                                                className="text-right leading-snug break-words outline-none hover:ring-1 hover:ring-blue-400 focus:ring-2 focus:ring-blue-600 rounded px-1 transition cursor-text max-w-[340px]"
+                                                className="text-right leading-snug break-words outline-none hover:ring-1 hover:ring-blue-400 focus:ring-2 focus:ring-blue-600 rounded px-1 transition cursor-text max-w-[260px]"
                                                 title="Click to edit address (shows fully without cut-off)"
                                             >
                                                 {headerData.address}
@@ -1739,6 +1780,10 @@ const DigitalLetterPad = () => {
                                             left: `${block.x}px`,
                                             top: `${block.y - 170}px`,
                                             width: `${block.width}px`,
+                                            maxWidth: `${Math.max(200, 794 - (block.x || 48) - 24)}px`,
+                                            boxSizing: 'border-box',
+                                            wordBreak: 'break-word',
+                                            overflowWrap: 'break-word',
                                             fontFamily: block.fontFamily,
                                             fontSize: `${block.fontSize}px`,
                                             fontWeight: block.bold ? 'bold' : 'normal',
@@ -1774,7 +1819,7 @@ const DigitalLetterPad = () => {
                                                 recordChange();
                                             }}
                                             dangerouslySetInnerHTML={{ __html: block.content }}
-                                            className="outline-none min-h-[1.5em] leading-relaxed cursor-text whitespace-pre-wrap"
+                                            className="outline-none min-h-[1.5em] leading-relaxed cursor-text whitespace-pre-wrap break-words"
                                         />
 
                                         {/* Delete Button (Visible on Active Selection) */}

@@ -185,7 +185,7 @@ const Login = () => {
                             className="p-3.5 mb-5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-2xl flex items-center gap-2.5 text-xs font-bold text-rose-600 dark:text-rose-400"
                         >
                             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            <span className="leading-snug">{error}</span>
+                            <span className="leading-snug">{typeof error === 'object' ? (error?.message || error?.error || JSON.stringify(error)) : String(error || '')}</span>
                         </motion.div>
                     )}
 

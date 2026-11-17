@@ -601,7 +601,7 @@ const PaymentSystem = () => {
                         </h3>
                         
                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">
-                            {paymentResult.message}
+                            {typeof paymentResult.message === 'object' ? (paymentResult.message?.message || JSON.stringify(paymentResult.message)) : String(paymentResult.message || '')}
                         </p>
 
                         <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200 dark:border-slate-700/60 mb-5 text-left text-xs space-y-2.5">

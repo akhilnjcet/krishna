@@ -173,7 +173,7 @@ const AdminLogin = () => {
                                 className="flex items-center gap-2 text-rose-500 bg-rose-50 p-4 rounded-xl border border-rose-100"
                             >
                                 <AlertCircle className="w-4 h-4" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest">{error}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest">{typeof error === 'object' ? (error?.message || error?.error || JSON.stringify(error)) : String(error || '')}</span>
                             </motion.div>
                         )}
                     </AnimatePresence>

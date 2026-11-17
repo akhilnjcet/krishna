@@ -157,7 +157,7 @@ const StaffLogin = () => {
                                 {error && (
                                     <div className="bg-rose-50/10 dark:bg-rose-900/10 border border-rose-100/30 dark:border-rose-900/30 p-4 rounded-2xl flex items-center gap-3">
                                         <Info className="w-5 h-5 text-rose-500 flex-shrink-0" />
-                                        <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">{error}</p>
+                                        <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">{typeof error === 'object' ? (error?.message || error?.error || JSON.stringify(error)) : String(error || '')}</p>
                                     </div>
                                 )}
 
@@ -183,7 +183,7 @@ const StaffLogin = () => {
                                 {error && (
                                     <div className="mt-6 bg-rose-50/10 dark:bg-rose-900/10 border border-rose-100/30 dark:border-rose-900/30 p-4 rounded-2xl flex items-center gap-3 w-full">
                                         <Info className="w-5 h-5 text-rose-500 flex-shrink-0" />
-                                        <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">{error}</p>
+                                        <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">{typeof error === 'object' ? (error?.message || error?.error || JSON.stringify(error)) : String(error || '')}</p>
                                     </div>
                                 )}
                             </motion.div>

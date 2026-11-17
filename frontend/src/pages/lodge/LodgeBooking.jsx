@@ -145,7 +145,7 @@ export default function LodgeBookingCheckout() {
                      </>
                  )}
 
-                 {error && <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg flex"><AlertCircle className="w-5 h-5 mr-2 inline" />{error}</div>}
+                 {error && <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg flex"><AlertCircle className="w-5 h-5 mr-2 inline" />{typeof error === 'object' ? (error?.message || error?.error || JSON.stringify(error)) : String(error || '')}</div>}
 
                  <div className="pt-4">
                     <button 

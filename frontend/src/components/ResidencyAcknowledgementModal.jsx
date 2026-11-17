@@ -133,7 +133,7 @@ export default function ResidencyAcknowledgementModal({ bookingId, onClose }) {
                     ) : error ? (
                         <div className="flex flex-col items-center justify-center py-24 gap-4">
                             <XCircle className="w-12 h-12 text-red-400" />
-                            <p className="text-slate-700 dark:text-slate-300 font-bold">{error}</p>
+                            <p className="text-slate-700 dark:text-slate-300 font-bold">{typeof error === 'object' ? (error?.message || error?.error || JSON.stringify(error)) : String(error || '')}</p>
                         </div>
                     ) : data ? (
                         <div className="p-5 sm:p-8 space-y-6">

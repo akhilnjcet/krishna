@@ -12,6 +12,19 @@ import { getSocket } from '../../utils/socket';
 import { generateGeneralReportPDF } from '../../services/pdfService';
 import { formatTimeIST } from '../../utils/dateTimeUtil';
 
+const formatLocationText = (loc) => {
+    if (!loc) return 'Factory / Site';
+    if (typeof loc === 'string') return loc;
+    if (typeof loc === 'object') {
+        if (loc.address) return loc.address;
+        if (loc.latitude && loc.longitude) {
+            return `${Number(loc.latitude).toFixed(4)}, ${Number(loc.longitude).toFixed(4)}`;
+        }
+        return 'Factory / Site';
+    }
+    return String(loc);
+};
+
 const StaffAttendanceHub = () => {
     const { user } = useAuthStore();
 
@@ -392,12 +405,12 @@ const StaffAttendanceHub = () => {
                                         {log.location && (
                                             <span className="flex items-center gap-1 truncate">
                                                 <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                                                <span className="truncate">{log.location}</span>
+                                                <span className="truncate">{formatLocationText(log.location)}</span>
                                             </span>
                                         )}
                                         {log.remarks && (
                                             <span className="italic truncate text-right">
-                                                "{log.remarks}"
+                                                "{typeof log.remarks === 'object' ? (log.remarks?.text || JSON.stringify(log.remarks)) : String(log.remarks)}"
                                             </span>
                                         )}
                                     </div>
@@ -459,7 +472,7 @@ const StaffAttendanceHub = () => {
                                         </td>
                                         <td className="px-4 lg:px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap flex items-center gap-1">
                                             <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                                            {log.location || 'Factory / Site'}
+                                            {formatLocationText(log.location)}
                                         </td>
                                         <td className="px-4 lg:px-6 py-4 text-slate-500 dark:text-slate-400 italic max-w-xs truncate">
                                             {log.remarks || 'Standard Shift Logged'}

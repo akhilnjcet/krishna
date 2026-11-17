@@ -304,7 +304,7 @@ const TaskAttachmentModal = ({
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">Unable to Preview Attachment</h4>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{error}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{typeof error === 'object' ? (error?.message || error?.error || JSON.stringify(error)) : String(error || '')}</p>
                                 </div>
                                 <div className="flex justify-center gap-3 pt-2">
                                     <button

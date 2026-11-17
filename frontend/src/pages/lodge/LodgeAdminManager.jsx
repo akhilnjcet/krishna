@@ -1234,7 +1234,7 @@ export default function LodgeAdminManager() {
                                     </div>
                                     <div className="flex justify-between items-center text-[11px]">
                                        <span className="text-slate-500 dark:text-slate-400 font-medium">Active Booking:</span>
-                                       <span className="font-extrabold text-indigo-600 font-mono">{r.bookingId}</span>
+                                       <span className="font-extrabold text-indigo-600 font-mono">{typeof r.bookingId === 'object' ? (r.bookingId?.agreementNumber || r.bookingId?._id || 'Active') : String(r.bookingId || 'N/A')}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-[11px]">
                                        <span className="text-slate-500 dark:text-slate-400 font-medium">Lease Period:</span>
