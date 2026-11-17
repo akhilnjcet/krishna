@@ -110,15 +110,22 @@ const DigitalLetterPad = () => {
     // Workspace & Preview State
     const [viewMode, setViewMode] = useState('split'); // 'split' | 'editor' | 'preview'
     const [zoomScale, setZoomScale] = useState(1);
+    const [autoFitScale, setAutoFitScale] = useState(1);
+    const [isAutoFit, setIsAutoFit] = useState(true);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [saveState, setSaveState] = useState(''); // 'saving' | 'saved' | 'error'
     const [toastMessage, setToastMessage] = useState('');
     const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-    // Print & Dragging references
+    // Workspace, Print & Dragging references
+    const workspaceRef = useRef(null);
     const printContainerRef = useRef(null);
     const letterAreaRef = useRef(null);
     const dragRef = useRef({ isDragging: false, blockId: null, startX: 0, startY: 0, initialX: 0, initialY: 0 });
+    const touchDistRef = useRef(null);
+
+    // Effective Zoom Scale (Auto-fit takes priority on mobile or when toggled)
+    const effectiveScale = isAutoFit ? autoFitScale : zoomScale;
 
     // Toast Helper
     const showToast = (msg, type = 'saved') => {
@@ -224,6 +231,80 @@ const DigitalLetterPad = () => {
         }, 1500);
         return () => clearTimeout(timer);
     }, [headerData, textBlocks, hasAddressBlock, addressData, hasSignatureBlock, signatureData]);
+
+    // Automatic Fit-to-Screen calculation for Responsive Canvas
+    useEffect(() => {
+        const updateAutoFit = () => {
+            if (!workspaceRef.current) return;
+            const availableWidth = workspaceRef.current.clientWidth;
+            // Pad 16px on mobile (<640), 32px on tablet (<1024), 64px on desktop
+            const pad = availableWidth < 640 ? 16 : (availableWidth < 1024 ? 32 : 64);
+            const usableWidth = Math.max(260, availableWidth - pad);
+            const calculatedFit = Math.min(1.2, Number((usableWidth / 794).toFixed(3)));
+            
+            setAutoFitScale(calculatedFit);
+            
+            if (window.innerWidth < 860) {
+                // On mobile and tablets, default to auto-fit
+                setIsAutoFit(true);
+            }
+        };
+
+        updateAutoFit();
+        const timer = setTimeout(updateAutoFit, 100);
+        window.addEventListener('resize', updateAutoFit);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', updateAutoFit);
+        };
+    }, []);
+
+    // Zoom Handlers
+    const handleZoomIn = () => {
+        setIsAutoFit(false);
+        setZoomScale(prev => Math.min(1.6, Number(((isAutoFit ? autoFitScale : prev) + 0.1).toFixed(2))));
+    };
+
+    const handleZoomOut = () => {
+        setIsAutoFit(false);
+        setZoomScale(prev => Math.max(0.25, Number(((isAutoFit ? autoFitScale : prev) - 0.1).toFixed(2))));
+    };
+
+    const handleToggleAutoFit = () => {
+        setIsAutoFit(true);
+        setZoomScale(autoFitScale);
+    };
+
+    // Pinch-to-zoom Touch Handlers on Document Workspace
+    const handleTouchStart = (e) => {
+        if (e.touches.length === 2) {
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            touchDistRef.current = dist;
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        if (e.touches.length === 2 && touchDistRef.current) {
+            const newDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const diff = newDist - touchDistRef.current;
+            if (Math.abs(diff) > 8) {
+                setIsAutoFit(false);
+                const delta = diff > 0 ? 0.025 : -0.025;
+                setZoomScale(prev => Math.min(1.8, Math.max(0.25, Number((prev + delta).toFixed(2)))));
+                touchDistRef.current = newDist;
+            }
+        }
+    };
+
+    const handleTouchEnd = () => {
+        touchDistRef.current = null;
+    };
 
     // Undo Handler
     const handleUndo = () => {
@@ -372,7 +453,7 @@ const DigitalLetterPad = () => {
         });
     };
 
-    // Drag Handling for Elements within Letter Area
+    // Drag Handling for Elements within Letter Area (Mouse)
     const handleMouseDownOnBlock = (e, blockId, initialX, initialY) => {
         e.stopPropagation();
         setSelectedBlockId(blockId);
@@ -388,8 +469,8 @@ const DigitalLetterPad = () => {
 
         const handleMouseMove = (moveEvent) => {
             if (!dragRef.current.isDragging) return;
-            const deltaX = (moveEvent.clientX - dragRef.current.startX) / zoomScale;
-            const deltaY = (moveEvent.clientY - dragRef.current.startY) / zoomScale;
+            const deltaX = (moveEvent.clientX - dragRef.current.startX) / effectiveScale;
+            const deltaY = (moveEvent.clientY - dragRef.current.startY) / effectiveScale;
 
             // Constrain within letterpad bounds (794px width, content area y between 180 and 1000)
             const targetX = Math.max(30, Math.min(700, dragRef.current.initialX + deltaX));
@@ -415,6 +496,53 @@ const DigitalLetterPad = () => {
 
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
+    };
+
+    // Touch Drag Handling for Elements on Mobile / Tablets
+    const handleTouchStartOnBlock = (e, blockId, initialX, initialY) => {
+        if (e.touches.length !== 1) return;
+        e.stopPropagation();
+        setSelectedBlockId(blockId);
+        
+        const touch = e.touches[0];
+        dragRef.current = {
+            isDragging: true,
+            blockId,
+            startX: touch.clientX,
+            startY: touch.clientY,
+            initialX,
+            initialY
+        };
+
+        const handleTouchMove = (moveEvent) => {
+            if (!dragRef.current.isDragging || moveEvent.touches.length !== 1) return;
+            const t = moveEvent.touches[0];
+            const deltaX = (t.clientX - dragRef.current.startX) / effectiveScale;
+            const deltaY = (t.clientY - dragRef.current.startY) / effectiveScale;
+
+            const targetX = Math.max(20, Math.min(700, dragRef.current.initialX + deltaX));
+            const targetY = Math.max(180, Math.min(980, dragRef.current.initialY + deltaY));
+
+            if (dragRef.current.blockId === 'recipient_address') {
+                setAddressData(prev => ({ ...prev, x: targetX, y: targetY }));
+            } else if (dragRef.current.blockId === 'signature_block') {
+                setSignatureData(prev => ({ ...prev, x: targetX, y: targetY }));
+            } else {
+                setTextBlocks(prev => prev.map(b => b.id === dragRef.current.blockId ? { ...b, x: targetX, y: targetY } : b));
+            }
+        };
+
+        const handleTouchEnd = () => {
+            if (dragRef.current.isDragging) {
+                dragRef.current.isDragging = false;
+                recordChange();
+            }
+            window.removeEventListener('touchmove', handleTouchMove);
+            window.removeEventListener('touchend', handleTouchEnd);
+        };
+
+        window.addEventListener('touchmove', handleTouchMove, { passive: false });
+        window.addEventListener('touchend', handleTouchEnd);
     };
 
     // Keyboard Shortcuts (Ctrl+Z, Ctrl+Y)
@@ -485,7 +613,16 @@ const DigitalLetterPad = () => {
                 allowTaint: true,
                 backgroundColor: '#ffffff',
                 logging: false,
-                windowWidth: 1000
+                windowWidth: 1000,
+                onclone: (clonedDoc) => {
+                    const clonedContainer = clonedDoc.getElementById('letterpad-print-container');
+                    if (clonedContainer) {
+                        clonedContainer.style.transform = 'none';
+                        clonedContainer.style.position = 'static';
+                        clonedContainer.style.width = '794px';
+                        clonedContainer.style.height = '1123px';
+                    }
+                }
             });
 
             const pdf = new jsPDF({
@@ -584,30 +721,61 @@ const DigitalLetterPad = () => {
             </AnimatePresence>
 
             {/* TOP COMMAND BAR */}
-            <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-sm no-print">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 px-3 sm:px-4 md:px-8 py-2.5 sm:py-3.5 shadow-sm no-print">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     {/* Title & Brand */}
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/30">
-                            <FileText className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-base font-black uppercase tracking-tight text-slate-900 dark:text-white">Digital Letter Pad</h1>
-                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                                    A4 Portrait
-                                </span>
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/30 shrink-0">
+                                <FileText className="w-5 h-5" />
                             </div>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                                Official Krishna Engineering Letterhead Designer & Word Processor
-                            </p>
+                            <div>
+                                <div className="flex items-center gap-1.5 sm:gap-2">
+                                    <h1 className="text-sm sm:text-base font-black uppercase tracking-tight text-slate-900 dark:text-white">Digital Letter Pad</h1>
+                                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                        A4 Portrait
+                                    </span>
+                                </div>
+                                <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-[210px] sm:max-w-none">
+                                    Official Krishna Engineering Letterhead Designer
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Mobile quick actions: Undo / Redo & Clear */}
+                        <div className="flex md:hidden items-center gap-1 shrink-0">
+                            <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
+                                <button
+                                    onClick={handleUndo}
+                                    disabled={historyIndex <= 0}
+                                    title="Undo (Ctrl+Z)"
+                                    className="p-1.5 text-slate-600 dark:text-slate-300 disabled:opacity-30 transition"
+                                >
+                                    <Undo2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                    onClick={handleRedo}
+                                    disabled={historyIndex >= history.length - 1}
+                                    title="Redo (Ctrl+Y)"
+                                    className="p-1.5 text-slate-600 dark:text-slate-300 disabled:opacity-30 transition"
+                                >
+                                    <Redo2 className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                            <button
+                                onClick={() => setShowClearConfirm(true)}
+                                className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition"
+                                title="Clear Letter Area"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
 
-                    {/* View Switchers & Action Buttons */}
-                    <div className="flex flex-wrap items-center gap-2">
-                        {/* Undo / Redo */}
-                        <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
+                    {/* View Switchers, Zoom & Action Buttons */}
+                    <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2">
+                        {/* Undo / Redo (Desktop only) */}
+                        <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
                             <button
                                 onClick={handleUndo}
                                 disabled={historyIndex <= 0}
@@ -626,8 +794,8 @@ const DigitalLetterPad = () => {
                             </button>
                         </div>
 
-                        {/* View Mode Toggle */}
-                        <div className="hidden sm:flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                        {/* View Mode Toggle (Desktop) */}
+                        <div className="hidden lg:flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700 text-xs font-bold">
                             <button
                                 onClick={() => setViewMode('editor')}
                                 className={`px-3 py-1.5 rounded-lg transition ${viewMode === 'editor' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
@@ -648,20 +816,30 @@ const DigitalLetterPad = () => {
                             </button>
                         </div>
 
-                        {/* Zoom Controls */}
+                        {/* Zoom Controls: Out, Fit / %, In */}
                         <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700 text-xs font-bold">
                             <button 
-                                onClick={() => setZoomScale(s => Math.max(0.5, s - 0.1))} 
+                                onClick={handleZoomOut} 
                                 title="Zoom Out"
-                                className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                                className="p-1 sm:p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 active:scale-90 transition"
                             >
                                 <ZoomOut className="w-3.5 h-3.5" />
                             </button>
-                            <span className="px-2 text-[11px] font-mono">{Math.round(zoomScale * 100)}%</span>
+                            <button
+                                onClick={handleToggleAutoFit}
+                                title={isAutoFit ? "Auto-fit mode active (click to lock current)" : "Click to auto-fit to screen"}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition ${
+                                    isAutoFit 
+                                        ? 'bg-blue-600 text-white shadow-xs' 
+                                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                }`}
+                            >
+                                {isAutoFit ? 'Fit' : `${Math.round(effectiveScale * 100)}%`}
+                            </button>
                             <button 
-                                onClick={() => setZoomScale(s => Math.min(1.4, s + 0.1))} 
+                                onClick={handleZoomIn} 
                                 title="Zoom In"
-                                className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                                className="p-1 sm:p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 active:scale-90 transition"
                             >
                                 <ZoomIn className="w-3.5 h-3.5" />
                             </button>
@@ -670,17 +848,17 @@ const DigitalLetterPad = () => {
                         {/* Letterhead Header Settings */}
                         <button
                             onClick={() => setShowHeaderSettings(true)}
-                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition text-slate-700 dark:text-slate-300"
+                            className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition text-slate-700 dark:text-slate-300"
                             title="Edit Company Header & Footer"
                         >
                             <Settings className="w-3.5 h-3.5" />
-                            Header
+                            <span className="hidden xs:inline">Header</span>
                         </button>
 
-                        {/* Clear Page */}
+                        {/* Clear Page (Desktop) */}
                         <button
                             onClick={() => setShowClearConfirm(true)}
-                            className="p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition"
+                            className="hidden md:flex p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition"
                             title="Clear Letter Area"
                         >
                             <Trash2 className="w-4 h-4" />
@@ -689,181 +867,188 @@ const DigitalLetterPad = () => {
                         {/* Print */}
                         <button
                             onClick={handlePrint}
-                            className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm transition"
+                            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[11px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition active:scale-95"
                         >
                             <Printer className="w-3.5 h-3.5" />
-                            Print
+                            <span>Print</span>
                         </button>
 
                         {/* Download PDF */}
                         <button
                             onClick={handleDownloadPDF}
                             disabled={isGeneratingPdf}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-blue-600/25 transition disabled:opacity-50"
+                            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-blue-600/25 transition disabled:opacity-50 active:scale-95"
                         >
                             <Download className="w-3.5 h-3.5" />
-                            {isGeneratingPdf ? 'Exporting...' : 'Save PDF'}
+                            <span>{isGeneratingPdf ? '...' : 'Save PDF'}</span>
                         </button>
                     </div>
                 </div>
 
                 {/* WORD PROCESSOR FORMATTING TOOLBAR */}
-                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-2.5">
-                    {/* Add Element Buttons */}
-                    <button
-                        onClick={handleAddTextBox}
-                        className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-700 hover:bg-blue-100 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition"
-                    >
-                        <Plus className="w-3.5 h-3.5" />
-                        Add Text Block
-                    </button>
-
-                    {/* Recipient Address Toggle */}
-                    <label className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold cursor-pointer hover:bg-slate-100 transition">
-                        <input
-                            type="checkbox"
-                            checked={hasAddressBlock}
-                            onChange={(e) => {
-                                setHasAddressBlock(e.target.checked);
-                                recordChange();
-                            }}
-                            className="rounded text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>Recipient Address Block</span>
-                    </label>
-
-                    {/* Signature Toggle */}
-                    <label className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold cursor-pointer hover:bg-slate-100 transition">
-                        <input
-                            type="checkbox"
-                            checked={hasSignatureBlock}
-                            onChange={(e) => {
-                                setHasSignatureBlock(e.target.checked);
-                                recordChange();
-                            }}
-                            className="rounded text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>Signature Block</span>
-                    </label>
-
-                    <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
-
-                    {/* Typography: Font Family */}
-                    <select
-                        value={activeFormatting.fontFamily}
-                        onChange={(e) => applyFormatting('fontFamily', e.target.value)}
-                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none"
-                    >
-                        {FONT_FAMILIES.map(f => (
-                            <option key={f.value} value={f.value}>{f.label}</option>
-                        ))}
-                    </select>
-
-                    {/* Typography: Font Size */}
-                    <select
-                        value={activeFormatting.fontSize}
-                        onChange={(e) => applyFormatting('fontSize', Number(e.target.value))}
-                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none"
-                    >
-                        {[10, 11, 12, 13, 14, 15, 16, 18, 20, 24, 28, 32].map(s => (
-                            <option key={s} value={s}>{s} pt</option>
-                        ))}
-                    </select>
-
-                    {/* Style Toggles: Bold, Italic, Underline */}
-                    <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
+                <div className="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
+                    {/* Row 1: Add Element Buttons */}
+                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
                         <button
-                            onClick={() => applyFormatting('bold', !activeFormatting.bold)}
-                            className={`p-1.5 rounded transition ${activeFormatting.bold ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
-                            title="Bold"
+                            onClick={handleAddTextBox}
+                            className="shrink-0 px-2.5 sm:px-3 py-1.5 bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-700 hover:bg-blue-100 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition active:scale-95"
                         >
-                            <Bold className="w-3.5 h-3.5" />
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Add Text Block</span>
                         </button>
-                        <button
-                            onClick={() => applyFormatting('italic', !activeFormatting.italic)}
-                            className={`p-1.5 rounded transition ${activeFormatting.italic ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
-                            title="Italic"
-                        >
-                            <Italic className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            onClick={() => applyFormatting('underline', !activeFormatting.underline)}
-                            className={`p-1.5 rounded transition ${activeFormatting.underline ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
-                            title="Underline"
-                        >
-                            <Underline className="w-3.5 h-3.5" />
-                        </button>
+
+                        {/* Recipient Address Toggle */}
+                        <label className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] sm:text-xs font-bold cursor-pointer hover:bg-slate-100 transition">
+                            <input
+                                type="checkbox"
+                                checked={hasAddressBlock}
+                                onChange={(e) => {
+                                    setHasAddressBlock(e.target.checked);
+                                    recordChange();
+                                }}
+                                className="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                            />
+                            <span>Recipient Address</span>
+                        </label>
+
+                        {/* Signature Toggle */}
+                        <label className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] sm:text-xs font-bold cursor-pointer hover:bg-slate-100 transition">
+                            <input
+                                type="checkbox"
+                                checked={hasSignatureBlock}
+                                onChange={(e) => {
+                                    setHasSignatureBlock(e.target.checked);
+                                    recordChange();
+                                }}
+                                className="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                            />
+                            <span>Signature Block</span>
+                        </label>
                     </div>
 
-                    {/* Alignment */}
-                    <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
-                        <button
-                            onClick={() => applyFormatting('align', 'left')}
-                            className={`p-1.5 rounded transition ${activeFormatting.align === 'left' ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
-                            title="Align Left"
-                        >
-                            <AlignLeft className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            onClick={() => applyFormatting('align', 'center')}
-                            className={`p-1.5 rounded transition ${activeFormatting.align === 'center' ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
-                            title="Align Center"
-                        >
-                            <AlignCenter className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            onClick={() => applyFormatting('align', 'right')}
-                            className={`p-1.5 rounded transition ${activeFormatting.align === 'right' ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
-                            title="Align Right"
-                        >
-                            <AlignRight className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            onClick={() => applyFormatting('align', 'justify')}
-                            className={`p-1.5 rounded transition ${activeFormatting.align === 'justify' ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
-                            title="Justify"
-                        >
-                            <AlignJustify className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
-
-                    {/* Text Color Picker & Presets */}
-                    <div className="flex items-center gap-1.5">
-                        <div className="flex items-center gap-1">
-                            {PRESET_COLORS.map(c => (
-                                <button
-                                    key={c.value}
-                                    onClick={() => applyFormatting('color', c.value)}
-                                    className={`w-4 h-4 rounded-full border ${activeFormatting.color === c.value ? 'ring-2 ring-blue-500 scale-110' : 'border-slate-300'}`}
-                                    style={{ backgroundColor: c.value }}
-                                    title={c.label}
-                                />
-                            ))}
-                        </div>
-                        <input
-                            type="color"
-                            value={activeFormatting.color}
-                            onChange={(e) => applyFormatting('color', e.target.value)}
-                            className="w-6 h-6 p-0 border border-slate-300 rounded cursor-pointer"
-                            title="Custom Color"
-                        />
-                    </div>
-
-                    {/* Line Spacing */}
-                    <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold">
-                        <span className="text-[10px] text-slate-400">Line:</span>
+                    {/* Row 2: Typography & Formatting with horizontal swipe */}
+                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+                        {/* Typography: Font Family */}
                         <select
-                            value={activeFormatting.lineHeight}
-                            onChange={(e) => applyFormatting('lineHeight', Number(e.target.value))}
-                            className="bg-transparent outline-none font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+                            value={activeFormatting.fontFamily}
+                            onChange={(e) => applyFormatting('fontFamily', e.target.value)}
+                            className="shrink-0 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none"
                         >
-                            <option value={1.2}>1.2</option>
-                            <option value={1.4}>1.4</option>
-                            <option value={1.5}>1.5</option>
-                            <option value={1.6}>1.6</option>
-                            <option value={1.8}>1.8</option>
-                            <option value={2.0}>2.0</option>
+                            {FONT_FAMILIES.map(f => (
+                                <option key={f.value} value={f.value}>{f.label}</option>
+                            ))}
                         </select>
+
+                        {/* Typography: Font Size */}
+                        <select
+                            value={activeFormatting.fontSize}
+                            onChange={(e) => applyFormatting('fontSize', Number(e.target.value))}
+                            className="shrink-0 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none"
+                        >
+                            {[10, 11, 12, 13, 14, 15, 16, 18, 20, 24, 28, 32].map(s => (
+                                <option key={s} value={s}>{s} pt</option>
+                            ))}
+                        </select>
+
+                        <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+
+                        {/* Style Toggles: Bold, Italic, Underline */}
+                        <div className="shrink-0 flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
+                            <button
+                                onClick={() => applyFormatting('bold', !activeFormatting.bold)}
+                                className={`p-1.5 rounded transition ${activeFormatting.bold ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
+                                title="Bold"
+                            >
+                                <Bold className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                                onClick={() => applyFormatting('italic', !activeFormatting.italic)}
+                                className={`p-1.5 rounded transition ${activeFormatting.italic ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
+                                title="Italic"
+                            >
+                                <Italic className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                                onClick={() => applyFormatting('underline', !activeFormatting.underline)}
+                                className={`p-1.5 rounded transition ${activeFormatting.underline ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
+                                title="Underline"
+                            >
+                                <Underline className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+
+                        {/* Alignment */}
+                        <div className="shrink-0 flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
+                            <button
+                                onClick={() => applyFormatting('align', 'left')}
+                                className={`p-1.5 rounded transition ${activeFormatting.align === 'left' ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
+                                title="Align Left"
+                            >
+                                <AlignLeft className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                                onClick={() => applyFormatting('align', 'center')}
+                                className={`p-1.5 rounded transition ${activeFormatting.align === 'center' ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
+                                title="Align Center"
+                            >
+                                <AlignCenter className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                                onClick={() => applyFormatting('align', 'right')}
+                                className={`p-1.5 rounded transition ${activeFormatting.align === 'right' ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
+                                title="Align Right"
+                            >
+                                <AlignRight className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                                onClick={() => applyFormatting('align', 'justify')}
+                                className={`p-1.5 rounded transition ${activeFormatting.align === 'justify' ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200'}`}
+                                title="Justify"
+                            >
+                                <AlignJustify className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+
+                        <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+
+                        {/* Text Color Picker & Presets */}
+                        <div className="shrink-0 flex items-center gap-1.5">
+                            <div className="flex items-center gap-1">
+                                {PRESET_COLORS.map(c => (
+                                    <button
+                                        key={c.value}
+                                        onClick={() => applyFormatting('color', c.value)}
+                                        className={`w-4 h-4 rounded-full border ${activeFormatting.color === c.value ? 'ring-2 ring-blue-500 scale-110' : 'border-slate-300'}`}
+                                        style={{ backgroundColor: c.value }}
+                                        title={c.label}
+                                    />
+                                ))}
+                            </div>
+                            <input
+                                type="color"
+                                value={activeFormatting.color}
+                                onChange={(e) => applyFormatting('color', e.target.value)}
+                                className="w-5 h-5 p-0 border border-slate-300 rounded cursor-pointer"
+                                title="Custom Color"
+                            />
+                        </div>
+
+                        {/* Line Spacing */}
+                        <div className="shrink-0 flex items-center gap-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold">
+                            <span className="text-[10px] text-slate-400">Line:</span>
+                            <select
+                                value={activeFormatting.lineHeight}
+                                onChange={(e) => applyFormatting('lineHeight', Number(e.target.value))}
+                                className="bg-transparent outline-none font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+                            >
+                                <option value={1.2}>1.2</option>
+                                <option value={1.4}>1.4</option>
+                                <option value={1.5}>1.5</option>
+                                <option value={1.6}>1.6</option>
+                                <option value={1.8}>1.8</option>
+                                <option value={2.0}>2.0</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1132,26 +1317,37 @@ const DigitalLetterPad = () => {
 
                 {/* CENTER: SCROLLABLE CANVAS CONTAINER */}
                 <div 
+                    ref={workspaceRef}
                     onClick={() => setSelectedBlockId(null)}
-                    className="flex-1 bg-slate-200 dark:bg-slate-950/80 p-4 md:p-8 overflow-auto flex justify-center items-start print:p-0 print:m-0 print:bg-white"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    className="flex-1 bg-slate-200 dark:bg-slate-950/80 p-2 sm:p-4 md:p-8 overflow-x-auto overflow-y-auto flex justify-center items-start print:p-0 print:m-0 print:bg-white min-w-0"
                 >
-                    {/* The Strict A4 Portrait Sheet (794px x 1123px = 210mm x 297mm at 96 DPI) */}
+                    {/* The Scaled Bounding Box to prevent layout overflow on mobile */}
                     <div 
                         style={{
-                            transform: `scale(${zoomScale})`,
-                            transformOrigin: 'top center',
-                            width: '794px',
-                            minWidth: '794px',
-                            height: '1123px',
-                            minHeight: '1123px'
+                            width: `${Math.round(794 * effectiveScale)}px`,
+                            height: `${Math.round(1123 * effectiveScale)}px`,
+                            minWidth: `${Math.round(794 * effectiveScale)}px`,
+                            minHeight: `${Math.round(1123 * effectiveScale)}px`,
+                            position: 'relative'
                         }}
-                        className="transition-transform duration-150"
+                        className="my-1 sm:my-2 transition-all duration-150 shrink-0"
                     >
+                        {/* The Strict A4 Portrait Sheet (794px x 1123px = 210mm x 297mm at 96 DPI) */}
                         <div
                             id="letterpad-print-container"
                             ref={printContainerRef}
                             className="w-[794px] h-[1123px] bg-white text-slate-900 relative shadow-2xl overflow-hidden select-none print:shadow-none print:border-none"
-                            style={{ backgroundColor: '#ffffff' }}
+                            style={{ 
+                                backgroundColor: '#ffffff',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                transform: `scale(${effectiveScale})`,
+                                transformOrigin: 'top left'
+                            }}
                         >
                             {/* ── TOP HEADER SECTION ── */}
                             <div className="pt-8 px-10 pb-3">
@@ -1365,7 +1561,8 @@ const DigitalLetterPad = () => {
                                         {/* Drag Handle */}
                                         <div
                                             onMouseDown={(e) => handleMouseDownOnBlock(e, 'recipient_address', addressData.x, addressData.y)}
-                                            className="no-print absolute -top-3 -right-3 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shadow cursor-grab active:cursor-grabbing opacity-80 hover:opacity-100"
+                                            onTouchStart={(e) => handleTouchStartOnBlock(e, 'recipient_address', addressData.x, addressData.y)}
+                                            className="no-print absolute -top-3 -right-3 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shadow cursor-grab active:cursor-grabbing opacity-80 hover:opacity-100 touch-none"
                                             title="Drag Recipient Address"
                                         >
                                             <Move className="w-3 h-3" />
@@ -1448,7 +1645,8 @@ const DigitalLetterPad = () => {
                                         {/* Move Handle */}
                                         <div
                                             onMouseDown={(e) => handleMouseDownOnBlock(e, block.id, block.x, block.y)}
-                                            className="no-print absolute -top-3 -right-3 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shadow cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onTouchStart={(e) => handleTouchStartOnBlock(e, block.id, block.x, block.y)}
+                                            className="no-print absolute -top-3 -right-3 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shadow cursor-grab active:cursor-grabbing opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-none"
                                             title="Drag to position"
                                         >
                                             <Move className="w-3 h-3" />
@@ -1499,7 +1697,8 @@ const DigitalLetterPad = () => {
                                         {/* Drag Handle */}
                                         <div
                                             onMouseDown={(e) => handleMouseDownOnBlock(e, 'signature_block', signatureData.x, signatureData.y)}
-                                            className="no-print absolute -top-3 -right-3 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shadow cursor-grab active:cursor-grabbing opacity-80 hover:opacity-100"
+                                            onTouchStart={(e) => handleTouchStartOnBlock(e, 'signature_block', signatureData.x, signatureData.y)}
+                                            className="no-print absolute -top-3 -right-3 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shadow cursor-grab active:cursor-grabbing opacity-80 hover:opacity-100 touch-none"
                                             title="Drag Signature"
                                         >
                                             <Move className="w-3 h-3" />
