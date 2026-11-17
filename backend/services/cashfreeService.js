@@ -14,19 +14,22 @@ class CashfreeService {
         let env = (process.env.CASHFREE_ENV || 'sandbox').toLowerCase();
         let enabled = true;
 
-        try {
-            const settings = await Setting.find({ 
-                key: { $in: ['cashfree_app_id', 'cashfree_secret_key', 'cashfree_mode', 'cashfree_enabled'] } 
-            });
+        const mongoose = require('mongoose');
+        if (mongoose.connection.readyState === 1) {
+            try {
+                const settings = await Setting.find({ 
+                    key: { $in: ['cashfree_app_id', 'cashfree_secret_key', 'cashfree_mode', 'cashfree_enabled'] } 
+                });
 
-            settings.forEach(s => {
-                if (s.key === 'cashfree_app_id' && s.value) appId = s.value;
-                if (s.key === 'cashfree_secret_key' && s.value) secretKey = s.value;
-                if (s.key === 'cashfree_mode' && s.value) env = s.value.toLowerCase();
-                if (s.key === 'cashfree_enabled') enabled = s.value === 'true' || s.value === true;
-            });
-        } catch (err) {
-            console.warn('[Cashfree] Could not query settings table:', err.message);
+                settings.forEach(s => {
+                    if (s.key === 'cashfree_app_id' && s.value) appId = s.value;
+                    if (s.key === 'cashfree_secret_key' && s.value) secretKey = s.value;
+                    if (s.key === 'cashfree_mode' && s.value) env = s.value.toLowerCase();
+                    if (s.key === 'cashfree_enabled') enabled = s.value === 'true' || s.value === true;
+                });
+            } catch (err) {
+                console.warn('[Cashfree] Could not query settings table:', err.message);
+            }
         }
 
         appId = (appId || '').toString().trim();
