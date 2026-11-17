@@ -799,7 +799,7 @@ const AttendanceScanner = () => {
                             <div className="flex justify-between text-xs">
                                 <span className="text-slate-400 font-bold uppercase">Timestamp (IST)</span>
                                 <span className="font-bold text-slate-900 dark:text-white">
-                                    {formatTimeIST(confirmedRecord?.login_time || Date.now())}
+                                    {formatTimeIST(confirmedRecord?.check_out || confirmedRecord?.login_time || Date.now(), true)}
                                 </span>
                             </div>
                             <div className="flex justify-between text-xs">

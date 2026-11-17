@@ -1,9 +1,11 @@
 const DailyAttendance = require('../models/DailyAttendance');
+const Attendance = require('../models/Attendance');
 const Overtime = require('../models/Overtime');
 const Salary = require('../models/Salary');
 const ProjectStatusHistory = require('../models/ProjectStatusHistory');
 const User = require('../models/User');
 const Task = require('../models/Task');
+const { getISTTimeString, formatISTDisplay, normalizeAttendanceTime } = require('../utils/dateTimeUtil');
 
 // 1. Staff Attendance Report
 exports.getAttendanceReport = async (req, res) => {
@@ -18,7 +20,55 @@ exports.getAttendanceReport = async (req, res) => {
             .populate('staffId', 'name staff_id department designation')
             .sort({ date: -1 });
 
-        res.json(records);
+        const staffIds = records.map(r => r.staffId?._id || r.staffId).filter(Boolean);
+        const dates = records.map(r => r.date).filter(Boolean);
+
+        let biometricLogs = [];
+        if (staffIds.length > 0 && dates.length > 0) {
+            biometricLogs = await Attendance.find({
+                staff_id: { $in: staffIds },
+                date: { $in: dates },
+                status: 'success'
+            }).sort({ login_time: 1 });
+        }
+
+        const bioMap = new Map();
+        biometricLogs.forEach(b => {
+            const key = `${b.staff_id}_${b.date}`;
+            if (!bioMap.has(key)) {
+                bioMap.set(key, b);
+            }
+        });
+
+        const reconciledRecords = records.map(r => {
+            const obj = r.toObject ? r.toObject() : { ...r };
+            const staffKey = `${r.staffId?._id || r.staffId}_${r.date}`;
+            const bio = bioMap.get(staffKey);
+
+            let finalCheckIn = obj.checkIn;
+            let finalCheckOut = obj.checkOut;
+
+            if (bio && bio.login_time) {
+                finalCheckIn = getISTTimeString(bio.login_time);
+                if (bio.check_out) {
+                    finalCheckOut = getISTTimeString(bio.check_out);
+                }
+            } else if (finalCheckIn) {
+                finalCheckIn = normalizeAttendanceTime(finalCheckIn);
+            }
+
+            if (finalCheckOut) {
+                finalCheckOut = normalizeAttendanceTime(finalCheckOut);
+            }
+
+            obj.checkIn = finalCheckIn;
+            obj.checkOut = finalCheckOut;
+            obj.checkInDisplay = finalCheckIn ? formatISTDisplay(finalCheckIn, false) : '--';
+            obj.checkOutDisplay = finalCheckOut ? formatISTDisplay(finalCheckOut, false) : '--';
+            return obj;
+        });
+
+        res.json(reconciledRecords);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

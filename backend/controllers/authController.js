@@ -15,6 +15,7 @@ const {
     sendEmailVerificationOTP
 } = require('../services/emailService');
 const { logAuthSuccess, logAuthFailure } = require('../utils/securityLogger');
+const { getISTDate, getISTTimeString, formatISTDisplay } = require('../utils/dateTimeUtil');
 
 const BCRYPT_SALT_ROUNDS = 12;
 
@@ -315,9 +316,9 @@ exports.verifyFace = async (req, res) => {
                 return res.status(403).json({ message: 'Customer accounts cannot record staff attendance.' });
             }
 
-            const today = new Date().toISOString().split('T')[0];
             const now = new Date();
-            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const today = getISTDate(now);
+            const timeStr = getISTTimeString(now);
             const cosineSim = Math.max(0, 1 - (Math.pow(minDistance, 2) / 2));
             const faceMatchConfidence = Math.min(100, Math.round(cosineSim * 100));
 

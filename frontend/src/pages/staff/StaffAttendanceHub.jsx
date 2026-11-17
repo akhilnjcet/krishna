@@ -370,10 +370,10 @@ const StaffAttendanceHub = () => {
                                     <div>
                                         <span className="text-[9px] text-slate-400 font-black uppercase block">Shift Clock (IST)</span>
                                         <div className="font-bold text-slate-700 dark:text-slate-300 mt-0.5">
-                                            In: {formatTimeIST(log.checkIn, false)}
+                                            In: {log.checkInDisplay || formatTimeIST(log.checkIn, false)}
                                         </div>
                                         <div className="font-bold text-slate-700 dark:text-slate-300">
-                                            Out: {formatTimeIST(log.checkOut, false)}
+                                            Out: {log.checkOutDisplay || formatTimeIST(log.checkOut, false)}
                                         </div>
                                     </div>
                                     <div>
@@ -441,10 +441,10 @@ const StaffAttendanceHub = () => {
                                             {log.date}
                                         </td>
                                         <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                                            {formatTimeIST(log.checkIn, false)}
+                                            {log.checkInDisplay || formatTimeIST(log.checkIn, false)}
                                         </td>
                                         <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                                            {formatTimeIST(log.checkOut, false)}
+                                            {log.checkOutDisplay || formatTimeIST(log.checkOut, false)}
                                         </td>
                                         <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                                             <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase border ${getStatusBadge(log.status)}`}>

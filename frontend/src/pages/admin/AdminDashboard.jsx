@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { generateGeneralReportPDF } from '../../services/pdfService';
+import { formatTimeIST } from '../../utils/dateTimeUtil';
 import { 
   Users, Calendar, Clock, Lock, ArrowUpRight, 
   TrendingUp, Activity, UserCheck, ShieldCheck, 
@@ -215,7 +216,7 @@ const AdminDashboard = () => {
                                     <div>
                                         <p className="font-bold text-sm text-[#111827] dark:text-dark-text">{log.full_name || log.name}</p>
                                         <div className="flex items-center gap-2 text-xs text-[#6B7280] dark:text-dark-muted font-medium mt-1">
-                                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {log.login_time ? new Date(log.login_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}</span>
+                                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {log.login_time ? formatTimeIST(log.login_time, false) : 'N/A'}</span>
                                         </div>
                                     </div>
                                 </div>

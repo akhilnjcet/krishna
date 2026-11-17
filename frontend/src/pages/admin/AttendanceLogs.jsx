@@ -10,6 +10,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import ReportHeader from '../../components/ReportHeader';
 import { generateGeneralReportPDF } from '../../services/pdfService';
+import { formatTimeIST, formatDateIST, formatDateTimeIST } from '../../utils/dateTimeUtil';
 
 const formatDateLocal = (d) => {
     const year = d.getFullYear();
@@ -296,7 +297,7 @@ const AttendanceLogs = () => {
             `"${log.staff_id?.name || log.full_name || ''}"`,
             `"${log.action || log.type || 'Check in'}"`,
             `"${log.date || ''}"`,
-            `"${log.login_time ? new Date(log.login_time).toLocaleString() : ''}"`,
+            `"${log.login_time ? formatDateTimeIST(log.login_time, true) : ''}"`,
             `"${log.status || ''}"`,
             `"${log.face_match_confidence || 0}"`,
             `"${log.verification_result || log.verification_reason || ''}"`,
@@ -554,7 +555,7 @@ const AttendanceLogs = () => {
                                                                 <Clock className="w-3 h-3" /> {log.action || log.type || 'Check in'}
                                                             </span>
                                                             <div className="font-mono text-slate-600 dark:text-slate-300 font-bold">
-                                                                {log.login_time ? new Date(log.login_time).toLocaleTimeString() : 'N/A'}
+                                                                {log.login_time ? formatTimeIST(log.login_time, true) : 'N/A'}
                                                             </div>
                                                             <div className="text-[10px] text-slate-400">
                                                                 {log.date || ''}
@@ -717,7 +718,7 @@ const AttendanceLogs = () => {
                                                             {details.requested_action || exc.action || 'Check in'}
                                                         </span>
                                                         <div className="text-[10px] text-slate-400">
-                                                            Requested for: {details.requested_time ? new Date(details.requested_time).toLocaleTimeString() : 'Current Time'}
+                                                            Requested for: {details.requested_time ? formatTimeIST(details.requested_time, true) : 'Current Time'}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 max-w-sm">
@@ -922,7 +923,7 @@ const AttendanceLogs = () => {
                                             Face Image Deleted Under Retention Policy
                                         </h4>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                                            This face image was permanently purged by {selectedImageRecord.face_image_deleted_by_name || 'an administrator'} on {new Date(selectedImageRecord.face_image_deleted_at).toLocaleString()} in compliance with privacy retention guidelines.
+                                            This face image was permanently purged by {selectedImageRecord.face_image_deleted_by_name || 'an administrator'} on {formatDateTimeIST(selectedImageRecord.face_image_deleted_at, true)} in compliance with privacy retention guidelines.
                                         </p>
                                         <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
                                             ✓ The attendance timestamp, verification result, and location records remain securely preserved.

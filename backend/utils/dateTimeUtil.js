@@ -48,6 +48,26 @@ const getISTFullTimeString = (date = new Date()) => {
  */
 const formatISTDisplay = (date = new Date(), includeSeconds = false) => {
     if (!date) return '--';
+
+    // If already formatted with AM/PM, return as-is to prevent double formatting
+    if (typeof date === 'string' && (date.includes('AM') || date.includes('PM'))) {
+        return date.trim();
+    }
+
+    // If in 24-hour HH:mm string format without date part
+    if (typeof date === 'string' && /^\d{1,2}:\d{2}(:\d{2})?$/.test(date.trim())) {
+        const parts = date.trim().split(':');
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        const s = parts[2] ? parseInt(parts[2], 10) : 0;
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const displayH = h % 12 || 12;
+        if (includeSeconds && parts.length > 2) {
+            return `${String(displayH).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} ${ampm}`;
+        }
+        return `${String(displayH).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
+    }
+
     const d = date instanceof Date ? date : new Date(date);
     if (isNaN(d.getTime())) return '--';
 
@@ -61,6 +81,37 @@ const formatISTDisplay = (date = new Date(), includeSeconds = false) => {
         options.second = '2-digit';
     }
     return new Intl.DateTimeFormat('en-US', options).format(d);
+};
+
+/**
+ * Reconciles stored attendance time strings with authoritative biometric UTC timestamps
+ * Guarantees IST output without altering the database.
+ */
+const normalizeAttendanceTime = (timeVal, biometricDate = null) => {
+    if (biometricDate) {
+        const d = biometricDate instanceof Date ? biometricDate : new Date(biometricDate);
+        if (!isNaN(d.getTime())) {
+            return getISTTimeString(d);
+        }
+    }
+
+    if (!timeVal) return '';
+
+    // If ISO timestamp string or Date object
+    if (timeVal instanceof Date || (typeof timeVal === 'string' && (timeVal.includes('T') || timeVal.includes('Z')))) {
+        const d = timeVal instanceof Date ? timeVal : new Date(timeVal);
+        if (!isNaN(d.getTime())) {
+            return getISTTimeString(d);
+        }
+    }
+
+    // If HH:mm or HH:mm:ss format
+    if (typeof timeVal === 'string' && /^\d{1,2}:\d{2}/.test(timeVal.trim())) {
+        const [h, m] = timeVal.trim().split(':');
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    return String(timeVal).trim();
 };
 
 /**
@@ -102,5 +153,8 @@ module.exports = {
     getISTTimeString,
     getISTFullTimeString,
     formatISTDisplay,
-    calculateDuration
+    formatTimeIST: formatISTDisplay,
+    formatDateIST: getISTDate,
+    calculateDuration,
+    normalizeAttendanceTime
 };

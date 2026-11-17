@@ -2,7 +2,7 @@ const Attendance = require('../models/Attendance');
 const DailyAttendance = require('../models/DailyAttendance');
 const User = require('../models/User');
 const FaceData = require('../models/FaceData');
-const { getISTDate, getISTTimeString, formatISTDisplay, calculateDuration } = require('../utils/dateTimeUtil');
+const { getISTDate, getISTTimeString, formatISTDisplay, calculateDuration, normalizeAttendanceTime } = require('../utils/dateTimeUtil');
 
 // Helper: Euclidean distance between two 128-d vectors
 const getEuclideanDistance = (v1, v2) => {
@@ -26,14 +26,20 @@ const getConfidenceScore = (distance) => {
  */
 exports.recordAttendance = async (req, res) => {
     try {
-        const { 
-            action = 'Check in', 
-            descriptor, 
-            face_image, 
-            location = {}, 
-            device_info = '',
-            consent_acknowledged = false 
-        } = req.body;
+        const {
+            action = 'Check in',
+            descriptor,
+            face_image,
+            location = {},
+            const {
+                action = 'Check in',
+                descriptor,
+                face_image,
+                location = {},
+                device_info = '',
+                consent_acknowledged = false
+            consent_acknowledged = false
+            } = req.body;
 
         const staffUser = await User.findById(req.user._id || req.user.id);
         if (!staffUser) {
@@ -102,8 +108,10 @@ exports.recordAttendance = async (req, res) => {
         }
 
         // Retrieve registered face template for this staff member
-        let registeredDescriptor = staffUser.faceDescriptor && staffUser.faceDescriptor.length === 128 
-            ? staffUser.faceDescriptor 
+        let registeredDescriptor = staffUser.faceDescriptor && staffUser.faceDescriptor.length === 128
+            ? staffUser.faceDescriptor
+        let registeredDescriptor = staffUser.faceDescriptor && staffUser.faceDescriptor.length === 128
+            ? staffUser.faceDescriptor
             : null;
 
         if (!registeredDescriptor) {
@@ -420,19 +428,28 @@ exports.recordAttendance = async (req, res) => {
  */
 exports.getAttendanceLogs = async (req, res) => {
     try {
-        const { 
-            staff_id, 
-            date, 
-            month, 
-            startDate, 
-            endDate, 
-            status, 
-            action, 
-            type, 
-            verification_result,
-            correction_status,
-            search
-        } = req.query;
+        const {
+            staff_id,
+            date,
+            month,
+            startDate,
+            endDate,
+            status,
+            action,
+            type,
+            const {
+                staff_id,
+                date,
+                month,
+                startDate,
+                endDate,
+                status,
+                action,
+                type,
+                verification_result,
+                correction_status,
+                search
+            } = req.query;
 
         let query = {};
 
@@ -474,7 +491,16 @@ exports.getAttendanceLogs = async (req, res) => {
             .sort({ login_time: -1 })
             .limit(200);
 
-        res.json(logs);
+        const formattedLogs = logs.map(log => {
+            const obj = log.toObject ? log.toObject() : { ...log };
+            obj.login_time_ist = log.login_time ? formatISTDisplay(log.login_time, true) : '--';
+            obj.login_time_ist_short = log.login_time ? formatISTDisplay(log.login_time, false) : '--';
+            obj.check_out_ist = log.check_out ? formatISTDisplay(log.check_out, true) : '--';
+            obj.check_out_ist_short = log.check_out ? formatISTDisplay(log.check_out, false) : '--';
+            return obj;
+        });
+
+        res.json(formattedLogs);
     } catch (error) {
         console.error('Error fetching attendance logs:', error);
         res.status(500).json({ message: error.message });
@@ -570,9 +596,27 @@ exports.getStaffLogs = async (req, res) => {
                 totalDurationMins = Math.max(1, Math.round((new Date(latestCheckOut) - new Date(earliestLogin)) / 60000));
             }
 
-            // Sync with DailyAttendance checkIn / checkOut strings
-            const checkInTimeStr = daily?.checkIn || (earliestLogin ? getISTTimeString(earliestLogin) : '--');
-            const checkOutTimeStr = daily?.checkOut || (latestCheckOut ? getISTTimeString(latestCheckOut) : '--');
+            // Priority to authoritative biometric login_time in IST; fallback to DailyAttendance
+            const checkInTimeStr = earliestLogin 
+                ? getISTTimeString(earliestLogin) 
+                : (daily?.checkIn ? normalizeAttendanceTime(daily.checkIn) : '--');
+            const checkOutTimeStr = latestCheckOut 
+                ? getISTTimeString(latestCheckOut) 
+                : (daily?.checkOut ? normalizeAttendanceTime(daily.checkOut) : '--');
+
+            const checkInDisplay = earliestLogin 
+                ? formatISTDisplay(earliestLogin, false) 
+                : (checkInTimeStr !== '--' ? formatISTDisplay(checkInTimeStr, false) : '--');
+            const checkInFullDisplay = earliestLogin 
+                ? formatISTDisplay(earliestLogin, true) 
+                : checkInDisplay;
+
+            const checkOutDisplay = latestCheckOut 
+                ? formatISTDisplay(latestCheckOut, false) 
+                : (checkOutTimeStr !== '--' ? formatISTDisplay(checkOutTimeStr, false) : '--');
+            const checkOutFullDisplay = latestCheckOut 
+                ? formatISTDisplay(latestCheckOut, true) 
+                : checkOutDisplay;
 
             const workedHours = daily?.workedHours !== undefined ? daily.workedHours : parseFloat((totalDurationMins / 60).toFixed(2));
 
@@ -601,6 +645,10 @@ exports.getStaffLogs = async (req, res) => {
                 check_out: latestCheckOut,
                 checkInStr: checkInTimeStr,
                 checkOutStr: checkOutTimeStr,
+                checkInDisplay,
+                checkInFullDisplay,
+                checkOutDisplay,
+                checkOutFullDisplay,
                 duration_minutes: totalDurationMins,
                 workedHours,
                 status: canonicalStatus,
@@ -722,14 +770,21 @@ exports.deleteFaceImage = async (req, res) => {
  */
 exports.requestCorrection = async (req, res) => {
     try {
-        const { 
-            attendance_id, 
-            date, 
-            requested_action = 'Check in', 
-            requested_time, 
-            reason, 
-            location_notes = '' 
-        } = req.body;
+        const {
+            attendance_id,
+            date,
+            requested_action = 'Check in',
+            requested_time,
+            reason,
+            location_notes = ''
+        const {
+                attendance_id,
+                date,
+                requested_action = 'Check in',
+                requested_time,
+                reason,
+                location_notes = ''
+            } = req.body;
 
         if (!reason || !reason.trim()) {
             return res.status(400).json({ message: 'Please provide a clear reason for the manual attendance correction.' });
@@ -830,10 +885,8 @@ exports.reviewCorrection = async (req, res) => {
 
             // Also update DailyAttendance
             const today = log.date;
-            const logTime = log.correction_details.requested_time || log.login_time;
-            const hours = String(new Date(logTime).getHours()).padStart(2, '0');
-            const minutes = String(new Date(logTime).getMinutes()).padStart(2, '0');
-            const timeStr = `${hours}:${minutes}`;
+            const logTime = log.correction_details?.requested_time || log.login_time;
+            const timeStr = getISTTimeString(logTime);
 
             const updatePayload = {
                 status: 'Present',
@@ -889,9 +942,12 @@ exports.getExceptions = async (req, res) => {
                 { verification_result: { $ne: 'success' } }
             ]
         })
+            .populate('staff_id', 'staff_id name email department designation profilePhoto')
+            .sort({ login_time: -1 })
+            .limit(100);
         .populate('staff_id', 'staff_id name email department designation profilePhoto')
-        .sort({ login_time: -1 })
-        .limit(100);
+            .sort({ login_time: -1 })
+            .limit(100);
 
         res.json(exceptions);
     } catch (error) {
@@ -954,14 +1010,17 @@ exports.updateLog = async (req, res) => {
     try {
         const { login_time, check_out, status, action } = req.body;
         const log = await Attendance.findById(req.params.id);
-        
+
+
         if (!log) return res.status(404).json({ message: 'Log not found' });
-        
+
+
         if (login_time) log.login_time = new Date(login_time);
         if (check_out) log.check_out = new Date(check_out);
         if (status) log.status = status;
         if (action) log.action = action;
-        
+
+
         if (log.login_time && log.check_out) {
             log.duration_minutes = Math.round((log.check_out - log.login_time) / 60000);
             log.type = 'OUT';
@@ -974,7 +1033,8 @@ exports.updateLog = async (req, res) => {
             timestamp: new Date(),
             details: `Log manually edited by admin ${req.user.name}`
         });
-        
+
+
         await log.save();
         res.json(log);
     } catch (error) {

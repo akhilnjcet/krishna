@@ -90,8 +90,8 @@ const StaffTimesheets = () => {
         const headers = ["Date", "Check-In (IST)", "Check-Out (IST)", "Worked Hours", "Duration", "Overtime (hrs)", "Status"];
         const rows = processedLogs.map(log => [
             log.date,
-            log.checkInStr || (log.login_time ? formatTimeIST(log.login_time) : '--'),
-            log.checkOutStr !== '--' ? log.checkOutStr : (log.check_out ? formatTimeIST(log.check_out) : '--'),
+            log.checkInDisplay || (log.login_time ? formatTimeIST(log.login_time, false) : (log.checkInStr ? formatTimeIST(log.checkInStr, false) : '--')),
+            log.checkOutDisplay || (log.check_out ? formatTimeIST(log.check_out, false) : (log.checkOutStr && log.checkOutStr !== '--' ? formatTimeIST(log.checkOutStr, false) : '--')),
             log.workedHours || 0,
             log.duration_minutes ? formatDurationMinutes(log.duration_minutes) : (log.is_active_shift ? 'In Progress' : '--'),
             log.overtimeHours || 0,
@@ -235,10 +235,10 @@ const StaffTimesheets = () => {
                                     <div className="text-xs bg-white dark:bg-slate-800/80 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60 flex justify-between items-center">
                                         <div className="space-y-0.5">
                                             <p className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
-                                                IN: {log.checkInStr || (log.login_time ? formatTimeIST(log.login_time) : '--')}
+                                                IN: {log.checkInDisplay || (log.login_time ? formatTimeIST(log.login_time, false) : (log.checkInStr ? formatTimeIST(log.checkInStr, false) : '--'))}
                                             </p>
                                             <p className="text-rose-500 dark:text-rose-400 font-bold text-[11px]">
-                                                OUT: {log.checkOutStr !== '--' ? log.checkOutStr : (log.check_out ? formatTimeIST(log.check_out) : '--')}
+                                                OUT: {log.checkOutDisplay || (log.check_out ? formatTimeIST(log.check_out, false) : (log.checkOutStr && log.checkOutStr !== '--' ? formatTimeIST(log.checkOutStr, false) : '--'))}
                                             </p>
                                         </div>
                                         <div className="text-right">
@@ -306,10 +306,10 @@ const StaffTimesheets = () => {
                                             <td className="px-5 py-3.5 whitespace-nowrap">
                                                 <div className="flex flex-col gap-0.5">
                                                     <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                                                        IN: {log.checkInStr || (log.login_time ? formatTimeIST(log.login_time) : '--')}
+                                                        IN: {log.checkInDisplay || (log.login_time ? formatTimeIST(log.login_time, false) : (log.checkInStr ? formatTimeIST(log.checkInStr, false) : '--'))}
                                                     </span>
                                                     <span className="text-rose-500 dark:text-rose-400 font-bold">
-                                                        OUT: {log.checkOutStr !== '--' ? log.checkOutStr : (log.check_out ? formatTimeIST(log.check_out) : '--')}
+                                                        OUT: {log.checkOutDisplay || (log.check_out ? formatTimeIST(log.check_out, false) : (log.checkOutStr && log.checkOutStr !== '--' ? formatTimeIST(log.checkOutStr, false) : '--'))}
                                                     </span>
                                                 </div>
                                             </td>

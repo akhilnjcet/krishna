@@ -7,18 +7,27 @@ const TIMEZONE = 'Asia/Kolkata';
 
 /**
  * Format a Date object or ISO timestamp string into IST 12-hour format with AM/PM
- * Example: 09:00:06 AM or 09:00 AM
+ * Example: 08:59:54 AM or 08:59 AM
  */
 export const formatTimeIST = (timeInput, includeSeconds = true) => {
     if (!timeInput) return '--';
 
-    // If already in 24-hour string format 'HH:mm'
-    if (typeof timeInput === 'string' && /^\d{1,2}:\d{2}$/.test(timeInput.trim())) {
-        const [hStr, mStr] = timeInput.trim().split(':');
-        const h = parseInt(hStr, 10);
-        const m = parseInt(mStr, 10);
+    // If already formatted with AM/PM, return as-is to prevent double timezone conversion
+    if (typeof timeInput === 'string' && (timeInput.includes('AM') || timeInput.includes('PM'))) {
+        return timeInput.trim();
+    }
+
+    // If already in 24-hour string format 'HH:mm' or 'HH:mm:ss'
+    if (typeof timeInput === 'string' && /^\d{1,2}:\d{2}(:\d{2})?$/.test(timeInput.trim())) {
+        const parts = timeInput.trim().split(':');
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        const s = parts[2] ? parseInt(parts[2], 10) : 0;
         const ampm = h >= 12 ? 'PM' : 'AM';
         const displayH = h % 12 || 12;
+        if (includeSeconds && parts.length > 2) {
+            return `${String(displayH).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} ${ampm}`;
+        }
         return `${String(displayH).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
     }
 
@@ -36,6 +45,34 @@ export const formatTimeIST = (timeInput, includeSeconds = true) => {
             options.second = '2-digit';
         }
         return new Intl.DateTimeFormat('en-US', options).format(d);
+    } catch (e) {
+        return '--';
+    }
+};
+
+/**
+ * Format Date to standard human-readable date & time in Asia/Kolkata
+ * Example: 17 Nov 2026, 08:59 AM
+ */
+export const formatDateTimeIST = (dateInput = new Date(), includeSeconds = false) => {
+    if (!dateInput) return '--';
+    try {
+        const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+        if (isNaN(d.getTime())) return '--';
+
+        const options = {
+            timeZone: TIMEZONE,
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        };
+        if (includeSeconds) {
+            options.second = '2-digit';
+        }
+        return new Intl.DateTimeFormat('en-IN', options).format(d);
     } catch (e) {
         return '--';
     }

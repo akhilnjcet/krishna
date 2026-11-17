@@ -2,7 +2,7 @@ const DailyAttendance = require('../models/DailyAttendance');
 const Attendance = require('../models/Attendance');
 const User = require('../models/User');
 const { autoGenerateAbsentLogs } = require('../utils/attendanceHelper');
-const { getISTDate, getISTTimeString, calculateDuration } = require('../utils/dateTimeUtil');
+const { getISTDate, getISTTimeString, formatISTDisplay, calculateDuration, normalizeAttendanceTime } = require('../utils/dateTimeUtil');
 
 // Mark/Update Daily Attendance status
 exports.markDailyAttendance = async (req, res) => {
@@ -191,6 +191,74 @@ exports.markDailyAttendance = async (req, res) => {
     }
 };
 
+// Helper: Reconcile Daily Attendance records dynamically with authoritative biometric logs
+const reconcileRecordsWithBiometrics = async (records) => {
+    if (!records || records.length === 0) return [];
+
+    const staffIds = records.map(r => r.staffId?._id || r.staffId).filter(Boolean);
+    const dates = records.map(r => r.date).filter(Boolean);
+
+    let biometricLogs = [];
+    if (staffIds.length > 0 && dates.length > 0) {
+        biometricLogs = await Attendance.find({
+            staff_id: { $in: staffIds },
+            date: { $in: dates },
+            status: 'success'
+        }).sort({ login_time: 1 });
+    }
+
+    const bioMap = new Map();
+    biometricLogs.forEach(b => {
+        const key = `${b.staff_id}_${b.date}`;
+        if (!bioMap.has(key)) {
+            bioMap.set(key, b);
+        }
+    });
+
+    return records.map(r => {
+        const obj = r.toObject ? r.toObject() : { ...r };
+        const staffKey = `${r.staffId?._id || r.staffId}_${r.date}`;
+        const bio = bioMap.get(staffKey);
+
+        let finalCheckIn = obj.checkIn;
+        let finalCheckOut = obj.checkOut;
+
+        if (bio && bio.login_time) {
+            // Authoritative biometric scan in IST
+            finalCheckIn = getISTTimeString(bio.login_time);
+            if (bio.check_out) {
+                finalCheckOut = getISTTimeString(bio.check_out);
+            }
+        } else if (finalCheckIn) {
+            finalCheckIn = normalizeAttendanceTime(finalCheckIn);
+        }
+
+        if (finalCheckOut) {
+            finalCheckOut = normalizeAttendanceTime(finalCheckOut);
+        }
+
+        obj.checkIn = finalCheckIn;
+        obj.checkOut = finalCheckOut;
+        obj.checkInDisplay = finalCheckIn ? formatISTDisplay(finalCheckIn, false) : '--';
+        obj.checkInFullDisplay = bio && bio.login_time 
+            ? formatISTDisplay(bio.login_time, true) 
+            : (finalCheckIn ? formatISTDisplay(finalCheckIn, true) : '--');
+        obj.checkOutDisplay = finalCheckOut ? formatISTDisplay(finalCheckOut, false) : '--';
+        obj.checkOutFullDisplay = bio && bio.check_out 
+            ? formatISTDisplay(bio.check_out, true) 
+            : (finalCheckOut ? formatISTDisplay(finalCheckOut, true) : '--');
+
+        if (bio && bio.login_time) {
+            obj.login_time = bio.login_time;
+        }
+        if (bio && bio.check_out) {
+            obj.biometric_check_out = bio.check_out;
+        }
+
+        return obj;
+    });
+};
+
 // Get Daily Attendance for a month (Format: YYYY-MM) or single date (Format: YYYY-MM-DD)
 exports.getDailyAttendance = async (req, res) => {
     try {
@@ -219,7 +287,9 @@ exports.getDailyAttendance = async (req, res) => {
             .populate('staffId', 'name email staff_id department designation')
             .sort({ date: 1 });
 
-        res.json(attendanceRecords);
+        const reconciledRecords = await reconcileRecordsWithBiometrics(attendanceRecords);
+
+        res.json(reconciledRecords);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -243,17 +313,19 @@ exports.getStaffDailyAttendanceSummary = async (req, res) => {
             date: { $regex: `^${month}` }
         }).sort({ date: 1 });
 
+        const reconciledRecords = await reconcileRecordsWithBiometrics(records);
+
         const summary = {
             present: 0,
             absent: 0,
             halfDay: 0,
             leave: 0,
             holiday: 0,
-            totalDays: records.length,
+            totalDays: reconciledRecords.length,
             percentage: 0
         };
 
-        records.forEach(r => {
+        reconciledRecords.forEach(r => {
             if (r.status === 'Present') summary.present++;
             else if (r.status === 'Absent') summary.absent++;
             else if (r.status === 'Half Day') summary.halfDay++;
@@ -270,7 +342,7 @@ exports.getStaffDailyAttendanceSummary = async (req, res) => {
             summary.percentage = 100; // All holidays
         }
 
-        res.json({ staffId: targetStaffId, month, summary, records });
+        res.json({ staffId: targetStaffId, month, summary, records: reconciledRecords });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
