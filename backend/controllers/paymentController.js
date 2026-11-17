@@ -601,21 +601,48 @@ async function processConfirmedCashfreeOrder(orderData, successfulPaymentInput =
         });
 
         const pType = (payment.paymentType || tagPaymentType || '').toLowerCase();
+        const pCat = (payment.chargeCategory || '').toLowerCase();
+        const isCombined = pCat.includes('combined') || (payment.notes || '').toLowerCase().includes('overall outstanding');
+
+        // Check extra charges in targetBooking
+        const extraCharges = Array.isArray(targetBooking.extraCharges) ? targetBooking.extraCharges : [];
+        let totalExtraRemaining = 0;
+        
+        if (extraCharges.length > 0) {
+            let chargeSurplus = verifiedAmount;
+            // If paying specifically for rent, only excess above rentDue flows to extra charges
+            if (pType.includes('rent') && !isCombined) {
+                const rentNeeded = Math.max(0, rentDue - totalDepositAdjusted);
+                chargeSurplus = Math.max(0, rentPaid - rentNeeded);
+            }
+            if (chargeSurplus > 0) {
+                extraCharges.forEach(ec => {
+                    const ecDue = Math.max(0, (parseFloat(ec.amount) || 0) - (parseFloat(ec.paidAmount) || 0));
+                    if (ecDue > 0 && chargeSurplus > 0) {
+                        const apply = Math.min(ecDue, chargeSurplus);
+                        ec.paidAmount = (parseFloat(ec.paidAmount) || 0) + apply;
+                        chargeSurplus -= apply;
+                    }
+                });
+            }
+            totalExtraRemaining = extraCharges.reduce((sum, ec) => sum + Math.max(0, (parseFloat(ec.amount) || 0) - (parseFloat(ec.paidAmount) || 0)), 0);
+        }
+
         if (pType.includes('deposit')) {
             remainingBalance = Math.max(0, originalDeposit - depositPaid);
             targetBooking.securityDeposit = depositPaid;
-            await targetBooking.save();
         } else {
-            // Rent
+            // Rent or Combined Settlement
             const effectiveRentSettled = rentPaid + totalDepositAdjusted;
-            remainingBalance = Math.max(0, rentDue - effectiveRentSettled);
-            // Authoritatively persist updated rentPaid & status on targetBooking
-            targetBooking.rentPaid = rentPaid;
-            if (!targetBooking.status || targetBooking.status === 'cancelled') {
-                targetBooking.status = 'active';
-            }
-            await targetBooking.save();
+            const remainingRent = Math.max(0, rentDue - effectiveRentSettled);
+            remainingBalance = remainingRent + totalExtraRemaining;
+            targetBooking.rentPaid = Math.min(rentDue, rentPaid);
         }
+
+        if (!targetBooking.status || targetBooking.status === 'cancelled') {
+            targetBooking.status = 'active';
+        }
+        await targetBooking.save();
 
         payment.outstandingBalance = remainingBalance;
         await payment.save();

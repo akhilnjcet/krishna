@@ -547,45 +547,91 @@ exports.getBookingFinancials = async (req, res) => {
     let totalRefunded = 0;
     const extraChargesPaidMap = {};
     const refundsList = [];
+    let combinedSettlementPaid = 0;
 
     uniqueValidPayments.forEach(p => {
       const type = (p.paymentType || '').toLowerCase();
+      const cat = (p.chargeCategory || p.notes || '').toLowerCase();
+      const isCombined = cat.includes('combined settlement') || cat.includes('overall outstanding') || cat.includes('total dues');
       const amt = parseFloat(p.amount) || 0;
+
       if (type.includes('refund')) {
         totalRefunded += amt;
         refundsList.push(p);
-        const cat = (p.chargeCategory || p.notes || '').toLowerCase();
         if (cat.includes('deposit')) {
           depositRefunded += amt;
         } else {
           rentRefunded += amt;
         }
-      } else if (type.includes('rent') && !type.includes('adjustment')) {
-        rentPaid += amt;
+      } else if (isCombined) {
+        combinedSettlementPaid += amt;
       } else if (type.includes('deposit') && !type.includes('adjustment')) {
         depositPaid += amt;
-      } else if (type.includes('additional') || type.includes('extra') || type.includes('service')) {
-        const cat = p.chargeCategory || 'Other';
-        extraChargesPaidMap[cat] = (extraChargesPaidMap[cat] || 0) + amt;
+      } else if (type.includes('additional') || type.includes('extra') || type.includes('service') || type.includes('charge')) {
+        const targetCategory = p.chargeCategory || p.notes || 'Other';
+        let matchedName = targetCategory;
+        for (const ec of extraCharges) {
+          if (targetCategory.toLowerCase().includes((ec.name || '').toLowerCase())) {
+            matchedName = ec.name;
+            break;
+          }
+        }
+        extraChargesPaidMap[matchedName] = (extraChargesPaidMap[matchedName] || 0) + amt;
+      } else if (type.includes('rent') && !type.includes('adjustment')) {
+        rentPaid += amt;
       } else if (!type.includes('adjustment')) {
         rentPaid += amt;
       }
     });
 
-    // Net values after accounting for refunds
+    // Waterfall allocation of combined settlement & surplus payments:
+    // 1. Settle Rent first up to rentDue
+    const netDirectRentPaid = Math.max(0, rentPaid - rentRefunded);
+    const rentNeeded = Math.max(0, rentDue - (netDirectRentPaid + totalDepositAdjusted));
+    const combinedToRent = Math.min(combinedSettlementPaid, rentNeeded);
+    rentPaid += combinedToRent;
+    combinedSettlementPaid -= combinedToRent;
+
+    // 2. Settle Deposit next up to originalDeposit
+    const netDirectDepositPaid = Math.max(0, depositPaid - depositRefunded);
+    const depositNeeded = Math.max(0, originalDeposit - netDirectDepositPaid);
+    const combinedToDeposit = Math.min(combinedSettlementPaid, depositNeeded);
+    depositPaid += combinedToDeposit;
+    combinedSettlementPaid -= combinedToDeposit;
+
+    // 3. Settle Extra Charges from remaining combined settlement or surplus rent
     const netRentPaid = Math.max(0, rentPaid - rentRefunded);
     const netDepositPaid = Math.max(0, depositPaid - depositRefunded);
     const effectiveRentSettled = netRentPaid + totalDepositAdjusted;
     const remainingRent = Math.max(0, rentDue - effectiveRentSettled);
 
+    // Available surplus from combined settlement and overpaid rent (if rentPaid exceeds rentDue)
+    let availableSurplus = combinedSettlementPaid + Math.max(0, effectiveRentSettled - rentDue);
+
     // Available deposit held after adjustments and refunds
     const availableDeposit = Math.max(0, originalDeposit - totalDepositAdjusted - depositRefunded);
-    const remainingDeposit = Math.max(0, originalDeposit - depositPaid);
+    const remainingDeposit = Math.max(0, originalDeposit - netDepositPaid);
 
-    // Calculate extra charges items
+    // Calculate extra charges items with waterfall surplus allocation
     const extraChargesList = extraCharges.map(ec => {
       const amt = parseFloat(ec.amount) || 0;
-      const paid = parseFloat(ec.paidAmount || extraChargesPaidMap[ec.name] || 0);
+      let paid = parseFloat(ec.paidAmount || extraChargesPaidMap[ec.name] || 0);
+
+      // Check case-insensitive map match
+      for (const [k, v] of Object.entries(extraChargesPaidMap)) {
+        if (k.toLowerCase() === (ec.name || '').toLowerCase() && ec.name !== k) {
+          paid += v;
+        }
+      }
+
+      // Apply available surplus if charge is still unpaid
+      const remBeforeSurplus = Math.max(0, amt - paid);
+      if (remBeforeSurplus > 0 && availableSurplus > 0) {
+        const cover = Math.min(remBeforeSurplus, availableSurplus);
+        paid += cover;
+        availableSurplus -= cover;
+      }
+
       const rem = Math.max(0, amt - paid);
       return {
         id: ec.id || ec._id,
@@ -599,13 +645,26 @@ exports.getBookingFinancials = async (req, res) => {
       };
     });
 
+    // Auto-sync paid amounts to booking.extraCharges in MongoDB
+    let bookingChargesModified = false;
+    for (const ecItem of extraChargesList) {
+      const originalEc = booking.extraCharges.find(c => (c.id || c._id?.toString()) === (ecItem.id || ecItem._id?.toString()));
+      if (originalEc && originalEc.paidAmount !== ecItem.paid) {
+        originalEc.paidAmount = ecItem.paid;
+        bookingChargesModified = true;
+      }
+    }
+    if (bookingChargesModified) {
+      await booking.save().catch(err => console.warn('Could not persist extra charges sync:', err.message));
+    }
+
     const totalExtraDue = extraChargesList.reduce((sum, ec) => sum + ec.due, 0);
     const totalExtraPaid = extraChargesList.reduce((sum, ec) => sum + ec.paid, 0);
     const totalExtraRemaining = extraChargesList.reduce((sum, ec) => sum + ec.remaining, 0);
 
     // Overall Totals
     const overallTotalDue = rentDue + originalDeposit + totalExtraDue;
-    const overallTotalPaid = rentPaid + depositPaid + totalExtraPaid;
+    const overallTotalPaid = Math.min(rentDue, netRentPaid) + Math.min(originalDeposit, netDepositPaid) + totalExtraPaid;
     const netOverallPaid = Math.max(0, overallTotalPaid - totalRefunded);
     const overallTotalRemaining = remainingRent + remainingDeposit + totalExtraRemaining;
 
