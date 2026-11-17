@@ -215,9 +215,8 @@ app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth/verify-face', loginLimiter);
 app.use('/api/auth/login-otp/verify', loginLimiter);
 
-// Account Creation Rate Limits (5 accounts / 1 hr per IP)
+// Account Creation Rate Limits (10 accounts / 1 hr per IP)
 app.use('/api/auth/register', registerLimiter);
-app.use('/api/auth/admin/users', registerLimiter);
 
 // Password Reset & OTP Rate Limits (5 requests / 15 min per IP)
 app.use('/api/auth/forgot-password', otpLimiter);

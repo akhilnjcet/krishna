@@ -41,7 +41,7 @@ router.get('/projects/:projectId/updates', protect, async (req, res) => {
         }
 
         // Check if project belongs to this customer
-        if (project.customerId.toString() !== req.user._id.toString()) {
+        if (!project.customerId || project.customerId.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to view this project' });
         }
 

@@ -53,18 +53,19 @@ const MAX_SCRAPE_REQUESTS_IN_WINDOW = 50; // max 50 requests in 30s to content e
 /**
  * 1. Global API Rate Limiter
  * Applied to all /api/ endpoints to prevent denial-of-service and crawling.
- * Window: 15 minutes, Max: 300 requests per IP (~20 requests / min sustained).
+ * Window: 15 minutes, Max: 1500 requests per IP (~100 requests / min burst).
  */
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 300,
+    max: 1500,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.method === 'OPTIONS',
     handler: (req, res) => {
-        logRateLimit(req, { message: 'Global API rate limit reached (300 req / 15 min)' });
+        logRateLimit(req, { message: 'Global API rate limit reached (1500 req / 15 min)' });
         res.status(429).json({
             error: 'Too Many Requests',
-            message: 'Too many API requests from this IP address. Please slow down and try again after 15 minutes.'
+            message: 'Too many API requests from this IP address. Please slow down and try again after a few minutes.'
         });
     }
 });
@@ -72,15 +73,16 @@ const apiLimiter = rateLimit({
 /**
  * 2. Login & Authentication Rate Limiter
  * Applied to /api/auth/login, /api/auth/verify-face, /api/auth/login-otp/verify.
- * Window: 15 minutes, Max: 10 attempts per IP.
+ * Window: 15 minutes, Max: 15 attempts per IP.
  */
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: 15,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.method === 'OPTIONS',
     handler: (req, res) => {
-        logRateLimit(req, { message: 'Authentication brute-force limit reached (10 attempts / 15 min)' });
+        logRateLimit(req, { message: 'Authentication brute-force limit reached (15 attempts / 15 min)' });
         res.status(429).json({
             error: 'Too Many Requests',
             message: 'Too many failed login attempts from this network. Please wait 15 minutes before trying again.'
@@ -91,15 +93,16 @@ const loginLimiter = rateLimit({
 /**
  * 3. Tenant Room PIN Access Limiter
  * Applied to /api/bookings/verify-access.
- * Window: 15 minutes, Max: 10 PIN verification attempts per IP.
+ * Window: 15 minutes, Max: 15 PIN verification attempts per IP.
  */
 const tenantPinLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: 15,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.method === 'OPTIONS',
     handler: (req, res) => {
-        logRateLimit(req, { message: 'Tenant PIN brute-force limit reached (10 attempts / 15 min)' });
+        logRateLimit(req, { message: 'Tenant PIN brute-force limit reached (15 attempts / 15 min)' });
         res.status(429).json({
             error: 'Too Many Requests',
             message: 'Too many invalid PIN attempts. Access locked for 15 minutes.'
@@ -109,16 +112,17 @@ const tenantPinLimiter = rateLimit({
 
 /**
  * 4. Account Registration & Creation Limiter
- * Applied to /api/auth/register and /api/auth/admin/users.
- * Window: 1 hour, Max: 5 account creations per IP.
+ * Applied to public /api/auth/register.
+ * Window: 1 hour, Max: 10 account creations per IP. Skips authenticated admins.
  */
 const registerLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
-    max: 5,
+    max: 10,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.method === 'OPTIONS' || (req.user && req.user.role === 'admin'),
     handler: (req, res) => {
-        logRateLimit(req, { message: 'Account creation rate limit reached (5 registrations / 1 hr)' });
+        logRateLimit(req, { message: 'Account creation rate limit reached (10 registrations / 1 hr)' });
         res.status(429).json({
             error: 'Too Many Requests',
             message: 'Too many account creation attempts from this network. Please try again in an hour.'
@@ -129,15 +133,16 @@ const registerLimiter = rateLimit({
 /**
  * 5. Password Reset & OTP Request Limiter
  * Applied to /api/auth/forgot-password, /api/auth/reset-password, OTP routes.
- * Window: 15 minutes, Max: 5 requests per IP.
+ * Window: 15 minutes, Max: 10 requests per IP.
  */
 const otpLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: 10,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.method === 'OPTIONS',
     handler: (req, res) => {
-        logRateLimit(req, { message: 'OTP/Reset verification limit reached (5 requests / 15 min)' });
+        logRateLimit(req, { message: 'OTP/Reset verification limit reached (10 requests / 15 min)' });
         res.status(429).json({
             error: 'Too Many Requests',
             message: 'Too many OTP requests or reset attempts. Please wait 15 minutes before requesting a new code.'

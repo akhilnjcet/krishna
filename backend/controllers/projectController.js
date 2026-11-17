@@ -585,7 +585,7 @@ exports.requestAdditionalWork = async (req, res) => {
 
         const isCustomer = req.user.role === 'customer';
         // Enforce ownership: customer can only request additional work on their own project
-        if (isCustomer && project.customerId.toString() !== req.user.id.toString()) {
+        if (isCustomer && (!project.customerId || project.customerId.toString() !== req.user.id.toString())) {
             return res.status(403).json({ message: "Access denied: You do not own this project." });
         }
 

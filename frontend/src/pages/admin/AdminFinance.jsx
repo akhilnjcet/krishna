@@ -104,9 +104,11 @@ const AdminFinance = () => {
         const presentDays = activeRecord ? (activeRecord.presentDays || 0) : 0;
         const halfDays = activeRecord ? (activeRecord.halfDays || 0) : 0;
         const fallbackHours = (presentDays * workingHours) + (halfDays * (workingHours / 2));
-        const workedHours = (activeRecord && (activeRecord.totalWorkedHours || activeRecord.workedHours))
-            ? (activeRecord.totalWorkedHours || activeRecord.workedHours)
-            : (draft?.totalWorkedHours || fallbackHours);
+        const workedHours = (activeRecord && typeof activeRecord.totalWorkedHours === 'number' && activeRecord.totalWorkedHours > 0)
+            ? activeRecord.totalWorkedHours
+            : ((draft && typeof draft.totalWorkedHours === 'number' && draft.totalWorkedHours > 0) 
+                ? draft.totalWorkedHours 
+                : fallbackHours);
 
         const earnedSalary = activeRecord ? (activeRecord.totalEarnedSalary || 0) : 0;
 

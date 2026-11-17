@@ -28,7 +28,7 @@ exports.updateInvoicePayment = async (req, res) => {
         if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
 
         // Enforce ownership: only admin or the invoice owner can update payment
-        if (req.user.role !== 'admin' && invoice.customerId.toString() !== req.user.id.toString()) {
+        if (req.user.role !== 'admin' && (!invoice.customerId || invoice.customerId.toString() !== req.user.id.toString())) {
             return res.status(403).json({ message: 'Access denied: You do not own this invoice.' });
         }
 
