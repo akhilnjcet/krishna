@@ -231,7 +231,7 @@ const PolicyViewer = ({ defaultType = 'privacy' }) => {
                             </div>
                         ) : error ? (
                             <div className="p-6 bg-red-50 text-red-600 rounded-2xl text-center text-sm font-bold">
-                                {error}
+                                {typeof error === 'object' ? (error?.message || JSON.stringify(error)) : String(error)}
                             </div>
                         ) : (
                             <div className="space-y-8">

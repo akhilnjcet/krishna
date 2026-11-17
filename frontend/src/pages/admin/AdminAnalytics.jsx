@@ -64,7 +64,7 @@ const AdminAnalytics = () => {
 
             {error && (
                 <div className="bg-red-50 text-red-600 p-4 rounded-lg flex items-center gap-2">
-                    <span className="font-medium">Error:</span> {error}
+                    <span className="font-medium">Error:</span> {typeof error === 'object' ? (error?.message || JSON.stringify(error)) : String(error)}
                 </div>
             )}
 

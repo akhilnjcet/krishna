@@ -79,7 +79,7 @@ const ForgotPassword = () => {
 
                 {error && (
                     <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 text-xs font-bold uppercase tracking-widest">
-                        {error}
+                        {typeof error === 'object' ? (error?.message || JSON.stringify(error)) : String(error)}
                     </div>
                 )}
                 

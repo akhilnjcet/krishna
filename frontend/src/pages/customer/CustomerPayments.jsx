@@ -17,6 +17,7 @@ import UPIAppPicker from '../../components/UPIAppPicker';
 import UPIFallback from '../../components/UPIFallback';
 import { getSocket } from '../../utils/socket';
 import { initializeCashfree } from '../../utils/cashfreeLoader';
+import { verifyAndPollCashfreePayment } from '../../services/cashfreePaymentVerifier';
 
 // Cashfree Geometric SVG Logo
 const CashfreeLogo = ({ className = "w-6 h-6" }) => (
@@ -192,38 +193,70 @@ const CustomerPayments = () => {
     const verifyAndCompleteCashfreePayment = async (orderId) => {
         setVerifyingCashfree(true);
         try {
-            const res = await api.post('/payments/cashfree/verify', { orderId });
-            if (res.data.success) {
+            setPaymentResult({
+                show: true,
+                success: false,
+                isPending: true,
+                amount: parseFloat(formData.amount) || 0,
+                orderId: orderId,
+                status: 'PENDING',
+                message: 'Verifying payment with Cashfree...'
+            });
+
+            const res = await verifyAndPollCashfreePayment(orderId, {
+                maxAttempts: 6,
+                intervalMs: 2500,
+                onAttempt: (info) => {
+                    setPaymentResult(prev => ({
+                        ...prev,
+                        message: info.statusText
+                    }));
+                }
+            });
+
+            if (res.success || res.verified) {
                 hapticService.success();
-                if (res.data.payment) {
+                if (res.payment) {
                     try {
-                        generatePaymentReceiptPDF(res.data.payment, user);
+                        generatePaymentReceiptPDF(res.payment, user);
                     } catch (e) {
                         console.warn("Receipt generate error:", e);
                     }
                 }
                 fetchData();
-                const vAmt = res.data.verifiedAmount || parseFloat(formData.amount) || 0;
+                const vAmt = res.verifiedAmount || parseFloat(formData.amount) || 0;
                 setFormData(prev => ({ ...prev, amount: '', notes: '', referenceId: '', uploadedProof: '' }));
                 setScreenshotPreview(null);
                 setPaymentResult({
                     show: true,
                     success: true,
+                    isPending: false,
                     amount: vAmt,
                     orderId: orderId,
-                    cfPaymentId: res.data.cfPaymentId,
-                    status: res.data.paymentStatus || 'PAID',
-                    message: res.data.message || 'Payment successfully verified by Cashfree and recorded in your ledger.',
-                    payment: res.data.payment
+                    cfPaymentId: res.cfPaymentId,
+                    status: res.paymentStatus || 'PAID',
+                    message: res.message || 'Payment successfully verified by Cashfree and recorded in your ledger.',
+                    payment: res.payment
+                });
+            } else if (res.isPending) {
+                setPaymentResult({
+                    show: true,
+                    success: false,
+                    isPending: true,
+                    amount: parseFloat(formData.amount) || 0,
+                    orderId: orderId,
+                    status: 'PENDING',
+                    message: res.message || 'Payment awaiting final confirmation from bank.'
                 });
             } else {
                 setPaymentResult({
                     show: true,
                     success: false,
+                    isPending: false,
                     amount: parseFloat(formData.amount) || 0,
                     orderId: orderId,
-                    status: res.data.orderStatus || 'INCOMPLETE',
-                    message: res.data.message || `Cashfree reported status: ${res.data.orderStatus}. Payment could not be confirmed.`
+                    status: res.orderStatus || 'FAILED',
+                    message: res.message || `Cashfree reported status: ${res.orderStatus}. Payment could not be confirmed.`
                 });
             }
         } catch (err) {
@@ -231,6 +264,7 @@ const CustomerPayments = () => {
             setPaymentResult({
                 show: true,
                 success: false,
+                isPending: false,
                 amount: parseFloat(formData.amount) || 0,
                 orderId: orderId,
                 status: 'VERIFICATION_ERROR',

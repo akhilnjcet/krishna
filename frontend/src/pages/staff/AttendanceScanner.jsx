@@ -860,7 +860,7 @@ const AttendanceScanner = () => {
                                 Verification Unsuccessful
                             </h3>
                             <p className="text-xs text-rose-600 dark:text-rose-400 font-bold max-w-md mx-auto">
-                                {errorMessage}
+                                {typeof errorMessage === 'object' ? (errorMessage?.message || JSON.stringify(errorMessage)) : String(errorMessage || '')}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
                                 Don't worry — no automated disciplinary decisions are made from technical or recognition mismatches. You can retry or submit a manual attendance correction for administrator approval.

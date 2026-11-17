@@ -495,14 +495,23 @@ exports.getBookingFinancials = async (req, res) => {
         p.roomId = bookingRoomId;
         modified = true;
       }
-      // Check any unverified Cashfree payment that was completed at Cashfree
+      // Check any unverified Cashfree payment that was completed at Cashfree (checks both order status & payment attempts)
       if (p.method === 'cashfree' && p.status === 'WAITING_FOR_VERIFICATION' && (p.cfOrderId || p.referenceId)) {
         try {
           const cashfreeService = require('../services/cashfreeService');
           const ordId = p.cfOrderId || p.referenceId;
           const cfOrder = await cashfreeService.getOrder(ordId);
-          if ((cfOrder.order_status || '').toUpperCase() === 'PAID') {
+          const paymentsList = await cashfreeService.getOrderPayments(ordId);
+          const successfulPayments = Array.isArray(paymentsList)
+            ? paymentsList.filter(pay => (pay.payment_status || '').toUpperCase() === 'SUCCESS')
+            : [];
+
+          if ((cfOrder.order_status || '').toUpperCase() === 'PAID' || successfulPayments.length > 0) {
+            const primary = successfulPayments[0] || null;
             p.status = 'Completed';
+            p.amount = primary?.payment_amount !== undefined ? parseFloat(primary.payment_amount) : parseFloat(cfOrder.order_amount);
+            if (primary?.cf_payment_id) p.cfPaymentId = String(primary.cf_payment_id);
+            if (primary?.bank_reference) p.referenceId = String(primary.bank_reference);
             p.verifiedByName = 'Cashfree Gateway Auto-Reconciliation';
             p.verifiedAt = new Date();
             modified = true;

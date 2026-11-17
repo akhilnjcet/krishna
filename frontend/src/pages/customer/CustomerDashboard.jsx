@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import ReportHeader from '../../components/ReportHeader';
 import { initializeCashfree } from '../../utils/cashfreeLoader';
 import { generateCashCounterChallanPDF } from '../../services/pdfService';
+import { verifyAndPollCashfreePayment } from '../../services/cashfreePaymentVerifier';
 
 const CustomerDashboard = () => {
     const [projects, setProjects] = useState([]);
@@ -126,28 +127,60 @@ const CustomerDashboard = () => {
 
     const verifyCashfreeDashboardReturn = async (orderId) => {
         try {
-            const verifyRes = await api.post('/payments/cashfree/verify', { orderId });
-            if (verifyRes.data.success) {
+            setPaymentResult({
+                show: true,
+                success: false,
+                isPending: true,
+                amount: 0,
+                orderId,
+                status: 'PENDING',
+                message: 'Verifying payment with Cashfree...'
+            });
+
+            const verifyRes = await verifyAndPollCashfreePayment(orderId, {
+                maxAttempts: 6,
+                intervalMs: 2500,
+                onAttempt: (info) => {
+                    setPaymentResult(prev => ({
+                        ...prev,
+                        message: info.statusText
+                    }));
+                }
+            });
+
+            if (verifyRes.success || verifyRes.verified) {
                 setPayModal({ show: false, bookingId: null, roomId: null, amount: 0, name: '', notes: '', referenceId: '', method: 'cashfree' });
                 setScreenshotPreview(null);
                 fetchDashboardData();
                 setPaymentResult({
                     show: true,
                     success: true,
-                    amount: verifyRes.data.verifiedAmount || 0,
+                    isPending: false,
+                    amount: verifyRes.verifiedAmount || 0,
                     orderId,
-                    cfPaymentId: verifyRes.data.cfPaymentId,
-                    status: verifyRes.data.paymentStatus || 'PAID',
-                    message: verifyRes.data.message || 'Payment successfully verified by Cashfree and booking settled.'
+                    cfPaymentId: verifyRes.cfPaymentId,
+                    status: verifyRes.paymentStatus || 'PAID',
+                    message: verifyRes.message || 'Payment successfully verified by Cashfree and booking settled.'
+                });
+            } else if (verifyRes.isPending) {
+                setPaymentResult({
+                    show: true,
+                    success: false,
+                    isPending: true,
+                    amount: 0,
+                    orderId,
+                    status: 'PENDING',
+                    message: verifyRes.message || 'Payment awaiting final confirmation from bank.'
                 });
             } else {
                 setPaymentResult({
                     show: true,
                     success: false,
+                    isPending: false,
                     amount: 0,
                     orderId,
-                    status: verifyRes.data.orderStatus || 'INCOMPLETE',
-                    message: verifyRes.data.message || `Cashfree reported status: ${verifyRes.data.orderStatus}.`
+                    status: verifyRes.orderStatus || 'FAILED',
+                    message: verifyRes.message || `Cashfree reported status: ${verifyRes.orderStatus}.`
                 });
             }
         } catch (err) {
@@ -155,6 +188,7 @@ const CustomerDashboard = () => {
             setPaymentResult({
                 show: true,
                 success: false,
+                isPending: false,
                 amount: 0,
                 orderId,
                 status: 'VERIFY_ERROR',

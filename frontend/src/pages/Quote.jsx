@@ -140,7 +140,7 @@ const Quote = () => {
 
                         <div className="p-8 md:p-12 bg-[#FDFDFD]">
                             {error && <div className="bg-red-50 text-red-700 p-4 border-4 border-red-600 text-sm font-bold uppercase tracking-wide mb-8 flex items-center gap-3">
-                                <span className="text-xl">⚠️</span> {error}
+                                <span className="text-xl">⚠️</span> {typeof error === 'object' ? (error?.message || JSON.stringify(error)) : String(error)}
                             </div>}
 
                             <form onSubmit={handleSubmit} className="space-y-8">

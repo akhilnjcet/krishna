@@ -9,7 +9,8 @@ const {
     getCashfreeConfig,
     createCashfreeOrder,
     verifyCashfreePayment,
-    cashfreeWebhook
+    cashfreeWebhook,
+    reconcileCashfreePayments
 } = require('../controllers/paymentController');
 const { protect, optionalProtect, admin } = require('../middleware/authMiddleware');
 
@@ -23,6 +24,7 @@ router.get('/my-payments', protect, getMyPayments);
 router.get('/cashfree/config', getCashfreeConfig);
 router.post('/cashfree/create-order', optionalProtect, createCashfreeOrder);
 router.post('/cashfree/verify', optionalProtect, verifyCashfreePayment);
+router.post('/cashfree/reconcile', optionalProtect, reconcileCashfreePayments);
 router.post('/cashfree/webhook', cashfreeWebhook);
 
 // Admin only

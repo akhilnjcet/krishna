@@ -5,12 +5,13 @@ import useLodgeStore from '../../stores/lodgeStore';
 import { 
   X, CreditCard, QrCode, Building2, Check, Copy, Upload, Camera, 
   Plus, Trash2, ArrowRight, ShieldCheck, AlertCircle, Sparkles, CheckCircle2, 
-  Settings, Edit3, Clock, FileText, Printer, Download, History, RefreshCcw, 
+  Settings, Edit3, Clock, FileText, Printer, Download, History, RefreshCcw, RefreshCw, Loader2,
   DollarSign, Receipt, ChevronDown, ChevronUp, AlertTriangle, ShieldAlert
 } from 'lucide-react';
 import api from '../../services/api';
 import { initializeCashfree } from '../../utils/cashfreeLoader';
 import { getSocket } from '../../utils/socket';
+import { verifyAndPollCashfreePayment } from '../../services/cashfreePaymentVerifier';
 
 const DEFAULT_CATEGORIES = [
   'Electricity', 'Water', 'Wi-Fi', 'Internet', 'Maintenance', 'Parking',
@@ -201,52 +202,76 @@ export default function LodgeTenantPaymentModal({
     const redirectOrderId = searchParams.get('order_id') || searchParams.get('cf_order_id');
     if (redirectOrderId) {
       setSubmitting(true);
-      api.post('/payments/cashfree/verify', { orderId: redirectOrderId })
-        .then(res => {
-          if (res.data.success) {
-            const remBalance = res.data.remainingBalance !== undefined 
-              ? res.data.remainingBalance 
-              : res.data.remainingBillBalance;
-            const finalBadge = remBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID';
-
-            setPaymentResultModal({
-              show: true,
-              success: true,
-              amount: res.data.verifiedAmount,
-              cfPaymentId: res.data.cfPaymentId,
-              orderId: redirectOrderId,
-              remainingBalance: remBalance,
-              status: finalBadge,
-              message: `Payment of ₹${res.data.verifiedAmount} verified and recorded successfully.`
-            });
-            fetchBookingFinancials();
-            if (onSuccess) onSuccess(res.data.payment);
-          } else {
-            setPaymentResultModal({
-              show: true,
-              success: false,
-              amount: 0,
-              orderId: redirectOrderId,
-              status: res.data.orderStatus || 'INCOMPLETE',
-              message: res.data.message || 'Payment not completed or failed at bank.'
-            });
-          }
-        })
-        .catch(err => {
+      verifyAndPollCashfreePayment(redirectOrderId, {
+        maxAttempts: 6,
+        intervalMs: 2500,
+        onAttempt: (info) => {
           setPaymentResultModal({
             show: true,
             success: false,
+            isPending: true,
             amount: 0,
             orderId: redirectOrderId,
-            status: 'ERROR',
-            message: err.response?.data?.message || err.message
+            status: 'PENDING',
+            message: info.statusText || 'Verifying transaction with bank & Cashfree...'
           });
-        })
-        .finally(() => {
-          setSubmitting(false);
-          const cleanUrl = window.location.pathname + window.location.hash.split('?')[0];
-          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      }).then(res => {
+        if (res.success || res.verified) {
+          const remBalance = res.remainingBalance !== undefined ? res.remainingBalance : res.remainingBillBalance;
+          const finalBadge = remBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID';
+
+          setPaymentResultModal({
+            show: true,
+            success: true,
+            isPending: false,
+            amount: res.amount || res.verifiedAmount || 0,
+            cfPaymentId: res.cfPaymentId,
+            bankReference: res.bankReference,
+            orderId: redirectOrderId,
+            remainingBalance: remBalance,
+            status: finalBadge,
+            receiptNumber: res.receiptNumber,
+            message: res.message || `Payment of ₹${res.amount || res.verifiedAmount} verified and recorded successfully.`
+          });
+          fetchBookingFinancials();
+          if (onSuccess) onSuccess(res.payment);
+        } else if (res.isPending) {
+          setPaymentResultModal({
+            show: true,
+            success: false,
+            isPending: true,
+            amount: res.amount || 0,
+            orderId: redirectOrderId,
+            status: 'PENDING',
+            message: res.message || 'Payment is being processed by your bank/UPI. Please do not pay again.'
+          });
+        } else {
+          setPaymentResultModal({
+            show: true,
+            success: false,
+            isPending: false,
+            amount: 0,
+            orderId: redirectOrderId,
+            status: res.orderStatus || 'FAILED',
+            message: res.message || 'Payment not completed or failed at bank.'
+          });
+        }
+      }).catch(err => {
+        setPaymentResultModal({
+          show: true,
+          success: false,
+          isPending: false,
+          amount: 0,
+          orderId: redirectOrderId,
+          status: 'ERROR',
+          message: err.response?.data?.message || err.message
         });
+      }).finally(() => {
+        setSubmitting(false);
+        const cleanUrl = window.location.pathname + window.location.hash.split('?')[0];
+        window.history.replaceState({}, document.title, cleanUrl);
+      });
     }
   }, [isOpen, fetchBookingFinancials, onSuccess]);
 
@@ -406,27 +431,52 @@ export default function LodgeTenantPaymentModal({
           return;
         }
 
-        // Always authoritative verification on backend
+        // Always authoritative verification on backend with automatic polling
         try {
-          const verifyRes = await api.post('/payments/cashfree/verify', { orderId });
-          if (verifyRes.data.success) {
-            const remBalance = verifyRes.data.remainingBalance !== undefined 
-              ? verifyRes.data.remainingBalance 
-              : verifyRes.data.remainingBillBalance;
+          setPaymentResultModal({
+            show: true,
+            success: false,
+            isPending: true,
+            amount: activePayAmount,
+            orderId,
+            status: 'PENDING',
+            message: 'Verifying payment with bank and Cashfree gateway...'
+          });
+
+          const verifyRes = await verifyAndPollCashfreePayment(orderId, {
+            maxAttempts: 6,
+            intervalMs: 2500,
+            onAttempt: (info) => {
+              setPaymentResultModal(prev => ({
+                ...prev,
+                show: true,
+                isPending: true,
+                message: info.statusText
+              }));
+            }
+          });
+
+          if (verifyRes.success || verifyRes.verified) {
+            const remBalance = verifyRes.remainingBalance !== undefined 
+              ? verifyRes.remainingBalance 
+              : verifyRes.remainingBillBalance;
             const finalBadge = remBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID';
 
             setPaymentResultModal({
               show: true,
               success: true,
-              amount: verifyRes.data.verifiedAmount,
-              cfPaymentId: verifyRes.data.cfPaymentId,
+              isPending: false,
+              amount: verifyRes.verifiedAmount || verifyRes.amount || activePayAmount,
+              cfPaymentId: verifyRes.cfPaymentId,
+              bankReference: verifyRes.bankReference,
               orderId,
               remainingBalance: remBalance,
               status: finalBadge,
-              message: verifyRes.data.message || `Payment of ₹${verifyRes.data.verifiedAmount} verified successfully.`
+              receiptNumber: verifyRes.receiptNumber,
+              message: verifyRes.message || `Payment of ₹${verifyRes.verifiedAmount || activePayAmount} verified and credited successfully.`
             });
             setLastPaymentReceipt({
-              ...verifyRes.data.payment,
+              ...verifyRes.payment,
               targetTitle,
               lineItemsSnapshot: financials?.lineItems,
               overallSnapshot: financials?.overall,
@@ -435,15 +485,26 @@ export default function LodgeTenantPaymentModal({
             });
             setSubmittedSuccess(true);
             await fetchBookingFinancials();
-            if (onSuccess) onSuccess(verifyRes.data.payment);
+            if (onSuccess) onSuccess(verifyRes.payment);
+          } else if (verifyRes.isPending) {
+            setPaymentResultModal({
+              show: true,
+              success: false,
+              isPending: true,
+              amount: activePayAmount,
+              orderId,
+              status: 'PENDING',
+              message: verifyRes.message || 'Payment is awaiting final bank/UPI confirmation. Please do not pay again.'
+            });
           } else {
             setPaymentResultModal({
               show: true,
               success: false,
+              isPending: false,
               amount: activePayAmount,
               orderId,
-              status: verifyRes.data.orderStatus || 'INCOMPLETE',
-              message: verifyRes.data.message || `Cashfree reported status: ${verifyRes.data.orderStatus}.`
+              status: verifyRes.orderStatus || 'FAILED',
+              message: verifyRes.message || `Payment could not be completed at bank.`
             });
           }
         } catch (vErr) {
@@ -451,6 +512,7 @@ export default function LodgeTenantPaymentModal({
           setPaymentResultModal({
             show: true,
             success: false,
+            isPending: false,
             amount: activePayAmount,
             orderId,
             status: 'VERIFICATION_ERROR',
@@ -2784,19 +2846,31 @@ export default function LodgeTenantPaymentModal({
             <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center ${
               paymentResultModal.success 
                 ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50' 
+                : paymentResultModal.isPending
+                ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50'
                 : 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50'
             }`}>
               {paymentResultModal.success ? (
                 <CheckCircle2 className="w-10 h-10" />
+              ) : paymentResultModal.isPending ? (
+                <Loader2 className="w-10 h-10 animate-spin" />
               ) : (
                 <AlertCircle className="w-10 h-10" />
               )}
             </div>
 
             <h3 className={`text-xl font-black mb-1 ${
-              paymentResultModal.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+              paymentResultModal.success 
+                ? 'text-emerald-600 dark:text-emerald-400' 
+                : paymentResultModal.isPending
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-rose-600 dark:text-rose-400'
             }`}>
-              {paymentResultModal.success ? 'Payment Verified & Confirmed' : 'Payment Incomplete or Failed'}
+              {paymentResultModal.success 
+                ? 'Payment Verified & Confirmed' 
+                : paymentResultModal.isPending
+                ? 'Payment Awaiting Confirmation'
+                : 'Payment Incomplete or Failed'}
             </h3>
             
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">
@@ -2813,6 +2887,8 @@ export default function LodgeTenantPaymentModal({
                 <span className={`px-2 py-0.5 rounded font-black text-[10px] tracking-wider uppercase ${
                   paymentResultModal.success 
                     ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' 
+                    : paymentResultModal.isPending
+                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                     : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
                 }`}>
                   {paymentResultModal.status}
@@ -2838,22 +2914,70 @@ export default function LodgeTenantPaymentModal({
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setPaymentResultModal(null);
-                if (paymentResultModal.success) {
-                  fetchBookingFinancials();
-                }
-              }}
-              className={`w-full py-3 rounded-xl font-bold text-xs shadow-md transition ${
-                paymentResultModal.success
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                  : 'bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-700 dark:hover:bg-slate-600'
-              }`}
-            >
-              {paymentResultModal.success ? 'Done & Refresh Balance' : 'Close'}
-            </button>
+            <div className="flex flex-col gap-2">
+              {paymentResultModal.isPending && paymentResultModal.orderId && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      setSubmitting(true);
+                      const verifyRes = await verifyAndPollCashfreePayment(paymentResultModal.orderId, {
+                        maxAttempts: 5,
+                        intervalMs: 2000
+                      });
+                      if (verifyRes.success || verifyRes.verified) {
+                        setPaymentResultModal({
+                          show: true,
+                          success: true,
+                          isPending: false,
+                          amount: verifyRes.verifiedAmount || paymentResultModal.amount,
+                          cfPaymentId: verifyRes.cfPaymentId,
+                          bankReference: verifyRes.bankReference,
+                          orderId: paymentResultModal.orderId,
+                          status: 'FULLY PAID',
+                          message: 'Payment verified and confirmed successfully!'
+                        });
+                        await fetchBookingFinancials();
+                      } else {
+                        setPaymentResultModal(prev => ({
+                          ...prev,
+                          message: verifyRes.message || 'Still awaiting gateway update. Please try again shortly.'
+                        }));
+                      }
+                    } catch (e) {
+                      setPaymentResultModal(prev => ({
+                        ...prev,
+                        message: e.response?.data?.message || 'Verification retry failed.'
+                      }));
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  disabled={submitting}
+                  className="w-full py-3 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${submitting ? 'animate-spin' : ''}`} />
+                  Check Status Now
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentResultModal(null);
+                  if (paymentResultModal.success) {
+                    fetchBookingFinancials();
+                  }
+                }}
+                className={`w-full py-3 rounded-xl font-bold text-xs shadow-md transition cursor-pointer ${
+                  paymentResultModal.success
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    : 'bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-700 dark:hover:bg-slate-600'
+                }`}
+              >
+                {paymentResultModal.success ? 'Done & Refresh Balance' : 'Close'}
+              </button>
+            </div>
           </div>
         </div>
       )}

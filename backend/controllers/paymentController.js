@@ -412,15 +412,19 @@ exports.createCashfreeOrder = async (req, res) => {
 /**
  * Helper to reconcile and apply verified Cashfree payment to ledger, projects, and rent bills
  */
-async function processConfirmedCashfreeOrder(orderData, reqUser = null, source = 'Cashfree Verification') {
+async function processConfirmedCashfreeOrder(orderData, successfulPaymentInput = null, reqUser = null, source = 'Cashfree Verification') {
     const orderId = orderData.order_id;
-    const paymentsList = await cashfreeService.getOrderPayments(orderId);
-    const successfulPayment = Array.isArray(paymentsList) 
-        ? paymentsList.find(p => (p.payment_status || '').toUpperCase() === 'SUCCESS')
-        : null;
+    let successfulPayment = successfulPaymentInput;
+
+    if (!successfulPayment) {
+        const paymentsList = await cashfreeService.getOrderPayments(orderId);
+        successfulPayment = Array.isArray(paymentsList) 
+            ? paymentsList.find(p => (p.payment_status || '').toUpperCase() === 'SUCCESS')
+            : null;
+    }
 
     if (!successfulPayment && (orderData.order_status || '').toUpperCase() !== 'PAID') {
-        throw new Error(`Order ${orderId} has no successful payment record.`);
+        throw new Error(`Order ${orderId} has no successful payment record in Cashfree.`);
     }
 
     const verifiedAmount = successfulPayment?.payment_amount !== undefined 
@@ -431,6 +435,7 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
         ? String(successfulPayment.cf_payment_id) 
         : String(orderData.cf_order_id || orderId);
 
+    const bankReference = successfulPayment?.bank_reference || '';
     const paymentTime = successfulPayment?.payment_completion_time || successfulPayment?.payment_time;
 
     // Find existing initiated payment record or create one
@@ -439,24 +444,33 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
             { cfPaymentId: cfPaymentId },
             { referenceId: orderId },
             { cfOrderId: orderId },
+            { transactionReference: cfPaymentId },
             { transactionReference: orderId }
         ] 
     });
 
+    const orderTags = orderData.order_tags || {};
+    const tagBookingId = orderTags.booking_id || orderTags.bookingId;
+    const tagRoomId = orderTags.room_id || orderTags.roomId;
+    const tagCustomerId = orderTags.customer_id || orderTags.customerId;
+    const tagPaymentType = orderTags.payment_type || orderTags.paymentType;
+
     if (!payment) {
         payment = new Payment({
-            customerId: (reqUser && (reqUser._id || reqUser.id)) || undefined,
+            customerId: (reqUser && (reqUser._id || reqUser.id)) || (tagCustomerId && mongoose.Types.ObjectId.isValid(tagCustomerId) ? tagCustomerId : undefined),
             amount: verifiedAmount,
             method: 'cashfree',
-            referenceId: orderId,
+            referenceId: bankReference || orderId,
             transactionReference: cfPaymentId,
             cfOrderId: String(orderData.cf_order_id || orderId),
             cfPaymentId: cfPaymentId,
             paymentDate: paymentTime ? new Date(paymentTime) : new Date(),
             tenantName: (reqUser && reqUser.name) || orderData.customer_details?.customer_name || 'Client',
             notes: orderData.order_note || 'Cashfree Online Gateway',
-            paymentType: 'Rent',
-            chargeCategory: 'Rent'
+            paymentType: tagPaymentType || 'Rent',
+            chargeCategory: tagPaymentType || 'Rent',
+            bookingId: tagBookingId && mongoose.Types.ObjectId.isValid(tagBookingId) ? tagBookingId : undefined,
+            roomId: tagRoomId && mongoose.Types.ObjectId.isValid(tagRoomId) ? tagRoomId : undefined
         });
     }
 
@@ -468,14 +482,18 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
     if (payment.bookingId) {
         targetBooking = await BookingLodge.findById(payment.bookingId).populate('roomId').populate('userId');
     }
-    if (!targetBooking && payment.roomId) {
+    if (!targetBooking && tagBookingId && mongoose.Types.ObjectId.isValid(tagBookingId)) {
+        targetBooking = await BookingLodge.findById(tagBookingId).populate('roomId').populate('userId');
+    }
+    if (!targetBooking && (payment.roomId || tagRoomId)) {
+        const rId = payment.roomId || tagRoomId;
         targetBooking = await BookingLodge.findOne({
-            roomId: payment.roomId,
+            roomId: rId,
             status: { $nin: ['cancelled', 'checked_out'] }
         }).populate('roomId').populate('userId').sort({ createdAt: -1 });
     }
-    if (!targetBooking && (payment.customerId || (reqUser && reqUser._id))) {
-        const custId = payment.customerId || reqUser._id;
+    if (!targetBooking && (payment.customerId || tagCustomerId || (reqUser && reqUser._id))) {
+        const custId = payment.customerId || tagCustomerId || reqUser._id;
         targetBooking = await BookingLodge.findOne({
             userId: custId,
             status: { $nin: ['cancelled', 'checked_out'] }
@@ -508,11 +526,25 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
     payment.cfOrderId = String(orderData.cf_order_id || orderId);
     payment.cfPaymentId = cfPaymentId;
     payment.transactionReference = cfPaymentId;
+    if (bankReference) {
+        payment.referenceId = bankReference;
+    }
     payment.verifiedByName = source;
     payment.verifiedAt = new Date();
     if (paymentTime) {
         payment.paymentDate = new Date(paymentTime);
     }
+    if (!payment.receiptNumber) {
+        payment.receiptNumber = `RCP-${Date.now().toString(36).toUpperCase()}-${cfPaymentId.slice(-4)}`;
+    }
+    if (!payment.auditLog) payment.auditLog = [];
+    payment.auditLog.push({
+        action: 'CASHFREE_VERIFIED',
+        performedBy: source,
+        timestamp: new Date(),
+        notes: `Verified ₹${verifiedAmount} via Cashfree (Payment ID: ${cfPaymentId}, Bank Ref: ${bankReference || 'N/A'})`
+    });
+
     await payment.save();
 
     // Recalculate Project Status if linked to a project
@@ -568,14 +600,25 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
             }
         });
 
-        const pType = (payment.paymentType || '').toLowerCase();
+        const pType = (payment.paymentType || tagPaymentType || '').toLowerCase();
         if (pType.includes('deposit')) {
             remainingBalance = Math.max(0, originalDeposit - depositPaid);
+            targetBooking.securityDeposit = depositPaid;
+            await targetBooking.save();
         } else {
             // Rent
             const effectiveRentSettled = rentPaid + totalDepositAdjusted;
             remainingBalance = Math.max(0, rentDue - effectiveRentSettled);
+            // Authoritatively persist updated rentPaid & status on targetBooking
+            targetBooking.rentPaid = rentPaid;
+            if (remainingBalance === 0) {
+                targetBooking.status = 'confirmed';
+            }
+            await targetBooking.save();
         }
+
+        payment.outstandingBalance = remainingBalance;
+        await payment.save();
     }
 
     // Settle Lodge Rent Bill if present
@@ -632,6 +675,12 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
         }
     }
 
+    // Auto-settle payment request if linked
+    if (payment.paymentRequestId) {
+        const LodgePaymentRequest = require('../models/LodgePaymentRequest');
+        await LodgePaymentRequest.findByIdAndUpdate(payment.paymentRequestId, { status: 'PAID' }).catch(() => {});
+    }
+
     // Socket.IO real-time notification
     const socketUtil = require('../utils/socket');
     const io = socketUtil.getIO();
@@ -677,6 +726,7 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
         payment, 
         verifiedAmount, 
         cfPaymentId, 
+        bankReference,
         remainingBalance, 
         remainingBillBalance: remainingBalance, 
         status: remainingBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID',
@@ -687,6 +737,8 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
 
 /**
  * Protected/Optional: Verify Cashfree PG Order & Complete Payment
+ * Authoritatively verifies both order and payment attempt list.
+ * Never treats ACTIVE as proof of failure.
  */
 exports.verifyCashfreePayment = async (req, res) => {
     try {
@@ -696,42 +748,84 @@ exports.verifyCashfreePayment = async (req, res) => {
         }
 
         const orderData = await cashfreeService.getOrder(orderId);
+        const paymentsList = await cashfreeService.getOrderPayments(orderId);
         const orderStatus = (orderData.order_status || '').toUpperCase(); // PAID, ACTIVE, EXPIRED, TERMINATED
 
-        if (orderStatus === 'PAID') {
-            const { payment, verifiedAmount, cfPaymentId, remainingBalance, bill } = 
-                await processConfirmedCashfreeOrder(orderData, req.user, 'Cashfree Gateway Verification');
+        // Identify successful payments among all attempts (handles multiple payment attempts)
+        const successfulPayments = Array.isArray(paymentsList)
+            ? paymentsList.filter(p => (p.payment_status || '').toUpperCase() === 'SUCCESS')
+            : [];
+
+        const isPaid = orderStatus === 'PAID' || successfulPayments.length > 0;
+
+        if (isPaid) {
+            const primaryPayment = successfulPayments[0] || null;
+            const { payment, verifiedAmount, cfPaymentId, bankReference, remainingBalance, bill } = 
+                await processConfirmedCashfreeOrder(orderData, primaryPayment, req.user, 'Cashfree Gateway Verification');
 
             const finalStatus = remainingBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID';
             return res.json({ 
                 success: true, 
                 verified: true,
-                message: `Payment of ₹${verifiedAmount} verified and recorded successfully.`, 
+                isPending: false,
+                message: `Payment of ₹${verifiedAmount} verified and credited successfully.`, 
                 payment,
                 cfPaymentId,
+                bankReference: bankReference || primaryPayment?.bank_reference || '',
                 verifiedAmount,
                 remainingBalance,
                 remainingBillBalance: remainingBalance,
                 status: finalStatus,
+                receiptNumber: payment.receiptNumber,
                 order: orderData 
             });
         }
 
+        // Check for pending payment attempts or active orders awaiting gateway/bank confirmation
+        const hasPendingAttempt = Array.isArray(paymentsList) && 
+            paymentsList.some(p => (p.payment_status || '').toUpperCase() === 'PENDING');
+        
+        const orderCreatedAt = orderData.created_at ? new Date(orderData.created_at) : new Date();
+        const orderAgeMinutes = (Date.now() - orderCreatedAt.getTime()) / (60 * 1000);
+
+        // If order is ACTIVE and either has a pending attempt, or was created recently (< 30 min)
+        if (orderStatus === 'ACTIVE' && (hasPendingAttempt || orderAgeMinutes < 30 || paymentsList.length === 0)) {
+            return res.json({ 
+                success: false, 
+                verified: false,
+                isPending: true,
+                orderStatus: 'PENDING',
+                gatewayOrderStatus: orderStatus,
+                paymentAttemptsCount: paymentsList.length,
+                message: 'Payment verification is currently in progress. Your bank is confirming the transaction. Please wait.' 
+            });
+        }
+
         // If order ended with failure or expiry, update payment record to prevent lingering waiting state
-        if (['EXPIRED', 'FAILED', 'TERMINATED', 'CANCELLED'].includes(orderStatus)) {
+        if (['EXPIRED', 'FAILED', 'TERMINATED', 'CANCELLED'].includes(orderStatus) || (orderAgeMinutes >= 30 && paymentsList.length > 0)) {
             const payment = await Payment.findOne({ referenceId: orderId });
             if (payment && payment.status === 'WAITING_FOR_VERIFICATION') {
                 payment.status = 'Failed';
                 payment.rejectionReason = `Cashfree order ended with status ${orderStatus}`;
                 await payment.save();
             }
+            return res.json({ 
+                success: false, 
+                verified: false,
+                isPending: false,
+                orderStatus: 'FAILED',
+                gatewayOrderStatus: orderStatus,
+                message: `Cashfree order ended with status ${orderStatus}. Payment was not completed.` 
+            });
         }
 
         return res.json({ 
             success: false, 
             verified: false,
-            orderStatus, 
-            message: `Order status is currently ${orderStatus}. Payment is not completed.` 
+            isPending: true,
+            orderStatus: 'PENDING',
+            gatewayOrderStatus: orderStatus,
+            message: `Order status is currently ${orderStatus}. Payment verification in progress.` 
         });
     } catch (err) {
         console.error('[Cashfree Verification Error]:', err.response?.data || err.message);
@@ -743,7 +837,7 @@ exports.verifyCashfreePayment = async (req, res) => {
 
 /**
  * Public: Cashfree Webhook Listener
- * Verifies HMAC-SHA256 signature using rawBody and re-verifies payment state
+ * Verifies HMAC-SHA256 signature using rawBody and re-verifies payment state authoritatively
  */
 exports.cashfreeWebhook = async (req, res) => {
     try {
@@ -771,7 +865,7 @@ exports.cashfreeWebhook = async (req, res) => {
         console.log('[Cashfree Webhook Received]:', type, orderId);
 
         if (orderId) {
-            if (type === 'PAYMENT_SUCCESS_WEBHOOK' || data?.order?.order_status === 'PAID') {
+            if (type === 'PAYMENT_SUCCESS_WEBHOOK' || data?.order?.order_status === 'PAID' || data?.payment?.payment_status === 'SUCCESS') {
                 // Idempotency check: if order is already processed as Completed, return 200 without duplicate action
                 const existingCompletedPayment = await Payment.findOne({
                     $or: [
@@ -788,8 +882,14 @@ exports.cashfreeWebhook = async (req, res) => {
                 // Re-verify order from backend authoritative API before fulfillment
                 try {
                     const verifiedOrder = await cashfreeService.getOrder(orderId);
-                    if ((verifiedOrder.order_status || '').toUpperCase() === 'PAID') {
-                        await processConfirmedCashfreeOrder(verifiedOrder, null, 'Cashfree Webhook');
+                    const paymentsList = await cashfreeService.getOrderPayments(orderId);
+                    const successfulPayments = Array.isArray(paymentsList)
+                        ? paymentsList.filter(p => (p.payment_status || '').toUpperCase() === 'SUCCESS')
+                        : [];
+
+                    if ((verifiedOrder.order_status || '').toUpperCase() === 'PAID' || successfulPayments.length > 0) {
+                        const primaryPayment = successfulPayments[0] || null;
+                        await processConfirmedCashfreeOrder(verifiedOrder, primaryPayment, null, 'Cashfree Webhook');
                     }
                 } catch (verifyErr) {
                     console.warn('[Cashfree Webhook] Order re-fetch warning:', verifyErr.message);
@@ -808,6 +908,99 @@ exports.cashfreeWebhook = async (req, res) => {
     } catch (err) {
         console.error('[Cashfree Webhook Error]:', err.message);
         return res.status(200).send('ERROR_RECORDED');
+    }
+};
+
+/**
+ * Reconcile single order or pending Cashfree payments against Authoritative Gateway
+ * POST /api/payments/cashfree/reconcile
+ */
+exports.reconcileCashfreePayments = async (req, res) => {
+    try {
+        const { orderId, bookingId } = req.body || {};
+        const results = [];
+
+        // Single order reconciliation (e.g. KE_1794901217991_560)
+        if (orderId) {
+            try {
+                const orderData = await cashfreeService.getOrder(orderId);
+                const paymentsList = await cashfreeService.getOrderPayments(orderId);
+                const orderStatus = (orderData.order_status || '').toUpperCase();
+                const successfulPayments = Array.isArray(paymentsList)
+                    ? paymentsList.filter(pay => (pay.payment_status || '').toUpperCase() === 'SUCCESS')
+                    : [];
+
+                if (orderStatus === 'PAID' || successfulPayments.length > 0) {
+                    const primaryPayment = successfulPayments[0] || null;
+                    const reconciliation = await processConfirmedCashfreeOrder(orderData, primaryPayment, req.user, 'Cashfree Reconciliation Tool');
+                    return res.json({
+                        success: true,
+                        reconciled: true,
+                        orderId,
+                        message: `Order ${orderId} successfully reconciled! Payment credited and ledger updated.`,
+                        reconciliation
+                    });
+                } else {
+                    return res.json({
+                        success: false,
+                        reconciled: false,
+                        orderId,
+                        orderStatus,
+                        paymentAttemptsCount: paymentsList.length,
+                        message: `Order ${orderId} has status ${orderStatus} without confirmed payment.`
+                    });
+                }
+            } catch (err) {
+                return res.status(500).json({ success: false, message: `Reconciliation failed for ${orderId}: ${err.message}` });
+            }
+        }
+
+        // Batch reconciliation for pending payments
+        const query = { method: 'cashfree' };
+        if (bookingId) {
+            query.bookingId = bookingId;
+        } else {
+            query.status = { $in: ['WAITING_FOR_VERIFICATION', 'Pending', 'pending', 'ACTIVE'] };
+        }
+
+        const candidatePayments = await Payment.find(query).limit(50);
+        for (const p of candidatePayments) {
+            const ordId = p.cfOrderId || p.referenceId;
+            if (!ordId) continue;
+            try {
+                const orderData = await cashfreeService.getOrder(ordId);
+                const paymentsList = await cashfreeService.getOrderPayments(ordId);
+                const orderStatus = (orderData.order_status || '').toUpperCase();
+                const successfulPayments = Array.isArray(paymentsList)
+                    ? paymentsList.filter(pay => (pay.payment_status || '').toUpperCase() === 'SUCCESS')
+                    : [];
+
+                if (orderStatus === 'PAID' || successfulPayments.length > 0) {
+                    const primaryPayment = successfulPayments[0] || null;
+                    const reconciliation = await processConfirmedCashfreeOrder(orderData, primaryPayment, req.user, 'Batch Reconciliation');
+                    results.push({ orderId: ordId, status: 'RECONCILED_SUCCESS', verifiedAmount: reconciliation.verifiedAmount });
+                } else if (['EXPIRED', 'FAILED', 'CANCELLED'].includes(orderStatus)) {
+                    p.status = 'Failed';
+                    p.rejectionReason = `Cashfree confirmed order ${orderStatus}`;
+                    await p.save();
+                    results.push({ orderId: ordId, status: 'RECONCILED_FAILED' });
+                } else {
+                    results.push({ orderId: ordId, status: 'RECONCILED_PENDING' });
+                }
+            } catch (err) {
+                results.push({ orderId: ordId, status: 'ERROR', message: err.message });
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Reconciliation batch completed for ${candidatePayments.length} record(s).`,
+            reconciledCount: results.filter(r => r.status === 'RECONCILED_SUCCESS').length,
+            results
+        });
+    } catch (err) {
+        console.error('Reconciliation error:', err);
+        res.status(500).json({ message: err.message });
     }
 };
 

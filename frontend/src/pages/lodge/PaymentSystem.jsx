@@ -9,6 +9,7 @@ import {
 import useLodgeStore from '../../stores/lodgeStore';
 import api from '../../services/api';
 import { initializeCashfree } from '../../utils/cashfreeLoader';
+import { verifyAndPollCashfreePayment } from '../../services/cashfreePaymentVerifier';
 
 const PaymentSystem = () => {
     const { roomNumber, type } = useParams();
@@ -65,9 +66,29 @@ const PaymentSystem = () => {
     const verifyCashfreeReturn = async (orderId) => {
         setProcessing(true);
         try {
-            const verifyRes = await api.post('/payments/cashfree/verify', { orderId });
-            if (verifyRes.data.success) {
-                const verifiedAmt = verifyRes.data.verifiedAmount || parseFloat(amount) || 0;
+            setPaymentResult({
+                show: true,
+                success: false,
+                isPending: true,
+                amount: parseFloat(amount) || 0,
+                orderId,
+                status: 'PENDING',
+                message: 'Verifying payment with Cashfree and banking systems...'
+            });
+
+            const verifyRes = await verifyAndPollCashfreePayment(orderId, {
+                maxAttempts: 6,
+                intervalMs: 2500,
+                onAttempt: (info) => {
+                    setPaymentResult(prev => ({
+                        ...prev,
+                        message: info.statusText
+                    }));
+                }
+            });
+
+            if (verifyRes.success || verifyRes.verified) {
+                const verifiedAmt = verifyRes.verifiedAmount || parseFloat(amount) || 0;
                 addPayment({
                     roomNumber,
                     type,
@@ -82,21 +103,33 @@ const PaymentSystem = () => {
                 setPaymentResult({
                     show: true,
                     success: true,
+                    isPending: false,
                     amount: verifiedAmt,
                     orderId,
-                    cfPaymentId: verifyRes.data.cfPaymentId,
-                    status: verifyRes.data.paymentStatus || 'PAID',
-                    remainingBalance: verifyRes.data.remainingBillBalance,
-                    message: verifyRes.data.message || 'Payment successfully verified by Cashfree and applied to ledger.'
+                    cfPaymentId: verifyRes.cfPaymentId,
+                    status: verifyRes.paymentStatus || 'PAID',
+                    remainingBalance: verifyRes.remainingBillBalance,
+                    message: verifyRes.message || 'Payment successfully verified by Cashfree and applied to ledger.'
+                });
+            } else if (verifyRes.isPending) {
+                setPaymentResult({
+                    show: true,
+                    success: false,
+                    isPending: true,
+                    amount: parseFloat(amount) || 0,
+                    orderId,
+                    status: 'PENDING',
+                    message: verifyRes.message || 'Payment is processing. We are awaiting final bank confirmation.'
                 });
             } else {
                 setPaymentResult({
                     show: true,
                     success: false,
+                    isPending: false,
                     amount: parseFloat(amount) || 0,
                     orderId,
-                    status: verifyRes.data.orderStatus || 'INCOMPLETE',
-                    message: verifyRes.data.message || `Cashfree reported status: ${verifyRes.data.orderStatus}.`
+                    status: verifyRes.orderStatus || 'FAILED',
+                    message: verifyRes.message || `Cashfree reported status: ${verifyRes.orderStatus}.`
                 });
             }
         } catch (err) {
@@ -104,6 +137,7 @@ const PaymentSystem = () => {
             setPaymentResult({
                 show: true,
                 success: false,
+                isPending: false,
                 amount: parseFloat(amount) || 0,
                 orderId,
                 status: 'VERIFY_ERROR',
