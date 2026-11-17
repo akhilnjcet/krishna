@@ -64,8 +64,16 @@ app.use(helmet({
     noSniff: true
 }));
 
-// Secure CORS Configuration: Whitelist explicitly trusted frontend origins and mobile apps
+// Secure CORS Configuration: Whitelist explicitly trusted production domains, frontend origins, and mobile apps
+const trustedProductionDomains = [
+    'https://krishnaengineeringkerala.in',
+    'https://www.krishnaengineeringkerala.in',
+    'http://krishnaengineeringkerala.in',
+    'http://www.krishnaengineeringkerala.in'
+];
+
 const allowedOrigins = [
+    ...trustedProductionDomains,
     'http://localhost:5173',
     'http://localhost:4173',
     'http://localhost:3000',
@@ -75,40 +83,116 @@ const allowedOrigins = [
     'http://localhost',
     'https://localhost'
 ];
-if (process.env.FRONTEND_URL) {
-    allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ''));
-}
 
-const corsOptions = {
-    origin: (origin, callback) => {
-        // Allow requests with no origin (e.g. native Capacitor mobile apps, mobile webviews, postman, server-to-server)
-        if (!origin) return callback(null, true);
+// Support comma-separated FRONTEND_URL or CLIENT_URL environment variables
+[process.env.FRONTEND_URL, process.env.CLIENT_URL].forEach(envVar => {
+    if (envVar) {
+        envVar.split(',').forEach(url => {
+            const trimmed = url.trim().replace(/\/$/, '');
+            if (trimmed && !allowedOrigins.includes(trimmed)) {
+                allowedOrigins.push(trimmed);
+            }
+        });
+    }
+});
 
-        const cleanOrigin = origin.replace(/\/$/, '');
+const isOriginAllowed = (origin, req) => {
+    // 1. Allow requests with no origin (e.g. native Capacitor mobile apps, mobile webviews, postman, server-to-server)
+    if (!origin) return true;
+
+    const cleanOrigin = origin.trim().replace(/\/$/, '');
+
+    // 2. Direct match in allowedOrigins list
+    if (allowedOrigins.includes(cleanOrigin)) {
+        return true;
+    }
+
+    try {
+        const parsed = new URL(cleanOrigin);
+        const hostname = parsed.hostname.toLowerCase();
+
+        // 3. Match official production domains (*.krishnaengineeringkerala.in)
         if (
-            allowedOrigins.includes(cleanOrigin) ||
-            cleanOrigin.endsWith('.vercel.app') ||
-            cleanOrigin.startsWith('http://localhost') ||
-            cleanOrigin.startsWith('https://localhost') ||
-            cleanOrigin.startsWith('capacitor://') ||
-            cleanOrigin.startsWith('ionic://') ||
-            cleanOrigin.startsWith('http://127.0.0.1') ||
-            cleanOrigin.startsWith('https://127.0.0.1') ||
-            cleanOrigin.startsWith('http://192.168.') ||
-            cleanOrigin.startsWith('https://192.168.') ||
-            cleanOrigin.startsWith('http://10.') ||
-            cleanOrigin.startsWith('https://10.')
+            hostname === 'krishnaengineeringkerala.in' ||
+            hostname.endsWith('.krishnaengineeringkerala.in')
         ) {
-            return callback(null, true);
+            return true;
         }
-        return callback(new Error(`CORS blocked request from untrusted origin: ${origin}`));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['X-CSRF-Token', 'X-Requested-With', 'Accept', 'Accept-Version', 'Content-Length', 'Content-MD5', 'Content-Type', 'Date', 'X-Api-Version', 'Authorization']
+
+        // 4. Match Vercel deployment URLs (*.vercel.app)
+        if (hostname.endsWith('.vercel.app')) {
+            return true;
+        }
+
+        // 5. Match same-origin if request Host header is available
+        if (req) {
+            const hostHeader = (req.headers['x-forwarded-host'] || req.headers.host || '').split(':')[0].toLowerCase();
+            if (hostHeader && hostname === hostHeader) {
+                return true;
+            }
+        }
+
+        // 6. Local development & private network IPs
+        if (
+            hostname === 'localhost' ||
+            hostname === '127.0.0.1' ||
+            hostname.startsWith('192.168.') ||
+            hostname.startsWith('10.') ||
+            /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)
+        ) {
+            return true;
+        }
+    } catch {
+        // Fallback for non-URL formats
+    }
+
+    // 7. Mobile app protocols
+    if (
+        cleanOrigin.startsWith('capacitor://') ||
+        cleanOrigin.startsWith('ionic://') ||
+        cleanOrigin.startsWith('http://localhost') ||
+        cleanOrigin.startsWith('https://localhost')
+    ) {
+        return true;
+    }
+
+    return false;
 };
 
-app.use(cors(corsOptions));
+const corsOptionsDelegate = (req, callback) => {
+    const origin = req.header('Origin');
+    if (isOriginAllowed(origin, req)) {
+        callback(null, {
+            origin: true,
+            credentials: true,
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+            allowedHeaders: [
+                'X-CSRF-Token',
+                'X-Requested-With',
+                'Accept',
+                'Accept-Version',
+                'Content-Length',
+                'Content-MD5',
+                'Content-Type',
+                'Date',
+                'X-Api-Version',
+                'Authorization'
+            ],
+            exposedHeaders: ['Authorization', 'X-Total-Count']
+        });
+    } else {
+        if (process.env.NODE_ENV === 'production' && origin) {
+            logSuspiciousTraffic(req, {
+                pattern: 'UNTRUSTED_CORS_ORIGIN',
+                details: `CORS blocked cross-origin request from: ${origin}`,
+                severity: 'WARN'
+            });
+        }
+        callback(null, { origin: false });
+    }
+};
+
+app.use(cors(corsOptionsDelegate));
 
 app.use(express.json({ 
     limit: '50mb',
