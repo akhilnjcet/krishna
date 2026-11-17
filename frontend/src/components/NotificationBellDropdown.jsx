@@ -55,7 +55,7 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [muted, setMuted] = useState(isSoundMuted());
 
-    // Close on outside click
+    // Close on outside click or mobile touch
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -63,7 +63,11 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside, { passive: true });
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
     }, []);
 
     // Initial load & socket setup
@@ -193,7 +197,7 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
     const categoriesAvailable = Array.from(new Set(safeNotifications.map(n => n?.category))).filter(Boolean);
 
     return (
-        <div className="relative" ref={dropdownRef}>
+        <div className={`relative ${isOpen ? 'z-50' : ''}`} ref={dropdownRef}>
             {/* Bell Icon Trigger */}
             <button
                 type="button"
@@ -225,21 +229,21 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 6, scale: 0.98 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-2 w-[360px] sm:w-[420px] max-w-[94vw] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-800 z-50 overflow-hidden flex flex-col max-h-[85vh]"
+                        className="fixed sm:absolute inset-x-3 sm:inset-x-auto top-[calc(env(safe-area-inset-top,0px)+4.25rem)] sm:top-full sm:right-0 sm:mt-2 w-auto sm:w-[420px] max-w-[440px] sm:max-w-[94vw] mx-auto sm:mx-0 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[85vh]"
                     >
                         {/* Header */}
-                        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
-                            <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-slate-900 dark:text-white text-base">
+                        <div className="p-3.5 sm:p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/95 dark:bg-slate-900/95 shrink-0 gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <h3 className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base truncate">
                                     Notifications
                                 </h3>
                                 {unreadCount > 0 && (
-                                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                                    <span className="px-2 py-0.5 text-[11px] sm:text-xs font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 shrink-0">
                                         {unreadCount} new
                                     </span>
                                 )}
                             </div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                                 {/* Sound Mute / Unmute Button */}
                                 <button
                                     type="button"
@@ -276,12 +280,23 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
                                 >
                                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                                 </button>
+
+                                {/* Close Button on mobile */}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsOpen(false)}
+                                    title="Close notifications"
+                                    className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors sm:hidden"
+                                    aria-label="Close notifications panel"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
 
                         {/* Category Filter Pills (if multiple categories present) */}
                         {categoriesAvailable.length > 1 && (
-                            <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                            <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
                                 <button
                                     type="button"
                                     onClick={() => setSelectedCategory('all')}
@@ -311,7 +326,7 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
                         )}
 
                         {/* Notification Items List */}
-                        <div className="overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 flex-1">
+                        <div className="overflow-y-auto min-h-0 divide-y divide-slate-100 dark:divide-slate-800 flex-1 overscroll-contain">
                             {filteredList.length === 0 ? (
                                 <div className="p-8 text-center">
                                     <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
@@ -333,14 +348,14 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
                                         <div
                                             key={item._id}
                                             onClick={() => handleItemClick(item)}
-                                            className={`p-3.5 transition-colors cursor-pointer flex items-start gap-3 relative group ${
+                                            className={`p-3 sm:p-3.5 transition-colors cursor-pointer flex items-start gap-2.5 sm:gap-3 relative group ${
                                                 !item.read
                                                     ? 'bg-blue-50/40 dark:bg-blue-950/20 hover:bg-blue-50/80 dark:hover:bg-blue-950/30'
                                                     : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
                                             }`}
                                         >
                                             {/* Icon */}
-                                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${meta.color}`}>
+                                            <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 ${meta.color}`}>
                                                 <IconComponent className="w-4 h-4" />
                                             </div>
 
@@ -387,7 +402,7 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
                         </div>
 
                         {/* Footer */}
-                        <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 flex items-center justify-between text-xs">
+                        <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/95 dark:bg-slate-900/95 flex items-center justify-between text-xs shrink-0">
                             <button
                                 type="button"
                                 onClick={handleClearRead}

@@ -6,7 +6,7 @@
 
 :root {
   --z-content: 1;
-  --z-header: 10;
+  --z-header: 40;
   --z-dropdown: 50;
   --z-modal: 100;
   --z-toast: 200;
