@@ -8,7 +8,8 @@ const {
     updateTaskProgress,
     reportTaskDelay,
     adminUpdateTask,
-    getTaskStats
+    getTaskStats,
+    getTaskAttachment
 } = require('../controllers/taskController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const { validateObjectIdParam } = require('../utils/validateInputs');
@@ -26,6 +27,13 @@ router.get('/stats', protect, authorize('admin'), getTaskStats);
 router.put('/:id/admin', protect, authorize('admin'), adminUpdateTask);
 router.put('/:id/progress', protect, updateTaskProgress);
 router.put('/:id/delay', protect, reportTaskDelay);
+
+// Authenticated task attachment and photo routes
+router.get('/:id/attachments/:index', protect, getTaskAttachment);
+router.get('/:id/work-photos/:index', protect, (req, res, next) => {
+    req.query.type = 'workPhoto';
+    return getTaskAttachment(req, res, next);
+});
 
 router.route('/:id/status')
     .put(protect, updateTaskStatus);

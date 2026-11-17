@@ -9,6 +9,7 @@ import {
     FileUp, Check, Trash2
 } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
+import TaskAttachmentModal from '../../components/TaskAttachmentModal';
 
 const StaffTasks = () => {
     const { user } = useAuthStore();
@@ -29,6 +30,14 @@ const StaffTasks = () => {
         task: null,
         reason: '',
         remarks: ''
+    });
+
+    const [attachmentPreview, setAttachmentPreview] = useState({
+        isOpen: false,
+        attachment: null,
+        index: 0,
+        taskTitle: '',
+        taskId: null
     });
 
     useEffect(() => {
@@ -510,15 +519,23 @@ const StaffTasks = () => {
                                                     </p>
                                                     <div className="flex flex-wrap gap-2">
                                                         {task.attachments.map((url, idx) => (
-                                                            <a 
+                                                            <button 
+                                                                type="button"
                                                                 key={idx} 
-                                                                href={url} 
-                                                                target="_blank" 
-                                                                rel="noopener noreferrer" 
-                                                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 dark:bg-dark-surface border dark:border-dark-border rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 dark:text-slate-300 hover:text-blue-600 transition-colors"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    setAttachmentPreview({
+                                                                        isOpen: true,
+                                                                        attachment: url,
+                                                                        index: idx,
+                                                                        taskTitle: task.title,
+                                                                        taskId: task._id
+                                                                    });
+                                                                }}
+                                                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 dark:bg-dark-surface border dark:border-dark-border rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 dark:text-slate-300 hover:text-blue-600 transition-colors cursor-pointer"
                                                             >
                                                                 <FileUp className="w-3.5 h-3.5 text-blue-500" /> Reference File #{idx + 1}
-                                                            </a>
+                                                            </button>
                                                         ))}
                                                     </div>
                                                 </div>
@@ -532,19 +549,27 @@ const StaffTasks = () => {
                                                     </p>
                                                     <div className="flex flex-wrap gap-2.5">
                                                         {task.workPhotos.map((url, idx) => (
-                                                            <a 
+                                                            <button 
+                                                                type="button"
                                                                 key={idx} 
-                                                                href={url} 
-                                                                target="_blank" 
-                                                                rel="noopener noreferrer" 
-                                                                className="relative group border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm flex-shrink-0"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    setAttachmentPreview({
+                                                                        isOpen: true,
+                                                                        attachment: url,
+                                                                        index: idx,
+                                                                        taskTitle: `${task.title} (Work Photo #${idx + 1})`,
+                                                                        taskId: task._id
+                                                                    });
+                                                                }}
+                                                                className="relative group border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm flex-shrink-0 cursor-pointer"
                                                             >
                                                                 <img 
                                                                     src={url} 
                                                                     alt="progress report" 
                                                                     className="w-16 h-16 object-cover hover:scale-110 transition-transform duration-300" 
                                                                 />
-                                                            </a>
+                                                            </button>
                                                         ))}
                                                     </div>
                                                 </div>
@@ -806,6 +831,14 @@ const StaffTasks = () => {
                     </div>
                 )}
             </AnimatePresence>
+            {/* Dedicated Task Attachment Preview Modal */}
+            <TaskAttachmentModal
+                isOpen={attachmentPreview.isOpen}
+                onClose={() => setAttachmentPreview(prev => ({ ...prev, isOpen: false, attachment: null }))}
+                attachment={attachmentPreview.attachment}
+                attachmentIndex={attachmentPreview.index}
+                taskTitle={attachmentPreview.taskTitle}
+            />
         </div>
     );
 };

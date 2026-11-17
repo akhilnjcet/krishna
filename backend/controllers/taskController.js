@@ -3,6 +3,8 @@ const User = require('../models/User');
 const Project = require('../models/Project');
 const { sendTaskAssignment } = require('../services/whatsappService');
 const socketUtil = require('../utils/socket');
+const path = require('path');
+const fs = require('fs');
 
 // Helpers for Socket.IO broadcasts
 const broadcastTaskAssigned = async (task) => {
@@ -347,5 +349,168 @@ exports.deleteTask = async (req, res) => {
         res.json({ success: true, message: 'Task removed' });
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * 9. Retrieve / Stream Task Attachment with Authentication & Security
+ * GET /api/tasks/:id/attachments/:index
+ */
+exports.getTaskAttachment = async (req, res) => {
+    try {
+        const { id, index } = req.params;
+        const isWorkPhoto = req.query.type === 'workPhoto';
+
+        const task = await Task.findById(id)
+            .populate('assignedStaff', '_id name email role')
+            .populate('assignedBy', '_id name role');
+
+        if (!task) {
+            return res.status(404).json({ success: false, message: 'Task record not found.' });
+        }
+
+        // Authorization check: User must be admin or assigned staff or the assigner
+        const userId = (req.user._id || req.user.id).toString();
+        const isAdmin = req.user.role === 'admin';
+        const isAssigned = Array.isArray(task.assignedStaff)
+            ? task.assignedStaff.some(s => s && (s._id ? s._id.toString() : s.toString()) === userId)
+            : false;
+        const isAssigner = task.assignedBy && (task.assignedBy._id ? task.assignedBy._id.toString() : task.assignedBy.toString()) === userId;
+
+        if (!isAdmin && !isAssigned && !isAssigner) {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Access forbidden: You do not have permission to view attachments for this task.' 
+            });
+        }
+
+        const list = isWorkPhoto ? (task.workPhotos || []) : (task.attachments || []);
+        const idx = parseInt(index, 10);
+
+        if (isNaN(idx) || idx < 0 || idx >= list.length) {
+            return res.status(404).json({ 
+                success: false, 
+                message: `${isWorkPhoto ? 'Work photo' : 'Attachment'} index #${index} was not found on this task.` 
+            });
+        }
+
+        const rawItem = list[idx];
+        if (!rawItem) {
+            return res.status(404).json({ success: false, message: 'Attachment entry is null or empty.' });
+        }
+
+        // Handle string or legacy object wrapper
+        let itemUrl = typeof rawItem === 'object' && rawItem !== null
+            ? (rawItem.url || rawItem.fileUrl || rawItem.path || '')
+            : String(rawItem).trim();
+
+        if (!itemUrl) {
+            return res.status(404).json({ success: false, message: 'Attachment URL is empty.' });
+        }
+
+        let mimeType = 'application/octet-stream';
+        let fileName = `${isWorkPhoto ? 'work_photo' : 'attachment'}_${idx + 1}`;
+        let fileType = 'other';
+        let isDataUri = false;
+        let base64Buffer = null;
+
+        // Case A: Data URI
+        if (itemUrl.startsWith('data:')) {
+            isDataUri = true;
+            const match = itemUrl.match(/^data:([a-zA-Z0-9\/+-.]+);base64,(.+)$/s);
+            if (match) {
+                mimeType = match[1];
+                base64Buffer = Buffer.from(match[2], 'base64');
+            }
+        } else if (itemUrl.includes('/uploads/') || itemUrl.startsWith('uploads/')) {
+            // Case B: Local storage path
+            const cleanRel = itemUrl.substring(itemUrl.indexOf('uploads/')).replace(/^uploads[\/\\]/, '');
+            const safeBase = path.basename(cleanRel);
+            fileName = safeBase;
+
+            const isVercel = process.env.VERCEL === '1';
+            const uploadDir = isVercel ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads');
+            const fullPath = path.join(uploadDir, safeBase);
+
+            const ext = path.extname(safeBase).toLowerCase();
+            const mimeMap = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.webp': 'image/webp',
+                '.gif': 'image/gif',
+                '.svg': 'image/svg+xml',
+                '.pdf': 'application/pdf',
+                '.doc': 'application/msword',
+                '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                '.xls': 'application/vnd.ms-excel',
+                '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                '.txt': 'text/plain'
+            };
+            if (mimeMap[ext]) mimeType = mimeMap[ext];
+
+            if (req.query.download === '1' || req.query.download === 'true' || req.query.raw === '1') {
+                if (!fs.existsSync(fullPath)) {
+                    return res.status(404).json({ success: false, message: 'Server storage file no longer exists.' });
+                }
+                const disposition = (req.query.download === '1' || req.query.download === 'true') ? 'attachment' : 'inline';
+                res.setHeader('Content-Disposition', `${disposition}; filename="${safeBase}"`);
+                res.setHeader('Content-Type', mimeType);
+                return fs.createReadStream(fullPath).pipe(res);
+            }
+        } else {
+            // Case C: Remote URL (Cloudinary / HTTPS)
+            const cleanUrl = itemUrl.split('?')[0];
+            const extMatch = cleanUrl.match(/\.([a-zA-Z0-9]+)$/);
+            if (extMatch) {
+                const ext = `.${extMatch[1].toLowerCase()}`;
+                const mimeMap = {
+                    '.jpg': 'image/jpeg',
+                    '.jpeg': 'image/jpeg',
+                    '.png': 'image/png',
+                    '.webp': 'image/webp',
+                    '.gif': 'image/gif',
+                    '.svg': 'image/svg+xml',
+                    '.pdf': 'application/pdf'
+                };
+                if (mimeMap[ext]) mimeType = mimeMap[ext];
+                fileName = path.basename(cleanUrl) || fileName;
+            }
+        }
+
+        // Categorize fileType
+        if (mimeType.startsWith('image/')) {
+            fileType = 'image';
+        } else if (mimeType === 'application/pdf') {
+            fileType = 'pdf';
+        } else if (mimeType.includes('document') || mimeType.includes('word') || mimeType.includes('sheet') || mimeType.includes('text/')) {
+            fileType = 'document';
+        }
+
+        // If client requested raw stream or download of data URI
+        if (isDataUri && base64Buffer && (req.query.download === '1' || req.query.download === 'true' || req.query.raw === '1')) {
+            const ext = mimeType === 'application/pdf' ? 'pdf' : (mimeType.split('/')[1] || 'bin');
+            const safeDownloadName = `${fileName}.${ext}`;
+            const disposition = (req.query.download === '1' || req.query.download === 'true') ? 'attachment' : 'inline';
+            res.setHeader('Content-Disposition', `${disposition}; filename="${safeDownloadName}"`);
+            res.setHeader('Content-Type', mimeType);
+            res.setHeader('Content-Length', base64Buffer.length);
+            return res.end(base64Buffer);
+        }
+
+        return res.json({
+            success: true,
+            taskId: task._id,
+            taskTitle: task.title,
+            attachmentIndex: idx,
+            url: itemUrl,
+            fileName,
+            fileType,
+            mimeType,
+            isDataUri
+        });
+    } catch (error) {
+        console.error('❌ Error retrieving task attachment:', error);
+        res.status(500).json({ success: false, message: 'Server error retrieving task attachment', error: error.message });
     }
 };

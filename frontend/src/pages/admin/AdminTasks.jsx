@@ -7,6 +7,7 @@ import {
     Filter, X, PlusCircle, Paperclip, ChevronRight, Check, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import TaskAttachmentModal from '../../components/TaskAttachmentModal';
 
 const AdminTasks = () => {
     const [tasks, setTasks] = useState([]);
@@ -40,6 +41,13 @@ const AdminTasks = () => {
     const [detailsModal, setDetailsModal] = useState({ show: false, task: null });
     const [reassignModal, setReassignModal] = useState({ show: false, task: null, assignedStaff: [] });
     const [extendModal, setExtendModal] = useState({ show: false, task: null, dueDate: '' });
+    const [attachmentPreview, setAttachmentPreview] = useState({
+        isOpen: false,
+        attachment: null,
+        index: 0,
+        taskTitle: '',
+        taskId: null
+    });
 
     // File Upload States
     const [uploading, setUploading] = useState(false);
@@ -1027,16 +1035,25 @@ const AdminTasks = () => {
                                         <span className="text-slate-400 uppercase tracking-wider block text-[9px] mb-1 font-bold">Attachments ({detailsModal.task.attachments.length})</span>
                                         <div className="flex flex-wrap gap-3">
                                             {detailsModal.task.attachments.map((url, idx) => (
-                                                <a 
+                                                <button 
+                                                    type="button"
                                                     key={idx} 
-                                                    href={url} 
-                                                    target="_blank" 
-                                                    rel="noreferrer" 
-                                                    className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-xs font-extrabold transition-all border border-blue-100"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setAttachmentPreview({
+                                                            isOpen: true,
+                                                            attachment: url,
+                                                            index: idx,
+                                                            taskTitle: detailsModal.task.title,
+                                                            taskId: detailsModal.task._id
+                                                        });
+                                                    }}
+                                                    className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-xs font-extrabold transition-all border border-blue-100 cursor-pointer"
                                                 >
                                                     <Paperclip className="w-3.5 h-3.5" />
                                                     View Attachment #{idx + 1}
-                                                </a>
+                                                </button>
                                             ))}
                                         </div>
                                     </div>
@@ -1048,9 +1065,24 @@ const AdminTasks = () => {
                                         <span className="text-slate-400 uppercase tracking-wider block text-[9px] mb-1 font-bold">Staff Uploaded Photos ({detailsModal.task.workPhotos.length})</span>
                                         <div className="grid grid-cols-3 gap-3">
                                             {detailsModal.task.workPhotos.map((url, idx) => (
-                                                <a key={idx} href={url} target="_blank" rel="noreferrer" className="block aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:opacity-85 transition-opacity">
+                                                <button 
+                                                    type="button"
+                                                    key={idx} 
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setAttachmentPreview({
+                                                            isOpen: true,
+                                                            attachment: url,
+                                                            index: idx,
+                                                            taskTitle: `${detailsModal.task.title} (Work Photo #${idx + 1})`,
+                                                            taskId: detailsModal.task._id
+                                                        });
+                                                    }}
+                                                    className="block aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:opacity-85 transition-opacity text-left cursor-pointer"
+                                                >
                                                     <img src={url} alt={`Work progress #${idx+1}`} className="w-full h-full object-cover" />
-                                                </a>
+                                                </button>
                                             ))}
                                         </div>
                                     </div>
@@ -1212,6 +1244,14 @@ const AdminTasks = () => {
                     </div>
                 )}
             </AnimatePresence>
+            {/* Dedicated Task Attachment Preview Modal */}
+            <TaskAttachmentModal
+                isOpen={attachmentPreview.isOpen}
+                onClose={() => setAttachmentPreview(prev => ({ ...prev, isOpen: false, attachment: null }))}
+                attachment={attachmentPreview.attachment}
+                attachmentIndex={attachmentPreview.index}
+                taskTitle={attachmentPreview.taskTitle}
+            />
         </div>
     );
 };
