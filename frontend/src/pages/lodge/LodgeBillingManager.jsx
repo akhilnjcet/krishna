@@ -1168,19 +1168,19 @@ const LodgeBillingManager = () => {
 
                 return (
                     <div className="space-y-6 print:hidden">
-                        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex-grow flex flex-col md:flex-row gap-4">
+                        <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
+                            <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-row gap-2.5 sm:gap-4 w-full">
                                 <input
                                     type="text"
-                                    placeholder="Search by name, room, booking or transaction ID..."
+                                    placeholder="Search by name, room, booking or txn ID..."
                                     value={verificationSearch}
                                     onChange={(e) => setVerificationSearch(e.target.value)}
-                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-medium text-xs flex-grow"
+                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl outline-none font-medium text-xs flex-grow min-w-0 w-full"
                                 />
                                 <select
                                     value={verificationStatusFilter}
                                     onChange={(e) => setVerificationStatusFilter(e.target.value)}
-                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 dark:text-slate-300 w-full md:w-56"
+                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 dark:text-slate-300 w-full md:w-56"
                                 >
                                     <option value="WAITING_FOR_VERIFICATION">Waiting for Verification</option>
                                     <option value="APPROVED">Approved</option>
@@ -1190,7 +1190,7 @@ const LodgeBillingManager = () => {
                                 <select
                                     value={verificationDateFilter}
                                     onChange={(e) => setVerificationDateFilter(e.target.value)}
-                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 dark:text-slate-300 w-full md:w-44"
+                                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl outline-none font-bold text-xs uppercase text-slate-700 dark:text-slate-300 w-full md:w-44"
                                 >
                                     <option value="all">All Dates</option>
                                     <option value="Today">Today</option>
@@ -1205,26 +1205,34 @@ const LodgeBillingManager = () => {
                             <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800 p-3 space-y-3">
                                 {filteredVerifications.map((v) => (
                                     <div key={v._id} className="bg-slate-50/80 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-700 space-y-3">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div>
-                                                <p className="font-black text-slate-900 dark:text-white text-sm">{v.tenantName || v.name || v.customerId?.name || 'Unknown Guest'}</p>
-                                                <p className="text-[10px] text-slate-500">Room ID: {v.roomId?._id || v.roomId || 'N/A'}</p>
-                                                <p className="text-[9px] text-indigo-500 uppercase font-bold">Booking: {v.bookingId?._id || v.bookingId || 'Direct Settlement'}</p>
+                                        <div className="space-y-2">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-black text-slate-900 dark:text-white text-base truncate">{v.tenantName || v.name || v.customerId?.name || 'Unknown Guest'}</p>
+                                                    <p className="text-[11px] text-slate-500 font-medium">Room ID: <span className="font-semibold text-slate-700 dark:text-slate-300">{v.roomId?._id || v.roomId || 'N/A'}</span></p>
+                                                    <p className="text-[10px] text-indigo-500 uppercase font-black tracking-tight truncate mt-0.5">Booking: {v.bookingId?._id || v.bookingId || 'Direct Settlement'}</p>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <p className="font-black text-slate-900 dark:text-white text-lg font-poppins">₹{v.amount}</p>
+                                                </div>
                                             </div>
-                                            <div className="text-right shrink-0">
-                                                <p className="font-black text-slate-900 dark:text-white text-base">₹{v.amount}</p>
-                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider inline-block mt-1 ${
-                                                    v.status === 'APPROVED' || v.status === 'Completed' || v.status === 'verified' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                                                    v.status === 'REJECTED' || v.status === 'Failed' || v.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-                                                    'bg-amber-50 text-amber-600 border border-amber-100'
+
+                                            <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/50 dark:border-slate-750">
+                                                <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider inline-block ${
+                                                    v.status === 'APPROVED' || v.status === 'Completed' || v.status === 'verified' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                                                    v.status === 'REJECTED' || v.status === 'Failed' || v.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-200' :
+                                                    'bg-amber-50 text-amber-600 border border-amber-200'
                                                 }`}>
-                                                    {v.status}
+                                                    {v.status === 'WAITING_FOR_VERIFICATION' ? 'WAITING VERIFICATION' : v.status.replace(/_/g, ' ')}
+                                                </span>
+                                                <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 uppercase">
+                                                    {v.method}
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="text-[11px] space-y-1 text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                                             <p><span className="font-bold text-slate-400">Method:</span> <span className="uppercase font-semibold">{v.method}</span></p>
-                                            <p><span className="font-bold text-slate-400">Txn:</span> <span className="font-mono">{v.referenceId || v.transactionReference || 'N/A'}</span></p>
+                                            <p className="break-all"><span className="font-bold text-slate-400">Txn:</span> <span className="font-mono">{v.referenceId || v.transactionReference || 'N/A'}</span></p>
                                             <p><span className="font-bold text-slate-400">Date:</span> {new Date(v.createdAt).toLocaleString()}</p>
                                         </div>
                                         {v.uploadedProof && (
@@ -1250,13 +1258,13 @@ const LodgeBillingManager = () => {
                                             <div className="grid grid-cols-2 gap-2 pt-1">
                                                 <button 
                                                     onClick={() => handleApproveVerification(v._id)}
-                                                    className="min-h-[42px] bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold uppercase tracking-wider text-xs flex items-center justify-center transition touch-manipulation"
+                                                    className="min-h-[42px] bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold uppercase tracking-wider text-xs flex items-center justify-center transition touch-manipulation shadow-sm active:scale-95"
                                                 >
                                                     Approve
                                                 </button>
                                                 <button 
                                                     onClick={() => handleRejectVerification(v._id)}
-                                                    className="min-h-[42px] bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl font-bold uppercase tracking-wider text-xs flex items-center justify-center transition touch-manipulation border border-rose-200"
+                                                    className="min-h-[42px] bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl font-bold uppercase tracking-wider text-xs flex items-center justify-center transition touch-manipulation border border-rose-200 active:scale-95"
                                                 >
                                                     Reject
                                                 </button>

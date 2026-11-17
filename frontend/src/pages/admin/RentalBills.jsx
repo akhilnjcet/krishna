@@ -1368,7 +1368,7 @@ const RentalBills = () => {
                         </div>
 
                         <div 
-                            className="print-document-container bg-white dark:bg-slate-900 p-8 md:p-12 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans"
+                            className="print-document-container bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 xl:p-10 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans"
                             style={{ '--theme-color': themeColor }}
                         >
                             {/* Header */}
@@ -1530,8 +1530,8 @@ const RentalBills = () => {
                             </div>
 
                             {/* Settlement & Financial Protection */}
-                            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6">
-                                <div className="flex-1 space-y-3 text-xs">
+                            <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:flex-row print:justify-between print:gap-4">
+                                <div className="w-full flex-1 min-w-0 space-y-3 text-xs">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">
                                         STATUTORY RENTAL CONTRACT TERMS & CONDITIONS (SEC. 73 INDIAN CONTRACT ACT):
                                     </span>
@@ -1550,7 +1550,7 @@ const RentalBills = () => {
                                     )}
                                 </div>
 
-                                <div className="w-full sm:w-72 space-y-2 text-xs">
+                                <div className="w-full lg:w-80 lg:shrink-0 max-w-md ml-auto space-y-2 text-xs print:w-64">
                                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                                         <span className="font-bold text-slate-500">Rental Hire Charges:</span>
                                         <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(rentalSubtotal)}</span>

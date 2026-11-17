@@ -1018,22 +1018,22 @@ const Quotations = () => {
                     </div>
 
                     {/* Estimation Line Items & Combined Sections Entry Table */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
-                        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
                             <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                <Layers className="w-4 h-4 text-indigo-500" /> Estimation Line Items ({items.length})
+                                <Layers className="w-4 h-4 text-indigo-500 shrink-0" /> <span className="truncate">Estimation Line Items ({items.length})</span>
                             </h2>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 shrink-0">
                                 <button
                                     type="button"
                                     onClick={() => setWorkspaceViewMode(workspaceViewMode === 'preview' ? 'editor' : 'preview')}
-                                    className="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+                                    className="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-95"
                                     title="View generated quotation document"
                                 >
-                                    <Eye className="w-3.5 h-3.5" /> View Live Preview
+                                    <Eye className="w-3.5 h-3.5" /> <span className="hidden xs:inline">View Live</span> Preview
                                 </button>
                                 <span className="text-[10px] font-bold text-slate-400">
-                                    {items.filter(i => i.isCombined || i.isCombinedMode).length > 0 ? '✓ Combined billing' : 'Standard items'}
+                                    {items.filter(i => i.isCombined || i.isCombinedMode).length > 0 ? '✓ Combined' : 'Standard'}
                                 </span>
                             </div>
                         </div>
@@ -1358,7 +1358,7 @@ const Quotations = () => {
                     {/* Proposal Document */}
                     <div 
                         id="quotation-print-container"
-                        className="print-document-container bg-white dark:bg-slate-900 p-8 md:p-12 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans print:p-3 print:shadow-none print:border-none print:rounded-none print:bg-white print:text-slate-900 print:w-full print:max-w-none"
+                        className={`print-document-container bg-white dark:bg-slate-900 ${workspaceViewMode === 'preview' ? 'p-4 sm:p-8 md:p-12' : 'p-3.5 sm:p-6'} shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans print:p-3 print:shadow-none print:border-none print:rounded-none print:bg-white print:text-slate-900 print:w-full print:max-w-none`}
                         style={{ '--theme-color': themeColor }}
                     >
                         {/* Header Rendering */}
@@ -1367,7 +1367,7 @@ const Quotations = () => {
                                 className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden print:p-3 print:mb-2.5 print:rounded-xl"
                                 style={{ backgroundColor: themeColor }}
                             >
-                                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0 print:flex-row print:justify-between print:items-start">
+                                <div className={`flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0 print:flex-row print:justify-between print:items-start`}>
                                     <div className="flex items-center gap-4 flex-wrap print:gap-3">
                                         {brandingSettings.company_logo && (
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white p-1 rounded-xl shadow-md print:h-10 print:rounded-lg" />
@@ -1439,7 +1439,7 @@ const Quotations = () => {
                             </div>
                         ) : (
                             /* Classic Theme */
-                            <div className="border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0 print:pb-2.5 print:mb-2.5 print:flex-row print:justify-between print:items-start print:border-slate-300">
+                            <div className={`border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0 print:pb-2.5 print:mb-2.5 print:flex-row print:justify-between print:items-start print:border-slate-300`}>
                                 <div className="flex items-center gap-4 flex-wrap print:gap-3">
                                     {brandingSettings.company_logo && (
                                         <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900 rounded-xl shadow p-1 print:h-10 print:shadow-none" />
@@ -1483,16 +1483,16 @@ const Quotations = () => {
                         )}
 
                         {/* Client Block */}
-                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0 print:p-2.5 print:mb-2.5 print:rounded-xl print:flex-row print:justify-between print:bg-slate-50 print:border-slate-200">
-                            <div>
+                        <div className={`bg-slate-50 dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0 print:p-2.5 print:mb-2.5 print:rounded-xl print:flex-row print:justify-between print:bg-slate-50 print:border-slate-200`}>
+                            <div className="min-w-0">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5 print:text-[9px]">PROPOSAL PREPARED FOR:</span>
-                                <h3 className="font-black text-slate-900 dark:text-white print:text-slate-900 text-sm uppercase print:text-xs">{clientName || 'Valued Client'}</h3>
+                                <h3 className="font-black text-slate-900 dark:text-white print:text-slate-900 text-sm uppercase truncate print:text-xs">{clientName || 'Valued Client'}</h3>
                                 <p className="text-xs text-slate-600 dark:text-slate-400 print:text-slate-700 mt-0.5 whitespace-pre-line print:text-[11px]">{clientAddress || 'Client Location'}</p>
                                 {clientPhone && <p className="text-xs text-slate-600 dark:text-slate-400 print:text-slate-700 mt-0.5 print:text-[10px]">Ph: {clientPhone}</p>}
                                 {clientGstin && <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 print:text-slate-800 mt-0.5 print:text-[10px]">GSTIN: {clientGstin} ({clientState})</p>}
                             </div>
                             {showValidityDate && proposalValidityDate && (
-                                <div className="text-left sm:text-right print:text-right">
+                                <div className="text-left sm:text-right shrink-0 print:text-right">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5 print:text-[9px]">VALIDITY DATE:</span>
                                     <span className="text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 px-3 py-1 rounded-lg inline-block print:py-0.5 print:px-2 print:text-[10.5px]">
                                         {proposalValidityDate}
@@ -1503,17 +1503,17 @@ const Quotations = () => {
 
                         {/* Quotation Table */}
                         <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 print:mb-2.5 print:rounded-lg print:border-slate-300 print:overflow-visible">
-                            <table className="w-full text-left border-collapse">
+                            <table className="w-full text-left border-collapse min-w-[460px] sm:min-w-full">
                                 <thead>
                                     <tr 
                                         className="text-[10px] font-black uppercase tracking-wider text-white"
                                         style={{ backgroundColor: themeColor }}
                                     >
-                                        <th className="p-3 w-12 text-left print:py-1.5 print:px-2 print:text-[9px]">Sr.</th>
-                                        <th className="p-3 text-left print:py-1.5 print:px-2 print:text-[9px]">Item / Service & Description</th>
-                                        {showQuantity && <th className="p-3 text-center print:py-1.5 print:px-2 print:text-[9px]">Qty</th>}
-                                        {showUnitPrice && <th className="p-3 text-right print:py-1.5 print:px-2 print:text-[9px]">Unit Rate</th>}
-                                        <th className="p-3 text-right print:py-1.5 print:px-2 print:text-[9px]">Total</th>
+                                        <th className="p-2.5 sm:p-3 w-10 sm:w-12 text-left print:py-1.5 print:px-2 print:text-[9px]">Sr.</th>
+                                        <th className="p-2.5 sm:p-3 text-left print:py-1.5 print:px-2 print:text-[9px]">Item / Service & Description</th>
+                                        {showQuantity && <th className="p-2.5 sm:p-3 text-center print:py-1.5 print:px-2 print:text-[9px] whitespace-nowrap">Qty</th>}
+                                        {showUnitPrice && <th className="p-2.5 sm:p-3 text-right print:py-1.5 print:px-2 print:text-[9px] whitespace-nowrap">Unit Rate</th>}
+                                        <th className="p-2.5 sm:p-3 text-right print:py-1.5 print:px-2 print:text-[9px] whitespace-nowrap">Total</th>
                                     </tr>
                                 </thead>
                                 <CombinedBillTableBody
@@ -1529,8 +1529,8 @@ const Quotations = () => {
                         </div>
 
                         {/* Summary & Disclaimers */}
-                        <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:mb-2 print:pb-2 print:gap-4 print:flex-row print:justify-between print:border-slate-200">
-                            <div className="flex-1 space-y-4 print:space-y-1.5">
+                        <div className={`flex flex-col ${workspaceViewMode === 'preview' ? 'lg:flex-row' : ''} justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:mb-2 print:pb-2 print:gap-4 print:flex-row print:justify-between print:border-slate-200`}>
+                            <div className="w-full flex-1 min-w-0 space-y-4 print:space-y-1.5">
                                 {showNotes && timelines && (
                                     <div>
                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5 print:text-[9px]">ESTIMATED TIMELINE:</span>
@@ -1568,7 +1568,7 @@ const Quotations = () => {
                                 )}
                             </div>
 
-                            <div className="w-full sm:w-72 space-y-2 text-xs print:w-64 print:space-y-1 print:text-[10.5px]">
+                            <div className={`w-full ${workspaceViewMode === 'preview' ? 'lg:w-80 lg:shrink-0' : 'max-w-md'} ml-auto space-y-2 text-xs print:w-64 print:space-y-1 print:text-[10.5px]`}>
                                 <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 print:border-slate-200">
                                     <span className="font-bold text-slate-500 dark:text-slate-400 print:text-slate-600">Subtotal:</span>
                                     <span className="font-bold text-slate-900 dark:text-white print:text-slate-900">{formatCurrencyINR(financials.subtotal)}</span>
@@ -1612,7 +1612,7 @@ const Quotations = () => {
                                     <span style={{ color: themeColor }}>{formatCurrencyINR(financials.grandTotal)}</span>
                                 </div>
 
-                                <div className="pt-2 text-[10px] text-slate-500 dark:text-slate-400 print:text-slate-600 italic print:pt-1 print:text-[9px]">
+                                <div className="pt-2 text-[10px] text-slate-500 dark:text-slate-400 print:text-slate-600 italic print:pt-1 print:text-[9px] break-words leading-relaxed">
                                     Amount in Words: {financials.amountInWords}
                                 </div>
                             </div>

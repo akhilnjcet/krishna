@@ -116,56 +116,58 @@ const StaffDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 
                 {/* Task Logistics Preview */}
-                <div className="lg:col-span-8 bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border p-6 md:p-10 shadow-sm relative overflow-hidden">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-50/30 dark:bg-blue-950/30 text-[#2563EB] rounded-2xl">
-                                <LayoutDashboard className="w-6 h-6" />
+                <div className="lg:col-span-8 bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-2xl sm:rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border p-4 sm:p-6 md:p-10 shadow-xs relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 mb-8 sm:mb-12">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                            <div className="p-2.5 sm:p-3 bg-blue-50/30 dark:bg-blue-950/30 text-[#2563EB] rounded-2xl shrink-0">
+                                <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6" />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-bold text-[#111827] dark:text-dark-text font-poppins">Assigned Operations</h2>
-                                <p className="text-sm text-[#6B7280] dark:text-dark-muted mt-1">Live critical path tasks for field reporting.</p>
+                                <h2 className="text-xl sm:text-2xl font-bold text-[#111827] dark:text-dark-text font-poppins">Assigned Operations</h2>
+                                <p className="text-xs sm:text-sm text-[#6B7280] dark:text-dark-muted mt-0.5 sm:mt-1">Live critical path tasks for field reporting.</p>
                             </div>
                         </div>
                         <button 
                             onClick={() => navigate('/staff/tasks')}
-                            className="text-[#2563EB] text-xs font-bold uppercase tracking-widest hover:underline decoration-2 underline-offset-8"
+                            className="text-[#2563EB] text-xs font-bold uppercase tracking-widest hover:underline decoration-2 underline-offset-8 self-start md:self-auto"
                         >
                             View Roadmap
                         </button>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                         {[1, 2, 3].map((item) => (
-                            <div key={item} className="flex items-center gap-6 p-6 rounded-3xl hover:bg-blue-50/30 dark:hover:bg-blue-900/10 border border-transparent hover:border-blue-100 transition-all group cursor-pointer">
-                                <div className="w-12 h-12 bg-[#F8FAFC] dark:bg-dark-bg border border-[#E2E8F0] dark:border-dark-border rounded-2xl flex items-center justify-center font-bold text-blue-600 transition-transform group-hover:rotate-3 shadow-sm">
-                                    {item}
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="text-base font-bold text-[#111827] dark:text-dark-text">Structural Welding Unit #{400 + item}</h4>
-                                    <div className="flex items-center gap-3 text-xs text-[#6B7280] dark:text-dark-muted font-medium mt-1.5">
-                                        <span className="flex items-center gap-1"><Activity className="w-3.5 h-3.5" /> High Priority</span>
-                                        <span className="flex items-center gap-1 opacity-70"><Clock className="w-3.5 h-3.5" /> Site Arrival by 10:00 AM</span>
+                            <div key={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6 p-4 sm:p-6 rounded-2xl sm:rounded-3xl hover:bg-blue-50/30 dark:hover:bg-blue-900/10 border border-slate-100 dark:border-slate-800 transition-all group cursor-pointer">
+                                <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#F8FAFC] dark:bg-dark-bg border border-[#E2E8F0] dark:border-dark-border rounded-xl sm:rounded-2xl flex items-center justify-center font-bold text-blue-600 transition-transform group-hover:rotate-3 shadow-xs shrink-0">
+                                        {item}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <h4 className="text-sm sm:text-base font-bold text-[#111827] dark:text-dark-text truncate">Structural Welding Unit #{400 + item}</h4>
+                                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-[#6B7280] dark:text-dark-muted font-medium mt-1">
+                                            <span className="flex items-center gap-1 text-[11px]"><Activity className="w-3.5 h-3.5" /> High Priority</span>
+                                            <span className="flex items-center gap-1 opacity-70 text-[11px]"><Clock className="w-3.5 h-3.5" /> Site Arrival by 10:00 AM</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <span className="bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl shadow-lg shadow-blue-500/20">Active</span>
+                                <span className="bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-lg shadow-blue-500/20 self-start sm:self-center shrink-0">Active</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 {/* Performance Analytics */}
-                <div className="lg:col-span-4 space-y-8">
-                    <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border p-10 shadow-sm text-center group">
-                        <div className="relative inline-block mb-8">
-                            <div className="w-32 h-32 rounded-full border-8 border-slate-50 dark:border-dark-bg flex items-center justify-center text-3xl font-bold text-[#111827] dark:text-dark-text shadow-xl group-hover:scale-105 transition-transform duration-500">
+                <div className="lg:col-span-4 space-y-6 sm:space-y-8">
+                    <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-2xl sm:rounded-[2.5rem] border border-[#E2E8F0] dark:border-dark-border p-5 sm:p-8 md:p-10 shadow-xs text-center group">
+                        <div className="relative inline-block mb-6 sm:mb-8">
+                            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-8 border-slate-50 dark:border-dark-bg flex items-center justify-center text-2xl sm:text-3xl font-bold text-[#111827] dark:text-dark-text shadow-xl group-hover:scale-105 transition-transform duration-500">
                                 <div className="absolute inset-0 border-8 border-blue-500 rounded-full border-t-transparent -rotate-45"></div>
                                 94%
                             </div>
                         </div>
-                        <h3 className="text-xl font-bold text-[#111827] dark:text-dark-text mb-2 font-poppins">Efficiency Rating</h3>
-                        <p className="text-sm text-[#6B7280] dark:text-dark-muted font-medium px-4 leading-relaxed">System performance is 12% above targets this cycle. Keep reporting!</p>
-                        <div className="mt-8 space-y-4">
+                        <h3 className="text-lg sm:text-xl font-bold text-[#111827] dark:text-dark-text mb-2 font-poppins">Efficiency Rating</h3>
+                        <p className="text-xs sm:text-sm text-[#6B7280] dark:text-dark-muted font-medium px-2 sm:px-4 leading-relaxed">System performance is 12% above targets this cycle. Keep reporting!</p>
+                        <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-4">
                             <div className="h-1.5 bg-slate-50 dark:bg-slate-800 dark:bg-dark-bg rounded-full overflow-hidden">
                                 <div className="h-full bg-blue-600 w-[94%]" />
                             </div>
@@ -177,7 +179,7 @@ const StaffDashboard = () => {
                     </div>
 
                     {/* Dark Card - Finance Link */}
-                    <div className="bg-gradient-to-br from-[#0F172A] to-[#1E293B] rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+                    <div className="bg-gradient-to-br from-[#0F172A] to-[#1E293B] rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-8 md:p-10 text-white shadow-2xl relative overflow-hidden group">
                         <Zap className="absolute -right-8 -bottom-8 w-48 h-48 opacity-[0.05] group-hover:scale-110 transition-transform duration-700" />
                         <div className="relative z-10">
                             <h3 className="text-2xl font-bold mb-4 font-poppins">Finance Link</h3>

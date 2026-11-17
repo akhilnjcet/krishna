@@ -61,19 +61,19 @@ export const EstimationEntryTable = ({
         ))}
       </datalist>
       {/* Top Controls Toolbar: View Switcher & Document-Level Toggles */}
-      <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-slate-50 dark:bg-slate-850/80 rounded-2xl border border-slate-200 dark:border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-1.5 sm:p-2 bg-slate-50 dark:bg-slate-850/80 rounded-2xl border border-slate-200 dark:border-slate-800">
         {/* View Mode Switcher */}
-        <div className="inline-flex items-center p-1 bg-slate-200/80 dark:bg-slate-800 rounded-xl text-xs font-bold">
+        <div className="inline-flex items-center p-0.5 sm:p-1 bg-slate-200/80 dark:bg-slate-800 rounded-xl text-[11px] sm:text-xs font-bold">
           <button
             type="button"
             onClick={() => handleViewChange('one-line')}
             title="One-Line view: High density compact rows, no horizontal scrolling"
-            className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition ${viewMode === 'one-line'
+            className={`px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg flex items-center gap-1 sm:gap-1.5 transition ${viewMode === 'one-line'
                 ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-black'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:white'
               }`}
           >
-            <Zap size={13} className="text-amber-500" />
+            <Zap size={12} className="text-amber-500" />
             <span>One-Line</span>
           </button>
 
@@ -81,12 +81,12 @@ export const EstimationEntryTable = ({
             type="button"
             onClick={() => handleViewChange('cards')}
             title="Cards view: Touch cards with spacious layout for mobile"
-            className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition ${viewMode === 'cards'
+            className={`px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg flex items-center gap-1 sm:gap-1.5 transition ${viewMode === 'cards'
                 ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-black'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:white'
               }`}
           >
-            <LayoutGrid size={13} className="text-indigo-500" />
+            <LayoutGrid size={12} className="text-indigo-500" />
             <span>Cards</span>
           </button>
 
@@ -94,18 +94,18 @@ export const EstimationEntryTable = ({
             type="button"
             onClick={() => handleViewChange('table')}
             title="Full spreadsheet table view"
-            className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition ${viewMode === 'table'
+            className={`px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg flex items-center gap-1 sm:gap-1.5 transition ${viewMode === 'table'
                 ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-black'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:white'
               }`}
           >
-            <TableIcon size={13} className="text-emerald-500" />
+            <TableIcon size={12} className="text-emerald-500" />
             <span>Table</span>
           </button>
         </div>
 
         {/* Global Column Toggles */}
-        <div className="flex items-center gap-3 text-xs bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800">
+        <div className="flex items-center gap-2.5 text-xs bg-white dark:bg-slate-900 px-2.5 py-1 sm:py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800">
           {onToggleEnableQuantity && (
             <label
               title={enableQuantity ? "Quantity enabled for invoice" : "Quantity disabled for invoice"}
@@ -477,10 +477,10 @@ export const EstimationEntryTable = ({
                   </div>
 
                   {/* 2-Column Quantity & Rate Fields */}
-                  <div className="grid grid-cols-2 gap-2.5 mb-3">
+                  <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2 sm:gap-2.5 mb-2.5">
                     {/* Qty Box */}
-                    <div className="p-2.5 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-200/70 dark:border-slate-800">
-                      <div className="flex items-center justify-between mb-1.5">
+                    <div className="p-2 sm:p-2.5 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-200/70 dark:border-slate-800">
+                      <div className="flex items-center justify-between mb-1">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           Quantity
                         </span>
@@ -498,7 +498,7 @@ export const EstimationEntryTable = ({
                       </div>
 
                       {enableQuantity && meta.hasQuantity !== false ? (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1 sm:gap-1.5">
                           <input
                             type="number"
                             min="1"
@@ -506,12 +506,12 @@ export const EstimationEntryTable = ({
                             value={meta.quantity ?? ''}
                             onChange={(e) => onUpdateItem(index, 'quantity', e.target.value)}
                             placeholder="1"
-                            className="flex-1 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-center text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                            className="flex-1 min-w-[45px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-center text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                           <select
                             value={meta.unit || 'Units'}
                             onChange={(e) => onUpdateItem(index, 'unit', e.target.value)}
-                            className="w-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-1 py-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 focus:outline-none"
+                            className="w-14 sm:w-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-1 py-1.5 text-[10px] sm:text-[11px] font-bold text-slate-700 dark:text-slate-300 focus:outline-none shrink-0"
                           >
                             <option value="Units">Units</option>
                             <option value="Nos">Nos</option>
@@ -533,8 +533,8 @@ export const EstimationEntryTable = ({
                     </div>
 
                     {/* Rate Box */}
-                    <div className="p-2.5 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-200/70 dark:border-slate-800">
-                      <div className="flex items-center justify-between mb-1.5">
+                    <div className="p-2 sm:p-2.5 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-200/70 dark:border-slate-800">
+                      <div className="flex items-center justify-between mb-1">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           Rate (₹)
                         </span>
@@ -558,7 +558,7 @@ export const EstimationEntryTable = ({
                           </div>
                         ) : (
                           <div className="relative">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">₹</span>
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold pointer-events-none">₹</span>
                             <input
                               type="number"
                               min="0"
@@ -566,7 +566,7 @@ export const EstimationEntryTable = ({
                               value={meta.price ?? meta.rate ?? meta.dailyRate ?? ''}
                               onChange={(e) => onUpdateItem(index, 'price', e.target.value)}
                               placeholder="0.00"
-                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-6 pr-2 py-1.5 text-xs font-bold text-right text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-6 pr-2 py-1.5 text-xs font-bold text-right text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
                           </div>
                         )

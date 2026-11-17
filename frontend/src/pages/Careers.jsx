@@ -357,7 +357,7 @@ const Careers = () => {
                                         {/* Apply Button */}
                                         <button
                                             onClick={() => setApplyModalVacancy(vacancy)}
-                                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-600/25 transition-all ml-auto"
+                                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-600/25 transition-all w-full sm:w-auto sm:ml-auto"
                                         >
                                             <span>Apply Now</span>
                                             <ChevronRight className="w-4 h-4" />

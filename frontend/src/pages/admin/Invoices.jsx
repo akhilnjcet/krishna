@@ -1452,24 +1452,24 @@ const Invoices = () => {
                             </div>
                         </div>
                                   {/* Billed Items & Estimation Table */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
-                        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
                             <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                <Layers className="w-4 h-4 text-indigo-500" /> Invoice Entry & Line Items
+                                <Layers className="w-4 h-4 text-indigo-500 shrink-0" /> <span className="truncate">Invoice Entry & Line Items</span>
                             </h2>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 shrink-0">
                                 <button
                                     type="button"
                                     onClick={() => setWorkspaceViewMode(workspaceViewMode === 'preview' ? 'editor' : 'preview')}
-                                    className="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+                                    className="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-95"
                                     title="View generated invoice document"
                                 >
-                                    <Eye className="w-3.5 h-3.5" /> View Live Preview
+                                    <Eye className="w-3.5 h-3.5" /> <span className="hidden xs:inline">View Live</span> Preview
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setShowCatalogModal(true)}
-                                    className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 transition"
+                                    className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 transition active:scale-95"
                                 >
                                     <Tag className="w-3.5 h-3.5" /> Catalog
                                 </button>
@@ -1893,7 +1893,7 @@ const Invoices = () => {
                         </div>
 
                         <div 
-                            className="print-document-container bg-white dark:bg-slate-900 p-8 md:p-12 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans"
+                            className={`print-document-container bg-white dark:bg-slate-900 ${workspaceViewMode === 'preview' ? 'p-4 sm:p-8 md:p-12' : 'p-3.5 sm:p-6'} shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans`}
                             style={{ '--theme-color': themeColor }}
                         >
                             {/* Header */}
@@ -1902,7 +1902,7 @@ const Invoices = () => {
                                     className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden"
                                     style={{ backgroundColor: themeColor }}
                                 >
-                                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
+                                    <div className={`flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0`}>
                                         <div className="flex items-center gap-4 flex-wrap">
                                             {brandingSettings.company_logo && showLogo && (
                                                 <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white p-1 rounded-xl shadow-md" />
@@ -1990,7 +1990,7 @@ const Invoices = () => {
                                     </div>
                                 </div>
                             ) : theme === 'Minimalist' ? (
-                                <div className="border-b-2 border-slate-900 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0">
+                                <div className={`border-b-2 border-slate-900 pb-6 mb-8 flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start sm:items-end gap-4 sm:gap-0`}>
                                     <div className="flex items-center gap-3 flex-wrap">
                                         {brandingSettings.company_logo && showLogo && (
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-10 w-auto object-contain" />
@@ -2066,7 +2066,7 @@ const Invoices = () => {
                                 </div>
                             ) : (
                                 /* Classic Theme */
-                                <div className="border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
+                                <div className={`border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0`}>
                                     <div className="flex items-center gap-4 flex-wrap">
                                         {brandingSettings.company_logo && showLogo && (
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900 rounded-xl shadow p-1" />
@@ -2164,16 +2164,16 @@ const Invoices = () => {
                             )}
 
                             {/* Customer / Consignee Block */}
-                            <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
-                                <div>
+                            <div className={`bg-slate-50 dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0`}>
+                                <div className="min-w-0">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">BILLED TO (BUYER / RECIPIENT):</span>
-                                    <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase">{customerName || 'Valued Client'}</h3>
+                                    <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase truncate">{customerName || 'Valued Client'}</h3>
                                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-line">{billingAddress || 'Site Location'}</p>
                                     {phone && <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Ph: {phone}</p>}
                                     {gstin && <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mt-1">GSTIN: {gstin} ({customerState})</p>}
                                 </div>
                                 {(showNetDays || (showDueDate && dueDate)) && (
-                                    <div className="text-left sm:text-right">
+                                    <div className="text-left sm:text-right shrink-0">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">INVOICE SUMMARY:</span>
                                         {showNetDays && (
                                             <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -2189,17 +2189,17 @@ const Invoices = () => {
 
                             {/* Invoice Table with Curly Brace Combined Billing */}
                             <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
-                                <table className="w-full text-left border-collapse">
+                                <table className="w-full text-left border-collapse min-w-[460px] sm:min-w-full">
                                     <thead>
                                         <tr 
                                             className="text-[10px] font-black uppercase tracking-wider text-white"
                                             style={{ backgroundColor: themeColor }}
                                         >
-                                            <th className="p-3 w-12 text-left">Sr.</th>
-                                            <th className="p-3 text-left">Description of Goods / Services</th>
-                                            {showQuantity && <th className="p-3 text-center">Qty</th>}
-                                            {showUnitPrice && <th className="p-3 text-right">Unit Price</th>}
-                                            <th className="p-3 text-right">Total</th>
+                                            <th className="p-2.5 sm:p-3 w-10 sm:w-12 text-left">Sr.</th>
+                                            <th className="p-2.5 sm:p-3 text-left">Description of Goods / Services</th>
+                                            {showQuantity && <th className="p-2.5 sm:p-3 text-center whitespace-nowrap">Qty</th>}
+                                            {showUnitPrice && <th className="p-2.5 sm:p-3 text-right whitespace-nowrap">Unit Price</th>}
+                                            <th className="p-2.5 sm:p-3 text-right whitespace-nowrap">Total</th>
                                         </tr>
                                     </thead>
                                     <CombinedBillTableBody
@@ -2215,8 +2215,8 @@ const Invoices = () => {
                             </div>
 
                             {/* Summary & QR Code Block */}
-                            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6">
-                                <div className="flex-1 space-y-4">
+                            <div className={`flex flex-col ${workspaceViewMode === 'preview' ? 'lg:flex-row' : ''} justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:flex-row print:justify-between print:gap-4`}>
+                                <div className="w-full flex-1 min-w-0 space-y-4">
                                     {showTerms && termsText && (
                                         <div>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">TERMS & CONDITIONS:</span>
@@ -2237,7 +2237,7 @@ const Invoices = () => {
 
                                     {/* QR Code for Instant UPI Payment */}
                                     {showQrCode && calculatedBalanceDue > 0 && (
-                                        <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-sm relative group">
+                                        <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md relative group">
                                             <div className="flex items-center gap-3">
                                                 <img src={upiQrImgUrl} alt="UPI QR" className="w-20 h-20 rounded-xl bg-white p-1 border shadow-sm flex-shrink-0" />
                                                 <div className="min-w-0 flex-1">
@@ -2285,7 +2285,7 @@ const Invoices = () => {
                                     )}
                                 </div>
 
-                                <div className="w-full sm:w-72 space-y-2 text-xs">
+                                <div className={`w-full ${workspaceViewMode === 'preview' ? 'lg:w-80 lg:shrink-0' : 'max-w-md'} ml-auto space-y-2 text-xs print:w-64`}>
                                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                                         <span className="font-bold text-slate-500">Subtotal:</span>
                                         <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(financials.subtotal)}</span>
@@ -2342,7 +2342,7 @@ const Invoices = () => {
                                         </>
                                     )}
 
-                                    <div className="pt-2 text-[10px] text-slate-500 italic">
+                                    <div className="pt-2 text-[10px] text-slate-500 italic break-words leading-relaxed">
                                         Amount in Words: {financials.amountInWords}
                                     </div>
                                 </div>

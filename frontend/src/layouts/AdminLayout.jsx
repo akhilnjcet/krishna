@@ -621,8 +621,8 @@ const AdminLayout = () => {
                     </div>
                 </header>
 
-                <main className="flex-1 p-2.5 sm:p-4 md:p-8 pb-8 overflow-x-hidden print:p-0 print:m-0 print:overflow-visible">
-                    <div className="max-w-[1500px] mx-auto print:max-w-none print:m-0 print:p-0">
+                <main className="flex-1 p-2 sm:p-4 md:p-8 pb-8 overflow-x-hidden min-w-0 w-full print:p-0 print:m-0 print:overflow-visible">
+                    <div className="max-w-[1500px] mx-auto min-w-0 w-full print:max-w-none print:m-0 print:p-0">
                         <Outlet />
                     </div>
                 </main>

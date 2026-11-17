@@ -594,17 +594,17 @@ const AdminUsers = () => {
                                 )}
 
                                 {/* Form Action Buttons */}
-                                <div className="border-t border-slate-100 dark:border-slate-800 dark:border-dark-border pt-6 flex justify-end gap-4 bg-slate-50 dark:bg-slate-800/25 dark:bg-dark-bg/25 p-6 -mx-8 -mb-8">
+                                <div className="border-t border-slate-100 dark:border-slate-800 dark:border-dark-border pt-4 sm:pt-6 flex flex-col-reverse sm:flex-row justify-end gap-2.5 sm:gap-4 bg-slate-50 dark:bg-slate-800/25 dark:bg-dark-bg/25 p-4 sm:p-6 md:p-8 -mx-4 sm:-mx-6 md:-mx-8 -mb-4 sm:-mb-6 md:-mb-8">
                                     <button 
                                         type="button"
                                         onClick={() => { setShowAddModal(false); setShowEditModal(false); resetForm(); }}
-                                        className="px-6 py-3 border border-slate-200 dark:border-slate-700 dark:border-dark-border hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-dark-bg text-slate-500 dark:text-slate-400 dark:text-dark-muted font-black uppercase tracking-widest text-[10px] rounded-xl transition-all"
+                                        className="w-full sm:w-auto px-5 py-3 border border-slate-200 dark:border-slate-700 dark:border-dark-border hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-dark-bg text-slate-500 dark:text-slate-400 dark:text-dark-muted font-black uppercase tracking-widest text-[10px] rounded-xl transition-all text-center"
                                     >
                                         Cancel
                                     </button>
                                     <button 
                                         type="submit"
-                                        className="px-6 py-3 bg-[#2563EB] hover:bg-blue-700 text-white font-black uppercase tracking-widest text-[10px] rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
+                                        className="w-full sm:w-auto px-6 py-3 bg-[#2563EB] hover:bg-blue-700 text-white font-black uppercase tracking-widest text-[10px] rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
                                     >
                                         {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                                         {showAddModal ? "Create Account" : "Save Changes"}

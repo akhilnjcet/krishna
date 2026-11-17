@@ -309,14 +309,14 @@ const CustomerDashboard = () => {
             />
 
             {/* Financial Overview Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
                 {[
                     { label: 'Total Engagement', value: `₹${(finance?.totalInvoiced || 0).toLocaleString()}`, icon: Wallet, color: 'blue' },
                     { label: 'Settled Amount', value: `₹${(finance?.totalPaid || 0).toLocaleString()}`, icon: CheckCircle2, color: 'emerald' },
                     { label: 'Current Dues', value: `₹${(finance?.remainingDues || 0).toLocaleString()}`, icon: AlertTriangle, color: 'rose' },
                     { label: 'Project Equity', value: `${Math.round(finance?.balancePercentage || 0)}%`, icon: TrendingUp, color: 'amber' }
                 ].map((item, i) => (
-                    <div key={i} className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group">
+                    <div key={i} className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-xs hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group">
                         <div className={`w-12 h-12 bg-blue-50/30 dark:bg-blue-950/30 text-blue-600 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
                             <item.icon className="w-6 h-6" />
                         </div>

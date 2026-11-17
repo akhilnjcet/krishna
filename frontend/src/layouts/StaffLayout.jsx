@@ -213,8 +213,8 @@ const StaffLayout = () => {
                 </header>
 
                 {/* Page */}
-                <main className="flex-1 p-2.5 sm:p-4 md:p-8 pb-8 overflow-x-hidden">
-                    <div className="max-w-[1500px] mx-auto">
+                <main className="flex-1 p-2 sm:p-4 md:p-8 pb-8 overflow-x-hidden min-w-0 w-full">
+                    <div className="max-w-[1500px] mx-auto min-w-0 w-full">
                         <Outlet />
                     </div>
                 </main>

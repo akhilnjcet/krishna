@@ -1711,24 +1711,24 @@ const AdminFinance = () => {
                                 </div>
 
                                 {/* Summary */}
-                                <div className="bg-slate-900 text-white p-5 rounded-2xl grid grid-cols-3 gap-2 text-center">
-                                    <div>
-                                        <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Net Payable</p>
-                                        <p className="text-lg font-black mt-1 text-emerald-400">₹ {paymentForm.netPayable?.toLocaleString()}</p>
+                                <div className="bg-slate-900 text-white p-3.5 sm:p-5 rounded-2xl grid grid-cols-3 gap-1.5 sm:gap-2 text-center">
+                                    <div className="min-w-0">
+                                        <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest opacity-60 truncate">Net Payable</p>
+                                        <p className="text-sm sm:text-lg font-black mt-1 text-emerald-400 truncate">₹ {paymentForm.netPayable?.toLocaleString()}</p>
                                     </div>
-                                    <div>
-                                        <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Already Paid</p>
-                                        <p className="text-lg font-black mt-1 opacity-90">₹ {paymentForm.salaryAlreadyPaid?.toLocaleString()}</p>
+                                    <div className="min-w-0">
+                                        <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest opacity-60 truncate">Already Paid</p>
+                                        <p className="text-sm sm:text-lg font-black mt-1 opacity-90 truncate">₹ {paymentForm.salaryAlreadyPaid?.toLocaleString()}</p>
                                     </div>
-                                    <div>
-                                        <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Remaining Salary</p>
-                                        <p className="text-lg font-black mt-1 text-amber-300">₹ {paymentForm.remainingBalance?.toLocaleString()}</p>
+                                    <div className="min-w-0">
+                                        <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest opacity-60 truncate">Remaining</p>
+                                        <p className="text-sm sm:text-lg font-black mt-1 text-amber-300 truncate">₹ {paymentForm.remainingBalance?.toLocaleString()}</p>
                                     </div>
                                 </div>
 
                                 {/* Payout Disbursement Form */}
                                 <form onSubmit={handleDisbursePayment} className="border-t pt-4 space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Payment Type</label>
                                             <select
@@ -1760,20 +1760,20 @@ const AdminFinance = () => {
 
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Payment Amount (₹)</label>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-col sm:flex-row gap-2">
                                             <input 
                                                 required
                                                 type="number"
                                                 value={paymentForm.amount}
                                                 onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})}
-                                                className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300"
+                                                className="flex-1 min-w-0 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl outline-none font-bold text-xs text-slate-700 dark:text-slate-300"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => {
                                                     setPaymentForm({...paymentForm, amount: paymentForm.remainingBalance.toString()});
                                                 }}
-                                                className="bg-indigo-50 border border-indigo-200 text-indigo-700 font-black uppercase tracking-widest text-[9px] px-4 rounded-xl hover:bg-indigo-100 transition active:scale-95"
+                                                className="bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-black uppercase tracking-wider text-[10px] px-4 py-2.5 sm:py-3 rounded-xl hover:bg-indigo-100 transition active:scale-95 shrink-0 text-center"
                                             >
                                                 Pay Remaining Salary
                                             </button>
@@ -1791,18 +1791,18 @@ const AdminFinance = () => {
                                         />
                                     </div>
 
-                                    <div className="flex justify-end gap-2 pt-2">
+                                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
                                         <button 
                                             type="button" 
                                             onClick={() => setShowPaymentModal(false)}
-                                            className="px-6 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-xl font-bold uppercase tracking-wider text-xs"
+                                            className="w-full sm:w-auto px-6 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-xl font-bold uppercase tracking-wider text-xs text-center"
                                         >
                                             Close
                                         </button>
                                         <button 
                                             type="submit" 
                                             disabled={actionLoading}
-                                            className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-indigo-600/20 active:scale-95 transition"
+                                            className="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-indigo-600/20 active:scale-95 transition flex items-center justify-center"
                                         >
                                             {actionLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
                                             Log Payment Transfer

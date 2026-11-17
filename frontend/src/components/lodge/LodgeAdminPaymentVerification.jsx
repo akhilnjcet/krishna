@@ -233,15 +233,15 @@ export default function LodgeAdminPaymentVerification() {
             {pendingPayments.map(p => (
               <div key={p._id} className="bg-white dark:bg-slate-900 border-2 border-amber-100 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all space-y-4">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center font-black text-xl font-poppins flex-shrink-0">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center font-black text-base sm:text-xl font-poppins shrink-0">
                       ₹{p.amount}
                     </div>
-                    <div>
-                      <h4 className="font-black text-slate-900 dark:text-white text-base">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-black text-slate-900 dark:text-white text-sm sm:text-base truncate">
                         {p.tenantName || p.customerId?.name || 'Tenant'} • Room #{p.roomId?.roomNumber || '101'}
                       </h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                         Method: <strong className="text-slate-800 dark:text-slate-200">{p.method}</strong> • Ref ID: <span className="font-mono text-indigo-600 font-bold">{p.referenceId || 'N/A'}</span>
                       </p>
                     </div>

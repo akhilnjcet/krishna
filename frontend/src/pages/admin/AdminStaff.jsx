@@ -800,16 +800,16 @@ const AdminStaff = () => {
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
                             className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
                         >
-                            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                            <div className="p-4 sm:p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">{showEditModal ? 'Update' : 'Register'} Staff</h2>
-                                    <p className="text-slate-500 dark:text-slate-400 font-medium">Capture profile details for the system.</p>
+                                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{showEditModal ? 'Update' : 'Register'} Staff</h2>
+                                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">Capture profile details for the system.</p>
                                 </div>
-                                <button onClick={() => { setShowAddModal(false); setShowEditModal(false); }} className="p-2 hover:bg-slate-200 rounded-full transition">
-                                    <X className="w-6 h-6 text-slate-400" />
+                                <button onClick={() => { setShowAddModal(false); setShowEditModal(false); }} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition">
+                                    <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
                                 </button>
                             </div>
-                            <form onSubmit={showEditModal ? handleEditStaff : handleAddStaff} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
+                            <form onSubmit={showEditModal ? handleEditStaff : handleAddStaff} className="p-4 sm:p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-h-[75vh] overflow-y-auto">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Staff ID*</label>
                                     <input required type="text" placeholder="STF-001" className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition" value={formData.staff_id} onChange={e => setFormData({...formData, staff_id: e.target.value})} />
@@ -1096,7 +1096,7 @@ const AdminStaff = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] shadow-2xl p-8 md:p-10 flex flex-col my-8"
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl sm:rounded-[2.5rem] shadow-2xl p-5 sm:p-8 md:p-10 flex flex-col my-4 sm:my-8"
                         >
                             <div className="flex items-center gap-4 mb-6">
                                 <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex-shrink-0 flex items-center justify-center">

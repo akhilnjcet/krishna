@@ -584,28 +584,28 @@ const AttendanceScanner = () => {
                             <label className="text-xs font-black uppercase tracking-wider text-slate-500 block">
                                 Select Action
                             </label>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                                 <button
                                     type="button"
                                     onClick={() => setAction('Check in')}
-                                    className={`py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border transition flex items-center justify-center gap-2 ${
+                                    className={`py-3 sm:py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border transition flex items-center justify-center gap-2 ${
                                         action === 'Check in'
                                             ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
                                             : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-500'
                                     }`}
                                 >
-                                    <CheckCircle2 className="w-4 h-4" /> Check in (Shift Start)
+                                    <CheckCircle2 className="w-4 h-4 shrink-0" /> Check in (Shift Start)
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setAction('Check out')}
-                                    className={`py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border transition flex items-center justify-center gap-2 ${
+                                    className={`py-3 sm:py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border transition flex items-center justify-center gap-2 ${
                                         action === 'Check out'
                                             ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-500/20'
                                             : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-500'
                                     }`}
                                 >
-                                    <Clock className="w-4 h-4" /> Check out (Shift End)
+                                    <Clock className="w-4 h-4 shrink-0" /> Check out (Shift End)
                                 </button>
                             </div>
 

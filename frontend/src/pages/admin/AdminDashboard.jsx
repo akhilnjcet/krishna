@@ -143,7 +143,7 @@ const AdminDashboard = () => {
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
-                    className="grid grid-cols-2 lg:grid-cols-4 gap-6"
+                    className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-6"
                 >
                     {[
                         { label: 'Active Projects', value: stats.activeProjectsCount, icon: Layers, color: 'blue', desc: 'Work in progress' },
@@ -155,7 +155,7 @@ const AdminDashboard = () => {
                             key={i} 
                             variants={itemVariants}
                             onClick={() => navigate('/admin/projects')}
-                            className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-6 rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+                            className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-xs hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group cursor-pointer relative overflow-hidden"
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className={`w-10 h-10 bg-${item.color}-50/30 dark:bg-blue-950/30 text-${item.color}-600 rounded-xl flex items-center justify-center`}>
@@ -173,9 +173,9 @@ const AdminDashboard = () => {
                 </motion.div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
                 {/* Main Activity Feed */}
-                <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-sm p-8 md:p-10">
+                <div className="bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-2xl sm:rounded-3xl border border-[#E2E8F0] dark:border-dark-border shadow-xs p-4 sm:p-8 md:p-10">
                     <div className="flex items-center justify-between mb-10">
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-blue-50/30 dark:bg-blue-950/30 rounded-2xl text-blue-600">
