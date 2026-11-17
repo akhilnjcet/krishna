@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../services/api';
-import { 
-    History, Calendar, Loader2, Download, 
+import {
+    History, Calendar, Loader2, Download,
     ArrowUpDown, RefreshCw, Clock, CheckCircle2,
     AlertCircle, Award, Filter
 } from 'lucide-react';
-import { 
-    formatTimeIST, 
-    formatDurationMinutes, 
-    getUnifiedAttendanceStatus 
+import {
+    formatTimeIST,
+    formatDurationMinutes,
+    getUnifiedAttendanceStatus
 } from '../../utils/dateTimeUtil';
 
 const StaffTimesheets = () => {
@@ -158,7 +158,7 @@ const StaffTimesheets = () => {
                     </button>
 
                     {/* Export CSV */}
-                    <button 
+                    <button
                         onClick={exportToCSV}
                         className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition-all active:scale-95"
                     >
@@ -211,15 +211,15 @@ const StaffTimesheets = () => {
                     ) : (
                         processedLogs.map((log) => {
                             const statusMeta = getUnifiedAttendanceStatus(
-                                log.status, 
-                                log.check_out, 
-                                log.duration_minutes, 
+                                log.status,
+                                log.check_out,
+                                log.duration_minutes,
                                 log.is_active_shift
                             );
 
                             return (
-                                <div 
-                                    key={`m-ts-${log._id}`} 
+                                <div
+                                    key={`m-ts-${log._id}`}
                                     className="p-3.5 bg-slate-50/80 dark:bg-slate-900/50 rounded-xl border border-slate-200/80 dark:border-slate-700/60 space-y-2.5"
                                 >
                                     <div className="flex items-center justify-between gap-2">
@@ -289,9 +289,9 @@ const StaffTimesheets = () => {
                             ) : (
                                 processedLogs.map((log) => {
                                     const statusMeta = getUnifiedAttendanceStatus(
-                                        log.status, 
-                                        log.check_out, 
-                                        log.duration_minutes, 
+                                        log.status,
+                                        log.check_out,
+                                        log.duration_minutes,
                                         log.is_active_shift
                                     );
 

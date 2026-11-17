@@ -1209,8 +1209,8 @@ const LodgeBillingManager = () => {
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0 flex-1">
                                                     <p className="font-black text-slate-900 dark:text-white text-base truncate">{v.tenantName || v.name || v.customerId?.name || 'Unknown Guest'}</p>
-                                                    <p className="text-[11px] text-slate-500 font-medium">Room ID: <span className="font-semibold text-slate-700 dark:text-slate-300">{v.roomId?._id || v.roomId || 'N/A'}</span></p>
-                                                    <p className="text-[10px] text-indigo-500 uppercase font-black tracking-tight truncate mt-0.5">Booking: {v.bookingId?._id || v.bookingId || 'Direct Settlement'}</p>
+                                                    <p className="text-[11px] text-slate-500 font-medium">Room: <span className="font-semibold text-slate-700 dark:text-slate-300">{v.roomId?.roomNumber ? `Room ${v.roomId.roomNumber}` : (v.roomId?._id || v.roomId || 'N/A')}</span></p>
+                                                    <p className="text-[10px] text-indigo-500 uppercase font-black tracking-tight truncate mt-0.5">Booking: {v.bookingId?.agreementNumber || v.bookingId?._id || v.bookingId || 'Direct Settlement'}</p>
                                                 </div>
                                                 <div className="text-right shrink-0">
                                                     <p className="font-black text-slate-900 dark:text-white text-lg font-poppins">₹{v.amount}</p>
@@ -1293,8 +1293,8 @@ const LodgeBillingManager = () => {
                                             <tr key={v._id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition">
                                                 <td className="px-6 py-4">
                                                     <p className="font-black text-slate-900 dark:text-white">{v.tenantName || v.name || v.customerId?.name || 'Unknown Guest'}</p>
-                                                    <p className="text-[10px] text-slate-400">Room ID: {v.roomId?._id || v.roomId || 'N/A'}</p>
-                                                    <p className="text-[9px] text-indigo-500 uppercase font-bold tracking-tight">Booking: {v.bookingId?._id || v.bookingId || 'Direct Settlement'}</p>
+                                                    <p className="text-[10px] text-slate-400">Room: {v.roomId?.roomNumber ? `Room ${v.roomId.roomNumber}` : (v.roomId?._id || v.roomId || 'N/A')}</p>
+                                                    <p className="text-[9px] text-indigo-500 uppercase font-bold tracking-tight">Booking: {v.bookingId?.agreementNumber || v.bookingId?._id || v.bookingId || 'Direct Settlement'}</p>
                                                 </td>
                                                 <td className="px-6 py-4 font-black text-slate-900 dark:text-white">₹{v.amount}</td>
                                                 <td className="px-6 py-4 uppercase text-slate-500 dark:text-slate-400 font-bold">{v.method}</td>

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { initializeCashfree } from '../../utils/cashfreeLoader';
+import { getSocket } from '../../utils/socket';
 
 const DEFAULT_CATEGORIES = [
   'Electricity', 'Water', 'Wi-Fi', 'Internet', 'Maintenance', 'Parking',
@@ -249,6 +250,30 @@ export default function LodgeTenantPaymentModal({
     }
   }, [isOpen, fetchBookingFinancials, onSuccess]);
 
+  // Real-time listener for financial balance updates
+  useEffect(() => {
+    if (!isOpen || !booking?._id) return;
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleFinancialsUpdated = (data) => {
+      if (!data || !booking?._id) return;
+      if (String(data.bookingId) === String(booking._id)) {
+        fetchBookingFinancials();
+      }
+    };
+
+    socket.on('booking-financials-updated', handleFinancialsUpdated);
+    socket.on('payment-status-changed', fetchBookingFinancials);
+    socket.on('lodge-payment-updated', fetchBookingFinancials);
+
+    return () => {
+      socket.off('booking-financials-updated', handleFinancialsUpdated);
+      socket.off('payment-status-changed', fetchBookingFinancials);
+      socket.off('lodge-payment-updated', fetchBookingFinancials);
+    };
+  }, [isOpen, booking?._id, fetchBookingFinancials]);
+
   // Load Admin Settings
   useEffect(() => {
     if (!isOpen) return;
@@ -331,6 +356,9 @@ export default function LodgeTenantPaymentModal({
 
   // Launch Cashfree PG Modal Checkout
   const handleCashfreeModalPay = async () => {
+    if (targetMaxDue <= 0 || overall.totalRemaining <= 0) {
+      return alert('All dues for this room are fully settled. No additional payment required.');
+    }
     if (isAmountExceeded) {
       return alert(`Entered payment amount exceeds the remaining balance of ₹${targetMaxDue.toLocaleString()}.`);
     }
@@ -1441,12 +1469,22 @@ export default function LodgeTenantPaymentModal({
                         <button
                           type="button"
                           onClick={handleCashfreeModalPay}
-                          disabled={submitting || activePayAmount <= 0}
-                          className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-black py-4 rounded-2xl text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-[0.99] transition-all cursor-pointer"
+                          disabled={submitting || activePayAmount <= 0 || targetMaxDue <= 0 || overall.totalRemaining <= 0}
+                          className={`w-full font-black py-4 rounded-2xl text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all ${
+                            targetMaxDue <= 0 || overall.totalRemaining <= 0
+                              ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 shadow-emerald-500/20 active:scale-[0.99] cursor-pointer'
+                          }`}
                         >
                           <Sparkles className="w-4 h-4 text-slate-950" />
-                          <span>Pay ₹{activePayAmount.toLocaleString()} via Cashfree Checkout</span>
-                          <ArrowRight className="w-4 h-4 text-slate-950" />
+                          <span>
+                            {targetMaxDue <= 0 || overall.totalRemaining <= 0
+                              ? '✓ All Dues Fully Paid'
+                              : `Pay ₹${activePayAmount.toLocaleString()} via Cashfree Checkout`}
+                          </span>
+                          {!(targetMaxDue <= 0 || overall.totalRemaining <= 0) && (
+                            <ArrowRight className="w-4 h-4 text-slate-950" />
+                          )}
                         </button>
                       </div>
                     </div>

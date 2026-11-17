@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../../services/api';
-import { 
-  History, Calendar, Search, Filter, Trash2, CheckCircle2, 
-  XCircle, Clock, Loader2, Download, Check, X,
-  ChevronLeft, ChevronRight, User, PieChart, RefreshCw,
-  MapPin, Eye, ShieldCheck, AlertCircle, ShieldAlert,
-  Send, ExternalLink, FileSpreadsheet, FileText, CheckSquare
+import {
+    History, Calendar, Search, Filter, Trash2, CheckCircle2,
+    XCircle, Clock, Loader2, Download, Check, X,
+    ChevronLeft, ChevronRight, User, PieChart, RefreshCw,
+    MapPin, Eye, ShieldCheck, AlertCircle, ShieldAlert,
+    Send, ExternalLink, FileSpreadsheet, FileText, CheckSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReportHeader from '../../components/ReportHeader';
@@ -22,7 +22,7 @@ const formatDateLocal = (d) => {
 const AttendanceLogs = () => {
     // Active Tab: 'hub' (Daily Attendance Matrix) | 'logs' (Biometric & Location Logs) | 'exceptions' (Correction Requests)
     const [activeTab, setActiveTab] = useState('logs');
-    
+
     // Core Data
     const [staffList, setStaffList] = useState([]);
     const [attendanceRecords, setAttendanceRecords] = useState([]);
@@ -32,7 +32,7 @@ const AttendanceLogs = () => {
     const [loadingHub, setLoadingHub] = useState(false);
     const [loadingLogs, setLoadingLogs] = useState(true);
     const [loadingExceptions, setLoadingExceptions] = useState(false);
-    
+
     // Config filters
     const [selectedMonth, setSelectedMonth] = useState(() => {
         const d = new Date();
@@ -254,8 +254,8 @@ const AttendanceLogs = () => {
     // Filtered staff roster
     const filteredStaff = useMemo(() => {
         return staffList.filter(s => {
-            const matchesSearch = s.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                  s.staff_id?.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesSearch = s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                s.staff_id?.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesDept = filterDept ? s.department === filterDept : true;
             return matchesSearch && matchesDept;
         });
@@ -287,8 +287,8 @@ const AttendanceLogs = () => {
         }
 
         const headers = [
-            "Staff ID", "Staff Name", "Action", "Date", "Timestamp", 
-            "Status", "Confidence (%)", "Verification Result", 
+            "Staff ID", "Staff Name", "Action", "Date", "Timestamp",
+            "Status", "Confidence (%)", "Verification Result",
             "Address", "Latitude", "Longitude", "Face Image Status", "Correction Status"
         ];
 
@@ -369,11 +369,10 @@ const AttendanceLogs = () => {
                     <button
                         type="button"
                         onClick={() => setActiveTab('logs')}
-                        className={`min-w-0 px-2 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider transition flex items-center justify-center gap-1 sm:gap-2 text-center ${
-                            activeTab === 'logs'
-                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
-                        }`}
+                        className={`min-w-0 px-2 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider transition flex items-center justify-center gap-1 sm:gap-2 text-center ${activeTab === 'logs'
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+                            }`}
                         title="Biometric & Location Logs"
                     >
                         <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
@@ -384,11 +383,10 @@ const AttendanceLogs = () => {
                     <button
                         type="button"
                         onClick={() => setActiveTab('exceptions')}
-                        className={`min-w-0 px-2 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider transition flex items-center justify-center gap-1 sm:gap-2 text-center relative ${
-                            activeTab === 'exceptions'
-                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
-                        }`}
+                        className={`min-w-0 px-2 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider transition flex items-center justify-center gap-1 sm:gap-2 text-center relative ${activeTab === 'exceptions'
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+                            }`}
                         title="Exceptions & Corrections"
                     >
                         <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 flex-shrink-0" />
@@ -404,11 +402,10 @@ const AttendanceLogs = () => {
                     <button
                         type="button"
                         onClick={() => setActiveTab('hub')}
-                        className={`min-w-0 px-2 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider transition flex items-center justify-center gap-1 sm:gap-2 text-center ${
-                            activeTab === 'hub'
-                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
-                        }`}
+                        className={`min-w-0 px-2 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider transition flex items-center justify-center gap-1 sm:gap-2 text-center ${activeTab === 'hub'
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+                            }`}
                         title="Monthly Roster Matrix"
                     >
                         <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
@@ -547,11 +544,10 @@ const AttendanceLogs = () => {
                                                     {/* Action & Time */}
                                                     <td className="px-6 py-4">
                                                         <div className="space-y-1">
-                                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                                                isCheckOut 
-                                                                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' 
-                                                                    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                                                            }`}>
+                                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${isCheckOut
+                                                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                                                : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                                                }`}>
                                                                 <Clock className="w-3 h-3" /> {log.action || log.type || 'Check in'}
                                                             </span>
                                                             <div className="font-mono text-slate-600 dark:text-slate-300 font-bold">
@@ -566,11 +562,10 @@ const AttendanceLogs = () => {
                                                     {/* Verification Status */}
                                                     <td className="px-6 py-4">
                                                         <div className="space-y-1">
-                                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                                                isSuccess 
-                                                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' 
-                                                                    : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
-                                                            }`}>
+                                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${isSuccess
+                                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+                                                                : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
+                                                                }`}>
                                                                 {isSuccess ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : <XCircle className="w-3 h-3 text-rose-500" />}
                                                                 {isSuccess ? 'Verified' : 'Verification Failed'}
                                                             </span>
@@ -732,13 +727,12 @@ const AttendanceLogs = () => {
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                                                            exc.correction_status === 'approved' 
-                                                                ? 'bg-emerald-100 text-emerald-800' 
-                                                                : exc.correction_status === 'rejected'
+                                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${exc.correction_status === 'approved'
+                                                            ? 'bg-emerald-100 text-emerald-800'
+                                                            : exc.correction_status === 'rejected'
                                                                 ? 'bg-rose-100 text-rose-800'
                                                                 : 'bg-amber-100 text-amber-800 animate-pulse'
-                                                        }`}>
+                                                            }`}>
                                                             {exc.correction_status || 'Exception'}
                                                         </span>
                                                     </td>
@@ -856,17 +850,16 @@ const AttendanceLogs = () => {
                                                                 checkOut: record?.checkOut,
                                                                 breakTime: record?.breakTime
                                                             })}
-                                                            className={`w-7 h-7 rounded-lg text-[10px] font-black transition cursor-pointer ${
-                                                                status === 'Present' 
-                                                                    ? 'bg-emerald-500 text-white' 
-                                                                    : status === 'Half Day' 
+                                                            className={`w-7 h-7 rounded-lg text-[10px] font-black transition cursor-pointer ${status === 'Present'
+                                                                ? 'bg-emerald-500 text-white'
+                                                                : status === 'Half Day'
                                                                     ? 'bg-amber-400 text-slate-950'
                                                                     : status === 'Absent'
-                                                                    ? 'bg-rose-500 text-white'
-                                                                    : status === 'Leave'
-                                                                    ? 'bg-indigo-500 text-white'
-                                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
-                                                            }`}
+                                                                        ? 'bg-rose-500 text-white'
+                                                                        : status === 'Leave'
+                                                                            ? 'bg-indigo-500 text-white'
+                                                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                                                                }`}
                                                             title={`${dateStr}: ${status} (Click to edit)`}
                                                         >
                                                             {status === 'Present' ? 'P' : status === 'Half Day' ? 'HD' : status === 'Absent' ? 'A' : status === 'Leave' ? 'L' : '-'}
@@ -887,7 +880,7 @@ const AttendanceLogs = () => {
             <AnimatePresence>
                 {selectedImageRecord && (
                     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
@@ -1002,7 +995,7 @@ const AttendanceLogs = () => {
             <AnimatePresence>
                 {selectedMapLocation && (
                     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
@@ -1067,7 +1060,7 @@ const AttendanceLogs = () => {
             <AnimatePresence>
                 {reviewingCorrection && (
                     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
@@ -1149,7 +1142,7 @@ const AttendanceLogs = () => {
             <AnimatePresence>
                 {editingCell && (
                     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
@@ -1160,14 +1153,14 @@ const AttendanceLogs = () => {
                                     <h4 className="font-black text-slate-950 dark:text-white text-lg uppercase tracking-tight">Set Attendance</h4>
                                     <p className="text-[10px] font-bold text-slate-400 mt-0.5">{editingCell.date}</p>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => setEditingCell(null)}
                                     className="p-1 hover:bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400 hover:text-slate-900 dark:text-white transition"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 <div>
                                     <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block mb-1">Status</label>
@@ -1203,8 +1196,8 @@ const AttendanceLogs = () => {
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
                                                 <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block mb-1">Check In</label>
-                                                <input 
-                                                    type="time" 
+                                                <input
+                                                    type="time"
                                                     value={localCheckIn}
                                                     onChange={(e) => setLocalCheckIn(e.target.value)}
                                                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500"
@@ -1212,8 +1205,8 @@ const AttendanceLogs = () => {
                                             </div>
                                             <div>
                                                 <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block mb-1">Check Out</label>
-                                                <input 
-                                                    type="time" 
+                                                <input
+                                                    type="time"
                                                     value={localCheckOut}
                                                     onChange={(e) => setLocalCheckOut(e.target.value)}
                                                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500"
@@ -1223,8 +1216,8 @@ const AttendanceLogs = () => {
 
                                         <div>
                                             <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block mb-1">Break Time (mins)</label>
-                                            <input 
-                                                type="number" 
+                                            <input
+                                                type="number"
                                                 min="0"
                                                 value={localBreakTime}
                                                 onChange={(e) => setLocalBreakTime(Number(e.target.value))}
@@ -1238,11 +1231,11 @@ const AttendanceLogs = () => {
                             <button
                                 type="button"
                                 onClick={() => handleUpdateAttendance(
-                                    editingCell.staffId, 
-                                    editingCell.date, 
-                                    localStatus, 
-                                    localCheckIn, 
-                                    localCheckOut, 
+                                    editingCell.staffId,
+                                    editingCell.date,
+                                    localStatus,
+                                    localCheckIn,
+                                    localCheckOut,
                                     localBreakTime
                                 )}
                                 className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-indigo-600/20 active:scale-95 transition"

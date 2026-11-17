@@ -92,7 +92,9 @@ class CashfreeService {
         customerEmail, 
         customerPhone, 
         orderNote = 'Payment for Krishna Engineering Works',
-        returnUrl
+        returnUrl,
+        notifyUrl,
+        orderTags = {}
     }) {
         const creds = await this.getCredentials();
         if (!creds.appId || !creds.secretKey) {
@@ -105,6 +107,8 @@ class CashfreeService {
         const sanitizedName = (customerName || 'Valued Customer').slice(0, 50);
         const sanitizedEmail = (customerEmail && customerEmail.includes('@')) ? customerEmail : 'customer@krishnaengg.com';
 
+        const defaultNotify = process.env.CASHFREE_NOTIFY_URL || 'https://krishnaengineering.vercel.app/api/payments/cashfree/webhook';
+
         const request = {
             order_id: orderId,
             order_amount: parseFloat(parseFloat(orderAmount).toFixed(2)),
@@ -116,9 +120,11 @@ class CashfreeService {
                 customer_phone: sanitizedPhone
             },
             order_meta: {
-                return_url: returnUrl || `https://krishnaengineering.vercel.app/#/customer/payments?cf_order_id=${orderId}`
+                return_url: returnUrl || `https://krishnaengineering.vercel.app/#/customer/payments?cf_order_id=${orderId}`,
+                notify_url: notifyUrl || defaultNotify
             },
-            order_note: orderNote.slice(0, 200)
+            order_note: orderNote.slice(0, 200),
+            ...(orderTags && typeof orderTags === 'object' && Object.keys(orderTags).length > 0 ? { order_tags: orderTags } : {})
         };
 
         const response = await axios.post(`${creds.baseUrl}/orders`, request, {

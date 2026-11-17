@@ -228,6 +228,21 @@ exports.verifyPayment = async (req, res) => {
       payment.receiptNumber = `REC-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
       payment.rejectionReason = undefined;
 
+      // Auto-bind missing bookingId or roomId
+      if (!payment.bookingId && payment.customerId) {
+        const custId = payment.customerId._id || payment.customerId;
+        const b = await BookingLodge.findOne({
+          userId: custId,
+          status: { $nin: ['cancelled', 'checked_out'] }
+        }).sort({ createdAt: -1 });
+        if (b) {
+          payment.bookingId = b._id;
+          if (!payment.roomId && b.roomId) {
+            payment.roomId = b.roomId;
+          }
+        }
+      }
+
       // Update associated LodgeRentBill with accurate balance reconciliation
       let bill = null;
       if (payment.billId) {
@@ -301,6 +316,13 @@ exports.verifyPayment = async (req, res) => {
     if (io) {
       io.emit('lodge-payment-updated', payment);
       io.emit('payment-status-changed', payment);
+      if (payment.bookingId) {
+        io.emit('booking-financials-updated', {
+          bookingId: payment.bookingId,
+          paymentId: payment._id,
+          status: payment.status
+        });
+      }
     }
 
     res.json({ message: `Payment ${payment.status} successfully.`, payment });
@@ -450,8 +472,47 @@ exports.getBookingFinancials = async (req, res) => {
     // Extra Charges
     const extraCharges = Array.isArray(booking.extraCharges) ? booking.extraCharges : [];
 
-    // Fetch payments for this booking
-    const payments = await Payment.find({ bookingId: booking._id }).sort({ createdAt: -1 });
+    // Fetch payments for this booking or payments made by this tenant for this room/rent
+    const bookingUserId = booking.userId?._id || booking.userId;
+    const bookingRoomId = booking.roomId?._id || booking.roomId;
+    const paymentQuery = {
+      $or: [
+        { bookingId: booking._id },
+        ...(bookingRoomId && bookingUserId ? [{ roomId: bookingRoomId, customerId: bookingUserId }] : []),
+        ...(bookingUserId ? [{ customerId: bookingUserId, paymentType: { $in: ['Rent', 'Deposit', 'Security Deposit', 'rent', 'deposit', 'Additional Charge'] } }] : [])
+      ]
+    };
+    let payments = await Payment.find(paymentQuery).sort({ createdAt: -1 });
+
+    // Auto-heal unlinked records: backfill bookingId and roomId
+    for (const p of payments) {
+      let modified = false;
+      if (!p.bookingId) {
+        p.bookingId = booking._id;
+        modified = true;
+      }
+      if (!p.roomId && bookingRoomId) {
+        p.roomId = bookingRoomId;
+        modified = true;
+      }
+      // Check any unverified Cashfree payment that was completed at Cashfree
+      if (p.method === 'cashfree' && p.status === 'WAITING_FOR_VERIFICATION' && (p.cfOrderId || p.referenceId)) {
+        try {
+          const cashfreeService = require('../services/cashfreeService');
+          const ordId = p.cfOrderId || p.referenceId;
+          const cfOrder = await cashfreeService.getOrder(ordId);
+          if ((cfOrder.order_status || '').toUpperCase() === 'PAID') {
+            p.status = 'Completed';
+            p.verifiedByName = 'Cashfree Gateway Auto-Reconciliation';
+            p.verifiedAt = new Date();
+            modified = true;
+          }
+        } catch (e) {}
+      }
+      if (modified) {
+        await p.save().catch(() => {});
+      }
+    }
 
     // Sum paid amounts by category - ONLY count strictly verified/completed payments!
     const VERIFIED_STATUSES = ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'];

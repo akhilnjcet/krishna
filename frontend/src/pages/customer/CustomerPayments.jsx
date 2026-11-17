@@ -110,7 +110,7 @@ const CustomerPayments = () => {
             socket.emit('join-room', userId);
         }
 
-        socket.on('payment-status-changed', (updatedPayment) => {
+        const handlePaymentUpdated = (updatedPayment) => {
             setPayments(prev => {
                 const exists = prev.some(p => p._id === updatedPayment._id);
                 if (exists) {
@@ -120,11 +120,16 @@ const CustomerPayments = () => {
                 }
             });
             fetchData();
-        });
+        };
+
+        socket.on('payment-status-changed', handlePaymentUpdated);
+        socket.on('lodge-payment-updated', fetchData);
+        socket.on('booking-financials-updated', fetchData);
 
         return () => {
-            socket.off('payment-status-changed');
-            socket.disconnect();
+            socket.off('payment-status-changed', handlePaymentUpdated);
+            socket.off('lodge-payment-updated', fetchData);
+            socket.off('booking-financials-updated', fetchData);
         };
     }, [user]);
 

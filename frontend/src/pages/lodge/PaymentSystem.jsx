@@ -161,8 +161,8 @@ const PaymentSystem = () => {
 
             const orderRes = await api.post('/payments/cashfree/create-order', {
                 amount: payAmt,
-                roomId: room?.id,
-                bookingId: room?.id,
+                roomId: room?._id || room?.id,
+                bookingId: room?.bookingId || (room?.booking && room.booking._id) || undefined,
                 name: room?.tenant || 'Guest Tenant',
                 paymentType: type === 'rent' ? 'Rent' : 'Additional Charge',
                 chargeCategory: type,

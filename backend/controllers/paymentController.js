@@ -90,6 +90,8 @@ exports.getMyPayments = async (req, res) => {
         const payments = await Payment.find({ customerId: req.user._id })
             .populate('projectId', 'title')
             .populate('quoteId', 'serviceType')
+            .populate('roomId', 'roomNumber type price')
+            .populate('bookingId', 'agreementNumber status totalAmount securityDeposit')
             .sort({ createdAt: -1 });
         res.json(payments);
     } catch (error) {
@@ -100,8 +102,10 @@ exports.getMyPayments = async (req, res) => {
 exports.getAllPayments = async (req, res) => {
     try {
         const payments = await Payment.find()
-            .populate('customerId', 'name email')
+            .populate('customerId', 'name email phone phoneNumber')
             .populate('projectId', 'title')
+            .populate('roomId', 'roomNumber type price')
+            .populate('bookingId', 'agreementNumber status totalAmount securityDeposit')
             .sort({ createdAt: -1 });
         res.json(payments);
     } catch (error) {
@@ -275,12 +279,57 @@ exports.createCashfreeOrder = async (req, res) => {
             name, 
             email, 
             phone, 
-            returnUrl 
+            returnUrl,
+            notifyUrl 
         } = req.body;
         const customer = req.user || {};
 
         if (!amount || parseFloat(amount) <= 0) {
             return res.status(400).json({ message: 'Valid payment amount is required.' });
+        }
+
+        const BookingLodge = require('../models/BookingLodge');
+        const Room = require('../models/Room');
+        const rawCustId = customer._id || customer.id || req.body.customerId;
+        const validCustId = (rawCustId && mongoose.Types.ObjectId.isValid(rawCustId)) ? rawCustId : undefined;
+
+        // Auto-resolve bookingId and roomId if missing or string
+        let resolvedBookingId = (bookingId && mongoose.Types.ObjectId.isValid(bookingId)) ? bookingId : undefined;
+        let resolvedRoomId = (roomId && mongoose.Types.ObjectId.isValid(roomId)) ? roomId : undefined;
+
+        if (!resolvedRoomId && roomId) {
+            const cleanRoomNum = String(roomId).replace(/^room-?/i, '').trim();
+            const foundRoom = await Room.findOne({
+                $or: [
+                    { roomNumber: cleanRoomNum },
+                    { roomNumber: String(roomId) },
+                    { name: String(roomId) }
+                ]
+            });
+            if (foundRoom) {
+                resolvedRoomId = foundRoom._id;
+            }
+        }
+
+        if (!resolvedBookingId && validCustId) {
+            const activeBooking = await BookingLodge.findOne({
+                userId: validCustId,
+                status: { $nin: ['cancelled', 'checked_out'] }
+            }).sort({ createdAt: -1 });
+            if (activeBooking) {
+                resolvedBookingId = activeBooking._id;
+                if (!resolvedRoomId && activeBooking.roomId) {
+                    resolvedRoomId = activeBooking.roomId;
+                }
+            }
+        } else if (!resolvedBookingId && resolvedRoomId) {
+            const activeBooking = await BookingLodge.findOne({
+                roomId: resolvedRoomId,
+                status: { $nin: ['cancelled', 'checked_out'] }
+            }).sort({ createdAt: -1 });
+            if (activeBooking) {
+                resolvedBookingId = activeBooking._id;
+            }
         }
 
         // Enforce ownership: verify user owns the project or booking if authenticated
@@ -293,25 +342,30 @@ exports.createCashfreeOrder = async (req, res) => {
                     return res.status(403).json({ message: 'Access denied: You do not own this project.' });
                 }
             }
-            if (bookingId) {
-                const BookingLodge = require('../models/BookingLodge');
-                const booking = await BookingLodge.findById(bookingId);
+            if (resolvedBookingId) {
+                const booking = await BookingLodge.findById(resolvedBookingId);
                 if (!booking) return res.status(404).json({ message: 'Booking not found.' });
                 const bOwner = (booking.userId?._id || booking.userId || '').toString();
-                if (bOwner !== req.user._id.toString()) {
+                if (bOwner && req.user._id && bOwner !== req.user._id.toString()) {
                     return res.status(403).json({ message: 'Access denied: You do not own this booking.' });
                 }
             }
         }
 
         const orderId = `KE_${Date.now()}_${Math.floor(100 + Math.random() * 900)}`;
-        const customerId = customer._id || customer.id || req.body.customerId || `guest_${Date.now().toString(36)}`;
+        const customerId = validCustId || req.body.customerId || `guest_${Date.now().toString(36)}`;
         const customerName = name || customer.name || 'Valued Client';
         const customerEmail = email || customer.email || 'customer@krishnaengg.com';
         const customerPhone = phone || customer.phone || customer.phoneNumber || '9447940835';
 
         const fallbackOrigin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : 'https://krishnaengineering.vercel.app');
         const effectiveReturnUrl = returnUrl || `${fallbackOrigin}/#/customer/payments?cf_order_id=${orderId}`;
+
+        const orderTags = {};
+        if (resolvedBookingId) orderTags.booking_id = String(resolvedBookingId);
+        if (resolvedRoomId) orderTags.room_id = String(resolvedRoomId);
+        if (validCustId) orderTags.customer_id = String(validCustId);
+        if (paymentType) orderTags.payment_type = String(paymentType);
 
         const orderResult = await cashfreeService.createOrder({
             orderId,
@@ -321,13 +375,12 @@ exports.createCashfreeOrder = async (req, res) => {
             customerEmail,
             customerPhone,
             orderNote: orderNote || `${paymentType} Online Payment for Krishna Engineering / Lodge`,
-            returnUrl: effectiveReturnUrl
+            returnUrl: effectiveReturnUrl,
+            notifyUrl,
+            orderTags
         });
 
-        const rawCustId = customer._id || customer.id || req.body.customerId;
-        const validCustId = (rawCustId && mongoose.Types.ObjectId.isValid(rawCustId)) ? rawCustId : undefined;
-
-        // Pre-create pending payment record in DB
+        // Pre-create pending payment record in DB with resolved IDs
         await Payment.create({
             customerId: validCustId,
             amount: parseFloat(amount),
@@ -338,8 +391,8 @@ exports.createCashfreeOrder = async (req, res) => {
             paymentDate: new Date(),
             projectId: projectId || undefined,
             quoteId: quoteId || undefined,
-            bookingId: bookingId || undefined,
-            roomId: roomId || undefined,
+            bookingId: resolvedBookingId,
+            roomId: resolvedRoomId,
             tenantName: customerName,
             paymentType: paymentType,
             chargeCategory: chargeCategory,
@@ -356,7 +409,6 @@ exports.createCashfreeOrder = async (req, res) => {
     }
 };
 
-/**
 /**
  * Helper to reconcile and apply verified Cashfree payment to ledger, projects, and rent bills
  */
@@ -408,6 +460,48 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
         });
     }
 
+    // Auto-bind missing bookingId or roomId to tenant's active booking
+    const BookingLodge = require('../models/BookingLodge');
+    const Room = require('../models/Room');
+    let targetBooking = null;
+
+    if (payment.bookingId) {
+        targetBooking = await BookingLodge.findById(payment.bookingId).populate('roomId').populate('userId');
+    }
+    if (!targetBooking && payment.roomId) {
+        targetBooking = await BookingLodge.findOne({
+            roomId: payment.roomId,
+            status: { $nin: ['cancelled', 'checked_out'] }
+        }).populate('roomId').populate('userId').sort({ createdAt: -1 });
+    }
+    if (!targetBooking && (payment.customerId || (reqUser && reqUser._id))) {
+        const custId = payment.customerId || reqUser._id;
+        targetBooking = await BookingLodge.findOne({
+            userId: custId,
+            status: { $nin: ['cancelled', 'checked_out'] }
+        }).populate('roomId').populate('userId').sort({ createdAt: -1 });
+    }
+    if (!targetBooking && (payment.tenantName || orderData.customer_details?.customer_name)) {
+        const tName = payment.tenantName || orderData.customer_details?.customer_name;
+        const matchingBookings = await BookingLodge.find({
+            status: { $nin: ['cancelled', 'checked_out'] }
+        }).populate('roomId').populate('userId').sort({ createdAt: -1 });
+        targetBooking = matchingBookings.find(b => 
+            (b.userId?.name && b.userId.name.toLowerCase() === tName.toLowerCase()) ||
+            (b.tenantName && b.tenantName.toLowerCase() === tName.toLowerCase())
+        );
+    }
+
+    if (targetBooking) {
+        payment.bookingId = targetBooking._id;
+        if (!payment.roomId && targetBooking.roomId?._id) {
+            payment.roomId = targetBooking.roomId._id;
+        }
+        if (!payment.customerId && targetBooking.userId) {
+            payment.customerId = targetBooking.userId._id || targetBooking.userId;
+        }
+    }
+
     // Mark as verified & completed
     payment.status = 'Completed';
     payment.amount = verifiedAmount;
@@ -429,20 +523,6 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
 
     // Accurate Ledger Reconciliation for Booking & Room
     let remainingBalance = 0;
-    let targetBooking = null;
-
-    if (payment.bookingId || payment.roomId) {
-        const BookingLodge = require('../models/BookingLodge');
-        if (payment.bookingId) {
-            targetBooking = await BookingLodge.findById(payment.bookingId).populate('roomId');
-        }
-        if (!targetBooking && payment.roomId) {
-            targetBooking = await BookingLodge.findOne({
-                roomId: payment.roomId,
-                status: { $nin: ['cancelled', 'checked_out'] }
-            }).populate('roomId').sort({ createdAt: -1 });
-        }
-    }
 
     if (targetBooking) {
         const rentDue = parseFloat(targetBooking.roomId?.price || targetBooking.totalAmount || 0);
@@ -452,7 +532,10 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
 
         const VERIFIED_STATUSES = ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'];
         const verifiedPayments = await Payment.find({
-            bookingId: targetBooking._id,
+            $or: [
+                { bookingId: targetBooking._id },
+                { roomId: targetBooking.roomId?._id, customerId: targetBooking.userId?._id || targetBooking.userId }
+            ],
             status: { $in: VERIFIED_STATUSES }
         });
 
@@ -555,6 +638,13 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
     if (io) {
         io.emit('payment-status-changed', payment);
         io.emit('lodge-payment-updated', payment);
+        if (targetBooking) {
+            io.emit('booking-financials-updated', {
+                bookingId: targetBooking._id,
+                remainingBalance,
+                status: remainingBalance === 0 ? 'FULLY PAID' : 'PARTIALLY PAID'
+            });
+        }
     }
 
     try {
@@ -659,14 +749,18 @@ exports.cashfreeWebhook = async (req, res) => {
     try {
         const signature = req.headers['x-webhook-signature'];
         const timestamp = req.headers['x-webhook-timestamp'];
-        const rawBodyStr = req.rawBody ? req.rawBody.toString('utf-8') : JSON.stringify(req.body);
+        const rawBodyStr = req.rawBody ? req.rawBody.toString('utf-8') : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
 
         // Verify webhook signature if present
         if (signature && timestamp) {
             try {
-                cashfreeService.verifyWebhookSignature(signature, rawBodyStr, timestamp);
+                const isValid = await cashfreeService.verifyWebhookSignature(signature, rawBodyStr, timestamp);
+                if (!isValid) {
+                    console.error('[Cashfree Webhook] Webhook signature mismatch.');
+                    return res.status(400).send('Invalid signature');
+                }
             } catch (sigErr) {
-                console.error('[Cashfree Webhook] Invalid signature:', sigErr.message);
+                console.error('[Cashfree Webhook] Signature verification error:', sigErr.message);
                 return res.status(400).send('Invalid signature');
             }
         }
@@ -678,6 +772,19 @@ exports.cashfreeWebhook = async (req, res) => {
 
         if (orderId) {
             if (type === 'PAYMENT_SUCCESS_WEBHOOK' || data?.order?.order_status === 'PAID') {
+                // Idempotency check: if order is already processed as Completed, return 200 without duplicate action
+                const existingCompletedPayment = await Payment.findOne({
+                    $or: [
+                        { referenceId: orderId, status: { $in: ['Completed', 'VERIFIED'] } },
+                        { cfOrderId: orderId, status: { $in: ['Completed', 'VERIFIED'] } }
+                    ]
+                });
+
+                if (existingCompletedPayment && existingCompletedPayment.bookingId) {
+                    console.log(`[Cashfree Webhook] Order ${orderId} already reconciled. Idempotent return.`);
+                    return res.status(200).send('ALREADY_PROCESSED');
+                }
+
                 // Re-verify order from backend authoritative API before fulfillment
                 try {
                     const verifiedOrder = await cashfreeService.getOrder(orderId);
