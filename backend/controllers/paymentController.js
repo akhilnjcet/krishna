@@ -624,6 +624,7 @@ async function processConfirmedCashfreeOrder(orderData, successfulPaymentInput =
                         chargeSurplus -= apply;
                     }
                 });
+                targetBooking.markModified('extraCharges');
             }
             totalExtraRemaining = extraCharges.reduce((sum, ec) => sum + Math.max(0, (parseFloat(ec.amount) || 0) - (parseFloat(ec.paidAmount) || 0)), 0);
         }

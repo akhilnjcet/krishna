@@ -655,6 +655,7 @@ exports.getBookingFinancials = async (req, res) => {
       }
     }
     if (bookingChargesModified) {
+      booking.markModified('extraCharges');
       await booking.save().catch(err => console.warn('Could not persist extra charges sync:', err.message));
     }
 
