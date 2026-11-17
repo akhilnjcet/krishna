@@ -40,7 +40,7 @@ const AdminStaff = () => {
     const handleDownloadRoster = () => {
         if (!staff || staff.length === 0) return alert("No staff data to export.");
         const columns = ['Emp ID', 'Full Name', 'Department', 'Designation', 'Contact'];
-        const data = staff.map(s => [
+        const data = (Array.isArray(staff) ? staff : []).map(s => [
             s.staff_id,
             s.name.toUpperCase(),
             s.department,
@@ -82,7 +82,7 @@ const AdminStaff = () => {
         setLoading(true);
         try {
             const res = await api.get(`/staff?search=${searchQuery}&department=${filterDept}`);
-            setStaff(res.data);
+            setStaff(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error("Failed to fetch staff data:", err);
         } finally {

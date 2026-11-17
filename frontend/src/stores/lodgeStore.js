@@ -158,12 +158,12 @@ const useLodgeStore = create((set, get) => ({
     set({ isSyncing: true });
     try {
         const res = await api.get('/lodge/sync');
-        if (res.data && res.data.rooms && res.data.rooms.length > 0) {
+        if (res.data && Array.isArray(res.data.rooms) && res.data.rooms.length > 0) {
             // Merge logic or direct set
             set({
                 rooms: res.data.rooms,
-                payments: res.data.payments || [],
-                complaints: res.data.complaints || [],
+                payments: Array.isArray(res.data.payments) ? res.data.payments : [],
+                complaints: Array.isArray(res.data.complaints) ? res.data.complaints : [],
                 adminPin: res.data.adminPin || '1234',
                 appSettings: res.data.appSettings || get().appSettings,
                 lastSynced: res.data.lastSynced

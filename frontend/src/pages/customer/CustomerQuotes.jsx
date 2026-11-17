@@ -18,16 +18,17 @@ const CustomerQuotes = () => {
     const fetchQuotes = async () => {
         try {
             const res = await api.get('/quotes/my-quotes');
-            setQuotes(res.data);
+            setQuotes(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error('Failed to fetch personal quotes', err);
+            setQuotes([]);
         } finally {
             setLoading(false);
         }
     };
 
     const handleQuoteLocationUpdated = (updatedQuote) => {
-        setQuotes(prev => prev.map(q => q._id === updatedQuote._id ? updatedQuote : q));
+        setQuotes(prev => (Array.isArray(prev) ? prev : []).map(q => q._id === updatedQuote._id ? updatedQuote : q));
     };
 
     const handleDownload = (quote) => {

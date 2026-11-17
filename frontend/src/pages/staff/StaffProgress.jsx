@@ -169,9 +169,10 @@ const StaffProgress = () => {
     const fetchData = async () => {
         try {
             const res = await api.get('/projects');
-            setProjects(res.data);
+            setProjects(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error('Fetch error:', err);
+            setProjects([]);
         } finally {
             setLoading(false);
         }

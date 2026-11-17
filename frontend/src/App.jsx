@@ -172,26 +172,34 @@ import useSignalStore from './stores/signalStore';
 
 const LodgeDataManager = () => {
     const pullFromCloud = useLodgeStore(state => state.pullFromCloud);
-    const token = useAuthStore(state => state.token);
+    const { token, user } = useAuthStore();
     const hasAttemptedPull = useRef(false);
 
     // Sync API Signal with Global BaseURL
     useEffect(() => {
         const unsubscribe = useSignalStore.subscribe(
             (state) => {
-                api.defaults.baseURL = state.getApiUrl();
-                console.log(`Signal Shifted: ${api.defaults.baseURL}`);
+                const newBase = state.getApiUrl();
+                if (newBase) {
+                    api.defaults.baseURL = newBase;
+                    console.log(`Signal Shifted: ${newBase}`);
+                }
             }
         );
         return () => unsubscribe();
     }, []);
 
     useEffect(() => {
-        if (token && !hasAttemptedPull.current) {
-            pullFromCloud();
+        const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
+        if (token && isAdminOrManager && !hasAttemptedPull.current) {
             hasAttemptedPull.current = true;
+            try {
+                pullFromCloud().catch(err => console.warn('Lodge background sync deferred:', err.message));
+            } catch (err) {
+                console.warn('Lodge pull invocation suppressed:', err);
+            }
         }
-    }, [token, pullFromCloud]);
+    }, [token, user, pullFromCloud]);
 
     return null;
 };
@@ -409,6 +417,12 @@ const SystemRescue = ({ error, isChunkError }) => {
                   className="w-full py-4 bg-white/5 text-slate-400 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-white/10 transition-all cursor-pointer"
               >
                   Purge Cache & Re-login
+              </button>
+              <button 
+                  onClick={() => { window.location.href = '#/'; window.location.reload(); }}
+                  className="w-full py-3 bg-white/5 text-slate-300 hover:text-white border border-white/10 rounded-2xl font-bold uppercase tracking-widest text-[9px] hover:bg-white/10 transition-all cursor-pointer"
+              >
+                  Return to Safe Home Portal
               </button>
           </div>
       </div>

@@ -273,7 +273,7 @@ export default function LodgeAdminManager() {
   const fetchRooms = async (lodgeId) => {
     if (!lodgeId || lodgeId === 'error_state') return;
     const res = await api.get(`/rooms/lodge/${lodgeId}`);
-    const roomsData = res.data || [];
+    const roomsData = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     // Display rooms immediately so UI renders in <100ms
     setRooms(roomsData);
 

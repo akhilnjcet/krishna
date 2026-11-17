@@ -20,9 +20,10 @@ const AdminInvoices = () => {
         setLoading(true);
         try {
             const res = await api.get('/invoices');
-            setInvoices(res.data);
+            setInvoices(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error("Failed to fetch invoices", err);
+            setInvoices([]);
         } finally {
             setLoading(false);
         }
@@ -33,9 +34,10 @@ const AdminInvoices = () => {
     };
 
     const handleDownloadLedger = () => {
-        if (invoices.length === 0) return alert("No ledger data available.");
+        const safeInvoices = Array.isArray(invoices) ? invoices : [];
+        if (safeInvoices.length === 0) return alert("No ledger data available.");
         const columns = ['Date', 'Invoice ID', 'Client', 'Project', 'Amount', 'Status'];
-        const data = invoices.map(inv => [
+        const data = safeInvoices.map(inv => [
             new Date(inv.createdAt).toLocaleDateString(),
             `INV-${inv._id.slice(-6).toUpperCase()}`,
             inv.customerId?.name || 'N/A',

@@ -166,11 +166,12 @@ const AdminNotifications = () => {
 
             const res = await notificationService.fetchNotifications(params);
             if (res && res.success) {
-                setNotifications(res.notifications || []);
+                setNotifications(Array.isArray(res.notifications) ? res.notifications : []);
                 setUnreadCount(res.unreadCount || 0);
             }
         } catch (err) {
             console.error('Error fetching inbox notifications:', err);
+            setNotifications([]);
         } finally {
             setLoadingInbox(false);
         }
@@ -231,11 +232,12 @@ const AdminNotifications = () => {
 
             const res = await notificationService.getNotificationLogs(params);
             if (res && res.success) {
-                setLogs(res.logs || []);
+                setLogs(Array.isArray(res.logs) ? res.logs : []);
                 setLogStats(res.stats || { total: 0, deliveredCount: 0, pendingCount: 0, failedCount: 0 });
             }
         } catch (err) {
             console.error('Error fetching logs:', err);
+            setLogs([]);
         } finally {
             setLoadingLogs(false);
         }
@@ -245,10 +247,10 @@ const AdminNotifications = () => {
         try {
             const res = await api.get('/projects/dashboard/stats');
             setIncidentStats({
-                activeAlertsCount: res.data.activeAlertsCount || 0,
-                acknowledgedAlertsCount: res.data.acknowledgedAlertsCount || 0,
-                resolvedAlertsCount: res.data.resolvedAlertsCount || 0,
-                criticalAlertsCount: res.data.criticalAlertsCount || 0
+                activeAlertsCount: res.data?.activeAlertsCount || 0,
+                acknowledgedAlertsCount: res.data?.acknowledgedAlertsCount || 0,
+                resolvedAlertsCount: res.data?.resolvedAlertsCount || 0,
+                criticalAlertsCount: res.data?.criticalAlertsCount || 0
             });
         } catch (err) {
             console.error('Error fetching incident stats:', err);
@@ -257,10 +259,14 @@ const AdminNotifications = () => {
 
     const fetchIncidentAlerts = async () => {
         try {
-            const res = await api.get('/notifications');
-            setIncidentAlerts(res.data || []);
+            const res = await api.get('/project-alerts');
+            const alerts = Array.isArray(res.data) 
+                ? res.data 
+                : (Array.isArray(res.data?.notifications) ? res.data.notifications : []);
+            setIncidentAlerts(alerts);
         } catch (err) {
             console.error('Error fetching incident alerts:', err);
+            setIncidentAlerts([]);
         }
     };
 
@@ -491,7 +497,7 @@ const AdminNotifications = () => {
                                 <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-500" />
                                 Loading notifications...
                             </div>
-                        ) : notifications.length === 0 ? (
+                        ) : (!Array.isArray(notifications) || notifications.length === 0) ? (
                             <div className="p-12 text-center">
                                 <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400 mb-3">
                                     <Bell className="w-6 h-6" />
@@ -1040,7 +1046,7 @@ const AdminNotifications = () => {
                                             Loading logs...
                                         </td>
                                     </tr>
-                                ) : logs.length === 0 ? (
+                                ) : (!Array.isArray(logs) || logs.length === 0) ? (
                                     <tr>
                                         <td colSpan={6} className="py-8 text-center text-slate-400">
                                             No delivery logs recorded yet.
@@ -1123,7 +1129,7 @@ const AdminNotifications = () => {
                     </div>
 
                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
-                        {incidentAlerts.length === 0 ? (
+                        {(!Array.isArray(incidentAlerts) || incidentAlerts.length === 0) ? (
                             <div className="p-8 text-center text-slate-400 text-sm">
                                 No project incidents reported.
                             </div>

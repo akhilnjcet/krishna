@@ -116,11 +116,14 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
             setLoading(true);
             const data = await notificationService.fetchNotifications({ limit: 40 });
             if (data && data.success) {
-                setNotifications(data.notifications || []);
+                setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
                 setUnreadCount(data.unreadCount || 0);
+            } else {
+                setNotifications([]);
             }
         } catch (err) {
             console.error('Error fetching notifications:', err);
+            setNotifications([]);
         } finally {
             setLoading(false);
         }
@@ -182,11 +185,12 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
         }
     };
 
+    const safeNotifications = Array.isArray(notifications) ? notifications : [];
     const filteredList = selectedCategory === 'all' 
-        ? notifications 
-        : notifications.filter(n => n.category === selectedCategory);
+        ? safeNotifications 
+        : safeNotifications.filter(n => n && n.category === selectedCategory);
 
-    const categoriesAvailable = Array.from(new Set(notifications.map(n => n.category))).filter(Boolean);
+    const categoriesAvailable = Array.from(new Set(safeNotifications.map(n => n?.category))).filter(Boolean);
 
     return (
         <div className="relative" ref={dropdownRef}>
