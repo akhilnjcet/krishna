@@ -611,8 +611,8 @@ async function processConfirmedCashfreeOrder(orderData, successfulPaymentInput =
             remainingBalance = Math.max(0, rentDue - effectiveRentSettled);
             // Authoritatively persist updated rentPaid & status on targetBooking
             targetBooking.rentPaid = rentPaid;
-            if (remainingBalance === 0) {
-                targetBooking.status = 'confirmed';
+            if (!targetBooking.status || targetBooking.status === 'cancelled') {
+                targetBooking.status = 'active';
             }
             await targetBooking.save();
         }

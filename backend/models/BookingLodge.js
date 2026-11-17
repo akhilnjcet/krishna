@@ -7,7 +7,7 @@ const bookingSchema = new mongoose.Schema({
   checkIn: { type: Date, required: true },
   checkOut: { type: Date, required: true },
   totalAmount: { type: Number, required: true },
-  status: { type: String, enum: ['active', 'cancelled', 'completed'], default: 'active' },
+  status: { type: String, enum: ['active', 'cancelled', 'completed', 'confirmed'], default: 'active' },
   refundPercentage: { type: Number, default: 0 },
   extensionRequest: {
       requestedCheckOut: Date,
