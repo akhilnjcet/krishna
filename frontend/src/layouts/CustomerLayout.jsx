@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import ThemeToggle from '../components/ThemeToggle';
+import NotificationBellDropdown from '../components/NotificationBellDropdown';
 import { getSocket } from '../utils/socket';
 
 const SIDEBAR_W = 'w-[280px] max-w-[85vw]';
@@ -213,14 +214,7 @@ const CustomerLayout = () => {
 
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         <ThemeToggle darkNavbar={true} />
-                        <button 
-                            className="min-w-[44px] min-h-[44px] flex items-center justify-center relative p-2.5 text-blue-100 hover:bg-white/10 dark:bg-slate-800/50 rounded-xl transition-all cursor-pointer"
-                            title="Notifications"
-                            aria-label="View notifications"
-                        >
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-yellow-400 rounded-full border-2 border-blue-700" />
-                        </button>
+                        <NotificationBellDropdown role="customer" />
                         <Link 
                             to="/customer/support" 
                             className="hidden sm:flex min-w-[44px] min-h-[44px] items-center gap-1.5 p-2.5 text-blue-100 hover:bg-white/10 dark:bg-slate-800/50 rounded-xl transition-all"

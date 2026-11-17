@@ -269,6 +269,7 @@ app.use(async (req, res, next) => {
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api', require('./routes/projectStatusRoutes'));
 app.use('/api/portfolio', require('./routes/portfolioRoutes'));
 app.use('/api/quotes', require('./routes/quoteRoutes'));

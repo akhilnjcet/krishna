@@ -61,6 +61,19 @@ exports.submitQuote = async (req, res) => {
             status: 'new'
         });
 
+        try {
+            const { dispatchNotification } = require('../services/notificationDispatcher');
+            dispatchNotification({
+                title: 'New Formal Quote Request',
+                message: `New quote submitted for "${newQuote.serviceType || 'Fabrication'}" at ${newQuote.location || 'Location'}.`,
+                category: 'quote',
+                priority: 'medium',
+                recipientRole: 'admin',
+                link: '/admin/quotes',
+                metadata: { quoteId: newQuote._id }
+            }).catch(() => {});
+        } catch (e) {}
+
         res.status(201).json(newQuote);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -129,6 +142,25 @@ exports.updateQuote = async (req, res) => {
         const quote = await Quote.findByIdAndUpdate(req.params.id, updates, { new: true }).populate('userId', 'name email');
         
         res.json(quote);
+
+        try {
+            if (updates.status && updates.status !== existingQuote.status) {
+                const { dispatchNotification } = require('../services/notificationDispatcher');
+                const targetCustId = quote.userId?._id || quote.userId;
+                if (targetCustId) {
+                    dispatchNotification({
+                        title: `Quote Update: ${quote.serviceType || 'Fabrication'}`,
+                        message: `Your quote request status has been updated to "${updates.status}".`,
+                        category: 'quote',
+                        priority: 'medium',
+                        recipientRole: 'customer',
+                        recipientUser: targetCustId,
+                        link: '/customer/quotes',
+                        metadata: { quoteId: quote._id, status: updates.status }
+                    }).catch(() => {});
+                }
+            }
+        } catch (e) {}
 
         // Notify Customer if status changed
         if (updates.status && updates.status !== existingQuote.status && quote.userId?.email) {

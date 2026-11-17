@@ -110,6 +110,17 @@ exports.markDailyAttendance = async (req, res) => {
                 io.emit('payroll_updated', { staffId: String(staffId), month: monthStr });
                 io.emit('salary_updated', { staffId: String(staffId), month: monthStr });
             }
+
+            const { dispatchNotification } = require('../services/notificationDispatcher');
+            dispatchNotification({
+                title: `Staff Attendance: ${staff.name}`,
+                message: `${staff.name} marked ${status} on ${date}.`,
+                category: 'attendance',
+                priority: 'low',
+                recipientRole: 'admin',
+                link: '/admin/attendance',
+                metadata: { staffId: String(staffId), date, status }
+            }).catch(() => {});
         } catch (sErr) {
             console.warn("Socket notification warning:", sErr.message);
         }

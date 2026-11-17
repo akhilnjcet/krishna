@@ -60,6 +60,19 @@ exports.submitPayment = async (req, res) => {
             io.emit('payment-status-changed', newPayment);
         }
 
+        try {
+            const { dispatchNotification } = require('../services/notificationDispatcher');
+            dispatchNotification({
+                title: 'New Payment Submitted',
+                message: `Payment of ₹${amount} submitted via ${method} — awaiting verification.`,
+                category: 'payment',
+                priority: 'high',
+                recipientRole: 'admin',
+                link: '/admin/finance',
+                metadata: { paymentId: newPayment._id, amount, method }
+            }).catch(() => {});
+        } catch (e) {}
+
         if (projectId && paymentStatus === 'Completed') {
             const { recalculateProjectPaymentStatus } = require('../utils/projectHelper');
             await recalculateProjectPaymentStatus(projectId);
@@ -166,6 +179,24 @@ exports.verifyPayment = async (req, res) => {
         if (io) {
             io.emit('payment-status-changed', payment);
         }
+
+        try {
+            const { dispatchNotification } = require('../services/notificationDispatcher');
+            const custId = payment.customerId?._id || payment.customerId;
+            if (custId) {
+                dispatchNotification({
+                    title: (status === 'Completed' || status === 'APPROVED') ? 'Payment Approved' : 'Payment Rejected',
+                    message: (status === 'Completed' || status === 'APPROVED')
+                        ? `Your payment of ₹${payment.amount} has been verified and approved.`
+                        : `Your payment of ₹${payment.amount} was rejected: ${rejectionReason || 'Verification Failed'}.`,
+                    category: 'payment',
+                    priority: (status === 'Completed' || status === 'APPROVED') ? 'medium' : 'high',
+                    recipientRole: 'customer',
+                    recipientUser: custId,
+                    link: '/customer/payments'
+                }).catch(() => {});
+            }
+        } catch (e) {}
 
         // Dispatch WhatsApp Notification to the customer
         const { sendWhatsAppMessage } = require('../services/whatsappService');
@@ -525,6 +556,32 @@ async function processConfirmedCashfreeOrder(orderData, reqUser = null, source =
         io.emit('payment-status-changed', payment);
         io.emit('lodge-payment-updated', payment);
     }
+
+    try {
+        const { dispatchNotification } = require('../services/notificationDispatcher');
+        dispatchNotification({
+            title: 'Cashfree Payment Received',
+            message: `₹${verifiedAmount} received successfully (Order ID: ${orderId}).`,
+            category: 'payment',
+            priority: 'high',
+            recipientRole: 'admin',
+            link: '/admin/finance',
+            metadata: { orderId, amount: verifiedAmount, cfPaymentId }
+        }).catch(() => {});
+
+        const custId = payment.customerId?._id || payment.customerId;
+        if (custId) {
+            dispatchNotification({
+                title: 'Payment Successful',
+                message: `Your payment of ₹${verifiedAmount} has been confirmed. Thank you!`,
+                category: 'payment',
+                priority: 'medium',
+                recipientRole: 'customer',
+                recipientUser: custId,
+                link: '/customer/payments'
+            }).catch(() => {});
+        }
+    } catch (e) {}
 
     return { 
         payment, 

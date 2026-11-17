@@ -24,6 +24,22 @@ const broadcastTaskAssigned = async (task) => {
                 });
             });
 
+            try {
+                const { dispatchNotification } = require('../services/notificationDispatcher');
+                for (const staff of populated.assignedStaff) {
+                    dispatchNotification({
+                        title: 'New Task Assigned',
+                        message: `You were assigned: "${populated.title}" (${populated.projectName || 'General'}).`,
+                        category: 'staff',
+                        priority: 'high',
+                        recipientRole: 'staff',
+                        recipientUser: staff._id,
+                        link: '/staff/tasks',
+                        metadata: { taskId: populated._id }
+                    }).catch(() => {});
+                }
+            } catch (e) {}
+
             io.to('admin').emit('admin-task-update', populated);
         }
     } catch (err) {

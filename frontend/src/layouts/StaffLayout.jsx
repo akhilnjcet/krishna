@@ -10,6 +10,7 @@ import { getSocket } from '../utils/socket';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import ThemeToggle from '../components/ThemeToggle';
+import NotificationBellDropdown from '../components/NotificationBellDropdown';
 import { playNotificationSound } from '../utils/soundService';
 import { preloadFaceModels } from '../utils/faceApiLoader';
 
@@ -191,10 +192,7 @@ const StaffLayout = () => {
                     </div>
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         <ThemeToggle darkNavbar={true} />
-                        <button className="relative p-2 text-blue-100 hover:bg-white/10 dark:bg-slate-800/50 rounded-xl transition-all">
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full border-2 border-blue-700" />
-                        </button>
+                        <NotificationBellDropdown role="staff" />
                         <div className="flex items-center gap-2">
                             <p className="text-sm font-bold text-white hidden sm:block truncate max-w-[100px]">{user?.name}</p>
                             <div className="w-8 h-8 bg-white/20 dark:bg-slate-800/70 rounded-xl border border-white/20 flex items-center justify-center text-white shrink-0">

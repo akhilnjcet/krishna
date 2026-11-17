@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getSocket } from '../utils/socket';
 import api from '../services/api';
 import ThemeToggle from '../components/ThemeToggle';
+import NotificationBellDropdown from '../components/NotificationBellDropdown';
 import { playNotificationSound, unlockAudio } from '../utils/soundService';
 
 const SIDEBAR_W = 'w-[280px] max-w-[85vw]';
@@ -543,74 +544,8 @@ const AdminLayout = () => {
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         <ThemeToggle darkNavbar={true} />
 
-                        {/* Notification Bell with Dropdown */}
-                        <div className="relative">
-                            <button 
-                                onClick={() => setShowDropdown(prev => !prev)}
-                                className="relative p-2 text-blue-100 hover:bg-white/10 dark:hover:bg-slate-800/50 rounded-xl transition-all"
-                                title="Notifications"
-                            >
-                                <Bell className="w-5 h-5" />
-                                {unreadCount > 0 && (
-                                    <span className="absolute top-1 right-1 bg-yellow-400 text-blue-900 text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-blue-700 animate-pulse">
-                                        {unreadCount}
-                                    </span>
-                                )}
-                            </button>
-
-                            {/* Bell Dropdown */}
-                            {showDropdown && (
-                                <>
-                                    <div 
-                                        className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[1px]" 
-                                        onClick={() => setShowDropdown(false)} 
-                                    />
-                                    <div className="fixed left-3 right-3 sm:left-auto sm:right-0 top-16 sm:top-12 sm:w-80 bg-white dark:bg-slate-900 dark:bg-dark-surface rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 dark:border-dark-border py-4 z-50 text-slate-800 dark:text-slate-200 animate-in fade-in slide-in-from-top-3 duration-200 flex flex-col max-h-[calc(100vh-5rem)] sm:max-h-[500px]">
-                                        <div className="px-4 pb-3 border-b border-slate-100 dark:border-slate-800 dark:border-dark-border flex justify-between items-center">
-                                            <span className="text-xs font-black uppercase tracking-wider text-slate-400">Recent Alerts</span>
-                                            {unreadCount > 0 && (
-                                                <span className="bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-[9px] font-black px-2 py-0.5 rounded-full">
-                                                    {unreadCount} New
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
-                                            {notifications.length === 0 ? (
-                                                <div className="px-4 py-8 text-center text-xs text-slate-400 font-bold uppercase tracking-wider">
-                                                    No notifications
-                                                </div>
-                                            ) : (
-                                                notifications.slice(0, 5).map(n => (
-                                                    <div 
-                                                        key={n._id} 
-                                                        onClick={() => { setShowDropdown(false); navigate('/admin/notifications'); }}
-                                                        className={`px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-all ${!n.isRead ? 'bg-blue-50/30 dark:bg-blue-950/30' : ''}`}
-                                                    >
-                                                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                                                            <span>{n.title}</span>
-                                                        </p>
-                                                        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Project: {n.projectName}</p>
-                                                        {n.reason && <p className="text-[9px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5">Reason: {n.reason}</p>}
-                                                        <p className="text-[9px] text-slate-400 mt-1">
-                                                            {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                        <div className="px-4 pt-3 border-t border-slate-100 dark:border-slate-800 dark:border-dark-border text-center">
-                                            <Link 
-                                                to="/admin/notifications" 
-                                                onClick={() => setShowDropdown(false)}
-                                                className="text-xs font-bold text-[#2563EB] dark:text-blue-400 hover:underline uppercase tracking-wider"
-                                            >
-                                                View All
-                                            </Link>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                        {/* Notification Bell with Industrial Real-Time Dropdown */}
+                        <NotificationBellDropdown role="admin" />
 
                         <div className="flex items-center gap-2">
                             <p className="text-sm font-bold text-white hidden sm:block truncate max-w-[100px]">{user?.name || user?.user?.name || "Admin"}</p>

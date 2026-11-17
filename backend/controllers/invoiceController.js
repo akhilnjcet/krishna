@@ -3,6 +3,23 @@ const Invoice = require('../models/Invoice');
 exports.createInvoice = async (req, res) => {
     try {
         const invoice = await Invoice.create(req.body);
+
+        try {
+            const { dispatchNotification } = require('../services/notificationDispatcher');
+            if (invoice.customerId) {
+                dispatchNotification({
+                    title: 'New Invoice Issued',
+                    message: `An invoice of ₹${invoice.amount || 0} has been issued.`,
+                    category: 'invoice',
+                    priority: 'medium',
+                    recipientRole: 'customer',
+                    recipientUser: invoice.customerId,
+                    link: '/customer/invoices',
+                    metadata: { invoiceId: invoice._id, amount: invoice.amount }
+                }).catch(() => {});
+            }
+        } catch (e) {}
+
         res.status(201).json(invoice);
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -39,6 +39,22 @@ module.exports = {
             console.warn(`⚠️ Cannot emit '${event}': Socket.IO is not initialized!`);
         }
     },
+    emitToStaff: (event, data) => {
+        if (io) {
+            io.to('staff').emit(event, data);
+            console.log(`📡 Broadcasted event '${event}' to staff room:`, data);
+        } else {
+            console.warn(`⚠️ Cannot emit '${event}': Socket.IO is not initialized!`);
+        }
+    },
+    emitToCustomer: (event, data) => {
+        if (io) {
+            io.to('customer').emit(event, data);
+            console.log(`📡 Broadcasted event '${event}' to customer room:`, data);
+        } else {
+            console.warn(`⚠️ Cannot emit '${event}': Socket.IO is not initialized!`);
+        }
+    },
     emitToUser: (userId, event, data) => {
         if (io && userId) {
             const userRoom = `user_${userId.toString()}`;
