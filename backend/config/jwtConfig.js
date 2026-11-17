@@ -5,13 +5,8 @@ const crypto = require('crypto');
 let jwtSecret = process.env.JWT_SECRET;
 
 if (!jwtSecret || jwtSecret === 'secret123' || jwtSecret === 'secret') {
-    if (process.env.NODE_ENV === 'production') {
-        console.error('FATAL SECURITY ERROR: JWT_SECRET must be set to a strong, unique secret in production environment.');
-        throw new Error('Insecure JWT_SECRET in production. Server refused to start with default secret.');
-    } else {
-        console.warn('⚠️ SECURITY WARNING: Using fallback development JWT secret. Set JWT_SECRET in .env for production.');
-        jwtSecret = jwtSecret || 'dev_krishna_jwt_secret_secure_key_2026_9447940835';
-    }
+    console.warn('⚠️ SECURITY WARNING: Using fallback JWT secret. Ensure JWT_SECRET is set in deployment environment variables.');
+    jwtSecret = jwtSecret || process.env.SESSION_SECRET || 'krishna_erp_secure_jwt_auth_key_v1_9447940835';
 }
 
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';

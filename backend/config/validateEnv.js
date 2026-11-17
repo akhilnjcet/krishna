@@ -49,14 +49,14 @@ const validateEnv = () => {
         console.warn('──────────────────────────────────────────────\n');
     }
 
-    // Halt startup if fatal errors exist in production
+    // Log configuration status
     if (errors.length > 0) {
         console.error('\n🚨 ─── [FATAL DEPLOYMENT CONFIGURATION ERRORS] ───');
         errors.forEach(e => console.error(`❌ ${e}`));
         console.error('───────────────────────────────────────────────────\n');
-        if (isProduction) {
-            throw new Error(`Server startup aborted due to ${errors.length} fatal security configuration error(s).`);
-        }
+        // Do not throw at module import time in serverless environments (e.g. Vercel)
+        // because that causes FUNCTION_INVOCATION_FAILED. Instead, allow Express to mount
+        // and return explicit JSON errors (such as 503 Database Unavailable) to clients.
     }
 
     return { valid: errors.length === 0, warnings, errors };

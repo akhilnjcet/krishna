@@ -31,15 +31,9 @@ exports.recordAttendance = async (req, res) => {
             descriptor,
             face_image,
             location = {},
-            const {
-                action = 'Check in',
-                descriptor,
-                face_image,
-                location = {},
-                device_info = '',
-                consent_acknowledged = false
+            device_info = '',
             consent_acknowledged = false
-            } = req.body;
+        } = req.body;
 
         const staffUser = await User.findById(req.user._id || req.user.id);
         if (!staffUser) {
@@ -108,8 +102,6 @@ exports.recordAttendance = async (req, res) => {
         }
 
         // Retrieve registered face template for this staff member
-        let registeredDescriptor = staffUser.faceDescriptor && staffUser.faceDescriptor.length === 128
-            ? staffUser.faceDescriptor
         let registeredDescriptor = staffUser.faceDescriptor && staffUser.faceDescriptor.length === 128
             ? staffUser.faceDescriptor
             : null;
@@ -437,19 +429,10 @@ exports.getAttendanceLogs = async (req, res) => {
             status,
             action,
             type,
-            const {
-                staff_id,
-                date,
-                month,
-                startDate,
-                endDate,
-                status,
-                action,
-                type,
-                verification_result,
-                correction_status,
-                search
-            } = req.query;
+            verification_result,
+            correction_status,
+            search
+        } = req.query;
 
         let query = {};
 
@@ -777,14 +760,7 @@ exports.requestCorrection = async (req, res) => {
             requested_time,
             reason,
             location_notes = ''
-        const {
-                attendance_id,
-                date,
-                requested_action = 'Check in',
-                requested_time,
-                reason,
-                location_notes = ''
-            } = req.body;
+        } = req.body;
 
         if (!reason || !reason.trim()) {
             return res.status(400).json({ message: 'Please provide a clear reason for the manual attendance correction.' });
@@ -943,9 +919,6 @@ exports.getExceptions = async (req, res) => {
             ]
         })
             .populate('staff_id', 'staff_id name email department designation profilePhoto')
-            .sort({ login_time: -1 })
-            .limit(100);
-        .populate('staff_id', 'staff_id name email department designation profilePhoto')
             .sort({ login_time: -1 })
             .limit(100);
 

@@ -83,12 +83,32 @@ const Login = () => {
                 }
             }
         } catch (err) {
+            const status = err.response?.status;
             const raw = err.response?.data;
-            const message = raw?.message || raw?.error || (typeof raw === 'string' && !raw.includes('<!DOCTYPE') && !raw.includes('FUNCTION_INVOCATION_FAILED') ? raw : null);
-            if (err.response?.status === 500 || (typeof raw === 'string' && raw.includes('FUNCTION_INVOCATION_FAILED'))) {
-                setError(message || 'The server encountered an internal issue. Please try again shortly.');
+            const rawMsg = typeof raw === 'object' ? (raw?.message || raw?.error) : (typeof raw === 'string' ? raw : null);
+            const isVercelCrash = typeof rawMsg === 'string' && (
+                rawMsg.includes('FUNCTION_INVOCATION_FAILED') ||
+                rawMsg.includes('server error has occurred') ||
+                rawMsg.includes('<!DOCTYPE') ||
+                rawMsg.includes('bom1::')
+            );
+
+            if (status === 401) {
+                setError(rawMsg && !isVercelCrash ? rawMsg : 'Invalid email/username or password. Please verify your credentials.');
+            } else if (status === 423) {
+                setError(rawMsg && !isVercelCrash ? rawMsg : 'Account is temporarily locked due to multiple failed login attempts. Please wait 15 minutes.');
+            } else if (status === 429) {
+                setError('Too many login attempts. Please wait a few minutes before trying again.');
+            } else if (status === 403) {
+                setError(rawMsg && !isVercelCrash ? rawMsg : 'Account is inactive. Please contact the administrator.');
+            } else if (status === 503) {
+                setError('Database synchronization in progress. Please try again in a few moments.');
+            } else if (status === 500 || isVercelCrash) {
+                setError(rawMsg && !isVercelCrash ? rawMsg : 'The authentication service is temporarily unavailable. Please try again shortly.');
+            } else if (!err.response) {
+                setError('Unable to connect to the server. Please check your internet connection.');
             } else {
-                setError(message || err.message || 'Identity verification failed.');
+                setError(rawMsg && !isVercelCrash ? rawMsg : 'Identity verification failed. Please try again.');
             }
         } finally {
             setLoading(false);

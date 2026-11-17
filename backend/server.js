@@ -1,4 +1,11 @@
-require('dotenv').config();
+const path = require('path');
+// Ensure environment variables are loaded regardless of current working directory
+try {
+    require('dotenv').config({ path: path.join(__dirname, '.env') });
+    require('dotenv').config({ path: path.join(__dirname, '../.env') });
+    require('dotenv').config();
+} catch (_) {}
+
 const validateEnv = require('./config/validateEnv');
 validateEnv();
 
@@ -6,7 +13,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -247,6 +253,19 @@ app.use((req, res, next) => {
     next();
 });
 
+// Lightweight Health and Liveness Probes (Accessible even before DB initialization)
+app.get('/api/health', (req, res) => {
+    const mongoose = require('mongoose');
+    const isDbConnected = mongoose.connection.readyState === 1;
+    res.json({ 
+        status: 'ok', 
+        message: 'Krishna ERP API is active',
+        database: isDbConnected ? 'connected' : (mongoose.connection.readyState === 2 ? 'connecting' : 'disconnected'),
+        environment: isVercel ? 'serverless-vercel' : 'node-dedicated',
+        timestamp: new Date().toISOString() 
+    });
+});
+app.get('/api/ping', (req, res) => res.json({ pong: true, timestamp: Date.now() }));
 
 // Connect to Database
 const connectDB = require('./config/database');
@@ -258,11 +277,19 @@ connectDB().then(() => {
 
 // Vercel Database Connection Sync (Ensures DB is ready for every request)
 app.use(async (req, res, next) => {
+    // Exempt health, ping, and status routes from blocking DB checks
+    if (req.path === '/health' || req.path === '/api/health' || req.path === '/ping' || req.path === '/api/ping') {
+        return next();
+    }
     try {
         await connectDB();
         next();
     } catch (err) {
-        res.status(503).json({ error: 'Database Synchronization Failure', message: err.message });
+        res.status(503).json({ 
+            error: 'Database Synchronization Failure', 
+            message: 'Database is currently unavailable. Please verify connection credentials.',
+            detail: err.message 
+        });
     }
 });
 
@@ -314,9 +341,6 @@ app.use('/api/inventory', require('./routes/inventoryRoutes'));
 app.use('/api/feedback', require('./routes/feedbackRoutes'));
 app.use('/api/vacancies', require('./routes/vacancyRoutes'));
 app.use('/api/announcements', require('./routes/announcementRoutes'));
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', message: 'API is running' });
-});
 
 // Root Error Route
 app.get('/api/debug/error', (req, res) => {

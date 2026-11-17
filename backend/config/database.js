@@ -26,8 +26,9 @@ const connectDB = async () => {
         console.warn('⚠️ WARNING: MONGODB_URI environment variable is missing on Vercel. Database requests will fail until MONGODB_URI is set in Vercel settings.');
     }
 
+    const isVercel = process.env.VERCEL === '1';
     const connectionOptions = {
-        serverSelectionTimeoutMS: 10000,
+        serverSelectionTimeoutMS: isVercel ? 4000 : 8000,
         retryWrites: true,
         w: 'majority',
         autoIndex: !isProduction // Disable heavy automatic index creation at runtime in production
