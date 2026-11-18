@@ -1,10 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const vehicleController = require('../controllers/vehicleController');
+const driverController = require('../controllers/driverController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
 
+// ─── DRIVER ROUTES (Must be defined before /:id) ──────────────────────
+router.get('/drivers/summary', driverController.getDriverDashboardSummary);
+router.get('/drivers/eligible', driverController.getEligibleDrivers);
+router.get('/drivers/staff-candidates', driverController.getStaffCandidates);
+router.get('/drivers/check-expiries', driverController.checkLicenseExpiries);
+router.get('/drivers', driverController.getDrivers);
+router.get('/drivers/:id', driverController.getDriverById);
+
+router.post('/drivers', authorize('admin', 'staff'), driverController.createDriver);
+router.put('/drivers/:id', authorize('admin', 'staff'), driverController.updateDriver);
+router.delete('/drivers/:id', authorize('admin'), driverController.deleteDriver);
+router.post('/drivers/:driverId/assign', authorize('admin', 'staff'), driverController.assignDriverToVehicle);
+
+// ─── VEHICLE ROUTES ──────────────────────────────────────────────────
 router.get('/', vehicleController.getVehicles);
 router.get('/reports/summary', vehicleController.getFleetReports);
 router.get('/:id', vehicleController.getVehicleById);

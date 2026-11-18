@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Vehicle = require('../models/Vehicle');
+const Driver = require('../models/Driver');
 const Expense = require('../models/Expense');
 const Project = require('../models/Project');
 const User = require('../models/User');
@@ -122,11 +123,23 @@ exports.createVehicle = async (req, res) => {
 
         let assignedDriverName = '';
         let assignedDriverPhone = '';
+        let assignedDriverLicense = driverLicenseNumber || '';
+        let assignedDriverRef = null;
+        let matchedDriver = null;
+
         if (assignedDriverId) {
-            const driver = await User.findById(assignedDriverId);
-            if (driver) {
-                assignedDriverName = driver.name;
-                assignedDriverPhone = driver.phone || driver.phoneNumber || '';
+            matchedDriver = await Driver.findById(assignedDriverId);
+            if (matchedDriver) {
+                assignedDriverName = matchedDriver.name;
+                assignedDriverPhone = matchedDriver.phone;
+                assignedDriverLicense = matchedDriver.licenseNumber;
+                assignedDriverRef = matchedDriver._id;
+            } else {
+                const driver = await User.findById(assignedDriverId);
+                if (driver) {
+                    assignedDriverName = driver.name;
+                    assignedDriverPhone = driver.phone || driver.phoneNumber || '';
+                }
             }
         }
 
@@ -134,10 +147,11 @@ exports.createVehicle = async (req, res) => {
             registrationNumber: cleanReg,
             vehicleName: vehicleName.trim(),
             vehicleType,
-            assignedDriverId: assignedDriverId || null,
+            assignedDriverId: (matchedDriver?.employeeId || (matchedDriver ? null : assignedDriverId)) || null,
+            assignedDriverRef: assignedDriverRef || null,
             assignedDriverName,
             assignedDriverPhone,
-            driverLicenseNumber: driverLicenseNumber || '',
+            driverLicenseNumber: assignedDriverLicense,
             status: 'Available',
             currentOdometer: parseFloat(currentOdometer) || 0,
             fuelType,
@@ -146,6 +160,28 @@ exports.createVehicle = async (req, res) => {
         });
 
         await vehicle.save();
+
+        // If driver assigned, update Driver record
+        if (matchedDriver) {
+            matchedDriver.currentAssignedVehicle = {
+                vehicleId: vehicle._id,
+                registrationNumber: vehicle.registrationNumber,
+                vehicleName: vehicle.vehicleName,
+                assignedAt: new Date()
+            };
+            matchedDriver.assignmentHistory.push({
+                vehicleId: vehicle._id,
+                registrationNumber: vehicle.registrationNumber,
+                vehicleName: vehicle.vehicleName,
+                assignedAt: new Date(),
+                unassignedAt: null,
+                assignedBy: req.user?._id || null,
+                assignedByName: req.user?.name || 'Administrator',
+                reason: 'Vehicle Registration Initial Assignment'
+            });
+            await matchedDriver.save();
+        }
+
         res.status(201).json({ success: true, message: 'Vehicle registered successfully', vehicle });
     } catch (err) {
         console.error('createVehicle error:', err);
@@ -181,17 +217,80 @@ exports.updateVehicle = async (req, res) => {
         if (notes !== undefined) vehicle.notes = notes;
 
         if (assignedDriverId !== undefined) {
+            const oldDriverRef = vehicle.assignedDriverRef;
             if (assignedDriverId) {
-                const driver = await User.findById(assignedDriverId);
-                if (driver) {
-                    vehicle.assignedDriverId = driver._id;
-                    vehicle.assignedDriverName = driver.name;
-                    vehicle.assignedDriverPhone = driver.phone || driver.phoneNumber || '';
+                const newDriver = await Driver.findById(assignedDriverId);
+                if (newDriver) {
+                    // If vehicle previously had a different driver, unassign old driver
+                    if (oldDriverRef && oldDriverRef.toString() !== newDriver._id.toString()) {
+                        const oldDriver = await Driver.findById(oldDriverRef);
+                        if (oldDriver) {
+                            if (oldDriver.assignmentHistory && oldDriver.assignmentHistory.length > 0) {
+                                const last = oldDriver.assignmentHistory[oldDriver.assignmentHistory.length - 1];
+                                if (!last.unassignedAt) {
+                                    last.unassignedAt = new Date();
+                                    last.reason = `Replaced by ${newDriver.name}`;
+                                }
+                            }
+                            oldDriver.currentAssignedVehicle = { vehicleId: null, registrationNumber: '', vehicleName: '', assignedAt: null };
+                            await oldDriver.save();
+                        }
+                    }
+
+                    vehicle.assignedDriverRef = newDriver._id;
+                    vehicle.assignedDriverId = newDriver.employeeId || null;
+                    vehicle.assignedDriverName = newDriver.name;
+                    vehicle.assignedDriverPhone = newDriver.phone;
+                    vehicle.driverLicenseNumber = newDriver.licenseNumber;
+
+                    // Update new driver
+                    newDriver.currentAssignedVehicle = {
+                        vehicleId: vehicle._id,
+                        registrationNumber: vehicle.registrationNumber,
+                        vehicleName: vehicle.vehicleName,
+                        assignedAt: new Date()
+                    };
+                    newDriver.assignmentHistory.push({
+                        vehicleId: vehicle._id,
+                        registrationNumber: vehicle.registrationNumber,
+                        vehicleName: vehicle.vehicleName,
+                        assignedAt: new Date(),
+                        unassignedAt: null,
+                        assignedBy: req.user?._id || null,
+                        assignedByName: req.user?.name || 'Administrator',
+                        reason: 'Vehicle Assignment Update'
+                    });
+                    await newDriver.save();
+                } else {
+                    const driver = await User.findById(assignedDriverId);
+                    if (driver) {
+                        vehicle.assignedDriverId = driver._id;
+                        vehicle.assignedDriverRef = null;
+                        vehicle.assignedDriverName = driver.name;
+                        vehicle.assignedDriverPhone = driver.phone || driver.phoneNumber || '';
+                    }
                 }
             } else {
+                // Unassign driver
+                if (oldDriverRef) {
+                    const oldDriver = await Driver.findById(oldDriverRef);
+                    if (oldDriver) {
+                        if (oldDriver.assignmentHistory && oldDriver.assignmentHistory.length > 0) {
+                            const last = oldDriver.assignmentHistory[oldDriver.assignmentHistory.length - 1];
+                            if (!last.unassignedAt) {
+                                last.unassignedAt = new Date();
+                                last.reason = 'Unassigned from vehicle';
+                            }
+                        }
+                        oldDriver.currentAssignedVehicle = { vehicleId: null, registrationNumber: '', vehicleName: '', assignedAt: null };
+                        await oldDriver.save();
+                    }
+                }
                 vehicle.assignedDriverId = null;
+                vehicle.assignedDriverRef = null;
                 vehicle.assignedDriverName = '';
                 vehicle.assignedDriverPhone = '';
+                vehicle.driverLicenseNumber = '';
             }
         }
 
@@ -237,6 +336,7 @@ exports.recordTrip = async (req, res) => {
 
         const {
             projectId,
+            startLocation = 'Central Yard / Workshop',
             destination,
             driverId,
             startOdometer,
@@ -255,10 +355,26 @@ exports.recordTrip = async (req, res) => {
             if (p) projectTitle = p.title;
         }
 
-        let driverName = vehicle.assignedDriverName;
+        let tripDriverId = vehicle.assignedDriverRef || vehicle.assignedDriverId;
+        let tripDriverName = vehicle.assignedDriverName || 'Driver';
+        let tripDriverPhone = vehicle.assignedDriverPhone || '';
+        let tripDriverLicense = vehicle.driverLicenseNumber || '';
+
         if (driverId) {
-            const d = await User.findById(driverId);
-            if (d) driverName = d.name;
+            const matchedDrv = await Driver.findById(driverId);
+            if (matchedDrv) {
+                tripDriverId = matchedDrv._id;
+                tripDriverName = matchedDrv.name;
+                tripDriverPhone = matchedDrv.phone;
+                tripDriverLicense = matchedDrv.licenseNumber;
+            } else {
+                const d = await User.findById(driverId);
+                if (d) {
+                    tripDriverId = d._id;
+                    tripDriverName = d.name;
+                    tripDriverPhone = d.phone || d.phoneNumber || '';
+                }
+            }
         }
 
         const tripNumber = `TRIP-${Date.now().toString(36).toUpperCase()}`;
@@ -268,9 +384,12 @@ exports.recordTrip = async (req, res) => {
             date: new Date(),
             projectId: projectId || null,
             projectTitle,
+            startLocation,
             destination: destination || 'Site Delivery',
-            driverId: driverId || vehicle.assignedDriverId,
-            driverName,
+            driverId: tripDriverId,
+            driverName: tripDriverName,
+            driverPhone: tripDriverPhone,
+            driverLicenseNumber: tripDriverLicense,
             startOdometer: effectiveStart,
             endOdometer: effectiveEnd,
             distanceKm,

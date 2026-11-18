@@ -30,13 +30,16 @@ const vehicleTripSchema = new mongoose.Schema({
         default: null
     },
     projectTitle: { type: String, default: '' },
+    startLocation: { type: String, default: 'Central Yard / Workshop' },
     destination: { type: String, required: true },
     driverId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'Driver',
         default: null
     },
     driverName: { type: String, default: '' },
+    driverPhone: { type: String, default: '' },
+    driverLicenseNumber: { type: String, default: '' },
     startOdometer: { type: Number, required: true },
     endOdometer: { type: Number, default: 0 },
     distanceKm: { type: Number, default: 0 },
@@ -129,6 +132,11 @@ const vehicleSchema = new mongoose.Schema({
     assignedDriverId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
+        default: null
+    },
+    assignedDriverRef: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Driver',
         default: null
     },
     assignedDriverName: { type: String, default: '' },
