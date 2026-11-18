@@ -73,7 +73,7 @@ export const savePDF = async (doc, filename, historyMetadata = null) => {
                     directory: Directory.Cache,
                     recursive: true
                 });
-                
+
                 await Share.share({
                     title: safeFilename,
                     text: 'Here is your generated PDF document.',
@@ -86,18 +86,18 @@ export const savePDF = async (doc, filename, historyMetadata = null) => {
                 console.warn('Native Capacitor Share fallback to browser download:', err);
             }
         }
-        
+
         try {
             const blob = doc.output('blob');
             const blobUrl = URL.createObjectURL(blob);
-            
+
             const link = document.createElement('a');
             link.href = blobUrl;
             link.download = safeFilename;
             link.style.display = 'none';
             document.body.appendChild(link);
             link.click();
-            
+
             setTimeout(() => {
                 if (document.body.contains(link)) {
                     document.body.removeChild(link);
@@ -125,7 +125,7 @@ const getApiBase = () => {
     try {
         const envUrl = import.meta.env.VITE_API_URL;
         if (envUrl) return envUrl.replace(/\/$/, '');
-    } catch (_) {}
+    } catch (_) { }
     return window.location.origin + '/api';
 };
 
@@ -177,7 +177,7 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
     const companyName = companyInfoOverride.company_name || companyInfoOverride.name || cachedBranding?.company_name || COMPANY_DETAILS.name;
     const tagline = companyInfoOverride.tagline || cachedBranding?.company_tagline || COMPANY_DETAILS.tagline;
     const address = companyInfoOverride.company_address || companyInfoOverride.address || cachedBranding?.company_address || cachedBranding?.footer_address || COMPANY_DETAILS.address;
-    
+
     const emailVal = companyInfoOverride.company_email || companyInfoOverride.email || cachedBranding?.company_email || cachedBranding?.footer_email || 'contact@krishnaengg.com';
     const phoneVal = companyInfoOverride.company_phone || companyInfoOverride.phone || cachedBranding?.company_phone || cachedBranding?.footer_phone || '+91 9447940835';
     const contact = companyInfoOverride.contact || `Phone: ${phoneVal} | Email: ${emailVal}`;
@@ -270,8 +270,8 @@ const addHeader = (doc, title, companyInfoOverride = {}) => {
         rightY += 4;
     });
 
-    const showGstin = companyInfoOverride.showCompanyGstin !== undefined 
-        ? companyInfoOverride.showCompanyGstin 
+    const showGstin = companyInfoOverride.showCompanyGstin !== undefined
+        ? companyInfoOverride.showCompanyGstin
         : (cachedBranding?.show_company_gstin !== false && cachedBranding?.show_company_gstin !== 'false');
 
     if (showGstin) {
@@ -361,15 +361,15 @@ export const generateQuotePDF = async (quote) => {
     const worksite = quote.worksiteLocation || {};
     const worksiteAddress = worksite.address || quote.location || 'N/A';
     const hasCoordinates = worksite.latitude !== null && worksite.latitude !== undefined &&
-                           worksite.longitude !== null && worksite.longitude !== undefined;
-    
+        worksite.longitude !== null && worksite.longitude !== undefined;
+
     let coordsText = 'Not Tagged (Manual Location)';
     let mapUrl = '';
     if (hasCoordinates) {
         const lat = Number(worksite.latitude).toFixed(6);
         const lng = Number(worksite.longitude).toFixed(6);
-        const sourceLabel = worksite.source === 'gps' 
-            ? `(GPS Verified${worksite.accuracy ? ` ±${worksite.accuracy}m` : ''})` 
+        const sourceLabel = worksite.source === 'gps'
+            ? `(GPS Verified${worksite.accuracy ? ` ±${worksite.accuracy}m` : ''})`
             : '(Map Pinned)';
         coordsText = `${lat}° N, ${lng}° E ${sourceLabel}`;
         mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
@@ -396,7 +396,7 @@ export const generateQuotePDF = async (quote) => {
         showHead: 'everyPage',
         headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold', fontSize: 9 },
         styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
-        columnStyles: { 
+        columnStyles: {
             0: { fontStyle: 'bold', fillColor: [249, 250, 251], width: 55, halign: 'left' },
             1: { halign: 'left' }
         },
@@ -474,7 +474,7 @@ export const generateSalaryPDF = async (salary, user) => {
             head: [['EMPLOYEE INFORMATION', 'TRANSACTION & BANK DETAILS']],
             body: [
                 [`Employee ID: ${empId}\nName: ${empName.toUpperCase()}\nDepartment: ${dept}\nDesignation: ${desig}\nJoining Date: ${joining}\nPhone: ${phoneNum}`,
-                 `Month / Cycle: ${salary.month}\nPayment Date: ${payDate}\nPayment Method: ${payMethod}\nTxn Ref No: ${txnRef}\nBank: ${bankName}\nAccount / IFSC: ${accNum} / ${ifsc}`]
+                `Month / Cycle: ${salary.month}\nPayment Date: ${payDate}\nPayment Method: ${payMethod}\nTxn Ref No: ${txnRef}\nBank: ${bankName}\nAccount / IFSC: ${accNum} / ${ifsc}`]
             ],
             theme: 'grid',
             showHead: 'everyPage',
@@ -491,7 +491,7 @@ export const generateSalaryPDF = async (salary, user) => {
             head: [['ATTENDANCE SUMMARY', 'OVERTIME SUMMARY']],
             body: [
                 [`Working Days: ${salary.totalWorkingDays || 26}\nPresent Days: ${salary.presentDays || 0}\nHalf Days: ${salary.halfDays || 0}\nLeave Days: ${salary.leaveDays || 0}\nHolidays: ${salary.holidays || 0}\nWorked Hours: ${(salary.totalWorkedHours !== undefined && salary.totalWorkedHours !== null && salary.totalWorkedHours > 0 ? salary.totalWorkedHours : ((salary.presentDays || 0) * (emp.standardWorkingHoursPerDay || 8) + ((salary.halfDays || 0) * ((emp.standardWorkingHoursPerDay || 8) / 2)))).toFixed(1)} hrs`,
-                 `Overtime Hours: ${salary.overtimeHours || 0} hrs\nOT Rate/Hr: ${formatCurrencyINR(salary.overtimeRate || emp.overtimeRate || user?.overtimeRate || 0)}\nOvertime Earnings: ${formatCurrencyINR(salary.overtimeEarnings || 0)}`]
+                `Overtime Hours: ${salary.overtimeHours || 0} hrs\nOT Rate/Hr: ${formatCurrencyINR(salary.overtimeRate || emp.overtimeRate || user?.overtimeRate || 0)}\nOvertime Earnings: ${formatCurrencyINR(salary.overtimeEarnings || 0)}`]
             ],
             theme: 'grid',
             showHead: 'everyPage',
@@ -502,15 +502,15 @@ export const generateSalaryPDF = async (salary, user) => {
 
         const ledgerY = doc.lastAutoTable.finalY + 6;
 
-        const baseVal  = salary.baseSalary || salary.base_salary || 0;
+        const baseVal = salary.baseSalary || salary.base_salary || 0;
         const calcBase = salary.totalEarnedSalary !== undefined ? salary.totalEarnedSalary : (salary.calculatedBase !== undefined ? salary.calculatedBase : (salary.salaryType === 'Daily Wage' ? (baseVal * ((salary.presentDays || 0) + ((salary.halfDays || 0) * 0.5))) : baseVal));
-        const otEarn   = salary.overtimeEarnings || 0;
+        const otEarn = salary.overtimeEarnings || 0;
         const bonusVal = salary.bonus !== undefined ? salary.bonus : (salary.bonusAmount || 0);
         const incentivesVal = salary.incentives || 0;
         const allowancesVal = salary.allowances || 0;
-        const dedVal   = salary.deductions !== undefined ? salary.deductions : (salary.deductionAmount || 0);
-        const advVal   = salary.advanceRecovery !== undefined ? salary.advanceRecovery : (salary.advanceAmount || 0);
-        const netVal   = salary.netSalary || salary.salaryAmount || 0;
+        const dedVal = salary.deductions !== undefined ? salary.deductions : (salary.deductionAmount || 0);
+        const advVal = salary.advanceRecovery !== undefined ? salary.advanceRecovery : (salary.advanceAmount || 0);
+        const netVal = salary.netSalary || salary.salaryAmount || 0;
 
         autoTable(doc, {
             startY: ledgerY,
@@ -587,7 +587,7 @@ export const generateInvoicePDF = async (invoice) => {
     doc.setFont('helvetica', 'bold');
     doc.text(`Invoice ID: ${invNumber}`, 15, startY, { charSpace: 0 });
     doc.text(`Invoice Date: ${new Date(invoice.createdAt || Date.now()).toLocaleDateString()}`, 15, startY + 6, { charSpace: 0 });
-    
+
     doc.text(`Billed To:`, 130, startY, { charSpace: 0 });
     doc.setFont('helvetica', 'normal');
     doc.text(`${invoice.customerId?.name || 'Valued Customer'}`, 130, startY + 6, { charSpace: 0 });
@@ -601,7 +601,7 @@ export const generateInvoicePDF = async (invoice) => {
         head: [['#', 'Description of Product / Service', 'Project ID', 'Status', 'Total (INR)']],
         body: [
             [
-                '1', 
+                '1',
                 invoice.projectId?.description?.substring(0, 70) || 'Heavy Industrial Fabrication & Services',
                 invoice.projectId?._id?.slice(-8).toUpperCase() || 'N/A',
                 (invoice.paymentStatus || 'unpaid').toUpperCase(),
@@ -751,7 +751,7 @@ export const generatePaymentReceiptPDF = async (payment, user) => {
     doc.setFont('helvetica', 'bold');
     doc.text(`Receipt ID: RCPT-${rcptId}`, 15, startY, { charSpace: 0 });
     doc.text(`Transaction Date: ${new Date(payment.createdAt || Date.now()).toLocaleDateString()}`, 15, startY + 6, { charSpace: 0 });
-    
+
     doc.text(`Payor Details:`, 130, startY, { charSpace: 0 });
     doc.setFont('helvetica', 'normal');
     doc.text(`${user?.name?.toUpperCase() || 'VALUED CUSTOMER'}`, 130, startY + 6, { charSpace: 0 });
@@ -817,7 +817,7 @@ export const generateCashCounterChallanPDF = async (payment, user) => {
     doc.setFont('helvetica', 'bold');
     doc.text(`Challan / Token ID: ${tokenId}`, 15, startY, { charSpace: 0 });
     doc.text(`Generated Date: ${new Date(payment.createdAt || Date.now()).toLocaleDateString()}`, 15, startY + 6, { charSpace: 0 });
-    
+
     doc.text(`Depositor (Client) Details:`, 125, startY, { charSpace: 0 });
     doc.setFont('helvetica', 'normal');
     doc.text(`Name: ${user?.name?.toUpperCase() || payment.name?.toUpperCase() || 'CLIENT'}`, 125, startY + 6, { charSpace: 0 });
