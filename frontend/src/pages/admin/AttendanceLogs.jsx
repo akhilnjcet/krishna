@@ -5,7 +5,8 @@ import {
     XCircle, Clock, Loader2, Download, Check, X,
     ChevronLeft, ChevronRight, User, PieChart, RefreshCw,
     MapPin, Eye, ShieldCheck, AlertCircle, ShieldAlert,
-    Send, ExternalLink, FileSpreadsheet, FileText, CheckSquare
+    Send, ExternalLink, FileSpreadsheet, FileText, CheckSquare,
+    ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReportHeader from '../../components/ReportHeader';
@@ -48,6 +49,7 @@ const AttendanceLogs = () => {
     const [filterAction, setFilterAction] = useState(''); // 'Check in', 'Check out'
     const [filterResult, setFilterResult] = useState(''); // 'success', 'mismatch', 'fail', 'manual_override'
     const [filterDept, setFilterDept] = useState('');
+    const [sortOrder, setSortOrder] = useState('asc'); // 'asc' = Date ascending (Oldest first), 'desc' = Date descending (Newest first)
 
     // Attendance Matrix edit cell state
     const [editingCell, setEditingCell] = useState(null);
@@ -111,6 +113,7 @@ const AttendanceLogs = () => {
             if (filterAction) params.append('action', filterAction);
             if (filterResult) params.append('verification_result', filterResult);
             if (searchQuery) params.append('search', searchQuery);
+            if (sortOrder) params.append('sortOrder', sortOrder);
 
             const res = await api.get(`/attendance?${params.toString()}`);
             setBiometricLogs(Array.isArray(res.data) ? res.data : []);
@@ -119,7 +122,7 @@ const AttendanceLogs = () => {
         } finally {
             setLoadingLogs(false);
         }
-    }, [selectedMonth, filterStaffId, filterAction, filterResult, searchQuery]);
+    }, [selectedMonth, filterStaffId, filterAction, filterResult, searchQuery, sortOrder]);
 
     // Fetch exceptions and correction requests
     const fetchExceptions = useCallback(async () => {
@@ -279,9 +282,19 @@ const AttendanceLogs = () => {
         return grid;
     }, [attendanceRecords]);
 
+    // Chronologically sorted biometric records
+    const sortedBiometricLogs = useMemo(() => {
+        if (!Array.isArray(biometricLogs)) return [];
+        return [...biometricLogs].sort((a, b) => {
+            const timeA = a.login_time ? new Date(a.login_time).getTime() : (a.date ? new Date(a.date).getTime() : 0);
+            const timeB = b.login_time ? new Date(b.login_time).getTime() : (b.date ? new Date(b.date).getTime() : 0);
+            return sortOrder === 'asc' ? timeA - timeB : timeB - timeA;
+        });
+    }, [biometricLogs, sortOrder]);
+
     // Export Filtered Records to CSV
     const exportToCSV = () => {
-        if (!biometricLogs.length) {
+        if (!sortedBiometricLogs.length) {
             alert("No records to export.");
             return;
         }
@@ -292,7 +305,7 @@ const AttendanceLogs = () => {
             "Address", "Latitude", "Longitude", "Face Image Status", "Correction Status"
         ];
 
-        const rows = biometricLogs.map(log => [
+        const rows = sortedBiometricLogs.map(log => [
             `"${log.staff_id?.staff_id || ''}"`,
             `"${log.staff_id?.name || log.full_name || ''}"`,
             `"${log.action || log.type || 'Check in'}"`,
@@ -419,7 +432,7 @@ const AttendanceLogs = () => {
             {activeTab === 'logs' && (
                 <div className="space-y-6">
                     {/* Filter Bar */}
-                    <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-center">
+                    <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-center">
                         <div>
                             <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Search Staff</label>
                             <div className="relative">
@@ -486,6 +499,18 @@ const AttendanceLogs = () => {
                                 <option value="fail">Failed Attempt</option>
                             </select>
                         </div>
+
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Sort By Date</label>
+                            <select
+                                value={sortOrder}
+                                onChange={(e) => setSortOrder(e.target.value)}
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                            >
+                                <option value="asc">Date: Ascending (Oldest First) ↑</option>
+                                <option value="desc">Date: Descending (Newest First) ↓</option>
+                            </select>
+                        </div>
                     </div>
 
                     {/* Records Table */}
@@ -495,7 +520,23 @@ const AttendanceLogs = () => {
                                 <thead>
                                     <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                         <th className="px-6 py-4">Staff Member</th>
-                                        <th className="px-6 py-4">Action & Time</th>
+                                        <th 
+                                            onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                            className="px-6 py-4 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition select-none group"
+                                            title="Click to toggle Date Sort Order"
+                                        >
+                                            <div className="flex items-center gap-1.5">
+                                                <span>Action & Time</span>
+                                                <span className={`inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 rounded ${
+                                                    sortOrder === 'asc'
+                                                        ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
+                                                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                                                }`}>
+                                                    {sortOrder === 'asc' ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />}
+                                                    {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                                                </span>
+                                            </div>
+                                        </th>
                                         <th className="px-6 py-4">Verification Status</th>
                                         <th className="px-6 py-4">Location Details</th>
                                         <th className="px-6 py-4">Face Snapshot</th>
@@ -510,14 +551,14 @@ const AttendanceLogs = () => {
                                                 Loading attendance logs...
                                             </td>
                                         </tr>
-                                    ) : biometricLogs.length === 0 ? (
+                                    ) : sortedBiometricLogs.length === 0 ? (
                                         <tr>
                                             <td colSpan={6} className="text-center py-12 text-slate-400 font-bold">
                                                 No attendance logs match the selected filters.
                                             </td>
                                         </tr>
                                     ) : (
-                                        biometricLogs.map((log) => {
+                                        sortedBiometricLogs.map((log) => {
                                             const staff = log.staff_id || {};
                                             const isSuccess = log.status === 'success';
                                             const isCheckOut = log.action === 'Check out' || log.type === 'OUT';

@@ -431,7 +431,10 @@ exports.getAttendanceLogs = async (req, res) => {
             type,
             verification_result,
             correction_status,
-            search
+            search,
+            sortOrder,
+            order,
+            sort
         } = req.query;
 
         let query = {};
@@ -467,12 +470,15 @@ exports.getAttendanceLogs = async (req, res) => {
             ];
         }
 
+        const isAsc = (sortOrder === 'asc' || order === 'asc' || sort === 'asc');
+        const sortCriteria = isAsc ? { date: 1, login_time: 1 } : { date: -1, login_time: -1 };
+
         const logs = await Attendance.find(query)
             .populate('staff_id', 'staff_id name email department designation profilePhoto phone')
             .populate('face_image_deleted_by', 'name email')
             .populate('correction_details.reviewed_by', 'name email')
-            .sort({ login_time: -1 })
-            .limit(200);
+            .sort(sortCriteria)
+            .limit(500);
 
         const formattedLogs = logs.map(log => {
             const obj = log.toObject ? log.toObject() : { ...log };
