@@ -63,6 +63,7 @@ exports.markDailyAttendance = async (req, res) => {
                 lateMinutes,
                 isLate: lateMinutes > 0,
                 earlyExitMinutes,
+                isEarlyExit: earlyExitMinutes > 0,
                 overtimeHours,
                 shiftId: shift._id,
                 shiftCode: shift.code,
@@ -284,6 +285,8 @@ const reconcileRecordsWithBiometrics = async (records) => {
 
             obj.isLate = calc.isLate;
             obj.lateMinutes = calc.lateMinutes;
+            obj.isEarlyExit = calc.isEarlyExit;
+            obj.earlyExitMinutes = calc.earlyExitMinutes;
 
             // Recalculate duration & hours if missing or zero
             if (!obj.workedHours || obj.workedHours === 0) {
@@ -313,6 +316,8 @@ const reconcileRecordsWithBiometrics = async (records) => {
         } else {
             obj.isLate = false;
             obj.lateMinutes = 0;
+            obj.isEarlyExit = false;
+            obj.earlyExitMinutes = 0;
         }
 
         return obj;

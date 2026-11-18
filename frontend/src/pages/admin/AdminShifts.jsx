@@ -6,7 +6,7 @@ import {
     UserCheck, Moon, Sun, Shield, RefreshCw, Calendar, Search, Filter,
     Check, X, Eye, FileText, ArrowRight, UserX, CheckSquare, Sparkles,
     ChevronDown, ChevronUp, Info, HelpCircle, Download, Bell, Sliders,
-    Award, FileSpreadsheet
+    Award, FileSpreadsheet, LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -47,6 +47,32 @@ export default function AdminShifts({ isEmbedded = false }) {
         records: []
     });
     const [lateReportLoading, setLateReportLoading] = useState(false);
+
+    // Early Checkout Management States
+    const [earlySettings, setEarlySettings] = useState({
+        shiftId: '',
+        shiftName: 'Morning Shift',
+        shiftCode: 'MORNING',
+        endTime: '17:00',
+        earlyExitAllowanceMinutes: 10,
+        earlyExitDetectionEnabled: true,
+        earlyExitNotificationsEnabled: true,
+        earlyExitNotificationChannels: { inApp: true, email: false, whatsapp: false }
+    });
+    const [earlySettingsLoading, setEarlySettingsLoading] = useState(false);
+    const [earlySettingsSaving, setEarlySettingsSaving] = useState(false);
+
+    const [earlyReportMonth, setEarlyReportMonth] = useState(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
+    const [earlyReportDate, setEarlyReportDate] = useState('');
+    const [earlyReportStaffId, setEarlyReportStaffId] = useState('ALL');
+    const [earlyReportData, setEarlyReportData] = useState({
+        summary: { totalEarlyCheckouts: 0, uniqueEarlyEmployees: 0, totalEarlyMinutes: 0, averageEarlyMinutes: 0, mostFrequentEarly: [] },
+        records: []
+    });
+    const [earlyReportLoading, setEarlyReportLoading] = useState(false);
 
     // Filters for Roster
     const [searchTerm, setSearchTerm] = useState('');
@@ -248,6 +274,128 @@ export default function AdminShifts({ isEmbedded = false }) {
             fetchLateArrivalReports();
         }
     }, [activeTab, fetchLateArrivalSettings, fetchLateArrivalReports]);
+
+    // Fetch Morning Shift Early Checkout Settings
+    const fetchEarlyCheckoutSettings = useCallback(async () => {
+        setEarlySettingsLoading(true);
+        try {
+            const res = await api.get('/shifts/settings/early-checkout');
+            if (res.data?.success && res.data?.settings) {
+                setEarlySettings(res.data.settings);
+            }
+        } catch (err) {
+            console.error('Failed to load early checkout settings:', err);
+        } finally {
+            setEarlySettingsLoading(false);
+        }
+    }, []);
+
+    // Fetch Early Checkout Reports & Dashboard Summary
+    const fetchEarlyCheckoutReports = useCallback(async () => {
+        setEarlyReportLoading(true);
+        try {
+            const params = new URLSearchParams();
+            if (earlyReportMonth) params.append('month', earlyReportMonth);
+            if (earlyReportDate) params.append('date', earlyReportDate);
+            if (earlyReportStaffId && earlyReportStaffId !== 'ALL') params.append('staffId', earlyReportStaffId);
+
+            const res = await api.get(`/shifts/reports/early-checkouts?${params.toString()}`);
+            if (res.data?.success) {
+                setEarlyReportData({
+                    summary: res.data.summary || { totalEarlyCheckouts: 0, uniqueEarlyEmployees: 0, totalEarlyMinutes: 0, averageEarlyMinutes: 0, mostFrequentEarly: [] },
+                    records: res.data.records || []
+                });
+            }
+        } catch (err) {
+            console.error('Failed to load early checkout reports:', err);
+        } finally {
+            setEarlyReportLoading(false);
+        }
+    }, [earlyReportMonth, earlyReportDate, earlyReportStaffId]);
+
+    // Save Morning Shift Early Checkout Settings
+    const handleSaveEarlySettings = async (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        setEarlySettingsSaving(true);
+        setError(null);
+        try {
+            const payload = {
+                endTime: earlySettings.endTime,
+                earlyExitAllowanceMinutes: Number(earlySettings.earlyExitAllowanceMinutes),
+                earlyExitDetectionEnabled: !!earlySettings.earlyExitDetectionEnabled,
+                earlyExitNotificationsEnabled: !!earlySettings.earlyExitNotificationsEnabled,
+                earlyExitNotificationChannels: earlySettings.earlyExitNotificationChannels || { inApp: true, email: false, whatsapp: false }
+            };
+
+            const res = await api.put('/shifts/settings/early-checkout', payload);
+            if (res.data?.success) {
+                showNotice('Morning Shift Early Checkout settings saved & updated successfully.');
+                await fetchEarlyCheckoutSettings();
+                await fetchEarlyCheckoutReports();
+                await fetchData();
+            }
+        } catch (err) {
+            console.error('Failed to save early checkout settings:', err);
+            setError(err.response?.data?.message || 'Failed to update early checkout settings.');
+        } finally {
+            setEarlySettingsSaving(false);
+        }
+    };
+
+    // Export CSV Report for Early Checkout
+    const handleExportEarlyCSV = () => {
+        const records = earlyReportData.records || [];
+        if (records.length === 0) {
+            alert('No early checkout records available to export.');
+            return;
+        }
+        const headers = ['Employee Name', 'Date', 'Shift End', 'Actual OUT', 'Early Minutes', 'Status'];
+        const rows = records.map(r => [
+            `"${(r.staffName || '').replace(/"/g, '""')}"`,
+            `"${r.date || ''}"`,
+            `"${r.shiftEnd || ''}"`,
+            `"${r.actualOut || ''}"`,
+            r.earlyMinutes || 0,
+            `"${(r.status || '').replace(/"/g, '""')}"`
+        ]);
+        const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `Monthly_Early_Checkout_Report_${earlyReportMonth || 'current'}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // Export PDF Report for Early Checkout
+    const handleExportEarlyPDF = async () => {
+        const records = earlyReportData.records || [];
+        if (records.length === 0) {
+            alert('No early checkout records available to export.');
+            return;
+        }
+        const columns = ['Employee Name', 'Date', 'Shift End', 'Actual OUT', 'Early Minutes', 'Status'];
+        const rows = records.map(r => [
+            r.staffName || 'Unknown',
+            r.date || '--',
+            r.shiftEnd || '--',
+            r.actualOut || '--',
+            `${r.earlyMinutes || 0} min`,
+            r.status || 'Early Checkout'
+        ]);
+        const title = `Monthly Early Checkout Report - ${earlyReportMonth}`;
+        await generateGeneralReportPDF(rows, title, columns);
+    };
+
+    // Fetch early checkout data when tab changes to early-checkout
+    useEffect(() => {
+        if (activeTab === 'early-checkout') {
+            fetchEarlyCheckoutSettings();
+            fetchEarlyCheckoutReports();
+        }
+    }, [activeTab, fetchEarlyCheckoutSettings, fetchEarlyCheckoutReports]);
 
     // Open Shift Modal (Create or Edit)
     const handleOpenShiftModal = (shift = null) => {
@@ -567,6 +715,18 @@ export default function AdminShifts({ isEmbedded = false }) {
                 >
                     <Sliders className="w-4 h-4" />
                     <span>Late Arrival Settings & Reports</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('early-checkout')}
+                    className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider transition border-b-2 flex items-center gap-2 ${
+                        activeTab === 'early-checkout'
+                            ? 'border-amber-600 text-amber-600 dark:text-amber-400'
+                            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    }`}
+                >
+                    <LogOut className="w-4 h-4" />
+                    <span>Early Checkout Settings & Reports</span>
                 </button>
             </div>
 
@@ -1385,6 +1545,500 @@ export default function AdminShifts({ isEmbedded = false }) {
                                                         </td>
                                                         <td className="px-5 py-3 whitespace-nowrap">
                                                             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400">
+                                                                {rec.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TAB 4: EARLY CHECKOUT SETTINGS & REPORTING */}
+            {activeTab === 'early-checkout' && (
+                <div className="space-y-6">
+                    {/* SECTION 1: DEDICATED EARLY CHECKOUT SETTINGS */}
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700 shadow-sm space-y-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-700">
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black">
+                                        <LogOut className="w-4 h-4" />
+                                    </div>
+                                    <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                                        Morning Shift Early Checkout Settings
+                                    </h2>
+                                </div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    Configure shift end time, departure allowances, automated early checkout tracking, and instant alerts.
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={fetchEarlyCheckoutSettings}
+                                disabled={earlySettingsLoading}
+                                className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200 transition flex items-center gap-1.5 self-start sm:self-auto"
+                            >
+                                <RefreshCw className={`w-3.5 h-3.5 ${earlySettingsLoading ? 'animate-spin' : ''}`} />
+                                <span>Reload Config</span>
+                            </button>
+                        </div>
+
+                        {/* Rules Calculation Explainer Banner */}
+                        <div className="p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-900/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs">
+                            <div className="flex items-start gap-2.5">
+                                <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                <div className="space-y-1">
+                                    <p className="font-bold text-amber-950 dark:text-amber-200">
+                                        Early Departure Detection Rules & Allowance Threshold:
+                                    </p>
+                                    <p className="text-amber-800 dark:text-amber-300 leading-relaxed text-[11px]">
+                                        Departure before the configured allowance window is flagged as Early Checkout. Early minutes are measured from Shift End:
+                                        <br />
+                                        <span className="font-mono bg-amber-100 dark:bg-amber-900/50 px-1.5 py-0.5 rounded text-amber-900 dark:text-amber-100 font-semibold">
+                                            Early Minutes = Shift End Time - Actual OUT Time (when OUT &lt; Shift End - Allowance)
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="text-[11px] bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-amber-200 dark:border-amber-900/60 shrink-0 space-y-0.5">
+                                <div className="text-emerald-600 dark:text-emerald-400 font-bold">
+                                    ✓ OUT at 04:55 PM → Within Allowance
+                                </div>
+                                <div className="text-amber-600 dark:text-amber-400 font-bold">
+                                    ⚠ OUT at 04:45 PM → Early Checkout (-15 mins)
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Settings Form */}
+                        <form onSubmit={handleSaveEarlySettings} className="space-y-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                {/* Morning Shift End Time */}
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        Morning Shift End Time *
+                                    </label>
+                                    <div className="relative">
+                                        <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                                        <input
+                                            type="time"
+                                            required
+                                            value={earlySettings.endTime || '17:00'}
+                                            onChange={(e) => setEarlySettings({ ...earlySettings, endTime: e.target.value })}
+                                            className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                        />
+                                    </div>
+                                    <span className="text-[10px] text-slate-400">Scheduled shift departure time (IST)</span>
+                                </div>
+
+                                {/* Early Checkout Allowance in Minutes */}
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        Early Departure Allowance (Minutes) *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="120"
+                                        required
+                                        value={earlySettings.earlyExitAllowanceMinutes ?? 10}
+                                        onChange={(e) => setEarlySettings({ ...earlySettings, earlyExitAllowanceMinutes: Math.max(0, parseInt(e.target.value) || 0) })}
+                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                    />
+                                    <span className="text-[10px] text-slate-400">Permitted departure window before shift end</span>
+                                </div>
+
+                                {/* Early Checkout Detection Toggle */}
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        Early Checkout Detection
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEarlySettings({ ...earlySettings, earlyExitDetectionEnabled: !earlySettings.earlyExitDetectionEnabled })}
+                                        className={`w-full py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-between transition ${
+                                            earlySettings.earlyExitDetectionEnabled
+                                                ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300'
+                                                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500'
+                                        }`}
+                                    >
+                                        <span>{earlySettings.earlyExitDetectionEnabled ? 'Detection Enabled' : 'Detection Disabled'}</span>
+                                        <span className={`w-2.5 h-2.5 rounded-full ${earlySettings.earlyExitDetectionEnabled ? 'bg-amber-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                                    </button>
+                                    <span className="text-[10px] text-slate-400">Flags checkouts before allowance</span>
+                                </div>
+
+                                {/* Early Checkout Notifications Toggle */}
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        Admin Notifications
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEarlySettings({ ...earlySettings, earlyExitNotificationsEnabled: !earlySettings.earlyExitNotificationsEnabled })}
+                                        className={`w-full py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-between transition ${
+                                            earlySettings.earlyExitNotificationsEnabled
+                                                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300'
+                                                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500'
+                                        }`}
+                                    >
+                                        <span>{earlySettings.earlyExitNotificationsEnabled ? 'Alerts Active' : 'Alerts Disabled'}</span>
+                                        <Bell className={`w-3.5 h-3.5 ${earlySettings.earlyExitNotificationsEnabled ? 'text-emerald-600' : 'text-slate-400'}`} />
+                                    </button>
+                                    <span className="text-[10px] text-slate-400">Notifies management on early checkout</span>
+                                </div>
+                            </div>
+
+                            {/* Notification Channels */}
+                            {earlySettings.earlyExitNotificationsEnabled && (
+                                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                                    <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                                        Notification Delivery Channels
+                                    </span>
+                                    <div className="flex items-center gap-4 flex-wrap text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={earlySettings.earlyExitNotificationChannels?.inApp ?? true}
+                                                onChange={(e) => setEarlySettings({
+                                                    ...earlySettings,
+                                                    earlyExitNotificationChannels: {
+                                                        ...earlySettings.earlyExitNotificationChannels,
+                                                        inApp: e.target.checked
+                                                    }
+                                                })}
+                                                className="rounded text-amber-600 focus:ring-0"
+                                            />
+                                            <span>In-App Realtime Alert (Instant bell notification)</span>
+                                        </label>
+
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={earlySettings.earlyExitNotificationChannels?.email ?? false}
+                                                onChange={(e) => setEarlySettings({
+                                                    ...earlySettings,
+                                                    earlyExitNotificationChannels: {
+                                                        ...earlySettings.earlyExitNotificationChannels,
+                                                        email: e.target.checked
+                                                    }
+                                                })}
+                                                className="rounded text-amber-600 focus:ring-0"
+                                            />
+                                            <span>Email Digest</span>
+                                        </label>
+
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={earlySettings.earlyExitNotificationChannels?.whatsapp ?? false}
+                                                onChange={(e) => setEarlySettings({
+                                                    ...earlySettings,
+                                                    earlyExitNotificationChannels: {
+                                                        ...earlySettings.earlyExitNotificationChannels,
+                                                        whatsapp: e.target.checked
+                                                    }
+                                                })}
+                                                className="rounded text-amber-600 focus:ring-0"
+                                            />
+                                            <span>WhatsApp Dispatch</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Save Settings Action Button */}
+                            <div className="flex justify-end pt-2">
+                                <button
+                                    type="submit"
+                                    disabled={earlySettingsSaving}
+                                    className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-600/20 transition flex items-center gap-2"
+                                >
+                                    {earlySettingsSaving ? (
+                                        <>
+                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                            <span>Saving Settings & Recalculating...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            <span>Save Early Checkout Settings</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* SECTION 2: EARLY CHECKOUT SUMMARY & KPI DASHBOARD */}
+                    <div className="space-y-4">
+                        {/* Filter Toolbar & Export Buttons */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm">
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                {/* Month Filter */}
+                                <div className="flex items-center gap-1.5 text-xs">
+                                    <Calendar className="w-4 h-4 text-slate-400" />
+                                    <input
+                                        type="month"
+                                        value={earlyReportMonth}
+                                        onChange={(e) => setEarlyReportMonth(e.target.value)}
+                                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200"
+                                    />
+                                </div>
+
+                                {/* Optional Single Date Filter */}
+                                <div className="flex items-center gap-1.5 text-xs">
+                                    <input
+                                        type="date"
+                                        placeholder="Specific Date"
+                                        value={earlyReportDate}
+                                        onChange={(e) => setEarlyReportDate(e.target.value)}
+                                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200"
+                                    />
+                                    {earlyReportDate && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setEarlyReportDate('')}
+                                            className="p-1 rounded text-slate-400 hover:text-slate-600"
+                                            title="Clear date filter"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Employee Filter */}
+                                <div className="flex items-center gap-1.5 text-xs">
+                                    <select
+                                        value={earlyReportStaffId}
+                                        onChange={(e) => setEarlyReportStaffId(e.target.value)}
+                                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200 max-w-[160px] truncate"
+                                    >
+                                        <option value="ALL">All Employees</option>
+                                        {staffList.map((s) => (
+                                            <option key={s._id} value={s._id}>
+                                                {s.name} ({s.department || 'Staff'})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Export Buttons */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <button
+                                    onClick={handleExportEarlyPDF}
+                                    className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5"
+                                    title="Download Monthly Early Checkout Report PDF"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    <span>Download PDF Report</span>
+                                </button>
+
+                                <button
+                                    onClick={handleExportEarlyCSV}
+                                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5"
+                                    title="Export Early Checkout Data as CSV"
+                                >
+                                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                                    <span>Download CSV</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* KPI Metrics */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-amber-200 dark:border-amber-900/50 shadow-sm">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500 block mb-1">
+                                    Total Early Checkouts
+                                </span>
+                                <span className="text-xl font-black text-amber-600 dark:text-amber-400">
+                                    {earlyReportData.summary?.totalEarlyCheckouts || 0}
+                                </span>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">Recorded in {earlyReportMonth}</span>
+                            </div>
+
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-orange-200 dark:border-orange-900/50 shadow-sm">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-orange-500 block mb-1">
+                                    Employees Early
+                                </span>
+                                <span className="text-xl font-black text-orange-600 dark:text-orange-400">
+                                    {earlyReportData.summary?.uniqueEarlyEmployees || 0}
+                                </span>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">Unique staff members</span>
+                            </div>
+
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-purple-200 dark:border-purple-900/50 shadow-sm">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-500 block mb-1">
+                                    Total Early Minutes
+                                </span>
+                                <span className="text-xl font-black text-purple-600 dark:text-purple-400">
+                                    {earlyReportData.summary?.totalEarlyMinutes || 0}m
+                                </span>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">Accumulated lost time</span>
+                            </div>
+
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 shadow-sm">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500 block mb-1">
+                                    Average Early Delay
+                                </span>
+                                <span className="text-xl font-black text-blue-600 dark:text-blue-400">
+                                    {earlyReportData.summary?.averageEarlyMinutes || 0}m
+                                </span>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">Per early departure event</span>
+                            </div>
+                        </div>
+
+                        {/* SECTION 3: MOST FREQUENT EARLY CHECKOUTS LEADERBOARD */}
+                        {earlyReportData.summary?.mostFrequentEarly && earlyReportData.summary.mostFrequentEarly.length > 0 && (
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <Award className="w-4 h-4 text-amber-500" />
+                                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                        Most Frequent Early Checkouts ({earlyReportMonth})
+                                    </h3>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                    {earlyReportData.summary.mostFrequentEarly.slice(0, 6).map((item, idx) => (
+                                        <div
+                                            key={item.staffId || idx}
+                                            className="p-3 bg-slate-50 dark:bg-slate-900/70 rounded-xl border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between"
+                                        >
+                                            <div className="flex items-center gap-2.5">
+                                                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${
+                                                    idx === 0 ? 'bg-amber-500 text-white' : idx === 1 ? 'bg-orange-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                                                }`}>
+                                                    #{idx + 1}
+                                                </span>
+                                                <div>
+                                                    <span className="font-bold text-xs text-slate-900 dark:text-white block">
+                                                        {item.name}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400">
+                                                        {item.department || 'General'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-xs font-black text-amber-600 dark:text-amber-400 block">
+                                                    {item.earlyCount} {item.earlyCount === 1 ? 'time' : 'times'}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-slate-500">
+                                                    -{item.totalEarlyMinutes}m total
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* SECTION 4: DATE-WISE EARLY CHECKOUT HISTORY */}
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden">
+                            <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                        Date-Wise Early Checkout History ({earlyReportData.records?.length || 0} Records)
+                                    </h3>
+                                    <p className="text-[11px] text-slate-400">
+                                        Chronological breakdown of early departures with shift end and departure variance.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {earlyReportLoading ? (
+                                <div className="p-12 text-center text-slate-400">
+                                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-600" />
+                                    Loading early checkout history...
+                                </div>
+                            ) : earlyReportData.records?.length === 0 ? (
+                                <div className="p-12 text-center text-slate-400 font-bold italic">
+                                    No early departures recorded for the selected filter criteria.
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Mobile Cards (sm:hidden) */}
+                                    <div className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                                        {earlyReportData.records.map((rec) => (
+                                            <div key={rec.id} className="p-3.5 space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <span className="font-black text-xs text-slate-900 dark:text-white block">
+                                                            {rec.staffName}
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-400">
+                                                            {rec.department || 'General'}
+                                                        </span>
+                                                    </div>
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-600 dark:text-amber-400">
+                                                        -{rec.earlyMinutes}m Early
+                                                    </span>
+                                                </div>
+
+                                                <div className="grid grid-cols-3 gap-2 text-[11px] bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                                    <div>
+                                                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Date</span>
+                                                        <span className="font-semibold text-slate-700 dark:text-slate-300">{rec.date}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Shift End</span>
+                                                        <span className="font-semibold text-slate-700 dark:text-slate-300">{rec.shiftEnd}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Actual OUT</span>
+                                                        <span className="font-bold text-amber-600 dark:text-amber-400">{rec.actualOut}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Desktop Table (hidden sm:block) */}
+                                    <div className="hidden sm:block overflow-x-auto">
+                                        <table className="w-full text-left text-xs border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-slate-400 font-black uppercase tracking-wider text-[10px]">
+                                                    <th className="px-5 py-3">Employee Name</th>
+                                                    <th className="px-5 py-3">Department</th>
+                                                    <th className="px-5 py-3">Date</th>
+                                                    <th className="px-5 py-3">Shift End</th>
+                                                    <th className="px-5 py-3">Actual OUT</th>
+                                                    <th className="px-5 py-3 text-center">Early Minutes</th>
+                                                    <th className="px-5 py-3">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300 font-semibold">
+                                                {earlyReportData.records.map((rec) => (
+                                                    <tr key={rec.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition">
+                                                        <td className="px-5 py-3 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                                                            {rec.staffName}
+                                                        </td>
+                                                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
+                                                            {rec.department || 'General'}
+                                                        </td>
+                                                        <td className="px-5 py-3 whitespace-nowrap">
+                                                            {rec.date}
+                                                        </td>
+                                                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
+                                                            {rec.shiftEnd}
+                                                        </td>
+                                                        <td className="px-5 py-3 font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                                                            {rec.actualOut}
+                                                        </td>
+                                                        <td className="px-5 py-3 text-center font-black text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                                                            -{rec.earlyMinutes} min
+                                                        </td>
+                                                        <td className="px-5 py-3 whitespace-nowrap">
+                                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-600 dark:text-amber-400">
                                                                 {rec.status}
                                                             </span>
                                                         </td>

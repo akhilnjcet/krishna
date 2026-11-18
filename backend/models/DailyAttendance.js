@@ -15,6 +15,8 @@ const dailyAttendanceSchema = new mongoose.Schema({
     lateMinutes: { type: Number, default: 0 },
     isLate: { type: Boolean, default: false },
     earlyExitMinutes: { type: Number, default: 0 },
+    isEarlyExit: { type: Boolean, default: false },
+    hasApprovedEarlyDeparture: { type: Boolean, default: false },
     shiftId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shift' },
     shiftName: { type: String },
     shiftCode: { type: String },

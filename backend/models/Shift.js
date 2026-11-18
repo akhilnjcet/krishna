@@ -43,6 +43,19 @@ const shiftSchema = new mongoose.Schema({
         default: 15, // minutes early exit tolerance
         min: [0, 'Early exit allowance cannot be negative'] 
     },
+    earlyExitDetectionEnabled: {
+        type: Boolean,
+        default: true
+    },
+    earlyExitNotificationsEnabled: {
+        type: Boolean,
+        default: true
+    },
+    earlyExitNotificationChannels: {
+        inApp: { type: Boolean, default: true },
+        email: { type: Boolean, default: false },
+        whatsapp: { type: Boolean, default: false }
+    },
     lateDetectionEnabled: {
         type: Boolean,
         default: true

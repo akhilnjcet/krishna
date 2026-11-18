@@ -265,9 +265,18 @@ const StaffTimesheets = () => {
                                                     </span>
                                                 ) : null}
                                             </div>
-                                            <p className="text-rose-500 dark:text-rose-400 font-bold text-[11px]">
-                                                OUT: {outDisp}
-                                            </p>
+                                            <div className="text-rose-500 dark:text-rose-400 font-bold text-[11px] flex items-center gap-1.5 flex-wrap">
+                                                <span>OUT: {outDisp}</span>
+                                                {(log.is_early_exit || log.early_departure_minutes > 0 || log.isEarlyExit || log.earlyExitMinutes > 0) ? (
+                                                    <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 px-1.5 py-0.2 rounded">
+                                                        Early (-{log.early_departure_minutes || log.earlyExitMinutes}m)
+                                                    </span>
+                                                ) : (outDisp && outDisp !== '--') ? (
+                                                    <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 px-1.5 py-0.2 rounded">
+                                                        ✓ On Time
+                                                    </span>
+                                                ) : null}
+                                            </div>
                                         </div>
                                         <div className="text-right">
                                             <span className="text-[9px] text-slate-400 font-bold uppercase block">Duration</span>
@@ -351,9 +360,20 @@ const StaffTimesheets = () => {
                                                             </span>
                                                         ) : null}
                                                     </div>
-                                                    <span className="text-rose-500 dark:text-rose-400 font-bold">
-                                                        OUT: {outDisp}
-                                                    </span>
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className="text-rose-500 dark:text-rose-400 font-bold">
+                                                            OUT: {outDisp}
+                                                        </span>
+                                                        {(log.is_early_exit || log.early_departure_minutes > 0 || log.isEarlyExit || log.earlyExitMinutes > 0) ? (
+                                                            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 px-1.5 py-0.2 rounded">
+                                                                Early (-{log.early_departure_minutes || log.earlyExitMinutes}m)
+                                                            </span>
+                                                        ) : (outDisp && outDisp !== '--') ? (
+                                                            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 px-1.5 py-0.2 rounded">
+                                                                ✓ On Time
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="px-5 py-3.5 text-center font-bold">

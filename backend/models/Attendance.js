@@ -25,6 +25,9 @@ const attendanceSchema = new mongoose.Schema({
     is_overnight: { type: Boolean, default: false },
     is_late: { type: Boolean, default: false },
     late_minutes: { type: Number, default: 0 },
+    is_early_checkout: { type: Boolean, default: false },
+    early_departure_minutes: { type: Number, default: 0 },
+    has_approved_early_departure: { type: Boolean, default: false },
     completion_status: { 
         type: String, 
         enum: ['IN_PROGRESS', 'COMPLETED', 'MISSING_OUT', 'MANUALLY_CLOSED'], 

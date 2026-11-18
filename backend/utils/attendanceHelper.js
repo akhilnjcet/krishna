@@ -25,6 +25,8 @@ const seedDefaultShifts = async () => {
                     earlyExitAllowanceMinutes: 15,
                     lateDetectionEnabled: true,
                     lateNotificationsEnabled: true,
+                    earlyExitDetectionEnabled: true,
+                    earlyExitNotificationsEnabled: true,
                     shiftType: 'Regular',
                     isOvernight: false,
                     overtimeEnabled: true,

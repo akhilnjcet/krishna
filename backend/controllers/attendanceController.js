@@ -219,13 +219,15 @@ exports.recordAttendance = async (req, res) => {
                 activeSession.shift_id = shift._id;
                 activeSession.shift_code = shift.code;
                 activeSession.is_overnight = shift.isOvernight;
+                activeSession.is_early_checkout = calc.isEarlyExit;
+                activeSession.early_departure_minutes = calc.earlyExitMinutes;
                 activeSession.location = validatedLocation;
                 activeSession.audit_trail.push({
                     action: 'RECORDED',
                     performed_by: staffUser._id,
                     performed_by_name: staffUser.name,
                     timestamp: now,
-                    details: `Check out recorded via face scan (Confidence: ${confidenceScore}%) and location. Shift: ${shift.name}. Duration: ${calc.formattedDuration}.`,
+                    details: `Check out recorded via face scan (Confidence: ${confidenceScore}%) and location. Shift: ${shift.name}. Duration: ${calc.formattedDuration}. ${calc.isEarlyExit ? `Early Checkout: -${calc.earlyExitMinutes}m.` : 'On Time.'}`,
                     ip_address: req.ip || req.headers['x-forwarded-for'] || ''
                 });
 
@@ -245,6 +247,7 @@ exports.recordAttendance = async (req, res) => {
                         overtimeHours: calc.overtimeHours,
                         lateMinutes: calc.lateMinutes,
                         earlyExitMinutes: calc.earlyExitMinutes,
+                        isEarlyExit: calc.isEarlyExit,
                         shiftId: shift._id,
                         shiftCode: shift.code,
                         shiftName: shift.name,
@@ -254,6 +257,44 @@ exports.recordAttendance = async (req, res) => {
                     },
                     { upsert: true, new: true }
                 );
+
+                // Dispatch Early Checkout notification to admin if enabled
+                if (calc.isEarlyExit && shift.earlyExitNotificationsEnabled !== false) {
+                    try {
+                        const Notification = require('../models/Notification');
+                        const adminUsers = await User.find({ role: { $in: ['admin', 'superadmin'] } });
+                        const checkOutDisplay = formatISTDisplay(now, false);
+
+                        for (const admin of adminUsers) {
+                            const existingNotif = await Notification.findOne({
+                                recipient: admin._id,
+                                'metadata.type': 'EARLY_CHECKOUT',
+                                'metadata.staffId': staffUser._id,
+                                'metadata.date': sessionDate
+                            });
+
+                            if (!existingNotif) {
+                                await Notification.create({
+                                    recipient: admin._id,
+                                    title: 'Early Checkout Detected',
+                                    message: `${staffUser.name} checked out early on ${sessionDate} at ${checkOutDisplay}. Early departure duration: ${calc.earlyExitMinutes} minutes.`,
+                                    type: 'warning',
+                                    category: 'attendance',
+                                    link: '/admin/shifts',
+                                    metadata: {
+                                        type: 'EARLY_CHECKOUT',
+                                        staffId: staffUser._id,
+                                        date: sessionDate,
+                                        earlyMinutes: calc.earlyExitMinutes,
+                                        checkOutTime: checkOutDisplay
+                                    }
+                                });
+                            }
+                        }
+                    } catch (notifErr) {
+                        console.error('Error dispatching early checkout notification:', notifErr);
+                    }
+                }
 
                 // Overtime calculation using shift rules
                 const stdHours = shift.expectedHours || staffUser.standardWorkingHoursPerDay || 7;

@@ -14,6 +14,8 @@ const DEFAULT_FALLBACK_SHIFT = {
     expectedHours: 7,
     gracePeriodMinutes: 10,
     earlyExitAllowanceMinutes: 15,
+    earlyExitDetectionEnabled: true,
+    earlyExitNotificationsEnabled: true,
     lateDetectionEnabled: true,
     lateNotificationsEnabled: true,
     shiftType: 'Regular',
@@ -133,7 +135,8 @@ const calculateShiftAttendance = ({
     outTime,
     recordDate,
     shift = DEFAULT_FALLBACK_SHIFT,
-    breakMinutes = null
+    breakMinutes = null,
+    hasApprovedEarlyDeparture = false
 }) => {
     const todayIST = getISTDate(new Date());
     const isToday = recordDate === todayIST;
@@ -200,9 +203,13 @@ const calculateShiftAttendance = ({
         }
 
         // Check Early Exit
-        if (actualOutMins < (scheduledEndMins - earlyAllowance)) {
+        const earlyExitDetectionActive = shift.earlyExitDetectionEnabled !== false;
+        if (earlyExitDetectionActive && !hasApprovedEarlyDeparture && actualOutMins < (scheduledEndMins - earlyAllowance)) {
             isEarlyExit = true;
-            earlyExitMinutes = Math.max(0, scheduledEndMins - actualOutMins);
+            earlyExitMinutes = Math.max(1, scheduledEndMins - actualOutMins);
+        } else {
+            isEarlyExit = false;
+            earlyExitMinutes = 0;
         }
 
         // Overtime Calculation

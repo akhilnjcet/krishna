@@ -415,8 +415,17 @@ const StaffAttendanceHub = () => {
                                                 </span>
                                             ) : null}
                                         </div>
-                                        <div className="font-bold text-slate-700 dark:text-slate-300">
-                                            Out: {log.checkOutDisplay || formatTimeIST(log.checkOut, false)}
+                                        <div className="font-bold text-slate-700 dark:text-slate-300 mt-1 flex items-center gap-1.5 flex-wrap">
+                                            <span>Out: {log.checkOutDisplay || formatTimeIST(log.checkOut, false)}</span>
+                                            {(log.isEarlyExit || log.earlyExitMinutes > 0) ? (
+                                                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 px-1.5 py-0.2 rounded">
+                                                    Early (-{log.earlyExitMinutes}m)
+                                                </span>
+                                            ) : (log.checkOut && log.checkOut !== '--') ? (
+                                                <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 px-1.5 py-0.2 rounded">
+                                                    ✓ On Time
+                                                </span>
+                                            ) : null}
                                         </div>
                                     </div>
                                     <div>
@@ -500,7 +509,20 @@ const StaffAttendanceHub = () => {
                                             </div>
                                         </td>
                                         <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                                            {log.checkOutDisplay || formatTimeIST(log.checkOut, false)}
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-semibold">{log.checkOutDisplay || formatTimeIST(log.checkOut, false)}</span>
+                                                {(log.isEarlyExit || log.earlyExitMinutes > 0) ? (
+                                                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                                        Early (-{log.earlyExitMinutes}m)
+                                                    </span>
+                                                ) : (log.checkOut && log.checkOut !== '--') ? (
+                                                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                        On Time
+                                                    </span>
+                                                ) : null}
+                                            </div>
                                         </td>
                                         <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                                             <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase border ${getStatusBadge(log.status)}`}>

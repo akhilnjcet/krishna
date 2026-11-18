@@ -793,3 +793,238 @@ exports.getLateArrivalsReport = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
+
+/**
+ * Retrieve Morning Shift Early Checkout settings
+ * GET /api/shifts/settings/early-checkout
+ */
+exports.getEarlyCheckoutSettings = async (req, res) => {
+    try {
+        let morningShift = await Shift.findOne({ code: 'MORNING' });
+        if (!morningShift) {
+            morningShift = await Shift.findOne({ isDefault: true }) || await Shift.findOne({});
+        }
+
+        if (!morningShift) {
+            return res.json({
+                success: true,
+                settings: {
+                    shiftName: 'Morning Shift',
+                    shiftCode: 'MORNING',
+                    endTime: '17:00',
+                    earlyExitAllowanceMinutes: 10,
+                    earlyExitDetectionEnabled: true,
+                    earlyExitNotificationsEnabled: true,
+                    earlyExitNotificationChannels: { inApp: true, email: false, whatsapp: false }
+                }
+            });
+        }
+
+        res.json({
+            success: true,
+            settings: {
+                shiftId: morningShift._id,
+                shiftName: morningShift.name,
+                shiftCode: morningShift.code,
+                endTime: morningShift.endTime || '17:00',
+                earlyExitAllowanceMinutes: morningShift.earlyExitAllowanceMinutes ?? 10,
+                earlyExitDetectionEnabled: morningShift.earlyExitDetectionEnabled !== false,
+                earlyExitNotificationsEnabled: morningShift.earlyExitNotificationsEnabled !== false,
+                earlyExitNotificationChannels: morningShift.earlyExitNotificationChannels || { inApp: true, email: false, whatsapp: false },
+                startTime: morningShift.startTime || '09:00',
+                breakDuration: morningShift.breakDuration || 60
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching early checkout settings:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Update Morning Shift Early Checkout settings
+ * PUT /api/shifts/settings/early-checkout
+ */
+exports.updateEarlyCheckoutSettings = async (req, res) => {
+    try {
+        const {
+            endTime,
+            earlyExitAllowanceMinutes,
+            earlyExitDetectionEnabled,
+            earlyExitNotificationsEnabled,
+            earlyExitNotificationChannels
+        } = req.body;
+
+        let morningShift = await Shift.findOne({ code: 'MORNING' });
+        if (!morningShift) {
+            morningShift = await Shift.findOne({ isDefault: true }) || await Shift.findOne({});
+        }
+
+        if (!morningShift) {
+            morningShift = new Shift({
+                name: 'Morning Shift',
+                code: 'MORNING',
+                startTime: '09:00',
+                endTime: endTime || '17:00',
+                breakDuration: 60,
+                expectedHours: 7,
+                gracePeriodMinutes: 10,
+                earlyExitAllowanceMinutes: earlyExitAllowanceMinutes !== undefined ? Number(earlyExitAllowanceMinutes) : 10,
+                earlyExitDetectionEnabled: earlyExitDetectionEnabled !== undefined ? !!earlyExitDetectionEnabled : true,
+                earlyExitNotificationsEnabled: earlyExitNotificationsEnabled !== undefined ? !!earlyExitNotificationsEnabled : true,
+                earlyExitNotificationChannels: earlyExitNotificationChannels || { inApp: true, email: false, whatsapp: false },
+                isDefault: true,
+                isActive: true
+            });
+        } else {
+            if (endTime) morningShift.endTime = endTime;
+            if (earlyExitAllowanceMinutes !== undefined) morningShift.earlyExitAllowanceMinutes = Math.max(0, Number(earlyExitAllowanceMinutes));
+            if (earlyExitDetectionEnabled !== undefined) morningShift.earlyExitDetectionEnabled = !!earlyExitDetectionEnabled;
+            if (earlyExitNotificationsEnabled !== undefined) morningShift.earlyExitNotificationsEnabled = !!earlyExitNotificationsEnabled;
+            if (earlyExitNotificationChannels) morningShift.earlyExitNotificationChannels = earlyExitNotificationChannels;
+        }
+
+        await morningShift.save();
+
+        // Dynamically recalculate today's attendance records if checkOut exists
+        try {
+            const { calculateShiftAttendance } = require('../utils/shiftCalculator');
+            const todayStr = getISTDate(new Date());
+            const todayRecords = await DailyAttendance.find({ date: todayStr });
+            for (const rec of todayRecords) {
+                if (rec.checkOut && rec.checkOut !== '--') {
+                    const calc = calculateShiftAttendance({
+                        inTime: rec.checkIn,
+                        outTime: rec.checkOut,
+                        recordDate: todayStr,
+                        shift: morningShift
+                    });
+                    await DailyAttendance.updateOne(
+                        { _id: rec._id },
+                        { $set: { earlyExitMinutes: calc.earlyExitMinutes, isEarlyExit: calc.isEarlyExit } }
+                    );
+                }
+            }
+        } catch (recalcErr) {
+            console.error('Non-critical error recalculating today early checkout adherence:', recalcErr);
+        }
+
+        res.json({
+            success: true,
+            message: 'Early checkout settings updated successfully.',
+            settings: {
+                shiftId: morningShift._id,
+                shiftName: morningShift.name,
+                shiftCode: morningShift.code,
+                endTime: morningShift.endTime,
+                earlyExitAllowanceMinutes: morningShift.earlyExitAllowanceMinutes,
+                earlyExitDetectionEnabled: morningShift.earlyExitDetectionEnabled,
+                earlyExitNotificationsEnabled: morningShift.earlyExitNotificationsEnabled,
+                earlyExitNotificationChannels: morningShift.earlyExitNotificationChannels
+            }
+        });
+    } catch (err) {
+        console.error('Error updating early checkout settings:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Retrieve Early Checkout Monthly & Date-wise Summary Report
+ * GET /api/shifts/reports/early-checkouts?month=YYYY-MM&staffId=...&date=...
+ */
+exports.getEarlyCheckoutsReport = async (req, res) => {
+    try {
+        const { month, date, staffId } = req.query;
+        const currentMonth = month || getISTDate(new Date()).substring(0, 7);
+
+        let query = {
+            earlyExitMinutes: { $gt: 0 }
+        };
+
+        if (date) {
+            query.date = date;
+        } else if (currentMonth) {
+            query.date = { $regex: `^${currentMonth}` };
+        }
+
+        if (staffId && staffId !== 'ALL') {
+            query.staffId = staffId;
+        }
+
+        const earlyDailyRecords = await DailyAttendance.find(query)
+            .populate('staffId', 'name staff_id department designation')
+            .sort({ date: -1 });
+
+        // Retrieve Morning Shift end time
+        const morningShift = await Shift.findOne({ code: 'MORNING' }) || await Shift.findOne({ isDefault: true });
+        const shiftEndStr = morningShift?.endTime ? formatISTDisplay(morningShift.endTime, false) : '05:00 PM';
+
+        let totalEarlyMinutes = 0;
+        const employeeMap = new Map();
+
+        const records = earlyDailyRecords.map(r => {
+            const staff = r.staffId || {};
+            const staffKey = staff._id ? String(staff._id) : (r.staffId ? String(r.staffId) : 'unknown');
+            const staffName = staff.name || 'Unknown Staff';
+            const dept = staff.department || 'General';
+            const earlyMins = r.earlyExitMinutes || 0;
+
+            totalEarlyMinutes += earlyMins;
+
+            if (!employeeMap.has(staffKey)) {
+                employeeMap.set(staffKey, {
+                    staffId: staffKey,
+                    name: staffName,
+                    department: dept,
+                    earlyCount: 0,
+                    totalEarlyMinutes: 0
+                });
+            }
+            const empStat = employeeMap.get(staffKey);
+            empStat.earlyCount += 1;
+            empStat.totalEarlyMinutes += earlyMins;
+
+            const actualOutStr = r.checkOutDisplay || r.checkOut || '--';
+
+            return {
+                id: r._id,
+                staffId: staffKey,
+                staffName: staffName,
+                department: dept,
+                date: r.date,
+                shiftEnd: shiftEndStr,
+                actualIn: r.checkInDisplay || r.checkIn || '--',
+                actualOut: actualOutStr,
+                earlyMinutes: earlyMins,
+                status: r.hasApprovedEarlyDeparture ? 'Approved Departure' : `Early Checkout (-${earlyMins}m)`,
+                attendanceStatus: r.status,
+                hasApprovedEarlyDeparture: !!r.hasApprovedEarlyDeparture
+            };
+        });
+
+        // Most frequent early checkouts sorted by count descending, then total minutes
+        const mostFrequentEarly = Array.from(employeeMap.values()).sort((a, b) => {
+            if (b.earlyCount !== a.earlyCount) {
+                return b.earlyCount - a.earlyCount;
+            }
+            return b.totalEarlyMinutes - a.totalEarlyMinutes;
+        });
+
+        res.json({
+            success: true,
+            month: currentMonth,
+            summary: {
+                totalEarlyCheckouts: records.length,
+                uniqueEarlyEmployees: employeeMap.size,
+                totalEarlyMinutes,
+                averageEarlyMinutes: records.length > 0 ? Math.round(totalEarlyMinutes / records.length) : 0,
+                mostFrequentEarly
+            },
+            records
+        });
+    } catch (err) {
+        console.error('Error fetching early checkouts report:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};

@@ -11,6 +11,11 @@ router.get('/settings/late-arrival', shiftController.getLateArrivalSettings);
 router.put('/settings/late-arrival', shiftController.updateLateArrivalSettings);
 router.get('/reports/late-arrivals', shiftController.getLateArrivalsReport);
 
+// Dedicated Early Checkout Settings & Reports
+router.get('/settings/early-checkout', shiftController.getEarlyCheckoutSettings);
+router.put('/settings/early-checkout', shiftController.updateEarlyCheckoutSettings);
+router.get('/reports/early-checkouts', shiftController.getEarlyCheckoutsReport);
+
 // Shift CRUD
 router.get('/', shiftController.getShifts);
 router.get('/roster/today', shiftController.getTodayShiftRoster);
