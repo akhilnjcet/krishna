@@ -12,6 +12,7 @@ router.param('id', validateObjectIdParam('id'));
 router.get('/stats', protect, authorize('admin', 'staff'), inventoryController.getStats);
 
 // Items CRUD
+router.get('/', protect, authorize('admin', 'staff'), inventoryController.getItems);
 router.get('/items', protect, authorize('admin', 'staff'), inventoryController.getItems);
 router.get('/items/:id', protect, authorize('admin', 'staff'), inventoryController.getItemById);
 router.post('/items', protect, admin, inventoryController.createItem);

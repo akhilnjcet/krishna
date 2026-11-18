@@ -3,7 +3,7 @@ import api from '../../services/api';
 import { 
     Calendar, Clock, AlertTriangle, CheckCircle2, Plus, Search, Filter, 
     ChevronRight, RefreshCw, Wrench, Users, ArrowRight, BarChart3, 
-    FileText, Layers, ShieldAlert, X, Eye, Edit3, RotateCcw
+    FileText, Layers, ShieldAlert, X, Eye, Edit3, RotateCcw, Loader2
 } from 'lucide-react';
 
 const STAGE_PRESETS = [
@@ -22,6 +22,8 @@ const AdminProductionPlanning = () => {
     const [activeTab, setActiveTab] = useState('plans'); // 'plans' | 'calendar' | 'conflicts' | 'reports'
     const [plans, setPlans] = useState([]);
     const [projects, setProjects] = useState([]);
+    const [loadingProjects, setLoadingProjects] = useState(false);
+    const [projectsError, setProjectsError] = useState(null);
     const [machines, setMachines] = useState([]);
     const [staffList, setStaffList] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -53,6 +55,13 @@ const AdminProductionPlanning = () => {
         notes: '',
         stages: []
     });
+
+    const isProjectCancelled = (p) => {
+        const s = String(p.status || '').toLowerCase();
+        return s === 'cancelled';
+    };
+    const eligibleProjects = projects.filter(p => !isProjectCancelled(p));
+    const ineligibleProjects = projects.filter(p => isProjectCancelled(p));
 
     // Progress Update Form
     const [progressForm, setProgressForm] = useState({
@@ -94,25 +103,51 @@ const AdminProductionPlanning = () => {
         }
     };
 
+    const fetchProjects = async () => {
+        setLoadingProjects(true);
+        setProjectsError(null);
+        try {
+            const res = await api.get('/projects');
+            const list = Array.isArray(res.data) ? res.data : (res.data?.projects || []);
+            setProjects(list);
+            return list;
+        } catch (err) {
+            console.error('Failed to load projects:', err);
+            setProjectsError(err.response?.data?.message || err.message || 'Failed to load projects');
+            return [];
+        } finally {
+            setLoadingProjects(false);
+        }
+    };
+
     const fetchAuxiliaryData = async () => {
         try {
-            const [projRes, invRes, staffRes, repRes] = await Promise.all([
-                api.get('/projects'),
-                api.get('/inventory?type=tool'),
-                api.get('/admin/staff').catch(() => ({ data: { staff: [] } })),
-                api.get('/production-plans/reports/summary').catch(() => ({ data: { summary: null } }))
-            ]);
+            // Fetch projects independently
+            await fetchProjects();
 
-            if (projRes.data) {
-                const list = Array.isArray(projRes.data) ? projRes.data : (projRes.data.projects || []);
-                setProjects(list);
-            }
-            if (invRes.data) {
-                const list = Array.isArray(invRes.data) ? invRes.data : (invRes.data.tools || invRes.data.items || []);
+            // Fetch machinery/tools safely
+            try {
+                const invRes = await api.get('/inventory/items', { params: { type: 'tool' } })
+                    .catch(() => api.get('/inventory?type=tool'))
+                    .catch(() => ({ data: [] }));
+                const list = Array.isArray(invRes.data) ? invRes.data : (invRes.data?.tools || invRes.data?.items || []);
                 setMachines(list);
-            }
-            if (staffRes.data?.staff) setStaffList(staffRes.data.staff);
-            if (repRes.data?.summary) setReportsSummary(repRes.data.summary);
+            } catch (_) {}
+
+            // Fetch staff safely
+            try {
+                const staffRes = await api.get('/staff')
+                    .catch(() => api.get('/auth/users?role=staff'))
+                    .catch(() => ({ data: [] }));
+                const sList = Array.isArray(staffRes.data) ? staffRes.data : (staffRes.data?.staff || staffRes.data?.users || []);
+                setStaffList(sList);
+            } catch (_) {}
+
+            // Fetch reports summary safely
+            try {
+                const repRes = await api.get('/production-plans/reports/summary').catch(() => ({ data: { summary: null } }));
+                if (repRes.data?.summary) setReportsSummary(repRes.data.summary);
+            } catch (_) {}
         } catch (err) {
             console.warn('Auxiliary data fetch error:', err);
         }
@@ -254,6 +289,9 @@ const AdminProductionPlanning = () => {
                     <button
                         type="button"
                         onClick={() => {
+                            if (projects.length === 0) {
+                                fetchProjects();
+                            }
                             setShowCreateModal(true);
                             if (planForm.stages.length === 0) handleAddStageToForm();
                         }}
@@ -668,25 +706,81 @@ const AdminProductionPlanning = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase">Linked Project *</label>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[11px] font-bold text-slate-500 uppercase">Linked Project *</label>
+                                        <div className="flex items-center gap-2">
+                                            {loadingProjects && (
+                                                <span className="text-[10px] font-semibold text-emerald-600 animate-pulse flex items-center gap-1">
+                                                    <Loader2 className="w-3 h-3 animate-spin" /> Loading...
+                                                </span>
+                                            )}
+                                            {projectsError && (
+                                                <button
+                                                    type="button"
+                                                    onClick={fetchProjects}
+                                                    className="text-[10px] font-bold text-rose-500 hover:underline flex items-center gap-1"
+                                                >
+                                                    Retry
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                     <select
                                         required
                                         value={planForm.projectId}
+                                        disabled={loadingProjects}
                                         onChange={(e) => {
-                                            const p = projects.find(x => String(x._id) === e.target.value);
-                                            setPlanForm({
-                                                ...planForm,
-                                                projectId: e.target.value,
-                                                jobOrderNumber: p ? (p.title || `JO-${p._id.slice(-6)}`) : ''
-                                            });
+                                            const pId = e.target.value;
+                                            const p = projects.find(x => String(x._id) === pId);
+                                            setPlanForm(prev => ({
+                                                ...prev,
+                                                projectId: pId,
+                                                jobOrderNumber: p ? (p.title || `JO-${p._id.slice(-6)}`) : '',
+                                                title: (!prev.title || prev.title.startsWith('Production Plan -')) && p ? `Production Plan - ${p.title}` : prev.title
+                                            }));
                                         }}
-                                        className="w-full mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold"
+                                        className="w-full mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold disabled:opacity-50"
                                     >
-                                        <option value="">Select Project</option>
-                                        {projects.map(p => (
-                                            <option key={p._id} value={p._id}>{p.title} ({p.customerId?.name || 'Client'})</option>
-                                        ))}
+                                        <option value="">
+                                            {loadingProjects
+                                                ? 'Loading projects...'
+                                                : projectsError
+                                                ? 'Error loading projects (Click Retry)'
+                                                : projects.length === 0
+                                                ? 'No projects found in database'
+                                                : 'Select Project / Job Order...'}
+                                        </option>
+                                        {eligibleProjects.length > 0 && (
+                                            <optgroup label={`Eligible Job Orders (${eligibleProjects.length})`}>
+                                                {eligibleProjects.map(p => {
+                                                    const client = p.customerId?.name || (typeof p.customerId === 'string' ? p.customerId : 'Client');
+                                                    const statusText = p.status ? ` • ${p.status}` : '';
+                                                    return (
+                                                        <option key={p._id} value={p._id}>
+                                                            {p.title} ({client}{statusText})
+                                                        </option>
+                                                    );
+                                                })}
+                                            </optgroup>
+                                        )}
+                                        {ineligibleProjects.length > 0 && (
+                                            <optgroup label="Cancelled / Ineligible Projects">
+                                                {ineligibleProjects.map(p => (
+                                                    <option key={p._id} value={p._id} disabled>
+                                                        {p.title} (Cancelled - Ineligible)
+                                                    </option>
+                                                ))}
+                                            </optgroup>
+                                        )}
                                     </select>
+                                    {projectsError && (
+                                        <p className="text-[10px] text-rose-500 mt-1 font-semibold">{projectsError}</p>
+                                    )}
+                                    {!loadingProjects && !projectsError && eligibleProjects.length === 0 && projects.length > 0 && (
+                                        <p className="text-[10px] text-amber-500 mt-1 font-semibold">
+                                            All existing projects are marked as Cancelled. Reactivate or create an active project to schedule production.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 

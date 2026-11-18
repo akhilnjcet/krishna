@@ -367,6 +367,10 @@ app.get('/api/admin/users', apiProtect, apiAuthorize('admin', 'staff'), (req, re
     const authController = require('./controllers/authController');
     return authController.getUsersByRole(req, res, next);
 });
+app.get('/api/admin/staff', apiProtect, apiAuthorize('admin', 'staff'), (req, res, next) => {
+    const staffController = require('./controllers/staffController');
+    return staffController.getStaff(req, res, next);
+});
 
 // Root Error Route
 app.get('/api/debug/error', (req, res) => {
