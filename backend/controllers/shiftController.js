@@ -1,0 +1,569 @@
+const Shift = require('../models/Shift');
+const User = require('../models/User');
+const Attendance = require('../models/Attendance');
+const DailyAttendance = require('../models/DailyAttendance');
+const Overtime = require('../models/Overtime');
+const { getISTDate, getISTTimeString, formatISTDisplay } = require('../utils/dateTimeUtil');
+const { calculateShiftAttendance, resolveEmployeeShift, DEFAULT_FALLBACK_SHIFT } = require('../utils/shiftCalculator');
+
+/**
+ * Get all configured shifts with staff assignment counts
+ * GET /api/shifts
+ */
+exports.getShifts = async (req, res) => {
+    try {
+        const shifts = await Shift.find({}).sort({ isDefault: -1, createdAt: 1 }).populate('applicableStaff', 'name staff_id department designation');
+
+        // Augment each shift with actual number of staff assigned
+        const shiftsWithCounts = await Promise.all(shifts.map(async (shift) => {
+            const shiftObj = shift.toObject();
+            
+            // Count staff assigned via assignedShift or department
+            const directCount = await User.countDocuments({ assignedShift: shift._id, role: 'staff', status: 'active' });
+            let deptCount = 0;
+            if (shift.applicableDepartments && shift.applicableDepartments.length > 0) {
+                deptCount = await User.countDocuments({
+                    department: { $in: shift.applicableDepartments },
+                    assignedShift: { $exists: false },
+                    role: 'staff',
+                    status: 'active'
+                });
+            }
+
+            shiftObj.assignedStaffCount = directCount + deptCount;
+            return shiftObj;
+        }));
+
+        res.json({
+            success: true,
+            shifts: shiftsWithCounts
+        });
+    } catch (err) {
+        console.error('Error in getShifts:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Get single shift by ID
+ * GET /api/shifts/:id
+ */
+exports.getShiftById = async (req, res) => {
+    try {
+        const shift = await Shift.findById(req.params.id)
+            .populate('applicableStaff', 'name staff_id department email')
+            .populate('createdBy', 'name email')
+            .populate('updatedBy', 'name email');
+
+        if (!shift) {
+            return res.status(404).json({ success: false, message: 'Shift configuration not found' });
+        }
+
+        res.json({ success: true, shift });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Create a new shift configuration
+ * POST /api/shifts
+ */
+exports.createShift = async (req, res) => {
+    try {
+        const {
+            name,
+            code,
+            startTime,
+            endTime,
+            breakDuration,
+            expectedHours,
+            gracePeriodMinutes,
+            earlyExitAllowanceMinutes,
+            shiftType,
+            isOvernight,
+            overtimeEnabled,
+            minOvertimeMinutes,
+            overtimeMultiplier,
+            applicableDepartments,
+            applicableStaff,
+            weeklyOffDays,
+            isActive,
+            isDefault,
+            autoShiftClosureEnabled,
+            autoShiftClosureMaxHours
+        } = req.body;
+
+        if (!name || !code || !startTime || !endTime) {
+            return res.status(400).json({ success: false, message: 'Shift Name, Code, Start Time, and End Time are required.' });
+        }
+
+        const normalizedCode = code.trim().toUpperCase();
+        const existing = await Shift.findOne({ code: normalizedCode });
+        if (existing) {
+            return res.status(400).json({ success: false, message: `A shift with code "${normalizedCode}" already exists.` });
+        }
+
+        const newShift = new Shift({
+            name: name.trim(),
+            code: normalizedCode,
+            startTime: startTime.trim(),
+            endTime: endTime.trim(),
+            breakDuration: breakDuration !== undefined ? Number(breakDuration) : 60,
+            expectedHours: expectedHours !== undefined ? Number(expectedHours) : 7,
+            gracePeriodMinutes: gracePeriodMinutes !== undefined ? Number(gracePeriodMinutes) : 10,
+            earlyExitAllowanceMinutes: earlyExitAllowanceMinutes !== undefined ? Number(earlyExitAllowanceMinutes) : 15,
+            shiftType: shiftType || 'Regular',
+            isOvernight: !!isOvernight,
+            overtimeEnabled: overtimeEnabled !== undefined ? !!overtimeEnabled : true,
+            minOvertimeMinutes: minOvertimeMinutes !== undefined ? Number(minOvertimeMinutes) : 30,
+            overtimeMultiplier: overtimeMultiplier !== undefined ? Number(overtimeMultiplier) : 1.0,
+            applicableDepartments: Array.isArray(applicableDepartments) ? applicableDepartments : [],
+            applicableStaff: Array.isArray(applicableStaff) ? applicableStaff : [],
+            weeklyOffDays: Array.isArray(weeklyOffDays) && weeklyOffDays.length > 0 ? weeklyOffDays : ['Sunday'],
+            isActive: isActive !== undefined ? !!isActive : true,
+            isDefault: !!isDefault,
+            autoShiftClosureEnabled: !!autoShiftClosureEnabled,
+            autoShiftClosureMaxHours: autoShiftClosureMaxHours !== undefined ? Number(autoShiftClosureMaxHours) : 16,
+            createdBy: req.user?._id || req.user?.id
+        });
+
+        await newShift.save();
+
+        res.status(201).json({
+            success: true,
+            message: `Shift "${newShift.name}" created successfully.`,
+            shift: newShift
+        });
+    } catch (err) {
+        console.error('Error creating shift:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Update shift configuration
+ * PUT /api/shifts/:id
+ */
+exports.updateShift = async (req, res) => {
+    try {
+        const shift = await Shift.findById(req.params.id);
+        if (!shift) {
+            return res.status(404).json({ success: false, message: 'Shift configuration not found' });
+        }
+
+        const {
+            name,
+            code,
+            startTime,
+            endTime,
+            breakDuration,
+            expectedHours,
+            gracePeriodMinutes,
+            earlyExitAllowanceMinutes,
+            shiftType,
+            isOvernight,
+            overtimeEnabled,
+            minOvertimeMinutes,
+            overtimeMultiplier,
+            applicableDepartments,
+            applicableStaff,
+            weeklyOffDays,
+            isActive,
+            isDefault,
+            autoShiftClosureEnabled,
+            autoShiftClosureMaxHours
+        } = req.body;
+
+        if (code && code.trim().toUpperCase() !== shift.code) {
+            const codeExists = await Shift.findOne({
+                code: code.trim().toUpperCase(),
+                _id: { $ne: shift._id }
+            });
+            if (codeExists) {
+                return res.status(400).json({ success: false, message: `Shift code "${code.trim().toUpperCase()}" is already in use.` });
+            }
+            shift.code = code.trim().toUpperCase();
+        }
+
+        if (name) shift.name = name.trim();
+        if (startTime) shift.startTime = startTime.trim();
+        if (endTime) shift.endTime = endTime.trim();
+        if (breakDuration !== undefined) shift.breakDuration = Number(breakDuration);
+        if (expectedHours !== undefined) shift.expectedHours = Number(expectedHours);
+        if (gracePeriodMinutes !== undefined) shift.gracePeriodMinutes = Number(gracePeriodMinutes);
+        if (earlyExitAllowanceMinutes !== undefined) shift.earlyExitAllowanceMinutes = Number(earlyExitAllowanceMinutes);
+        if (shiftType) shift.shiftType = shiftType;
+        if (isOvernight !== undefined) shift.isOvernight = !!isOvernight;
+        if (overtimeEnabled !== undefined) shift.overtimeEnabled = !!overtimeEnabled;
+        if (minOvertimeMinutes !== undefined) shift.minOvertimeMinutes = Number(minOvertimeMinutes);
+        if (overtimeMultiplier !== undefined) shift.overtimeMultiplier = Number(overtimeMultiplier);
+        if (applicableDepartments !== undefined) shift.applicableDepartments = applicableDepartments;
+        if (applicableStaff !== undefined) shift.applicableStaff = applicableStaff;
+        if (weeklyOffDays !== undefined) shift.weeklyOffDays = weeklyOffDays;
+        if (isActive !== undefined) shift.isActive = !!isActive;
+        if (isDefault !== undefined) shift.isDefault = !!isDefault;
+        if (autoShiftClosureEnabled !== undefined) shift.autoShiftClosureEnabled = !!autoShiftClosureEnabled;
+        if (autoShiftClosureMaxHours !== undefined) shift.autoShiftClosureMaxHours = Number(autoShiftClosureMaxHours);
+
+        shift.updatedBy = req.user?._id || req.user?.id;
+
+        await shift.save();
+
+        res.json({
+            success: true,
+            message: `Shift "${shift.name}" updated successfully. Subsequent attendance records will use this configuration.`,
+            shift
+        });
+    } catch (err) {
+        console.error('Error updating shift:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Delete a shift configuration
+ * DELETE /api/shifts/:id
+ */
+exports.deleteShift = async (req, res) => {
+    try {
+        const shift = await Shift.findById(req.params.id);
+        if (!shift) {
+            return res.status(404).json({ success: false, message: 'Shift configuration not found' });
+        }
+
+        if (shift.isDefault) {
+            return res.status(400).json({ success: false, message: 'Cannot delete the default organization shift. Designate another shift as default first.' });
+        }
+
+        // Unlink from any users assigned
+        await User.updateMany({ assignedShift: shift._id }, { $unset: { assignedShift: 1 } });
+        await Shift.findByIdAndDelete(req.params.id);
+
+        res.json({
+            success: true,
+            message: `Shift "${shift.name}" deleted successfully. Assigned staff have reverted to the default shift.`
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Toggle active status of a shift
+ * PATCH /api/shifts/:id/toggle
+ */
+exports.toggleShiftStatus = async (req, res) => {
+    try {
+        const shift = await Shift.findById(req.params.id);
+        if (!shift) {
+            return res.status(404).json({ success: false, message: 'Shift configuration not found' });
+        }
+
+        if (shift.isDefault && shift.isActive) {
+            return res.status(400).json({ success: false, message: 'Cannot deactivate the default shift. Make another shift default first.' });
+        }
+
+        shift.isActive = !shift.isActive;
+        shift.updatedBy = req.user?._id || req.user?.id;
+        await shift.save();
+
+        res.json({
+            success: true,
+            message: `Shift "${shift.name}" is now ${shift.isActive ? 'Active' : 'Inactive'}.`,
+            isActive: shift.isActive
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Assign staff members or departments to a shift
+ * POST /api/shifts/:id/assign
+ */
+exports.assignStaffToShift = async (req, res) => {
+    try {
+        const shift = await Shift.findById(req.params.id);
+        if (!shift) {
+            return res.status(404).json({ success: false, message: 'Shift configuration not found' });
+        }
+
+        const { staffIds = [], departments = [] } = req.body;
+
+        if (Array.isArray(staffIds) && staffIds.length > 0) {
+            await User.updateMany(
+                { _id: { $in: staffIds }, role: 'staff' },
+                { $set: { assignedShift: shift._id } }
+            );
+        }
+
+        if (Array.isArray(departments)) {
+            shift.applicableDepartments = Array.from(new Set([...(shift.applicableDepartments || []), ...departments]));
+            await shift.save();
+        }
+
+        res.json({
+            success: true,
+            message: `Shift assigned to ${staffIds.length} staff members and departments.`
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Comprehensive Shift Roster & Operational Dashboard (Section 5)
+ * GET /api/shifts/roster/today
+ */
+exports.getTodayShiftRoster = async (req, res) => {
+    try {
+        const todayDate = req.query.date || getISTDate(new Date());
+
+        // 1. Fetch all active staff
+        const allStaff = await User.find({ role: 'staff', status: 'active' })
+            .select('name staff_id department designation email phone profilePhoto assignedShift')
+            .populate('assignedShift');
+
+        // 2. Fetch today's DailyAttendance records and Attendance biometric logs
+        const [dailyRecords, bioLogs, shifts] = await Promise.all([
+            DailyAttendance.find({ date: todayDate }).populate('staffId', 'name staff_id department designation'),
+            Attendance.find({ date: todayDate, status: 'success' }).sort({ login_time: 1 }),
+            Shift.find({ isActive: true })
+        ]);
+
+        const dailyMap = new Map();
+        dailyRecords.forEach(d => {
+            if (d.staffId?._id) dailyMap.set(String(d.staffId._id), d);
+        });
+
+        const bioMap = new Map();
+        bioLogs.forEach(b => {
+            const id = String(b.staff_id);
+            if (!bioMap.has(id)) {
+                bioMap.set(id, []);
+            }
+            bioMap.get(id).push(b);
+        });
+
+        const roster = await Promise.all(allStaff.map(async (staff) => {
+            const staffIdStr = String(staff._id);
+            const daily = dailyMap.get(staffIdStr);
+            const biometrics = bioMap.get(staffIdStr) || [];
+
+            let earliestBioIn = null;
+            let latestBioOut = null;
+            let bestBio = biometrics[0] || null;
+
+            biometrics.forEach(b => {
+                if (!earliestBioIn || new Date(b.login_time) < new Date(earliestBioIn)) {
+                    earliestBioIn = b.login_time;
+                    bestBio = b;
+                }
+                if (b.check_out) {
+                    if (!latestBioOut || new Date(b.check_out) > new Date(latestBioOut)) {
+                        latestBioOut = b.check_out;
+                    }
+                }
+            });
+
+            const shift = await resolveEmployeeShift(staff);
+            const effectiveIn = earliestBioIn ? getISTTimeString(earliestBioIn) : (daily?.checkIn || null);
+            const effectiveOut = latestBioOut ? getISTTimeString(latestBioOut) : (daily?.checkOut || null);
+
+            const calc = calculateShiftAttendance({
+                inTime: effectiveIn,
+                outTime: effectiveOut,
+                recordDate: todayDate,
+                shift,
+                breakMinutes: daily?.breakTime || shift.breakDuration || 0
+            });
+
+            return {
+                staffId: staff._id,
+                staff_id: staff.staff_id || 'ID',
+                name: staff.name,
+                email: staff.email,
+                department: staff.department || 'General',
+                designation: staff.designation || 'Staff',
+                profilePhoto: staff.profilePhoto,
+                shift: {
+                    id: shift._id,
+                    name: shift.name,
+                    code: shift.code,
+                    startTime: shift.startTime,
+                    endTime: shift.endTime,
+                    expectedHours: shift.expectedHours
+                },
+                date: todayDate,
+                checkIn: effectiveIn ? formatISTDisplay(effectiveIn, false) : '--',
+                checkOut: effectiveOut ? formatISTDisplay(effectiveOut, false) : '--',
+                rawCheckIn: effectiveIn,
+                rawCheckOut: effectiveOut,
+                status: calc.status,
+                completionStatus: calc.completionStatus,
+                isCompleted: calc.isCompleted,
+                isActiveShift: calc.isActiveShift,
+                isMissingOut: calc.isMissingOut,
+                isLate: calc.isLate,
+                lateMinutes: calc.lateMinutes,
+                isEarlyExit: calc.isEarlyExit,
+                earlyExitMinutes: calc.earlyExitMinutes,
+                workedHours: calc.workedHours,
+                durationMinutes: calc.durationMinutes,
+                formattedDuration: calc.formattedDuration,
+                overtimeHours: calc.overtimeHours,
+                location: bestBio?.location || null,
+                dailyRecordId: daily?._id || null,
+                biometricLogId: bestBio?._id || null,
+                manualCorrectionReason: daily?.manualCorrectionReason || null
+            };
+        }));
+
+        // Summary counts
+        const summary = {
+            totalStaff: allStaff.length,
+            activeShiftsNow: roster.filter(r => r.isActiveShift).length,
+            completedShifts: roster.filter(r => r.isCompleted).length,
+            missingOut: roster.filter(r => r.isMissingOut).length,
+            lateArrivals: roster.filter(r => r.isLate).length,
+            earlyDepartures: roster.filter(r => r.isEarlyExit).length,
+            totalOvertimeHours: parseFloat(roster.reduce((sum, r) => sum + (r.overtimeHours || 0), 0).toFixed(2))
+        };
+
+        res.json({
+            success: true,
+            date: todayDate,
+            summary,
+            roster,
+            shifts
+        });
+    } catch (err) {
+        console.error('Error in getTodayShiftRoster:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Manually correct an attendance record with mandatory reason & audit trail (Section 5)
+ * POST /api/shifts/attendance/correct
+ */
+exports.manualAttendanceCorrection = async (req, res) => {
+    try {
+        const {
+            staffId,
+            date,
+            checkIn,
+            checkOut,
+            reason,
+            breakTime = 0
+        } = req.body;
+
+        if (!staffId || !date) {
+            return res.status(400).json({ success: false, message: 'Staff ID and Date are required.' });
+        }
+
+        if (!reason || String(reason).trim().length < 5) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'A mandatory audit reason (minimum 5 characters) is required for manual attendance correction.' 
+            });
+        }
+
+        const staff = await User.findById(staffId);
+        if (!staff) {
+            return res.status(404).json({ success: false, message: 'Staff member not found.' });
+        }
+
+        const shift = await resolveEmployeeShift(staff);
+        const calc = calculateShiftAttendance({
+            inTime: checkIn,
+            outTime: checkOut,
+            recordDate: date,
+            shift,
+            breakMinutes: Number(breakTime) || shift.breakDuration || 0
+        });
+
+        // 1. Update or create DailyAttendance
+        const existingDaily = await DailyAttendance.findOne({ staffId, date });
+        const previousDaily = existingDaily ? {
+            checkIn: existingDaily.checkIn,
+            checkOut: existingDaily.checkOut,
+            status: existingDaily.status,
+            workedHours: existingDaily.workedHours
+        } : null;
+
+        const updatedDaily = await DailyAttendance.findOneAndUpdate(
+            { staffId, date },
+            {
+                $set: {
+                    status: calc.status === 'COMPLETED' ? 'Completed' : (checkIn && !checkOut ? (date === getISTDate(new Date()) ? 'In Progress' : 'Missing Out') : 'Absent'),
+                    checkIn: checkIn || '',
+                    checkOut: checkOut || '',
+                    breakTime: Number(breakTime) || shift.breakDuration || 0,
+                    workedHours: calc.workedHours,
+                    lateMinutes: calc.lateMinutes,
+                    earlyExitMinutes: calc.earlyExitMinutes,
+                    shiftId: shift._id,
+                    shiftName: shift.name,
+                    shiftCode: shift.code,
+                    overtimeHours: calc.overtimeHours,
+                    isApproved: true,
+                    manualCorrectionReason: reason.trim(),
+                    correctedBy: req.user?._id || req.user?.id,
+                    correctedAt: new Date(),
+                    originalCheckIn: previousDaily?.checkIn || checkIn,
+                    originalCheckOut: previousDaily?.checkOut || checkOut,
+                    updatedAt: new Date()
+                }
+            },
+            { upsert: true, new: true }
+        );
+
+        // 2. Add entry to Attendance audit trail
+        const existingBio = await Attendance.findOne({ staff_id: staffId, date });
+        if (existingBio) {
+            existingBio.completion_status = calc.completionStatus;
+            existingBio.duration_minutes = calc.durationMinutes;
+            existingBio.shift_id = shift._id;
+            existingBio.shift_code = shift.code;
+            existingBio.audit_trail.push({
+                action: 'MANUALLY_EDITED',
+                performed_by: req.user?._id || req.user?.id,
+                performed_by_name: req.user?.name || 'Administrator',
+                timestamp: new Date(),
+                details: `Admin corrected timestamps. In: ${checkIn || '--'}, Out: ${checkOut || '--'}. Reason: "${reason.trim()}". Duration: ${calc.formattedDuration}.`,
+                ip_address: req.ip || ''
+            });
+            await existingBio.save();
+        }
+
+        // 3. Overtime record update
+        if (calc.overtimeHours > 0) {
+            await Overtime.findOneAndUpdate(
+                { staffId, date },
+                {
+                    hours: calc.overtimeHours,
+                    ratePerHour: staff.overtimeRate || 0,
+                    totalAmount: parseFloat((calc.overtimeHours * (staff.overtimeRate || 0)).toFixed(2)),
+                    regularHours: shift.expectedHours,
+                    checkIn: checkIn || '09:00',
+                    checkOut: checkOut || '17:00',
+                    status: staff.otApprovalRequired ? 'Pending' : 'Approved',
+                    addedBy: req.user?._id || req.user?.id
+                },
+                { upsert: true }
+            );
+        }
+
+        res.json({
+            success: true,
+            message: `Attendance for ${staff.name} on ${date} corrected successfully. Status: ${calc.status}.`,
+            record: updatedDaily,
+            calculation: calc
+        });
+    } catch (err) {
+        console.error('Error in manualAttendanceCorrection:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};

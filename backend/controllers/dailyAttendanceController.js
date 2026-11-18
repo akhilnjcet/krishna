@@ -19,45 +19,54 @@ exports.markDailyAttendance = async (req, res) => {
             return res.status(404).json({ message: "Staff member not found." });
         }
 
-        // Calculate hours if status is Present or Half Day
+        // Calculate hours and dynamic shift adherence
         let workedHours = 0;
         let lateMinutes = 0;
         let earlyExitMinutes = 0;
+        let overtimeHours = 0;
+        let canonicalStatus = status;
 
-        if (status === 'Present' || status === 'Half Day') {
-            const defaultCheckIn = "09:00";
-            const defaultCheckOut = status === 'Present' ? "17:00" : "13:00";
-            
-            const actualCheckIn = checkIn || defaultCheckIn;
-            const actualCheckOut = checkOut || defaultCheckOut;
-            const actualBreakTime = breakTime !== undefined ? Number(breakTime) : 0;
+        const { resolveEmployeeShift, calculateShiftAttendance } = require('../utils/shiftCalculator');
+        const shift = await resolveEmployeeShift(staff);
 
-            const durationCalc = calculateDuration(actualCheckIn, actualCheckOut, actualBreakTime);
-            workedHours = durationCalc.hours;
+        const hasCheckIn = !!(checkIn && checkIn.trim() !== '' && checkIn !== '--');
+        const hasCheckOut = !!(checkOut && checkOut.trim() !== '' && checkOut !== '--');
 
-            // Compute late/early minutes relative to standard shift 9 AM to 5 PM
-            const [inH, inM] = actualCheckIn.split(':').map(Number);
-            const [outH, outM] = actualCheckOut.split(':').map(Number);
-            const stdInMins = 9 * 60; // 09:00
-            const stdOutMins = 17 * 60; // 17:00
+        if (status === 'Present' || status === 'Completed' || status === 'Half Day' || (hasCheckIn && hasCheckOut)) {
+            const actualCheckIn = checkIn || shift.startTime || "09:00";
+            const actualCheckOut = checkOut || shift.endTime || "17:00";
+            const actualBreakTime = breakTime !== undefined ? Number(breakTime) : (shift.breakDuration || 0);
 
-            const actualInMins = inH * 60 + inM;
-            const actualOutMins = outH * 60 + outM;
+            const calc = calculateShiftAttendance({
+                inTime: actualCheckIn,
+                outTime: actualCheckOut,
+                recordDate: date,
+                shift,
+                breakMinutes: actualBreakTime
+            });
 
-            lateMinutes = Math.max(0, actualInMins - stdInMins);
-            earlyExitMinutes = Math.max(0, stdOutMins - actualOutMins);
+            workedHours = calc.workedHours;
+            lateMinutes = calc.lateMinutes;
+            earlyExitMinutes = calc.earlyExitMinutes;
+            overtimeHours = calc.overtimeHours;
+            canonicalStatus = (hasCheckIn && hasCheckOut) ? 'Completed' : calc.status;
         }
 
         const attendance = await DailyAttendance.findOneAndUpdate(
             { staffId, date },
             { 
-                status, 
-                checkIn: (status === 'Present' || status === 'Half Day') ? checkIn || "09:00" : "",
-                checkOut: (status === 'Present' || status === 'Half Day') ? checkOut || (status === 'Present' ? "17:00" : "13:00") : "",
-                breakTime: (status === 'Present' || status === 'Half Day') ? breakTime || 0 : 0,
+                status: canonicalStatus, 
+                checkIn: (status === 'Present' || status === 'Completed' || status === 'Half Day') ? checkIn || shift.startTime || "09:00" : "",
+                checkOut: (status === 'Present' || status === 'Completed' || status === 'Half Day') ? checkOut || (status === 'Completed' || status === 'Present' ? shift.endTime || "17:00" : "13:00") : "",
+                breakTime: (status === 'Present' || status === 'Completed' || status === 'Half Day') ? breakTime || shift.breakDuration || 0 : 0,
                 workedHours,
                 lateMinutes,
                 earlyExitMinutes,
+                overtimeHours,
+                shiftId: shift._id,
+                shiftCode: shift.code,
+                shiftName: shift.name,
+                isOvernight: shift.isOvernight,
                 isApproved: true,
                 markedBy: req.user.id, 
                 updatedAt: Date.now() 
@@ -253,6 +262,39 @@ const reconcileRecordsWithBiometrics = async (records) => {
         }
         if (bio && bio.check_out) {
             obj.biometric_check_out = bio.check_out;
+        }
+
+        const todayStr = getISTDate(new Date());
+        const hasValidIn = !!(finalCheckIn && finalCheckIn !== '--');
+        const hasValidOut = !!(finalCheckOut && finalCheckOut !== '--');
+
+        if (hasValidIn && hasValidOut) {
+            obj.status = 'Completed';
+            obj.completion_status = 'COMPLETED';
+            obj.is_active_shift = false;
+
+            // Recalculate duration & hours if missing or zero
+            if (!obj.workedHours || obj.workedHours === 0) {
+                const { calculateShiftAttendance } = require('../utils/shiftCalculator');
+                const calc = calculateShiftAttendance({
+                    inTime: finalCheckIn,
+                    outTime: finalCheckOut,
+                    recordDate: obj.date,
+                    breakMinutes: obj.breakTime || 0
+                });
+                obj.workedHours = calc.workedHours;
+                obj.duration_minutes = calc.durationMinutes;
+            }
+        } else if (hasValidIn && !hasValidOut) {
+            if (obj.date === todayStr) {
+                obj.status = 'In Progress';
+                obj.completion_status = 'IN_PROGRESS';
+                obj.is_active_shift = true;
+            } else {
+                obj.status = 'Missing Out';
+                obj.completion_status = 'MISSING_OUT';
+                obj.is_active_shift = false;
+            }
         }
 
         return obj;

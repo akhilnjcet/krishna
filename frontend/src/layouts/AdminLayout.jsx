@@ -23,6 +23,7 @@ const SIDEBAR_ITEMS = [
     { name: 'User Management',  path: '/admin/users',        icon: User },
     { name: 'Staff Management', path: '/admin/staff',        icon: Users },
     { name: 'Attendance Hub',  path: '/admin/logs',         icon: Clock },
+    { name: 'Shift Control',   path: '/admin/shifts',       icon: Clock },
     { name: 'Leave Requests',  path: '/admin/leave',        icon: ClipboardList },
     { name: 'Projects Hub',    path: '/admin/projects',     icon: Layers },
     { name: 'Task Assignment Hub', path: '/admin/tasks',    icon: CheckSquare },

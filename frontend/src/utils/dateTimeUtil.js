@@ -92,43 +92,139 @@ export const formatDateIST = (dateInput = new Date()) => {
 };
 
 /**
- * Format Duration in minutes into human-readable hours and minutes (e.g. 8h 30m)
+ * Parse any time representation (Date, ISO string, HH:mm, or 12-hour AM/PM string) into total minutes from 00:00
  */
-export const formatDurationMinutes = (minutes) => {
-    if (!minutes || isNaN(minutes) || Number(minutes) <= 0) return '--';
-    const m = Math.round(Number(minutes));
-    const hours = Math.floor(m / 60);
-    const mins = m % 60;
+export const parseTimeToMinutes = (timeVal) => {
+    if (!timeVal) return null;
+
+    if (timeVal instanceof Date) {
+        const istStr = getISTTimeString(timeVal);
+        const [h, m] = istStr.split(':').map(Number);
+        return h * 60 + m;
+    }
+
+    if (typeof timeVal === 'string') {
+        const trimmed = timeVal.trim();
+        if (trimmed === '--' || trimmed === '' || trimmed === 'null' || trimmed === 'undefined') return null;
+
+        if (trimmed.includes('T') || trimmed.includes('Z')) {
+            const d = new Date(trimmed);
+            if (!isNaN(d.getTime())) {
+                const istStr = getISTTimeString(d);
+                const [h, m] = istStr.split(':').map(Number);
+                return h * 60 + m;
+            }
+        }
+
+        if (/AM|PM/i.test(trimmed)) {
+            const match = trimmed.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)/i);
+            if (match) {
+                let h = parseInt(match[1], 10);
+                const m = parseInt(match[2], 10);
+                const ampm = match[3].toUpperCase();
+                if (ampm === 'PM' && h < 12) h += 12;
+                if (ampm === 'AM' && h === 12) h = 0;
+                return h * 60 + m;
+            }
+        }
+
+        if (/^\d{1,2}:\d{2}/.test(trimmed)) {
+            const [h, m] = trimmed.split(':').map(Number);
+            return h * 60 + m;
+        }
+    }
+
+    return null;
+};
+
+/**
+ * Accurately calculate duration in minutes between IN and OUT timestamps, supporting overnight shifts crossing midnight
+ */
+export const calculateOvernightDuration = (inTime, outTime, breakMins = 0) => {
+    const inMins = parseTimeToMinutes(inTime);
+    const outMins = parseTimeToMinutes(outTime);
+
+    if (inMins === null || outMins === null) return 0;
+
+    let actualOutMins = outMins;
+    if (actualOutMins <= inMins) {
+        actualOutMins += 24 * 60; // Overnight shift crossing midnight
+    }
+
+    const rawDiff = actualOutMins - inMins;
+    const netMins = Math.max(1, rawDiff - Number(breakMins || 0));
+    return netMins;
+};
+
+/**
+ * Format Duration in minutes into human-readable hours and minutes (e.g. 8h 30m).
+ * If minutes is 0 but valid inTime and outTime exist, dynamically computes overnight duration so it never shows '--'!
+ */
+export const formatDurationMinutes = (minutes, inTime = null, outTime = null, breakMins = 0) => {
+    let m = Number(minutes);
+    if ((!m || isNaN(m) || m <= 0) && inTime && outTime && outTime !== '--' && inTime !== '--') {
+        m = calculateOvernightDuration(inTime, outTime, breakMins);
+    }
+
+    if (!m || isNaN(m) || m <= 0) return '--';
+    const rounded = Math.round(m);
+    const hours = Math.floor(rounded / 60);
+    const mins = rounded % 60;
     return `${hours}h ${mins}m`;
 };
 
 /**
- * Format Attendance status badge styling and label
+ * Unified Attendance Status resolver:
+ * 1. If both IN and OUT timestamps exist: ALWAYS marks COMPLETED (never IN PROGRESS).
+ * 2. If only IN exists and date is today (or active): IN PROGRESS.
+ * 3. If only IN exists and date is in the past: MISSING OUT.
+ * 4. If neither timestamp exists: Absent / Weekly Off / Leave / Holiday.
  */
-export const getUnifiedAttendanceStatus = (status, checkOut, durationMinutes = 0, isActiveShift = false) => {
+export const getUnifiedAttendanceStatus = (status, checkOut, durationMinutes = 0, isActiveShift = false, checkIn = null, recordDate = null) => {
     const rawStatus = (status || '').trim();
 
-    if (rawStatus === 'Absent') {
-        return { label: 'Absent', color: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50' };
-    }
+    const hasValidOut = !!(checkOut && checkOut !== '--' && String(checkOut).trim() !== '' && String(checkOut).trim() !== 'null' && String(checkOut).trim() !== 'undefined');
+    const hasValidIn = !!(checkIn && checkIn !== '--' && String(checkIn).trim() !== '' && String(checkIn).trim() !== 'null' && String(checkIn).trim() !== 'undefined');
+
+    // Categorical statuses that don't depend on timestamps
     if (rawStatus === 'Leave') {
         return { label: 'Leave', color: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900/50' };
     }
     if (rawStatus === 'Holiday') {
         return { label: 'Holiday', color: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-900/50' };
     }
-
-    if (isActiveShift || (!checkOut && rawStatus === 'Present')) {
-        return { label: 'Present (In Progress)', color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50' };
+    if (rawStatus === 'Weekly Off' || rawStatus === 'WEEKLY_OFF') {
+        return { label: 'Weekly Off', color: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700' };
     }
 
-    if (rawStatus === 'Half Day' || (durationMinutes > 0 && durationMinutes < 450 && durationMinutes >= 240)) {
+    // MANDATORY RULE 1: If an attendance record contains both IN and OUT timestamps, mark it as COMPLETED!
+    // NEVER display IN PROGRESS when a valid OUT timestamp exists!
+    if (hasValidOut || rawStatus === 'Completed' || rawStatus === 'COMPLETED') {
+        if (rawStatus === 'Half Day') {
+            return { label: 'Half Day', color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50' };
+        }
+        return { label: 'Completed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' };
+    }
+
+    // MANDATORY RULE 2: If only IN exists and OUT is missing:
+    // If active shift or today's date -> IN PROGRESS
+    if (isActiveShift || rawStatus === 'In Progress' || rawStatus === 'IN PROGRESS') {
+        return { label: 'In Progress', color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50' };
+    }
+
+    // If past date with missing OUT -> MISSING OUT
+    if (rawStatus === 'Missing Out' || rawStatus === 'MISSING_OUT' || (hasValidIn && !hasValidOut)) {
+        return { label: 'Missing Out', color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50' };
+    }
+
+    // MANDATORY RULE 3: If neither exists, do not mark employee present
+    if (rawStatus === 'Absent' || rawStatus === 'ABSENT' || (!hasValidIn && !hasValidOut)) {
+        return { label: 'Absent', color: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50' };
+    }
+
+    if (rawStatus === 'Half Day') {
         return { label: 'Half Day', color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50' };
     }
 
-    if (rawStatus === 'Present' || durationMinutes >= 450) {
-        return { label: 'Full Day', color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' };
-    }
-
-    return { label: rawStatus || 'Present', color: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700' };
+    return { label: rawStatus || 'Completed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' };
 };

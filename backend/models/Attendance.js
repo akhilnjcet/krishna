@@ -20,6 +20,14 @@ const attendanceSchema = new mongoose.Schema({
     check_out: { type: Date },
     duration_minutes: { type: Number, default: 0 },
     date: { type: String, required: true }, // Format: YYYY-MM-DD
+    shift_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Shift' },
+    shift_code: { type: String },
+    is_overnight: { type: Boolean, default: false },
+    completion_status: { 
+        type: String, 
+        enum: ['IN_PROGRESS', 'COMPLETED', 'MISSING_OUT', 'MANUALLY_CLOSED'], 
+        default: 'IN_PROGRESS' 
+    },
     face_match_confidence: { type: Number, default: 0 },
     device_ip: { type: String, default: '' },
     device_info: { type: String, default: '' },

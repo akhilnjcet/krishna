@@ -88,15 +88,22 @@ const StaffTimesheets = () => {
 
     const exportToCSV = () => {
         const headers = ["Date", "Check-In (IST)", "Check-Out (IST)", "Worked Hours", "Duration", "Overtime (hrs)", "Status"];
-        const rows = processedLogs.map(log => [
-            log.date,
-            log.checkInDisplay || (log.login_time ? formatTimeIST(log.login_time, false) : (log.checkInStr ? formatTimeIST(log.checkInStr, false) : '--')),
-            log.checkOutDisplay || (log.check_out ? formatTimeIST(log.check_out, false) : (log.checkOutStr && log.checkOutStr !== '--' ? formatTimeIST(log.checkOutStr, false) : '--')),
-            log.workedHours || 0,
-            log.duration_minutes ? formatDurationMinutes(log.duration_minutes) : (log.is_active_shift ? 'In Progress' : '--'),
-            log.overtimeHours || 0,
-            log.status || 'Present'
-        ]);
+        const rows = processedLogs.map(log => {
+            const inDisp = log.checkInDisplay || (log.login_time ? formatTimeIST(log.login_time, false) : (log.checkInStr ? formatTimeIST(log.checkInStr, false) : '--'));
+            const outDisp = log.checkOutDisplay || (log.check_out ? formatTimeIST(log.check_out, false) : (log.checkOutStr && log.checkOutStr !== '--' ? formatTimeIST(log.checkOutStr, false) : '--'));
+            const dur = formatDurationMinutes(log.duration_minutes, inDisp, outDisp);
+            const statusMeta = getUnifiedAttendanceStatus(log.status, outDisp !== '--' ? outDisp : log.check_out, log.duration_minutes, log.is_active_shift, inDisp !== '--' ? inDisp : log.login_time, log.date);
+
+            return [
+                log.date,
+                inDisp,
+                outDisp,
+                log.workedHours || 0,
+                dur,
+                log.overtimeHours || 0,
+                statusMeta.label
+            ];
+        });
 
         const csvContent = [
             headers.join(','),
@@ -210,11 +217,15 @@ const StaffTimesheets = () => {
                         </div>
                     ) : (
                         processedLogs.map((log) => {
+                            const inDisp = log.checkInDisplay || (log.login_time ? formatTimeIST(log.login_time, false) : (log.checkInStr ? formatTimeIST(log.checkInStr, false) : '--'));
+                            const outDisp = log.checkOutDisplay || (log.check_out ? formatTimeIST(log.check_out, false) : (log.checkOutStr && log.checkOutStr !== '--' ? formatTimeIST(log.checkOutStr, false) : '--'));
                             const statusMeta = getUnifiedAttendanceStatus(
                                 log.status,
-                                log.check_out,
+                                outDisp !== '--' ? outDisp : log.check_out,
                                 log.duration_minutes,
-                                log.is_active_shift
+                                log.is_active_shift,
+                                inDisp !== '--' ? inDisp : log.login_time,
+                                log.date
                             );
 
                             return (
@@ -235,16 +246,16 @@ const StaffTimesheets = () => {
                                     <div className="text-xs bg-white dark:bg-slate-800/80 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60 flex justify-between items-center">
                                         <div className="space-y-0.5">
                                             <p className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
-                                                IN: {log.checkInDisplay || (log.login_time ? formatTimeIST(log.login_time, false) : (log.checkInStr ? formatTimeIST(log.checkInStr, false) : '--'))}
+                                                IN: {inDisp}
                                             </p>
                                             <p className="text-rose-500 dark:text-rose-400 font-bold text-[11px]">
-                                                OUT: {log.checkOutDisplay || (log.check_out ? formatTimeIST(log.check_out, false) : (log.checkOutStr && log.checkOutStr !== '--' ? formatTimeIST(log.checkOutStr, false) : '--'))}
+                                                OUT: {outDisp}
                                             </p>
                                         </div>
                                         <div className="text-right">
                                             <span className="text-[9px] text-slate-400 font-bold uppercase block">Duration</span>
                                             <span className="font-mono font-black text-xs text-slate-700 dark:text-slate-300">
-                                                {log.duration_minutes ? formatDurationMinutes(log.duration_minutes) : (log.is_active_shift ? 'In Progress' : '--')}
+                                                {formatDurationMinutes(log.duration_minutes, inDisp, outDisp)}
                                             </span>
                                             {log.overtimeHours > 0 && (
                                                 <span className="text-[10px] font-bold text-indigo-600 block">
@@ -288,11 +299,15 @@ const StaffTimesheets = () => {
                                 </tr>
                             ) : (
                                 processedLogs.map((log) => {
+                                    const inDisp = log.checkInDisplay || (log.login_time ? formatTimeIST(log.login_time, false) : (log.checkInStr ? formatTimeIST(log.checkInStr, false) : '--'));
+                                    const outDisp = log.checkOutDisplay || (log.check_out ? formatTimeIST(log.check_out, false) : (log.checkOutStr && log.checkOutStr !== '--' ? formatTimeIST(log.checkOutStr, false) : '--'));
                                     const statusMeta = getUnifiedAttendanceStatus(
                                         log.status,
-                                        log.check_out,
+                                        outDisp !== '--' ? outDisp : log.check_out,
                                         log.duration_minutes,
-                                        log.is_active_shift
+                                        log.is_active_shift,
+                                        inDisp !== '--' ? inDisp : log.login_time,
+                                        log.date
                                     );
 
                                     return (
@@ -306,10 +321,10 @@ const StaffTimesheets = () => {
                                             <td className="px-5 py-3.5 whitespace-nowrap">
                                                 <div className="flex flex-col gap-0.5">
                                                     <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                                                        IN: {log.checkInDisplay || (log.login_time ? formatTimeIST(log.login_time, false) : (log.checkInStr ? formatTimeIST(log.checkInStr, false) : '--'))}
+                                                        IN: {inDisp}
                                                     </span>
                                                     <span className="text-rose-500 dark:text-rose-400 font-bold">
-                                                        OUT: {log.checkOutDisplay || (log.check_out ? formatTimeIST(log.check_out, false) : (log.checkOutStr && log.checkOutStr !== '--' ? formatTimeIST(log.checkOutStr, false) : '--'))}
+                                                        OUT: {outDisp}
                                                     </span>
                                                 </div>
                                             </td>
@@ -317,7 +332,7 @@ const StaffTimesheets = () => {
                                                 {log.workedHours || 0} hrs
                                             </td>
                                             <td className="px-5 py-3.5 text-center font-mono">
-                                                {log.duration_minutes ? formatDurationMinutes(log.duration_minutes) : (log.is_active_shift ? <span className="text-blue-600 font-bold">In Progress</span> : '--')}
+                                                {formatDurationMinutes(log.duration_minutes, inDisp, outDisp)}
                                             </td>
                                             <td className="px-5 py-3.5 text-center">
                                                 {log.overtimeHours > 0 ? (

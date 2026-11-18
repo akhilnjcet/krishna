@@ -146,17 +146,25 @@ const StaffAttendanceHub = () => {
 
     // Status Badge Helpers
     const getStatusBadge = (status) => {
-        switch (status) {
-            case 'Present':
-                return 'bg-emerald-100 text-emerald-800 border-emerald-300';
-            case 'Absent':
-                return 'bg-rose-100 text-rose-800 border-rose-300';
-            case 'Half Day':
-                return 'bg-amber-100 text-amber-800 border-amber-300';
-            case 'Leave':
-                return 'bg-purple-100 text-purple-800 border-purple-300';
-            case 'Holiday':
-                return 'bg-blue-100 text-blue-800 border-blue-300';
+        const s = (status || '').toUpperCase();
+        switch (s) {
+            case 'COMPLETED':
+            case 'PRESENT':
+                return 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50';
+            case 'IN PROGRESS':
+                return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50';
+            case 'MISSING OUT':
+                return 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50';
+            case 'ABSENT':
+                return 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50';
+            case 'HALF DAY':
+                return 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50';
+            case 'LEAVE':
+                return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900/50';
+            case 'HOLIDAY':
+                return 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-900/50';
+            case 'WEEKLY OFF':
+                return 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
             default:
                 return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
         }

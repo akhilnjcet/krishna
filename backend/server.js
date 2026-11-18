@@ -269,8 +269,15 @@ app.get('/api/ping', (req, res) => res.json({ pong: true, timestamp: Date.now() 
 
 // Connect to Database
 const connectDB = require('./config/database');
-connectDB().then(() => {
+const { seedDefaultShifts, recalculateHistoricalAttendance } = require('./utils/attendanceHelper');
+connectDB().then(async () => {
     console.log('Database synchronization established.');
+    try {
+        await seedDefaultShifts();
+        await recalculateHistoricalAttendance();
+    } catch (shiftInitErr) {
+        console.error('Shift & historical attendance initialization error:', shiftInitErr.message);
+    }
 }).catch(err => {
     console.error('Critical Database Failure:', err.message);
 });
@@ -328,6 +335,7 @@ app.use('/api/complaints', require('./routes/complaintRoutes'));
 app.use('/api/visits', require('./routes/visitRoutes'));
 app.use('/api/lodge-extras', require('./routes/lodgeExtraRoutes'));
 app.use('/api/daily-attendance', require('./routes/dailyAttendanceRoutes'));
+app.use('/api/shifts', require('./routes/shiftRoutes'));
 app.use('/api/overtime', require('./routes/overtimeRoutes'));
 app.use('/api/payroll', require('./routes/payrollRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));

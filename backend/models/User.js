@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema({
     department: { type: String },
     designation: { type: String },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    assignedShift: { type: mongoose.Schema.Types.ObjectId, ref: 'Shift' },
     faceDescriptor: { type: [Number], default: [] },
     profilePhoto: { type: String },
     joiningDate: { type: Date, default: Date.now },

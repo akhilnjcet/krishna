@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ReportHeader from '../../components/ReportHeader';
 import { generateGeneralReportPDF } from '../../services/pdfService';
 import { formatTimeIST, formatDateIST, formatDateTimeIST } from '../../utils/dateTimeUtil';
+import AdminShifts from './AdminShifts';
 
 const formatDateLocal = (d) => {
     const year = d.getFullYear();
@@ -378,7 +379,7 @@ const AttendanceLogs = () => {
 
             {/* Navigation Tabs (Fully Responsive - Never overflows mobile screen) */}
             <div className="w-full border-b border-slate-200 dark:border-slate-800 pb-2">
-                <div className="grid grid-cols-3 gap-1.5 sm:flex sm:items-center sm:gap-2 w-full">
+                <div className="grid grid-cols-2 sm:flex sm:items-center sm:gap-2 w-full gap-1.5">
                     <button
                         type="button"
                         onClick={() => setActiveTab('logs')}
@@ -424,6 +425,20 @@ const AttendanceLogs = () => {
                         <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                         <span className="hidden sm:inline">Monthly Roster Matrix</span>
                         <span className="sm:hidden truncate">Roster</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('shifts')}
+                        className={`min-w-0 px-2 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider transition flex items-center justify-center gap-1 sm:gap-2 text-center ${activeTab === 'shifts'
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+                            }`}
+                        title="Shift Time Control & Live Roster"
+                    >
+                        <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="hidden sm:inline">Shift Control & Roster</span>
+                        <span className="sm:hidden truncate">Shifts</span>
                     </button>
                 </div>
             </div>
@@ -914,6 +929,13 @@ const AttendanceLogs = () => {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            )}
+
+            {/* TAB 4: Shift Time Control & Live Roster */}
+            {activeTab === 'shifts' && (
+                <div className="pt-2">
+                    <AdminShifts isEmbedded={true} />
                 </div>
             )}
 

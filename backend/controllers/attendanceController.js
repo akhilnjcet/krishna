@@ -171,72 +171,104 @@ exports.recordAttendance = async (req, res) => {
         let attendanceRecord = null;
 
         if (isCheckOut) {
-            // Find the active check-in record for today
-            const activeSession = await Attendance.findOne({
+            // Find the active check-in record for today (or yesterday if overnight shift)
+            let activeSession = await Attendance.findOne({
                 staff_id: staffUser._id,
                 date: today,
                 status: 'success'
             }).sort({ login_time: 1 });
 
+            // If not found today, check if yesterday had an unclosed session (overnight shift support)
+            if (!activeSession) {
+                const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+                const yesterdayStr = getISTDate(yesterday);
+                activeSession = await Attendance.findOne({
+                    staff_id: staffUser._id,
+                    date: yesterdayStr,
+                    status: 'success',
+                    check_out: null
+                }).sort({ login_time: -1 });
+            }
+
             if (!activeSession) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Cannot check out: No active check-in session found for today. Please check in first.'
+                    message: 'Cannot check out: No active check-in session found. Please check in first.'
                 });
             }
 
             if (overallStatus === 'success') {
-                const durationCalc = calculateDuration(activeSession.login_time, now);
-                const workedHours = durationCalc.hours;
-                const durationMins = durationCalc.minutes;
+                const { resolveEmployeeShift, calculateShiftAttendance } = require('../utils/shiftCalculator');
+                const shift = await resolveEmployeeShift(staffUser);
+
+                const sessionDate = activeSession.date || today;
+                const calc = calculateShiftAttendance({
+                    inTime: activeSession.login_time,
+                    outTime: now,
+                    recordDate: sessionDate,
+                    shift
+                });
+
+                const workedHours = calc.workedHours;
+                const durationMins = calc.durationMinutes;
 
                 activeSession.check_out = now;
                 activeSession.action = 'Check in / Check out';
                 activeSession.duration_minutes = durationMins;
+                activeSession.completion_status = 'COMPLETED';
+                activeSession.shift_id = shift._id;
+                activeSession.shift_code = shift.code;
+                activeSession.is_overnight = shift.isOvernight;
                 activeSession.location = validatedLocation;
                 activeSession.audit_trail.push({
                     action: 'RECORDED',
                     performed_by: staffUser._id,
                     performed_by_name: staffUser.name,
                     timestamp: now,
-                    details: `Check out recorded via face scan (Confidence: ${confidenceScore}%) and location. Duration: ${durationCalc.formatted}.`,
+                    details: `Check out recorded via face scan (Confidence: ${confidenceScore}%) and location. Shift: ${shift.name}. Duration: ${calc.formattedDuration}.`,
                     ip_address: req.ip || req.headers['x-forwarded-for'] || ''
                 });
 
                 await activeSession.save();
                 attendanceRecord = activeSession;
 
-                // Sync DailyAttendance
+                // Sync DailyAttendance with COMPLETED status and dynamic shift calculation
                 const checkInTimeStr = getISTTimeString(activeSession.login_time);
-                const dailyStatus = workedHours >= 7.5 ? 'Present' : (workedHours >= 4 ? 'Half Day' : 'Half Day');
 
                 await DailyAttendance.findOneAndUpdate(
-                    { staffId: staffUser._id, date: today },
+                    { staffId: staffUser._id, date: sessionDate },
                     {
-                        status: dailyStatus,
+                        status: 'Completed',
                         checkIn: checkInTimeStr,
                         checkOut: timeStr,
                         workedHours,
+                        overtimeHours: calc.overtimeHours,
+                        lateMinutes: calc.lateMinutes,
+                        earlyExitMinutes: calc.earlyExitMinutes,
+                        shiftId: shift._id,
+                        shiftCode: shift.code,
+                        shiftName: shift.name,
+                        isOvernight: shift.isOvernight,
                         isApproved: true,
                         updatedAt: now
                     },
                     { upsert: true, new: true }
                 );
 
-                // Overtime calculation
-                const stdHours = staffUser.standardWorkingHoursPerDay || 8;
+                // Overtime calculation using shift rules
+                const stdHours = shift.expectedHours || staffUser.standardWorkingHoursPerDay || 7;
                 const Overtime = require('../models/Overtime');
                 if (workedHours > stdHours) {
-                    const otHours = parseFloat((workedHours - stdHours).toFixed(2));
+                    const otHours = calc.overtimeHours || parseFloat((workedHours - stdHours).toFixed(2));
                     const otRate = staffUser.overtimeRate || 0;
                     const otAmount = parseFloat((otHours * otRate).toFixed(2));
                     const otStatus = staffUser.otApprovalRequired ? 'Pending' : 'Approved';
 
                     await Overtime.findOneAndUpdate(
-                        { staffId: staffUser._id, date: today },
+                        { staffId: staffUser._id, date: sessionDate },
                         {
                             staffId: staffUser._id,
-                            date: today,
+                            date: sessionDate,
                             hours: otHours,
                             ratePerHour: otRate,
                             totalAmount: otAmount,
@@ -258,7 +290,10 @@ exports.recordAttendance = async (req, res) => {
                 });
             }
         } else {
-            // Check-In flow: Create single canonical attendance record
+            // Check-In flow: Resolve shift & create single canonical attendance record
+            const { resolveEmployeeShift } = require('../utils/shiftCalculator');
+            const shift = await resolveEmployeeShift(staffUser);
+
             attendanceRecord = new Attendance({
                 staff_id: staffUser._id,
                 full_name: staffUser.name,
@@ -269,6 +304,10 @@ exports.recordAttendance = async (req, res) => {
                 face_verified: isFaceMatched,
                 face_match_confidence: confidenceScore,
                 status: overallStatus,
+                completion_status: 'IN_PROGRESS',
+                shift_id: shift._id,
+                shift_code: shift.code,
+                is_overnight: shift.isOvernight,
                 verification_reason: verificationReason,
                 verification_result: verificationResult,
                 face_image: face_image || null,
@@ -281,7 +320,7 @@ exports.recordAttendance = async (req, res) => {
                     performed_by: staffUser._id,
                     performed_by_name: staffUser.name,
                     timestamp: now,
-                    details: `${normalizedAction} recorded via face scan (Confidence: ${confidenceScore}%) and location`,
+                    details: `${normalizedAction} recorded via face scan (Confidence: ${confidenceScore}%) and location. Assigned Shift: ${shift.name}.`,
                     ip_address: req.ip || req.headers['x-forwarded-for'] || ''
                 }]
             });
@@ -292,10 +331,14 @@ exports.recordAttendance = async (req, res) => {
                 await DailyAttendance.findOneAndUpdate(
                     { staffId: staffUser._id, date: today },
                     {
-                        status: 'Present',
+                        status: 'In Progress',
                         checkIn: timeStr,
                         checkOut: '',
                         workedHours: 0,
+                        shiftId: shift._id,
+                        shiftCode: shift.code,
+                        shiftName: shift.name,
+                        isOvernight: shift.isOvernight,
                         markedBy: staffUser._id,
                         isApproved: true,
                         updatedAt: now
@@ -552,6 +595,9 @@ exports.getStaffLogs = async (req, res) => {
 
         const todayStr = getISTDate(new Date());
 
+        const { resolveEmployeeShift, calculateShiftAttendance } = require('../utils/shiftCalculator');
+        const employeeShift = await resolveEmployeeShift(targetStaffId);
+
         const consolidatedTimesheets = allDates.map(dateStr => {
             const dateBiometrics = biometricByDate.get(dateStr) || [];
             const daily = dailyMap.get(dateStr);
@@ -580,71 +626,69 @@ exports.getStaffLogs = async (req, res) => {
                 }
             });
 
-            // Calculate duration if check_out exists
-            if (earliestLogin && latestCheckOut && totalDurationMins === 0) {
-                totalDurationMins = Math.max(1, Math.round((new Date(latestCheckOut) - new Date(earliestLogin)) / 60000));
-            }
+            // Fallback to DailyAttendance if biometric log doesn't have checkIn or checkOut
+            const effectiveIn = earliestLogin || (daily?.checkIn && daily.checkIn !== '--' ? daily.checkIn : null);
+            const effectiveOut = latestCheckOut || (daily?.checkOut && daily.checkOut !== '--' ? daily.checkOut : null);
 
-            // Priority to authoritative biometric login_time in IST; fallback to DailyAttendance
-            const checkInTimeStr = earliestLogin 
-                ? getISTTimeString(earliestLogin) 
-                : (daily?.checkIn ? normalizeAttendanceTime(daily.checkIn) : '--');
-            const checkOutTimeStr = latestCheckOut 
-                ? getISTTimeString(latestCheckOut) 
-                : (daily?.checkOut ? normalizeAttendanceTime(daily.checkOut) : '--');
+            // Run centralized shift calculator
+            const calc = calculateShiftAttendance({
+                inTime: effectiveIn,
+                outTime: effectiveOut,
+                recordDate: dateStr,
+                shift: employeeShift,
+                breakMinutes: daily?.breakDuration ?? daily?.breakTime ?? employeeShift?.breakDuration
+            });
 
-            const checkInDisplay = earliestLogin 
-                ? formatISTDisplay(earliestLogin, false) 
-                : (checkInTimeStr !== '--' ? formatISTDisplay(checkInTimeStr, false) : '--');
-            const checkInFullDisplay = earliestLogin 
-                ? formatISTDisplay(earliestLogin, true) 
-                : checkInDisplay;
+            // Format check-in and check-out strings
+            const checkInTimeStr = effectiveIn ? normalizeAttendanceTime(effectiveIn) : '--';
+            const checkOutTimeStr = effectiveOut ? normalizeAttendanceTime(effectiveOut) : '--';
 
-            const checkOutDisplay = latestCheckOut 
-                ? formatISTDisplay(latestCheckOut, false) 
-                : (checkOutTimeStr !== '--' ? formatISTDisplay(checkOutTimeStr, false) : '--');
-            const checkOutFullDisplay = latestCheckOut 
-                ? formatISTDisplay(latestCheckOut, true) 
-                : checkOutDisplay;
+            const checkInDisplay = checkInTimeStr !== '--' ? formatISTDisplay(checkInTimeStr, false) : '--';
+            const checkInFullDisplay = checkInTimeStr !== '--' ? formatISTDisplay(checkInTimeStr, true) : '--';
 
-            const workedHours = daily?.workedHours !== undefined ? daily.workedHours : parseFloat((totalDurationMins / 60).toFixed(2));
+            const checkOutDisplay = checkOutTimeStr !== '--' ? formatISTDisplay(checkOutTimeStr, false) : '--';
+            const checkOutFullDisplay = checkOutTimeStr !== '--' ? formatISTDisplay(checkOutTimeStr, true) : '--';
 
-            // Determine canonical status
-            let canonicalStatus = 'Absent';
-            if (daily?.status) {
-                canonicalStatus = daily.status;
-            } else if (earliestLogin) {
-                if (!latestCheckOut && dateStr === todayStr) {
-                    canonicalStatus = 'Present';
-                } else if (workedHours >= 7.5 || totalDurationMins >= 450) {
-                    canonicalStatus = 'Present';
-                } else if (workedHours >= 4 || totalDurationMins >= 240) {
-                    canonicalStatus = 'Half Day';
-                } else {
-                    canonicalStatus = 'Present';
-                }
-            }
+            // Duration: ensure duration is NEVER 0 or -- when both IN and OUT exist
+            const durationMinutes = calc.durationMinutes > 0 ? calc.durationMinutes : totalDurationMins;
+            const workedHours = calc.workedHours > 0 ? calc.workedHours : (daily?.workedHours !== undefined ? daily.workedHours : parseFloat((durationMinutes / 60).toFixed(2)));
+
+            // Canonical status according to strict rules:
+            // 1. Both IN and OUT exist -> COMPLETED
+            // 2. Only IN exists and is today -> IN PROGRESS
+            // 3. Only IN exists and is past date -> MISSING OUT
+            // 4. Neither exists -> Weekly Off or Absent
+            const canonicalStatus = calc.status;
+            const isActiveShift = (calc.status === 'IN PROGRESS');
 
             return {
                 _id: bestLog?._id || `daily-${dateStr}`,
                 staff_id: targetStaffId,
                 full_name: bestLog?.full_name || req.user.name,
                 date: dateStr,
-                login_time: earliestLogin,
-                check_out: latestCheckOut,
+                login_time: earliestLogin || (effectiveIn ? new Date(`${dateStr}T${effectiveIn}`) : null),
+                check_out: latestCheckOut || (effectiveOut ? new Date(`${dateStr}T${effectiveOut}`) : null),
                 checkInStr: checkInTimeStr,
                 checkOutStr: checkOutTimeStr,
                 checkInDisplay,
                 checkInFullDisplay,
                 checkOutDisplay,
                 checkOutFullDisplay,
-                duration_minutes: totalDurationMins,
+                duration_minutes: durationMinutes,
                 workedHours,
                 status: canonicalStatus,
-                overtimeHours: ot?.hours || 0,
+                completion_status: calc.completionStatus,
+                shift_name: employeeShift.name,
+                shift_code: employeeShift.code,
+                is_overnight: employeeShift.isOvernight,
+                is_late: calc.isLate,
+                lateMinutes: calc.lateMinutes,
+                is_early_exit: calc.isEarlyExit,
+                earlyExitMinutes: calc.earlyExitMinutes,
+                overtimeHours: ot?.hours || calc.overtimeHours || 0,
                 location: bestLog?.location || null,
                 rawAttemptsCount: dateBiometrics.length,
-                is_active_shift: (!latestCheckOut && dateStr === todayStr && !!earliestLogin)
+                is_active_shift: isActiveShift
             };
         });
 

@@ -76,6 +76,7 @@ const AdminQuotes = lazy(() => import('./pages/admin/AdminQuotes'));
 const AdminStaff = lazy(() => import('./pages/admin/AdminStaff'));
 const AdminInvoices = lazy(() => import('./pages/admin/AdminInvoices'));
 const AttendanceLogs = lazy(() => import('./pages/admin/AttendanceLogs'));
+const AdminShifts = lazy(() => import('./pages/admin/AdminShifts'));
 const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
 const AdminLeave = lazy(() => import('./pages/admin/AdminLeave'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
@@ -571,6 +572,7 @@ const App = () => {
               <Route path="staff" element={<AdminStaff />} />
               <Route path="invoices" element={<AdminInvoices />} />
               <Route path="logs" element={<AttendanceLogs />} />
+              <Route path="shifts" element={<AdminShifts />} />
               <Route path="reports" element={<AdminReports />} />
               <Route path="leave" element={<AdminLeave />} />
               <Route path="settings" element={<AdminSettings />} />
