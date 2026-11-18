@@ -564,11 +564,11 @@ exports.getStaffLogs = async (req, res) => {
             await require('../utils/attendanceHelper').autoGenerateAbsentLogs(month);
         }
 
-        // Fetch raw biometric logs, daily register records, and overtime records concurrently
+        // Fetch raw biometric logs, daily register records, and overtime records concurrently (latest first)
         const [rawLogs, dailyRecords, otRecords] = await Promise.all([
-            Attendance.find(biometricQuery).sort({ date: 1, login_time: 1 }),
-            DailyAttendance.find(dailyQuery).sort({ date: 1 }),
-            Overtime.find(dailyQuery)
+            Attendance.find(biometricQuery).sort({ date: -1, login_time: -1 }),
+            DailyAttendance.find(dailyQuery).sort({ date: -1 }),
+            Overtime.find(dailyQuery).sort({ date: -1 })
         ]);
 
         const dailyMap = new Map();
@@ -587,11 +587,11 @@ exports.getStaffLogs = async (req, res) => {
             biometricByDate.get(dateStr).push(log);
         });
 
-        // Collect all distinct dates from both sources
+        // Collect all distinct dates from both sources sorted latest date first (descending order)
         const allDates = Array.from(new Set([
             ...dailyRecords.map(d => d.date),
             ...rawLogs.map(l => l.date)
-        ])).sort(); // Ascending chronological order (YYYY-MM-DD)
+        ])).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
         const todayStr = getISTDate(new Date());
 

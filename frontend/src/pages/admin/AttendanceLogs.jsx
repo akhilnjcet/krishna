@@ -50,7 +50,7 @@ const AttendanceLogs = () => {
     const [filterAction, setFilterAction] = useState(''); // 'Check in', 'Check out'
     const [filterResult, setFilterResult] = useState(''); // 'success', 'mismatch', 'fail', 'manual_override'
     const [filterDept, setFilterDept] = useState('');
-    const [sortOrder, setSortOrder] = useState('asc'); // 'asc' = Date ascending (Oldest first), 'desc' = Date descending (Newest first)
+    const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = Date descending (Latest date first)
 
     // Attendance Matrix edit cell state
     const [editingCell, setEditingCell] = useState(null);
@@ -543,12 +543,12 @@ const AttendanceLogs = () => {
                                             <div className="flex items-center gap-1.5">
                                                 <span>Action & Time</span>
                                                 <span className={`inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 rounded ${
-                                                    sortOrder === 'asc'
+                                                    sortOrder === 'desc'
                                                         ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
                                                         : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                                                 }`}>
-                                                    {sortOrder === 'asc' ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />}
-                                                    {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                                                    {sortOrder === 'desc' ? <ArrowDown className="w-2.5 h-2.5" /> : <ArrowUp className="w-2.5 h-2.5" />}
+                                                    {sortOrder === 'desc' ? 'Latest First' : 'Oldest First'}
                                                 </span>
                                             </div>
                                         </th>

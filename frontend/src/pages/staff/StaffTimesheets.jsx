@@ -20,7 +20,7 @@ const StaffTimesheets = () => {
         const month = String(d.getMonth() + 1).padStart(2, '0');
         return `${year}-${month}`;
     });
-    const [sortAscending, setSortAscending] = useState(true); // Ascending by default (Oldest first)
+    const [sortAscending, setSortAscending] = useState(false); // Descending by default (Latest date first)
     const [statusFilter, setStatusFilter] = useState('ALL');
 
     useEffect(() => {
@@ -31,7 +31,13 @@ const StaffTimesheets = () => {
         setLoading(true);
         try {
             const res = await api.get(`/attendance/my-logs?month=${selectedMonth}`);
-            setLogs(Array.isArray(res.data) ? res.data : []);
+            const raw = Array.isArray(res.data) ? res.data : [];
+            const sorted = [...raw].sort((a, b) => {
+                const timeA = a.date ? new Date(a.date).getTime() : 0;
+                const timeB = b.date ? new Date(b.date).getTime() : 0;
+                return timeB - timeA;
+            });
+            setLogs(sorted);
         } catch (err) {
             console.error("Failed to fetch timesheet logs:", err);
         } finally {
@@ -39,7 +45,7 @@ const StaffTimesheets = () => {
         }
     };
 
-    // Filter and Sort logs
+    // Filter and Sort logs (Proper timestamp comparison, latest date first by default)
     const processedLogs = useMemo(() => {
         let list = [...logs];
 
@@ -48,13 +54,15 @@ const StaffTimesheets = () => {
         }
 
         list.sort((a, b) => {
-            const dateComp = (a.date || '').localeCompare(b.date || '');
+            const timeA = a.date ? new Date(a.date).getTime() : 0;
+            const timeB = b.date ? new Date(b.date).getTime() : 0;
+            const dateComp = timeA - timeB;
             if (dateComp !== 0) {
                 return sortAscending ? dateComp : -dateComp;
             }
-            const timeA = a.login_time ? new Date(a.login_time).getTime() : 0;
-            const timeB = b.login_time ? new Date(b.login_time).getTime() : 0;
-            return sortAscending ? timeA - timeB : timeB - timeA;
+            const logTimeA = a.login_time ? new Date(a.login_time).getTime() : 0;
+            const logTimeB = b.login_time ? new Date(b.login_time).getTime() : 0;
+            return sortAscending ? logTimeA - logTimeB : logTimeB - logTimeA;
         });
 
         return list;
@@ -148,10 +156,10 @@ const StaffTimesheets = () => {
                         type="button"
                         onClick={() => setSortAscending(!sortAscending)}
                         className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors shadow-sm"
-                        title={sortAscending ? "Sorted Ascending (Oldest First)" : "Sorted Descending (Newest First)"}
+                        title={sortAscending ? "Sorted Ascending (Oldest First)" : "Sorted Descending (Latest Date First)"}
                     >
                         <ArrowUpDown className="w-3.5 h-3.5 text-blue-600" />
-                        <span className="hidden sm:inline">{sortAscending ? "Oldest First" : "Newest First"}</span>
+                        <span className="hidden sm:inline">{sortAscending ? "Oldest First" : "Latest First"}</span>
                     </button>
 
                     {/* Refresh */}

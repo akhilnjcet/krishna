@@ -298,7 +298,7 @@ const reconcileRecordsWithBiometrics = async (records) => {
         }
 
         return obj;
-    });
+    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
 // Get Daily Attendance for a month (Format: YYYY-MM) or single date (Format: YYYY-MM-DD)
@@ -327,7 +327,7 @@ exports.getDailyAttendance = async (req, res) => {
 
         const attendanceRecords = await DailyAttendance.find(query)
             .populate('staffId', 'name email staff_id department designation')
-            .sort({ date: 1 });
+            .sort({ date: -1 });
 
         const reconciledRecords = await reconcileRecordsWithBiometrics(attendanceRecords);
 
@@ -353,7 +353,7 @@ exports.getStaffDailyAttendanceSummary = async (req, res) => {
         const records = await DailyAttendance.find({
             staffId: targetStaffId,
             date: { $regex: `^${month}` }
-        }).sort({ date: 1 });
+        }).sort({ date: -1 });
 
         const reconciledRecords = await reconcileRecordsWithBiometrics(records);
 

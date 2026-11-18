@@ -73,7 +73,13 @@ const StaffAttendanceHub = () => {
             if (summaryRes.data && summaryRes.data.summary) {
                 setSummary(summaryRes.data.summary);
             }
-            setAttendanceLogs(Array.isArray(dailyRes.data) ? dailyRes.data : []);
+            const rawDaily = Array.isArray(dailyRes.data) ? dailyRes.data : [];
+            const sortedDaily = [...rawDaily].sort((a, b) => {
+                const timeA = a.date ? new Date(a.date).getTime() : 0;
+                const timeB = b.date ? new Date(b.date).getTime() : 0;
+                return timeB - timeA;
+            });
+            setAttendanceLogs(sortedDaily);
             setOvertimeLogs(Array.isArray(otRes.data) ? otRes.data : []);
         } catch (err) {
             console.error("Failed to load staff attendance data:", err);
@@ -122,9 +128,9 @@ const StaffAttendanceHub = () => {
         return overtimeLogs.reduce((acc, ot) => acc + (ot.hours || 0), 0);
     }, [overtimeLogs]);
 
-    // Filtered Logs Calculation
+    // Filtered Logs Calculation (Sorted Latest Date First: Descending Order)
     const filteredLogs = useMemo(() => {
-        return attendanceLogs.filter(log => {
+        const filtered = attendanceLogs.filter(log => {
             const matchesSearch = 
                 !searchTerm || 
                 (log.date && log.date.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -134,6 +140,13 @@ const StaffAttendanceHub = () => {
             const matchesStatus = statusFilter === 'ALL' || log.status === statusFilter;
 
             return matchesSearch && matchesStatus;
+        });
+
+        // Numerical timestamp comparison: Latest attendance date first
+        return filtered.sort((a, b) => {
+            const timeA = a.date ? new Date(a.date).getTime() : 0;
+            const timeB = b.date ? new Date(b.date).getTime() : 0;
+            return timeB - timeA;
         });
     }, [attendanceLogs, searchTerm, statusFilter]);
 
