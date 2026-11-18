@@ -37,6 +37,7 @@ const SIDEBAR_ITEMS = [
     { name: 'Equipment Rental Studio', path: '/admin/rental-bills', icon: KeyRound },
     { name: 'Lodge Manager',   path: '/admin/lodge-manager', icon: Building2 },
     { name: 'Inventory & Tools', path: '/admin/inventory',    icon: Package },
+    { name: 'BOM & Costing',   path: '/admin/bom-costing',  icon: Layers },
     { name: 'Document History', path: '/admin/document-history', icon: FileText },
     { name: 'Digital Letter Pad', path: '/admin/letter-pad', icon: PenTool },
     { name: 'Project Timeline', path: '/admin/progress',     icon: Activity },

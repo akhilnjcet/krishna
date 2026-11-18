@@ -349,6 +349,7 @@ app.use('/api/inventory', require('./routes/inventoryRoutes'));
 app.use('/api/feedback', require('./routes/feedbackRoutes'));
 app.use('/api/vacancies', require('./routes/vacancyRoutes'));
 app.use('/api/announcements', require('./routes/announcementRoutes'));
+app.use('/api', require('./routes/bomCostingRoutes'));
 
 // Root Error Route
 app.get('/api/debug/error', (req, res) => {

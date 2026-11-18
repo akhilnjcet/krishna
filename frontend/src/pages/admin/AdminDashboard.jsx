@@ -9,7 +9,7 @@ import {
   TrendingUp, Activity, UserCheck, ShieldCheck, 
   ArrowRight, ChevronRight, Search, Filter,
   Layers, Package, AlertCircle, Download, DoorOpen,
-  Bell, FileText, History
+  Bell, FileText, History, BadgeIndianRupee, AlertTriangle, Boxes
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -31,6 +31,7 @@ const AdminDashboard = () => {
     const [recentLogs, setRecentLogs] = useState([]);
     const [recentNotifications, setRecentNotifications] = useState([]);
     const [recentQuotations, setRecentQuotations] = useState([]);
+    const [costingSummary, setCostingSummary] = useState(null);
     const [loading, setLoading] = useState(true);
 
     const handleQuickReport = () => {
@@ -82,6 +83,16 @@ const AdminDashboard = () => {
                 setRecentQuotations(qRes.data.documents || []);
             } catch (_) {
                 // Non-blocking — dashboard works without it
+            }
+
+            // Fetch BOM & Project Costing summary
+            try {
+                const costRes = await api.get('/project-costing/dashboard/summary');
+                if (costRes.data && costRes.data.success) {
+                    setCostingSummary(costRes.data.summary);
+                }
+            } catch (_) {
+                // Non-blocking
             }
         } catch (err) {
             console.error("Dashboard fetch error:", err);
@@ -173,6 +184,103 @@ const AdminDashboard = () => {
                     ))}
                 </motion.div>
             </div>
+
+            {/* Manufacturing & Project Costing Section */}
+            {costingSummary && (
+                <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h2 className="text-xl font-bold text-[#111827] dark:text-dark-text tracking-tight font-poppins flex items-center gap-2">
+                                <Boxes className="w-5 h-5 text-indigo-600" />
+                                Manufacturing & Project Costing <span className="text-indigo-600">Overview</span>
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-dark-muted">Real-time material valuation, inventory stock and project profitability metrics</p>
+                        </div>
+                        <button 
+                            onClick={() => navigate('/admin/bom-costing')}
+                            className="self-start sm:self-auto px-4 py-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-indigo-100 dark:border-indigo-900"
+                        >
+                            Open BOM & Costing Hub <ArrowUpRight className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div 
+                            onClick={() => navigate('/admin/bom-costing')}
+                            className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-5 rounded-2xl border border-slate-200 dark:border-dark-border shadow-xs hover:border-indigo-300 transition cursor-pointer"
+                        >
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Material Consumed</span>
+                                <div className="p-2 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg text-indigo-600">
+                                    <Layers className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <div className="text-2xl font-black text-slate-900 dark:text-white">
+                                ₹{costingSummary.totalMaterialConsumptionValue?.toLocaleString('en-IN') || 0}
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-1">Across all active job works</p>
+                        </div>
+
+                        <div 
+                            onClick={() => navigate('/admin/inventory')}
+                            className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-5 rounded-2xl border border-slate-200 dark:border-dark-border shadow-xs hover:border-blue-300 transition cursor-pointer"
+                        >
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Store Inventory Value</span>
+                                <div className="p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-blue-600">
+                                    <Package className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <div className="text-2xl font-black text-slate-900 dark:text-white">
+                                ₹{costingSummary.totalInventoryValue?.toLocaleString('en-IN') || 0}
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-1">{costingSummary.totalMaterialCount || 0} materials & {costingSummary.totalToolCount || 0} tools</p>
+                        </div>
+
+                        <div 
+                            onClick={() => navigate('/admin/bom-costing')}
+                            className="bg-white dark:bg-slate-900 dark:bg-dark-surface p-5 rounded-2xl border border-slate-200 dark:border-dark-border shadow-xs hover:border-emerald-300 transition cursor-pointer"
+                        >
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Active Project Costs</span>
+                                <div className="p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg text-emerald-600">
+                                    <BadgeIndianRupee className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <div className="text-2xl font-black text-slate-900 dark:text-white">
+                                ₹{costingSummary.totalActiveProjectCosts?.toLocaleString('en-IN') || 0}
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-1">Material + Labour + Transport</p>
+                        </div>
+
+                        <div 
+                            onClick={() => navigate('/admin/bom-costing')}
+                            className={`p-5 rounded-2xl border shadow-xs transition cursor-pointer ${
+                                (costingSummary.overrunProjectsCount || 0) > 0
+                                    ? 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'
+                                    : 'bg-white dark:bg-slate-900 dark:bg-dark-surface border-slate-200 dark:border-dark-border'
+                            }`}
+                        >
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Budget Overrun Alerts</span>
+                                <div className={`p-2 rounded-lg ${
+                                    (costingSummary.overrunProjectsCount || 0) > 0 ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-500'
+                                }`}>
+                                    <AlertTriangle className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <div className={`text-2xl font-black ${
+                                (costingSummary.overrunProjectsCount || 0) > 0 ? 'text-rose-600' : 'text-slate-900 dark:text-white'
+                            }`}>
+                                {costingSummary.overrunProjectsCount || 0} Project{(costingSummary.overrunProjectsCount || 0) === 1 ? '' : 's'}
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-1">
+                                {(costingSummary.overrunProjectsCount || 0) > 0 ? 'Cost exceeds approved budget!' : 'All projects within threshold'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
                 {/* Main Activity Feed */}

@@ -5,6 +5,8 @@ const expenseSchema = new mongoose.Schema({
     title: { type: String, required: true },
     amount: { type: Number, required: true },
     category: { type: String, enum: ['material', 'fuel', 'machinery', 'utilities', 'staff', 'client_payment', 'scrap_sale', 'capital_injection', 'advance', 'others'], default: 'others' },
+    projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', default: null, index: true },
+    costType: { type: String, enum: ['material', 'labour', 'transportation', 'other', 'none'], default: 'other' },
     description: { type: String },
     date: { type: Date, default: Date.now },
     recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
