@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../../services/api';
+import { generateGeneralReportPDF } from '../../services/pdfService';
 import {
     Clock, Plus, Edit, Trash2, CheckCircle2, AlertTriangle, AlertCircle,
     UserCheck, Moon, Sun, Shield, RefreshCw, Calendar, Search, Filter,
     Check, X, Eye, FileText, ArrowRight, UserX, CheckSquare, Sparkles,
-    ChevronDown, ChevronUp, Info, HelpCircle
+    ChevronDown, ChevronUp, Info, HelpCircle, Download, Bell, Sliders,
+    Award, FileSpreadsheet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function AdminShifts({ isEmbedded = false }) {
-    const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'shifts'
+    const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'shifts' | 'late-arrival'
     const [shifts, setShifts] = useState([]);
     const [rosterData, setRosterData] = useState({ summary: {}, roster: [] });
     const [staffList, setStaffList] = useState([]);
@@ -19,6 +21,32 @@ export default function AdminShifts({ isEmbedded = false }) {
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
+
+    // Late Arrival Management States
+    const [lateSettings, setLateSettings] = useState({
+        shiftId: '',
+        shiftName: 'Morning Shift',
+        shiftCode: 'MORNING',
+        startTime: '09:00',
+        gracePeriodMinutes: 10,
+        lateDetectionEnabled: true,
+        lateNotificationsEnabled: true,
+        lateNotificationChannels: { inApp: true, email: false, whatsapp: false }
+    });
+    const [lateSettingsLoading, setLateSettingsLoading] = useState(false);
+    const [lateSettingsSaving, setLateSettingsSaving] = useState(false);
+
+    const [lateReportMonth, setLateReportMonth] = useState(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
+    const [lateReportDate, setLateReportDate] = useState('');
+    const [lateReportStaffId, setLateReportStaffId] = useState('ALL');
+    const [lateReportData, setLateReportData] = useState({
+        summary: { totalLateArrivals: 0, uniqueLateEmployees: 0, totalLateMinutes: 0, averageLateMinutes: 0, mostFrequentLate: [] },
+        records: []
+    });
+    const [lateReportLoading, setLateReportLoading] = useState(false);
 
     // Filters for Roster
     const [searchTerm, setSearchTerm] = useState('');
@@ -98,6 +126,128 @@ export default function AdminShifts({ isEmbedded = false }) {
         setSuccessMessage(msg);
         setTimeout(() => setSuccessMessage(null), 4000);
     };
+
+    // Fetch Morning Shift Late Arrival Settings
+    const fetchLateArrivalSettings = useCallback(async () => {
+        setLateSettingsLoading(true);
+        try {
+            const res = await api.get('/shifts/settings/late-arrival');
+            if (res.data?.success && res.data?.settings) {
+                setLateSettings(res.data.settings);
+            }
+        } catch (err) {
+            console.error('Failed to load late arrival settings:', err);
+        } finally {
+            setLateSettingsLoading(false);
+        }
+    }, []);
+
+    // Fetch Late Arrival Reports & Dashboard Summary
+    const fetchLateArrivalReports = useCallback(async () => {
+        setLateReportLoading(true);
+        try {
+            const params = new URLSearchParams();
+            if (lateReportMonth) params.append('month', lateReportMonth);
+            if (lateReportDate) params.append('date', lateReportDate);
+            if (lateReportStaffId && lateReportStaffId !== 'ALL') params.append('staffId', lateReportStaffId);
+
+            const res = await api.get(`/shifts/reports/late-arrivals?${params.toString()}`);
+            if (res.data?.success) {
+                setLateReportData({
+                    summary: res.data.summary || { totalLateArrivals: 0, uniqueLateEmployees: 0, totalLateMinutes: 0, averageLateMinutes: 0, mostFrequentLate: [] },
+                    records: res.data.records || []
+                });
+            }
+        } catch (err) {
+            console.error('Failed to load late arrival reports:', err);
+        } finally {
+            setLateReportLoading(false);
+        }
+    }, [lateReportMonth, lateReportDate, lateReportStaffId]);
+
+    // Save Morning Shift Late Arrival Settings
+    const handleSaveLateSettings = async (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        setLateSettingsSaving(true);
+        setError(null);
+        try {
+            const payload = {
+                startTime: lateSettings.startTime,
+                gracePeriodMinutes: Number(lateSettings.gracePeriodMinutes),
+                lateDetectionEnabled: !!lateSettings.lateDetectionEnabled,
+                lateNotificationsEnabled: !!lateSettings.lateNotificationsEnabled,
+                lateNotificationChannels: lateSettings.lateNotificationChannels || { inApp: true, email: false, whatsapp: false }
+            };
+
+            const res = await api.put('/shifts/settings/late-arrival', payload);
+            if (res.data?.success) {
+                showNotice('Morning Shift Late Arrival settings saved & updated successfully.');
+                await fetchLateArrivalSettings();
+                await fetchLateArrivalReports();
+                await fetchData();
+            }
+        } catch (err) {
+            console.error('Failed to save late arrival settings:', err);
+            setError(err.response?.data?.message || 'Failed to update late arrival settings.');
+        } finally {
+            setLateSettingsSaving(false);
+        }
+    };
+
+    // Export CSV Report
+    const handleExportLateCSV = () => {
+        const records = lateReportData.records || [];
+        if (records.length === 0) {
+            alert('No late arrival records available to export.');
+            return;
+        }
+        const headers = ['Employee Name', 'Date', 'Shift Start', 'Actual IN', 'Late Minutes', 'Status'];
+        const rows = records.map(r => [
+            `"${(r.staffName || '').replace(/"/g, '""')}"`,
+            `"${r.date || ''}"`,
+            `"${r.shiftStart || ''}"`,
+            `"${r.actualIn || ''}"`,
+            r.lateMinutes || 0,
+            `"${(r.status || '').replace(/"/g, '""')}"`
+        ]);
+        const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `Monthly_Late_Arrival_Report_${lateReportMonth || 'current'}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // Export PDF Report
+    const handleExportLatePDF = async () => {
+        const records = lateReportData.records || [];
+        if (records.length === 0) {
+            alert('No late arrival records available to export.');
+            return;
+        }
+        const columns = ['Employee Name', 'Date', 'Shift Start', 'Actual IN', 'Late Minutes', 'Status'];
+        const rows = records.map(r => [
+            r.staffName || 'Unknown',
+            r.date || '--',
+            r.shiftStart || '--',
+            r.actualIn || '--',
+            `${r.lateMinutes || 0} min`,
+            r.status || 'Late'
+        ]);
+        const title = `Monthly Late Arrival Report - ${lateReportMonth}`;
+        await generateGeneralReportPDF(rows, title, columns);
+    };
+
+    // Fetch late data when tab changes to late-arrival
+    useEffect(() => {
+        if (activeTab === 'late-arrival') {
+            fetchLateArrivalSettings();
+            fetchLateArrivalReports();
+        }
+    }, [activeTab, fetchLateArrivalSettings, fetchLateArrivalReports]);
 
     // Open Shift Modal (Create or Edit)
     const handleOpenShiftModal = (shift = null) => {
@@ -405,6 +555,18 @@ export default function AdminShifts({ isEmbedded = false }) {
                 >
                     <Clock className="w-4 h-4" />
                     <span>Shift Configurations ({shifts.length})</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('late-arrival')}
+                    className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider transition border-b-2 flex items-center gap-2 ${
+                        activeTab === 'late-arrival'
+                            ? 'border-rose-600 text-rose-600 dark:text-rose-400'
+                            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    }`}
+                >
+                    <Sliders className="w-4 h-4" />
+                    <span>Late Arrival Settings & Reports</span>
                 </button>
             </div>
 
@@ -740,6 +902,500 @@ export default function AdminShifts({ isEmbedded = false }) {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* TAB 3: LATE ARRIVAL SETTINGS & REPORTING */}
+            {activeTab === 'late-arrival' && (
+                <div className="space-y-6">
+                    {/* SECTION 1: DEDICATED LATE ARRIVAL SETTINGS */}
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700 shadow-sm space-y-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-700">
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center font-black">
+                                        <Sliders className="w-4 h-4" />
+                                    </div>
+                                    <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                                        Morning Shift Late Arrival Settings
+                                    </h2>
+                                </div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    Configure shift start time, grace periods, automatic late detection rules, and real-time alerts.
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={fetchLateArrivalSettings}
+                                disabled={lateSettingsLoading}
+                                className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200 transition flex items-center gap-1.5 self-start sm:self-auto"
+                            >
+                                <RefreshCw className={`w-3.5 h-3.5 ${lateSettingsLoading ? 'animate-spin' : ''}`} />
+                                <span>Reload Config</span>
+                            </button>
+                        </div>
+
+                        {/* Rules Calculation Explainer Banner */}
+                        <div className="p-4 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs">
+                            <div className="flex items-start gap-2.5">
+                                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                                <div className="space-y-1">
+                                    <p className="font-bold text-blue-950 dark:text-blue-200">
+                                        Automated Late Arrival Calculation Formula:
+                                    </p>
+                                    <p className="text-blue-800 dark:text-blue-300 leading-relaxed text-[11px]">
+                                        Late duration is calculated relative to configured shift start time, excluding the grace period:
+                                        <br />
+                                        <span className="font-mono bg-blue-100 dark:bg-blue-900/50 px-1.5 py-0.5 rounded text-blue-900 dark:text-blue-100 font-semibold">
+                                            Late Minutes = Check-In Time - (Shift Start Time + Grace Period)
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="text-[11px] bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-blue-200 dark:border-blue-900/60 shrink-0 space-y-0.5">
+                                <div className="text-emerald-600 dark:text-emerald-400 font-bold">
+                                    ✓ IN at 09:10 AM → On Time (0 min)
+                                </div>
+                                <div className="text-rose-600 dark:text-rose-400 font-bold">
+                                    ⚠ IN at 09:25 AM → Late (+15 mins)
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Settings Form */}
+                        <form onSubmit={handleSaveLateSettings} className="space-y-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                {/* Morning Shift Start Time */}
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        Morning Shift Start Time *
+                                    </label>
+                                    <div className="relative">
+                                        <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                                        <input
+                                            type="time"
+                                            required
+                                            value={lateSettings.startTime || '09:00'}
+                                            onChange={(e) => setLateSettings({ ...lateSettings, startTime: e.target.value })}
+                                            className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                    <span className="text-[10px] text-slate-400">Official scheduled start (IST)</span>
+                                </div>
+
+                                {/* Grace Period in Minutes */}
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        Grace Period (Minutes) *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="120"
+                                        required
+                                        value={lateSettings.gracePeriodMinutes ?? 10}
+                                        onChange={(e) => setLateSettings({ ...lateSettings, gracePeriodMinutes: Math.max(0, parseInt(e.target.value) || 0) })}
+                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    <span className="text-[10px] text-slate-400">No late penalty within grace limit</span>
+                                </div>
+
+                                {/* Late Arrival Detection Toggle */}
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        Late Arrival Detection
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setLateSettings({ ...lateSettings, lateDetectionEnabled: !lateSettings.lateDetectionEnabled })}
+                                        className={`w-full py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-between transition ${
+                                            lateSettings.lateDetectionEnabled
+                                                ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300'
+                                                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500'
+                                        }`}
+                                    >
+                                        <span>{lateSettings.lateDetectionEnabled ? 'Detection Enabled' : 'Detection Disabled'}</span>
+                                        <span className={`w-2.5 h-2.5 rounded-full ${lateSettings.lateDetectionEnabled ? 'bg-rose-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                                    </button>
+                                    <span className="text-[10px] text-slate-400">Flags attendance after grace period</span>
+                                </div>
+
+                                {/* Late Arrival Notifications Toggle */}
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        Late Notifications
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setLateSettings({ ...lateSettings, lateNotificationsEnabled: !lateSettings.lateNotificationsEnabled })}
+                                        className={`w-full py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-between transition ${
+                                            lateSettings.lateNotificationsEnabled
+                                                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300'
+                                                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500'
+                                        }`}
+                                    >
+                                        <span>{lateSettings.lateNotificationsEnabled ? 'Alerts Active' : 'Alerts Disabled'}</span>
+                                        <Bell className={`w-3.5 h-3.5 ${lateSettings.lateNotificationsEnabled ? 'text-emerald-600' : 'text-slate-400'}`} />
+                                    </button>
+                                    <span className="text-[10px] text-slate-400">Notifies management on late check-in</span>
+                                </div>
+                            </div>
+
+                            {/* Notification Channels */}
+                            {lateSettings.lateNotificationsEnabled && (
+                                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                                    <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                                        Notification Delivery Channels
+                                    </span>
+                                    <div className="flex items-center gap-4 flex-wrap text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={lateSettings.lateNotificationChannels?.inApp ?? true}
+                                                onChange={(e) => setLateSettings({
+                                                    ...lateSettings,
+                                                    lateNotificationChannels: {
+                                                        ...lateSettings.lateNotificationChannels,
+                                                        inApp: e.target.checked
+                                                    }
+                                                })}
+                                                className="rounded text-blue-600 focus:ring-0"
+                                            />
+                                            <span>In-App Realtime Alert (Instant bell notification)</span>
+                                        </label>
+
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={lateSettings.lateNotificationChannels?.email ?? false}
+                                                onChange={(e) => setLateSettings({
+                                                    ...lateSettings,
+                                                    lateNotificationChannels: {
+                                                        ...lateSettings.lateNotificationChannels,
+                                                        email: e.target.checked
+                                                    }
+                                                })}
+                                                className="rounded text-blue-600 focus:ring-0"
+                                            />
+                                            <span>Email Digest</span>
+                                        </label>
+
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={lateSettings.lateNotificationChannels?.whatsapp ?? false}
+                                                onChange={(e) => setLateSettings({
+                                                    ...lateSettings,
+                                                    lateNotificationChannels: {
+                                                        ...lateSettings.lateNotificationChannels,
+                                                        whatsapp: e.target.checked
+                                                    }
+                                                })}
+                                                className="rounded text-blue-600 focus:ring-0"
+                                            />
+                                            <span>WhatsApp Dispatch</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Save Settings Action Button */}
+                            <div className="flex justify-end pt-2">
+                                <button
+                                    type="submit"
+                                    disabled={lateSettingsSaving}
+                                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition flex items-center gap-2"
+                                >
+                                    {lateSettingsSaving ? (
+                                        <>
+                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                            <span>Saving Settings & Recalculating...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            <span>Save Late Arrival Settings</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* SECTION 2: LATE ARRIVAL SUMMARY & KPI DASHBOARD */}
+                    <div className="space-y-4">
+                        {/* Filter Toolbar & Export Buttons */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm">
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                {/* Month Filter */}
+                                <div className="flex items-center gap-1.5 text-xs">
+                                    <Calendar className="w-4 h-4 text-slate-400" />
+                                    <input
+                                        type="month"
+                                        value={lateReportMonth}
+                                        onChange={(e) => setLateReportMonth(e.target.value)}
+                                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200"
+                                    />
+                                </div>
+
+                                {/* Optional Single Date Filter */}
+                                <div className="flex items-center gap-1.5 text-xs">
+                                    <input
+                                        type="date"
+                                        placeholder="Specific Date"
+                                        value={lateReportDate}
+                                        onChange={(e) => setLateReportDate(e.target.value)}
+                                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200"
+                                    />
+                                    {lateReportDate && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setLateReportDate('')}
+                                            className="p-1 rounded text-slate-400 hover:text-slate-600"
+                                            title="Clear date filter"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Employee Filter */}
+                                <div className="flex items-center gap-1.5 text-xs">
+                                    <select
+                                        value={lateReportStaffId}
+                                        onChange={(e) => setLateReportStaffId(e.target.value)}
+                                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200 max-w-[160px] truncate"
+                                    >
+                                        <option value="ALL">All Employees</option>
+                                        {staffList.map((s) => (
+                                            <option key={s._id} value={s._id}>
+                                                {s.name} ({s.department || 'Staff'})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Export Buttons */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <button
+                                    onClick={handleExportLatePDF}
+                                    className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5"
+                                    title="Download Monthly Late Arrival Report PDF"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    <span>Download PDF Report</span>
+                                </button>
+
+                                <button
+                                    onClick={handleExportLateCSV}
+                                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5"
+                                    title="Export Late Arrival Data as CSV"
+                                >
+                                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                                    <span>Download CSV</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* KPI Metrics */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-rose-200 dark:border-rose-900/50 shadow-sm">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500 block mb-1">
+                                    Total Late Arrivals
+                                </span>
+                                <span className="text-xl font-black text-rose-600 dark:text-rose-400">
+                                    {lateReportData.summary?.totalLateArrivals || 0}
+                                </span>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">Recorded in {lateReportMonth}</span>
+                            </div>
+
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-amber-200 dark:border-amber-900/50 shadow-sm">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500 block mb-1">
+                                    Employees Late
+                                </span>
+                                <span className="text-xl font-black text-amber-600 dark:text-amber-400">
+                                    {lateReportData.summary?.uniqueLateEmployees || 0}
+                                </span>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">Unique staff members</span>
+                            </div>
+
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-purple-200 dark:border-purple-900/50 shadow-sm">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-500 block mb-1">
+                                    Total Late Minutes
+                                </span>
+                                <span className="text-xl font-black text-purple-600 dark:text-purple-400">
+                                    {lateReportData.summary?.totalLateMinutes || 0}m
+                                </span>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">Accumulated lost time</span>
+                            </div>
+
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 shadow-sm">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500 block mb-1">
+                                    Average Late Delay
+                                </span>
+                                <span className="text-xl font-black text-blue-600 dark:text-blue-400">
+                                    {lateReportData.summary?.averageLateMinutes || 0}m
+                                </span>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">Per late arrival event</span>
+                            </div>
+                        </div>
+
+                        {/* SECTION 3: MOST FREQUENT LATE ARRIVALS LEADERBOARD */}
+                        {lateReportData.summary?.mostFrequentLate && lateReportData.summary.mostFrequentLate.length > 0 && (
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <Award className="w-4 h-4 text-amber-500" />
+                                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                        Most Frequent Late Arrivals ({lateReportMonth})
+                                    </h3>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                    {lateReportData.summary.mostFrequentLate.slice(0, 6).map((item, idx) => (
+                                        <div
+                                            key={item.staffId || idx}
+                                            className="p-3 bg-slate-50 dark:bg-slate-900/70 rounded-xl border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between"
+                                        >
+                                            <div className="flex items-center gap-2.5">
+                                                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${
+                                                    idx === 0 ? 'bg-rose-500 text-white' : idx === 1 ? 'bg-amber-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                                                }`}>
+                                                    #{idx + 1}
+                                                </span>
+                                                <div>
+                                                    <span className="font-bold text-xs text-slate-900 dark:text-white block">
+                                                        {item.name}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400">
+                                                        {item.department || 'General'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-xs font-black text-rose-600 dark:text-rose-400 block">
+                                                    {item.lateCount} {item.lateCount === 1 ? 'time' : 'times'}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-slate-500">
+                                                    +{item.totalLateMinutes}m total
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* SECTION 4: DATE-WISE LATE ARRIVAL HISTORY */}
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden">
+                            <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                        Date-Wise Late Arrival History ({lateReportData.records?.length || 0} Records)
+                                    </h3>
+                                    <p className="text-[11px] text-slate-400">
+                                        Chronological breakdown of late check-ins with actual arrival and penalty duration.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {lateReportLoading ? (
+                                <div className="p-12 text-center text-slate-400">
+                                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-rose-600" />
+                                    Loading late arrival history...
+                                </div>
+                            ) : lateReportData.records?.length === 0 ? (
+                                <div className="p-12 text-center text-slate-400 font-bold italic">
+                                    No late arrivals recorded for the selected filter criteria.
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Mobile Cards (sm:hidden) */}
+                                    <div className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                                        {lateReportData.records.map((rec) => (
+                                            <div key={rec.id} className="p-3.5 space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <span className="font-black text-xs text-slate-900 dark:text-white block">
+                                                            {rec.staffName}
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-400">
+                                                            {rec.department || 'General'}
+                                                        </span>
+                                                    </div>
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400">
+                                                        +{rec.lateMinutes}m Late
+                                                    </span>
+                                                </div>
+
+                                                <div className="grid grid-cols-3 gap-2 text-[11px] bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                                    <div>
+                                                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Date</span>
+                                                        <span className="font-semibold text-slate-700 dark:text-slate-300">{rec.date}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Shift Start</span>
+                                                        <span className="font-semibold text-slate-700 dark:text-slate-300">{rec.shiftStart}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Actual IN</span>
+                                                        <span className="font-bold text-rose-600 dark:text-rose-400">{rec.actualIn}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Desktop Table (hidden sm:block) */}
+                                    <div className="hidden sm:block overflow-x-auto">
+                                        <table className="w-full text-left text-xs border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-slate-400 font-black uppercase tracking-wider text-[10px]">
+                                                    <th className="px-5 py-3">Employee Name</th>
+                                                    <th className="px-5 py-3">Department</th>
+                                                    <th className="px-5 py-3">Date</th>
+                                                    <th className="px-5 py-3">Shift Start</th>
+                                                    <th className="px-5 py-3">Actual IN</th>
+                                                    <th className="px-5 py-3 text-center">Late Minutes</th>
+                                                    <th className="px-5 py-3">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300 font-semibold">
+                                                {lateReportData.records.map((rec) => (
+                                                    <tr key={rec.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition">
+                                                        <td className="px-5 py-3 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                                                            {rec.staffName}
+                                                        </td>
+                                                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
+                                                            {rec.department || 'General'}
+                                                        </td>
+                                                        <td className="px-5 py-3 whitespace-nowrap">
+                                                            {rec.date}
+                                                        </td>
+                                                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
+                                                            {rec.shiftStart}
+                                                        </td>
+                                                        <td className="px-5 py-3 font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                                                            {rec.actualIn}
+                                                        </td>
+                                                        <td className="px-5 py-3 text-center font-black text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                                                            +{rec.lateMinutes} min
+                                                        </td>
+                                                        <td className="px-5 py-3 whitespace-nowrap">
+                                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400">
+                                                                {rec.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

@@ -23,6 +23,8 @@ const attendanceSchema = new mongoose.Schema({
     shift_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Shift' },
     shift_code: { type: String },
     is_overnight: { type: Boolean, default: false },
+    is_late: { type: Boolean, default: false },
+    late_minutes: { type: Number, default: 0 },
     completion_status: { 
         type: String, 
         enum: ['IN_PROGRESS', 'COMPLETED', 'MISSING_OUT', 'MANUALLY_CLOSED'], 

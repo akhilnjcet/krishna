@@ -403,8 +403,17 @@ const StaffAttendanceHub = () => {
                                 <div className="grid grid-cols-2 gap-2 text-[11px] bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
                                     <div>
                                         <span className="text-[9px] text-slate-400 font-black uppercase block">Shift Clock (IST)</span>
-                                        <div className="font-bold text-slate-700 dark:text-slate-300 mt-0.5">
-                                            In: {log.checkInDisplay || formatTimeIST(log.checkIn, false)}
+                                        <div className="font-bold text-slate-700 dark:text-slate-300 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                                            <span>In: {log.checkInDisplay || formatTimeIST(log.checkIn, false)}</span>
+                                            {log.isLate || log.lateMinutes > 0 ? (
+                                                <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 px-1.5 py-0.2 rounded">
+                                                    Late (+{log.lateMinutes}m)
+                                                </span>
+                                            ) : (log.checkIn && log.checkIn !== '--') ? (
+                                                <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 px-1.5 py-0.2 rounded">
+                                                    ✓ On Time
+                                                </span>
+                                            ) : null}
                                         </div>
                                         <div className="font-bold text-slate-700 dark:text-slate-300">
                                             Out: {log.checkOutDisplay || formatTimeIST(log.checkOut, false)}
@@ -475,7 +484,20 @@ const StaffAttendanceHub = () => {
                                             {log.date}
                                         </td>
                                         <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                                            {log.checkInDisplay || formatTimeIST(log.checkIn, false)}
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-semibold">{log.checkInDisplay || formatTimeIST(log.checkIn, false)}</span>
+                                                {log.isLate || log.lateMinutes > 0 ? (
+                                                    <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                                        Late (+{log.lateMinutes}m)
+                                                    </span>
+                                                ) : (log.checkIn && log.checkIn !== '--') ? (
+                                                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                        On Time
+                                                    </span>
+                                                ) : null}
+                                            </div>
                                         </td>
                                         <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                             {log.checkOutDisplay || formatTimeIST(log.checkOut, false)}

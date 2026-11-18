@@ -291,8 +291,15 @@ exports.recordAttendance = async (req, res) => {
             }
         } else {
             // Check-In flow: Resolve shift & create single canonical attendance record
-            const { resolveEmployeeShift } = require('../utils/shiftCalculator');
+            const { resolveEmployeeShift, calculateShiftAttendance } = require('../utils/shiftCalculator');
             const shift = await resolveEmployeeShift(staffUser);
+
+            const calc = calculateShiftAttendance({
+                inTime: now,
+                outTime: null,
+                recordDate: today,
+                shift
+            });
 
             attendanceRecord = new Attendance({
                 staff_id: staffUser._id,
@@ -308,6 +315,8 @@ exports.recordAttendance = async (req, res) => {
                 shift_id: shift._id,
                 shift_code: shift.code,
                 is_overnight: shift.isOvernight,
+                is_late: calc.isLate,
+                late_minutes: calc.lateMinutes,
                 verification_reason: verificationReason,
                 verification_result: verificationResult,
                 face_image: face_image || null,
@@ -320,7 +329,7 @@ exports.recordAttendance = async (req, res) => {
                     performed_by: staffUser._id,
                     performed_by_name: staffUser.name,
                     timestamp: now,
-                    details: `${normalizedAction} recorded via face scan (Confidence: ${confidenceScore}%) and location. Assigned Shift: ${shift.name}.`,
+                    details: `${normalizedAction} recorded via face scan (Confidence: ${confidenceScore}%) and location. Assigned Shift: ${shift.name}. ${calc.isLate ? `Late Arrival: +${calc.lateMinutes}m` : 'On Time'}.`,
                     ip_address: req.ip || req.headers['x-forwarded-for'] || ''
                 }]
             });
@@ -335,6 +344,8 @@ exports.recordAttendance = async (req, res) => {
                         checkIn: timeStr,
                         checkOut: '',
                         workedHours: 0,
+                        lateMinutes: calc.lateMinutes,
+                        isLate: calc.isLate,
                         shiftId: shift._id,
                         shiftCode: shift.code,
                         shiftName: shift.name,
@@ -345,6 +356,39 @@ exports.recordAttendance = async (req, res) => {
                     },
                     { upsert: true, new: true }
                 );
+
+                // Dispatch Late Arrival Alert (Avoid duplicates for same attendance event)
+                if (calc.isLate && shift.lateNotificationsEnabled !== false) {
+                    try {
+                        const Notification = require('../models/Notification');
+                        const existingNotif = await Notification.findOne({
+                            category: 'attendance',
+                            'metadata.staffId': staffUser._id,
+                            'metadata.date': today,
+                            'metadata.type': 'LATE_ARRIVAL'
+                        });
+
+                        if (!existingNotif) {
+                            await Notification.create({
+                                title: `Late Arrival Alert: ${staffUser.name}`,
+                                message: `${staffUser.name} arrived late on ${today} at ${timeStr} (${calc.lateMinutes} mins late against shift start ${shift.startTime} with ${shift.gracePeriodMinutes || 10}m grace).`,
+                                category: 'attendance',
+                                priority: 'medium',
+                                metadata: {
+                                    staffId: staffUser._id,
+                                    staffName: staffUser.name,
+                                    date: today,
+                                    inTime: timeStr,
+                                    shiftStart: shift.startTime,
+                                    lateMinutes: calc.lateMinutes,
+                                    type: 'LATE_ARRIVAL'
+                                }
+                            });
+                        }
+                    } catch (notifErr) {
+                        console.warn('Late arrival notification notice:', notifErr.message);
+                    }
+                }
             }
         }
 

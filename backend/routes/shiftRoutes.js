@@ -6,6 +6,11 @@ const shiftController = require('../controllers/shiftController');
 // All shift management endpoints require authentication and admin privileges
 router.use(protect, admin);
 
+// Dedicated Late Arrival Settings & Reports
+router.get('/settings/late-arrival', shiftController.getLateArrivalSettings);
+router.put('/settings/late-arrival', shiftController.updateLateArrivalSettings);
+router.get('/reports/late-arrivals', shiftController.getLateArrivalsReport);
+
 // Shift CRUD
 router.get('/', shiftController.getShifts);
 router.get('/roster/today', shiftController.getTodayShiftRoster);

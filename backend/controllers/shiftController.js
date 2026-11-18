@@ -567,3 +567,229 @@ exports.manualAttendanceCorrection = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
+
+/**
+ * Get Late Arrival Configuration for Morning Shift
+ * GET /api/shifts/settings/late-arrival
+ */
+exports.getLateArrivalSettings = async (req, res) => {
+    try {
+        let morningShift = await Shift.findOne({ code: 'MORNING' });
+        if (!morningShift) {
+            morningShift = await Shift.findOne({ isDefault: true }) || await Shift.findOne({});
+        }
+
+        if (!morningShift) {
+            return res.json({
+                success: true,
+                settings: {
+                    shiftName: 'Morning Shift',
+                    shiftCode: 'MORNING',
+                    startTime: '09:00',
+                    gracePeriodMinutes: 10,
+                    lateDetectionEnabled: true,
+                    lateNotificationsEnabled: true,
+                    lateNotificationChannels: { inApp: true, email: false, whatsapp: false }
+                }
+            });
+        }
+
+        res.json({
+            success: true,
+            settings: {
+                shiftId: morningShift._id,
+                shiftName: morningShift.name,
+                shiftCode: morningShift.code,
+                startTime: morningShift.startTime || '09:00',
+                gracePeriodMinutes: morningShift.gracePeriodMinutes !== undefined ? morningShift.gracePeriodMinutes : 10,
+                lateDetectionEnabled: morningShift.lateDetectionEnabled !== false,
+                lateNotificationsEnabled: morningShift.lateNotificationsEnabled !== false,
+                lateNotificationChannels: morningShift.lateNotificationChannels || { inApp: true, email: false, whatsapp: false }
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching late arrival settings:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Update Late Arrival Configuration for Morning Shift
+ * PUT /api/shifts/settings/late-arrival
+ */
+exports.updateLateArrivalSettings = async (req, res) => {
+    try {
+        const {
+            startTime,
+            gracePeriodMinutes,
+            lateDetectionEnabled,
+            lateNotificationsEnabled,
+            lateNotificationChannels
+        } = req.body;
+
+        let morningShift = await Shift.findOne({ code: 'MORNING' });
+        if (!morningShift) {
+            morningShift = await Shift.findOne({ isDefault: true });
+        }
+
+        const updateData = {};
+        if (startTime) updateData.startTime = startTime.trim();
+        if (gracePeriodMinutes !== undefined) updateData.gracePeriodMinutes = Math.max(0, Number(gracePeriodMinutes));
+        if (lateDetectionEnabled !== undefined) updateData.lateDetectionEnabled = Boolean(lateDetectionEnabled);
+        if (lateNotificationsEnabled !== undefined) updateData.lateNotificationsEnabled = Boolean(lateNotificationsEnabled);
+        if (lateNotificationChannels) updateData.lateNotificationChannels = lateNotificationChannels;
+        updateData.updatedBy = req.user?._id || req.user?.id;
+
+        if (morningShift) {
+            await Shift.updateOne({ _id: morningShift._id }, { $set: updateData });
+            morningShift = await Shift.findById(morningShift._id);
+        } else {
+            morningShift = await Shift.create({
+                name: 'Morning Shift',
+                code: 'MORNING',
+                endTime: '17:00',
+                isDefault: true,
+                ...updateData
+            });
+        }
+
+        // Trigger dynamic recalculation of today's attendance records with new grace/start
+        try {
+            const todayStr = getISTDate(new Date());
+            const todayRecords = await DailyAttendance.find({ date: todayStr });
+            for (const rec of todayRecords) {
+                if (rec.checkIn && rec.checkIn !== '--') {
+                    const calc = calculateShiftAttendance({
+                        inTime: rec.checkIn,
+                        outTime: rec.checkOut,
+                        recordDate: todayStr,
+                        shift: morningShift
+                    });
+                    await DailyAttendance.updateOne(
+                        { _id: rec._id },
+                        { $set: { lateMinutes: calc.lateMinutes, isLate: calc.isLate } }
+                    );
+                }
+            }
+        } catch (recalcErr) {
+            console.warn('Notice updating today records on settings change:', recalcErr.message);
+        }
+
+        res.json({
+            success: true,
+            message: 'Late arrival settings updated successfully.',
+            settings: {
+                shiftId: morningShift._id,
+                shiftName: morningShift.name,
+                shiftCode: morningShift.code,
+                startTime: morningShift.startTime,
+                gracePeriodMinutes: morningShift.gracePeriodMinutes,
+                lateDetectionEnabled: morningShift.lateDetectionEnabled,
+                lateNotificationsEnabled: morningShift.lateNotificationsEnabled,
+                lateNotificationChannels: morningShift.lateNotificationChannels
+            }
+        });
+    } catch (err) {
+        console.error('Error updating late arrival settings:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Get Monthly & Date-wise Late Arrivals Summary & Report
+ * GET /api/shifts/reports/late-arrivals
+ */
+exports.getLateArrivalsReport = async (req, res) => {
+    try {
+        const { month, date, staffId } = req.query;
+        const currentMonth = month || getISTDate(new Date()).substring(0, 7);
+
+        let query = {
+            lateMinutes: { $gt: 0 }
+        };
+
+        if (date) {
+            query.date = date;
+        } else if (currentMonth) {
+            query.date = { $regex: `^${currentMonth}` };
+        }
+
+        if (staffId && staffId !== 'ALL') {
+            query.staffId = staffId;
+        }
+
+        const lateDailyRecords = await DailyAttendance.find(query)
+            .populate('staffId', 'name staff_id department designation')
+            .sort({ date: -1 });
+
+        // Retrieve Morning Shift start time
+        const morningShift = await Shift.findOne({ code: 'MORNING' }) || await Shift.findOne({ isDefault: true });
+        const shiftStartStr = morningShift?.startTime ? formatISTDisplay(morningShift.startTime, false) : '09:00 AM';
+
+        let totalLateMinutes = 0;
+        const employeeMap = new Map();
+
+        const records = lateDailyRecords.map(r => {
+            const staff = r.staffId || {};
+            const staffKey = staff._id ? String(staff._id) : (r.staffId ? String(r.staffId) : 'unknown');
+            const staffName = staff.name || 'Unknown Staff';
+            const dept = staff.department || 'General';
+            const lateMins = r.lateMinutes || 0;
+
+            totalLateMinutes += lateMins;
+
+            if (!employeeMap.has(staffKey)) {
+                employeeMap.set(staffKey, {
+                    staffId: staffKey,
+                    name: staffName,
+                    department: dept,
+                    lateCount: 0,
+                    totalLateMinutes: 0
+                });
+            }
+            const empStat = employeeMap.get(staffKey);
+            empStat.lateCount += 1;
+            empStat.totalLateMinutes += lateMins;
+
+            const actualInStr = r.checkInDisplay || r.checkIn || '--';
+
+            return {
+                id: r._id,
+                staffId: staffKey,
+                staffName: staffName,
+                department: dept,
+                date: r.date,
+                shiftStart: shiftStartStr,
+                actualIn: actualInStr,
+                actualOut: r.checkOutDisplay || r.checkOut || '--',
+                lateMinutes: lateMins,
+                status: `Late (+${lateMins}m)`,
+                attendanceStatus: r.status
+            };
+        });
+
+        // Most frequent late arrivals sorted by count descending, then total minutes
+        const mostFrequentLate = Array.from(employeeMap.values()).sort((a, b) => {
+            if (b.lateCount !== a.lateCount) {
+                return b.lateCount - a.lateCount;
+            }
+            return b.totalLateMinutes - a.totalLateMinutes;
+        });
+
+        res.json({
+            success: true,
+            month: currentMonth,
+            summary: {
+                totalLateArrivals: records.length,
+                uniqueLateEmployees: employeeMap.size,
+                totalLateMinutes,
+                averageLateMinutes: records.length > 0 ? Math.round(totalLateMinutes / records.length) : 0,
+                mostFrequentLate
+            },
+            records
+        });
+    } catch (err) {
+        console.error('Error fetching late arrivals report:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};

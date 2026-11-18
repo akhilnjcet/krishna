@@ -61,6 +61,7 @@ exports.markDailyAttendance = async (req, res) => {
                 breakTime: (status === 'Present' || status === 'Completed' || status === 'Half Day') ? breakTime || shift.breakDuration || 0 : 0,
                 workedHours,
                 lateMinutes,
+                isLate: lateMinutes > 0,
                 earlyExitMinutes,
                 overtimeHours,
                 shiftId: shift._id,
@@ -273,19 +274,33 @@ const reconcileRecordsWithBiometrics = async (records) => {
             obj.completion_status = 'COMPLETED';
             obj.is_active_shift = false;
 
+            const { calculateShiftAttendance } = require('../utils/shiftCalculator');
+            const calc = calculateShiftAttendance({
+                inTime: finalCheckIn,
+                outTime: finalCheckOut,
+                recordDate: obj.date,
+                breakMinutes: obj.breakTime || 0
+            });
+
+            obj.isLate = calc.isLate;
+            obj.lateMinutes = calc.lateMinutes;
+
             // Recalculate duration & hours if missing or zero
             if (!obj.workedHours || obj.workedHours === 0) {
-                const { calculateShiftAttendance } = require('../utils/shiftCalculator');
-                const calc = calculateShiftAttendance({
-                    inTime: finalCheckIn,
-                    outTime: finalCheckOut,
-                    recordDate: obj.date,
-                    breakMinutes: obj.breakTime || 0
-                });
                 obj.workedHours = calc.workedHours;
                 obj.duration_minutes = calc.durationMinutes;
             }
         } else if (hasValidIn && !hasValidOut) {
+            const { calculateShiftAttendance } = require('../utils/shiftCalculator');
+            const calc = calculateShiftAttendance({
+                inTime: finalCheckIn,
+                outTime: null,
+                recordDate: obj.date,
+                breakMinutes: obj.breakTime || 0
+            });
+            obj.isLate = calc.isLate;
+            obj.lateMinutes = calc.lateMinutes;
+
             if (obj.date === todayStr) {
                 obj.status = 'In Progress';
                 obj.completion_status = 'IN_PROGRESS';
@@ -295,6 +310,9 @@ const reconcileRecordsWithBiometrics = async (records) => {
                 obj.completion_status = 'MISSING_OUT';
                 obj.is_active_shift = false;
             }
+        } else {
+            obj.isLate = false;
+            obj.lateMinutes = 0;
         }
 
         return obj;

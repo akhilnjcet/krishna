@@ -14,6 +14,8 @@ const DEFAULT_FALLBACK_SHIFT = {
     expectedHours: 7,
     gracePeriodMinutes: 10,
     earlyExitAllowanceMinutes: 15,
+    lateDetectionEnabled: true,
+    lateNotificationsEnabled: true,
     shiftType: 'Regular',
     isOvernight: false,
     overtimeEnabled: true,
@@ -190,10 +192,11 @@ const calculateShiftAttendance = ({
         status = 'COMPLETED';
         completionStatus = 'COMPLETED';
 
-        // Check Late Arrival
-        if (inMins > (scheduledStartMins + gracePeriod)) {
+        // Check Late Arrival (excluding grace period per specification)
+        const lateDetectionActive = shift.lateDetectionEnabled !== false;
+        if (lateDetectionActive && inMins > (scheduledStartMins + gracePeriod)) {
             isLate = true;
-            lateMinutes = Math.max(0, inMins - scheduledStartMins);
+            lateMinutes = Math.max(1, inMins - (scheduledStartMins + gracePeriod));
         }
 
         // Check Early Exit
@@ -214,10 +217,11 @@ const calculateShiftAttendance = ({
     } 
     // CASE 2: Only IN exists, OUT is missing
     else if (hasIn && !hasOut) {
-        // Late arrival evaluation on clock-in
-        if (inMins > (scheduledStartMins + gracePeriod)) {
+        // Late arrival evaluation on clock-in (excluding grace period)
+        const lateDetectionActive = shift.lateDetectionEnabled !== false;
+        if (lateDetectionActive && inMins > (scheduledStartMins + gracePeriod)) {
             isLate = true;
-            lateMinutes = Math.max(0, inMins - scheduledStartMins);
+            lateMinutes = Math.max(1, inMins - (scheduledStartMins + gracePeriod));
         }
 
         if (isToday) {

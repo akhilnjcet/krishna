@@ -253,9 +253,18 @@ const StaffTimesheets = () => {
 
                                     <div className="text-xs bg-white dark:bg-slate-800/80 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60 flex justify-between items-center">
                                         <div className="space-y-0.5">
-                                            <p className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
-                                                IN: {inDisp}
-                                            </p>
+                                            <div className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px] flex items-center gap-1.5 flex-wrap">
+                                                <span>IN: {inDisp}</span>
+                                                {(log.is_late || log.late_minutes > 0 || log.isLate || log.lateMinutes > 0) ? (
+                                                    <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 px-1.5 py-0.2 rounded">
+                                                        Late (+{log.late_minutes || log.lateMinutes}m)
+                                                    </span>
+                                                ) : (inDisp && inDisp !== '--') ? (
+                                                    <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 px-1.5 py-0.2 rounded">
+                                                        ✓ On Time
+                                                    </span>
+                                                ) : null}
+                                            </div>
                                             <p className="text-rose-500 dark:text-rose-400 font-bold text-[11px]">
                                                 OUT: {outDisp}
                                             </p>
@@ -328,9 +337,20 @@ const StaffTimesheets = () => {
                                             </td>
                                             <td className="px-5 py-3.5 whitespace-nowrap">
                                                 <div className="flex flex-col gap-0.5">
-                                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                                                        IN: {inDisp}
-                                                    </span>
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                                                            IN: {inDisp}
+                                                        </span>
+                                                        {(log.is_late || log.late_minutes > 0 || log.isLate || log.lateMinutes > 0) ? (
+                                                            <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 px-1.5 py-0.2 rounded">
+                                                                Late (+{log.late_minutes || log.lateMinutes}m)
+                                                            </span>
+                                                        ) : (inDisp && inDisp !== '--') ? (
+                                                            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 px-1.5 py-0.2 rounded">
+                                                                ✓ On Time
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
                                                     <span className="text-rose-500 dark:text-rose-400 font-bold">
                                                         OUT: {outDisp}
                                                     </span>
