@@ -5,7 +5,8 @@ import {
     ArrowLeftRight, FileText, Download, Plus, Trash2, Edit, Search, 
     Filter, RefreshCw, IndianRupee, TrendingUp, TrendingDown, ShieldAlert, 
     Check, X, Eye, FileSpreadsheet, Percent, Wrench, Truck, Briefcase, 
-    ChevronRight, User, Calendar, AlertCircle, Info, Sparkles, Building2
+    ChevronRight, User, Calendar, AlertCircle, Info, Sparkles, Building2,
+    Users, MapPin, Fuel
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateGeneralReportPDF } from '../../services/pdfService';
@@ -19,8 +20,23 @@ const FABRICATION_CATEGORIES = [
 
 const STANDARD_UNITS = ['Pcs', 'Kg', 'Meters', 'Sheets', 'Lengths', 'Litres', 'Boxes', 'Pack', 'Bundles', 'Bags', 'Nos'];
 
+const LABOUR_CATEGORIES = [
+    'Welding', 'Fit-up & Assembly', 'Cutting & Fabrication', 
+    'Painting & Blasting', 'Machine Operator', 'Site Erection', 
+    'Helper / Rigging', 'Crane / Forklift Operator', 'Electrical & Wiring', 
+    'General Labour', 'Subcontracted Labour', 'Other'
+];
+
+const RATE_TYPES = ['Daily', 'Hourly', 'Piece Rate', 'Fixed Job'];
+
+const TRANSPORT_TYPES = [
+    'Flatbed Trailer', 'Pickup Van (Tata Ace / Bolero)', 'Hydra Crane Transport', 
+    'Heavy Trailer (40ft / Low Bed)', 'Tempo / Mini Truck', 'Inter-Site Shuttle', 
+    'Third Party Logistics (3PL)', 'Material Inward Transport', 'Other'
+];
+
 export default function AdminBOMCosting() {
-    const [activeTab, setActiveTab] = useState('bom'); // 'bom' | 'requests' | 'consumption' | 'costing' | 'wastage'
+    const [activeTab, setActiveTab] = useState('bom'); // 'bom' | 'requests' | 'consumption' | 'labour' | 'transport' | 'costing' | 'wastage'
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -35,6 +51,59 @@ export default function AdminBOMCosting() {
     const [projectsCosting, setProjectsCosting] = useState([]);
     const [dashboardSummary, setDashboardSummary] = useState(null);
     const [wastageReports, setWastageReports] = useState([]);
+
+    // Independent Labour Cost State
+    const [labourCosts, setLabourCosts] = useState([]);
+    const [selectedLabourCategory, setSelectedLabourCategory] = useState('All');
+    const [labourDateFilter, setLabourDateFilter] = useState('');
+    const [showLabourModal, setShowLabourModal] = useState(false);
+    const [editingLabour, setEditingLabour] = useState(null);
+    const [labourForm, setLabourForm] = useState({
+        projectId: '',
+        labourCategory: 'Welding',
+        workDescription: '',
+        workerName: '',
+        numberOfWorkers: 1,
+        workDate: new Date().toISOString().split('T')[0],
+        rateType: 'Daily',
+        quantity: 1,
+        rate: 900,
+        totalAmount: 900,
+        notes: '',
+        attachmentUrl: ''
+    });
+
+    // Independent Transport Cost State
+    const [transportCosts, setTransportCosts] = useState([]);
+    const [selectedTransportTypeFilter, setSelectedTransportTypeFilter] = useState('All');
+    const [transportDateFilter, setTransportDateFilter] = useState('');
+    const [showTransportModal, setShowTransportModal] = useState(false);
+    const [editingTransport, setEditingTransport] = useState(null);
+    const [transportForm, setTransportForm] = useState({
+        projectId: '',
+        transportDate: new Date().toISOString().split('T')[0],
+        transportType: 'Flatbed Trailer',
+        vehicleNumber: '',
+        driverName: '',
+        startingLocation: 'Central Fabrication Yard, Palakkad',
+        destination: '',
+        transportDescription: '',
+        numberOfTrips: 1,
+        freightCharge: 0,
+        fuelCharge: 0,
+        loadingUnloadingCharge: 0,
+        tollCharge: 0,
+        otherCharge: 0,
+        totalTransportCost: 0,
+        notes: '',
+        attachmentUrl: ''
+    });
+
+    // Project Cost History Modal State
+    const [showProjectHistoryModal, setShowProjectHistoryModal] = useState(false);
+    const [projectHistoryData, setProjectHistoryData] = useState(null);
+    const [historySubTab, setHistorySubTab] = useState('all'); // 'all' | 'material' | 'labour' | 'transport' | 'other'
+    const [historyLoading, setHistoryLoading] = useState(false);
 
     // Filters
     const [searchQuery, setSearchQuery] = useState('');
@@ -165,6 +234,30 @@ export default function AdminBOMCosting() {
         }
     }, []);
 
+    // Load Independent Labour Costs
+    const fetchLabourCosts = useCallback(async () => {
+        try {
+            const res = await api.get('/labour-cost');
+            if (res.data?.success) {
+                setLabourCosts(res.data.labourCosts || []);
+            }
+        } catch (err) {
+            console.error('Error fetching labour costs:', err);
+        }
+    }, []);
+
+    // Load Independent Transport Costs
+    const fetchTransportCosts = useCallback(async () => {
+        try {
+            const res = await api.get('/transport-cost');
+            if (res.data?.success) {
+                setTransportCosts(res.data.transportCosts || []);
+            }
+        } catch (err) {
+            console.error('Error fetching transport costs:', err);
+        }
+    }, []);
+
     // Load Project Costing & Dashboard Summary
     const fetchCostingData = useCallback(async () => {
         try {
@@ -203,9 +296,260 @@ export default function AdminBOMCosting() {
         if (activeTab === 'bom') fetchBOMs();
         else if (activeTab === 'requests') fetchMaterialRequests();
         else if (activeTab === 'consumption') fetchConsumptionHistory();
-        else if (activeTab === 'costing') fetchCostingData();
+        else if (activeTab === 'labour') fetchLabourCosts();
+        else if (activeTab === 'transport') fetchTransportCosts();
+        else if (activeTab === 'costing') {
+            fetchCostingData();
+            fetchLabourCosts();
+            fetchTransportCosts();
+        }
         else if (activeTab === 'wastage') fetchWastageReports();
-    }, [activeTab, fetchBOMs, fetchMaterialRequests, fetchConsumptionHistory, fetchCostingData, fetchWastageReports]);
+    }, [activeTab, fetchBOMs, fetchMaterialRequests, fetchConsumptionHistory, fetchLabourCosts, fetchTransportCosts, fetchCostingData, fetchWastageReports]);
+
+    // ─── LABOUR COST CALCULATION & ACTIONS ───
+    const updateLabourFormCalculation = (field, val) => {
+        setLabourForm(prev => {
+            const next = { ...prev, [field]: val };
+            if (field !== 'totalAmount') {
+                const nw = Number(next.numberOfWorkers) > 0 ? Number(next.numberOfWorkers) : 1;
+                const q = Number(next.quantity) || 0;
+                const r = Number(next.rate) || 0;
+                if (next.rateType === 'Fixed Job') {
+                    next.totalAmount = r;
+                } else {
+                    next.totalAmount = parseFloat((q * r * nw).toFixed(2));
+                }
+            }
+            return next;
+        });
+    };
+
+    const handleOpenAddLabour = (targetProjectId = '') => {
+        setEditingLabour(null);
+        const pId = targetProjectId || projects[0]?._id || '';
+        setLabourForm({
+            projectId: pId,
+            labourCategory: 'Welding',
+            workDescription: '',
+            workerName: '',
+            numberOfWorkers: 1,
+            workDate: new Date().toISOString().split('T')[0],
+            rateType: 'Daily',
+            quantity: 1,
+            rate: 900,
+            totalAmount: 900,
+            notes: '',
+            attachmentUrl: ''
+        });
+        setShowLabourModal(true);
+    };
+
+    const handleOpenEditLabour = (rec) => {
+        setEditingLabour(rec);
+        setLabourForm({
+            projectId: rec.projectId?._id || rec.projectId || '',
+            labourCategory: rec.labourCategory || 'General Labour',
+            workDescription: rec.workDescription || '',
+            workerName: rec.workerName || '',
+            numberOfWorkers: rec.numberOfWorkers || 1,
+            workDate: rec.workDate ? new Date(rec.workDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            rateType: rec.rateType || 'Daily',
+            quantity: rec.quantity || 1,
+            rate: rec.rate || 0,
+            totalAmount: rec.totalAmount || 0,
+            notes: rec.notes || '',
+            attachmentUrl: rec.attachmentUrl || ''
+        });
+        setShowLabourModal(true);
+    };
+
+    const handleSaveLabour = async (e) => {
+        e.preventDefault();
+        setActionLoading(true);
+        setError(null);
+        try {
+            if (editingLabour) {
+                const res = await api.put(`/labour-cost/${editingLabour._id}`, labourForm);
+                if (res.data?.success) {
+                    notify('Labour cost record updated successfully!');
+                }
+            } else {
+                const res = await api.post('/labour-cost', labourForm);
+                if (res.data?.success) {
+                    notify('Labour cost recorded successfully!');
+                }
+            }
+            setShowLabourModal(false);
+            setEditingLabour(null);
+            fetchLabourCosts();
+            fetchCostingData();
+            if (projectHistoryData?.project?.id) {
+                handleOpenProjectHistory(projectHistoryData.project.id);
+            }
+        } catch (err) {
+            console.error('Error saving labour cost:', err);
+            setError(err.response?.data?.message || err.message || 'Failed to save labour cost.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeleteLabour = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this labour cost record?')) return;
+        setActionLoading(true);
+        try {
+            const res = await api.delete(`/labour-cost/${id}`);
+            if (res.data?.success) {
+                notify('Labour cost record deleted.');
+                fetchLabourCosts();
+                fetchCostingData();
+                if (projectHistoryData?.project?.id) {
+                    handleOpenProjectHistory(projectHistoryData.project.id);
+                }
+            }
+        } catch (err) {
+            console.error('Error deleting labour cost:', err);
+            setError(err.response?.data?.message || err.message || 'Failed to delete labour cost.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // ─── TRANSPORT COST CALCULATION & ACTIONS ───
+    const updateTransportFormCalculation = (field, val) => {
+        setTransportForm(prev => {
+            const next = { ...prev, [field]: val };
+            if (field !== 'totalTransportCost') {
+                const fr = Number(next.freightCharge) || 0;
+                const fu = Number(next.fuelCharge) || 0;
+                const lo = Number(next.loadingUnloadingCharge) || 0;
+                const to = Number(next.tollCharge) || 0;
+                const ot = Number(next.otherCharge) || 0;
+                next.totalTransportCost = parseFloat((fr + fu + lo + to + ot).toFixed(2));
+            }
+            return next;
+        });
+    };
+
+    const handleOpenAddTransport = (targetProjectId = '') => {
+        setEditingTransport(null);
+        const pId = targetProjectId || projects[0]?._id || '';
+        const targetProj = projects.find(p => p._id === pId);
+        setTransportForm({
+            projectId: pId,
+            transportDate: new Date().toISOString().split('T')[0],
+            transportType: 'Flatbed Trailer',
+            vehicleNumber: '',
+            driverName: '',
+            startingLocation: 'Central Fabrication Yard, Palakkad',
+            destination: targetProj?.location || '',
+            transportDescription: '',
+            numberOfTrips: 1,
+            freightCharge: 0,
+            fuelCharge: 0,
+            loadingUnloadingCharge: 0,
+            tollCharge: 0,
+            otherCharge: 0,
+            totalTransportCost: 0,
+            notes: '',
+            attachmentUrl: ''
+        });
+        setShowTransportModal(true);
+    };
+
+    const handleOpenEditTransport = (rec) => {
+        setEditingTransport(rec);
+        setTransportForm({
+            projectId: rec.projectId?._id || rec.projectId || '',
+            transportDate: rec.transportDate ? new Date(rec.transportDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            transportType: rec.transportType || 'Flatbed Trailer',
+            vehicleNumber: rec.vehicleNumber || '',
+            driverName: rec.driverName || '',
+            startingLocation: rec.startingLocation || '',
+            destination: rec.destination || '',
+            transportDescription: rec.transportDescription || '',
+            numberOfTrips: rec.numberOfTrips || 1,
+            freightCharge: rec.freightCharge || 0,
+            fuelCharge: rec.fuelCharge || 0,
+            loadingUnloadingCharge: rec.loadingUnloadingCharge || 0,
+            tollCharge: rec.tollCharge || 0,
+            otherCharge: rec.otherCharge || 0,
+            totalTransportCost: rec.totalTransportCost || 0,
+            notes: rec.notes || '',
+            attachmentUrl: rec.attachmentUrl || ''
+        });
+        setShowTransportModal(true);
+    };
+
+    const handleSaveTransport = async (e) => {
+        e.preventDefault();
+        setActionLoading(true);
+        setError(null);
+        try {
+            if (editingTransport) {
+                const res = await api.put(`/transport-cost/${editingTransport._id}`, transportForm);
+                if (res.data?.success) {
+                    notify('Transport cost record updated successfully!');
+                }
+            } else {
+                const res = await api.post('/transport-cost', transportForm);
+                if (res.data?.success) {
+                    notify('Transport cost recorded successfully!');
+                }
+            }
+            setShowTransportModal(false);
+            setEditingTransport(null);
+            fetchTransportCosts();
+            fetchCostingData();
+            if (projectHistoryData?.project?.id) {
+                handleOpenProjectHistory(projectHistoryData.project.id);
+            }
+        } catch (err) {
+            console.error('Error saving transport cost:', err);
+            setError(err.response?.data?.message || err.message || 'Failed to save transport cost.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeleteTransport = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this transport cost record?')) return;
+        setActionLoading(true);
+        try {
+            const res = await api.delete(`/transport-cost/${id}`);
+            if (res.data?.success) {
+                notify('Transport cost record deleted.');
+                fetchTransportCosts();
+                fetchCostingData();
+                if (projectHistoryData?.project?.id) {
+                    handleOpenProjectHistory(projectHistoryData.project.id);
+                }
+            }
+        } catch (err) {
+            console.error('Error deleting transport cost:', err);
+            setError(err.response?.data?.message || err.message || 'Failed to delete transport cost.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // ─── PROJECT COST HISTORY VIEWER ───
+    const handleOpenProjectHistory = async (projId) => {
+        setHistoryLoading(true);
+        setShowProjectHistoryModal(true);
+        setHistorySubTab('all');
+        try {
+            const res = await api.get(`/project-costing/${projId}/history`);
+            if (res.data?.success) {
+                setProjectHistoryData(res.data);
+            }
+        } catch (err) {
+            console.error('Error loading project history:', err);
+            setError('Failed to load project cost history.');
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
 
     // ─── BOM ACTIONS ───
     const handleOpenCreateBOM = () => {
@@ -557,6 +901,45 @@ export default function AdminBOMCosting() {
                             </button>
                         </div>
                     )}
+
+                    {activeTab === 'labour' && (
+                        <button
+                            onClick={() => handleOpenAddLabour()}
+                            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 transition flex items-center gap-1.5"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span>Add Labour Cost</span>
+                        </button>
+                    )}
+
+                    {activeTab === 'transport' && (
+                        <button
+                            onClick={() => handleOpenAddTransport()}
+                            className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold shadow-md shadow-cyan-600/20 transition flex items-center gap-1.5"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span>Add Transport Cost</span>
+                        </button>
+                    )}
+
+                    {activeTab === 'costing' && (
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => handleOpenAddLabour()}
+                                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Add Labour Cost</span>
+                            </button>
+                            <button
+                                onClick={() => handleOpenAddTransport()}
+                                className="px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Add Transport Cost</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -612,7 +995,7 @@ export default function AdminBOMCosting() {
                     }`}
                 >
                     <Package className="w-4 h-4" />
-                    <span>Material Requests & Approvals ({materialRequests.filter(r => r.status === 'Pending').length} Pending)</span>
+                    <span>Material Requests ({materialRequests.filter(r => r.status === 'Pending').length} Pending)</span>
                 </button>
 
                 <button
@@ -624,7 +1007,31 @@ export default function AdminBOMCosting() {
                     }`}
                 >
                     <ArrowLeftRight className="w-4 h-4" />
-                    <span>Material Movements & Consumption</span>
+                    <span>Material Movements</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('labour')}
+                    className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider transition border-b-2 flex items-center gap-2 shrink-0 ${
+                        activeTab === 'labour'
+                            ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    }`}
+                >
+                    <Users className="w-4 h-4" />
+                    <span>Labour Costs ({labourCosts.length})</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('transport')}
+                    className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider transition border-b-2 flex items-center gap-2 shrink-0 ${
+                        activeTab === 'transport'
+                            ? 'border-cyan-600 text-cyan-600 dark:text-cyan-400'
+                            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    }`}
+                >
+                    <Truck className="w-4 h-4" />
+                    <span>Transport Costs ({transportCosts.length})</span>
                 </button>
 
                 <button
@@ -648,7 +1055,7 @@ export default function AdminBOMCosting() {
                     }`}
                 >
                     <TrendingDown className="w-4 h-4" />
-                    <span>Material Wastage Reports</span>
+                    <span>Material Wastage</span>
                 </button>
             </div>
 
@@ -934,7 +1341,409 @@ export default function AdminBOMCosting() {
                 </div>
             )}
 
-            {/* TAB 4: PROJECT COSTING & PROFITABILITY DASHBOARD */}
+            {/* TAB 4: INDEPENDENT LABOUR COSTS */}
+            {activeTab === 'labour' && (
+                <div className="space-y-4">
+                    {/* Filter Bar */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-sm">
+                        <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
+                            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                            <input
+                                type="text"
+                                placeholder="Search by worker name, description, project..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold w-full sm:w-72"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap justify-end">
+                            <select
+                                value={selectedProjectFilter}
+                                onChange={(e) => setSelectedProjectFilter(e.target.value)}
+                                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold"
+                            >
+                                <option value="All">All Projects</option>
+                                {projects.map(p => (
+                                    <option key={p._id} value={p._id}>{p.title}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={selectedLabourCategory}
+                                onChange={(e) => setSelectedLabourCategory(e.target.value)}
+                                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold"
+                            >
+                                <option value="All">All Categories</option>
+                                {LABOUR_CATEGORIES.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+
+                            <input
+                                type="date"
+                                value={labourDateFilter}
+                                onChange={(e) => setLabourDateFilter(e.target.value)}
+                                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold"
+                                title="Filter by work date"
+                            />
+                            {labourDateFilter && (
+                                <button
+                                    onClick={() => setLabourDateFilter('')}
+                                    className="p-1.5 text-xs text-rose-500 hover:bg-rose-50 rounded"
+                                    title="Clear date filter"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+
+                            <button
+                                onClick={() => handleOpenAddLabour()}
+                                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 transition flex items-center gap-1.5"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span>Add Labour Cost</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Summary Cards */}
+                    {(() => {
+                        const filtered = labourCosts.filter(l => {
+                            const matchProj = selectedProjectFilter === 'All' || (l.projectId?._id || l.projectId) === selectedProjectFilter;
+                            const matchCat = selectedLabourCategory === 'All' || l.labourCategory === selectedLabourCategory;
+                            const matchDate = !labourDateFilter || (l.workDate && new Date(l.workDate).toISOString().split('T')[0] === labourDateFilter);
+                            const matchSearch = !searchQuery || 
+                                l.workDescription?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                l.workerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                l.projectTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                l.labourCategory?.toLowerCase().includes(searchQuery.toLowerCase());
+                            return matchProj && matchCat && matchDate && matchSearch;
+                        });
+                        const totalSpend = filtered.reduce((acc, curr) => acc + (Number(curr.totalAmount) || 0), 0);
+                        const totalWorkers = filtered.reduce((acc, curr) => acc + (Number(curr.numberOfWorkers) || 1), 0);
+
+                        return (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 shadow-sm">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-500 block mb-1">
+                                            Total Labour Expenditure
+                                        </span>
+                                        <span className="text-xl font-black text-indigo-600 dark:text-indigo-400">
+                                            ₹{totalSpend.toLocaleString()}
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 block mt-0.5">Project Direct Fabrication Labour</span>
+                                    </div>
+
+                                    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                                            Total Workers Deployed
+                                        </span>
+                                        <span className="text-xl font-black text-slate-900 dark:text-white">
+                                            {totalWorkers} Workers
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 block mt-0.5">Across logged fabrication operations</span>
+                                    </div>
+
+                                    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                                            Total Entries Logged
+                                        </span>
+                                        <span className="text-xl font-black text-slate-900 dark:text-white">
+                                            {filtered.length} Records
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 block mt-0.5">In BOM & Project Costing Hub</span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden">
+                                    {filtered.length === 0 ? (
+                                        <div className="p-12 text-center text-slate-400 font-bold">
+                                            No labour cost records found matching the filters. Click "Add Labour Cost" to create a new entry.
+                                        </div>
+                                    ) : (
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-xs border-collapse">
+                                                <thead>
+                                                    <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-slate-400 font-black uppercase tracking-wider text-[10px]">
+                                                        <th className="px-4 py-3">Work Date</th>
+                                                        <th className="px-4 py-3">Project</th>
+                                                        <th className="px-4 py-3">Category</th>
+                                                        <th className="px-4 py-3">Worker / Crew</th>
+                                                        <th className="px-4 py-3">Description</th>
+                                                        <th className="px-4 py-3 text-center">Quantity & Rate</th>
+                                                        <th className="px-4 py-3 text-right">Total Amount</th>
+                                                        <th className="px-4 py-3 text-center">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-700 dark:text-slate-300">
+                                                    {filtered.map(l => (
+                                                        <tr key={l._id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition">
+                                                            <td className="px-4 py-3 whitespace-nowrap text-slate-400">
+                                                                {new Date(l.workDate).toLocaleDateString()}
+                                                            </td>
+                                                            <td className="px-4 py-3 font-bold whitespace-nowrap">
+                                                                {l.projectTitle}
+                                                            </td>
+                                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-50 text-indigo-600 border border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400">
+                                                                    {l.labourCategory}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                                <span className="font-bold text-slate-900 dark:text-white">{l.workerName || 'Shopfloor Crew'}</span>
+                                                                <span className="text-[10px] text-slate-400 block">{l.numberOfWorkers} worker(s)</span>
+                                                            </td>
+                                                            <td className="px-4 py-3 max-w-xs truncate" title={l.workDescription}>
+                                                                {l.workDescription}
+                                                                {l.notes && <span className="block text-[10px] text-slate-400 italic">"{l.notes}"</span>}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center whitespace-nowrap">
+                                                                {l.rateType === 'Fixed Job' ? (
+                                                                    <span className="font-bold text-slate-800 dark:text-slate-200">Fixed Job</span>
+                                                                ) : (
+                                                                    <span>{l.quantity} {l.rateType === 'Hourly' ? 'hrs' : 'days'} @ ₹{l.rate}</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right font-black text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                                                                ₹{l.totalAmount?.toLocaleString()}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center whitespace-nowrap">
+                                                                <div className="flex items-center justify-center gap-1.5">
+                                                                    <button
+                                                                        onClick={() => handleOpenEditLabour(l)}
+                                                                        className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 hover:text-blue-600 transition"
+                                                                        title="Edit Labour Record"
+                                                                    >
+                                                                        <Edit className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteLabour(l._id)}
+                                                                        className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950 text-slate-500 hover:text-rose-600 transition"
+                                                                        title="Delete Labour Record"
+                                                                    >
+                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })()}
+                </div>
+            )}
+
+            {/* TAB 5: INDEPENDENT TRANSPORT COSTS */}
+            {activeTab === 'transport' && (
+                <div className="space-y-4">
+                    {/* Filter Bar */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-sm">
+                        <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
+                            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                            <input
+                                type="text"
+                                placeholder="Search by vehicle, driver, route, project..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold w-full sm:w-72"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap justify-end">
+                            <select
+                                value={selectedProjectFilter}
+                                onChange={(e) => setSelectedProjectFilter(e.target.value)}
+                                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold"
+                            >
+                                <option value="All">All Projects</option>
+                                {projects.map(p => (
+                                    <option key={p._id} value={p._id}>{p.title}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={selectedTransportTypeFilter}
+                                onChange={(e) => setSelectedTransportTypeFilter(e.target.value)}
+                                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold"
+                            >
+                                <option value="All">All Transport Types</option>
+                                {TRANSPORT_TYPES.map(t => (
+                                    <option key={t} value={t}>{t}</option>
+                                ))}
+                            </select>
+
+                            <input
+                                type="date"
+                                value={transportDateFilter}
+                                onChange={(e) => setTransportDateFilter(e.target.value)}
+                                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold"
+                                title="Filter by transport date"
+                            />
+                            {transportDateFilter && (
+                                <button
+                                    onClick={() => setTransportDateFilter('')}
+                                    className="p-1.5 text-xs text-rose-500 hover:bg-rose-50 rounded"
+                                    title="Clear date filter"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+
+                            <button
+                                onClick={() => handleOpenAddTransport()}
+                                className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold shadow-md shadow-cyan-600/20 transition flex items-center gap-1.5"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span>Add Transport Cost</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Summary Cards */}
+                    {(() => {
+                        const filtered = transportCosts.filter(t => {
+                            const matchProj = selectedProjectFilter === 'All' || (t.projectId?._id || t.projectId) === selectedProjectFilter;
+                            const matchType = selectedTransportTypeFilter === 'All' || t.transportType === selectedTransportTypeFilter;
+                            const matchDate = !transportDateFilter || (t.transportDate && new Date(t.transportDate).toISOString().split('T')[0] === transportDateFilter);
+                            const matchSearch = !searchQuery || 
+                                t.transportDescription?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                t.vehicleNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                t.driverName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                t.startingLocation?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                t.destination?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                t.projectTitle?.toLowerCase().includes(searchQuery.toLowerCase());
+                            return matchProj && matchType && matchDate && matchSearch;
+                        });
+                        const totalTransport = filtered.reduce((acc, curr) => acc + (Number(curr.totalTransportCost) || 0), 0);
+                        const totalTrips = filtered.reduce((acc, curr) => acc + (Number(curr.numberOfTrips) || 1), 0);
+
+                        return (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-cyan-200 dark:border-cyan-900/50 shadow-sm">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-500 block mb-1">
+                                            Total Transport Expenditure
+                                        </span>
+                                        <span className="text-xl font-black text-cyan-600 dark:text-cyan-400">
+                                            ₹{totalTransport.toLocaleString()}
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 block mt-0.5">Project Freight, Fuel & Dispatch Logistics</span>
+                                    </div>
+
+                                    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                                            Total Logistics Trips
+                                        </span>
+                                        <span className="text-xl font-black text-slate-900 dark:text-white">
+                                            {totalTrips} Trips
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 block mt-0.5">Executed transport movements</span>
+                                    </div>
+
+                                    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                                            Total Entries Logged
+                                        </span>
+                                        <span className="text-xl font-black text-slate-900 dark:text-white">
+                                            {filtered.length} Records
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 block mt-0.5">In BOM & Project Costing Hub</span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden">
+                                    {filtered.length === 0 ? (
+                                        <div className="p-12 text-center text-slate-400 font-bold">
+                                            No transport cost records found matching the filters. Click "Add Transport Cost" to create a new entry.
+                                        </div>
+                                    ) : (
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-xs border-collapse">
+                                                <thead>
+                                                    <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-slate-400 font-black uppercase tracking-wider text-[10px]">
+                                                        <th className="px-4 py-3">Date</th>
+                                                        <th className="px-4 py-3">Project</th>
+                                                        <th className="px-4 py-3">Type</th>
+                                                        <th className="px-4 py-3">Vehicle / Driver</th>
+                                                        <th className="px-4 py-3">Route & Description</th>
+                                                        <th className="px-4 py-3 text-center">Cost Breakdown</th>
+                                                        <th className="px-4 py-3 text-right">Total Cost</th>
+                                                        <th className="px-4 py-3 text-center">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-700 dark:text-slate-300">
+                                                    {filtered.map(t => (
+                                                        <tr key={t._id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition">
+                                                            <td className="px-4 py-3 whitespace-nowrap text-slate-400">
+                                                                {new Date(t.transportDate).toLocaleDateString()}
+                                                            </td>
+                                                            <td className="px-4 py-3 font-bold whitespace-nowrap">
+                                                                {t.projectTitle}
+                                                            </td>
+                                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-cyan-50 text-cyan-600 border border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-400">
+                                                                    {t.transportType}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                                <span className="font-bold text-slate-900 dark:text-white">{t.vehicleNumber || 'Standard Carrier'}</span>
+                                                                {t.driverName && <span className="text-[10px] text-slate-400 block">Driver: {t.driverName}</span>}
+                                                            </td>
+                                                            <td className="px-4 py-3 max-w-xs truncate" title={`${t.startingLocation} -> ${t.destination}`}>
+                                                                <div className="font-bold text-slate-800 dark:text-slate-200">
+                                                                    {t.startingLocation && t.destination ? `${t.startingLocation} ➔ ${t.destination}` : (t.destination || 'On-site Transit')}
+                                                                </div>
+                                                                {t.transportDescription && (
+                                                                    <span className="text-[10px] text-slate-400 block truncate">{t.transportDescription}</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center whitespace-nowrap text-[10px] text-slate-500">
+                                                                <span>Freight: ₹{t.freightCharge}</span>
+                                                                {t.fuelCharge > 0 && <span className="ml-1">• Fuel: ₹{t.fuelCharge}</span>}
+                                                                {t.tollCharge > 0 && <span className="ml-1">• Toll: ₹{t.tollCharge}</span>}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right font-black text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
+                                                                ₹{t.totalTransportCost?.toLocaleString()}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center whitespace-nowrap">
+                                                                <div className="flex items-center justify-center gap-1.5">
+                                                                    <button
+                                                                        onClick={() => handleOpenEditTransport(t)}
+                                                                        className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 hover:text-blue-600 transition"
+                                                                        title="Edit Transport Record"
+                                                                    >
+                                                                        <Edit className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteTransport(t._id)}
+                                                                        className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950 text-slate-500 hover:text-rose-600 transition"
+                                                                        title="Delete Transport Record"
+                                                                    >
+                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })()}
+                </div>
+            )}
+
+            {/* TAB 6: PROJECT COSTING & PROFITABILITY DASHBOARD */}
             {activeTab === 'costing' && (
                 <div className="space-y-6">
                     {/* Summary KPI Cards */}
@@ -957,7 +1766,7 @@ export default function AdminBOMCosting() {
                                 <span className="text-xl font-black text-blue-600 dark:text-blue-400">
                                     ₹{dashboardSummary.totalActiveProjectCosts?.toLocaleString()}
                                 </span>
-                                <span className="text-[10px] text-slate-400 block mt-0.5">Cumulative consumed cost</span>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">Cumulative actual cost</span>
                             </div>
 
                             <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 shadow-sm">
@@ -1001,7 +1810,7 @@ export default function AdminBOMCosting() {
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                                Project-Wise Costing & Financial Statements ({projectsCosting.length})
+                                Project-Wise Costing & Profitability Statements ({projectsCosting.length})
                             </h2>
                         </div>
 
@@ -1016,6 +1825,7 @@ export default function AdminBOMCosting() {
                                         key={c.project.id}
                                         className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 shadow-sm space-y-4"
                                     >
+                                        {/* Card Header: Title & Profitability */}
                                         <div className="flex items-start justify-between gap-2">
                                             <div>
                                                 <h3 className="font-black text-base text-slate-900 dark:text-white">
@@ -1028,7 +1838,7 @@ export default function AdminBOMCosting() {
 
                                             <div className="text-right">
                                                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                                                    act.actualProfit >= 0 ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'
+                                                    act.actualProfit >= 0 ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400'
                                                 }`}>
                                                     {act.actualProfitMargin}% Margin
                                                 </span>
@@ -1039,34 +1849,69 @@ export default function AdminBOMCosting() {
                                         </div>
 
                                         {/* Cost Components Breakdown */}
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl">
+                                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl">
                                             <div>
                                                 <span className="text-[9px] text-slate-400 font-bold uppercase block">Material Cost</span>
                                                 <span className="font-bold text-slate-800 dark:text-slate-200">
                                                     ₹{act.materialCost?.toLocaleString()}
                                                 </span>
-                                                <span className="text-[9px] text-slate-400 block">Est: ₹{est.materialCost?.toLocaleString()}</span>
+                                                <span className="text-[9px] text-slate-400 block truncate">Est: ₹{est.materialCost?.toLocaleString()}</span>
                                             </div>
                                             <div>
-                                                <span className="text-[9px] text-slate-400 font-bold uppercase block">Labour Cost</span>
-                                                <span className="font-bold text-slate-800 dark:text-slate-200">
+                                                <span className="text-[9px] text-indigo-500 font-bold uppercase block">Labour Cost</span>
+                                                <span className="font-bold text-indigo-600 dark:text-indigo-400">
                                                     ₹{act.labourCost?.toLocaleString()}
                                                 </span>
-                                                <span className="text-[9px] text-slate-400 block">Est: ₹{est.labourCost?.toLocaleString()}</span>
+                                                <span className="text-[9px] text-slate-400 block truncate">Est: ₹{est.labourCost?.toLocaleString()}</span>
                                             </div>
                                             <div>
-                                                <span className="text-[9px] text-slate-400 font-bold uppercase block">Transport</span>
-                                                <span className="font-bold text-slate-800 dark:text-slate-200">
+                                                <span className="text-[9px] text-cyan-500 font-bold uppercase block">Transport</span>
+                                                <span className="font-bold text-cyan-600 dark:text-cyan-400">
                                                     ₹{act.transportCost?.toLocaleString()}
                                                 </span>
-                                                <span className="text-[9px] text-slate-400 block">Est: ₹{est.transportCost?.toLocaleString()}</span>
+                                                <span className="text-[9px] text-slate-400 block truncate">Est: ₹{est.transportCost?.toLocaleString()}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-[9px] text-slate-400 font-bold uppercase block">Machine Cost</span>
+                                                <span className="font-bold text-slate-800 dark:text-slate-200">
+                                                    ₹{(act.machineCost || 0)?.toLocaleString()}
+                                                </span>
+                                                <span className="text-[9px] text-slate-400 block">Equipment</span>
                                             </div>
                                             <div>
                                                 <span className="text-[9px] text-slate-400 font-bold uppercase block">Other Expenses</span>
                                                 <span className="font-bold text-slate-800 dark:text-slate-200">
                                                     ₹{act.otherCost?.toLocaleString()}
                                                 </span>
-                                                <span className="text-[9px] text-slate-400 block">Est: ₹{est.otherCost?.toLocaleString()}</span>
+                                                <span className="text-[9px] text-slate-400 block truncate">Est: ₹{est.otherCost?.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Financial Metrics Row: Actual Cost, Budget, Variance & Revenue */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs p-2.5 bg-slate-100/60 dark:bg-slate-800/60 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+                                            <div>
+                                                <span className="text-[9px] text-slate-400 font-bold uppercase block">Total Actual Cost</span>
+                                                <span className="font-black text-slate-900 dark:text-white">
+                                                    ₹{act.totalCost?.toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span className="text-[9px] text-slate-400 font-bold uppercase block">Approved Budget</span>
+                                                <span className="font-bold text-slate-700 dark:text-slate-300">
+                                                    ₹{fin.approvedProjectValue?.toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span className="text-[9px] text-slate-400 font-bold uppercase block">Budget Variance</span>
+                                                <span className={`font-black ${fin.isCostOverrun ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                                    {fin.isCostOverrun ? `+₹${fin.costVariance?.toLocaleString()} (Over)` : `₹${Math.abs(fin.costVariance || 0)?.toLocaleString()} (Under)`}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span className="text-[9px] text-slate-400 font-bold uppercase block">Project Revenue</span>
+                                                <span className="font-black text-blue-600 dark:text-blue-400">
+                                                    ₹{act.recognizedRevenue?.toLocaleString()}
+                                                </span>
                                             </div>
                                         </div>
 
@@ -1086,19 +1931,65 @@ export default function AdminBOMCosting() {
                                             </div>
                                         </div>
 
-                                        {/* Financial Actions */}
-                                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
-                                            <div className="text-xs">
-                                                <span className="text-slate-400">Outstanding: </span>
-                                                <span className="font-bold text-amber-600">₹{fin.outstandingAmount?.toLocaleString()}</span>
+                                        {/* Dedicated Action Buttons */}
+                                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <button
+                                                    onClick={() => {
+                                                        setConsumeForm({
+                                                            projectId: c.project.id,
+                                                            materialRequestId: '',
+                                                            inventoryItemId: inventoryItems[0]?._id || '',
+                                                            materialName: inventoryItems[0]?.name || '',
+                                                            consumedQty: 1,
+                                                            wastageQty: 0,
+                                                            date: new Date().toISOString().split('T')[0],
+                                                            notes: ''
+                                                        });
+                                                        setShowConsumeModal(true);
+                                                    }}
+                                                    className="px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 text-[11px] font-bold transition flex items-center gap-1 border border-emerald-200 dark:border-emerald-800"
+                                                    title="Add material consumption for this project"
+                                                >
+                                                    <Package className="w-3 h-3" />
+                                                    <span>+ Material</span>
+                                                </button>
+
+                                                <button
+                                                    onClick={() => handleOpenAddLabour(c.project.id)}
+                                                    className="px-2.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 text-[11px] font-bold transition flex items-center gap-1 border border-indigo-200 dark:border-indigo-800"
+                                                    title="Add labour cost for this project"
+                                                >
+                                                    <Users className="w-3 h-3" />
+                                                    <span>+ Labour</span>
+                                                </button>
+
+                                                <button
+                                                    onClick={() => handleOpenAddTransport(c.project.id)}
+                                                    className="px-2.5 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 text-[11px] font-bold transition flex items-center gap-1 border border-cyan-200 dark:border-cyan-800"
+                                                    title="Add transport cost for this project"
+                                                >
+                                                    <Truck className="w-3 h-3" />
+                                                    <span>+ Transport</span>
+                                                </button>
+
+                                                <button
+                                                    onClick={() => handleOpenProjectHistory(c.project.id)}
+                                                    className="px-2.5 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 hover:bg-purple-100 text-[11px] font-bold transition flex items-center gap-1 border border-purple-200 dark:border-purple-800"
+                                                    title="View itemized cost history & audit trail"
+                                                >
+                                                    <Eye className="w-3 h-3" />
+                                                    <span>View Cost Details</span>
+                                                </button>
                                             </div>
 
                                             <button
                                                 onClick={() => handleExportCostingPDF(c)}
-                                                className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-bold transition flex items-center gap-1.5"
+                                                className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-[11px] font-bold transition flex items-center gap-1"
+                                                title="Download PDF statement"
                                             >
-                                                <Download className="w-3.5 h-3.5" />
-                                                <span>Download Costing PDF</span>
+                                                <Download className="w-3 h-3" />
+                                                <span>PDF</span>
                                             </button>
                                         </div>
                                     </div>
@@ -1816,6 +2707,1006 @@ export default function AdminBOMCosting() {
                                     </div>
                                 </div>
                             </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* MODAL: ADD / EDIT LABOUR COST */}
+            <AnimatePresence>
+                {showLabourModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8"
+                        >
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                                <div>
+                                    <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                                        <Users className="w-5 h-5 text-indigo-600" />
+                                        <span>{editingLabour ? 'Edit Project Labour Cost' : 'Record Project Labour Cost'}</span>
+                                    </h2>
+                                    <p className="text-[11px] text-slate-400">
+                                        Independent labour cost entry for fabrication, welding, assembly, and site work.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setShowLabourModal(false)}
+                                    className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSaveLabour} className="space-y-4 text-xs">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Target Project *</label>
+                                        <select
+                                            required
+                                            value={labourForm.projectId}
+                                            onChange={(e) => setLabourForm({ ...labourForm, projectId: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold"
+                                        >
+                                            <option value="">Select Project</option>
+                                            {projects.map(p => (
+                                                <option key={p._id} value={p._id}>
+                                                    {p.title} ({p.projectCode || p.jobOrderNumber || 'No Code'})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Labour Category *</label>
+                                        <select
+                                            required
+                                            value={labourForm.labourCategory}
+                                            onChange={(e) => setLabourForm({ ...labourForm, labourCategory: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold"
+                                        >
+                                            {LABOUR_CATEGORIES.map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div className="sm:col-span-2">
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Worker / Team Name *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="e.g. Ramesh Kumar / Site Team B"
+                                            value={labourForm.workerName}
+                                            onChange={(e) => setLabourForm({ ...labourForm, workerName: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-medium"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Work Date *</label>
+                                        <input
+                                            type="date"
+                                            required
+                                            value={labourForm.workDate}
+                                            onChange={(e) => setLabourForm({ ...labourForm, workDate: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-medium"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Work Description *</label>
+                                    <textarea
+                                        rows="2"
+                                        required
+                                        placeholder="Specific work completed e.g. Truss assembly welding, base plate drilling, grinding welds..."
+                                        value={labourForm.workDescription}
+                                        onChange={(e) => setLabourForm({ ...labourForm, workDescription: e.target.value })}
+                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-medium"
+                                    />
+                                </div>
+
+                                <div className="p-3 bg-indigo-50/50 dark:bg-indigo-950/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 space-y-3">
+                                    <div className="font-bold text-[11px] uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
+                                        Rate & Working Hours Calculation
+                                    </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        <div>
+                                            <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Rate Basis *</label>
+                                            <select
+                                                value={labourForm.rateType}
+                                                onChange={(e) => updateLabourFormCalculation('rateType', e.target.value)}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold"
+                                            >
+                                                {RATE_TYPES.map(rt => (
+                                                    <option key={rt} value={rt}>{rt}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">No. of Workers *</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                required
+                                                value={labourForm.numberOfWorkers}
+                                                onChange={(e) => updateLabourFormCalculation('numberOfWorkers', e.target.value)}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">
+                                                {labourForm.rateType === 'Hourly' ? 'Hours' : labourForm.rateType === 'Daily' ? 'Days / Shifts' : labourForm.rateType === 'Piece Rate' ? 'Quantity / Pcs' : 'Units'} *
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="any"
+                                                min="0.1"
+                                                required
+                                                disabled={labourForm.rateType === 'Fixed Job'}
+                                                value={labourForm.quantity}
+                                                onChange={(e) => updateLabourFormCalculation('quantity', e.target.value)}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold disabled:bg-slate-100 dark:disabled:bg-slate-800"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">
+                                                Rate (₹ / {labourForm.rateType === 'Hourly' ? 'hr' : labourForm.rateType === 'Daily' ? 'day' : labourForm.rateType === 'Piece Rate' ? 'pc' : 'job'}) *
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                required
+                                                value={labourForm.rate}
+                                                onChange={(e) => updateLabourFormCalculation('rate', e.target.value)}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-indigo-100 dark:border-indigo-900/50">
+                                        <div className="text-[11px] text-slate-500">
+                                            Formula: <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{labourForm.rateType === 'Fixed Job' ? `Fixed ₹${labourForm.rate}` : `${labourForm.numberOfWorkers} worker(s) × ${labourForm.quantity} × ₹${labourForm.rate}`}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <label className="font-black text-slate-800 dark:text-slate-200 whitespace-nowrap">Total Labour Cost (₹):</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                required
+                                                value={labourForm.totalAmount}
+                                                onChange={(e) => setLabourForm({ ...labourForm, totalAmount: Number(e.target.value) || 0 })}
+                                                className="w-36 px-3 py-1.5 rounded-xl border-2 border-indigo-500 bg-white dark:bg-slate-900 font-black text-indigo-700 dark:text-indigo-400 text-sm text-right"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Notes / Remarks</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Optional notes or overtime info..."
+                                            value={labourForm.notes}
+                                            onChange={(e) => setLabourForm({ ...labourForm, notes: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-medium"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Attachment / Timesheet Link</label>
+                                        <input
+                                            type="text"
+                                            placeholder="https://... or doc URL"
+                                            value={labourForm.attachmentUrl}
+                                            onChange={(e) => setLabourForm({ ...labourForm, attachmentUrl: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-medium"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowLabourModal(false)}
+                                        className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={actionLoading}
+                                        className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-md shadow-indigo-600/20"
+                                    >
+                                        {actionLoading ? 'Saving...' : editingLabour ? 'Update Labour Record' : 'Save Labour Cost'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* MODAL: ADD / EDIT TRANSPORT COST */}
+            <AnimatePresence>
+                {showTransportModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8"
+                        >
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                                <div>
+                                    <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                                        <Truck className="w-5 h-5 text-amber-600" />
+                                        <span>{editingTransport ? 'Edit Project Transport Cost' : 'Record Project Transport Cost'}</span>
+                                    </h2>
+                                    <p className="text-[11px] text-slate-400">
+                                        Independent freight, fuel, vehicle trip, and logistics cost for this project.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setShowTransportModal(false)}
+                                    className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSaveTransport} className="space-y-4 text-xs">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Target Project *</label>
+                                        <select
+                                            required
+                                            value={transportForm.projectId}
+                                            onChange={(e) => setTransportForm({ ...transportForm, projectId: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold"
+                                        >
+                                            <option value="">Select Project</option>
+                                            {projects.map(p => (
+                                                <option key={p._id} value={p._id}>
+                                                    {p.title} ({p.projectCode || p.jobOrderNumber || 'No Code'})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Transport Date *</label>
+                                        <input
+                                            type="date"
+                                            required
+                                            value={transportForm.transportDate}
+                                            onChange={(e) => setTransportForm({ ...transportForm, transportDate: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-medium"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Transport / Vehicle Type *</label>
+                                        <select
+                                            required
+                                            value={transportForm.transportType}
+                                            onChange={(e) => setTransportForm({ ...transportForm, transportType: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold"
+                                        >
+                                            {TRANSPORT_TYPES.map(tt => (
+                                                <option key={tt} value={tt}>{tt}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Vehicle Number</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. KL-09-AH-3829"
+                                            value={transportForm.vehicleNumber}
+                                            onChange={(e) => setTransportForm({ ...transportForm, vehicleNumber: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold font-mono"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Driver / Transporter</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Suresh / City Logistics"
+                                            value={transportForm.driverName}
+                                            onChange={(e) => setTransportForm({ ...transportForm, driverName: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-medium"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Starting Location</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Fabrication Yard, Palakkad"
+                                            value={transportForm.startingLocation}
+                                            onChange={(e) => setTransportForm({ ...transportForm, startingLocation: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-medium"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Destination Site</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Client Site, Kochi"
+                                            value={transportForm.destination}
+                                            onChange={(e) => setTransportForm({ ...transportForm, destination: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-medium"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">No. of Trips</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={transportForm.numberOfTrips}
+                                            onChange={(e) => setTransportForm({ ...transportForm, numberOfTrips: Number(e.target.value) || 1 })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Transport / Goods Description</label>
+                                    <textarea
+                                        rows="2"
+                                        placeholder="e.g. Shifted 4 prefabricated roof trusses and purlins to site..."
+                                        value={transportForm.transportDescription}
+                                        onChange={(e) => setTransportForm({ ...transportForm, transportDescription: e.target.value })}
+                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-medium"
+                                    />
+                                </div>
+
+                                <div className="p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl border border-amber-100 dark:border-amber-900/50 space-y-3">
+                                    <div className="font-bold text-[11px] uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                                        Expense Breakdown (₹)
+                                    </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                        <div>
+                                            <label className="font-bold block mb-1 text-slate-600 dark:text-slate-400 text-[10px]">Freight / Hire</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={transportForm.freightCharge}
+                                                onChange={(e) => updateTransportFormCalculation('freightCharge', e.target.value)}
+                                                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold text-xs"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="font-bold block mb-1 text-slate-600 dark:text-slate-400 text-[10px]">Fuel / Diesel</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={transportForm.fuelCharge}
+                                                onChange={(e) => updateTransportFormCalculation('fuelCharge', e.target.value)}
+                                                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold text-xs"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="font-bold block mb-1 text-slate-600 dark:text-slate-400 text-[10px]">Loading / Crane</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={transportForm.loadingUnloadingCharge}
+                                                onChange={(e) => updateTransportFormCalculation('loadingUnloadingCharge', e.target.value)}
+                                                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold text-xs"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="font-bold block mb-1 text-slate-600 dark:text-slate-400 text-[10px]">Toll / Fastag</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={transportForm.tollCharge}
+                                                onChange={(e) => updateTransportFormCalculation('tollCharge', e.target.value)}
+                                                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold text-xs"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="font-bold block mb-1 text-slate-600 dark:text-slate-400 text-[10px]">Other Charges</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={transportForm.otherCharge}
+                                                onChange={(e) => updateTransportFormCalculation('otherCharge', e.target.value)}
+                                                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold text-xs"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-amber-100 dark:border-amber-900/50">
+                                        <div className="text-[11px] text-slate-500">
+                                            Sum of breakdown: <span className="font-mono font-bold text-amber-600 dark:text-amber-400">₹{((Number(transportForm.freightCharge) || 0) + (Number(transportForm.fuelCharge) || 0) + (Number(transportForm.loadingUnloadingCharge) || 0) + (Number(transportForm.tollCharge) || 0) + (Number(transportForm.otherCharge) || 0)).toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <label className="font-black text-slate-800 dark:text-slate-200 whitespace-nowrap">Total Transport Cost (₹):</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                required
+                                                value={transportForm.totalTransportCost}
+                                                onChange={(e) => setTransportForm({ ...transportForm, totalTransportCost: Number(e.target.value) || 0 })}
+                                                className="w-36 px-3 py-1.5 rounded-xl border-2 border-amber-500 bg-white dark:bg-slate-900 font-black text-amber-700 dark:text-amber-400 text-sm text-right"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Notes / Remarks</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Weighbridge slip attached, driver toll receipt..."
+                                            value={transportForm.notes}
+                                            onChange={(e) => setTransportForm({ ...transportForm, notes: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-medium"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">Attachment / LR / Bilty Link</label>
+                                        <input
+                                            type="text"
+                                            placeholder="https://... or receipt URL"
+                                            value={transportForm.attachmentUrl}
+                                            onChange={(e) => setTransportForm({ ...transportForm, attachmentUrl: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-medium"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowTransportModal(false)}
+                                        className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={actionLoading}
+                                        className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold transition shadow-md shadow-amber-600/20"
+                                    >
+                                        {actionLoading ? 'Saving...' : editingTransport ? 'Update Transport Record' : 'Save Transport Cost'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* MODAL: PROJECT COST HISTORY & AUDIT TRAIL */}
+            <AnimatePresence>
+                {showProjectHistoryModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 max-w-5xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-6"
+                        >
+                            {/* Modal Header */}
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700 gap-3">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="text-base font-black text-slate-900 dark:text-white">
+                                            Project Cost Details & Complete Audit Trail
+                                        </h2>
+                                        {projectHistoryData?.project && (
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                                projectHistoryData.project.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                                                projectHistoryData.project.status === 'In Progress' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
+                                                'bg-slate-100 text-slate-600'
+                                            }`}>
+                                                {projectHistoryData.project.status}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        {projectHistoryData?.project?.title} • Code: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{projectHistoryData?.project?.projectCode || projectHistoryData?.project?.jobOrderNumber || 'N/A'}</span> • Client: <span className="font-semibold text-slate-700 dark:text-slate-300">{projectHistoryData?.project?.customerName || 'N/A'}</span>
+                                    </p>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    {projectHistoryData?.project?.id && (
+                                        <>
+                                            <button
+                                                onClick={() => {
+                                                    const pid = projectHistoryData.project.id;
+                                                    setShowProjectHistoryModal(false);
+                                                    setConsumeForm({
+                                                        projectId: pid,
+                                                        materialRequestId: '',
+                                                        inventoryItemId: inventoryItems[0]?._id || '',
+                                                        materialName: inventoryItems[0]?.name || '',
+                                                        consumedQty: 1,
+                                                        wastageQty: 0,
+                                                        date: new Date().toISOString().split('T')[0],
+                                                        notes: ''
+                                                    });
+                                                    setShowConsumeModal(true);
+                                                }}
+                                                className="px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 text-[11px] font-bold transition flex items-center gap-1 border border-emerald-200 dark:border-emerald-800"
+                                            >
+                                                <Package className="w-3.5 h-3.5" />
+                                                <span>+ Material</span>
+                                            </button>
+
+                                            <button
+                                                onClick={() => {
+                                                    const pid = projectHistoryData.project.id;
+                                                    setShowProjectHistoryModal(false);
+                                                    handleOpenAddLabour(pid);
+                                                }}
+                                                className="px-2.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 text-[11px] font-bold transition flex items-center gap-1 border border-indigo-200 dark:border-indigo-800"
+                                            >
+                                                <Users className="w-3.5 h-3.5" />
+                                                <span>+ Labour</span>
+                                            </button>
+
+                                            <button
+                                                onClick={() => {
+                                                    const pid = projectHistoryData.project.id;
+                                                    setShowProjectHistoryModal(false);
+                                                    handleOpenAddTransport(pid);
+                                                }}
+                                                className="px-2.5 py-1.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 text-[11px] font-bold transition flex items-center gap-1 border border-cyan-200 dark:border-cyan-800"
+                                            >
+                                                <Truck className="w-3.5 h-3.5" />
+                                                <span>+ Transport</span>
+                                            </button>
+                                        </>
+                                    )}
+
+                                    <button
+                                        onClick={() => setShowProjectHistoryModal(false)}
+                                        className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 ml-1"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {historyLoading ? (
+                                <div className="p-12 text-center text-slate-400 font-bold">
+                                    Loading complete project cost history...
+                                </div>
+                            ) : !projectHistoryData ? (
+                                <div className="p-12 text-center text-slate-400 font-bold">
+                                    No history data available for this project.
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {/* Cost Breakdown Summary Cards */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 bg-slate-50 dark:bg-slate-900/70 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                        <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700">
+                                            <span className="text-[10px] text-slate-400 font-bold uppercase block">Material Cost</span>
+                                            <span className="text-xs font-black text-slate-800 dark:text-slate-100">
+                                                ₹{projectHistoryData.summary?.totalMaterialCost?.toLocaleString() || 0}
+                                            </span>
+                                        </div>
+
+                                        <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700">
+                                            <span className="text-[10px] text-indigo-500 font-bold uppercase block">Labour Cost</span>
+                                            <span className="text-xs font-black text-indigo-600 dark:text-indigo-400">
+                                                ₹{projectHistoryData.summary?.totalLabourCost?.toLocaleString() || 0}
+                                            </span>
+                                        </div>
+
+                                        <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700">
+                                            <span className="text-[10px] text-amber-500 font-bold uppercase block">Transport Cost</span>
+                                            <span className="text-xs font-black text-amber-600 dark:text-amber-400">
+                                                ₹{projectHistoryData.summary?.totalTransportCost?.toLocaleString() || 0}
+                                            </span>
+                                        </div>
+
+                                        <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700">
+                                            <span className="text-[10px] text-purple-500 font-bold uppercase block">Machine / Other</span>
+                                            <span className="text-xs font-black text-purple-600 dark:text-purple-400">
+                                                ₹{((projectHistoryData.summary?.totalMachineCost || 0) + (projectHistoryData.summary?.totalOtherCost || 0)).toLocaleString()}
+                                            </span>
+                                        </div>
+
+                                        <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-rose-200 dark:border-rose-900/50">
+                                            <span className="text-[10px] text-rose-500 font-bold uppercase block">Total Cost</span>
+                                            <span className="text-xs font-black text-rose-600 dark:text-rose-400">
+                                                ₹{projectHistoryData.summary?.totalActualCost?.toLocaleString() || 0}
+                                            </span>
+                                        </div>
+
+                                        <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-emerald-200 dark:border-emerald-900/50">
+                                            <span className="text-[10px] text-emerald-500 font-bold uppercase block">Profit / Margin</span>
+                                            <span className={`text-xs font-black ${
+                                                (projectHistoryData.summary?.netProfit || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                                            }`}>
+                                                ₹{projectHistoryData.summary?.netProfit?.toLocaleString() || 0} ({projectHistoryData.summary?.profitMarginPercentage || 0}%)
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Sub-tabs Navigation */}
+                                    <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-700 pb-1 overflow-x-auto text-xs">
+                                        {[
+                                            { id: 'all', label: `Complete Cost History (${projectHistoryData.counts?.completeHistory || 0})` },
+                                            { id: 'material', label: `Material Consumption (${projectHistoryData.counts?.materialMovements || 0})` },
+                                            { id: 'labour', label: `Labour Costs (${projectHistoryData.counts?.labourRecords || 0})` },
+                                            { id: 'transport', label: `Transport Costs (${projectHistoryData.counts?.transportRecords || 0})` },
+                                            { id: 'other', label: `Other Expenses (${projectHistoryData.counts?.otherExpenses || 0})` }
+                                        ].map(tab => (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => setHistorySubTab(tab.id)}
+                                                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition text-xs ${
+                                                    historySubTab === tab.id
+                                                        ? 'bg-blue-600 text-white shadow-sm'
+                                                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                                }`}
+                                            >
+                                                {tab.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Sub-tab 1: ALL / COMPLETE COST HISTORY */}
+                                    {historySubTab === 'all' && (
+                                        <div className="overflow-x-auto max-h-[50vh] overflow-y-auto">
+                                            {(!projectHistoryData.completeHistory || projectHistoryData.completeHistory.length === 0) ? (
+                                                <div className="p-8 text-center text-slate-400 text-xs">
+                                                    No cost transactions recorded for this project yet.
+                                                </div>
+                                            ) : (
+                                                <table className="w-full text-left text-xs border-collapse">
+                                                    <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-400 font-black uppercase text-[10px]">
+                                                        <tr>
+                                                            <th className="px-3 py-2">Date</th>
+                                                            <th className="px-3 py-2">Type</th>
+                                                            <th className="px-3 py-2">Description / Particulars</th>
+                                                            <th className="px-3 py-2 text-center">Qty / Units</th>
+                                                            <th className="px-3 py-2 text-right">Unit Rate</th>
+                                                            <th className="px-3 py-2 text-right">Total Amount</th>
+                                                            <th className="px-3 py-2">Recorded By</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-700 dark:text-slate-300">
+                                                        {projectHistoryData.completeHistory.map((item, idx) => (
+                                                            <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition">
+                                                                <td className="px-3 py-2 whitespace-nowrap text-slate-400">
+                                                                    {new Date(item.date).toLocaleDateString()}
+                                                                </td>
+                                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                                                                        item.costType === 'Material' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                                                                        item.costType === 'Labour' ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' :
+                                                                        item.costType === 'Transport' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
+                                                                        'bg-purple-50 text-purple-600 border border-purple-200'
+                                                                    }`}>
+                                                                        {item.costType}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-3 py-2">
+                                                                    <div className="font-bold text-slate-900 dark:text-white">{item.title}</div>
+                                                                    {item.subtitle && <div className="text-[10px] text-slate-400 font-normal">{item.subtitle}</div>}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-center whitespace-nowrap">
+                                                                    {item.quantity ? `${item.quantity} ${item.unit || ''}` : '-'}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right whitespace-nowrap text-slate-500">
+                                                                    {item.unitRate ? `₹${item.unitRate}` : '-'}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right font-black text-slate-900 dark:text-white whitespace-nowrap">
+                                                                    ₹{item.totalCost?.toLocaleString() || 0}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-[11px]">
+                                                                    {item.handler || 'Staff'}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Sub-tab 2: MATERIAL CONSUMPTION */}
+                                    {historySubTab === 'material' && (
+                                        <div className="overflow-x-auto max-h-[50vh] overflow-y-auto">
+                                            {(!projectHistoryData.materialLogs || projectHistoryData.materialLogs.length === 0) ? (
+                                                <div className="p-8 text-center text-slate-400 text-xs">
+                                                    No material consumption logs recorded for this project.
+                                                </div>
+                                            ) : (
+                                                <table className="w-full text-left text-xs border-collapse">
+                                                    <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-400 font-black uppercase text-[10px]">
+                                                        <tr>
+                                                            <th className="px-3 py-2">Date</th>
+                                                            <th className="px-3 py-2">Movement</th>
+                                                            <th className="px-3 py-2">Material</th>
+                                                            <th className="px-3 py-2 text-center">Consumed Qty</th>
+                                                            <th className="px-3 py-2 text-center">Wastage / Scrap</th>
+                                                            <th className="px-3 py-2 text-right">Unit Cost</th>
+                                                            <th className="px-3 py-2 text-right">Total Cost</th>
+                                                            <th className="px-3 py-2">Handler</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-700 dark:text-slate-300">
+                                                        {projectHistoryData.materialLogs.map((log, idx) => (
+                                                            <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition">
+                                                                <td className="px-3 py-2 whitespace-nowrap text-slate-400">
+                                                                    {new Date(log.date).toLocaleDateString()}
+                                                                </td>
+                                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                                                                        log.movementType === 'ISSUE' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
+                                                                        log.movementType === 'CONSUMPTION' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                                                                        log.movementType === 'RETURN' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
+                                                                        'bg-rose-50 text-rose-600 border border-rose-200'
+                                                                    }`}>
+                                                                        {log.movementType}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-3 py-2 font-bold text-slate-900 dark:text-white">
+                                                                    {log.materialName} ({log.unit})
+                                                                </td>
+                                                                <td className="px-3 py-2 text-center font-bold whitespace-nowrap">
+                                                                    {log.quantity} {log.unit}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-center text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                                                                    {log.wastageQuantity ? `${log.wastageQuantity} ${log.unit}` : '-'}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right whitespace-nowrap text-slate-500">
+                                                                    ₹{log.unitCost}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right font-black text-slate-900 dark:text-white whitespace-nowrap">
+                                                                    ₹{log.totalCost?.toLocaleString() || 0}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-[11px]">
+                                                                    {log.issuedByName || log.receivedBy || 'Staff'}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Sub-tab 3: LABOUR COSTS */}
+                                    {historySubTab === 'labour' && (
+                                        <div className="overflow-x-auto max-h-[50vh] overflow-y-auto">
+                                            {(!projectHistoryData.labourRecords || projectHistoryData.labourRecords.length === 0) ? (
+                                                <div className="p-8 text-center text-slate-400 text-xs">
+                                                    No labour costs recorded for this project yet. Click "+ Labour" above to add.
+                                                </div>
+                                            ) : (
+                                                <table className="w-full text-left text-xs border-collapse">
+                                                    <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-400 font-black uppercase text-[10px]">
+                                                        <tr>
+                                                            <th className="px-3 py-2">Work Date</th>
+                                                            <th className="px-3 py-2">Category</th>
+                                                            <th className="px-3 py-2">Worker / Team</th>
+                                                            <th className="px-3 py-2">Work Description</th>
+                                                            <th className="px-3 py-2 text-center">Basis & Qty</th>
+                                                            <th className="px-3 py-2 text-right">Rate</th>
+                                                            <th className="px-3 py-2 text-right">Total Amount</th>
+                                                            <th className="px-3 py-2 text-right">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-700 dark:text-slate-300">
+                                                        {projectHistoryData.labourRecords.map((lab, idx) => (
+                                                            <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition">
+                                                                <td className="px-3 py-2 whitespace-nowrap text-slate-400">
+                                                                    {new Date(lab.workDate).toLocaleDateString()}
+                                                                </td>
+                                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                                                                        {lab.labourCategory}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-3 py-2 font-bold whitespace-nowrap">
+                                                                    {lab.workerName} {lab.numberOfWorkers > 1 && `(${lab.numberOfWorkers} workers)`}
+                                                                </td>
+                                                                <td className="px-3 py-2 max-w-xs truncate text-slate-500" title={lab.workDescription}>
+                                                                    {lab.workDescription}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-center whitespace-nowrap text-[11px]">
+                                                                    {lab.rateType === 'Fixed Job' ? 'Fixed Job' : `${lab.quantity} ${lab.rateType === 'Hourly' ? 'hrs' : lab.rateType === 'Daily' ? 'days' : 'pcs'}`}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right whitespace-nowrap text-slate-500">
+                                                                    ₹{lab.rate}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right font-black text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                                                                    ₹{lab.totalAmount?.toLocaleString() || 0}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right whitespace-nowrap">
+                                                                    <div className="flex items-center justify-end gap-1">
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setShowProjectHistoryModal(false);
+                                                                                handleOpenEditLabour(lab);
+                                                                            }}
+                                                                            className="p-1 rounded text-slate-400 hover:text-blue-600"
+                                                                            title="Edit Labour Record"
+                                                                        >
+                                                                            <Edit className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteLabour(lab._id)}
+                                                                            className="p-1 rounded text-slate-400 hover:text-rose-600"
+                                                                            title="Delete Labour Record"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Sub-tab 4: TRANSPORT COSTS */}
+                                    {historySubTab === 'transport' && (
+                                        <div className="overflow-x-auto max-h-[50vh] overflow-y-auto">
+                                            {(!projectHistoryData.transportRecords || projectHistoryData.transportRecords.length === 0) ? (
+                                                <div className="p-8 text-center text-slate-400 text-xs">
+                                                    No transport costs recorded for this project yet. Click "+ Transport" above to add.
+                                                </div>
+                                            ) : (
+                                                <table className="w-full text-left text-xs border-collapse">
+                                                    <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-400 font-black uppercase text-[10px]">
+                                                        <tr>
+                                                            <th className="px-3 py-2">Date</th>
+                                                            <th className="px-3 py-2">Transport Type</th>
+                                                            <th className="px-3 py-2">Vehicle / Driver</th>
+                                                            <th className="px-3 py-2">Route</th>
+                                                            <th className="px-3 py-2 text-center">Trips</th>
+                                                            <th className="px-3 py-2">Breakdown</th>
+                                                            <th className="px-3 py-2 text-right">Total Cost</th>
+                                                            <th className="px-3 py-2 text-right">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-700 dark:text-slate-300">
+                                                        {projectHistoryData.transportRecords.map((tr, idx) => (
+                                                            <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition">
+                                                                <td className="px-3 py-2 whitespace-nowrap text-slate-400">
+                                                                    {new Date(tr.transportDate).toLocaleDateString()}
+                                                                </td>
+                                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                                                                        {tr.transportType}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                                    <div className="font-bold text-slate-900 dark:text-white font-mono">{tr.vehicleNumber || '-'}</div>
+                                                                    {tr.driverName && <div className="text-[10px] text-slate-400 font-sans">{tr.driverName}</div>}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-[11px] whitespace-nowrap">
+                                                                    <div className="flex items-center gap-1">
+                                                                        <span>{tr.startingLocation || 'Yard'}</span>
+                                                                        <ArrowRight className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                                                        <span className="font-bold text-slate-800 dark:text-slate-200">{tr.destination || 'Site'}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-3 py-2 text-center font-bold whitespace-nowrap">
+                                                                    {tr.numberOfTrips || 1}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-[10px] text-slate-500 whitespace-nowrap">
+                                                                    Hire: ₹{tr.freightCharge || 0} | Fuel: ₹{tr.fuelCharge || 0} | Crane: ₹{tr.loadingUnloadingCharge || 0}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right font-black text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                                                                    ₹{tr.totalTransportCost?.toLocaleString() || 0}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right whitespace-nowrap">
+                                                                    <div className="flex items-center justify-end gap-1">
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setShowProjectHistoryModal(false);
+                                                                                handleOpenEditTransport(tr);
+                                                                            }}
+                                                                            className="p-1 rounded text-slate-400 hover:text-blue-600"
+                                                                            title="Edit Transport Record"
+                                                                        >
+                                                                            <Edit className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteTransport(tr._id)}
+                                                                            className="p-1 rounded text-slate-400 hover:text-rose-600"
+                                                                            title="Delete Transport Record"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Sub-tab 5: OTHER DIRECT EXPENSES */}
+                                    {historySubTab === 'other' && (
+                                        <div className="overflow-x-auto max-h-[50vh] overflow-y-auto">
+                                            {(!projectHistoryData.otherExpenses || projectHistoryData.otherExpenses.length === 0) ? (
+                                                <div className="p-8 text-center text-slate-400 text-xs">
+                                                    No other direct expenses recorded for this project.
+                                                </div>
+                                            ) : (
+                                                <table className="w-full text-left text-xs border-collapse">
+                                                    <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-400 font-black uppercase text-[10px]">
+                                                        <tr>
+                                                            <th className="px-3 py-2">Date</th>
+                                                            <th className="px-3 py-2">Category</th>
+                                                            <th className="px-3 py-2">Title / Description</th>
+                                                            <th className="px-3 py-2 text-right">Amount</th>
+                                                            <th className="px-3 py-2">Payment Method / Vendor</th>
+                                                            <th className="px-3 py-2">Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-700 dark:text-slate-300">
+                                                        {projectHistoryData.otherExpenses.map((exp, idx) => (
+                                                            <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition">
+                                                                <td className="px-3 py-2 whitespace-nowrap text-slate-400">
+                                                                    {new Date(exp.date).toLocaleDateString()}
+                                                                </td>
+                                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+                                                                        {exp.category}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-3 py-2 font-bold text-slate-900 dark:text-white">
+                                                                    {exp.title}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right font-black text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                                                                    ₹{exp.amount?.toLocaleString() || 0}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-slate-500 whitespace-nowrap text-[11px]">
+                                                                    {exp.vendor || exp.paymentMethod || '-'}
+                                                                </td>
+                                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                                                                        {exp.status || 'Recorded'}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </motion.div>
                     </div>
                 )}

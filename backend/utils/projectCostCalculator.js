@@ -1,5 +1,7 @@
 const BillOfMaterials = require('../models/BillOfMaterials');
 const MaterialConsumption = require('../models/MaterialConsumption');
+const ProjectLabourCost = require('../models/ProjectLabourCost');
+const ProjectTransportCost = require('../models/ProjectTransportCost');
 const Expense = require('../models/Expense');
 const Payment = require('../models/Payment');
 const Project = require('../models/Project');
@@ -46,12 +48,27 @@ async function calculateProjectCosting(projectId) {
 
     const netBiometricMaterialCost = Math.max(0, actualMaterialConsumedCost - actualMaterialReturnedCost);
 
-    // 3. Fetch linked Direct Expenses from Finance system (Avoid duplicate counting)
+    // 3. Fetch dedicated Project Labour Costs (BOM & Project Costing Hub)
+    const dedicatedLabourRecords = await ProjectLabourCost.find({ 
+        projectId: project._id, 
+        status: { $ne: 'Cancelled' } 
+    });
+    const dedicatedLabourCost = dedicatedLabourRecords.reduce((sum, item) => sum + (Number(item.totalAmount) || 0), 0);
+
+    // 4. Fetch dedicated Project Transport Costs (BOM & Project Costing Hub)
+    const dedicatedTransportRecords = await ProjectTransportCost.find({ 
+        projectId: project._id, 
+        status: { $ne: 'Cancelled' } 
+    });
+    const dedicatedTransportCost = dedicatedTransportRecords.reduce((sum, item) => sum + (Number(item.totalTransportCost) || 0), 0);
+
+    // 5. Fetch linked Direct Expenses from Finance system
     const directExpenses = await Expense.find({ projectId: project._id, type: 'expense' });
 
     let directMaterialExpense = 0;
     let directLabourExpense = 0;
     let directTransportExpense = 0;
+    let directMachineExpense = 0;
     let directOtherExpense = 0;
 
     directExpenses.forEach(exp => {
@@ -62,21 +79,25 @@ async function calculateProjectCosting(projectId) {
             directLabourExpense += amt;
         } else if (exp.costType === 'transportation' || exp.category === 'fuel') {
             directTransportExpense += amt;
+        } else if (exp.costType === 'machinery' || exp.category === 'machinery') {
+            directMachineExpense += amt;
         } else {
             directOtherExpense += amt;
         }
     });
 
-    // Total Component Costs
+    // Total Component Costs (Independent BOM & Project Costing records + legacy finance entries)
     const totalMaterialCost = parseFloat((netBiometricMaterialCost + directMaterialExpense).toFixed(2));
-    const totalLabourCost = parseFloat(directLabourExpense.toFixed(2));
-    const totalTransportationCost = parseFloat(directTransportExpense.toFixed(2));
+    const totalLabourCost = parseFloat((dedicatedLabourCost + directLabourExpense).toFixed(2));
+    const totalTransportationCost = parseFloat((dedicatedTransportCost + directTransportExpense).toFixed(2));
+    const totalMachineCost = parseFloat(directMachineExpense.toFixed(2));
     const totalOtherCost = parseFloat(directOtherExpense.toFixed(2));
 
     const actualTotalCost = parseFloat((
         totalMaterialCost + 
         totalLabourCost + 
         totalTransportationCost + 
+        totalMachineCost + 
         totalOtherCost
     ).toFixed(2));
 
@@ -192,11 +213,16 @@ async function calculateProjectCosting(projectId) {
             materialCost: totalMaterialCost,
             labourCost: totalLabourCost,
             transportCost: totalTransportationCost,
+            machineCost: totalMachineCost,
             otherCost: totalOtherCost,
             totalCost: actualTotalCost,
             recognizedRevenue,
             actualProfit,
-            actualProfitMargin
+            actualProfitMargin,
+            dedicatedLabourCost: parseFloat(dedicatedLabourCost.toFixed(2)),
+            dedicatedTransportCost: parseFloat(dedicatedTransportCost.toFixed(2)),
+            labourRecordCount: dedicatedLabourRecords.length,
+            transportRecordCount: dedicatedTransportRecords.length
         },
         financials: {
             quotationValue,

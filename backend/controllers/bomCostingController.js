@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 const BillOfMaterials = require('../models/BillOfMaterials');
 const MaterialRequest = require('../models/MaterialRequest');
 const MaterialConsumption = require('../models/MaterialConsumption');
+const ProjectLabourCost = require('../models/ProjectLabourCost');
+const ProjectTransportCost = require('../models/ProjectTransportCost');
+const Expense = require('../models/Expense');
 const InventoryItem = require('../models/InventoryItem');
 const Project = require('../models/Project');
 const User = require('../models/User');
@@ -968,6 +971,654 @@ exports.getWastageReports = async (req, res) => {
         });
     } catch (err) {
         console.error('Error generating wastage reports:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * INDEPENDENT PROJECT LABOUR COST MANAGEMENT
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+// GET /api/bom/labour-cost
+exports.getAllLabourCosts = async (req, res) => {
+    try {
+        const { projectId, category, search, startDate, endDate, status } = req.query;
+        let query = {};
+
+        if (projectId) query.projectId = projectId;
+        if (category && category !== 'All') query.labourCategory = category;
+        if (status && status !== 'All') query.status = status;
+        else query.status = { $ne: 'Cancelled' };
+
+        if (startDate || endDate) {
+            query.workDate = {};
+            if (startDate) query.workDate.$gte = new Date(startDate);
+            if (endDate) query.workDate.$lte = new Date(endDate);
+        }
+
+        if (search) {
+            query.$or = [
+                { workDescription: { $regex: search, $options: 'i' } },
+                { workerName: { $regex: search, $options: 'i' } },
+                { projectTitle: { $regex: search, $options: 'i' } },
+                { labourCategory: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const labourCosts = await ProjectLabourCost.find(query)
+            .populate('projectId', 'title status budget')
+            .sort({ workDate: -1, createdAt: -1 });
+
+        const totalAmount = labourCosts.reduce((acc, curr) => acc + (Number(curr.totalAmount) || 0), 0);
+
+        res.json({
+            success: true,
+            count: labourCosts.length,
+            totalAmount: parseFloat(totalAmount.toFixed(2)),
+            labourCosts
+        });
+    } catch (err) {
+        console.error('Error fetching labour costs:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// GET /api/bom/labour-cost/:id
+exports.getLabourCostById = async (req, res) => {
+    try {
+        const labourCost = await ProjectLabourCost.findById(req.params.id)
+            .populate('projectId')
+            .populate('createdBy', 'name email role');
+
+        if (!labourCost) {
+            return res.status(404).json({ success: false, message: 'Labour cost record not found' });
+        }
+
+        res.json({ success: true, labourCost });
+    } catch (err) {
+        console.error('Error fetching labour cost details:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// POST /api/bom/labour-cost
+exports.createLabourCost = async (req, res) => {
+    try {
+        const {
+            projectId,
+            labourCategory,
+            workDescription,
+            workerName,
+            numberOfWorkers,
+            workDate,
+            rateType,
+            quantity,
+            rate,
+            totalAmount,
+            notes,
+            attachmentUrl,
+            status
+        } = req.body;
+
+        if (!projectId) {
+            return res.status(400).json({ success: false, message: 'Project selection is required' });
+        }
+        if (!labourCategory) {
+            return res.status(400).json({ success: false, message: 'Labour category is required' });
+        }
+        if (!workDescription) {
+            return res.status(400).json({ success: false, message: 'Work description is required' });
+        }
+
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ success: false, message: 'Project not found' });
+        }
+
+        const numWorkers = Number(numberOfWorkers) > 0 ? Number(numberOfWorkers) : 1;
+        const qty = Number(quantity) || 0;
+        const r = Number(rate) || 0;
+        let computedTotal = Number(totalAmount);
+
+        if (isNaN(computedTotal) || computedTotal <= 0) {
+            if (rateType === 'Fixed Job') {
+                computedTotal = r;
+            } else {
+                computedTotal = qty * r * numWorkers;
+            }
+        }
+
+        const newLabour = new ProjectLabourCost({
+            projectId: project._id,
+            projectTitle: project.title,
+            jobOrderNumber: project._id.toString().substring(18, 24).toUpperCase(),
+            labourCategory,
+            workDescription,
+            workerName: workerName || '',
+            numberOfWorkers: numWorkers,
+            workDate: workDate ? new Date(workDate) : new Date(),
+            rateType: rateType || 'Daily',
+            quantity: qty,
+            rate: r,
+            totalAmount: parseFloat(computedTotal.toFixed(2)),
+            notes: notes || '',
+            attachmentUrl: attachmentUrl || '',
+            status: status || 'Approved',
+            createdBy: req.user?._id,
+            createdByName: req.user?.name || 'Staff',
+            auditTrail: [{
+                action: 'CREATED',
+                performedBy: req.user?.name || 'Staff',
+                timestamp: new Date(),
+                details: `Recorded ₹${computedTotal.toFixed(2)} labour cost (${labourCategory}) for ${numWorkers} worker(s).`
+            }]
+        });
+
+        await newLabour.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Labour cost recorded successfully',
+            labourCost: newLabour
+        });
+    } catch (err) {
+        console.error('Error creating labour cost:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// PUT /api/bom/labour-cost/:id
+exports.updateLabourCost = async (req, res) => {
+    try {
+        const labourCost = await ProjectLabourCost.findById(req.params.id);
+        if (!labourCost) {
+            return res.status(404).json({ success: false, message: 'Labour cost record not found' });
+        }
+
+        const {
+            labourCategory,
+            workDescription,
+            workerName,
+            numberOfWorkers,
+            workDate,
+            rateType,
+            quantity,
+            rate,
+            totalAmount,
+            notes,
+            attachmentUrl,
+            status
+        } = req.body;
+
+        if (labourCategory) labourCost.labourCategory = labourCategory;
+        if (workDescription) labourCost.workDescription = workDescription;
+        if (workerName !== undefined) labourCost.workerName = workerName;
+        if (numberOfWorkers) labourCost.numberOfWorkers = Number(numberOfWorkers);
+        if (workDate) labourCost.workDate = new Date(workDate);
+        if (rateType) labourCost.rateType = rateType;
+        if (quantity !== undefined) labourCost.quantity = Number(quantity);
+        if (rate !== undefined) labourCost.rate = Number(rate);
+
+        if (totalAmount !== undefined && !isNaN(Number(totalAmount))) {
+            labourCost.totalAmount = Number(totalAmount);
+        } else {
+            const numW = labourCost.numberOfWorkers || 1;
+            const q = labourCost.quantity || 0;
+            const r = labourCost.rate || 0;
+            labourCost.totalAmount = labourCost.rateType === 'Fixed Job' ? r : (q * r * numW);
+        }
+
+        if (notes !== undefined) labourCost.notes = notes;
+        if (attachmentUrl !== undefined) labourCost.attachmentUrl = attachmentUrl;
+        if (status) labourCost.status = status;
+
+        labourCost.auditTrail.push({
+            action: 'UPDATED',
+            performedBy: req.user?.name || 'Staff',
+            timestamp: new Date(),
+            details: `Updated labour record. New Total: ₹${labourCost.totalAmount}`
+        });
+
+        await labourCost.save();
+
+        res.json({
+            success: true,
+            message: 'Labour cost record updated successfully',
+            labourCost
+        });
+    } catch (err) {
+        console.error('Error updating labour cost:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// DELETE /api/bom/labour-cost/:id
+exports.deleteLabourCost = async (req, res) => {
+    try {
+        const labourCost = await ProjectLabourCost.findById(req.params.id);
+        if (!labourCost) {
+            return res.status(404).json({ success: false, message: 'Labour cost record not found' });
+        }
+
+        await ProjectLabourCost.findByIdAndDelete(req.params.id);
+
+        res.json({
+            success: true,
+            message: 'Labour cost record deleted successfully'
+        });
+    } catch (err) {
+        console.error('Error deleting labour cost:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * INDEPENDENT PROJECT TRANSPORT COST MANAGEMENT
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+// GET /api/bom/transport-cost
+exports.getAllTransportCosts = async (req, res) => {
+    try {
+        const { projectId, transportType, search, startDate, endDate, status } = req.query;
+        let query = {};
+
+        if (projectId) query.projectId = projectId;
+        if (transportType && transportType !== 'All') query.transportType = transportType;
+        if (status && status !== 'All') query.status = status;
+        else query.status = { $ne: 'Cancelled' };
+
+        if (startDate || endDate) {
+            query.transportDate = {};
+            if (startDate) query.transportDate.$gte = new Date(startDate);
+            if (endDate) query.transportDate.$lte = new Date(endDate);
+        }
+
+        if (search) {
+            query.$or = [
+                { transportDescription: { $regex: search, $options: 'i' } },
+                { vehicleNumber: { $regex: search, $options: 'i' } },
+                { driverName: { $regex: search, $options: 'i' } },
+                { startingLocation: { $regex: search, $options: 'i' } },
+                { destination: { $regex: search, $options: 'i' } },
+                { projectTitle: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const transportCosts = await ProjectTransportCost.find(query)
+            .populate('projectId', 'title status budget')
+            .sort({ transportDate: -1, createdAt: -1 });
+
+        const totalTransportCost = transportCosts.reduce((acc, curr) => acc + (Number(curr.totalTransportCost) || 0), 0);
+
+        res.json({
+            success: true,
+            count: transportCosts.length,
+            totalTransportCost: parseFloat(totalTransportCost.toFixed(2)),
+            transportCosts
+        });
+    } catch (err) {
+        console.error('Error fetching transport costs:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// GET /api/bom/transport-cost/:id
+exports.getTransportCostById = async (req, res) => {
+    try {
+        const transportCost = await ProjectTransportCost.findById(req.params.id)
+            .populate('projectId')
+            .populate('createdBy', 'name email role');
+
+        if (!transportCost) {
+            return res.status(404).json({ success: false, message: 'Transport cost record not found' });
+        }
+
+        res.json({ success: true, transportCost });
+    } catch (err) {
+        console.error('Error fetching transport cost details:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// POST /api/bom/transport-cost
+exports.createTransportCost = async (req, res) => {
+    try {
+        const {
+            projectId,
+            transportDate,
+            transportType,
+            vehicleNumber,
+            driverName,
+            startingLocation,
+            destination,
+            transportDescription,
+            numberOfTrips,
+            freightCharge,
+            fuelCharge,
+            loadingUnloadingCharge,
+            tollCharge,
+            otherCharge,
+            totalTransportCost,
+            notes,
+            attachmentUrl,
+            status
+        } = req.body;
+
+        if (!projectId) {
+            return res.status(400).json({ success: false, message: 'Project selection is required' });
+        }
+        if (!transportType) {
+            return res.status(400).json({ success: false, message: 'Transport type is required' });
+        }
+
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ success: false, message: 'Project not found' });
+        }
+
+        const freight = Number(freightCharge) || 0;
+        const fuel = Number(fuelCharge) || 0;
+        const loading = Number(loadingUnloadingCharge) || 0;
+        const toll = Number(tollCharge) || 0;
+        const other = Number(otherCharge) || 0;
+        const sum = freight + fuel + loading + toll + other;
+
+        let finalTotal = Number(totalTransportCost);
+        if (isNaN(finalTotal) || (finalTotal <= 0 && sum > 0)) {
+            finalTotal = sum;
+        }
+
+        const newTransport = new ProjectTransportCost({
+            projectId: project._id,
+            projectTitle: project.title,
+            jobOrderNumber: project._id.toString().substring(18, 24).toUpperCase(),
+            transportDate: transportDate ? new Date(transportDate) : new Date(),
+            transportType,
+            vehicleNumber: vehicleNumber || '',
+            driverName: driverName || '',
+            startingLocation: startingLocation || '',
+            destination: destination || '',
+            transportDescription: transportDescription || '',
+            numberOfTrips: Number(numberOfTrips) > 0 ? Number(numberOfTrips) : 1,
+            freightCharge: freight,
+            fuelCharge: fuel,
+            loadingUnloadingCharge: loading,
+            tollCharge: toll,
+            otherCharge: other,
+            totalTransportCost: parseFloat(finalTotal.toFixed(2)),
+            notes: notes || '',
+            attachmentUrl: attachmentUrl || '',
+            status: status || 'Approved',
+            createdBy: req.user?._id,
+            createdByName: req.user?.name || 'Staff',
+            auditTrail: [{
+                action: 'CREATED',
+                performedBy: req.user?.name || 'Staff',
+                timestamp: new Date(),
+                details: `Recorded ₹${finalTotal.toFixed(2)} transport cost (${transportType}).`
+            }]
+        });
+
+        await newTransport.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Transport cost recorded successfully',
+            transportCost: newTransport
+        });
+    } catch (err) {
+        console.error('Error creating transport cost:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// PUT /api/bom/transport-cost/:id
+exports.updateTransportCost = async (req, res) => {
+    try {
+        const transportCost = await ProjectTransportCost.findById(req.params.id);
+        if (!transportCost) {
+            return res.status(404).json({ success: false, message: 'Transport cost record not found' });
+        }
+
+        const {
+            transportDate,
+            transportType,
+            vehicleNumber,
+            driverName,
+            startingLocation,
+            destination,
+            transportDescription,
+            numberOfTrips,
+            freightCharge,
+            fuelCharge,
+            loadingUnloadingCharge,
+            tollCharge,
+            otherCharge,
+            totalTransportCost,
+            notes,
+            attachmentUrl,
+            status
+        } = req.body;
+
+        if (transportDate) transportCost.transportDate = new Date(transportDate);
+        if (transportType) transportCost.transportType = transportType;
+        if (vehicleNumber !== undefined) transportCost.vehicleNumber = vehicleNumber;
+        if (driverName !== undefined) transportCost.driverName = driverName;
+        if (startingLocation !== undefined) transportCost.startingLocation = startingLocation;
+        if (destination !== undefined) transportCost.destination = destination;
+        if (transportDescription !== undefined) transportCost.transportDescription = transportDescription;
+        if (numberOfTrips) transportCost.numberOfTrips = Number(numberOfTrips);
+        if (freightCharge !== undefined) transportCost.freightCharge = Number(freightCharge);
+        if (fuelCharge !== undefined) transportCost.fuelCharge = Number(fuelCharge);
+        if (loadingUnloadingCharge !== undefined) transportCost.loadingUnloadingCharge = Number(loadingUnloadingCharge);
+        if (tollCharge !== undefined) transportCost.tollCharge = Number(tollCharge);
+        if (otherCharge !== undefined) transportCost.otherCharge = Number(otherCharge);
+
+        if (totalTransportCost !== undefined && !isNaN(Number(totalTransportCost))) {
+            transportCost.totalTransportCost = Number(totalTransportCost);
+        } else {
+            transportCost.totalTransportCost = transportCost.freightCharge + transportCost.fuelCharge + 
+                transportCost.loadingUnloadingCharge + transportCost.tollCharge + transportCost.otherCharge;
+        }
+
+        if (notes !== undefined) transportCost.notes = notes;
+        if (attachmentUrl !== undefined) transportCost.attachmentUrl = attachmentUrl;
+        if (status) transportCost.status = status;
+
+        transportCost.auditTrail.push({
+            action: 'UPDATED',
+            performedBy: req.user?.name || 'Staff',
+            timestamp: new Date(),
+            details: `Updated transport record. New Total: ₹${transportCost.totalTransportCost}`
+        });
+
+        await transportCost.save();
+
+        res.json({
+            success: true,
+            message: 'Transport cost record updated successfully',
+            transportCost
+        });
+    } catch (err) {
+        console.error('Error updating transport cost:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// DELETE /api/bom/transport-cost/:id
+exports.deleteTransportCost = async (req, res) => {
+    try {
+        const transportCost = await ProjectTransportCost.findById(req.params.id);
+        if (!transportCost) {
+            return res.status(404).json({ success: false, message: 'Transport cost record not found' });
+        }
+
+        await ProjectTransportCost.findByIdAndDelete(req.params.id);
+
+        res.json({
+            success: true,
+            message: 'Transport cost record deleted successfully'
+        });
+    } catch (err) {
+        console.error('Error deleting transport cost:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * COMPLETE PROJECT COST HISTORY (ITEMIZED AUDIT)
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+// GET /api/bom/project-costing/:projectId/history
+exports.getProjectCostHistory = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const project = await Project.findById(projectId).populate('customerId', 'name email phone');
+        if (!project) {
+            return res.status(404).json({ success: false, message: 'Project not found' });
+        }
+
+        // 1. Material Consumptions
+        const materials = await MaterialConsumption.find({ projectId: project._id }).sort({ date: -1 });
+
+        // 2. Labour Costs
+        const labours = await ProjectLabourCost.find({ 
+            projectId: project._id, 
+            status: { $ne: 'Cancelled' } 
+        }).sort({ workDate: -1 });
+
+        // 3. Transport Costs
+        const transports = await ProjectTransportCost.find({ 
+            projectId: project._id, 
+            status: { $ne: 'Cancelled' } 
+        }).sort({ transportDate: -1 });
+
+        // 4. Other Expenses
+        const otherExpenses = await Expense.find({ 
+            projectId: project._id, 
+            type: 'expense' 
+        }).sort({ date: -1 });
+
+        // Totals
+        let materialCost = 0;
+        materials.forEach(m => {
+            if (m.movementType === 'CONSUMPTION') materialCost += Number(m.totalCost) || 0;
+            else if (m.movementType === 'RETURN') materialCost -= Number(m.totalCost) || 0;
+        });
+        materialCost = Math.max(0, materialCost);
+
+        const labourCost = labours.reduce((sum, l) => sum + (Number(l.totalAmount) || 0), 0);
+        const transportCost = transports.reduce((sum, t) => sum + (Number(t.totalTransportCost) || 0), 0);
+        const otherCost = otherExpenses.reduce((sum, o) => sum + (Number(o.amount) || 0), 0);
+
+        const totalActualCost = parseFloat((materialCost + labourCost + transportCost + otherCost).toFixed(2));
+
+        // Format unified complete history
+        const completeHistory = [];
+
+        materials.forEach(m => {
+            completeHistory.push({
+                id: m._id,
+                costType: 'Material',
+                date: m.date,
+                title: m.materialName,
+                description: `${m.movementType}: ${m.materialName} (${m.specification || m.category})`,
+                quantity: m.quantity,
+                unit: m.unit,
+                rate: m.unitCost,
+                amount: m.movementType === 'RETURN' ? -Number(m.totalCost) : Number(m.totalCost),
+                createdBy: m.issuedByName || 'Storekeeper',
+                status: m.movementType,
+                notes: m.notes
+            });
+        });
+
+        labours.forEach(l => {
+            completeHistory.push({
+                id: l._id,
+                costType: 'Labour',
+                date: l.workDate,
+                title: `${l.labourCategory} - ${l.workerName || 'Worker Crew'}`,
+                description: l.workDescription,
+                quantity: l.quantity,
+                unit: l.rateType,
+                rate: l.rate,
+                amount: Number(l.totalAmount),
+                createdBy: l.createdByName || 'Supervisor',
+                status: l.status,
+                notes: l.notes
+            });
+        });
+
+        transports.forEach(t => {
+            completeHistory.push({
+                id: t._id,
+                costType: 'Transport',
+                date: t.transportDate,
+                title: `${t.transportType} ${t.vehicleNumber ? `(${t.vehicleNumber})` : ''}`,
+                description: t.transportDescription || `Route: ${t.startingLocation || 'Yard'} -> ${t.destination || 'Site'}`,
+                quantity: t.numberOfTrips,
+                unit: 'Trips',
+                rate: t.freightCharge,
+                amount: Number(t.totalTransportCost),
+                createdBy: t.createdByName || 'Logistics',
+                status: t.status,
+                notes: t.notes
+            });
+        });
+
+        otherExpenses.forEach(e => {
+            completeHistory.push({
+                id: e._id,
+                costType: 'Other',
+                date: e.date,
+                title: e.category || 'Direct Expense',
+                description: e.title || e.description || 'Project direct expense',
+                quantity: 1,
+                unit: 'Item',
+                rate: Number(e.amount),
+                amount: Number(e.amount),
+                createdBy: e.createdByName || 'Accounts',
+                status: e.status || 'Paid',
+                notes: e.notes || ''
+            });
+        });
+
+        // Sort unified chronological history by date descending
+        completeHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        res.json({
+            success: true,
+            project: {
+                id: project._id,
+                title: project.title,
+                status: project.status,
+                budget: project.budget,
+                customer: project.customerId
+            },
+            summary: {
+                materialCost: parseFloat(materialCost.toFixed(2)),
+                labourCost: parseFloat(labourCost.toFixed(2)),
+                transportCost: parseFloat(transportCost.toFixed(2)),
+                otherCost: parseFloat(otherCost.toFixed(2)),
+                totalActualCost
+            },
+            history: {
+                materials,
+                labours,
+                transports,
+                otherExpenses,
+                completeHistory
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching project cost history:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 };
