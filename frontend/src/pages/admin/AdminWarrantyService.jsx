@@ -3,7 +3,7 @@ import api from '../../services/api';
 import { 
     ShieldCheck, Plus, Search, Filter, Phone, Mail, 
     Calendar, CheckCircle2, Clock, Wrench, AlertTriangle, 
-    X, RefreshCw, Star, User, FileText, ChevronRight
+    X, RefreshCw, Star, User, FileText, ChevronRight, Loader2
 } from 'lucide-react';
 
 const AdminWarrantyService = () => {
@@ -12,6 +12,8 @@ const AdminWarrantyService = () => {
     const [serviceRequests, setServiceRequests] = useState([]);
     const [projects, setProjects] = useState([]);
     const [customers, setCustomers] = useState([]);
+    const [loadingCustomers, setLoadingCustomers] = useState(false);
+    const [customerError, setCustomerError] = useState(null);
     const [staffList, setStaffList] = useState([]);
     const [materials, setMaterials] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -114,11 +116,32 @@ const AdminWarrantyService = () => {
     };
 
     const fetchCustomers = async () => {
+        setLoadingCustomers(true);
+        setCustomerError(null);
         try {
-            const res = await api.get('/admin/users');
+            let res;
+            try {
+                // Primary: accessible by both admin and staff roles
+                res = await api.get('/auth/users', { params: { role: 'customer' } });
+            } catch (err1) {
+                try {
+                    // Fallback 1: admin users route
+                    res = await api.get('/auth/admin/users', { params: { role: 'customer' } });
+                } catch (err2) {
+                    // Fallback 2: direct admin route
+                    res = await api.get('/admin/users', { params: { role: 'customer' } });
+                }
+            }
+
             const list = Array.isArray(res.data) ? res.data : (res.data.users || []);
-            setCustomers(list.filter(u => u.role === 'customer'));
-        } catch (_) {}
+            const clientList = list.filter(u => u.role === 'customer' || !u.role);
+            setCustomers(clientList);
+        } catch (err) {
+            console.error('Failed to load customers for warranty module:', err);
+            setCustomerError(err.response?.data?.message || err.message || 'Failed to load registered customers');
+        } finally {
+            setLoadingCustomers(false);
+        }
     };
 
     const fetchStaff = async () => {
@@ -259,8 +282,11 @@ const AdminWarrantyService = () => {
                     {activeTab === 'warranties' ? (
                         <button
                             onClick={() => {
+                                if (customers.length === 0) {
+                                    fetchCustomers();
+                                }
                                 setWarrantyForm({
-                                    customerId: customers[0]?._id || '',
+                                    customerId: '',
                                     projectId: projects[0]?._id || '',
                                     deliveredItem: '',
                                     serialNumber: '',
@@ -279,8 +305,11 @@ const AdminWarrantyService = () => {
                     ) : (
                         <button
                             onClick={() => {
+                                if (customers.length === 0) {
+                                    fetchCustomers();
+                                }
                                 setServiceForm({
-                                    customerId: customers[0]?._id || '',
+                                    customerId: '',
                                     projectId: projects[0]?._id || '',
                                     warrantyId: '',
                                     deliveredItem: '',
@@ -493,23 +522,69 @@ const AdminWarrantyService = () => {
                         <form onSubmit={handleCreateWarrantySubmit} className="space-y-4 text-xs">
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Customer *</label>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="block text-[10px] font-black uppercase text-slate-500">Customer *</label>
+                                        {loadingCustomers && (
+                                            <span className="text-[10px] font-semibold text-emerald-600 animate-pulse flex items-center gap-1">
+                                                <Loader2 className="w-3 h-3 animate-spin" /> Loading...
+                                            </span>
+                                        )}
+                                        {customerError && (
+                                            <button
+                                                type="button"
+                                                onClick={fetchCustomers}
+                                                className="text-[10px] font-bold text-rose-500 hover:underline"
+                                            >
+                                                Retry
+                                            </button>
+                                        )}
+                                    </div>
                                     <select
                                         required
                                         value={warrantyForm.customerId}
                                         onChange={(e) => setWarrantyForm({ ...warrantyForm, customerId: e.target.value })}
-                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl"
+                                        disabled={loadingCustomers}
+                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl disabled:opacity-50"
                                     >
-                                        <option value="">Select Customer...</option>
-                                        {customers.map(c => <option key={c._id} value={c._id}>{c.name} ({c.phone})</option>)}
+                                        <option value="">
+                                            {loadingCustomers
+                                                ? 'Loading customers...'
+                                                : customerError
+                                                ? 'Error loading customers (click retry)'
+                                                : customers.length === 0
+                                                ? 'No registered clients found'
+                                                : 'Select Customer...'}
+                                        </option>
+                                        {customers.map(c => {
+                                            const contact = c.phone || c.phoneNumber || c.email;
+                                            return (
+                                                <option key={c._id} value={c._id}>
+                                                    {c.name}{contact ? ` (${contact})` : ''}
+                                                </option>
+                                            );
+                                        })}
                                     </select>
+                                    {customerError && (
+                                        <p className="text-[10px] text-rose-500 mt-1">{customerError}</p>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Project *</label>
                                     <select
                                         required
                                         value={warrantyForm.projectId}
-                                        onChange={(e) => setWarrantyForm({ ...warrantyForm, projectId: e.target.value })}
+                                        onChange={(e) => {
+                                            const pId = e.target.value;
+                                            const proj = projects.find(p => p._id === pId);
+                                            setWarrantyForm(prev => {
+                                                const next = { ...prev, projectId: pId };
+                                                if (proj && !next.customerId) {
+                                                    const cId = typeof proj.customerId === 'object' ? proj.customerId?._id : proj.customerId;
+                                                    if (cId) next.customerId = cId;
+                                                }
+                                                return next;
+                                            });
+                                        }}
                                         className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl"
                                     >
                                         <option value="">Select Project...</option>
@@ -590,23 +665,69 @@ const AdminWarrantyService = () => {
                         <form onSubmit={handleCreateServiceSubmit} className="space-y-4 text-xs">
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Customer *</label>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="block text-[10px] font-black uppercase text-slate-500">Customer *</label>
+                                        {loadingCustomers && (
+                                            <span className="text-[10px] font-semibold text-indigo-600 animate-pulse flex items-center gap-1">
+                                                <Loader2 className="w-3 h-3 animate-spin" /> Loading...
+                                            </span>
+                                        )}
+                                        {customerError && (
+                                            <button
+                                                type="button"
+                                                onClick={fetchCustomers}
+                                                className="text-[10px] font-bold text-rose-500 hover:underline"
+                                            >
+                                                Retry
+                                            </button>
+                                        )}
+                                    </div>
                                     <select
                                         required
                                         value={serviceForm.customerId}
                                         onChange={(e) => setServiceForm({ ...serviceForm, customerId: e.target.value })}
-                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl"
+                                        disabled={loadingCustomers}
+                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl disabled:opacity-50"
                                     >
-                                        <option value="">Select Customer...</option>
-                                        {customers.map(c => <option key={c._id} value={c._id}>{c.name} ({c.phone})</option>)}
+                                        <option value="">
+                                            {loadingCustomers
+                                                ? 'Loading customers...'
+                                                : customerError
+                                                ? 'Error loading customers (click retry)'
+                                                : customers.length === 0
+                                                ? 'No registered clients found'
+                                                : 'Select Customer...'}
+                                        </option>
+                                        {customers.map(c => {
+                                            const contact = c.phone || c.phoneNumber || c.email;
+                                            return (
+                                                <option key={c._id} value={c._id}>
+                                                    {c.name}{contact ? ` (${contact})` : ''}
+                                                </option>
+                                            );
+                                        })}
                                     </select>
+                                    {customerError && (
+                                        <p className="text-[10px] text-rose-500 mt-1">{customerError}</p>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Project *</label>
                                     <select
                                         required
                                         value={serviceForm.projectId}
-                                        onChange={(e) => setServiceForm({ ...serviceForm, projectId: e.target.value })}
+                                        onChange={(e) => {
+                                            const pId = e.target.value;
+                                            const proj = projects.find(p => p._id === pId);
+                                            setServiceForm(prev => {
+                                                const next = { ...prev, projectId: pId };
+                                                if (proj && !next.customerId) {
+                                                    const cId = typeof proj.customerId === 'object' ? proj.customerId?._id : proj.customerId;
+                                                    if (cId) next.customerId = cId;
+                                                }
+                                                return next;
+                                            });
+                                        }}
                                         className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl"
                                     >
                                         <option value="">Select Project...</option>

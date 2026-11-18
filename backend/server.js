@@ -361,6 +361,13 @@ app.use('/api/drawings', require('./routes/drawingRoutes'));
 app.use('/api/scrap', require('./routes/scrapRoutes'));
 app.use('/api/handover', require('./routes/handoverRoutes'));
 
+// Direct alias for /api/admin/users for seamless customer/staff lookup across admin portals
+const { protect: apiProtect, authorize: apiAuthorize } = require('./middleware/authMiddleware');
+app.get('/api/admin/users', apiProtect, apiAuthorize('admin', 'staff'), (req, res, next) => {
+    const authController = require('./controllers/authController');
+    return authController.getUsersByRole(req, res, next);
+});
+
 // Root Error Route
 app.get('/api/debug/error', (req, res) => {
     res.json({ status: 'Operational', msg: 'System monitoring active.' });

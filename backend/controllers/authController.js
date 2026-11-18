@@ -510,8 +510,8 @@ exports.getUsersByRole = async (req, res) => {
         const { role } = req.query;
         const isAdmin = req.user && req.user.role === 'admin';
         const fields = isAdmin 
-            ? '_id name email role phone staff_id base_salary isEmailVerified'
-            : '_id name email role phone staff_id isEmailVerified';
+            ? '_id name email role phone phoneNumber staff_id base_salary isEmailVerified'
+            : '_id name email role phone phoneNumber staff_id isEmailVerified';
         const users = await User.find(role ? { role } : {}).select(fields);
         res.json(users);
     } catch (error) { 

@@ -71,8 +71,7 @@ const warrantySchema = new mongoose.Schema({
     },
     expiryDate: {
         type: Date,
-        required: true,
-        index: true
+        required: true
     },
     coverageTerms: {
         type: String,
