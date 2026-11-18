@@ -5,9 +5,10 @@ import {
     Briefcase, Plus, X, Loader2, AlertCircle, MessageSquare, Send, AlertTriangle, 
     Clock, Calendar, Trash2, CheckCircle2, Wallet, CheckCircle, XCircle, History, 
     IndianRupee, Wrench, PlusCircle, Mail, Eye, EyeOff, Search, Filter, ArrowUpDown, 
-    Ban, ShieldAlert, FileText, Check, ChevronDown, Info, ShieldCheck, RefreshCw 
+    Ban, ShieldAlert, FileText, Check, ChevronDown, Info, ShieldCheck, RefreshCw, Award 
 } from 'lucide-react';
 import { getSocket } from '../../utils/socket';
+import ProjectHandoverModal from '../../components/project/ProjectHandoverModal';
 
 // Inline sub-component: approve a pending additional-work item with a cost estimate
 const ApproveWithAmountButton = ({ workItem, onApprove, isLoading }) => {
@@ -230,6 +231,14 @@ const AdminProjects = () => {
     const [staffList, setStaffList] = useState([]);
     const [showStaffModal, setShowStaffModal] = useState(false);
     const [editAssignedStaff, setEditAssignedStaff] = useState([]);
+
+    const [showHandoverModal, setShowHandoverModal] = useState(false);
+    const [selectedHandoverProject, setSelectedHandoverProject] = useState(null);
+
+    const handleOpenHandoverModal = (project) => {
+        setSelectedHandoverProject(project);
+        setShowHandoverModal(true);
+    };
 
     const [showTimelineModal, setShowTimelineModal] = useState(false);
     const [timelineDraft, setTimelineDraft] = useState([]);
@@ -986,6 +995,13 @@ const AdminProjects = () => {
                                                 <Clock className="w-3.5 h-3.5" /> Timeline
                                             </button>
                                             <button 
+                                                onClick={() => handleOpenHandoverModal(prj)}
+                                                className="flex items-center justify-center gap-1 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 hover:bg-amber-600 hover:text-white py-2 px-2 rounded-xl text-[11px] font-bold transition"
+                                                title="Project Handover & Completion Certificate"
+                                            >
+                                                <Award className="w-3.5 h-3.5" /> Handover
+                                            </button>
+                                            <button 
                                                 onClick={() => {
                                                     setSelectedProject(prj);
                                                     setEditAssignedStaff(prj.assignedStaff.map(s => s._id || s));
@@ -1201,6 +1217,13 @@ const AdminProjects = () => {
                                                         title="Manage & Publish Project Timeline"
                                                     >
                                                         <Clock className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleOpenHandoverModal(prj)}
+                                                        className="bg-amber-50 text-amber-700 p-2 rounded-xl hover:bg-amber-600 hover:text-white transition"
+                                                        title="Project Handover & Completion Certificate"
+                                                    >
+                                                        <Award className="w-4 h-4" />
                                                     </button>
                                                     <button 
                                                         onClick={() => {
@@ -2962,6 +2985,17 @@ const AdminProjects = () => {
                     );
                 })()}
             </AnimatePresence>
+
+            {/* Project Handover & Completion Certificate Modal */}
+            <ProjectHandoverModal
+                project={selectedHandoverProject}
+                isOpen={showHandoverModal}
+                onClose={() => {
+                    setShowHandoverModal(false);
+                    setSelectedHandoverProject(null);
+                }}
+                onUpdated={fetchProjects}
+            />
         </div>
     );
 };

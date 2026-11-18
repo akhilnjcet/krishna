@@ -30,6 +30,8 @@ const documentHistorySchema = new mongoose.Schema({
             'Quality Inspection Reports',
             'Warranty Certificates',
             'Service Reports',
+            'Project Completion Certificate',
+            'Handover Report',
             'Agreements',
             'Employee Documents',
             'Other Business Documents'

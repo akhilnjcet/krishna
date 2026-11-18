@@ -91,6 +91,52 @@ const projectSchema = new mongoose.Schema({
         status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
         requestedAt: { type: Date, default: Date.now }
     }],
+    handover: {
+        status: {
+            type: String,
+            enum: ['Not Initiated', 'Pending Approval', 'Approved', 'Completed', 'Rejected'],
+            default: 'Not Initiated',
+            index: true
+        },
+        requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        requestedByName: { type: String, default: '' },
+        requestedAt: { type: Date },
+        approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        approvedByName: { type: String, default: '' },
+        approvedAt: { type: Date },
+        handoverDate: { type: Date },
+        handoverNotes: { type: String, default: '' },
+        rejectionReason: { type: String, default: '' },
+        checklist: {
+            fabricationCompleted: { type: Boolean, default: false },
+            installationCompleted: { type: Boolean, default: false },
+            qualityInspectionPassed: { type: Boolean, default: false },
+            defectsResolved: { type: Boolean, default: false },
+            siteCleared: { type: Boolean, default: false },
+            deliveryCompleted: { type: Boolean, default: false },
+            customerInspectionCompleted: { type: Boolean, default: false },
+            customerAcceptanceReceived: { type: Boolean, default: false }
+        },
+        qualityInspectionStatus: {
+            type: String,
+            enum: ['Pending', 'Passed', 'Conditional Pass', 'Failed'],
+            default: 'Pending'
+        },
+        pendingWorkNotes: { type: String, default: '' },
+        deliveryVerificationNotes: { type: String, default: '' },
+        finalPhotos: [{ type: String }],
+        customerFeedback: {
+            rating: { type: Number, min: 1, max: 5, default: 5 },
+            comments: { type: String, default: '' },
+            acceptedBy: { type: String, default: '' },
+            acceptanceDate: { type: Date },
+            signatureUrl: { type: String, default: '' }
+        },
+        certificateNumber: { type: String, default: '' },
+        certificateUrl: { type: String, default: '' },
+        certificateIssuedAt: { type: Date },
+        documentHistoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'DocumentHistory', default: null }
+    },
     createdAt: { type: Date, default: Date.now }
 });
 

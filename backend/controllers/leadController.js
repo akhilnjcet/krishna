@@ -74,19 +74,19 @@ exports.getLeads = async (req, res) => {
 // @route POST /api/leads/manual
 exports.createManualLead = async (req, res) => {
     try {
-        const { 
-            name, 
-            phone, 
-            email, 
-            location, 
-            source, 
-            requiredService, 
-            projectDescription, 
-            estimatedBudget, 
-            expectedCompletionDate, 
-            assignedTo, 
+        const {
+            name,
+            phone,
+            email,
+            location,
+            source,
+            requiredService,
+            projectDescription,
+            estimatedBudget,
+            expectedCompletionDate,
+            assignedTo,
             assignedToName,
-            notes 
+            notes
         } = req.body;
 
         if (!name || !phone) {
@@ -265,8 +265,8 @@ exports.convertLeadToCustomer = async (req, res) => {
 
         res.json({
             success: true,
-            message: isNewCustomer 
-                ? 'Lead converted and new Customer record created!' 
+            message: isNewCustomer
+                ? 'Lead converted and new Customer record created!'
                 : 'Lead linked to existing Customer record without duplication!',
             customer: {
                 _id: customer._id,

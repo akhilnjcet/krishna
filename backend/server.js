@@ -4,7 +4,7 @@ try {
     require('dotenv').config({ path: path.join(__dirname, '.env') });
     require('dotenv').config({ path: path.join(__dirname, '../.env') });
     require('dotenv').config();
-} catch (_) {}
+} catch (_) { }
 
 const validateEnv = require('./config/validateEnv');
 validateEnv();
@@ -200,7 +200,7 @@ const corsOptionsDelegate = (req, callback) => {
 
 app.use(cors(corsOptionsDelegate));
 
-app.use(express.json({ 
+app.use(express.json({
     limit: '50mb',
     verify: (req, res, buf) => {
         req.rawBody = buf;
@@ -257,12 +257,12 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => {
     const mongoose = require('mongoose');
     const isDbConnected = mongoose.connection.readyState === 1;
-    res.json({ 
-        status: 'ok', 
+    res.json({
+        status: 'ok',
         message: 'Krishna ERP API is active',
         database: isDbConnected ? 'connected' : (mongoose.connection.readyState === 2 ? 'connecting' : 'disconnected'),
         environment: isVercel ? 'serverless-vercel' : 'node-dedicated',
-        timestamp: new Date().toISOString() 
+        timestamp: new Date().toISOString()
     });
 });
 app.get('/api/ping', (req, res) => res.json({ pong: true, timestamp: Date.now() }));
@@ -292,10 +292,10 @@ app.use(async (req, res, next) => {
         await connectDB();
         next();
     } catch (err) {
-        res.status(503).json({ 
-            error: 'Database Synchronization Failure', 
+        res.status(503).json({
+            error: 'Database Synchronization Failure',
             message: 'Database is currently unavailable. Please verify connection credentials.',
-            detail: err.message 
+            detail: err.message
         });
     }
 });
@@ -357,6 +357,9 @@ app.use('/api/production-plans', require('./routes/productionPlanRoutes'));
 app.use('/api/machines', require('./routes/machineAnalyticsRoutes'));
 app.use('/api/vehicles', require('./routes/vehicleRoutes'));
 app.use('/api/ai-erp', require('./routes/aiErpRoutes'));
+app.use('/api/drawings', require('./routes/drawingRoutes'));
+app.use('/api/scrap', require('./routes/scrapRoutes'));
+app.use('/api/handover', require('./routes/handoverRoutes'));
 
 // Root Error Route
 app.get('/api/debug/error', (req, res) => {
@@ -373,18 +376,18 @@ app.get('/api/health/whatsapp', serverProtect, serverAdmin, async (req, res) => 
         const SystemSetting = require('./models/SystemSetting');
         const fs = require('fs');
         const path = require('path');
-        
+
         // Check DB first
-        const dbCreds = await SystemSetting.findOne({ 
-            key: { $in: ['whatsapp_creds', 'whatsapp_auth_bundle'] } 
+        const dbCreds = await SystemSetting.findOne({
+            key: { $in: ['whatsapp_creds', 'whatsapp_auth_bundle'] }
         });
-        
+
         await ensureWhatsApp();
-        
+
         // Vercel/Serverless Wait Loop: Stay alive for up to 8 seconds to capture any new QR code
         let attempts = 0;
         let status = await getWhatsAppStatus();
-        
+
         while (!status.connected && !status.qr && attempts < 8) {
             await new Promise(r => setTimeout(r, 1000));
             status = await getWhatsAppStatus();
@@ -392,14 +395,14 @@ app.get('/api/health/whatsapp', serverProtect, serverAdmin, async (req, res) => 
         }
 
         // Check file status AFTER connection attempt
-        const credsPath = process.env.VERCEL === '1' 
-            ? '/tmp/whatsapp_auth/creds.json' 
+        const credsPath = process.env.VERCEL === '1'
+            ? '/tmp/whatsapp_auth/creds.json'
             : path.join(__dirname, 'whatsapp_auth_info/creds.json');
-        
+
         const fileExists = fs.existsSync(credsPath);
-        
-        res.json({ 
-            connected: status.connected, 
+
+        res.json({
+            connected: status.connected,
             isConnecting: status.isConnecting,
             phone: status.phone,
             qr: status.qr,
@@ -431,11 +434,11 @@ app.get('/api/health/email', serverProtect, serverAdmin, async (req, res) => {
     try {
         const { sendWelcomeEmail } = require('./services/emailService');
         const success = await sendWelcomeEmail(process.env.EMAIL_USER, "System Health Check");
-        res.json({ 
-            success, 
+        res.json({
+            success,
             user: process.env.EMAIL_USER,
             passSet: !!process.env.EMAIL_PASS,
-            timestamp: new Date().toISOString() 
+            timestamp: new Date().toISOString()
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -447,7 +450,7 @@ app.get('/api/debug/cleanup-sundays', serverProtect, serverAdmin, async (req, re
     try {
         const DailyAttendance = require('./models/DailyAttendance');
         const records = await DailyAttendance.find({ status: 'Absent' });
-        
+
         let deletedCount = 0;
         for (const r of records) {
             const dateObj = new Date(r.date);
@@ -499,10 +502,10 @@ app.use((err, req, res, next) => {
     const statusCode = err.status || (res.statusCode && res.statusCode >= 400 ? res.statusCode : 500);
     logApiError(req, err, { statusCode });
 
-    res.status(statusCode).json({ 
+    res.status(statusCode).json({
         error: true,
-        message: process.env.NODE_ENV === 'production' 
-            ? 'An internal error occurred while processing your request. This event has been securely logged.' 
+        message: process.env.NODE_ENV === 'production'
+            ? 'An internal error occurred while processing your request. This event has been securely logged.'
             : (err.message || 'Internal Signal Breach'),
         details: process.env.NODE_ENV !== 'production' ? err.stack : undefined
     });

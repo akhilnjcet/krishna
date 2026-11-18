@@ -5,13 +5,14 @@ import {
     Briefcase, Calendar, DollarSign, User, Mail, Phone, Clock, 
     CheckCircle2, AlertCircle, RefreshCw, FileText, ChevronRight,
     MapPin, Users, IndianRupee, Wallet, CheckCircle, XCircle, Plus, X, Wrench, Send, Sparkles, ArrowRight,
-    Copy, Check, Building2, Upload, Image as ImageIcon, Download, ShieldCheck, Store, Printer
+    Copy, Check, Building2, Upload, Image as ImageIcon, Download, ShieldCheck, Store, Printer, Award
 } from 'lucide-react';
 import { getSocket } from '../../utils/socket';
 import { getDirectImageUrl } from '../../utils/imageUtils';
 import { initializeCashfree } from '../../utils/cashfreeLoader';
 import { generateCashCounterChallanPDF, generatePaymentReceiptPDF } from '../../services/pdfService';
 import { verifyAndPollCashfreePayment } from '../../services/cashfreePaymentVerifier';
+import ProjectHandoverModal from '../../components/project/ProjectHandoverModal';
 
 const CustomerProjects = () => {
     const [projects, setProjects] = useState([]);
@@ -23,6 +24,7 @@ const CustomerProjects = () => {
     const [bankSettings, setBankSettings] = useState({});
     const [showQR, setShowQR] = useState(false);
     const [copiedField, setCopiedField] = useState(null);
+    const [showHandoverModal, setShowHandoverModal] = useState(false);
     const [screenshotPreview, setScreenshotPreview] = useState(null);
     const [paymentResult, setPaymentResult] = useState(null);
     const [paymentForm, setPaymentForm] = useState({
@@ -996,6 +998,25 @@ const CustomerProjects = () => {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Project Handover & Completion Certificate Section */}
+                                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 shadow-sm space-y-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 border-slate-100 dark:border-slate-800">
+                                        <div>
+                                            <h3 className="text-lg font-black text-slate-850 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                                                <Award className="w-5 h-5 text-amber-500" /> Formal Handover & Completion Certificate
+                                            </h3>
+                                            <p className="text-xs text-slate-400 mt-0.5">Review completion inspection checklist, provide client sign-off, or download your official certified PDF certificate.</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowHandoverModal(true)}
+                                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-md shadow-amber-500/20 shrink-0"
+                                        >
+                                            <Award className="w-4 h-4" /> View Handover Hub
+                                        </button>
+                                    </div>
+                                </div>
                             </motion.div>
                         ) : (
                             <div className="h-full min-h-[500px] flex flex-col items-center justify-center bg-slate-55 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[2.5rem] text-slate-400">
@@ -1443,6 +1464,15 @@ const CustomerProjects = () => {
                     </div>
                 </div>
             )}
+
+            {/* Handover & Completion Certificate Modal */}
+            <ProjectHandoverModal
+                project={selectedProject}
+                isOpen={showHandoverModal}
+                onClose={() => setShowHandoverModal(false)}
+                isCustomer={true}
+                onUpdated={fetchProjects}
+            />
         </div>
     );
 };

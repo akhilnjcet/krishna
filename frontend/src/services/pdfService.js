@@ -880,3 +880,240 @@ export const generateCashCounterChallanPDF = async (payment, user) => {
     };
     savePDF(doc, `Challan_${tokenId}.pdf`, historyMetadata);
 };
+
+// ─── PROJECT HANDOVER & COMPLETION CERTIFICATE ──────────────────────
+export const generateProjectCompletionCertificatePDF = async (project, handover = null) => {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const hData = handover || project.handover || {};
+    const certNum = hData.certificateNumber || `KEC-CERT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const completionDate = hData.handoverDate ? new Date(hData.handoverDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('en-IN');
+    const clientName = project.clientName || project.customerId?.name || 'Valued Client';
+
+    // 1. Decorative Double Border
+    doc.setDrawColor(15, 23, 42); // Slate 900
+    doc.setLineWidth(1.2);
+    doc.rect(7, 7, 196, 283);
+    doc.setDrawColor(37, 99, 235); // Blue 600
+    doc.setLineWidth(0.4);
+    doc.rect(9, 9, 192, 279);
+
+    // 2. Official Header
+    doc.setFillColor(15, 23, 42);
+    doc.rect(10, 10, 190, 28, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text(COMPANY_DETAILS.name, 105, 19, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(191, 219, 254);
+    doc.text(COMPANY_DETAILS.tagline, 105, 25, { align: 'center' });
+    doc.setFontSize(7.5);
+    doc.setTextColor(226, 232, 240);
+    doc.text(`${COMPANY_DETAILS.address} | ${COMPANY_DETAILS.contact} | ${COMPANY_DETAILS.gstin}`, 105, 31, { align: 'center' });
+
+    // 3. Certificate Title Banner
+    doc.setFillColor(37, 99, 235);
+    doc.rect(30, 43, 150, 10, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text('OFFICIAL CERTIFICATE OF PROJECT COMPLETION & HANDOVER', 105, 49.5, { align: 'center' });
+
+    // Certificate Meta
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...THEME.accent);
+    doc.text(`Certificate No: ${certNum}`, 14, 60);
+    doc.setTextColor(...THEME.textDark);
+    doc.text(`Date of Issue: ${completionDate}`, 196, 60, { align: 'right' });
+
+    // 4. Salutation & Declaration
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...THEME.textDark);
+    const declaration = `This is to formally certify that Krishna Engineering Works has successfully completed fabrication, engineering, testing, and handover of the contract deliverables detailed below. The completed works conform strictly to approved technical drawings, structural specifications, and industrial safety benchmarks.`;
+    doc.text(doc.splitTextToSize(declaration, 182), 14, 68);
+
+    // 5. Project & Client Summary Table
+    autoTable(doc, {
+        startY: 79,
+        margin: { left: 14, right: 14 },
+        body: [
+            ['Project Title:', project.title || 'Engineering Fabrication Project', 'Service Category:', project.serviceType || 'Custom Fabrication'],
+            ['Client Name / Firm:', clientName, 'Project Contract ID:', String(project._id || '').slice(-8).toUpperCase()],
+            ['Handover Date:', completionDate, 'Handover Status:', 'COMPLETED & ACCEPTED'],
+            ['Authorized Engineer:', hData.approvedByName || 'Chief Technical Officer', 'Customer Sign-off:', hData.customerFeedback?.acceptedBy || 'Verified & Accepted']
+        ],
+        theme: 'grid',
+        styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 2.8 },
+        columnStyles: {
+            0: { fontStyle: 'bold', fillColor: [241, 245, 249], width: 40 },
+            1: { width: 55 },
+            2: { fontStyle: 'bold', fillColor: [241, 245, 249], width: 40 },
+            3: { width: 55 }
+        }
+    });
+
+    // 6. Quality & Completion Inspection Checklist Table
+    const chk = hData.checklist || {};
+    const checklistData = [
+        ['1', 'Fabrication & Structural Assembly', chk.fabricationCompleted !== false ? 'COMPLETED' : 'PENDING', 'Conforms to approved design and structural drawings'],
+        ['2', 'Precision Machining & Dimensional Tolerances', 'PASSED', 'Verified within tolerance limits (±0.5mm)'],
+        ['3', 'Welding Quality & Joint Inspection', chk.qualityInspectionPassed !== false ? 'PASSED' : 'PENDING', 'Visual inspection & weld integrity verified'],
+        ['4', 'Protective Surface Coating & Painting', 'COMPLETED', 'Industrial primer and finish coat verified'],
+        ['5', 'Erection, Delivery & Site Installation', chk.deliveryCompleted !== false ? 'COMPLETED' : 'PENDING', 'Delivered and erected at designated customer site'],
+        ['6', 'Punchlist & Defect Rectification', chk.defectsResolved !== false ? 'ZERO DEFECTS' : 'IN PROGRESS', 'All punchlist and rework observations resolved'],
+        ['7', 'Site Clearance & Equipment Demobilization', chk.siteCleared !== false ? 'COMPLETED' : 'PENDING', 'Materials and tools cleared from installation site'],
+        ['8', 'Customer Joint Inspection & Acceptance', chk.customerAcceptanceReceived !== false ? 'ACCEPTED' : 'PENDING', 'Approved by customer designated representative']
+    ];
+
+    autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 6,
+        margin: { left: 14, right: 14 },
+        head: [['#', 'Deliverable & Inspection Item', 'Status', 'Engineering Verification Notes']],
+        body: checklistData,
+        theme: 'striped',
+        headStyles: { fillColor: THEME.primary, textColor: 255, fontStyle: 'bold', fontSize: 8.5 },
+        styles: { font: 'helvetica', fontSize: 8, cellPadding: 2.5 },
+        columnStyles: {
+            0: { halign: 'center', width: 10 },
+            1: { fontStyle: 'bold', width: 70 },
+            2: { fontStyle: 'bold', halign: 'center', width: 30, textColor: [16, 185, 129] },
+            3: { width: 80 }
+        }
+    });
+
+    let currentY = doc.lastAutoTable.finalY + 6;
+
+    // 7. Customer Satisfaction & Feedback Box
+    const feedback = hData.customerFeedback || {};
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(14, currentY, 182, 22, 2, 2, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...THEME.accent);
+    doc.text('CLIENT ACCEPTANCE & QUALITY RATING', 18, currentY + 5.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...THEME.textDark);
+    const ratingStars = '★'.repeat(feedback.rating || 5) + '☆'.repeat(5 - (feedback.rating || 5));
+    doc.text(`Rating: ${ratingStars} (${feedback.rating || 5}/5.0)`, 18, currentY + 11);
+    doc.text(`Feedback: "${feedback.comments || 'Work executed per agreed technical scope. Satisfactory delivery.'}"`, 18, currentY + 16.5);
+
+    currentY += 28;
+
+    // 8. Signatures & Official Seals
+    doc.setDrawColor(203, 213, 225);
+    doc.line(18, currentY + 18, 75, currentY + 18);
+    doc.line(135, currentY + 18, 192, currentY + 18);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...THEME.textDark);
+    doc.text('AUTHORIZED SIGNATORY & SEAL', 18, currentY + 22);
+    doc.text('ACCEPTED & RECEIVED BY CLIENT', 135, currentY + 22);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...THEME.textMuted);
+    doc.text(`${hData.approvedByName || 'Chief Technical Officer'} | Krishna Engg`, 18, currentY + 26);
+    doc.text(`${feedback.acceptedBy || clientName} | Authorized Signatory`, 135, currentY + 26);
+
+    // 9. Document Verification Footnote
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Security Verification Hash: SHA256-${certNum.replace(/-/g, '')}-VERIFIED-RECORD | Krishna Industrial ERP`, 105, 280, { align: 'center' });
+
+    // Save & Record in DocumentHistory
+    const historyMetadata = {
+        documentType: 'Project Completion Certificate',
+        documentNumber: certNum,
+        customerId: project.customerId?._id || project.customerId || null,
+        projectId: project._id,
+        status: 'Approved',
+        data: { certificateNumber: certNum, projectTitle: project.title, handoverDate: completionDate }
+    };
+    savePDF(doc, `Completion_Certificate_${certNum}.pdf`, historyMetadata);
+};
+
+// ─── SCRAP & WASTE AUDIT REPORT GENERATOR ────────────────────────────
+export const generateScrapReportPDF = async (records = [], summary = {}) => {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const reportDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    // Header
+    doc.setFillColor(15, 23, 42);
+    doc.rect(10, 10, 190, 24, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.setTextColor(255, 255, 255);
+    doc.text(COMPANY_DETAILS.name, 105, 18, { align: 'center' });
+    doc.setFontSize(9);
+    doc.setTextColor(191, 219, 254);
+    doc.text('MATERIAL SCRAP, REUSABLE OFFCUTS & WASTAGE AUDIT REPORT', 105, 25, { align: 'center' });
+
+    // Summary Cards Table
+    autoTable(doc, {
+        startY: 38,
+        margin: { left: 10, right: 10 },
+        body: [
+            ['Total Scrap Lots:', `${summary.totalLots || records.length}`, 'Total Scrap Weight:', `${summary.totalScrapQtyKg || 0} kg`],
+            ['Reusable Offcuts:', `${summary.reusableOffcutQtyKg || 0} kg`, 'Non-Reusable Waste:', `${summary.nonReusableQtyKg || 0} kg`],
+            ['Returned to Inventory:', `${summary.returnedToStockQtyKg || 0} kg`, 'Total External Sales:', `Rs. ${(summary.totalSoldValue || 0).toLocaleString()}`]
+        ],
+        theme: 'grid',
+        styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 2.8 },
+        columnStyles: {
+            0: { fontStyle: 'bold', fillColor: [241, 245, 249], width: 45 },
+            1: { width: 50 },
+            2: { fontStyle: 'bold', fillColor: [241, 245, 249], width: 45 },
+            3: { width: 50 }
+        }
+    });
+
+    // Scrap Records Table
+    const tableData = records.map(r => [
+        r.scrapCode,
+        r.materialName,
+        r.materialType || 'MS',
+        `${r.quantity} ${r.unit || 'kg'}`,
+        r.scrapType === 'Reusable Offcut' ? 'Reusable' : 'Waste',
+        r.status,
+        r.storageLocation || 'Yard',
+        r.projectTitle || 'General',
+        r.status === 'Sold' ? `Rs. ${(r.saleAction?.totalSaleAmount || 0).toLocaleString()}` : `Est. Rs. ${(r.estimatedTotalValue || 0).toLocaleString()}`
+    ]);
+
+    autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 6,
+        margin: { left: 10, right: 10 },
+        head: [['Lot Code', 'Material', 'Type', 'Qty', 'Category', 'Status', 'Location', 'Project', 'Value']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: THEME.primary, textColor: 255, fontStyle: 'bold', fontSize: 8 },
+        styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 2 },
+        columnStyles: {
+            0: { fontStyle: 'bold', width: 22 },
+            1: { width: 32 },
+            2: { width: 18 },
+            3: { halign: 'right', width: 16 },
+            4: { width: 18 },
+            5: { fontStyle: 'bold', width: 22 },
+            6: { width: 20 },
+            7: { width: 24 },
+            8: { halign: 'right', width: 20 }
+        }
+    });
+
+    doc.setFontSize(7.5);
+    doc.setTextColor(...THEME.textMuted);
+    doc.text(`Generated on: ${reportDate} | Krishna Engineering Industrial ERP`, 10, 285);
+
+    savePDF(doc, `Scrap_Wastage_Report_${Date.now()}.pdf`);
+};

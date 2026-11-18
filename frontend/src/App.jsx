@@ -104,6 +104,8 @@ const AdminAIErpAssistant = lazy(() => import('./pages/admin/AdminAIErpAssistant
 const AdminCRM = lazy(() => import('./pages/admin/AdminCRM'));
 const AdminDefectsRework = lazy(() => import('./pages/admin/AdminDefectsRework'));
 const AdminWarrantyService = lazy(() => import('./pages/admin/AdminWarrantyService'));
+const AdminDrawings = lazy(() => import('./pages/admin/AdminDrawings'));
+const AdminScrapWaste = lazy(() => import('./pages/admin/AdminScrapWaste'));
 
 // Staff Pages (Lazy loaded on demand)
 const StaffDashboard = lazy(() => import('./pages/staff/StaffDashboard'));
@@ -614,6 +616,8 @@ const App = () => {
               <Route path="crm" element={<AdminCRM />} />
               <Route path="defects" element={<AdminDefectsRework />} />
               <Route path="warranty-service" element={<AdminWarrantyService />} />
+              <Route path="drawings" element={<AdminDrawings />} />
+              <Route path="scrap-waste" element={<AdminScrapWaste />} />
               <Route path="legal-policies" element={<AdminLegalPolicies />} />
               <Route path="careers" element={<AdminCareers />} />
             </Route>

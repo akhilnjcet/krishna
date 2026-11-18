@@ -7,7 +7,7 @@ import {
     Search, HelpCircle, ChevronRight, User, Filter, LayoutGrid, Activity,
     Clock, AlertCircle, Radio, MessageCircle, ChevronLeft, CheckSquare, Truck,
     ShieldCheck, KeyRound, Package, Building2, Briefcase, PenTool, Sparkles,
-    AlertTriangle, Calendar, Bot
+    AlertTriangle, Calendar, Bot, Trash2
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,6 +28,8 @@ const SIDEBAR_ITEMS = [
     { name: 'Leave Requests',  path: '/admin/leave',        icon: ClipboardList },
     { name: 'Projects Hub',    path: '/admin/projects',     icon: Layers },
     { name: 'Production Plans', path: '/admin/production-planning', icon: Calendar },
+    { name: 'Fabrication Drawings', path: '/admin/drawings', icon: FileText },
+    { name: 'Scrap & Wastage', path: '/admin/scrap-waste',   icon: Trash2 },
     { name: 'Task Assignment Hub', path: '/admin/tasks',    icon: CheckSquare },
     { name: 'Rework & Defects', path: '/admin/defects',     icon: AlertTriangle },
     { name: 'Warranty & Service', path: '/admin/warranty-service', icon: ShieldCheck },
