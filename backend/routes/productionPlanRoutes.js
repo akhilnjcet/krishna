@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const productionPlanController = require('../controllers/productionPlanController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
 

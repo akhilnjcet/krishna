@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const scrapController = require('../controllers/scrapController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 // Query & Analytics
 router.get('/', protect, scrapController.getScrapRecords);

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const handoverController = require('../controllers/handoverController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 // Get Handover details for a project
 router.get('/projects/:id/handover', protect, handoverController.getHandoverDetails);

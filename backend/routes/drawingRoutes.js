@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const drawingController = require('../controllers/drawingController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 // List & Query
 router.get('/', protect, drawingController.getDrawings);
