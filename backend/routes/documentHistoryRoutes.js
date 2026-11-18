@@ -4,6 +4,9 @@ const documentHistoryController = require('../controllers/documentHistoryControl
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.post('/save', protect, documentHistoryController.saveDocument);
+router.post('/upload', protect, documentHistoryController.uploadBusinessDocument);
+router.get('/expiring', protect, documentHistoryController.getExpiringDocuments);
+router.post('/:id/audit', protect, documentHistoryController.recordDocumentAction);
 router.get('/', protect, documentHistoryController.getDocuments);
 router.post('/:id/archive', protect, documentHistoryController.toggleArchiveDocument);
 router.delete('/:id', protect, admin, documentHistoryController.deleteDocument);

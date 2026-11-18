@@ -567,11 +567,20 @@ exports.getBookingFinancials = async (req, res) => {
         combinedSettlementPaid += amt;
       } else if (type.includes('deposit') && !type.includes('adjustment')) {
         depositPaid += amt;
-      } else if (type.includes('additional') || type.includes('extra') || type.includes('service') || type.includes('charge')) {
-        const targetCategory = p.chargeCategory || p.notes || 'Other';
-        let matchedName = targetCategory;
+      } else if (
+        type.includes('additional') || 
+        type.includes('extra') || 
+        type.includes('service') || 
+        type.includes('charge') ||
+        extraCharges.some(ec => {
+          const ecName = (ec.name || '').toLowerCase();
+          return ecName && (type.includes(ecName) || cat.includes(ecName));
+        })
+      ) {
+        let matchedName = p.chargeCategory || p.paymentType || 'Other';
         for (const ec of extraCharges) {
-          if (targetCategory.toLowerCase().includes((ec.name || '').toLowerCase())) {
+          const ecName = (ec.name || '').toLowerCase();
+          if (ecName && (type.includes(ecName) || cat.includes(ecName) || (p.notes || '').toLowerCase().includes(ecName))) {
             matchedName = ec.name;
             break;
           }

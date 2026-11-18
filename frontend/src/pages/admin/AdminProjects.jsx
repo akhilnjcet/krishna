@@ -1908,14 +1908,21 @@ const AdminProjects = () => {
                                                             />
                                                         </div>
                                                         <div>
-                                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Status</label>
+                                                            <div className="flex justify-between items-center mb-1">
+                                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Status</label>
+                                                                {milestone.date && new Date(milestone.date) < new Date() && milestone.status !== 'Completed' && (
+                                                                    <span className="text-[9px] font-black text-rose-600 uppercase">Overdue</span>
+                                                                )}
+                                                            </div>
                                                             <select
                                                                 className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/25"
                                                                 value={milestone.status}
                                                                 onChange={e => handleMilestoneChange(idx, 'status', e.target.value)}
                                                             >
                                                                 <option value="Pending">Pending</option>
+                                                                <option value="In Progress">In Progress</option>
                                                                 <option value="Completed">Completed</option>
+                                                                <option value="Delayed">Delayed</option>
                                                             </select>
                                                         </div>
                                                     </div>

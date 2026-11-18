@@ -2,15 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { 
     Wrench, Package, AlertTriangle, CheckCircle2, Clock, User, Plus, 
     Search, Filter, RotateCcw, ArrowRightLeft, DollarSign, ShieldAlert, 
-    X, Check, Hammer, Tag, Calendar, ChevronRight, History, Layers
+    X, Check, Hammer, Tag, Calendar, ChevronRight, History, Layers,
+    Building2, Truck, QrCode, Scan, Printer, Activity
 } from 'lucide-react';
 import api from '../../services/api';
 import { formatCurrencyINR } from '../../utils/pdfHelpers';
+import WarehouseLocationsTab from '../../components/inventory/WarehouseLocationsTab';
+import StockTransfersTab from '../../components/inventory/StockTransfersTab';
+import MachineAnalyticsTab from '../../components/inventory/MachineAnalyticsTab';
+import QRBarcodeScannerModal from '../../components/inventory/QRBarcodeScannerModal';
+import QRLabelModal from '../../components/inventory/QRLabelModal';
 
 const AdminInventory = () => {
-    const [activeTab, setActiveTab] = useState('tools'); // 'tools' | 'materials' | 'repairs'
+    const [activeTab, setActiveTab] = useState('tools'); // 'tools' | 'materials' | 'repairs' | 'locations' | 'transfers'
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState(null);
+    const [warehouses, setWarehouses] = useState([]);
+    const [showScannerModal, setShowScannerModal] = useState(false);
+    const [showQRModal, setShowQRModal] = useState(false);
+    const [selectedQRItems, setSelectedQRItems] = useState([]);
 
     // Items and Repairs Data
     const [tools, setTools] = useState([]);
@@ -85,7 +95,15 @@ const AdminInventory = () => {
     useEffect(() => {
         fetchStats();
         fetchStaff();
+        fetchWarehouses();
     }, []);
+
+    const fetchWarehouses = async () => {
+        try {
+            const res = await api.get('/warehouses');
+            if (res.data.success) setWarehouses(res.data.warehouses);
+        } catch (_) {}
+    };
 
     useEffect(() => {
         if (activeTab === 'tools') fetchTools();
@@ -393,18 +411,34 @@ const AdminInventory = () => {
                 </div>
 
                 {/* Primary Action Buttons */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+                <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                    <button
+                        onClick={() => setShowScannerModal(true)}
+                        className="bg-indigo-950/10 hover:bg-indigo-950/20 text-indigo-700 dark:text-indigo-300 dark:bg-indigo-950/40 border border-indigo-300 dark:border-indigo-800 px-3.5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
+                    >
+                        <Scan className="w-4 h-4 text-indigo-600" /> Scanner Terminal
+                    </button>
+                    <button
+                        onClick={() => {
+                            const allItems = [...tools, ...materials];
+                            setSelectedQRItems(allItems.slice(0, 40));
+                            setShowQRModal(true);
+                        }}
+                        className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3.5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 border border-slate-200 dark:border-slate-700"
+                    >
+                        <Printer className="w-4 h-4 text-slate-500" /> Print QR Labels
+                    </button>
                     <button
                         onClick={() => handleOpenCreateItem('tool')}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition active:scale-95"
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/20 transition active:scale-95"
                     >
-                        <Plus className="w-4 h-4" /> Add New Tool
+                        <Plus className="w-4 h-4" /> Add Tool
                     </button>
                     <button
                         onClick={() => handleOpenCreateItem('material')}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition active:scale-95"
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 transition active:scale-95"
                     >
-                        <Plus className="w-4 h-4" /> Add Material / Product
+                        <Plus className="w-4 h-4" /> Add Material
                     </button>
                 </div>
             </div>
@@ -487,6 +521,36 @@ const AdminInventory = () => {
                     }`}
                 >
                     <Hammer className="w-4 h-4" /> Tool Repairs ({repairs.length})
+                </button>
+                <button
+                    onClick={() => { setActiveTab('locations'); setSearchQuery(''); }}
+                    className={`px-4 sm:px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition whitespace-nowrap flex-shrink-0 ${
+                        activeTab === 'locations'
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                >
+                    <Building2 className="w-4 h-4" /> Warehouses & Sites ({warehouses.length})
+                </button>
+                <button
+                    onClick={() => { setActiveTab('transfers'); setSearchQuery(''); }}
+                    className={`px-4 sm:px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition whitespace-nowrap flex-shrink-0 ${
+                        activeTab === 'transfers'
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                >
+                    <Truck className="w-4 h-4" /> Stock Transfers
+                </button>
+                <button
+                    onClick={() => { setActiveTab('machine-analytics'); setSearchQuery(''); }}
+                    className={`px-4 sm:px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition whitespace-nowrap flex-shrink-0 ${
+                        activeTab === 'machine-analytics'
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                >
+                    <Activity className="w-4 h-4" /> Machine Analytics
                 </button>
             </div>
 
@@ -1156,7 +1220,21 @@ const AdminInventory = () => {
                 </div>
             )}
 
-            {/* ══════════════ MODAL: ADD / EDIT ITEM ══════════════ */}
+            {/* ══════════════ TAB 4: WAREHOUSE LOCATIONS & SITE STOCK ══════════════ */}
+            {activeTab === 'locations' && (
+                <WarehouseLocationsTab staffList={staffList} />
+            )}
+
+            {/* ══════════════ TAB 5: INTER-LOCATION STOCK TRANSFERS ══════════════ */}
+            {activeTab === 'transfers' && (
+                <StockTransfersTab materials={materials} warehouses={warehouses} />
+            )}
+
+            {/* ══════════════ TAB 6: MACHINE UTILIZATION & DOWNTIME ANALYTICS ══════════════ */}
+            {activeTab === 'machine-analytics' && (
+                <MachineAnalyticsTab machines={tools} />
+            )}
+
             {/* ══════════════ MODAL: ADD / EDIT ITEM ══════════════ */}
             {showItemModal && (
                 <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
@@ -1830,6 +1908,24 @@ const AdminInventory = () => {
                     </div>
                 </div>
             )}
+            {/* ══════════════ MODAL: QR & BARCODE SCANNER TERMINAL ══════════════ */}
+            <QRBarcodeScannerModal
+                isOpen={showScannerModal}
+                onClose={() => setShowScannerModal(false)}
+                warehouses={warehouses}
+                onStockUpdated={() => {
+                    fetchStats();
+                    fetchMaterials();
+                    fetchTools();
+                }}
+            />
+
+            {/* ══════════════ MODAL: PRINTABLE QR LABELS ══════════════ */}
+            <QRLabelModal
+                isOpen={showQRModal}
+                onClose={() => setShowQRModal(false)}
+                items={selectedQRItems}
+            />
         </div>
     );
 };

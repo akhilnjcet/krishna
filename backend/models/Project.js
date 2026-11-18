@@ -38,6 +38,38 @@ const projectSchema = new mongoose.Schema({
         date: { type: Date, required: true },
         status: { type: String, enum: ['Pending', 'Completed'], default: 'Pending' }
     }],
+    startDate: { type: Date, default: Date.now },
+    milestones: [{
+        title: { type: String, required: true, trim: true },
+        description: { type: String, default: '' },
+        assignedStaff: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        assignedStaffNames: [{ type: String }],
+        plannedStartDate: { type: Date },
+        deadline: { type: Date, required: true },
+        actualCompletionDate: { type: Date },
+        status: { 
+            type: String, 
+            enum: ['Pending', 'In Progress', 'Completed', 'Delayed'], 
+            default: 'Pending',
+            index: true
+        },
+        progressPercentage: { type: Number, default: 0, min: 0, max: 100 },
+        completionEvidence: [{
+            url: { type: String },
+            notes: { type: String },
+            uploadedAt: { type: Date, default: Date.now }
+        }],
+        notes: { type: String, default: '' },
+        delayReason: { type: String, default: '' },
+        weightPercentage: { type: Number, default: 10 }
+    }],
+    milestoneActivity: [{
+        action: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+        performedBy: { type: String, default: 'Admin' },
+        performedById: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        notes: { type: String, default: '' }
+    }],
     timelineStatus: {
         type: String,
         enum: ['None', 'Proposed by Staff', 'Sent to Client'],

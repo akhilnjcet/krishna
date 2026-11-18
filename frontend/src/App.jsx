@@ -98,6 +98,12 @@ const DocumentHistory = lazy(() => import('./pages/admin/DocumentHistory'));
 const AdminInventory = lazy(() => import('./pages/admin/AdminInventory'));
 const AdminBOMCosting = lazy(() => import('./pages/admin/AdminBOMCosting'));
 const DigitalLetterPad = lazy(() => import('./pages/admin/DigitalLetterPad'));
+const AdminProductionPlanning = lazy(() => import('./pages/admin/AdminProductionPlanning'));
+const AdminFleet = lazy(() => import('./pages/admin/AdminFleet'));
+const AdminAIErpAssistant = lazy(() => import('./pages/admin/AdminAIErpAssistant'));
+const AdminCRM = lazy(() => import('./pages/admin/AdminCRM'));
+const AdminDefectsRework = lazy(() => import('./pages/admin/AdminDefectsRework'));
+const AdminWarrantyService = lazy(() => import('./pages/admin/AdminWarrantyService'));
 
 // Staff Pages (Lazy loaded on demand)
 const StaffDashboard = lazy(() => import('./pages/staff/StaffDashboard'));
@@ -602,6 +608,12 @@ const App = () => {
               <Route path="document-history" element={<DocumentHistory />} />
               <Route path="letter-pad" element={<DigitalLetterPad />} />
               <Route path="letterpad" element={<DigitalLetterPad />} />
+              <Route path="production-planning" element={<AdminProductionPlanning />} />
+              <Route path="fleet" element={<AdminFleet />} />
+              <Route path="ai-assistant" element={<AdminAIErpAssistant />} />
+              <Route path="crm" element={<AdminCRM />} />
+              <Route path="defects" element={<AdminDefectsRework />} />
+              <Route path="warranty-service" element={<AdminWarrantyService />} />
               <Route path="legal-policies" element={<AdminLegalPolicies />} />
               <Route path="careers" element={<AdminCareers />} />
             </Route>

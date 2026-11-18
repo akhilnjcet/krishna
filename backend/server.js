@@ -350,6 +350,13 @@ app.use('/api/feedback', require('./routes/feedbackRoutes'));
 app.use('/api/vacancies', require('./routes/vacancyRoutes'));
 app.use('/api/announcements', require('./routes/announcementRoutes'));
 app.use('/api', require('./routes/bomCostingRoutes'));
+app.use('/api', require('./routes/warehouseRoutes'));
+app.use('/api', require('./routes/defectReworkRoutes'));
+app.use('/api', require('./routes/warrantyServiceRoutes'));
+app.use('/api/production-plans', require('./routes/productionPlanRoutes'));
+app.use('/api/machines', require('./routes/machineAnalyticsRoutes'));
+app.use('/api/vehicles', require('./routes/vehicleRoutes'));
+app.use('/api/ai-erp', require('./routes/aiErpRoutes'));
 
 // Root Error Route
 app.get('/api/debug/error', (req, res) => {

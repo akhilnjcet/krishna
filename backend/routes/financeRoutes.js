@@ -6,7 +6,11 @@ const {
     getCustomerDues, 
     getExpenses, 
     addExpense,
-    addSalary
+    addSalary,
+    getCashFlowForecast,
+    addCashFlowAdjustment,
+    getCashFlowAdjustments,
+    deleteCashFlowAdjustment
 } = require('../controllers/financeController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -19,5 +23,11 @@ router.post('/salaries', protect, authorize('admin'), addSalary);
 router.route('/expenses')
     .get(protect, authorize('admin'), getExpenses)
     .post(protect, authorize('admin', 'staff'), addExpense);
+
+// Cash Flow Forecasting
+router.get('/cash-flow-forecast', protect, authorize('admin', 'accountant'), getCashFlowForecast);
+router.get('/adjustments', protect, authorize('admin', 'accountant'), getCashFlowAdjustments);
+router.post('/adjustments', protect, authorize('admin', 'accountant'), addCashFlowAdjustment);
+router.delete('/adjustments/:id', protect, authorize('admin'), deleteCashFlowAdjustment);
 
 module.exports = router;

@@ -496,6 +496,26 @@ exports.sendTimeline = async (req, res) => {
 
         project.timeline = timeline;
         project.timelineStatus = 'Sent to Client';
+
+        // Auto-sync milestones collection with published timeline
+        if (!project.milestones) project.milestones = [];
+        timeline.forEach(t => {
+            const existingM = project.milestones.find(m => m.title === t.title);
+            if (existingM) {
+                existingM.deadline = new Date(t.date);
+                existingM.status = t.status || existingM.status;
+                if (t.description) existingM.description = t.description;
+            } else {
+                project.milestones.push({
+                    title: t.title,
+                    description: t.description || '',
+                    deadline: new Date(t.date),
+                    status: t.status || 'Pending',
+                    progressPercentage: t.status === 'Completed' ? 100 : 0
+                });
+            }
+        });
+
         const savedProject = await project.save();
 
         let emailNotification = { sent: false, skipped: true, reason: 'Client email notification checkbox was not enabled.' };
@@ -654,3 +674,229 @@ exports.deleteAdditionalWork = async (req, res) => {
 };
 
 exports.analyzeTimelineChanges = analyzeTimelineChanges;
+
+// ─── FEATURE 4: PROJECT MILESTONE & TIMELINE MANAGEMENT ─────────────
+
+// Add a milestone to a project
+exports.addMilestone = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        const {
+            title,
+            description,
+            assignedStaff = [],
+            plannedStartDate,
+            deadline,
+            weightPercentage = 10,
+            notes
+        } = req.body;
+
+        if (!title || !deadline) {
+            return res.status(400).json({ message: 'Milestone title and deadline are required' });
+        }
+
+        // Fetch staff names
+        const User = require('../models/User');
+        const staffDocs = await User.find({ _id: { $in: assignedStaff } });
+        const assignedStaffNames = staffDocs.map(s => s.name);
+
+        const newMilestone = {
+            title: title.trim(),
+            description: description || '',
+            assignedStaff,
+            assignedStaffNames,
+            plannedStartDate: plannedStartDate ? new Date(plannedStartDate) : new Date(),
+            deadline: new Date(deadline),
+            status: 'Pending',
+            progressPercentage: 0,
+            weightPercentage: parseFloat(weightPercentage) || 10,
+            notes: notes || '',
+            completionEvidence: []
+        };
+
+        if (!project.milestones) project.milestones = [];
+        project.milestones.push(newMilestone);
+
+        // Also add backwards-compatible timeline entry
+        project.timeline.push({
+            title: title.trim(),
+            description: description || '',
+            date: new Date(deadline),
+            status: 'Pending'
+        });
+
+        project.milestoneActivity.unshift({
+            action: `Added Milestone: ${title.trim()}`,
+            timestamp: new Date(),
+            performedBy: req.user?.name || 'Admin',
+            performedById: req.user?._id,
+            notes: `Target deadline: ${new Date(deadline).toLocaleDateString()}`
+        });
+
+        await project.save();
+        res.status(201).json({ success: true, message: 'Milestone added successfully', milestones: project.milestones, milestone: newMilestone });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+// Update an existing milestone
+exports.updateMilestone = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        const milestone = project.milestones.id(req.params.milestoneId);
+        if (!milestone) return res.status(404).json({ message: 'Milestone not found' });
+
+        const {
+            title,
+            description,
+            assignedStaff,
+            plannedStartDate,
+            deadline,
+            weightPercentage,
+            notes
+        } = req.body;
+
+        if (title) milestone.title = title.trim();
+        if (description !== undefined) milestone.description = description;
+        if (plannedStartDate) milestone.plannedStartDate = new Date(plannedStartDate);
+        if (deadline) milestone.deadline = new Date(deadline);
+        if (weightPercentage !== undefined) milestone.weightPercentage = parseFloat(weightPercentage);
+        if (notes !== undefined) milestone.notes = notes;
+
+        if (assignedStaff && Array.isArray(assignedStaff)) {
+            milestone.assignedStaff = assignedStaff;
+            const User = require('../models/User');
+            const staffDocs = await User.find({ _id: { $in: assignedStaff } });
+            milestone.assignedStaffNames = staffDocs.map(s => s.name);
+        }
+
+        project.milestoneActivity.unshift({
+            action: `Updated Milestone: ${milestone.title}`,
+            timestamp: new Date(),
+            performedBy: req.user?.name || 'Admin',
+            performedById: req.user?._id,
+            notes: 'Milestone details updated'
+        });
+
+        await project.save();
+        res.json({ success: true, message: 'Milestone updated successfully', milestone });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+// Update milestone progress, status, and completion evidence
+exports.updateMilestoneStatus = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        const milestone = project.milestones.id(req.params.milestoneId);
+        if (!milestone) return res.status(404).json({ message: 'Milestone not found' });
+
+        const { status, progressPercentage, delayReason, notes, evidenceUrl, evidenceNotes } = req.body;
+
+        if (status) {
+            milestone.status = status;
+            if (status === 'Completed') {
+                milestone.actualCompletionDate = new Date();
+                milestone.progressPercentage = 100;
+            } else if (status === 'Pending') {
+                milestone.actualCompletionDate = null;
+            }
+        }
+
+        if (progressPercentage !== undefined) {
+            milestone.progressPercentage = Math.max(0, Math.min(100, parseFloat(progressPercentage)));
+            if (milestone.progressPercentage === 100 && milestone.status !== 'Completed') {
+                milestone.status = 'Completed';
+                milestone.actualCompletionDate = new Date();
+            }
+        }
+
+        if (delayReason !== undefined) milestone.delayReason = delayReason;
+        if (notes !== undefined) milestone.notes = notes;
+
+        if (evidenceUrl) {
+            milestone.completionEvidence.push({
+                url: evidenceUrl,
+                notes: evidenceNotes || 'Milestone completion proof',
+                uploadedAt: new Date()
+            });
+        }
+
+        // Auto-recalculate project overall progress based on weighted milestone percentages
+        if (project.milestones.length > 0) {
+            const totalWeight = project.milestones.reduce((s, m) => s + (m.weightPercentage || 10), 0);
+            if (totalWeight > 0) {
+                const weightedProgress = project.milestones.reduce((s, m) => {
+                    const wt = m.weightPercentage || 10;
+                    const prog = m.status === 'Completed' ? 100 : (m.progressPercentage || 0);
+                    return s + ((prog * wt) / totalWeight);
+                }, 0);
+                project.progress = Math.round(weightedProgress);
+            }
+        }
+
+        // Check if all milestones completed
+        const allDone = project.milestones.every(m => m.status === 'Completed');
+        if (allDone && project.milestones.length > 0 && project.status !== 'completed' && project.status !== 'Completed') {
+            project.status = 'completed';
+        }
+
+        project.milestoneActivity.unshift({
+            action: `Milestone Status: ${milestone.title} -> ${milestone.status} (${milestone.progressPercentage}%)`,
+            timestamp: new Date(),
+            performedBy: req.user?.name || 'Staff',
+            performedById: req.user?._id,
+            notes: notes || (delayReason ? `Delay Reason: ${delayReason}` : 'Status updated')
+        });
+
+        await project.save();
+        res.json({ success: true, message: 'Milestone status updated successfully', milestone, projectProgress: project.progress });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+// Cross-project query for overdue/delayed milestones
+exports.getMilestoneDelays = async (req, res) => {
+    try {
+        const now = new Date();
+        const projects = await Project.find({
+            status: { $nin: ['completed', 'Completed', 'cancelled', 'Cancelled', 'CANCELLED'] }
+        }).populate('customerId', 'name email phone');
+
+        const delayedMilestones = [];
+        projects.forEach(p => {
+            (p.milestones || []).forEach(m => {
+                const isOverdue = m.status !== 'Completed' && new Date(m.deadline) < now;
+                if (isOverdue || m.status === 'Delayed') {
+                    const daysOverdue = Math.max(0, Math.ceil((now - new Date(m.deadline)) / (1000 * 60 * 60 * 24)));
+                    delayedMilestones.push({
+                        projectId: p._id,
+                        projectTitle: p.title,
+                        customerName: p.customerId?.name || 'Client',
+                        milestoneId: m._id,
+                        title: m.title,
+                        deadline: m.deadline,
+                        status: m.status,
+                        progressPercentage: m.progressPercentage,
+                        delayReason: m.delayReason,
+                        daysOverdue,
+                        assignedStaffNames: m.assignedStaffNames || []
+                    });
+                }
+            });
+        });
+
+        res.json({ success: true, count: delayedMilestones.length, delayedMilestones });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};

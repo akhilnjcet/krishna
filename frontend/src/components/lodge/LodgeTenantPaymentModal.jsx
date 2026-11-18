@@ -320,18 +320,67 @@ export default function LodgeTenantPaymentModal({
   const extraChargesSummary = financials?.lineItems?.extraChargesSummary || { due: 0, paid: 0, remaining: 0 };
   const overall = financials?.overall || { totalDue: 0, totalPaid: 0, totalAdjusted: 0, totalRemaining: 0, status: 'Payment Due' };
 
-  // Calculate maximum payable for current selection
+  // Calculate maximum payable & titles for current selection
+  const unpaidExtraCharges = extraChargesList.filter(c => (c.remaining || 0) > 0);
+  const selectedExtraCharge = paymentTarget?.startsWith('EXTRA_')
+    ? extraChargesList.find(c => String(c.id) === paymentTarget.replace('EXTRA_', ''))
+    : null;
+
   let targetMaxDue = overall.totalRemaining;
   let targetTitle = 'Overall Outstanding Total';
-  if (paymentTarget === 'RENT') {
+  let effectivePaymentType = 'Rent';
+  let effectiveChargeCategory = 'Combined Settlement';
+
+  if (selectedExtraCharge) {
+    targetMaxDue = selectedExtraCharge.remaining || 0;
+    targetTitle = selectedExtraCharge.name;
+    effectivePaymentType = selectedExtraCharge.name;
+    effectiveChargeCategory = selectedExtraCharge.name;
+  } else if (paymentTarget === 'RENT') {
     targetMaxDue = rentData.remaining;
     targetTitle = 'Unpaid Room Rent';
+    effectivePaymentType = 'Rent';
+    effectiveChargeCategory = 'Rent';
   } else if (paymentTarget === 'DEPOSIT') {
     targetMaxDue = depositData.remaining;
     targetTitle = 'Unpaid Security Deposit';
+    effectivePaymentType = 'Security Deposit';
+    effectiveChargeCategory = 'Security Deposit';
   } else if (paymentTarget === 'EXTRA') {
     targetMaxDue = extraChargesSummary.remaining;
-    targetTitle = 'Unpaid Additional Charges';
+    targetTitle = unpaidExtraCharges.length === 1 ? unpaidExtraCharges[0].name : 'Unpaid Additional Charges';
+    effectivePaymentType = unpaidExtraCharges.length === 1 ? unpaidExtraCharges[0].name : 'Additional Charge';
+    effectiveChargeCategory = unpaidExtraCharges.map(c => c.name).join(' & ') || 'Additional Charges';
+  } else {
+    // paymentTarget === 'ALL' (Pay All Dues)
+    const rentRem = rentData.remaining || 0;
+    const depRem = depositData.remaining || 0;
+    const extraRem = extraChargesSummary.remaining || 0;
+
+    if (rentRem <= 0 && depRem <= 0 && extraRem > 0) {
+      // ONLY extra charge(s) are due (e.g., Electricity added by Admin)
+      if (unpaidExtraCharges.length === 1) {
+        targetTitle = unpaidExtraCharges[0].name;
+        effectivePaymentType = unpaidExtraCharges[0].name;
+        effectiveChargeCategory = unpaidExtraCharges[0].name;
+      } else {
+        targetTitle = `Additional Charges (${unpaidExtraCharges.map(c => c.name).join(', ')})`;
+        effectivePaymentType = 'Additional Charge';
+        effectiveChargeCategory = unpaidExtraCharges.map(c => c.name).join(' & ');
+      }
+    } else if (rentRem > 0 && depRem <= 0 && extraRem <= 0) {
+      targetTitle = 'Unpaid Room Rent';
+      effectivePaymentType = 'Rent';
+      effectiveChargeCategory = 'Rent';
+    } else if (rentRem <= 0 && depRem > 0 && extraRem <= 0) {
+      targetTitle = 'Unpaid Security Deposit';
+      effectivePaymentType = 'Security Deposit';
+      effectiveChargeCategory = 'Security Deposit';
+    } else {
+      targetTitle = 'Overall Outstanding Total';
+      effectivePaymentType = 'Combined Settlement';
+      effectiveChargeCategory = 'Combined Settlement';
+    }
   }
 
   // Active payment amount
@@ -392,8 +441,8 @@ export default function LodgeTenantPaymentModal({
     }
     setSubmitting(true);
     try {
-      const paymentType = paymentTarget === 'ALL' ? 'Rent' : (paymentTarget === 'DEPOSIT' ? 'Security Deposit' : (paymentTarget === 'EXTRA' ? 'Additional Charge' : 'Rent'));
-      const chargeCategory = paymentTarget === 'ALL' ? 'Combined Settlement' : (paymentTarget === 'DEPOSIT' ? 'Security Deposit' : (paymentTarget === 'EXTRA' ? 'Additional Charges' : 'Rent'));
+      const paymentType = effectivePaymentType;
+      const chargeCategory = effectiveChargeCategory;
 
       const returnUrl = `${window.location.origin}${window.location.pathname}${window.location.hash.split('?')[0]}?cf_order_id={order_id}&booking_id=${booking._id}`;
       const orderRes = await api.post('/payments/cashfree/create-order', {
@@ -478,6 +527,8 @@ export default function LodgeTenantPaymentModal({
             setLastPaymentReceipt({
               ...verifyRes.payment,
               targetTitle,
+              paymentType: verifyRes.payment?.paymentType || effectivePaymentType,
+              chargeCategory: verifyRes.payment?.chargeCategory || effectiveChargeCategory,
               lineItemsSnapshot: financials?.lineItems,
               overallSnapshot: financials?.overall,
               newRemaining: remBalance,
@@ -551,8 +602,8 @@ export default function LodgeTenantPaymentModal({
 
     setSubmitting(true);
     try {
-      const paymentType = paymentTarget === 'ALL' ? 'Rent' : (paymentTarget === 'DEPOSIT' ? 'Security Deposit' : (paymentTarget === 'EXTRA' ? 'Additional Charge' : 'Rent'));
-      const chargeCategory = paymentTarget === 'ALL' ? 'Combined Settlement' : (paymentTarget === 'DEPOSIT' ? 'Security Deposit' : (paymentTarget === 'EXTRA' ? 'Additional Charges' : 'Rent'));
+      const paymentType = effectivePaymentType;
+      const chargeCategory = effectiveChargeCategory;
 
       let res;
       if (isAdmin && isAdminDirectPay) {
@@ -595,6 +646,8 @@ export default function LodgeTenantPaymentModal({
       setLastPaymentReceipt({
         ...res.data.payment,
         targetTitle,
+        paymentType: res.data.payment?.paymentType || effectivePaymentType,
+        chargeCategory: res.data.payment?.chargeCategory || effectiveChargeCategory,
         lineItemsSnapshot: financials?.lineItems,
         overallSnapshot: financials?.overall,
         newRemaining: resultOverallRemaining,
@@ -1088,7 +1141,7 @@ export default function LodgeTenantPaymentModal({
 
                   {/* Extra Charges Cards if present */}
                   {extraChargesList.map(charge => (
-                    <div key={charge.id} className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <div key={charge.id} className={`p-3.5 rounded-xl border transition-all ${paymentTarget === 'EXTRA_' + charge.id ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 ring-2 ring-indigo-500/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <p className="font-black text-slate-900 dark:text-white text-sm">⚡ {charge.name}</p>
@@ -1115,6 +1168,17 @@ export default function LodgeTenantPaymentModal({
                           <span className="font-black text-rose-600">₹{charge.remaining.toLocaleString()}</span>
                         </div>
                       </div>
+                      {charge.remaining > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => { setPaymentTarget('EXTRA_' + charge.id); setPaymentMode('FULL'); }}
+                          className={`w-full mt-2.5 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 touch-manipulation min-h-[38px] ${
+                            paymentTarget === 'EXTRA_' + charge.id ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
+                          }`}
+                        >
+                          {paymentTarget === 'EXTRA_' + charge.id ? `✓ ${charge.name} Selected` : `Select ${charge.name} to Pay`}
+                        </button>
+                      )}
                     </div>
                   ))}
 
@@ -1225,10 +1289,25 @@ export default function LodgeTenantPaymentModal({
 
                       {/* Row 3+: Extra Charges (Itemized) */}
                       {extraChargesList.map(charge => (
-                        <tr key={charge.id} className="hover:bg-white dark:hover:bg-slate-900 transition-colors">
-                          <td className="py-2.5 pl-6">
-                            <p className="font-bold text-slate-900 dark:text-white">⚡ {charge.name}</p>
-                            {charge.notes && <p className="text-[10px] text-slate-400">{charge.notes}</p>}
+                        <tr key={charge.id} className={`hover:bg-white dark:hover:bg-slate-900 transition-colors ${paymentTarget === 'EXTRA_' + charge.id ? 'bg-indigo-50/60 dark:bg-indigo-950/20' : ''}`}>
+                          <td className="py-2.5 flex items-center gap-2">
+                            {charge.remaining > 0 ? (
+                              <button
+                                type="button"
+                                onClick={() => { setPaymentTarget('EXTRA_' + charge.id); setPaymentMode('FULL'); }}
+                                className={`p-1 rounded text-[10px] font-black uppercase ${
+                                  paymentTarget === 'EXTRA_' + charge.id ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                                }`}
+                              >
+                                Select
+                              </button>
+                            ) : (
+                              <span className="w-10"></span>
+                            )}
+                            <div>
+                              <p className="font-bold text-slate-900 dark:text-white">⚡ {charge.name}</p>
+                              {charge.notes && <p className="text-[10px] text-slate-400">{charge.notes}</p>}
+                            </div>
                           </td>
                           <td className="text-right py-2.5 font-bold">₹{charge.due.toLocaleString()}</td>
                           <td className="text-right py-2.5 font-bold text-emerald-600">₹{charge.paid.toLocaleString()}</td>
@@ -2537,7 +2616,9 @@ export default function LodgeTenantPaymentModal({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Payment Category:</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{lastPaymentReceipt.paymentType || 'Rent'}</span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {lastPaymentReceipt.chargeCategory || lastPaymentReceipt.paymentType || lastPaymentReceipt.targetTitle || 'Rent'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Payment Method:</span>

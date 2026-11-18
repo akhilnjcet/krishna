@@ -170,7 +170,7 @@ const StaffLayout = () => {
 
             {/* ── Main Content ────────────────────────── */}
             <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-64' : 'md:ml-0'}`}>
-                <header className="sticky top-0 z-40 h-16 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-3 sm:px-4 md:px-6 flex items-center justify-between gap-1.5 sm:gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
+                <header className="sticky top-0 z-50 h-16 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-3 sm:px-4 md:px-6 flex items-center justify-between gap-1.5 sm:gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
                     <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}

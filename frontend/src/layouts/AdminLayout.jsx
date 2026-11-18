@@ -6,7 +6,8 @@ import {
     Calculator, Receipt, TrendingUp, Settings, LogOut, Menu, X, Bell,
     Search, HelpCircle, ChevronRight, User, Filter, LayoutGrid, Activity,
     Clock, AlertCircle, Radio, MessageCircle, ChevronLeft, CheckSquare, Truck,
-    ShieldCheck, KeyRound, Package, Building2, Briefcase, PenTool
+    ShieldCheck, KeyRound, Package, Building2, Briefcase, PenTool, Sparkles,
+    AlertTriangle, Calendar, Bot
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,7 +27,13 @@ const SIDEBAR_ITEMS = [
     { name: 'Shift Control',   path: '/admin/shifts',       icon: Clock },
     { name: 'Leave Requests',  path: '/admin/leave',        icon: ClipboardList },
     { name: 'Projects Hub',    path: '/admin/projects',     icon: Layers },
+    { name: 'Production Plans', path: '/admin/production-planning', icon: Calendar },
     { name: 'Task Assignment Hub', path: '/admin/tasks',    icon: CheckSquare },
+    { name: 'Rework & Defects', path: '/admin/defects',     icon: AlertTriangle },
+    { name: 'Warranty & Service', path: '/admin/warranty-service', icon: ShieldCheck },
+    { name: 'CRM Pipeline',    path: '/admin/crm',          icon: Users },
+    { name: 'Fleet Logistics',  path: '/admin/fleet',        icon: Truck },
+    { name: 'AI ERP Copilot',  path: '/admin/ai-assistant', icon: Sparkles },
     { name: 'Notification Center', path: '/admin/notifications', icon: Bell },
     { name: 'Visual Portfolio', path: '/admin/portfolio',    icon: ImageIcon },
     { name: 'Formal Quotes',   path: '/admin/quotes',       icon: Receipt },
@@ -522,7 +529,7 @@ const AdminLayout = () => {
 
             {/* ── Main Content ────────────────────────── */}
             <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-[280px]' : 'md:ml-0'} print:ml-0 print:min-h-0 print:p-0`}>
-                <header className="sticky top-0 z-40 h-16 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-3 sm:px-4 md:px-6 flex items-center justify-between gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800 no-print print:hidden">
+                <header className="sticky top-0 z-50 h-16 bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-3 sm:px-4 md:px-6 flex items-center justify-between gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800 no-print print:hidden">
                     <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}

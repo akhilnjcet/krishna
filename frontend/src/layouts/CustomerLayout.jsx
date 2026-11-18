@@ -189,7 +189,7 @@ const CustomerLayout = () => {
             <div className={`flex-1 flex flex-col min-h-[100dvh] min-w-0 transition-all duration-300 ${desktopOpen ? 'md:ml-[280px]' : 'md:ml-0'}`}>
 
                 {/* Header with Safe Area Inset Support */}
-                <header className="sticky top-0 z-40 min-h-[4rem] pt-[env(safe-area-inset-top,0px)] bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-3 sm:px-4 md:px-6 flex items-center justify-between gap-1.5 sm:gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
+                <header className="sticky top-0 z-50 min-h-[4rem] pt-[env(safe-area-inset-top,0px)] bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] px-3 sm:px-4 md:px-6 flex items-center justify-between gap-1.5 sm:gap-2 shadow-lg dark:from-slate-900 dark:to-slate-950 dark:border-b dark:border-slate-800">
                     <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
                         <button
                             onClick={() => window.innerWidth < 768 ? setMobileOpen(true) : setDesktopOpen(v => !v)}

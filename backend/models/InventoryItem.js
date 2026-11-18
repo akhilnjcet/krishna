@@ -25,6 +25,26 @@ const inventoryItemSchema = new mongoose.Schema({
         type: String,
         default: 'Main Workshop Store'
     },
+    // Multi-location stock breakdown
+    locationStock: [{
+        warehouseId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Warehouse'
+        },
+        warehouseName: { type: String, default: 'Main Warehouse' },
+        quantity: { type: Number, default: 0 },
+        minThreshold: { type: Number, default: 5 }
+    }],
+    qrCode: {
+        type: String,
+        trim: true,
+        index: true
+    },
+    barcode: {
+        type: String,
+        trim: true,
+        index: true
+    },
     notes: {
         type: String,
         default: ''

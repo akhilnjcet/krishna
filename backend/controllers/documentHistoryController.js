@@ -113,7 +113,7 @@ exports.getDocuments = async (req, res) => {
         query.archived = archived === 'true';
 
         // Filter by category
-        if (category) {
+        if (category && category !== 'All') {
             // Map category queries to document types
             if (category === 'Quotations') query.documentType = 'Quotation';
             else if (category === 'Estimates') query.documentType = 'Estimate';
@@ -124,6 +124,7 @@ exports.getDocuments = async (req, res) => {
             else if (category === 'Salary Slips') query.documentType = 'Salary Slip';
             else if (category === 'Reports') query.documentType = { $in: ['Attendance Report', 'Project Report', 'General Report', 'Expense Report'] };
             else if (category === 'Receipts') query.documentType = 'Payment Receipt';
+            else query.documentType = category; // Directly match industrial categories: Technical Drawings, Agreements, etc.
         }
 
         // Filter by status
@@ -307,5 +308,109 @@ exports.getDocumentById = async (req, res) => {
     } catch (err) {
         console.error('Error fetching document detail:', err);
         res.status(500).json({ message: 'Internal server error fetching document details.' });
+    }
+};
+
+// Upload or Link an external Business Document (Technical Drawing, Site Photo, Agreement, etc.)
+exports.uploadBusinessDocument = async (req, res) => {
+    try {
+        const {
+            documentType,
+            title,
+            fileUrl,
+            fileName,
+            fileSize,
+            mimeType,
+            customerId,
+            projectId,
+            jobOrderNumber,
+            tags,
+            expiryDate,
+            reminderEnabled,
+            accessRoles,
+            notes
+        } = req.body;
+
+        if (!documentType || !fileUrl) {
+            return res.status(400).json({ message: 'Document category and file URL are required.' });
+        }
+
+        const documentNumber = `DOC-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+
+        const newDoc = await DocumentHistory.create({
+            documentType,
+            title: title || fileName || `${documentType} Record`,
+            documentNumber,
+            customerId: customerId || null,
+            projectId: projectId || null,
+            jobOrderNumber: jobOrderNumber || '',
+            fileUrl,
+            fileName: fileName || 'Document_Attachment',
+            fileSize: Number(fileSize) || 0,
+            mimeType: mimeType || 'application/pdf',
+            tags: Array.isArray(tags) ? tags : (tags ? tags.split(',').map(t => t.trim()) : []),
+            expiryDate: expiryDate ? new Date(expiryDate) : null,
+            reminderEnabled: !!reminderEnabled,
+            accessRoles: accessRoles || ['admin', 'manager', 'staff'],
+            createdBy: req.user.id,
+            createdByName: req.user.name || 'Staff',
+            data: { notes: notes || '', uploadedDirectly: true },
+            status: 'Approved',
+            approvalStatus: 'Approved',
+            auditLogs: [{
+                action: 'UPLOADED',
+                performedBy: req.user.name || 'Staff',
+                timestamp: new Date(),
+                details: `Document uploaded under category ${documentType}`
+            }]
+        });
+
+        res.status(201).json({ success: true, message: 'Document successfully saved in Digital Repository', document: newDoc });
+    } catch (err) {
+        console.error('Error uploading business document:', err);
+        res.status(500).json({ message: 'Internal server error uploading document.', error: err.message });
+    }
+};
+
+// Record an audit action (e.g. Download, View)
+exports.recordDocumentAction = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action, details } = req.body;
+
+        const doc = await DocumentHistory.findById(id);
+        if (!doc) {
+            return res.status(404).json({ message: 'Document not found' });
+        }
+
+        doc.auditLogs.push({
+            action: action || 'ACCESSED',
+            performedBy: req.user ? req.user.name : 'User',
+            timestamp: new Date(),
+            details: details || ''
+        });
+
+        await doc.save();
+        res.json({ success: true, message: 'Audit action logged' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+// Retrieve documents expiring soon (within 30 days)
+exports.getExpiringDocuments = async (req, res) => {
+    try {
+        const now = new Date();
+        const in30Days = new Date();
+        in30Days.setDate(in30Days.getDate() + 30);
+
+        const expiring = await DocumentHistory.find({
+            expiryDate: { $gte: now, $lte: in30Days },
+            archived: false
+        }).sort({ expiryDate: 1 });
+
+        res.json({ success: true, count: expiring.length, documents: expiring });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 };

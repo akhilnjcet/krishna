@@ -10,15 +10,21 @@ const {
     sendTimeline,
     requestAdditionalWork,
     updateAdditionalWorkStatus,
-    deleteAdditionalWork
+    deleteAdditionalWork,
+    addMilestone,
+    updateMilestone,
+    updateMilestoneStatus,
+    getMilestoneDelays
 } = require('../controllers/projectController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const { validateObjectIdParam } = require('../utils/validateInputs');
 
+// Milestone delay summary across all projects
+router.get('/milestones/delays', protect, getMilestoneDelays);
+
 // Validate all :id and :workId route parameters
 router.param('id', validateObjectIdParam('id'));
 router.param('workId', validateObjectIdParam('workId'));
-
 
 router.route('/')
     .post(protect, authorize('admin'), createProject)
@@ -37,12 +43,16 @@ router.route('/:id/propose-timeline')
 router.route('/:id/send-timeline')
     .put(protect, authorize('admin'), sendTimeline);
 
+// Milestone routes
+router.post('/:id/milestones', protect, authorize('admin', 'staff'), addMilestone);
+router.put('/:id/milestones/:milestoneId', protect, authorize('admin', 'staff'), updateMilestone);
+router.patch('/:id/milestones/:milestoneId/status', protect, authorize('admin', 'staff'), updateMilestoneStatus);
+
 router.route('/:id/additional-work')
     .post(protect, authorize('admin', 'customer'), requestAdditionalWork);
 
 router.route('/:id/additional-work/:workId')
     .put(protect, authorize('admin'), updateAdditionalWorkStatus)
     .delete(protect, authorize('admin'), deleteAdditionalWork);
-
 
 module.exports = router;

@@ -221,112 +221,119 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
                 )}
             </button>
 
-            {/* Dropdown Card */}
+            {/* Dropdown Card & Backdrop */}
             <AnimatePresence>
                 {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                        transition={{ duration: 0.15 }}
-                        className="fixed sm:absolute inset-x-3 sm:inset-x-auto top-[calc(env(safe-area-inset-top,0px)+4.25rem)] sm:top-full sm:right-0 sm:mt-2 w-auto sm:w-[420px] max-w-[440px] sm:max-w-[94vw] mx-auto sm:mx-0 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[85vh]"
-                    >
-                        {/* Header */}
-                        <div className="p-3.5 sm:p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/95 dark:bg-slate-900/95 shrink-0 gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                                <h3 className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base truncate">
-                                    Notifications
-                                </h3>
-                                {unreadCount > 0 && (
-                                    <span className="px-2 py-0.5 text-[11px] sm:text-xs font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 shrink-0">
-                                        {unreadCount} new
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                                {/* Sound Mute / Unmute Button */}
-                                <button
-                                    type="button"
-                                    onClick={handleToggleMute}
-                                    title={muted ? 'Unmute notification tones' : 'Mute notification tones'}
-                                    className={`p-1.5 rounded-lg transition-colors ${
-                                        muted 
-                                            ? 'text-rose-500 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100' 
-                                            : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
-                                    }`}
-                                >
-                                    {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                                </button>
-
-                                {/* Mark all as read */}
-                                {unreadCount > 0 && (
+                    <>
+                        {/* Mobile backdrop for outside tap & clean backdrop separation */}
+                        <div
+                            className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-40 sm:hidden"
+                            onClick={() => setIsOpen(false)}
+                            aria-hidden="true"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                            transition={{ duration: 0.15 }}
+                            className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-[calc(env(safe-area-inset-top,0px)+4rem)] sm:top-full sm:mt-2 w-auto sm:w-[420px] max-w-[calc(100vw-1.5rem)] sm:max-w-[94vw] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-5rem)] sm:max-h-[85vh]"
+                        >
+                            {/* Header */}
+                            <div className="p-3.5 sm:p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0 gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <h3 className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base truncate">
+                                        Notifications
+                                    </h3>
+                                    {unreadCount > 0 && (
+                                        <span className="px-2 py-0.5 text-[11px] sm:text-xs font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 shrink-0">
+                                            {unreadCount} new
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                                    {/* Sound Mute / Unmute Button */}
                                     <button
                                         type="button"
-                                        onClick={handleMarkAllRead}
-                                        title="Mark all as read"
-                                        className="p-1.5 text-xs font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 flex items-center gap-1 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                        onClick={handleToggleMute}
+                                        title={muted ? 'Unmute notification tones' : 'Mute notification tones'}
+                                        className={`p-1.5 rounded-lg transition-colors ${
+                                            muted 
+                                                ? 'text-rose-500 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100' 
+                                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
+                                        }`}
                                     >
-                                        <CheckCheck className="w-4 h-4" />
-                                        <span className="hidden sm:inline">Mark read</span>
+                                        {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                                     </button>
-                                )}
 
-                                {/* Refresh */}
-                                <button
-                                    type="button"
-                                    onClick={fetchNotifications}
-                                    title="Refresh notifications"
-                                    className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                                >
-                                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                                </button>
+                                    {/* Mark all as read */}
+                                    {unreadCount > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={handleMarkAllRead}
+                                            title="Mark all as read"
+                                            className="p-1.5 text-xs font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 flex items-center gap-1 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                        >
+                                            <CheckCheck className="w-4 h-4" />
+                                            <span className="hidden sm:inline">Mark read</span>
+                                        </button>
+                                    )}
 
-                                {/* Close Button on mobile */}
-                                <button
-                                    type="button"
-                                    onClick={() => setIsOpen(false)}
-                                    title="Close notifications"
-                                    className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors sm:hidden"
-                                    aria-label="Close notifications panel"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Category Filter Pills (if multiple categories present) */}
-                        {categoriesAvailable.length > 1 && (
-                            <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedCategory('all')}
-                                    className={`px-2.5 py-1 text-xs rounded-full font-medium transition-colors whitespace-nowrap ${
-                                        selectedCategory === 'all'
-                                            ? 'bg-blue-600 text-white shadow-sm'
-                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                                    }`}
-                                >
-                                    All
-                                </button>
-                                {categoriesAvailable.map(cat => (
+                                    {/* Refresh */}
                                     <button
-                                        key={cat}
                                         type="button"
-                                        onClick={() => setSelectedCategory(cat)}
-                                        className={`px-2.5 py-1 text-xs rounded-full font-medium transition-colors whitespace-nowrap capitalize ${
-                                            selectedCategory === cat
+                                        onClick={fetchNotifications}
+                                        title="Refresh notifications"
+                                        className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                    >
+                                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                                    </button>
+
+                                    {/* Close Button on mobile */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsOpen(false)}
+                                        title="Close notifications"
+                                        className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors sm:hidden"
+                                        aria-label="Close notifications panel"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Category Filter Pills (if multiple categories present) */}
+                            {categoriesAvailable.length > 1 && (
+                                <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedCategory('all')}
+                                        className={`px-2.5 py-1 text-xs rounded-full font-medium transition-colors whitespace-nowrap ${
+                                            selectedCategory === 'all'
                                                 ? 'bg-blue-600 text-white shadow-sm'
                                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                                         }`}
                                     >
-                                        {cat.replace('_', ' ')}
+                                        All
                                     </button>
-                                ))}
-                            </div>
-                        )}
+                                    {categoriesAvailable.map(cat => (
+                                        <button
+                                            key={cat}
+                                            type="button"
+                                            onClick={() => setSelectedCategory(cat)}
+                                            className={`px-2.5 py-1 text-xs rounded-full font-medium transition-colors whitespace-nowrap capitalize ${
+                                                selectedCategory === cat
+                                                    ? 'bg-blue-600 text-white shadow-sm'
+                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                            }`}
+                                        >
+                                            {cat.replace('_', ' ')}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
 
-                        {/* Notification Items List */}
-                        <div className="overflow-y-auto min-h-0 divide-y divide-slate-100 dark:divide-slate-800 flex-1 overscroll-contain">
+                            {/* Notification Items List */}
+                            <div className="overflow-y-auto min-h-0 divide-y divide-slate-100 dark:divide-slate-800 flex-1 overscroll-contain bg-white dark:bg-slate-900">
                             {filteredList.length === 0 ? (
                                 <div className="p-8 text-center">
                                     <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
@@ -402,7 +409,7 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
                         </div>
 
                         {/* Footer */}
-                        <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/95 dark:bg-slate-900/95 flex items-center justify-between text-xs shrink-0">
+                        <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between text-xs shrink-0">
                             <button
                                 type="button"
                                 onClick={handleClearRead}
@@ -425,6 +432,7 @@ const NotificationBellDropdown = ({ role = 'admin', customSettingsLink = null })
                             )}
                         </div>
                     </motion.div>
+                    </>
                 )}
             </AnimatePresence>
         </div>

@@ -520,6 +520,9 @@ async function processConfirmedCashfreeOrder(orderData, successfulPaymentInput =
         }
     }
 
+    // Check if already completed to prevent duplicate notifications during polling
+    const wasAlreadyCompleted = payment.status === 'Completed';
+
     // Mark as verified & completed
     payment.status = 'Completed';
     payment.amount = verifiedAmount;
@@ -586,26 +589,54 @@ async function processConfirmedCashfreeOrder(orderData, successfulPaymentInput =
 
         let rentPaid = 0;
         let depositPaid = 0;
+        const extraCharges = Array.isArray(targetBooking.extraCharges) ? targetBooking.extraCharges : [];
+        const extraChargesPaidDirectMap = {};
+
         uniquePayments.forEach(vp => {
             const t = (vp.paymentType || '').toLowerCase();
+            const c = (vp.chargeCategory || '').toLowerCase();
+            const n = (vp.notes || '').toLowerCase();
             const amt = parseFloat(vp.amount) || 0;
+
+            const isMatchExtra = extraCharges.some(ec => {
+                const en = (ec.name || '').toLowerCase();
+                return en && (t.includes(en) || c.includes(en) || n.includes(en));
+            });
+
             if (t.includes('refund')) {
                 // Refund
-            } else if (t.includes('rent') && !t.includes('adjustment')) {
-                rentPaid += amt;
             } else if (t.includes('deposit') && !t.includes('adjustment')) {
                 depositPaid += amt;
+            } else if (isMatchExtra || t.includes('additional') || t.includes('extra') || t.includes('charge') || t.includes('service')) {
+                let matchedName = vp.chargeCategory || vp.paymentType || 'Extra';
+                for (const ec of extraCharges) {
+                    const en = (ec.name || '').toLowerCase();
+                    if (en && (t.includes(en) || c.includes(en) || n.includes(en))) {
+                        matchedName = ec.name;
+                        break;
+                    }
+                }
+                extraChargesPaidDirectMap[matchedName] = (extraChargesPaidDirectMap[matchedName] || 0) + amt;
+            } else if (t.includes('rent') && !t.includes('adjustment')) {
+                rentPaid += amt;
             } else if (!t.includes('adjustment')) {
                 rentPaid += amt;
             }
         });
 
+        // Sync direct payments to extra charges
+        if (extraCharges.length > 0) {
+            extraCharges.forEach(ec => {
+                const directPaid = extraChargesPaidDirectMap[ec.name] || 0;
+                if (directPaid > 0) {
+                    ec.paidAmount = Math.max(parseFloat(ec.paidAmount) || 0, directPaid);
+                }
+            });
+        }
+
         const pType = (payment.paymentType || tagPaymentType || '').toLowerCase();
         const pCat = (payment.chargeCategory || '').toLowerCase();
         const isCombined = pCat.includes('combined') || (payment.notes || '').toLowerCase().includes('overall outstanding');
-
-        // Check extra charges in targetBooking
-        const extraCharges = Array.isArray(targetBooking.extraCharges) ? targetBooking.extraCharges : [];
         let totalExtraRemaining = 0;
         
         if (extraCharges.length > 0) {
@@ -724,31 +755,34 @@ async function processConfirmedCashfreeOrder(orderData, successfulPaymentInput =
         }
     }
 
-    try {
-        const { dispatchNotification } = require('../services/notificationDispatcher');
-        dispatchNotification({
-            title: 'Cashfree Payment Received',
-            message: `₹${verifiedAmount} received successfully (Order ID: ${orderId}).`,
-            category: 'payment',
-            priority: 'high',
-            recipientRole: 'admin',
-            link: '/admin/finance',
-            metadata: { orderId, amount: verifiedAmount, cfPaymentId }
-        }).catch(() => {});
-
-        const custId = payment.customerId?._id || payment.customerId;
-        if (custId) {
+    if (!wasAlreadyCompleted) {
+        try {
+            const { dispatchNotification } = require('../services/notificationDispatcher');
             dispatchNotification({
-                title: 'Payment Successful',
-                message: `Your payment of ₹${verifiedAmount} has been confirmed. Thank you!`,
+                title: 'Cashfree Payment Received',
+                message: `₹${verifiedAmount} received successfully (Order ID: ${orderId}).`,
                 category: 'payment',
-                priority: 'medium',
-                recipientRole: 'customer',
-                recipientUser: custId,
-                link: '/customer/payments'
+                priority: 'high',
+                recipientRole: 'admin',
+                link: '/admin/finance',
+                metadata: { orderId, amount: verifiedAmount, cfPaymentId }
             }).catch(() => {});
-        }
-    } catch (e) {}
+
+            const custId = payment.customerId?._id || payment.customerId;
+            if (custId) {
+                dispatchNotification({
+                    title: 'Payment Successful',
+                    message: `Your payment of ₹${verifiedAmount} has been confirmed. Thank you!`,
+                    category: 'payment',
+                    priority: 'medium',
+                    recipientRole: 'customer',
+                    recipientUser: custId,
+                    link: '/customer/payments',
+                    metadata: { orderId, cfPaymentId }
+                }).catch(() => {});
+            }
+        } catch (e) {}
+    }
 
     return { 
         payment, 
