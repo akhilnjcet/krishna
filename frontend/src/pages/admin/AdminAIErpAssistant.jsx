@@ -9,13 +9,19 @@ import {
 } from 'lucide-react';
 
 const SUGGESTED_QUERIES = [
+    'How many employees are on leave today?',
+    'driver',
+    'Which vehicles are available?',
     'Which projects are delayed?',
-    'Which raw materials are running low?',
-    'My vehicle details',
-    'Company fleet status',
-    'Which production jobs are pending?',
-    'Which machines had the highest downtime this month?',
-    'What is the total pending customer payment?',
+    'Which materials are running low?',
+    'Pending payment ethra und?',
+    'Innu ethra per leave aanu?',
+    'Driver details kaanikk',
+    'Ethra vehicle tripil und?',
+    'Which E-Way Bills are expiring?',
+    'How much was spent on transport this month?',
+    'What is today\'s production?',
+    'Which machines are under maintenance?',
     'Summarize business performance'
 ];
 
@@ -310,8 +316,13 @@ const AdminAIErpAssistant = () => {
         setInputQuery('');
         setLoading(true);
 
+        const historyPayload = messages.slice(-10).map(m => ({ sender: m.sender, text: m.text }));
+
         try {
-            const res = await api.post('/ai-erp/query', { query });
+            const res = await api.post('/ai-erp/query', { 
+                query,
+                conversationHistory: historyPayload
+            });
             const aiReply = {
                 id: (Date.now() + 1).toString(),
                 sender: 'ai',

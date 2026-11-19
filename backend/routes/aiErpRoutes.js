@@ -5,7 +5,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
 
-router.post('/query', authorize('admin', 'staff'), aiErpController.askAiAssistant);
+router.post('/query', authorize('admin', 'manager', 'staff', 'driver'), aiErpController.askAiAssistant);
 router.get('/audit-logs', authorize('admin'), aiErpController.getAiAuditLogs);
 
 module.exports = router;
