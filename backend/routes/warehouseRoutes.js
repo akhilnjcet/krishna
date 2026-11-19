@@ -7,6 +7,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 router.get('/warehouses', protect, warehouseController.getAllWarehouses);
 router.post('/warehouses', protect, authorize('admin', 'manager'), warehouseController.createWarehouse);
 router.put('/warehouses/:id', protect, authorize('admin', 'manager'), warehouseController.updateWarehouse);
+router.delete('/warehouses/:id', protect, authorize('admin', 'manager'), warehouseController.deleteWarehouse);
 router.get('/warehouses/stock-overview', protect, warehouseController.getLocationStockOverview);
 
 // Stock Transfers

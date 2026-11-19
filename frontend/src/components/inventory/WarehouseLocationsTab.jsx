@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { 
     Building2, MapPin, Plus, User, AlertTriangle, 
-    Layers, Search, CheckCircle2, X, RefreshCw, Phone
+    Layers, Search, CheckCircle2, X, RefreshCw, Phone,
+    Edit, Trash2
 } from 'lucide-react';
 
-const WarehouseLocationsTab = ({ staffList = [] }) => {
+const WarehouseLocationsTab = ({ staffList = [], onRefreshWarehouses }) => {
     const [warehouses, setWarehouses] = useState([]);
     const [stockMatrix, setStockMatrix] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -22,7 +23,8 @@ const WarehouseLocationsTab = ({ staffList = [] }) => {
         managerId: '',
         managerName: '',
         managerPhone: '',
-        capacityNotes: ''
+        capacityNotes: '',
+        status: 'Active'
     });
 
     useEffect(() => {
@@ -64,10 +66,48 @@ const WarehouseLocationsTab = ({ staffList = [] }) => {
             managerId: staffList[0]?._id || '',
             managerName: staffList[0]?.name || '',
             managerPhone: staffList[0]?.phone || '',
-            capacityNotes: ''
+            capacityNotes: '',
+            status: 'Active'
         });
         setSelectedLocation(null);
         setShowModal(true);
+    };
+
+    const handleOpenEdit = (w, e) => {
+        if (e) e.stopPropagation();
+        setSelectedLocation(w);
+        setFormData({
+            name: w.name || '',
+            code: w.code || '',
+            type: w.type || 'Main Warehouse',
+            address: w.address || '',
+            managerId: w.managerId?._id || w.managerId || '',
+            managerName: w.managerName || '',
+            managerPhone: w.managerPhone || '',
+            capacityNotes: w.capacityNotes || '',
+            status: w.status || 'Active'
+        });
+        setShowModal(true);
+    };
+
+    const handleDeleteLocation = async (w, e) => {
+        if (e) e.stopPropagation();
+        if (!window.confirm(`Are you sure you want to permanently delete location "${w.name}" (${w.code})?\n\nThis will remove the location and refresh stock information across the ERP.`)) {
+            return;
+        }
+        try {
+            const res = await api.delete(`/warehouses/${w._id}`);
+            if (res.data?.success || res.status === 200) {
+                if (filterLocId === w._id) {
+                    setFilterLocId('ALL');
+                }
+                fetchWarehouses();
+                fetchStockMatrix();
+                if (onRefreshWarehouses) onRefreshWarehouses();
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || err.message || 'Failed to delete warehouse location.');
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -86,10 +126,12 @@ const WarehouseLocationsTab = ({ staffList = [] }) => {
                 await api.post('/warehouses', payload);
             }
             setShowModal(false);
+            setSelectedLocation(null);
             fetchWarehouses();
             fetchStockMatrix();
+            if (onRefreshWarehouses) onRefreshWarehouses();
         } catch (err) {
-            alert(err.response?.data?.message || 'Error saving warehouse location');
+            alert(err.response?.data?.message || err.message || 'Error saving warehouse location');
         }
     };
 
@@ -155,7 +197,25 @@ const WarehouseLocationsTab = ({ staffList = [] }) => {
                                     </span>
                                     <h3 className="text-base font-bold text-slate-900 dark:text-white mt-1.5">{w.name}</h3>
                                 </div>
-                                <span className={`w-2.5 h-2.5 rounded-full ${w.status === 'Active' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => handleOpenEdit(w, e)}
+                                        className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 transition"
+                                        title="Edit Location Details"
+                                    >
+                                        <Edit className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => handleDeleteLocation(w, e)}
+                                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition"
+                                        title="Delete Location"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <span className={`w-2.5 h-2.5 rounded-full ${w.status === 'Active' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                                </div>
                             </div>
 
                             <p className="text-xs text-slate-500 mb-4 flex items-center gap-1.5">
@@ -375,6 +435,21 @@ const WarehouseLocationsTab = ({ staffList = [] }) => {
                                     className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100"
                                 />
                             </div>
+
+                            {selectedLocation && (
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Location Status</label>
+                                    <select
+                                        value={formData.status || 'Active'}
+                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100"
+                                    >
+                                        <option value="Active">Active</option>
+                                        <option value="Inactive">Inactive</option>
+                                        <option value="Archived">Archived</option>
+                                    </select>
+                                </div>
+                            )}
 
                             <div className="pt-3 flex justify-end gap-2">
                                 <button

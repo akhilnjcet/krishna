@@ -340,6 +340,9 @@ exports.adjustStock = async (req, res) => {
         }
 
         material.quantity = newQuantity;
+        if (req.body.location && typeof req.body.location === 'string' && req.body.location.trim()) {
+            material.location = req.body.location.trim();
+        }
         material.stockMovements.unshift({
             type,
             quantity: qtyNum,
@@ -347,6 +350,7 @@ exports.adjustStock = async (req, res) => {
             newQuantity,
             reason: reason || 'Manual Stock Update',
             reference: reference || '',
+            location: req.body.location || material.location || '',
             performedBy: req.user?.name || 'Administrator',
             date: new Date()
         });

@@ -142,6 +142,7 @@ const inventoryItemSchema = new mongoose.Schema({
         newQuantity: { type: Number },
         reason: { type: String },
         reference: { type: String }, // e.g. PO number, Project ID
+        location: { type: String, default: '' },
         performedBy: { type: String },
         date: { type: Date, default: Date.now }
     }]

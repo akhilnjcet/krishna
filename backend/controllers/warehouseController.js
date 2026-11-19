@@ -51,12 +51,66 @@ exports.createWarehouse = async (req, res) => {
 // @route PUT /api/warehouses/:id
 exports.updateWarehouse = async (req, res) => {
     try {
-        const warehouse = await Warehouse.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+        const { name, code, type, address, managerId, managerName, managerPhone, capacityNotes, status } = req.body;
+        
+        if (name || code) {
+            const orConditions = [];
+            if (name) orConditions.push({ name: name.trim() });
+            if (code) orConditions.push({ code: code.trim().toUpperCase() });
+
+            const existing = await Warehouse.findOne({
+                _id: { $ne: req.params.id },
+                $or: orConditions
+            });
+            if (existing) {
+                return res.status(400).json({ success: false, message: 'Another warehouse with this Name or Code already exists' });
+            }
+        }
+
+        const updateData = {};
+        if (name !== undefined) updateData.name = name.trim();
+        if (code !== undefined) updateData.code = code.trim().toUpperCase();
+        if (type !== undefined) updateData.type = type;
+        if (address !== undefined) updateData.address = address;
+        if (managerId !== undefined) updateData.managerId = managerId || null;
+        if (managerName !== undefined) updateData.managerName = managerName;
+        if (managerPhone !== undefined) updateData.managerPhone = managerPhone;
+        if (capacityNotes !== undefined) updateData.capacityNotes = capacityNotes;
+        if (status !== undefined) updateData.status = status;
+
+        const warehouse = await Warehouse.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
         if (!warehouse) {
-            return res.status(404).json({ success: false, message: 'Warehouse not found' });
+            return res.status(404).json({ success: false, message: 'Warehouse location not found' });
         }
         res.json({ success: true, warehouse });
     } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// @desc Delete warehouse location
+// @route DELETE /api/warehouses/:id
+exports.deleteWarehouse = async (req, res) => {
+    try {
+        const warehouse = await Warehouse.findById(req.params.id);
+        if (!warehouse) {
+            return res.status(404).json({ success: false, message: 'Warehouse location not found' });
+        }
+
+        // Clean up or remove locationStock references in InventoryItem
+        await InventoryItem.updateMany(
+            { 'locationStock.warehouseId': warehouse._id },
+            { $pull: { locationStock: { warehouseId: warehouse._id } } }
+        );
+
+        await Warehouse.findByIdAndDelete(req.params.id);
+
+        res.json({
+            success: true,
+            message: `Warehouse location "${warehouse.name}" (${warehouse.code}) deleted successfully`
+        });
+    } catch (err) {
+        console.error('deleteWarehouse error:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 };

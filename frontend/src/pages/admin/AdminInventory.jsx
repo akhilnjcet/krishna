@@ -83,7 +83,7 @@ const AdminInventory = () => {
     });
 
     const [stockForm, setStockForm] = useState({
-        type: 'IN', quantity: '', reason: 'Supplier Delivery Intake', reference: ''
+        type: 'IN', quantity: '', reason: 'Supplier Delivery Intake', reference: '', location: ''
     });
 
     const [repairForm, setRepairForm] = useState({
@@ -320,7 +320,8 @@ const AdminInventory = () => {
             type: 'IN',
             quantity: '',
             reason: 'Supplier Delivery Intake',
-            reference: ''
+            reference: '',
+            location: material.location || 'Main Workshop Store'
         });
         setShowStockModal(true);
     };
@@ -343,6 +344,7 @@ const AdminInventory = () => {
         setSelectedMaterialForEdit(material);
         setEditMaterialForm({
             unitPrice: material.unitPrice !== undefined && material.unitPrice !== null ? material.unitPrice : 0,
+            location: material.location || 'Main Workshop Store',
             notes: material.notes || ''
         });
         setEditMaterialError('');
@@ -369,10 +371,11 @@ const AdminInventory = () => {
         try {
             const res = await api.put(`/inventory/items/${selectedMaterialForEdit._id}`, {
                 unitPrice: parsedRate,
+                location: editMaterialForm.location,
                 notes: editMaterialForm.notes
             });
             if (res.data?.success) {
-                showToast(`✓ Updated rate for "${selectedMaterialForEdit.name}" to ${formatCurrencyINR(parsedRate)} / ${selectedMaterialForEdit.unit}`);
+                showToast(`✓ Updated details for "${selectedMaterialForEdit.name}"`);
                 setShowEditMaterialModal(false);
                 setSelectedMaterialForEdit(null);
                 fetchStats();
@@ -1295,7 +1298,10 @@ const AdminInventory = () => {
 
             {/* ══════════════ TAB 4: WAREHOUSE LOCATIONS & SITE STOCK ══════════════ */}
             {activeTab === 'locations' && (
-                <WarehouseLocationsTab staffList={staffList} />
+                <WarehouseLocationsTab 
+                    staffList={staffList} 
+                    onRefreshWarehouses={fetchWarehouses}
+                />
             )}
 
             {/* ══════════════ TAB 5: INTER-LOCATION STOCK TRANSFERS ══════════════ */}
@@ -1459,11 +1465,13 @@ const AdminInventory = () => {
                                 <label className="block text-slate-500 mb-1">Storage Location / Rack</label>
                                 <input
                                     type="text"
+                                    list="inventory-warehouses-list"
                                     value={formData.location}
                                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                    placeholder="e.g. Workshop Bay 2, Tool Rack B"
+                                    placeholder="e.g. Main Workshop Store, Workshop Bay 2"
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200"
                                 />
+                                <p className="text-[10px] text-slate-400 mt-1">Select from registered warehouses or type a custom site / rack</p>
                             </div>
 
                             <div className="pt-2 flex flex-col-reverse sm:flex-row justify-end gap-2.5">
@@ -1911,6 +1919,19 @@ const AdminInventory = () => {
                                 />
                             </div>
 
+                            <div>
+                                <label className="block text-slate-500 mb-1">Storage Location / Warehouse</label>
+                                <input
+                                    type="text"
+                                    list="inventory-warehouses-list"
+                                    value={stockForm.location || ''}
+                                    onChange={(e) => setStockForm({ ...stockForm, location: e.target.value })}
+                                    placeholder="e.g. Main Workshop Store, Warehouse 1, Site B"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-1">Update or specify the storage location for this stock</p>
+                            </div>
+
                             <div className="pt-2 flex flex-col-reverse sm:flex-row justify-end gap-2.5">
                                 <button
                                     type="button"
@@ -2023,6 +2044,24 @@ const AdminInventory = () => {
                                 </div>
                                 <p className="text-[10px] text-slate-400 mt-1">
                                     Must be a valid non-negative number (0 or greater). Changing unit rate will not alter stock quantity.
+                                </p>
+                            </div>
+
+                            {/* Storage Location Input */}
+                            <div>
+                                <label className="block text-slate-600 dark:text-slate-300 mb-1">
+                                    Storage Location / Warehouse
+                                </label>
+                                <input
+                                    type="text"
+                                    list="inventory-warehouses-list"
+                                    value={editMaterialForm.location || ''}
+                                    onChange={(e) => setEditMaterialForm({ ...editMaterialForm, location: e.target.value })}
+                                    placeholder="e.g. Main Workshop Store, Bay 3"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-1">
+                                    Select from existing warehouses or enter custom location details.
                                 </p>
                             </div>
 
@@ -2150,6 +2189,15 @@ const AdminInventory = () => {
                 onClose={() => setShowQRModal(false)}
                 items={selectedQRItems}
             />
+
+            {/* Datalist for Warehouse / Site Auto-suggest */}
+            <datalist id="inventory-warehouses-list">
+                {warehouses.map((w) => (
+                    <option key={w._id} value={w.name}>
+                        {w.code ? `${w.code} · ${w.type || 'Warehouse'}` : w.name}
+                    </option>
+                ))}
+            </datalist>
         </div>
     );
 };
