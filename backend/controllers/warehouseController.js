@@ -232,9 +232,14 @@ exports.createStockTransfer = async (req, res) => {
             projectTitle,
             items, 
             transportMethod, 
-            vehicleNumber, 
+            vehicleId,
+            vehicleNumber,
+            vehicleName,
+            isManualVehicle,
             driverName, 
             driverPhone, 
+            totalWeight,
+            weightUnit,
             notes 
         } = req.body;
 
@@ -349,46 +354,93 @@ exports.createStockTransfer = async (req, res) => {
         // Validate items and source stock availability
         const formattedItems = [];
         for (const it of items) {
-            const inv = await InventoryItem.findById(it.inventoryItemId);
-            if (!inv) {
-                return res.status(404).json({ success: false, message: `Item ${it.itemName || it.inventoryItemId} not found` });
-            }
+            const isManual = Boolean(it.isManualItem) || !it.inventoryItemId || it.inventoryItemId === '__MANUAL__';
 
-            // Check stock in source warehouse/location
-            let sourceQty = 0;
-            if (finalSourceId && Array.isArray(inv.locationStock) && inv.locationStock.length > 0) {
-                const found = inv.locationStock.find(ls => ls.warehouseId && ls.warehouseId.toString() === finalSourceId.toString());
-                if (found) {
-                    sourceQty = Number(found.quantity) || 0;
+            if (isManual) {
+                const itemName = (it.itemName || '').trim();
+                if (!itemName) {
+                    return res.status(400).json({ success: false, message: 'Item name is required for manual material entry' });
+                }
+                const reqQty = Number(it.requestedQuantity) || 0;
+                if (reqQty <= 0) {
+                    return res.status(400).json({ success: false, message: `Invalid requested quantity for "${itemName}"` });
+                }
+
+                // If user checked saveToInventory or provided an item to register in inventory
+                let savedInvId = null;
+                if (it.saveToInventory) {
+                    try {
+                        const newInv = await InventoryItem.create({
+                            name: itemName,
+                            code: (it.itemCode || `MAT-${Date.now().toString().slice(-4)}`).trim().toUpperCase(),
+                            category: it.category || 'Raw Materials',
+                            type: 'material',
+                            quantity: 0,
+                            unit: it.unit || 'Pcs',
+                            location: finalSourceName || 'Main Workshop Store'
+                        });
+                        savedInvId = newInv._id;
+                    } catch (_) {}
+                }
+
+                formattedItems.push({
+                    inventoryItemId: savedInvId || null,
+                    itemName,
+                    itemCode: it.itemCode || '',
+                    unit: it.unit || 'Pcs',
+                    requestedQuantity: reqQty,
+                    dispatchedQuantity: reqQty,
+                    receivedQuantity: 0,
+                    weight: it.weight !== undefined && it.weight !== null && it.weight !== '' ? Number(it.weight) : null,
+                    weightUnit: it.weightUnit || weightUnit || 'Kg',
+                    isManualItem: true,
+                    conditionOnArrival: 'Good'
+                });
+            } else {
+                const inv = await InventoryItem.findById(it.inventoryItemId);
+                if (!inv) {
+                    return res.status(404).json({ success: false, message: `Item ${it.itemName || it.inventoryItemId} not found` });
+                }
+
+                // Check stock in source warehouse/location
+                let sourceQty = 0;
+                if (finalSourceId && Array.isArray(inv.locationStock) && inv.locationStock.length > 0) {
+                    const found = inv.locationStock.find(ls => ls.warehouseId && ls.warehouseId.toString() === finalSourceId.toString());
+                    if (found) {
+                        sourceQty = Number(found.quantity) || 0;
+                    } else {
+                        sourceQty = Number(inv.quantity) || 0;
+                    }
                 } else {
+                    // If manual source location or not sharded, check total inventory quantity
                     sourceQty = Number(inv.quantity) || 0;
                 }
-            } else {
-                // If manual source location or not sharded, check total inventory quantity
-                sourceQty = Number(inv.quantity) || 0;
-            }
 
-            const reqQty = Number(it.requestedQuantity) || 0;
-            if (reqQty <= 0) {
-                return res.status(400).json({ success: false, message: `Invalid requested quantity for ${inv.name}` });
-            }
-            if (reqQty > sourceQty) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: `Insufficient stock at ${finalSourceName} for ${inv.name}. Available: ${sourceQty}, Requested: ${reqQty}` 
+                const reqQty = Number(it.requestedQuantity) || 0;
+                if (reqQty <= 0) {
+                    return res.status(400).json({ success: false, message: `Invalid requested quantity for ${inv.name}` });
+                }
+                if (reqQty > sourceQty) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        message: `Insufficient stock at ${finalSourceName} for ${inv.name}. Available: ${sourceQty}, Requested: ${reqQty}` 
+                    });
+                }
+
+                formattedItems.push({
+                    inventoryItemId: inv._id,
+                    itemName: inv.name,
+                    itemCode: inv.code || '',
+                    unit: inv.unit || 'Pcs',
+                    requestedQuantity: reqQty,
+                    dispatchedQuantity: reqQty,
+                    receivedQuantity: 0,
+                    weight: it.weight !== undefined && it.weight !== null && it.weight !== '' ? Number(it.weight) : null,
+                    weightUnit: it.weightUnit || weightUnit || 'Kg',
+                    isManualItem: false,
+                    conditionOnArrival: 'Good'
                 });
             }
-
-            formattedItems.push({
-                inventoryItemId: inv._id,
-                itemName: inv.name,
-                itemCode: inv.code || '',
-                unit: inv.unit || 'Pcs',
-                requestedQuantity: reqQty,
-                dispatchedQuantity: reqQty,
-                receivedQuantity: 0,
-                conditionOnArrival: 'Good'
-            });
         }
 
         const transferNumber = `ST-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
@@ -408,9 +460,14 @@ exports.createStockTransfer = async (req, res) => {
             items: formattedItems,
             status: 'Requested',
             transportMethod: transportMethod || 'Internal Vehicle',
-            vehicleNumber: vehicleNumber || '',
-            driverName: driverName || '',
-            driverPhone: driverPhone || '',
+            vehicleId: vehicleId || null,
+            vehicleNumber: (vehicleNumber || '').trim().toUpperCase(),
+            vehicleName: (vehicleName || '').trim(),
+            isManualVehicle: Boolean(isManualVehicle),
+            driverName: (driverName || '').trim(),
+            driverPhone: (driverPhone || '').trim(),
+            totalWeight: totalWeight !== undefined && totalWeight !== null && totalWeight !== '' ? Number(totalWeight) : null,
+            weightUnit: weightUnit || 'Kg',
             notes: notes || '',
             requestedBy: req.user ? req.user._id : null,
             requestedByName: req.user ? req.user.name : 'Store Staff',
@@ -444,6 +501,7 @@ exports.dispatchStockTransfer = async (req, res) => {
 
         // Atomic deduction from source warehouse
         for (const it of transfer.items) {
+            if (!it.inventoryItemId) continue; // Manual unlisted item without inventory tracking
             const inv = await InventoryItem.findById(it.inventoryItemId);
             if (!inv) continue;
 
@@ -522,7 +580,10 @@ exports.receiveStockTransfer = async (req, res) => {
         // Process each item received
         for (const item of transfer.items) {
             const userUpdate = Array.isArray(receivedItems) 
-                ? receivedItems.find(r => r._id?.toString() === item._id.toString() || r.inventoryItemId?.toString() === item.inventoryItemId.toString())
+                ? receivedItems.find(r => 
+                    (r._id && item._id && r._id.toString() === item._id.toString()) || 
+                    (r.inventoryItemId && item.inventoryItemId && r.inventoryItemId.toString() === item.inventoryItemId.toString())
+                )
                 : null;
 
             const recQty = userUpdate ? Number(userUpdate.receivedQuantity) : item.dispatchedQuantity;
@@ -542,7 +603,7 @@ exports.receiveStockTransfer = async (req, res) => {
             }
 
             // Credit received quantity to destination warehouse if it is a tracked warehouse
-            const inv = await InventoryItem.findById(item.inventoryItemId);
+            const inv = item.inventoryItemId ? await InventoryItem.findById(item.inventoryItemId) : null;
             if (inv) {
                 if (destLocId) {
                     if (!Array.isArray(inv.locationStock)) {

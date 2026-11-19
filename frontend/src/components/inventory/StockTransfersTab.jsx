@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { 
     Truck, Plus, ArrowRight, AlertTriangle, CheckCircle2, 
-    X, RefreshCw, Clock, FileText, User, ShieldCheck, MapPin, Building
+    X, RefreshCw, Clock, FileText, User, ShieldCheck, MapPin, Building,
+    Scale, Package
 } from 'lucide-react';
 
 const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouses }) => {
     const [transfers, setTransfers] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [companyVehicles, setCompanyVehicles] = useState([]);
+    const [loadingVehicles, setLoadingVehicles] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showReceiveModal, setShowReceiveModal] = useState(false);
     const [selectedTransfer, setSelectedTransfer] = useState(null);
@@ -25,11 +28,18 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
     const [destManualAddress, setDestManualAddress] = useState('');
     const [saveDestLoc, setSaveDestLoc] = useState(false);
 
-    const [itemsList, setItemsList] = useState([{ inventoryItemId: '', requestedQuantity: 1 }]);
+    const [itemsList, setItemsList] = useState([
+        { isManualItem: false, inventoryItemId: '', itemName: '', itemCode: '', unit: 'Pcs', requestedQuantity: 1, weight: '', weightUnit: 'Kg' }
+    ]);
     const [transportMethod, setTransportMethod] = useState('Internal Vehicle');
+    const [vehicleMode, setVehicleMode] = useState('saved'); // 'saved' | 'manual'
+    const [selectedVehicleId, setSelectedVehicleId] = useState('');
     const [vehicleNumber, setVehicleNumber] = useState('');
+    const [vehicleName, setVehicleName] = useState('');
     const [driverName, setDriverName] = useState('');
     const [driverPhone, setDriverPhone] = useState('');
+    const [totalWeight, setTotalWeight] = useState('');
+    const [weightUnit, setWeightUnit] = useState('Kg');
     const [notes, setNotes] = useState('');
 
     // State for receiving transfer
@@ -37,6 +47,7 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
 
     useEffect(() => {
         fetchTransfers();
+        fetchCompanyVehicles();
     }, []);
 
     const fetchTransfers = async () => {
@@ -50,6 +61,40 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
             console.error('Error fetching transfers:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchCompanyVehicles = async () => {
+        setLoadingVehicles(true);
+        try {
+            const res = await api.get('/vehicles');
+            if (res.data?.success && Array.isArray(res.data.vehicles)) {
+                setCompanyVehicles(res.data.vehicles);
+            }
+        } catch (err) {
+            console.warn('Could not load company fleet vehicles:', err);
+        } finally {
+            setLoadingVehicles(false);
+        }
+    };
+
+    const handleSelectCompanyVehicle = (vehId) => {
+        if (vehId === '__MANUAL__') {
+            setVehicleMode('manual');
+            setSelectedVehicleId('');
+            return;
+        }
+        setSelectedVehicleId(vehId);
+        const v = companyVehicles.find(veh => veh._id === vehId);
+        if (v) {
+            setVehicleNumber(v.registrationNumber || '');
+            setVehicleName(v.vehicleName || v.vehicleType || '');
+            if (v.assignedDriverName || v.assignedDriverId?.name) {
+                setDriverName(v.assignedDriverName || v.assignedDriverId?.name || '');
+            }
+            if (v.assignedDriverId?.phone) {
+                setDriverPhone(v.assignedDriverId.phone);
+            }
         }
     };
 
@@ -77,17 +122,58 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
         setDestManualName('');
         setDestManualAddress('');
         setSaveDestLoc(false);
-        setItemsList([{ inventoryItemId: materials[0]?._id || '', requestedQuantity: 1 }]);
+
+        // Vehicle Setup
+        if (companyVehicles && companyVehicles.length > 0) {
+            setVehicleMode('saved');
+            const firstV = companyVehicles[0];
+            setSelectedVehicleId(firstV._id);
+            setVehicleNumber(firstV.registrationNumber || '');
+            setVehicleName(firstV.vehicleName || firstV.vehicleType || '');
+            setDriverName(firstV.assignedDriverName || firstV.assignedDriverId?.name || '');
+            setDriverPhone(firstV.assignedDriverId?.phone || '');
+        } else {
+            setVehicleMode('manual');
+            setSelectedVehicleId('');
+            setVehicleNumber('');
+            setVehicleName('');
+            setDriverName('');
+            setDriverPhone('');
+        }
+
+        const firstMat = materials[0];
+        setItemsList([{
+            isManualItem: false,
+            inventoryItemId: firstMat?._id || '',
+            itemName: firstMat?.name || '',
+            itemCode: firstMat?.code || '',
+            unit: firstMat?.unit || 'Pcs',
+            requestedQuantity: 1,
+            weight: '',
+            weightUnit: 'Kg'
+        }]);
         setTransportMethod('Internal Vehicle');
-        setVehicleNumber('');
-        setDriverName('');
-        setDriverPhone('');
+        setTotalWeight('');
+        setWeightUnit('Kg');
         setNotes('');
         setShowCreateModal(true);
     };
 
     const handleAddItemRow = () => {
-        setItemsList([...itemsList, { inventoryItemId: '', requestedQuantity: 1 }]);
+        const firstMat = materials[0];
+        setItemsList([
+            ...itemsList,
+            {
+                isManualItem: false,
+                inventoryItemId: firstMat?._id || '',
+                itemName: firstMat?.name || '',
+                itemCode: firstMat?.code || '',
+                unit: firstMat?.unit || 'Pcs',
+                requestedQuantity: 1,
+                weight: '',
+                weightUnit: 'Kg'
+            }
+        ]);
     };
 
     const handleRemoveItemRow = (index) => {
@@ -134,9 +220,17 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
             return;
         }
 
-        const validItems = itemsList.filter(it => it.inventoryItemId && Number(it.requestedQuantity) > 0);
+        const validItems = itemsList.filter(it => {
+            const qty = Number(it.requestedQuantity);
+            if (qty <= 0) return false;
+            if (it.isManualItem) {
+                return Boolean(it.itemName && it.itemName.trim());
+            }
+            return Boolean(it.inventoryItemId && it.inventoryItemId !== '__MANUAL__');
+        });
+
         if (!validItems.length) {
-            alert('Please add at least one item with a valid quantity.');
+            alert('Please add at least one material with a valid name and quantity.');
             return;
         }
 
@@ -158,11 +252,27 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                 isManualDestination: destMode === 'manual',
                 saveDestinationLocation: destMode === 'manual' ? saveDestLoc : false,
 
-                items: validItems,
+                items: validItems.map(it => ({
+                    isManualItem: Boolean(it.isManualItem),
+                    inventoryItemId: it.isManualItem ? null : it.inventoryItemId,
+                    itemName: it.isManualItem 
+                        ? it.itemName.trim() 
+                        : (materials.find(m => m._id === it.inventoryItemId)?.name || it.itemName || 'Material'),
+                    itemCode: it.itemCode || '',
+                    unit: it.unit || 'Pcs',
+                    requestedQuantity: Number(it.requestedQuantity),
+                    weight: it.weight !== undefined && it.weight !== null && it.weight !== '' ? Number(it.weight) : null,
+                    weightUnit: it.weightUnit || weightUnit || 'Kg'
+                })),
                 transportMethod,
-                vehicleNumber,
-                driverName,
-                driverPhone,
+                vehicleId: vehicleMode === 'saved' && selectedVehicleId ? selectedVehicleId : null,
+                vehicleNumber: (vehicleNumber || '').trim().toUpperCase(),
+                vehicleName: (vehicleName || '').trim(),
+                isManualVehicle: vehicleMode === 'manual',
+                driverName: (driverName || '').trim(),
+                driverPhone: (driverPhone || '').trim(),
+                totalWeight: totalWeight !== '' && totalWeight !== null ? Number(totalWeight) : null,
+                weightUnit: weightUnit || 'Kg',
                 notes
             };
 
@@ -337,7 +447,7 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                                     <div>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase">Vehicle:</span>{' '}
                                         <span className="font-medium text-slate-700 dark:text-slate-300">
-                                            {tr.vehicleNumber ? `${tr.vehicleNumber} (${tr.driverName || 'Driver'})` : tr.transportMethod}
+                                            {tr.vehicleNumber ? `${tr.vehicleNumber}${tr.vehicleName ? ` (${tr.vehicleName})` : ''} · ${tr.driverName || 'Driver'}` : tr.transportMethod}
                                         </span>
                                     </div>
                                     <div>
@@ -350,11 +460,30 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
 
                                 {/* Items table */}
                                 <div className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-100 dark:border-slate-800">
-                                    <div className="text-[10px] font-black uppercase text-slate-400 mb-2">Transferred Line Items:</div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-[10px] font-black uppercase text-slate-400">Transferred Line Items:</span>
+                                        {tr.totalWeight && (
+                                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                                <Scale className="w-3 h-3" /> Cargo Wt: {tr.totalWeight} {tr.weightUnit || 'Kg'}
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="space-y-1.5">
                                         {tr.items.map((it, idx) => (
-                                            <div key={idx} className="flex justify-between items-center text-xs">
-                                                <span className="font-medium text-slate-800 dark:text-slate-200">{it.itemName}</span>
+                                            <div key={idx} className="flex justify-between items-center text-xs flex-wrap gap-2">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span className="font-medium text-slate-800 dark:text-slate-200">{it.itemName}</span>
+                                                    {it.isManualItem && (
+                                                        <span className="text-[9px] px-1.5 py-0.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded font-medium border border-amber-200 dark:border-amber-800">
+                                                            Manual / Unlisted
+                                                        </span>
+                                                    )}
+                                                    {it.weight && (
+                                                        <span className="text-[10px] text-slate-400 font-mono">
+                                                            ({it.weight} {it.weightUnit || 'Kg'})
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-slate-500">Requested: {it.requestedQuantity} {it.unit}</span>
                                                     {it.dispatchedQuantity > 0 && (
@@ -566,82 +695,316 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                             </div>
 
                             {/* Item Rows */}
-                            <div className="space-y-2">
+                            <div className="space-y-2.5">
                                 <div className="flex justify-between items-center">
-                                    <label className="block text-[10px] font-black uppercase text-slate-500">Items to Transfer</label>
+                                    <label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1.5">
+                                        <Package className="w-3.5 h-3.5 text-blue-500" /> Materials to Transfer *
+                                    </label>
                                     <button
                                         type="button"
                                         onClick={handleAddItemRow}
-                                        className="text-blue-600 font-bold hover:underline flex items-center gap-1"
+                                        className="text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1 text-xs"
                                     >
-                                        <Plus className="w-3 h-3" /> Add Item
+                                        <Plus className="w-3.5 h-3.5" /> Add Material Line
                                     </button>
                                 </div>
 
                                 {itemsList.map((row, idx) => (
-                                    <div key={idx} className="flex items-center gap-2">
-                                        <select
-                                            required
-                                            value={row.inventoryItemId}
-                                            onChange={(e) => handleItemChange(idx, 'inventoryItemId', e.target.value)}
-                                            className="flex-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100"
-                                        >
-                                            <option value="">Select Material / Item...</option>
-                                            {materials.map(m => (
-                                                <option key={m._id} value={m._id}>{m.name} ({m.quantity} {m.unit} in stock)</option>
-                                            ))}
-                                        </select>
-                                        <input
-                                            type="number"
-                                            min="0.1"
-                                            step="any"
-                                            required
-                                            placeholder="Qty"
-                                            value={row.requestedQuantity}
-                                            onChange={(e) => handleItemChange(idx, 'requestedQuantity', e.target.value)}
-                                            className="w-24 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-right font-bold outline-none text-slate-800 dark:text-slate-100"
-                                        />
-                                        {itemsList.length > 1 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveItemRow(idx)}
-                                                className="text-rose-500 hover:text-rose-700 p-1.5"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
+                                    <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-2">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-[10px] font-black uppercase text-slate-500">
+                                                Line #{idx + 1} &middot; {row.isManualItem ? 'Custom / Unlisted Material' : 'Inventory Catalog Material'}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const updated = [...itemsList];
+                                                        const nextIsManual = !row.isManualItem;
+                                                        updated[idx].isManualItem = nextIsManual;
+                                                        if (nextIsManual) {
+                                                            updated[idx].inventoryItemId = '';
+                                                            if (!updated[idx].unit) updated[idx].unit = 'Pcs';
+                                                        } else {
+                                                            const fallback = materials[0];
+                                                            updated[idx].inventoryItemId = fallback?._id || '';
+                                                            updated[idx].itemName = fallback?.name || '';
+                                                            updated[idx].itemCode = fallback?.code || '';
+                                                            updated[idx].unit = fallback?.unit || 'Pcs';
+                                                        }
+                                                        setItemsList(updated);
+                                                    }}
+                                                    className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                                >
+                                                    {row.isManualItem ? '📦 Select from inventory' : '✏️ Enter material manually'}
+                                                </button>
+                                                {itemsList.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveItemRow(idx)}
+                                                        className="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                                                        title="Remove item line"
+                                                    >
+                                                        <X className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {row.isManualItem ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                                                <div className="sm:col-span-6">
+                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Material Name *</label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        placeholder="e.g. MS Angle 50x50x6 / Custom Flange"
+                                                        value={row.itemName || ''}
+                                                        onChange={(e) => handleItemChange(idx, 'itemName', e.target.value)}
+                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-800 dark:text-slate-100 text-xs font-medium"
+                                                    />
+                                                </div>
+                                                <div className="sm:col-span-2">
+                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Quantity *</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0.01"
+                                                        step="any"
+                                                        required
+                                                        placeholder="Qty"
+                                                        value={row.requestedQuantity}
+                                                        onChange={(e) => handleItemChange(idx, 'requestedQuantity', e.target.value)}
+                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-right font-bold outline-none text-slate-800 dark:text-slate-100 text-xs"
+                                                    />
+                                                </div>
+                                                <div className="sm:col-span-2">
+                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Unit</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Pcs, Kg, Mtr"
+                                                        value={row.unit || 'Pcs'}
+                                                        onChange={(e) => handleItemChange(idx, 'unit', e.target.value)}
+                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-800 dark:text-slate-100 text-xs text-center"
+                                                    />
+                                                </div>
+                                                <div className="sm:col-span-2">
+                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5" title="Optional weight">
+                                                        Weight (Kg) <span className="text-[8px] font-normal lowercase">(opt)</span>
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        step="any"
+                                                        placeholder="Optional"
+                                                        value={row.weight || ''}
+                                                        onChange={(e) => handleItemChange(idx, 'weight', e.target.value)}
+                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-right outline-none text-slate-700 dark:text-slate-300 text-xs"
+                                                        title="Optional weight in Kg (leave blank if unavailable)"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                                                <div className="sm:col-span-6">
+                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Select Catalog Material *</label>
+                                                    <select
+                                                        required
+                                                        value={row.inventoryItemId}
+                                                        onChange={(e) => {
+                                                            if (e.target.value === '__MANUAL__') {
+                                                                const updated = [...itemsList];
+                                                                updated[idx].isManualItem = true;
+                                                                updated[idx].inventoryItemId = '';
+                                                                updated[idx].itemName = '';
+                                                                updated[idx].unit = 'Pcs';
+                                                                setItemsList(updated);
+                                                            } else {
+                                                                const selMat = materials.find(m => m._id === e.target.value);
+                                                                const updated = [...itemsList];
+                                                                updated[idx].inventoryItemId = e.target.value;
+                                                                if (selMat) {
+                                                                    updated[idx].itemName = selMat.name;
+                                                                    updated[idx].itemCode = selMat.code || '';
+                                                                    updated[idx].unit = selMat.unit || 'Pcs';
+                                                                }
+                                                                setItemsList(updated);
+                                                            }
+                                                        }}
+                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-800 dark:text-slate-100 text-xs font-medium"
+                                                    >
+                                                        <option value="">Select Material / Item...</option>
+                                                        {materials.map(m => (
+                                                            <option key={m._id} value={m._id}>
+                                                                {m.name} ({m.quantity} {m.unit} in stock){m.location ? ` - ${m.location}` : ''}
+                                                            </option>
+                                                        ))}
+                                                        <option value="__MANUAL__">✏️ Enter material manually (not listed)...</option>
+                                                    </select>
+                                                </div>
+                                                <div className="sm:col-span-3">
+                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Quantity ({row.unit || 'Pcs'}) *</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0.01"
+                                                        step="any"
+                                                        required
+                                                        placeholder="Qty"
+                                                        value={row.requestedQuantity}
+                                                        onChange={(e) => handleItemChange(idx, 'requestedQuantity', e.target.value)}
+                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-right font-bold outline-none text-slate-800 dark:text-slate-100 text-xs"
+                                                    />
+                                                </div>
+                                                <div className="sm:col-span-3">
+                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5" title="Optional weight">
+                                                        Weight (Kg) <span className="text-[8px] font-normal lowercase">(opt)</span>
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        step="any"
+                                                        placeholder="Optional"
+                                                        value={row.weight || ''}
+                                                        onChange={(e) => handleItemChange(idx, 'weight', e.target.value)}
+                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-right outline-none text-slate-700 dark:text-slate-300 text-xs"
+                                                        title="Optional weight in Kg (leave blank if unavailable)"
+                                                    />
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Transport Method</label>
-                                    <input
-                                        type="text"
-                                        value={transportMethod}
-                                        onChange={(e) => setTransportMethod(e.target.value)}
-                                        className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100"
-                                    />
+                            {/* Transport Vehicle & Dispatch Details */}
+                            <div className="space-y-3 bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                                        <Truck className="w-3.5 h-3.5 text-blue-500" /> Transport Vehicle & Dispatch Details
+                                    </label>
+                                    {companyVehicles.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (vehicleMode === 'saved') {
+                                                    setVehicleMode('manual');
+                                                    setSelectedVehicleId('');
+                                                } else {
+                                                    setVehicleMode('saved');
+                                                    if (companyVehicles.length > 0) {
+                                                        handleSelectCompanyVehicle(companyVehicles[0]._id);
+                                                    }
+                                                }
+                                            }}
+                                            className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                                        >
+                                            {vehicleMode === 'saved' ? '✏️ Enter vehicle manually' : '🚛 Select company vehicle'}
+                                        </button>
+                                    )}
                                 </div>
-                                <div>
-                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Vehicle No</label>
-                                    <input
-                                        type="text"
-                                        placeholder="KL-52-A-1234"
-                                        value={vehicleNumber}
-                                        onChange={(e) => setVehicleNumber(e.target.value)}
-                                        className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Driver Name</label>
-                                    <input
-                                        type="text"
-                                        value={driverName}
-                                        onChange={(e) => setDriverName(e.target.value)}
-                                        className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100"
-                                    />
+
+                                {vehicleMode === 'saved' && companyVehicles.length > 0 ? (
+                                    <div className="space-y-2">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 mb-1">Company Fleet Vehicle</label>
+                                            <select
+                                                value={selectedVehicleId}
+                                                onChange={(e) => handleSelectCompanyVehicle(e.target.value)}
+                                                className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-medium text-xs"
+                                            >
+                                                <option value="">Select Company Vehicle...</option>
+                                                {companyVehicles.map(v => (
+                                                    <option key={v._id} value={v._id}>
+                                                        {v.registrationNumber} &middot; {v.vehicleName || v.vehicleType || 'Vehicle'} {v.assignedDriverName ? `(Driver: ${v.assignedDriverName})` : ''}
+                                                    </option>
+                                                ))}
+                                                <option value="__MANUAL__">✏️ Enter vehicle details manually...</option>
+                                            </select>
+                                        </div>
+                                        {selectedVehicleId && (
+                                            <div className="text-[11px] text-slate-500 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                                                <span>
+                                                    Selected: <strong className="text-slate-800 dark:text-slate-200 font-mono">{vehicleNumber}</strong> {vehicleName ? `(${vehicleName})` : ''}
+                                                </span>
+                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 font-bold">
+                                                    Fleet Verified
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 mb-1">Vehicle Registration / No</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. KL-07-CD-1234 / External Truck"
+                                                value={vehicleNumber}
+                                                onChange={(e) => setVehicleNumber(e.target.value)}
+                                                className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs font-mono"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 mb-1">Vehicle Model / Description (Optional)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Tata 407 / Mahindra Bolero / 3rd Party Truck"
+                                                value={vehicleName}
+                                                onChange={(e) => setVehicleName(e.target.value)}
+                                                className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Transport Method, Driver Name & Phone, Optional Consignment Weight */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1">
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Transport Method</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Internal Vehicle, Courier"
+                                            value={transportMethod}
+                                            onChange={(e) => setTransportMethod(e.target.value)}
+                                            className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Driver Name</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Driver full name"
+                                            value={driverName}
+                                            onChange={(e) => setDriverName(e.target.value)}
+                                            className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Driver Contact Phone</label>
+                                        <input
+                                            type="text"
+                                            placeholder="+91 9876543210"
+                                            value={driverPhone}
+                                            onChange={(e) => setDriverPhone(e.target.value)}
+                                            className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1 flex items-center gap-1">
+                                            <Scale className="w-3 h-3 text-amber-500" />
+                                            <span>Consignment Wt</span>
+                                            <span className="text-slate-400 font-normal lowercase">(opt)</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="any"
+                                            placeholder="e.g. 500 Kg"
+                                            value={totalWeight}
+                                            onChange={(e) => setTotalWeight(e.target.value)}
+                                            className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs text-right"
+                                            title="Consignment cargo weight in Kg (optional - leave blank if not weighed)"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 

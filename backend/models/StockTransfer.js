@@ -4,7 +4,8 @@ const transferItemSchema = new mongoose.Schema({
     inventoryItemId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'InventoryItem',
-        required: true
+        required: false,
+        default: null
     },
     itemName: {
         type: String,
@@ -22,6 +23,18 @@ const transferItemSchema = new mongoose.Schema({
         type: Number,
         required: true,
         min: [0.01, 'Quantity must be greater than zero']
+    },
+    weight: {
+        type: Number,
+        default: null
+    },
+    weightUnit: {
+        type: String,
+        default: 'Kg'
+    },
+    isManualItem: {
+        type: Boolean,
+        default: false
     },
     dispatchedQuantity: {
         type: Number,
@@ -125,9 +138,22 @@ const stockTransferSchema = new mongoose.Schema({
         type: String,
         default: 'Internal Vehicle' // e.g. Pickup Truck, Courier, Hand Carry
     },
+    vehicleId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Vehicle',
+        default: null
+    },
     vehicleNumber: {
         type: String,
         default: ''
+    },
+    vehicleName: {
+        type: String,
+        default: ''
+    },
+    isManualVehicle: {
+        type: Boolean,
+        default: false
     },
     driverName: {
         type: String,
@@ -136,6 +162,14 @@ const stockTransferSchema = new mongoose.Schema({
     driverPhone: {
         type: String,
         default: ''
+    },
+    totalWeight: {
+        type: Number,
+        default: null
+    },
+    weightUnit: {
+        type: String,
+        default: 'Kg'
     },
     trackingReference: {
         type: String,
