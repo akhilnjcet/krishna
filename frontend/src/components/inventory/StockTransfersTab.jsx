@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { 
     Truck, Plus, ArrowRight, AlertTriangle, CheckCircle2, 
-    X, RefreshCw, Clock, FileText, User, ShieldCheck
+    X, RefreshCw, Clock, FileText, User, ShieldCheck, MapPin, Building
 } from 'lucide-react';
 
-const StockTransfersTab = ({ materials = [], warehouses = [] }) => {
+const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouses }) => {
     const [transfers, setTransfers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -13,8 +13,18 @@ const StockTransfersTab = ({ materials = [], warehouses = [] }) => {
     const [selectedTransfer, setSelectedTransfer] = useState(null);
 
     // Form state for creating transfer
+    const [sourceMode, setSourceMode] = useState('saved'); // 'saved' | 'manual'
     const [sourceW, setSourceW] = useState('');
+    const [sourceManualName, setSourceManualName] = useState('');
+    const [sourceManualAddress, setSourceManualAddress] = useState('');
+    const [saveSourceLoc, setSaveSourceLoc] = useState(false);
+
+    const [destMode, setDestMode] = useState('saved'); // 'saved' | 'manual'
     const [destW, setDestW] = useState('');
+    const [destManualName, setDestManualName] = useState('');
+    const [destManualAddress, setDestManualAddress] = useState('');
+    const [saveDestLoc, setSaveDestLoc] = useState(false);
+
     const [itemsList, setItemsList] = useState([{ inventoryItemId: '', requestedQuantity: 1 }]);
     const [transportMethod, setTransportMethod] = useState('Internal Vehicle');
     const [vehicleNumber, setVehicleNumber] = useState('');
@@ -43,6 +53,39 @@ const StockTransfersTab = ({ materials = [], warehouses = [] }) => {
         }
     };
 
+    const handleOpenCreateModal = () => {
+        if (warehouses && warehouses.length >= 2) {
+            setSourceMode('saved');
+            setSourceW(warehouses[0]._id);
+            setDestMode('saved');
+            setDestW(warehouses[1]._id);
+        } else if (warehouses && warehouses.length === 1) {
+            setSourceMode('saved');
+            setSourceW(warehouses[0]._id);
+            setDestMode('manual');
+            setDestW('');
+        } else {
+            // 0 warehouses saved - allow direct manual entry without requiring warehouses
+            setSourceMode('manual');
+            setSourceW('');
+            setDestMode('manual');
+            setDestW('');
+        }
+        setSourceManualName('');
+        setSourceManualAddress('');
+        setSaveSourceLoc(false);
+        setDestManualName('');
+        setDestManualAddress('');
+        setSaveDestLoc(false);
+        setItemsList([{ inventoryItemId: materials[0]?._id || '', requestedQuantity: 1 }]);
+        setTransportMethod('Internal Vehicle');
+        setVehicleNumber('');
+        setDriverName('');
+        setDriverPhone('');
+        setNotes('');
+        setShowCreateModal(true);
+    };
+
     const handleAddItemRow = () => {
         setItemsList([...itemsList, { inventoryItemId: '', requestedQuantity: 1 }]);
     };
@@ -59,11 +102,63 @@ const StockTransfersTab = ({ materials = [], warehouses = [] }) => {
 
     const handleCreateTransferSubmit = async (e) => {
         e.preventDefault();
+
+        // Source validation
+        const effectiveSourceName = sourceMode === 'saved'
+            ? (warehouses.find(w => w._id === sourceW)?.name || '')
+            : sourceManualName.trim();
+
+        if (!effectiveSourceName) {
+            alert('Source location is required.');
+            return;
+        }
+
+        // Destination validation
+        const effectiveDestName = destMode === 'saved'
+            ? (warehouses.find(w => w._id === destW)?.name || '')
+            : destManualName.trim();
+
+        if (!effectiveDestName) {
+            alert('Destination location is required.');
+            return;
+        }
+
+        // Prevent choosing identical source and destination
+        if (sourceMode === 'saved' && destMode === 'saved' && sourceW === destW) {
+            alert('Source and destination locations cannot be identical.');
+            return;
+        }
+
+        if (effectiveSourceName.toLowerCase() === effectiveDestName.toLowerCase()) {
+            alert('Source and destination locations cannot be identical.');
+            return;
+        }
+
+        const validItems = itemsList.filter(it => it.inventoryItemId && Number(it.requestedQuantity) > 0);
+        if (!validItems.length) {
+            alert('Please add at least one item with a valid quantity.');
+            return;
+        }
+
         try {
             const payload = {
-                sourceWarehouseId: sourceW,
-                destinationWarehouseId: destW,
-                items: itemsList.filter(it => it.inventoryItemId && Number(it.requestedQuantity) > 0),
+                sourceWarehouseId: sourceMode === 'saved' ? sourceW : null,
+                sourceLocationName: effectiveSourceName,
+                sourceAddress: sourceMode === 'saved' 
+                    ? (warehouses.find(w => w._id === sourceW)?.address || '') 
+                    : sourceManualAddress.trim(),
+                isManualSource: sourceMode === 'manual',
+                saveSourceLocation: sourceMode === 'manual' ? saveSourceLoc : false,
+
+                destinationWarehouseId: destMode === 'saved' ? destW : null,
+                destinationLocationName: effectiveDestName,
+                destinationAddress: destMode === 'saved' 
+                    ? (warehouses.find(w => w._id === destW)?.address || '') 
+                    : destManualAddress.trim(),
+                isManualDestination: destMode === 'manual',
+                saveDestinationLocation: destMode === 'manual' ? saveDestLoc : false,
+
+                items: validItems,
                 transportMethod,
                 vehicleNumber,
                 driverName,
@@ -74,6 +169,11 @@ const StockTransfersTab = ({ materials = [], warehouses = [] }) => {
             const res = await api.post('/stock-transfers', payload);
             if (res.data.success) {
                 setShowCreateModal(false);
+                if (saveSourceLoc || saveDestLoc) {
+                    if (typeof onRefreshWarehouses === 'function') {
+                        onRefreshWarehouses();
+                    }
+                }
                 fetchTransfers();
             }
         } catch (err) {
@@ -167,12 +267,7 @@ const StockTransfersTab = ({ materials = [], warehouses = [] }) => {
                         <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                     </button>
                     <button
-                        onClick={() => {
-                            setSourceW(warehouses[0]?._id || '');
-                            setDestW(warehouses[1]?._id || '');
-                            setItemsList([{ inventoryItemId: materials[0]?._id || '', requestedQuantity: 1 }]);
-                            setShowCreateModal(true);
-                        }}
+                        onClick={handleOpenCreateModal}
                         className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-md transition"
                     >
                         <Plus className="w-4 h-4" /> New Transfer Request
@@ -223,8 +318,20 @@ const StockTransfersTab = ({ materials = [], warehouses = [] }) => {
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mb-3">
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase">Route:</span>
-                                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                                            {tr.sourceWarehouseName} <ArrowRight className="w-3 h-3 text-slate-400" /> {tr.destinationWarehouseName}
+                                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 flex-wrap">
+                                            <span>{tr.sourceWarehouseName}</span>
+                                            {tr.isManualSource && (
+                                                <span className="text-[9px] px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md font-normal" title={tr.sourceAddress || 'Manual location'}>
+                                                    Manual
+                                                </span>
+                                            )}
+                                            <ArrowRight className="w-3 h-3 text-slate-400" />
+                                            <span>{tr.destinationWarehouseName}</span>
+                                            {tr.isManualDestination && (
+                                                <span className="text-[9px] px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md font-normal" title={tr.destinationAddress || 'Manual location'}>
+                                                    Manual
+                                                </span>
+                                            )}
                                         </span>
                                     </div>
                                     <div>
@@ -284,35 +391,177 @@ const StockTransfersTab = ({ materials = [], warehouses = [] }) => {
                         </div>
 
                         <form onSubmit={handleCreateTransferSubmit} className="space-y-4 text-xs">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Source Location *</label>
-                                    <select
-                                        required
-                                        value={sourceW}
-                                        onChange={(e) => setSourceW(e.target.value)}
-                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100"
-                                    >
-                                        <option value="">Select Origin Location...</option>
-                                        {warehouses.map(w => (
-                                            <option key={w._id} value={w._id}>{w.name} ({w.code})</option>
-                                        ))}
-                                    </select>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                                {/* Source Location */}
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                                            <Building className="w-3.5 h-3.5 text-blue-500" /> Source Location *
+                                        </label>
+                                        {warehouses.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (sourceMode === 'saved') {
+                                                        setSourceMode('manual');
+                                                    } else {
+                                                        setSourceMode('saved');
+                                                        if (!sourceW && warehouses.length > 0) setSourceW(warehouses[0]._id);
+                                                    }
+                                                }}
+                                                className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                                            >
+                                                {sourceMode === 'saved' ? '✏️ Enter manually' : '📁 Choose saved'}
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {sourceMode === 'saved' && warehouses.length > 0 ? (
+                                        <div>
+                                            <select
+                                                required
+                                                value={sourceW}
+                                                onChange={(e) => {
+                                                    if (e.target.value === '__MANUAL__') {
+                                                        setSourceMode('manual');
+                                                        setSourceW('');
+                                                    } else {
+                                                        setSourceW(e.target.value);
+                                                    }
+                                                }}
+                                                className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-medium"
+                                            >
+                                                <option value="">Select Origin Location...</option>
+                                                {warehouses.map(w => (
+                                                    <option key={w._id} value={w._id}>{w.name} ({w.code})</option>
+                                                ))}
+                                                <option value="__MANUAL__">✏️ Enter location manually...</option>
+                                            </select>
+                                            {sourceW && (
+                                                <p className="text-[10px] text-slate-400 mt-1 truncate">
+                                                    {warehouses.find(w => w._id === sourceW)?.address || 'Saved warehouse'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    placeholder="Location name (e.g. Site A / Main Yard) *"
+                                                    value={sourceManualName}
+                                                    onChange={(e) => setSourceManualName(e.target.value)}
+                                                    className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-medium"
+                                                />
+                                            </div>
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Location address / landmark (optional)"
+                                                    value={sourceManualAddress}
+                                                    onChange={(e) => setSourceManualAddress(e.target.value)}
+                                                    className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-700 dark:text-slate-200 text-xs"
+                                                />
+                                            </div>
+                                            <label className="flex items-center gap-2 cursor-pointer pt-0.5 text-[11px] text-slate-600 dark:text-slate-400 select-none">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={saveSourceLoc}
+                                                    onChange={(e) => setSaveSourceLoc(e.target.checked)}
+                                                    className="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                                                />
+                                                <span>Save this location for future reuse</span>
+                                            </label>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <div>
-                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Destination Location *</label>
-                                    <select
-                                        required
-                                        value={destW}
-                                        onChange={(e) => setDestW(e.target.value)}
-                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100"
-                                    >
-                                        <option value="">Select Destination...</option>
-                                        {warehouses.filter(w => w._id !== sourceW).map(w => (
-                                            <option key={w._id} value={w._id}>{w.name} ({w.code})</option>
-                                        ))}
-                                    </select>
+                                {/* Destination Location */}
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                                            <MapPin className="w-3.5 h-3.5 text-emerald-500" /> Destination Location *
+                                        </label>
+                                        {warehouses.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (destMode === 'saved') {
+                                                        setDestMode('manual');
+                                                    } else {
+                                                        setDestMode('saved');
+                                                        const fallback = warehouses.find(w => w._id !== sourceW) || warehouses[0];
+                                                        if (!destW && fallback) setDestW(fallback._id);
+                                                    }
+                                                }}
+                                                className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                                            >
+                                                {destMode === 'saved' ? '✏️ Enter manually' : '📁 Choose saved'}
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {destMode === 'saved' && warehouses.length > 0 ? (
+                                        <div>
+                                            <select
+                                                required
+                                                value={destW}
+                                                onChange={(e) => {
+                                                    if (e.target.value === '__MANUAL__') {
+                                                        setDestMode('manual');
+                                                        setDestW('');
+                                                    } else {
+                                                        setDestMode('saved');
+                                                        setDestW(e.target.value);
+                                                    }
+                                                }}
+                                                className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-medium"
+                                            >
+                                                <option value="">Select Destination...</option>
+                                                {warehouses.filter(w => sourceMode !== 'saved' || w._id !== sourceW).map(w => (
+                                                    <option key={w._id} value={w._id}>{w.name} ({w.code})</option>
+                                                ))}
+                                                <option value="__MANUAL__">✏️ Enter location manually...</option>
+                                            </select>
+                                            {destW && (
+                                                <p className="text-[10px] text-slate-400 mt-1 truncate">
+                                                    {warehouses.find(w => w._id === destW)?.address || 'Saved warehouse'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    placeholder="Location name (e.g. Site B / Client Premise) *"
+                                                    value={destManualName}
+                                                    onChange={(e) => setDestManualName(e.target.value)}
+                                                    className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-medium"
+                                                />
+                                            </div>
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Location address / landmark (optional)"
+                                                    value={destManualAddress}
+                                                    onChange={(e) => setDestManualAddress(e.target.value)}
+                                                    className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-700 dark:text-slate-200 text-xs"
+                                                />
+                                            </div>
+                                            <label className="flex items-center gap-2 cursor-pointer pt-0.5 text-[11px] text-slate-600 dark:text-slate-400 select-none">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={saveDestLoc}
+                                                    onChange={(e) => setSaveDestLoc(e.target.checked)}
+                                                    className="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                                                />
+                                                <span>Save this location for future reuse</span>
+                                            </label>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

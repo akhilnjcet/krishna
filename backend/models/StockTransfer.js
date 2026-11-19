@@ -61,20 +61,38 @@ const stockTransferSchema = new mongoose.Schema({
     sourceWarehouseId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Warehouse',
-        required: true
+        default: null
     },
     sourceWarehouseName: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     destinationWarehouseId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Warehouse',
-        required: true
+        default: null
     },
     destinationWarehouseName: {
         type: String,
-        required: true
+        required: true,
+        trim: true
+    },
+    isManualSource: {
+        type: Boolean,
+        default: false
+    },
+    isManualDestination: {
+        type: Boolean,
+        default: false
+    },
+    sourceAddress: {
+        type: String,
+        default: ''
+    },
+    destinationAddress: {
+        type: String,
+        default: ''
     },
     projectId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -180,8 +198,8 @@ const stockTransferSchema = new mongoose.Schema({
     }]
 }, { timestamps: true });
 
-stockTransferSchema.index({ sourceWarehouseId: 1 });
-stockTransferSchema.index({ destinationWarehouseId: 1 });
+stockTransferSchema.index({ sourceWarehouseId: 1 }, { sparse: true });
+stockTransferSchema.index({ destinationWarehouseId: 1 }, { sparse: true });
 stockTransferSchema.index({ status: 1 });
 stockTransferSchema.index({ createdAt: -1 });
 

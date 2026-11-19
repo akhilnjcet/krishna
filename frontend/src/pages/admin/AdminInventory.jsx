@@ -1300,7 +1300,11 @@ const AdminInventory = () => {
 
             {/* ══════════════ TAB 5: INTER-LOCATION STOCK TRANSFERS ══════════════ */}
             {activeTab === 'transfers' && (
-                <StockTransfersTab materials={materials} warehouses={warehouses} />
+                <StockTransfersTab 
+                    materials={materials} 
+                    warehouses={warehouses} 
+                    onRefreshWarehouses={fetchWarehouses}
+                />
             )}
 
             {/* ══════════════ TAB 6: MACHINE UTILIZATION & DOWNTIME ANALYTICS ══════════════ */}

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Warehouse = require('../models/Warehouse');
 const StockTransfer = require('../models/StockTransfer');
 const InventoryItem = require('../models/InventoryItem');
@@ -164,7 +165,15 @@ exports.createStockTransfer = async (req, res) => {
     try {
         const { 
             sourceWarehouseId, 
+            sourceLocationName,
+            sourceAddress,
+            isManualSource,
+            saveSourceLocation,
             destinationWarehouseId, 
+            destinationLocationName,
+            destinationAddress,
+            isManualDestination,
+            saveDestinationLocation,
             projectId, 
             projectTitle,
             items, 
@@ -175,22 +184,112 @@ exports.createStockTransfer = async (req, res) => {
             notes 
         } = req.body;
 
-        if (!sourceWarehouseId || !destinationWarehouseId) {
-            return res.status(400).json({ success: false, message: 'Source and destination warehouses are required' });
-        }
-        if (sourceWarehouseId.toString() === destinationWarehouseId.toString()) {
-            return res.status(400).json({ success: false, message: 'Source and destination cannot be identical' });
-        }
         if (!items || !items.length) {
             return res.status(400).json({ success: false, message: 'At least one item must be added to transfer' });
         }
 
-        const [sourceW, destW] = await Promise.all([
-            Warehouse.findById(sourceWarehouseId),
-            Warehouse.findById(destinationWarehouseId)
-        ]);
-        if (!sourceW || !destW) {
-            return res.status(404).json({ success: false, message: 'Specified warehouse not found' });
+        // --- RESOLVE SOURCE LOCATION ---
+        let finalSourceId = null;
+        let finalSourceName = '';
+        let finalSourceAddress = (sourceAddress || '').trim();
+        let manualSource = Boolean(isManualSource) || !sourceWarehouseId || sourceWarehouseId === '__MANUAL__';
+
+        if (!manualSource && sourceWarehouseId && mongoose.Types.ObjectId.isValid(sourceWarehouseId)) {
+            const foundSourceW = await Warehouse.findById(sourceWarehouseId);
+            if (foundSourceW) {
+                finalSourceId = foundSourceW._id;
+                finalSourceName = foundSourceW.name;
+                finalSourceAddress = foundSourceW.address || finalSourceAddress;
+                manualSource = false;
+            } else {
+                manualSource = true;
+                finalSourceName = (sourceLocationName || '').trim();
+            }
+        } else {
+            manualSource = true;
+            finalSourceName = (sourceLocationName || '').trim();
+        }
+
+        if (!finalSourceName) {
+            return res.status(400).json({ success: false, message: 'Source location is required' });
+        }
+
+        // If user opted to save manual source location for future reuse
+        if (manualSource && saveSourceLocation) {
+            let existingW = await Warehouse.findOne({ name: { $regex: new RegExp(`^${finalSourceName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } });
+            if (existingW) {
+                finalSourceId = existingW._id;
+                finalSourceName = existingW.name;
+                manualSource = false;
+            } else {
+                const whCode = `LOC-${Date.now().toString().slice(-4)}${Math.floor(10 + Math.random() * 90)}`;
+                const createdW = await Warehouse.create({
+                    name: finalSourceName,
+                    code: whCode,
+                    type: 'Project Site',
+                    address: finalSourceAddress || '',
+                    status: 'Active'
+                });
+                finalSourceId = createdW._id;
+                finalSourceName = createdW.name;
+                manualSource = false;
+            }
+        }
+
+        // --- RESOLVE DESTINATION LOCATION ---
+        let finalDestId = null;
+        let finalDestName = '';
+        let finalDestAddress = (destinationAddress || '').trim();
+        let manualDest = Boolean(isManualDestination) || !destinationWarehouseId || destinationWarehouseId === '__MANUAL__';
+
+        if (!manualDest && destinationWarehouseId && mongoose.Types.ObjectId.isValid(destinationWarehouseId)) {
+            const foundDestW = await Warehouse.findById(destinationWarehouseId);
+            if (foundDestW) {
+                finalDestId = foundDestW._id;
+                finalDestName = foundDestW.name;
+                finalDestAddress = foundDestW.address || finalDestAddress;
+                manualDest = false;
+            } else {
+                manualDest = true;
+                finalDestName = (destinationLocationName || '').trim();
+            }
+        } else {
+            manualDest = true;
+            finalDestName = (destinationLocationName || '').trim();
+        }
+
+        if (!finalDestName) {
+            return res.status(400).json({ success: false, message: 'Destination location is required' });
+        }
+
+        // If user opted to save manual destination location for future reuse
+        if (manualDest && saveDestinationLocation) {
+            let existingW = await Warehouse.findOne({ name: { $regex: new RegExp(`^${finalDestName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } });
+            if (existingW) {
+                finalDestId = existingW._id;
+                finalDestName = existingW.name;
+                manualDest = false;
+            } else {
+                const whCode = `LOC-${Date.now().toString().slice(-4)}${Math.floor(10 + Math.random() * 90)}`;
+                const createdW = await Warehouse.create({
+                    name: finalDestName,
+                    code: whCode,
+                    type: 'Project Site',
+                    address: finalDestAddress || '',
+                    status: 'Active'
+                });
+                finalDestId = createdW._id;
+                finalDestName = createdW.name;
+                manualDest = false;
+            }
+        }
+
+        // Prevent identical source and destination
+        if (finalSourceId && finalDestId && finalSourceId.toString() === finalDestId.toString()) {
+            return res.status(400).json({ success: false, message: 'Source and destination locations cannot be identical' });
+        }
+        if (finalSourceName.trim().toLowerCase() === finalDestName.trim().toLowerCase()) {
+            return res.status(400).json({ success: false, message: 'Source and destination locations cannot be identical' });
         }
 
         // Validate items and source stock availability
@@ -201,14 +300,17 @@ exports.createStockTransfer = async (req, res) => {
                 return res.status(404).json({ success: false, message: `Item ${it.itemName || it.inventoryItemId} not found` });
             }
 
-            // Check stock in source warehouse
+            // Check stock in source warehouse/location
             let sourceQty = 0;
-            if (Array.isArray(inv.locationStock)) {
-                const found = inv.locationStock.find(ls => ls.warehouseId && ls.warehouseId.toString() === sourceWarehouseId.toString());
-                if (found) sourceQty = Number(found.quantity) || 0;
-            }
-            if (sourceQty === 0 && (!inv.locationStock || inv.locationStock.length === 0)) {
-                // If not yet sharded, check total quantity
+            if (finalSourceId && Array.isArray(inv.locationStock) && inv.locationStock.length > 0) {
+                const found = inv.locationStock.find(ls => ls.warehouseId && ls.warehouseId.toString() === finalSourceId.toString());
+                if (found) {
+                    sourceQty = Number(found.quantity) || 0;
+                } else {
+                    sourceQty = Number(inv.quantity) || 0;
+                }
+            } else {
+                // If manual source location or not sharded, check total inventory quantity
                 sourceQty = Number(inv.quantity) || 0;
             }
 
@@ -219,7 +321,7 @@ exports.createStockTransfer = async (req, res) => {
             if (reqQty > sourceQty) {
                 return res.status(400).json({ 
                     success: false, 
-                    message: `Insufficient stock at ${sourceW.name} for ${inv.name}. Available: ${sourceQty}, Requested: ${reqQty}` 
+                    message: `Insufficient stock at ${finalSourceName} for ${inv.name}. Available: ${sourceQty}, Requested: ${reqQty}` 
                 });
             }
 
@@ -239,10 +341,14 @@ exports.createStockTransfer = async (req, res) => {
 
         const transfer = await StockTransfer.create({
             transferNumber,
-            sourceWarehouseId: sourceW._id,
-            sourceWarehouseName: sourceW.name,
-            destinationWarehouseId: destW._id,
-            destinationWarehouseName: destW.name,
+            sourceWarehouseId: finalSourceId || null,
+            sourceWarehouseName: finalSourceName,
+            destinationWarehouseId: finalDestId || null,
+            destinationWarehouseName: finalDestName,
+            isManualSource: manualSource,
+            isManualDestination: manualDest,
+            sourceAddress: finalSourceAddress || '',
+            destinationAddress: finalDestAddress || '',
             projectId: projectId || null,
             projectTitle: projectTitle || '',
             items: formattedItems,
@@ -258,7 +364,7 @@ exports.createStockTransfer = async (req, res) => {
                 action: 'REQUESTED',
                 performedBy: req.user ? req.user.name : 'Store Staff',
                 timestamp: new Date(),
-                details: `Transfer request created for ${formattedItems.length} line items.`
+                details: `Transfer request created from ${finalSourceName} to ${finalDestName} for ${formattedItems.length} line items.`
             }]
         });
 
@@ -280,7 +386,7 @@ exports.dispatchStockTransfer = async (req, res) => {
             return res.status(400).json({ success: false, message: `Cannot dispatch transfer in status ${transfer.status}` });
         }
 
-        const sourceLocId = transfer.sourceWarehouseId.toString();
+        const sourceLocId = transfer.sourceWarehouseId ? transfer.sourceWarehouseId.toString() : null;
 
         // Atomic deduction from source warehouse
         for (const it of transfer.items) {
@@ -290,13 +396,12 @@ exports.dispatchStockTransfer = async (req, res) => {
             const qty = Number(it.requestedQuantity);
             it.dispatchedQuantity = qty;
 
-            // Deduct from locationStock
-            if (Array.isArray(inv.locationStock)) {
+            // Deduct from locationStock if source has warehouse ID
+            if (sourceLocId && Array.isArray(inv.locationStock)) {
                 let found = inv.locationStock.find(ls => ls.warehouseId && ls.warehouseId.toString() === sourceLocId);
                 if (found) {
                     found.quantity = Math.max(0, (Number(found.quantity) || 0) - qty);
                 } else {
-                    // Create entry
                     inv.locationStock.push({
                         warehouseId: transfer.sourceWarehouseId,
                         warehouseName: transfer.sourceWarehouseName,
@@ -305,12 +410,17 @@ exports.dispatchStockTransfer = async (req, res) => {
                 }
             }
 
+            // Deduct from overall stock if transferring outside saved warehouses (e.g., manual destination)
+            if (!transfer.destinationWarehouseId) {
+                inv.quantity = Math.max(0, (Number(inv.quantity) || 0) - qty);
+            }
+
             // Log movement
             inv.stockMovements.push({
                 type: 'OUT',
                 quantity: qty,
                 reference: transfer.transferNumber,
-                reason: `Transfer dispatched to ${transfer.destinationWarehouseName}`,
+                reason: `Transfer dispatched from ${transfer.sourceWarehouseName} to ${transfer.destinationWarehouseName}`,
                 performedBy: req.user ? req.user.name : 'Warehouse Admin',
                 date: new Date()
             });
@@ -329,7 +439,7 @@ exports.dispatchStockTransfer = async (req, res) => {
             action: 'DISPATCHED',
             performedBy: req.user ? req.user.name : 'Warehouse Admin',
             timestamp: new Date(),
-            details: `Goods dispatched in transit. Stock deducted from ${transfer.sourceWarehouseName}.`
+            details: `Goods dispatched in transit. Stock dispatched from ${transfer.sourceWarehouseName} to ${transfer.destinationWarehouseName}.`
         });
 
         await transfer.save();
@@ -352,7 +462,7 @@ exports.receiveStockTransfer = async (req, res) => {
             return res.status(400).json({ success: false, message: `Transfer is not In Transit (status: ${transfer.status})` });
         }
 
-        const destLocId = transfer.destinationWarehouseId.toString();
+        const destLocId = transfer.destinationWarehouseId ? transfer.destinationWarehouseId.toString() : null;
         let hasDiscrepancy = false;
 
         // Process each item received
@@ -377,27 +487,34 @@ exports.receiveStockTransfer = async (req, res) => {
                 hasDiscrepancy = true;
             }
 
-            // Credit received quantity to destination warehouse
+            // Credit received quantity to destination warehouse if it is a tracked warehouse
             const inv = await InventoryItem.findById(item.inventoryItemId);
             if (inv) {
-                if (!Array.isArray(inv.locationStock)) {
-                    inv.locationStock = [];
-                }
-                let destEntry = inv.locationStock.find(ls => ls.warehouseId && ls.warehouseId.toString() === destLocId);
-                if (destEntry) {
-                    destEntry.quantity = (Number(destEntry.quantity) || 0) + recQty;
-                } else {
-                    inv.locationStock.push({
-                        warehouseId: transfer.destinationWarehouseId,
-                        warehouseName: transfer.destinationWarehouseName,
-                        quantity: recQty,
-                        minThreshold: 5
-                    });
+                if (destLocId) {
+                    if (!Array.isArray(inv.locationStock)) {
+                        inv.locationStock = [];
+                    }
+                    let destEntry = inv.locationStock.find(ls => ls.warehouseId && ls.warehouseId.toString() === destLocId);
+                    if (destEntry) {
+                        destEntry.quantity = (Number(destEntry.quantity) || 0) + recQty;
+                    } else {
+                        inv.locationStock.push({
+                            warehouseId: transfer.destinationWarehouseId,
+                            warehouseName: transfer.destinationWarehouseName,
+                            quantity: recQty,
+                            minThreshold: 5
+                        });
+                    }
+
+                    // If source was a manual external location, receiving into our warehouse increases total stock
+                    if (!transfer.sourceWarehouseId) {
+                        inv.quantity = (Number(inv.quantity) || 0) + recQty;
+                    }
                 }
 
-                // If goods were damaged or missing, overall total quantity decreases by difference
+                // If goods were damaged or missing and destination was a warehouse, overall total quantity decreases by discrepancy loss
                 const discrepancyLoss = Math.max(0, item.dispatchedQuantity - recQty);
-                if (discrepancyLoss > 0) {
+                if (discrepancyLoss > 0 && transfer.destinationWarehouseId && transfer.sourceWarehouseId) {
                     inv.quantity = Math.max(0, (Number(inv.quantity) || 0) - discrepancyLoss);
                 }
 
