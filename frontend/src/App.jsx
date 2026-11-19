@@ -634,6 +634,7 @@ const App = () => {
               <Route path="salary" element={<StaffFinance />} />
               <Route path="applications" element={<StaffApplications />} />
               <Route path="contacts" element={<StaffContacts />} />
+              <Route path="ai-assistant" element={<AdminAIErpAssistant />} />
               <Route path="chat" element={<SupportHub />} />
               <Route path="profile" element={<Profile />} />
             </Route>

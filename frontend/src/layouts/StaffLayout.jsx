@@ -3,7 +3,7 @@ import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-d
 import {
     LayoutDashboard, UserCheck, Wallet, CalendarDays, Users,
     MessageSquare, CheckSquare, LogOut, Menu, X, Bell, User, ChevronLeft,
-    ClipboardList
+    ClipboardList, Sparkles
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { getSocket } from '../utils/socket';
@@ -27,6 +27,7 @@ const navItems = [
     { name: 'Leave Tracker',    path: '/staff/leave',        icon: CalendarDays },
     { name: 'Track Requests',   path: '/staff/applications', icon: CheckSquare },
     { name: 'Field Contacts',   path: '/staff/contacts',     icon: Users },
+    { name: 'AI ERP Copilot',   path: '/staff/ai-assistant', icon: Sparkles },
     { name: 'Support Channel',  path: '/staff/chat',         icon: MessageSquare },
 ];
 
