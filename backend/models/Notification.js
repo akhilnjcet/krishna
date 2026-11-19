@@ -22,6 +22,8 @@ const notificationSchema = new mongoose.Schema({
             'advance',
             'salary',
             'project',
+            'inventory',
+            'material',
             'quote',
             'invoice',
             'payment',

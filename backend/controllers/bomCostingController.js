@@ -237,9 +237,17 @@ exports.createMaterialRequest = async (req, res) => {
             notes
         } = req.body;
 
+        if (!projectId) {
+            return res.status(400).json({ success: false, message: 'Project selection is required for material request' });
+        }
+
         const project = await Project.findById(projectId);
         if (!project) {
             return res.status(404).json({ success: false, message: 'Referenced Project not found' });
+        }
+
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ success: false, message: 'At least one material item must be requested' });
         }
 
         const year = new Date().getFullYear();
@@ -247,15 +255,38 @@ exports.createMaterialRequest = async (req, res) => {
         const requestNumber = `MR-${year}-${String(count + 1).padStart(4, '0')}`;
 
         const reqItems = [];
-        for (const item of (items || [])) {
-            const inv = await InventoryItem.findById(item.inventoryItemId);
+        for (const item of items) {
+            const hasValidId = item.inventoryItemId && mongoose.Types.ObjectId.isValid(item.inventoryItemId);
+            let inv = hasValidId ? await InventoryItem.findById(item.inventoryItemId) : null;
+            if (!inv && item.materialName) {
+                inv = await InventoryItem.findOne({
+                    name: new RegExp(`^${item.materialName.trim()}$`, 'i'),
+                    type: 'material'
+                });
+            }
+            if (!inv && item.materialName && item.materialName.trim()) {
+                try {
+                    inv = await InventoryItem.create({
+                        type: 'material',
+                        name: item.materialName.trim(),
+                        category: item.category || 'Raw Material',
+                        quantity: 0,
+                        unit: item.unit || 'Pcs',
+                        unitPrice: Number(item.unitPrice) || 0,
+                        notes: item.specification || 'Created via Material Request'
+                    });
+                } catch (cErr) {
+                    console.warn('Auto-create inventory item fallback error:', cErr.message);
+                }
+            }
+
             reqItems.push({
-                inventoryItemId: inv ? inv._id : item.inventoryItemId,
-                materialName: inv ? inv.name : item.materialName,
+                inventoryItemId: inv ? inv._id : (hasValidId ? item.inventoryItemId : null),
+                materialName: inv ? inv.name : (item.materialName || 'Raw Material'),
                 category: inv ? inv.category : (item.category || 'Raw Material'),
                 specification: item.specification || inv?.notes || '',
                 unit: inv ? inv.unit : (item.unit || 'Pcs'),
-                requestedQty: Number(item.requestedQty) || 0,
+                requestedQty: Math.max(1, Number(item.requestedQty) || 1),
                 unitPrice: inv ? inv.unitPrice : (Number(item.unitPrice) || 0)
             });
         }
@@ -265,8 +296,8 @@ exports.createMaterialRequest = async (req, res) => {
             projectId: project._id,
             projectTitle: project.title,
             jobOrderNumber: project._id.toString().substring(18, 24).toUpperCase(),
-            bomId: bomId || null,
-            requestedBy: req.user?._id,
+            bomId: (bomId && mongoose.Types.ObjectId.isValid(bomId)) ? bomId : null,
+            requestedBy: req.user?._id || new mongoose.Types.ObjectId(),
             requestedByName: req.user?.name || 'Staff Member',
             priority: priority || 'Normal',
             items: reqItems,
@@ -357,7 +388,9 @@ exports.reviewMaterialRequest = async (req, res) => {
         const approvalMap = new Map();
         if (Array.isArray(approvedItems)) {
             approvedItems.forEach(item => {
-                approvalMap.set(item.inventoryItemId?.toString(), Number(item.approvedQty) || 0);
+                if (item.inventoryItemId) {
+                    approvalMap.set(item.inventoryItemId.toString(), Number(item.approvedQty) || 0);
+                }
             });
         }
 
@@ -365,35 +398,54 @@ exports.reviewMaterialRequest = async (req, res) => {
         const consumptionsToRecord = [];
 
         for (const reqItem of request.items) {
-            const approvedQty = approvalMap.has(reqItem.inventoryItemId.toString())
-                ? approvalMap.get(reqItem.inventoryItemId.toString())
+            const invId = reqItem.inventoryItemId ? reqItem.inventoryItemId.toString() : '';
+            const approvedQty = (invId && approvalMap.has(invId))
+                ? approvalMap.get(invId)
                 : reqItem.requestedQty;
 
             reqItem.approvedQty = approvedQty;
 
             if (approvedQty > 0) {
-                const invItem = await InventoryItem.findById(reqItem.inventoryItemId);
-                if (!invItem) {
-                    return res.status(404).json({ 
-                        success: false, 
-                        message: `Inventory item "${reqItem.materialName}" not found.` 
+                let invItem = null;
+                if (reqItem.inventoryItemId) {
+                    invItem = await InventoryItem.findById(reqItem.inventoryItemId);
+                }
+                if (!invItem && reqItem.materialName) {
+                    invItem = await InventoryItem.findOne({ 
+                        name: new RegExp(`^${reqItem.materialName.trim()}$`, 'i'), 
+                        type: 'material' 
                     });
                 }
-
-                // Check negative stock boundary rule
-                if (!allowNegativeStock && invItem.quantity < approvedQty) {
-                    return res.status(400).json({
-                        success: false,
-                        message: `Insufficient stock for "${invItem.name}". Available: ${invItem.quantity} ${invItem.unit}, Requested for issue: ${approvedQty} ${invItem.unit}. Admin exception required to allow negative stock.`
+                if (!invItem && reqItem.materialName) {
+                    invItem = await InventoryItem.create({
+                        type: 'material',
+                        name: reqItem.materialName,
+                        category: reqItem.category || 'Raw Material',
+                        quantity: 0,
+                        unit: reqItem.unit || 'Pcs',
+                        unitPrice: reqItem.unitPrice || 0
                     });
+                    reqItem.inventoryItemId = invItem._id;
                 }
 
-                reqItem.issuedQty = approvedQty;
-                stockItemsToUpdate.push({
-                    invItem,
-                    issuedQty: approvedQty,
-                    unitPrice: invItem.unitPrice || reqItem.unitPrice || 0
-                });
+                if (invItem) {
+                    // Check negative stock boundary rule
+                    if (!allowNegativeStock && invItem.quantity < approvedQty) {
+                        return res.status(400).json({
+                            success: false,
+                            message: `Insufficient stock for "${invItem.name}". Available: ${invItem.quantity} ${invItem.unit}, Requested for issue: ${approvedQty} ${invItem.unit}. Enable "Allow Negative Stock Exception" to issue anyway.`
+                        });
+                    }
+
+                    reqItem.issuedQty = approvedQty;
+                    stockItemsToUpdate.push({
+                        invItem,
+                        issuedQty: approvedQty,
+                        unitPrice: invItem.unitPrice || reqItem.unitPrice || 0
+                    });
+                } else {
+                    reqItem.issuedQty = approvedQty;
+                }
             }
         }
 

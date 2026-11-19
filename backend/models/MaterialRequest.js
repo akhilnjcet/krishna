@@ -4,7 +4,8 @@ const requestItemSchema = new mongoose.Schema({
     inventoryItemId: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'InventoryItem',
-        required: true 
+        default: null,
+        required: false 
     },
     materialName: { 
         type: String, 

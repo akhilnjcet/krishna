@@ -6,7 +6,7 @@ import {
     Filter, RefreshCw, IndianRupee, TrendingUp, TrendingDown, ShieldAlert, 
     Check, X, Eye, FileSpreadsheet, Percent, Wrench, Truck, Briefcase, 
     ChevronRight, User, Calendar, AlertCircle, Info, Sparkles, Building2,
-    Users, MapPin, Fuel
+    Users, MapPin, Fuel, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateGeneralReportPDF } from '../../services/pdfService';
@@ -47,6 +47,11 @@ export default function AdminBOMCosting() {
     const [inventoryItems, setInventoryItems] = useState([]);
     const [boms, setBoms] = useState([]);
     const [materialRequests, setMaterialRequests] = useState([]);
+    const [requestsLoading, setRequestsLoading] = useState(false);
+    const [requestsError, setRequestsError] = useState(null);
+    const [requestSearchQuery, setRequestSearchQuery] = useState('');
+    const [requestStatusFilter, setRequestStatusFilter] = useState('All');
+    const [selectedRequestDetails, setSelectedRequestDetails] = useState(null);
     const [consumptionLogs, setConsumptionLogs] = useState([]);
     const [projectsCosting, setProjectsCosting] = useState([]);
     const [dashboardSummary, setDashboardSummary] = useState(null);
@@ -184,12 +189,13 @@ export default function AdminBOMCosting() {
         setError(null);
         try {
             const [projRes, invRes] = await Promise.all([
-                api.get('/projects'),
-                api.get('/inventory/items')
+                api.get('/projects').catch(() => ({ data: [] })),
+                api.get('/inventory/items').catch(() => api.get('/inventory')).catch(() => ({ data: [] }))
             ]);
             setProjects(Array.isArray(projRes.data) ? projRes.data : (projRes.data?.projects || []));
-            const items = invRes.data?.items || invRes.data || [];
-            setInventoryItems(items.filter(i => i.type === 'material'));
+            const items = Array.isArray(invRes.data) ? invRes.data : (invRes.data?.items || []);
+            const materials = items.filter(i => i.type === 'material' || !i.type);
+            setInventoryItems(materials.length > 0 ? materials : items);
         } catch (err) {
             console.error('Error loading master data:', err);
             setError(err.response?.data?.message || err.message || 'Failed to load master projects & inventory.');
@@ -212,6 +218,8 @@ export default function AdminBOMCosting() {
 
     // Load Material Requests
     const fetchMaterialRequests = useCallback(async () => {
+        setRequestsLoading(true);
+        setRequestsError(null);
         try {
             const res = await api.get('/material-requests');
             if (res.data?.success) {
@@ -219,6 +227,9 @@ export default function AdminBOMCosting() {
             }
         } catch (err) {
             console.error('Error fetching material requests:', err);
+            setRequestsError(err.response?.data?.message || err.message || 'Failed to fetch material requests.');
+        } finally {
+            setRequestsLoading(false);
         }
     }, []);
 
@@ -287,6 +298,19 @@ export default function AdminBOMCosting() {
             console.error('Error fetching wastage reports:', err);
         }
     }, [selectedMonth]);
+
+    const filteredRequests = useMemo(() => {
+        return materialRequests.filter(req => {
+            const matchesStatus = requestStatusFilter === 'All' || req.status === requestStatusFilter;
+            const q = requestSearchQuery.trim().toLowerCase();
+            const matchesSearch = !q || 
+                req.requestNumber?.toLowerCase().includes(q) ||
+                req.projectTitle?.toLowerCase().includes(q) ||
+                req.requestedByName?.toLowerCase().includes(q) ||
+                req.items?.some(i => i.materialName?.toLowerCase().includes(q));
+            return matchesStatus && matchesSearch;
+        });
+    }, [materialRequests, requestStatusFilter, requestSearchQuery]);
 
     useEffect(() => {
         fetchMasterData();
@@ -671,8 +695,13 @@ export default function AdminBOMCosting() {
 
     // ─── MATERIAL REQUEST ACTIONS ───
     const handleOpenCreateRequest = () => {
+        if (projects.length === 0 || inventoryItems.length === 0) {
+            fetchMasterData();
+        }
+        const eligibleProjects = projects.filter(p => !['cancelled', 'CANCELLED', 'Cancelled'].includes(p.status));
+        const initialProj = eligibleProjects[0]?._id || projects[0]?._id || '';
         setRequestForm({
-            projectId: projects[0]?._id || '',
+            projectId: initialProj,
             bomId: '',
             priority: 'Normal',
             items: [{
@@ -681,25 +710,92 @@ export default function AdminBOMCosting() {
                 category: inventoryItems[0]?.category || 'Raw Material',
                 specification: '',
                 unit: inventoryItems[0]?.unit || 'Pcs',
-                requestedQty: 5,
+                requestedQty: 1,
                 unitPrice: inventoryItems[0]?.unitPrice || 0
             }],
             notes: ''
         });
+        setError(null);
         setShowRequestModal(true);
+    };
+
+    const handleAddRequestItem = () => {
+        setRequestForm(prev => ({
+            ...prev,
+            items: [
+                ...prev.items,
+                {
+                    inventoryItemId: inventoryItems[0]?._id || '',
+                    materialName: inventoryItems[0]?.name || '',
+                    category: inventoryItems[0]?.category || 'Raw Material',
+                    specification: '',
+                    unit: inventoryItems[0]?.unit || 'Pcs',
+                    requestedQty: 1,
+                    unitPrice: inventoryItems[0]?.unitPrice || 0
+                }
+            ]
+        }));
+    };
+
+    const handleRemoveRequestItem = (index) => {
+        if (requestForm.items.length <= 1) return;
+        setRequestForm(prev => ({
+            ...prev,
+            items: prev.items.filter((_, idx) => idx !== index)
+        }));
+    };
+
+    const handleUpdateRequestItem = (index, field, value) => {
+        setRequestForm(prev => {
+            const nextItems = [...prev.items];
+            if (field === 'inventoryItemId') {
+                const inv = inventoryItems.find(i => i._id === value);
+                nextItems[index] = {
+                    ...nextItems[index],
+                    inventoryItemId: value,
+                    materialName: inv ? inv.name : nextItems[index].materialName,
+                    category: inv ? inv.category : nextItems[index].category,
+                    unit: inv ? inv.unit : nextItems[index].unit,
+                    unitPrice: inv ? (inv.unitPrice || 0) : nextItems[index].unitPrice
+                };
+            } else {
+                nextItems[index] = { ...nextItems[index], [field]: value };
+            }
+            return { ...prev, items: nextItems };
+        });
     };
 
     const handleSaveMaterialRequest = async (e) => {
         e.preventDefault();
+        if (!requestForm.projectId) {
+            setError('Please select a project for the material request.');
+            return;
+        }
+        if (!requestForm.items || requestForm.items.length === 0) {
+            setError('Please add at least one material item.');
+            return;
+        }
+        for (let i = 0; i < requestForm.items.length; i++) {
+            const itm = requestForm.items[i];
+            if (!itm.materialName && !itm.inventoryItemId) {
+                setError(`Item #${i + 1} requires a material name.`);
+                return;
+            }
+            if (Number(itm.requestedQty) <= 0) {
+                setError(`Item #${i + 1} requested quantity must be greater than zero.`);
+                return;
+            }
+        }
         setActionLoading(true);
         setError(null);
         try {
             const res = await api.post('/material-requests', requestForm);
-            notify(`Material Request ${res.data?.request?.requestNumber} submitted to Admin.`);
+            notify(`Material Request ${res.data?.request?.requestNumber || 'submitted'} created successfully.`);
             setShowRequestModal(false);
             fetchMaterialRequests();
+            fetchMasterData();
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to submit material request.');
+            setError(err.response?.data?.message || err.message || 'Failed to submit material request.');
         } finally {
             setActionLoading(false);
         }
@@ -1188,15 +1284,87 @@ export default function AdminBOMCosting() {
             {activeTab === 'requests' && (
                 <div className="space-y-4">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden">
-                        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
-                            <h2 className="text-sm font-black uppercase text-slate-800 dark:text-slate-200 tracking-wider">
-                                Project Material Requests & Store Approvals ({materialRequests.length})
-                            </h2>
+                        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-sm font-black uppercase text-slate-800 dark:text-slate-200 tracking-wider">
+                                    Project Material Requests & Store Approvals ({filteredRequests.length})
+                                </h2>
+                                {requestsLoading && (
+                                    <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                                )}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                <div className="relative flex-1 md:w-56">
+                                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search req, project, item..."
+                                        value={requestSearchQuery}
+                                        onChange={(e) => setRequestSearchQuery(e.target.value)}
+                                        className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium"
+                                    />
+                                </div>
+
+                                <select
+                                    value={requestStatusFilter}
+                                    onChange={(e) => setRequestStatusFilter(e.target.value)}
+                                    className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold"
+                                >
+                                    <option value="All">All Statuses</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Partially Approved">Partially Approved</option>
+                                    <option value="Issued">Issued</option>
+                                    <option value="Rejected">Rejected</option>
+                                </select>
+
+                                <button
+                                    onClick={handleOpenCreateRequest}
+                                    className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 transition flex items-center gap-1.5 shrink-0"
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>Request Material</span>
+                                </button>
+
+                                <button
+                                    onClick={fetchMaterialRequests}
+                                    className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 transition"
+                                    title="Refresh requests"
+                                >
+                                    <RefreshCw className={`w-3.5 h-3.5 ${requestsLoading ? 'animate-spin text-indigo-600' : ''}`} />
+                                </button>
+                            </div>
                         </div>
 
-                        {materialRequests.length === 0 ? (
-                            <div className="p-12 text-center text-slate-400 font-bold">
-                                No material requests currently found.
+                        {requestsLoading ? (
+                            <div className="p-12 text-center text-slate-400 font-bold flex flex-col items-center justify-center gap-2">
+                                <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+                                <span>Loading project material requests...</span>
+                            </div>
+                        ) : requestsError ? (
+                            <div className="p-8 text-center space-y-2">
+                                <p className="text-xs font-bold text-rose-500">{requestsError}</p>
+                                <button
+                                    onClick={fetchMaterialRequests}
+                                    className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-xs font-bold hover:bg-slate-200 transition"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        ) : filteredRequests.length === 0 ? (
+                            <div className="p-12 text-center text-slate-400 font-bold space-y-3">
+                                <Package className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600" />
+                                <p className="text-xs">
+                                    {materialRequests.length === 0 
+                                        ? 'No material requests currently recorded.' 
+                                        : 'No material requests match your filters.'}
+                                </p>
+                                <button
+                                    onClick={handleOpenCreateRequest}
+                                    className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs shadow-md shadow-indigo-600/20"
+                                >
+                                    + Request Material
+                                </button>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
@@ -1206,32 +1374,45 @@ export default function AdminBOMCosting() {
                                             <th className="px-5 py-3">Req Number</th>
                                             <th className="px-5 py-3">Project</th>
                                             <th className="px-5 py-3">Requested By</th>
-                                            <th className="px-5 py-3">Items Count</th>
+                                            <th className="px-5 py-3">Items Summary</th>
                                             <th className="px-5 py-3 text-center">Priority</th>
                                             <th className="px-5 py-3">Status</th>
                                             <th className="px-5 py-3 text-right">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-700 dark:text-slate-300">
-                                        {materialRequests.map(req => (
+                                        {filteredRequests.map(req => (
                                             <tr key={req._id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition">
-                                                <td className="px-5 py-3 font-bold text-blue-600 whitespace-nowrap">
+                                                <td className="px-5 py-3 font-bold text-indigo-600 whitespace-nowrap">
                                                     {req.requestNumber}
                                                 </td>
                                                 <td className="px-5 py-3 whitespace-nowrap">
-                                                    {req.projectTitle}
+                                                    <span className="font-bold text-slate-900 dark:text-white block">{req.projectTitle}</span>
+                                                    {req.jobOrderNumber && (
+                                                        <span className="text-[10px] text-slate-400 font-mono">Job: {req.jobOrderNumber}</span>
+                                                    )}
                                                 </td>
                                                 <td className="px-5 py-3 whitespace-nowrap text-slate-500">
-                                                    {req.requestedByName}
+                                                    <span className="block font-medium">{req.requestedByName}</span>
+                                                    <span className="text-[10px] text-slate-400">
+                                                        {new Date(req.createdAt).toLocaleDateString()}
+                                                    </span>
                                                 </td>
                                                 <td className="px-5 py-3 whitespace-nowrap">
-                                                    {req.items?.length || 0} items
+                                                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                                                        {req.items?.length || 0} items
+                                                    </span>
+                                                    {req.items && req.items[0] && (
+                                                        <span className="text-[10px] text-slate-400 block truncate max-w-[160px]">
+                                                            e.g. {req.items[0].materialName} ({req.items[0].requestedQty} {req.items[0].unit})
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-5 py-3 text-center whitespace-nowrap">
                                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                                                         req.priority === 'Urgent' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' :
                                                         req.priority === 'High' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' :
-                                                        'bg-slate-100 text-slate-600'
+                                                        'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
                                                     }`}>
                                                         {req.priority}
                                                     </span>
@@ -1239,24 +1420,33 @@ export default function AdminBOMCosting() {
                                                 <td className="px-5 py-3 whitespace-nowrap">
                                                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
                                                         req.status === 'Issued' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                                                        req.status === 'Partially Approved' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
                                                         req.status === 'Pending' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
                                                         req.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border border-rose-200' :
-                                                        'bg-blue-50 text-blue-600'
+                                                        'bg-slate-50 text-slate-600'
                                                     }`}>
                                                         {req.status}
                                                     </span>
                                                 </td>
                                                 <td className="px-5 py-3 text-right whitespace-nowrap">
-                                                    {req.status === 'Pending' ? (
+                                                    <div className="flex items-center justify-end gap-1.5">
                                                         <button
-                                                            onClick={() => handleOpenReviewModal(req)}
-                                                            className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition"
+                                                            onClick={() => setSelectedRequestDetails(req)}
+                                                            className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 transition"
+                                                            title="View details"
                                                         >
-                                                            Review & Issue Stock
+                                                            <Eye className="w-3.5 h-3.5" />
                                                         </button>
-                                                    ) : (
-                                                        <span className="text-[11px] text-slate-400">Processed</span>
-                                                    )}
+
+                                                        {req.status === 'Pending' && (
+                                                            <button
+                                                                onClick={() => handleOpenReviewModal(req)}
+                                                                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition shadow-sm"
+                                                            >
+                                                                Review & Issue
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -2311,6 +2501,418 @@ export default function AdminBOMCosting() {
                                     </button>
                                 </div>
                             </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* MODAL: CREATE MATERIAL REQUEST */}
+            <AnimatePresence>
+                {showRequestModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 max-w-3xl w-full p-5 sm:p-6 shadow-2xl space-y-4 my-8"
+                        >
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <Package className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                                            Request Material from Store
+                                        </h2>
+                                        <p className="text-xs text-slate-400">
+                                            Requisition raw materials, steel profiles, or fasteners for a project.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setShowRequestModal(false)} 
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSaveMaterialRequest} className="space-y-4 text-xs">
+                                {/* Project & Priority Selection */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">
+                                            Target Project *
+                                        </label>
+                                        <select
+                                            required
+                                            value={requestForm.projectId}
+                                            onChange={(e) => setRequestForm({ ...requestForm, projectId: e.target.value })}
+                                            className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
+                                        >
+                                            <option value="">Select Project...</option>
+                                            {projects.map(p => {
+                                                const isCancelled = ['cancelled', 'CANCELLED', 'Cancelled'].includes(p.status);
+                                                return (
+                                                    <option key={p._id} value={p._id} disabled={isCancelled}>
+                                                        {p.title} {isCancelled ? '(Cancelled - Ineligible)' : `• ${p.status || 'Active'}`}
+                                                    </option>
+                                                );
+                                            })}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">
+                                            Priority Level
+                                        </label>
+                                        <select
+                                            value={requestForm.priority}
+                                            onChange={(e) => setRequestForm({ ...requestForm, priority: e.target.value })}
+                                            className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
+                                        >
+                                            <option value="Normal">Normal</option>
+                                            <option value="High">High Priority</option>
+                                            <option value="Urgent">Urgent / Critical</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Linked BOM (Optional) */}
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">
+                                        Linked Bill of Materials (Optional)
+                                    </label>
+                                    <select
+                                        value={requestForm.bomId}
+                                        onChange={(e) => setRequestForm({ ...requestForm, bomId: e.target.value })}
+                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold"
+                                    >
+                                        <option value="">No BOM Linked (General Requisition)</option>
+                                        {boms
+                                            .filter(b => !requestForm.projectId || String(b.projectId?._id || b.projectId) === String(requestForm.projectId))
+                                            .map(b => (
+                                                <option key={b._id} value={b._id}>
+                                                    {b.bomNumber} - {b.productName} ({b.jobOrderNumber || 'General'})
+                                                </option>
+                                            ))}
+                                    </select>
+                                </div>
+
+                                {/* Requested Items Section */}
+                                <div className="space-y-2 pt-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[11px] font-black uppercase text-slate-700 dark:text-slate-300">
+                                            Materials Requested ({requestForm.items.length})
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={handleAddRequestItem}
+                                            className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 font-bold text-[11px] flex items-center gap-1 transition"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" />
+                                            <span>+ Add Item</span>
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-3 max-h-[38vh] overflow-y-auto pr-1">
+                                        {requestForm.items.map((item, idx) => {
+                                            const selectedInv = inventoryItems.find(i => String(i._id) === String(item.inventoryItemId));
+                                            const currentStock = selectedInv?.quantity ?? null;
+
+                                            return (
+                                                <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-2.5">
+                                                    <div className="flex items-center justify-between pb-1 border-b border-slate-200/50 dark:border-slate-800">
+                                                        <span className="font-black text-[10px] uppercase text-indigo-600 dark:text-indigo-400">
+                                                            Item #{idx + 1}
+                                                        </span>
+                                                        {requestForm.items.length > 1 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRemoveRequestItem(idx)}
+                                                                className="text-rose-500 hover:text-rose-700 p-1 transition"
+                                                                title="Remove item"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                        {/* Store Item Selection */}
+                                                        <div className="sm:col-span-2">
+                                                            <label className="block text-[10px] font-bold text-slate-500 mb-0.5">
+                                                                Select from Store Stock
+                                                            </label>
+                                                            <select
+                                                                value={item.inventoryItemId}
+                                                                onChange={(e) => handleUpdateRequestItem(idx, 'inventoryItemId', e.target.value)}
+                                                                className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs"
+                                                            >
+                                                                <option value="">-- Custom / Manual Entry Below --</option>
+                                                                {inventoryItems.map(inv => (
+                                                                    <option key={inv._id} value={inv._id}>
+                                                                        {inv.name} (Stock: {inv.quantity || 0} {inv.unit || 'Pcs'})
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                            {currentStock !== null && (
+                                                                <span className={`text-[10px] font-semibold mt-0.5 block ${currentStock <= 0 ? 'text-amber-500' : 'text-emerald-600'}`}>
+                                                                    Current Store Stock: {currentStock} {item.unit || 'Pcs'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Category */}
+                                                        <div>
+                                                            <label className="block text-[10px] font-bold text-slate-500 mb-0.5">
+                                                                Category
+                                                            </label>
+                                                            <select
+                                                                value={item.category}
+                                                                onChange={(e) => handleUpdateRequestItem(idx, 'category', e.target.value)}
+                                                                className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold text-xs"
+                                                            >
+                                                                {FABRICATION_CATEGORIES.map(cat => (
+                                                                    <option key={cat} value={cat}>{cat}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                        {/* Material Name */}
+                                                        <div className="col-span-2">
+                                                            <label className="block text-[10px] font-bold text-slate-500 mb-0.5">
+                                                                Material Name / Item Code *
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                required
+                                                                placeholder="e.g. MS Plate 16mm IS 2062"
+                                                                value={item.materialName}
+                                                                onChange={(e) => handleUpdateRequestItem(idx, 'materialName', e.target.value)}
+                                                                className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs"
+                                                            />
+                                                        </div>
+
+                                                        {/* Qty */}
+                                                        <div>
+                                                            <label className="block text-[10px] font-bold text-slate-500 mb-0.5">
+                                                                Quantity *
+                                                            </label>
+                                                            <input
+                                                                type="number"
+                                                                min="1"
+                                                                required
+                                                                value={item.requestedQty}
+                                                                onChange={(e) => handleUpdateRequestItem(idx, 'requestedQty', Math.max(1, Number(e.target.value) || 1))}
+                                                                className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-black text-xs text-indigo-600"
+                                                            />
+                                                        </div>
+
+                                                        {/* Unit */}
+                                                        <div>
+                                                            <label className="block text-[10px] font-bold text-slate-500 mb-0.5">
+                                                                Unit
+                                                            </label>
+                                                            <select
+                                                                value={item.unit}
+                                                                onChange={(e) => handleUpdateRequestItem(idx, 'unit', e.target.value)}
+                                                                className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold text-xs"
+                                                            >
+                                                                {STANDARD_UNITS.map(u => (
+                                                                    <option key={u} value={u}>{u}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Specification */}
+                                                    <div>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Specification / Dimensions / Heat No. / Make (Optional)"
+                                                            value={item.specification}
+                                                            onChange={(e) => handleUpdateRequestItem(idx, 'specification', e.target.value)}
+                                                            className="w-full p-1.5 bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 rounded-xl text-[11px]"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Justification / Notes */}
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">
+                                        Remarks / Justification
+                                    </label>
+                                    <textarea
+                                        rows={2}
+                                        placeholder="State purpose of material requisition, shop-floor work order reference, or urgency details..."
+                                        value={requestForm.notes}
+                                        onChange={(e) => setRequestForm({ ...requestForm, notes: e.target.value })}
+                                        className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium"
+                                    />
+                                </div>
+
+                                {error && (
+                                    <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 rounded-xl text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-2">
+                                        <AlertCircle className="w-4 h-4 shrink-0" />
+                                        <span>{error}</span>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowRequestModal(false)}
+                                        className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={actionLoading}
+                                        className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition flex items-center gap-2"
+                                    >
+                                        {actionLoading ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                <span>Submitting Request...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Package className="w-4 h-4" />
+                                                <span>Submit Material Request</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* MODAL: VIEW REQUEST DETAILS */}
+            <AnimatePresence>
+                {selectedRequestDetails && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 my-8"
+                        >
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                                <div>
+                                    <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider">
+                                        Material Requisition Details
+                                    </span>
+                                    <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                                        {selectedRequestDetails.requestNumber}
+                                    </h2>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedRequestDetails(null)}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl text-xs">
+                                <div>
+                                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Project</span>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200">{selectedRequestDetails.projectTitle}</span>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Requested By</span>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200">{selectedRequestDetails.requestedByName}</span>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Priority</span>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200">{selectedRequestDetails.priority}</span>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Status</span>
+                                    <span className="font-black uppercase text-indigo-600 dark:text-indigo-400">{selectedRequestDetails.status}</span>
+                                </div>
+                            </div>
+
+                            {selectedRequestDetails.rejectionReason && (
+                                <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 rounded-xl text-xs text-rose-600">
+                                    <span className="font-black block uppercase text-[10px]">Rejection Reason:</span>
+                                    {selectedRequestDetails.rejectionReason}
+                                </div>
+                            )}
+
+                            <div>
+                                <h3 className="text-xs font-black uppercase text-slate-600 dark:text-slate-300 mb-2">
+                                    Requisitioned Items ({selectedRequestDetails.items?.length || 0})
+                                </h3>
+                                <div className="overflow-x-auto border border-slate-100 dark:border-slate-700 rounded-xl">
+                                    <table className="w-full text-left text-xs">
+                                        <thead className="bg-slate-50 dark:bg-slate-900 text-slate-400 text-[10px] uppercase font-black">
+                                            <tr>
+                                                <th className="px-3 py-2">Material</th>
+                                                <th className="px-3 py-2">Category</th>
+                                                <th className="px-3 py-2 text-center">Requested</th>
+                                                <th className="px-3 py-2 text-center">Approved</th>
+                                                <th className="px-3 py-2 text-center">Issued</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700 font-semibold">
+                                            {selectedRequestDetails.items?.map((item, idx) => (
+                                                <tr key={idx} className="hover:bg-slate-50/50">
+                                                    <td className="px-3 py-2 font-bold text-slate-800 dark:text-slate-200">
+                                                        {item.materialName}
+                                                        {item.specification ? (
+                                                            <span className="block text-[10px] font-normal text-slate-400">{item.specification}</span>
+                                                        ) : null}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-slate-500">{item.category}</td>
+                                                    <td className="px-3 py-2 text-center font-black text-indigo-600">{item.requestedQty} {item.unit}</td>
+                                                    <td className="px-3 py-2 text-center font-bold text-emerald-600">{item.approvedQty || 0} {item.unit}</td>
+                                                    <td className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300">{item.issuedQty || 0} {item.unit}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {selectedRequestDetails.notes && (
+                                <div className="text-xs text-slate-500 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl">
+                                    <span className="font-bold block text-slate-700 dark:text-slate-300 mb-1">Remarks:</span>
+                                    {selectedRequestDetails.notes}
+                                </div>
+                            )}
+
+                            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+                                <button
+                                    onClick={() => setSelectedRequestDetails(null)}
+                                    className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                                >
+                                    Close
+                                </button>
+                                {selectedRequestDetails.status === 'Pending' && (
+                                    <button
+                                        onClick={() => {
+                                            const req = selectedRequestDetails;
+                                            setSelectedRequestDetails(null);
+                                            handleOpenReviewModal(req);
+                                        }}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+                                    >
+                                        Review & Issue Stock
+                                    </button>
+                                )}
+                            </div>
                         </motion.div>
                     </div>
                 )}
