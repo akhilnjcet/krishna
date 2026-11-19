@@ -118,6 +118,15 @@ const StaffTimesheets = lazy(() => import('./pages/staff/StaffTimesheets'));
 const StaffContacts = lazy(() => import('./pages/staff/StaffContacts'));
 const StaffApplications = lazy(() => import('./pages/staff/StaffApplications'));
 const StaffAttendanceHub = lazy(() => import('./pages/staff/StaffAttendanceHub'));
+const StaffDrivers = lazy(() => import('./pages/staff/StaffDrivers'));
+
+// Driver Portal Pages (Lazy loaded on demand)
+const DriverLayout = lazy(() => import('./layouts/DriverLayout'));
+const DriverDashboard = lazy(() => import('./pages/driver/DriverDashboard'));
+const DriverTripDetail = lazy(() => import('./pages/driver/DriverTripDetail'));
+const DriverIssues = lazy(() => import('./pages/driver/DriverIssues'));
+const DriverProfile = lazy(() => import('./pages/driver/DriverProfile'));
+const DriverLogin = lazy(() => import('./pages/driver/DriverLogin'));
 
 // Customer Pages (Lazy loaded on demand)
 const CustomerDashboard = lazy(() => import('./pages/customer/CustomerDashboard'));
@@ -558,6 +567,7 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/staff-login" element={<StaffLogin />} />
+            <Route path="/driver-login" element={<DriverLogin />} />
             <Route path="/terms-of-service" element={<PolicyViewer defaultType="terms" />} />
             <Route path="/privacy-policy" element={<PolicyViewer defaultType="privacy" />} />
             <Route path="/terms" element={<PolicyViewer defaultType="terms" />} />
@@ -634,9 +644,18 @@ const App = () => {
               <Route path="salary" element={<StaffFinance />} />
               <Route path="applications" element={<StaffApplications />} />
               <Route path="contacts" element={<StaffContacts />} />
+              <Route path="drivers" element={<StaffDrivers />} />
               <Route path="ai-assistant" element={<AdminAIErpAssistant />} />
               <Route path="chat" element={<SupportHub />} />
               <Route path="profile" element={<Profile />} />
+            </Route>
+
+            {/* Driver Portal Routes */}
+            <Route path="/driver" element={<DriverLayout />}>
+              <Route index element={<DriverDashboard />} />
+              <Route path="trip/:id" element={<DriverTripDetail />} />
+              <Route path="issues" element={<DriverIssues />} />
+              <Route path="profile" element={<DriverProfile />} />
             </Route>
 
               {/* Customer Routes */}

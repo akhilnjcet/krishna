@@ -241,6 +241,8 @@ exports.login = async (req, res) => {
             name: user.name, 
             email: user.email,
             role: role, 
+            permissions: user.permissions || [],
+            driverRef: user.driverRef || null,
             token: token,
             isEmailVerified: user.isEmailVerified
         });

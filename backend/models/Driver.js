@@ -41,6 +41,23 @@ const driverSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+        sparse: true,
+        index: true
+    },
+    email: {
+        type: String,
+        default: '',
+        trim: true,
+        lowercase: true
+    },
+    licenseDocUrl: {
+        type: String,
+        default: ''
+    },
     employeeId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

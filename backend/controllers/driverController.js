@@ -1,9 +1,30 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const Driver = require('../models/Driver');
 const Vehicle = require('../models/Vehicle');
 const User = require('../models/User');
+const FleetTrip = require('../models/FleetTrip');
+const DriverIssue = require('../models/DriverIssue');
+const DriverEmergencyAlert = require('../models/DriverEmergencyAlert');
 const Notification = require('../models/Notification');
 const { dispatchNotification } = require('../services/notificationDispatcher');
+const { ALL_DRIVER_PERMISSIONS, STAFF_PROHIBITED_PERMISSIONS } = require('../middleware/driverPermissionMiddleware');
+
+// Helper to resolve driver record for logged-in user
+const resolveDriverForUser = async (user) => {
+    if (!user) return null;
+    let driver = await Driver.findOne({ userId: user._id });
+    if (!driver && user.driverRef) {
+        driver = await Driver.findById(user.driverRef);
+    }
+    if (!driver && user.employeeId) {
+        driver = await Driver.findOne({ employeeId: user._id });
+    }
+    if (!driver && (user.phone || user.phoneNumber)) {
+        driver = await Driver.findOne({ phone: user.phone || user.phoneNumber });
+    }
+    return driver;
+};
 
 // ─── 1. LIST DRIVERS (WITH FILTERS) ──────────────────────────────────
 exports.getDrivers = async (req, res) => {
@@ -255,9 +276,30 @@ exports.getDriverById = async (req, res) => {
     }
 };
 
-// ─── 6. REGISTER NEW DRIVER ──────────────────────────────────────────
+// ─── 6. REGISTER NEW DRIVER (WITH OPTIONAL PORTAL LOGIN) ─────────────
 exports.createDriver = async (req, res) => {
     try {
+        const userRole = (req.user?.role || '').toLowerCase();
+
+        // Strict Role Enforcement: Staff can NEVER create driver accounts!
+        if (userRole === 'staff') {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied: Staff members are strictly prohibited from creating or registering driver accounts.'
+            });
+        }
+
+        // Manager requires explicit permission from Admin
+        if (userRole === 'manager') {
+            const managerPerms = Array.isArray(req.user.permissions) ? req.user.permissions : [];
+            if (!managerPerms.includes('driver.create') && !managerPerms.includes('driver.*')) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied: Manager lacks explicit driver.create permission granted by Administrator.'
+                });
+            }
+        }
+
         const {
             name,
             photoUrl,
@@ -268,11 +310,16 @@ exports.createDriver = async (req, res) => {
             licenseNumber,
             licenseType,
             licenseExpiryDate,
+            licenseDocUrl,
             emergencyContact,
             emergencyPhone,
             joiningDate,
             status = 'Active',
-            notes
+            notes,
+            // Authentication credentials for Driver Portal
+            email,
+            password,
+            enablePortalLogin = true
         } = req.body;
 
         if (!name || !name.trim()) {
@@ -317,9 +364,53 @@ exports.createDriver = async (req, res) => {
             if (!staffIdCode && user.staff_id) staffIdCode = user.staff_id;
         }
 
+        // Set up driver email & user login credentials if enabled
+        let driverLoginEmail = (email || '').trim().toLowerCase();
+        if (!driverLoginEmail && enablePortalLogin) {
+            driverLoginEmail = `driver.${cleanLicense.replace(/[^A-Z0-9]/gi, '').toLowerCase()}@krishnaerp.local`;
+        }
+
+        let createdPortalUser = null;
+        if (enablePortalLogin && !linkedUserId) {
+            // Check if user with this email already exists
+            let existingUser = await User.findOne({ email: driverLoginEmail });
+            if (existingUser) {
+                if (existingUser.role !== 'driver') {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Account with email ${driverLoginEmail} already exists with role '${existingUser.role}'. Use a distinct email address.`
+                    });
+                }
+                linkedUserId = existingUser._id;
+            } else {
+                const initialPassword = password && password.trim() ? password.trim() : `Driver@${cleanLicense.slice(-4) || '123'}`;
+                const hashedPassword = await bcrypt.hash(initialPassword, 10);
+
+                createdPortalUser = new User({
+                    name: name.trim(),
+                    email: driverLoginEmail,
+                    phone: phone.trim(),
+                    phoneNumber: phone.trim(),
+                    password: hashedPassword,
+                    role: 'driver',
+                    status: status === 'Active' ? 'active' : 'inactive',
+                    profilePhoto: photoUrl || '',
+                    address: address ? address.trim() : '',
+                    emergencyContact: emergencyPhone || '',
+                    permissions: []
+                });
+
+                await createdPortalUser.save();
+                linkedUserId = createdPortalUser._id;
+            }
+        }
+
         const driver = new Driver({
             name: name.trim(),
             photoUrl: photoUrl || '',
+            userId: linkedUserId,
+            email: driverLoginEmail,
+            licenseDocUrl: licenseDocUrl || '',
             employeeId: linkedUserId,
             staff_id: staffIdCode,
             phone: phone.trim(),
@@ -337,11 +428,18 @@ exports.createDriver = async (req, res) => {
                 performedBy: req.user?._id || null,
                 performedByName: req.user?.name || 'Administrator',
                 timestamp: new Date(),
-                details: `Registered with licence ${cleanLicense} (${licenseType || 'LMV-Commercial / Transport'})`
+                details: `Registered with licence ${cleanLicense} (${licenseType || 'LMV-Commercial / Transport'}). Login: ${driverLoginEmail || 'Disabled'}`
             }]
         });
 
         await driver.save();
+
+        if (createdPortalUser) {
+            createdPortalUser.driverRef = driver._id;
+            await createdPortalUser.save();
+        } else if (linkedUserId) {
+            await User.findByIdAndUpdate(linkedUserId, { driverRef: driver._id, role: 'driver' });
+        }
 
         // Dispatch in-app notification if licence is expiring soon or expired
         const now = new Date();
@@ -366,7 +464,11 @@ exports.createDriver = async (req, res) => {
         res.status(201).json({
             success: true,
             message: 'Driver registered successfully.',
-            driver
+            driver,
+            portalCredentials: enablePortalLogin ? {
+                email: driverLoginEmail,
+                hasPassword: Boolean(password)
+            } : null
         });
     } catch (err) {
         console.error('createDriver error:', err);
@@ -810,6 +912,613 @@ exports.checkLicenseExpiries = async (req, res) => {
         });
     } catch (err) {
         console.error('checkLicenseExpiries error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// ─── 11. ACTIVATE / DEACTIVATE DRIVER ACCOUNT ─────────────────────────
+exports.toggleDriverStatus = async (req, res) => {
+    try {
+        const userRole = (req.user?.role || '').toLowerCase();
+        if (userRole === 'staff') {
+            return res.status(403).json({ success: false, message: 'Access denied: Staff members cannot activate or deactivate driver accounts.' });
+        }
+
+        const { status } = req.body; // 'Active' | 'Inactive'
+        if (!['Active', 'Inactive', 'Suspended'].includes(status)) {
+            return res.status(400).json({ success: false, message: 'Invalid status. Must be Active or Inactive.' });
+        }
+
+        if (userRole === 'manager') {
+            const reqPerm = status === 'Active' ? 'driver.activate' : 'driver.deactivate';
+            const perms = Array.isArray(req.user.permissions) ? req.user.permissions : [];
+            if (!perms.includes(reqPerm) && !perms.includes('driver.*')) {
+                return res.status(403).json({ success: false, message: `Access denied: Manager lacks '${reqPerm}' permission.` });
+            }
+        }
+
+        const driver = await Driver.findById(req.params.id);
+        if (!driver) return res.status(404).json({ success: false, message: 'Driver not found.' });
+
+        driver.status = status;
+
+        // If deactivated and currently assigned to a vehicle, unassign automatically
+        if ((status === 'Inactive' || status === 'Suspended') && driver.currentAssignedVehicle?.vehicleId) {
+            const v = await Vehicle.findById(driver.currentAssignedVehicle.vehicleId);
+            if (v) {
+                v.assignedDriverId = null;
+                v.assignedDriverRef = null;
+                v.assignedDriverName = '';
+                v.assignedDriverPhone = '';
+                v.driverLicenseNumber = '';
+                await v.save();
+            }
+            driver.currentAssignedVehicle = { vehicleId: null, registrationNumber: '', vehicleName: '', assignedAt: null };
+        }
+
+        driver.auditTrail.push({
+            action: `Driver ${status}`,
+            performedBy: req.user?._id || null,
+            performedByName: req.user?.name || 'Admin',
+            timestamp: new Date(),
+            details: `Account marked ${status} by ${req.user?.name || 'Admin'}`
+        });
+
+        await driver.save();
+
+        // Sync linked user status
+        if (driver.userId) {
+            await User.findByIdAndUpdate(driver.userId, {
+                status: status === 'Active' ? 'active' : 'inactive'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: `Driver ${driver.name} is now ${status}.`,
+            driver
+        });
+    } catch (err) {
+        console.error('toggleDriverStatus error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// ─── 12. RESET DRIVER PASSWORD ────────────────────────────────────────
+exports.resetDriverPassword = async (req, res) => {
+    try {
+        const userRole = (req.user?.role || '').toLowerCase();
+        if (userRole === 'staff') {
+            return res.status(403).json({ success: false, message: 'Access denied: Staff members cannot reset driver passwords.' });
+        }
+
+        if (userRole === 'manager') {
+            const perms = Array.isArray(req.user.permissions) ? req.user.permissions : [];
+            if (!perms.includes('driver.password_reset') && !perms.includes('driver.*')) {
+                return res.status(403).json({ success: false, message: 'Access denied: Manager lacks driver.password_reset permission.' });
+            }
+        }
+
+        const { newPassword } = req.body;
+        if (!newPassword || newPassword.trim().length < 6) {
+            return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
+        }
+
+        const driver = await Driver.findById(req.params.id);
+        if (!driver) return res.status(404).json({ success: false, message: 'Driver not found.' });
+
+        let linkedUser = null;
+        if (driver.userId) {
+            linkedUser = await User.findById(driver.userId);
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword.trim(), 10);
+
+        if (!linkedUser) {
+            // Create user account if not yet existing
+            const email = driver.email || `driver.${driver.licenseNumber.replace(/[^A-Z0-9]/gi, '').toLowerCase()}@krishnaerp.local`;
+            linkedUser = new User({
+                name: driver.name,
+                email,
+                phone: driver.phone,
+                password: hashedPassword,
+                role: 'driver',
+                status: driver.status === 'Active' ? 'active' : 'inactive',
+                driverRef: driver._id
+            });
+            await linkedUser.save();
+            driver.userId = linkedUser._id;
+            driver.email = email;
+            await driver.save();
+        } else {
+            linkedUser.password = hashedPassword;
+            linkedUser.failedLoginAttempts = 0;
+            linkedUser.lockUntil = undefined;
+            await linkedUser.save();
+        }
+
+        driver.auditTrail.push({
+            action: 'Password Reset',
+            performedBy: req.user?._id || null,
+            performedByName: req.user?.name || 'Admin',
+            timestamp: new Date(),
+            details: `Password reset by ${req.user?.name || 'Admin'}`
+        });
+        await driver.save();
+
+        res.json({
+            success: true,
+            message: `Password reset successfully for driver ${driver.name}.`,
+            loginEmail: linkedUser.email
+        });
+    } catch (err) {
+        console.error('resetDriverPassword error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// ─── 13. DRIVER PERMISSIONS MANAGEMENT MATRIX (ADMIN ONLY) ────────────
+exports.getDriverPermissionMatrix = async (req, res) => {
+    try {
+        const users = await User.find({
+            role: { $in: ['admin', 'manager', 'staff'] },
+            status: 'active'
+        }).select('name email role permissions department designation staff_id phone').sort({ role: 1, name: 1 });
+
+        res.json({
+            success: true,
+            allPermissions: ALL_DRIVER_PERMISSIONS,
+            prohibitedForStaff: STAFF_PROHIBITED_PERMISSIONS,
+            users
+        });
+    } catch (err) {
+        console.error('getDriverPermissionMatrix error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.updateUserDriverPermissions = async (req, res) => {
+    try {
+        const { targetUserId } = req.params;
+        const { permissions } = req.body;
+
+        if (!Array.isArray(permissions)) {
+            return res.status(400).json({ success: false, message: 'Permissions must be an array of permission strings.' });
+        }
+
+        const targetUser = await User.findById(targetUserId);
+        if (!targetUser) return res.status(404).json({ success: false, message: 'Target user not found.' });
+
+        if (targetUser.role === 'admin') {
+            return res.status(400).json({ success: false, message: 'Administrators already have full, unrestricted permissions.' });
+        }
+
+        // If target user is staff, filter out any prohibited permissions!
+        let finalPerms = permissions.filter(p => ALL_DRIVER_PERMISSIONS.includes(p));
+        if (targetUser.role === 'staff') {
+            finalPerms = finalPerms.filter(p => !STAFF_PROHIBITED_PERMISSIONS.includes(p));
+        }
+
+        targetUser.permissions = finalPerms;
+        await targetUser.save();
+
+        res.json({
+            success: true,
+            message: `Driver permissions updated for ${targetUser.name} (${targetUser.role}).`,
+            user: {
+                _id: targetUser._id,
+                name: targetUser.name,
+                role: targetUser.role,
+                permissions: targetUser.permissions
+            }
+        });
+    } catch (err) {
+        console.error('updateUserDriverPermissions error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.getMyDriverPermissions = async (req, res) => {
+    try {
+        const user = req.user;
+        const perms = user.role === 'admin' 
+            ? ALL_DRIVER_PERMISSIONS 
+            : (Array.isArray(user.permissions) ? user.permissions : []);
+
+        res.json({
+            success: true,
+            role: user.role,
+            permissions: perms,
+            isAdmin: user.role === 'admin',
+            isStaff: user.role === 'staff',
+            isManager: user.role === 'manager',
+            isDriver: user.role === 'driver'
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// ─── 14. DRIVER PORTAL DASHBOARD (MOBILE-FIRST) ──────────────────────
+exports.getDriverPortalData = async (req, res) => {
+    try {
+        const driver = await resolveDriverForUser(req.user);
+        if (!driver) {
+            return res.status(404).json({
+                success: false,
+                message: 'No driver profile linked with this login account. Contact administrator.'
+            });
+        }
+
+        // Assigned vehicle information (Read-only)
+        let assignedVehicle = null;
+        if (driver.currentAssignedVehicle?.vehicleId) {
+            assignedVehicle = await Vehicle.findById(driver.currentAssignedVehicle.vehicleId)
+                .select('registrationNumber vehicleName vehicleType status currentOdometer fuelType tankCapacityLiters documents notes');
+        }
+
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+        // Trips assigned to this driver
+        const allTrips = await FleetTrip.find({ driverId: driver._id }).sort({ pickupDateTime: -1 });
+
+        const todayTrips = allTrips.filter(t => {
+            const pDate = new Date(t.pickupDateTime);
+            return pDate >= startOfToday && pDate <= endOfToday;
+        });
+
+        const upcomingTrips = allTrips.filter(t => {
+            const pDate = new Date(t.pickupDateTime);
+            return pDate > endOfToday && (t.status === 'Assigned' || t.status === 'Confirmed');
+        });
+
+        const activeTrip = allTrips.find(t => t.status === 'Started' || t.status === 'Paused');
+        const completedTrips = allTrips.filter(t => t.status === 'Completed');
+
+        // Active issues reported by this driver
+        const driverIssues = await DriverIssue.find({ driverId: driver._id }).sort({ createdAt: -1 });
+        const openIssues = driverIssues.filter(i => i.status !== 'Closed' && i.status !== 'Resolved');
+
+        res.json({
+            success: true,
+            driver: {
+                _id: driver._id,
+                name: driver.name,
+                phone: driver.phone,
+                email: driver.email,
+                photoUrl: driver.photoUrl,
+                licenseNumber: driver.licenseNumber,
+                licenseType: driver.licenseType,
+                licenseExpiryDate: driver.licenseExpiryDate,
+                licenseDocUrl: driver.licenseDocUrl,
+                status: driver.status,
+                emergencyContact: driver.emergencyContact,
+                emergencyPhone: driver.emergencyPhone,
+                address: driver.address
+            },
+            assignedVehicle,
+            todayTrips,
+            upcomingTrips,
+            activeTrip: activeTrip || null,
+            recentTrips: allTrips.slice(0, 5),
+            issues: {
+                total: driverIssues.length,
+                open: openIssues.length,
+                recent: driverIssues.slice(0, 5)
+            },
+            metrics: {
+                totalTrips: allTrips.length,
+                completedTrips: completedTrips.length,
+                totalDistanceKm: completedTrips.reduce((acc, t) => acc + (t.endReport?.distanceKm || 0), 0)
+            }
+        });
+    } catch (err) {
+        console.error('getDriverPortalData error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// ─── 15. GET ASSIGNED VEHICLE INFO (DRIVER READ-ONLY) ─────────────────
+exports.getDriverAssignedVehicle = async (req, res) => {
+    try {
+        const driver = await resolveDriverForUser(req.user);
+        if (!driver) return res.status(404).json({ success: false, message: 'Driver profile not found.' });
+
+        if (!driver.currentAssignedVehicle?.vehicleId) {
+            return res.json({ success: true, vehicle: null, message: 'No vehicle currently assigned.' });
+        }
+
+        const vehicle = await Vehicle.findById(driver.currentAssignedVehicle.vehicleId);
+        res.json({ success: true, vehicle });
+    } catch (err) {
+        console.error('getDriverAssignedVehicle error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// ─── 16. ISSUE REPORTING SYSTEM ──────────────────────────────────────
+exports.reportIssue = async (req, res) => {
+    try {
+        const driver = await resolveDriverForUser(req.user);
+        if (!driver) return res.status(404).json({ success: false, message: 'Driver profile not found.' });
+
+        const {
+            category,
+            description,
+            priority = 'Medium',
+            photos = [],
+            location = { lat: null, lng: null, address: '' },
+            vehicleId,
+            tripId
+        } = req.body;
+
+        if (!category || !description) {
+            return res.status(400).json({ success: false, message: 'Issue category and description are required.' });
+        }
+
+        const issueNumber = `ISS-${Date.now().toString().slice(-6)}-${Math.floor(10 + Math.random() * 90)}`;
+
+        let vId = vehicleId || driver.currentAssignedVehicle?.vehicleId || null;
+        let vReg = driver.currentAssignedVehicle?.registrationNumber || '';
+        if (vId && !vReg) {
+            const v = await Vehicle.findById(vId).select('registrationNumber');
+            if (v) vReg = v.registrationNumber;
+        }
+
+        let tNumber = '';
+        if (tripId) {
+            const tr = await FleetTrip.findById(tripId).select('tripNumber');
+            if (tr) tNumber = tr.tripNumber;
+        }
+
+        const issue = new DriverIssue({
+            issueNumber,
+            driverId: driver._id,
+            driverUserId: driver.userId || req.user._id,
+            driverName: driver.name,
+            driverPhone: driver.phone,
+            vehicleId: vId,
+            vehicleRegistration: vReg,
+            tripId: tripId || null,
+            tripNumber: tNumber,
+            category,
+            description: description.trim(),
+            priority,
+            photos: Array.isArray(photos) ? photos : [],
+            location: {
+                lat: location?.lat || null,
+                lng: location?.lng || null,
+                address: location?.address || ''
+            },
+            status: 'Submitted',
+            auditTrail: [{
+                action: 'Issue Reported',
+                performedBy: driver.name,
+                timestamp: new Date(),
+                details: `Issue ${issueNumber} reported under category: ${category}`
+            }]
+        });
+
+        await issue.save();
+
+        // Dispatch notifications to Admins & Staff
+        try {
+            await Notification.create({
+                title: `🚨 Driver Issue: ${category}`,
+                message: `Driver ${driver.name} reported a ${category} (${issueNumber}) for vehicle ${vReg || 'N/A'}: ${description.slice(0, 100)}`,
+                recipientRole: 'admin',
+                category: 'system',
+                priority: priority === 'Critical' || priority === 'High' ? 'high' : 'medium',
+                metadata: { issueId: issue._id, issueNumber, type: 'DRIVER_ISSUE_REPORTED' }
+            });
+        } catch (notifErr) {
+            console.warn('Issue notification error:', notifErr.message);
+        }
+
+        res.status(201).json({
+            success: true,
+            message: `Issue ${issueNumber} submitted successfully. Dispatch team has been notified.`,
+            issue
+        });
+    } catch (err) {
+        console.error('reportIssue error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.getDriverIssues = async (req, res) => {
+    try {
+        const { status, category, driverId, vehicleId } = req.query;
+        const query = {};
+
+        // If driver role, restrict to own issues
+        if (req.user.role === 'driver') {
+            const currentDriver = await resolveDriverForUser(req.user);
+            if (!currentDriver) return res.json({ success: true, issues: [], count: 0 });
+            query.driverId = currentDriver._id;
+        } else if (driverId) {
+            query.driverId = driverId;
+        }
+
+        if (status && status !== 'All') query.status = status;
+        if (category && category !== 'All') query.category = category;
+        if (vehicleId) query.vehicleId = vehicleId;
+
+        const issues = await DriverIssue.find(query).sort({ createdAt: -1 });
+
+        res.json({
+            success: true,
+            count: issues.length,
+            issues
+        });
+    } catch (err) {
+        console.error('getDriverIssues error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.updateIssueStatus = async (req, res) => {
+    try {
+        const { status, resolutionNotes } = req.body;
+        const issue = await DriverIssue.findById(req.params.id);
+        if (!issue) return res.status(404).json({ success: false, message: 'Issue not found.' });
+
+        const validStatuses = ['Submitted', 'Acknowledged', 'Under Review', 'In Progress', 'Resolved', 'Closed'];
+        if (status && !validStatuses.includes(status)) {
+            return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+        }
+
+        const now = new Date();
+        const oldStatus = issue.status;
+
+        if (status) issue.status = status;
+        if (resolutionNotes) issue.resolutionNotes = resolutionNotes;
+
+        if (status === 'Acknowledged' && !issue.acknowledgedAt) {
+            issue.acknowledgedBy = req.user.name || 'Staff';
+            issue.acknowledgedAt = now;
+        }
+
+        if ((status === 'Resolved' || status === 'Closed') && !issue.resolvedAt) {
+            issue.resolvedBy = req.user.name || 'Staff';
+            issue.resolvedAt = now;
+        }
+
+        issue.auditTrail.push({
+            action: `Status Updated to ${status}`,
+            performedBy: req.user.name || 'Staff',
+            timestamp: now,
+            details: `Status transitioned from ${oldStatus} to ${status}. Notes: ${resolutionNotes || 'None'}`
+        });
+
+        await issue.save();
+
+        // Notify Driver of issue resolution/update
+        if (issue.driverUserId) {
+            try {
+                await Notification.create({
+                    title: `Issue ${issue.issueNumber} Updated: ${status}`,
+                    message: `Your reported issue (${issue.category}) has been marked '${status}'. ${resolutionNotes ? `Notes: ${resolutionNotes}` : ''}`,
+                    recipientRole: 'driver',
+                    recipientUser: issue.driverUserId,
+                    category: 'task',
+                    priority: 'medium',
+                    metadata: { issueId: issue._id, type: 'DRIVER_ISSUE_UPDATED' }
+                });
+            } catch (notifErr) {
+                console.warn('Driver issue notification error:', notifErr.message);
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Issue ${issue.issueNumber} updated to ${status}.`,
+            issue
+        });
+    } catch (err) {
+        console.error('updateIssueStatus error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// ─── 17. EMERGENCY SOS ALERT SYSTEM ──────────────────────────────────
+exports.sendEmergencyAlert = async (req, res) => {
+    try {
+        const driver = await resolveDriverForUser(req.user);
+        if (!driver) return res.status(404).json({ success: false, message: 'Driver profile not found.' });
+
+        const {
+            tripId,
+            vehicleId,
+            location = { lat: null, lng: null, address: '' },
+            description = 'Emergency SOS triggered by driver'
+        } = req.body;
+
+        const alertNumber = `SOS-${Date.now().toString().slice(-6)}-${Math.floor(10 + Math.random() * 90)}`;
+
+        let vId = vehicleId || driver.currentAssignedVehicle?.vehicleId || null;
+        let vReg = driver.currentAssignedVehicle?.registrationNumber || '';
+        let tNumber = '';
+
+        if (tripId) {
+            const tr = await FleetTrip.findById(tripId).select('tripNumber vehicleRegistration vehicleId');
+            if (tr) {
+                tNumber = tr.tripNumber;
+                if (!vReg) vReg = tr.vehicleRegistration;
+                if (!vId) vId = tr.vehicleId;
+            }
+        }
+
+        const alert = new DriverEmergencyAlert({
+            alertNumber,
+            driverId: driver._id,
+            driverUserId: driver.userId || req.user._id,
+            driverName: driver.name,
+            driverPhone: driver.phone,
+            vehicleId: vId,
+            vehicleRegistration: vReg,
+            tripId: tripId || null,
+            tripNumber: tNumber,
+            location: {
+                lat: location?.lat || null,
+                lng: location?.lng || null,
+                address: location?.address || 'Location coordinates attached'
+            },
+            description: description.trim(),
+            status: 'Active',
+            timestamp: new Date()
+        });
+
+        await alert.save();
+
+        // Broadcast Urgent SOS Notification to Admins and Staff
+        try {
+            await Notification.create({
+                title: `🚨 EMERGENCY SOS: ${driver.name}`,
+                message: `CRITICAL ALERT: Driver ${driver.name} (${driver.phone}) triggered SOS for vehicle ${vReg || 'N/A'}${tNumber ? ` on trip ${tNumber}` : ''}! Location: ${location?.address || `${location?.lat}, ${location?.lng}`}. Message: ${description}`,
+                recipientRole: 'admin',
+                category: 'system',
+                priority: 'critical',
+                metadata: { alertId: alert._id, alertNumber, type: 'DRIVER_EMERGENCY_SOS' }
+            });
+        } catch (notifErr) {
+            console.warn('Emergency alert notification warning:', notifErr.message);
+        }
+
+        res.status(201).json({
+            success: true,
+            message: 'EMERGENCY ALERT BROADCASTED. Fleet manager and dispatch team have been alerted immediately.',
+            alert
+        });
+    } catch (err) {
+        console.error('sendEmergencyAlert error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.getEmergencyAlerts = async (req, res) => {
+    try {
+        const alerts = await DriverEmergencyAlert.find({}).sort({ timestamp: -1 }).limit(50);
+        res.json({ success: true, count: alerts.length, alerts });
+    } catch (err) {
+        console.error('getEmergencyAlerts error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.getEmergencyContacts = async (req, res) => {
+    try {
+        const contacts = [
+            { role: 'Fleet Manager', name: 'Fleet Operations Desk', phone: '+91 98450 12345', available: '24/7 Toll Free' },
+            { role: 'Transport Manager', name: 'Central Logistics Control', phone: '+91 98450 67890', available: '24/7 Emergency' },
+            { role: 'Assigned Staff', name: 'Krishna Workshop HQ', phone: '+91 80 2345 6789', available: 'Business Hours' },
+            { role: 'Highway Police / Medical SOS', name: 'National Emergency Helpline', phone: '112', available: 'Instant Emergency' }
+        ];
+
+        res.json({ success: true, contacts });
+    } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 };

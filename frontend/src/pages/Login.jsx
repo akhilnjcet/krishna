@@ -28,7 +28,8 @@ const Login = () => {
         if (isAuthenticated && user) {
             const role = user.role || user.user?.role;
             const path = role === 'admin' ? '/admin' : 
-                         role === 'staff' ? '/staff' : '/customer';
+                         role === 'driver' ? '/driver' :
+                         (role === 'staff' || role === 'manager') ? '/staff' : '/customer';
             if (location.pathname === '/login' || location.pathname === '/') {
                 navigate(path, { replace: true });
             }
@@ -55,7 +56,9 @@ const Login = () => {
                 const role = userObj.role || userObj.user?.role;
                 if (role === 'admin') {
                     navigate('/admin');
-                } else if (role === 'staff') {
+                } else if (role === 'driver') {
+                    navigate('/driver');
+                } else if (role === 'staff' || role === 'manager') {
                     navigate('/staff');
                 } else {
                     navigate('/customer');
@@ -75,7 +78,9 @@ const Login = () => {
                     const role = userObj.role || userObj.user?.role;
                     if (role === 'admin') {
                         navigate('/admin');
-                    } else if (role === 'staff') {
+                    } else if (role === 'driver') {
+                        navigate('/driver');
+                    } else if (role === 'staff' || role === 'manager') {
                         navigate('/staff');
                     } else {
                         navigate('/customer');

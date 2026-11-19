@@ -3,21 +3,22 @@ const router = express.Router();
 const vehicleController = require('../controllers/vehicleController');
 const driverController = require('../controllers/driverController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { requireDriverPermission } = require('../middleware/driverPermissionMiddleware');
 
 router.use(protect);
 
-// ─── DRIVER ROUTES (Must be defined before /:id) ──────────────────────
-router.get('/drivers/summary', driverController.getDriverDashboardSummary);
-router.get('/drivers/eligible', driverController.getEligibleDrivers);
-router.get('/drivers/staff-candidates', driverController.getStaffCandidates);
-router.get('/drivers/check-expiries', driverController.checkLicenseExpiries);
-router.get('/drivers', driverController.getDrivers);
-router.get('/drivers/:id', driverController.getDriverById);
+// ─── DRIVER ROUTES (Backward compatibility with /api/vehicles/drivers) ──
+router.get('/drivers/summary', requireDriverPermission('driver.view'), driverController.getDriverDashboardSummary);
+router.get('/drivers/eligible', requireDriverPermission('driver.view'), driverController.getEligibleDrivers);
+router.get('/drivers/staff-candidates', requireDriverPermission('driver.view'), driverController.getStaffCandidates);
+router.get('/drivers/check-expiries', requireDriverPermission('driver.view'), driverController.checkLicenseExpiries);
+router.get('/drivers', requireDriverPermission('driver.view'), driverController.getDrivers);
+router.get('/drivers/:id', requireDriverPermission('driver.view'), driverController.getDriverById);
 
-router.post('/drivers', authorize('admin', 'staff'), driverController.createDriver);
-router.put('/drivers/:id', authorize('admin', 'staff'), driverController.updateDriver);
-router.delete('/drivers/:id', authorize('admin'), driverController.deleteDriver);
-router.post('/drivers/:driverId/assign', authorize('admin', 'staff'), driverController.assignDriverToVehicle);
+router.post('/drivers', requireDriverPermission('driver.create'), driverController.createDriver);
+router.put('/drivers/:id', requireDriverPermission('driver.edit'), driverController.updateDriver);
+router.delete('/drivers/:id', requireDriverPermission('driver.delete'), driverController.deleteDriver);
+router.post('/drivers/:driverId/assign', requireDriverPermission('driver.assign_vehicle'), driverController.assignDriverToVehicle);
 
 // ─── VEHICLE ROUTES ──────────────────────────────────────────────────
 router.get('/', vehicleController.getVehicles);

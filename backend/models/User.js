@@ -5,7 +5,9 @@ const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ['admin', 'staff', 'customer'], default: 'customer' },
+    role: { type: String, enum: ['admin', 'manager', 'staff', 'driver', 'customer'], default: 'customer' },
+    permissions: [{ type: String, trim: true }],
+    driverRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver', default: null },
     
     // Staff specific fields
     staff_id: { type: String, unique: true, sparse: true },

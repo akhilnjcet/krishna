@@ -356,6 +356,8 @@ app.use('/api', require('./routes/warrantyServiceRoutes'));
 app.use('/api/production-plans', require('./routes/productionPlanRoutes'));
 app.use('/api/machines', require('./routes/machineAnalyticsRoutes'));
 app.use('/api/vehicles', require('./routes/vehicleRoutes'));
+app.use('/api/drivers', require('./routes/driverRoutes'));
+app.use('/api/fleet-trips', require('./routes/fleetTripRoutes'));
 app.use('/api/ai-erp', require('./routes/aiErpRoutes'));
 app.use('/api/drawings', require('./routes/drawingRoutes'));
 app.use('/api/scrap', require('./routes/scrapRoutes'));

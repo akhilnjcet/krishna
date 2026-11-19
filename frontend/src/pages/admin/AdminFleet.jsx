@@ -4,7 +4,8 @@ import {
     Truck, Plus, Search, Filter, Calendar, AlertTriangle, ShieldCheck, 
     Clock, DollarSign, Fuel, Wrench, FileText, CheckCircle2, ChevronRight, 
     X, RefreshCw, Navigation, User, MapPin, Gauge, UserCheck, UserX, 
-    Phone, Edit, Trash2, ArrowRight, Eye, ShieldAlert, Users, Award
+    Phone, Edit, Trash2, ArrowRight, Eye, ShieldAlert, Users, Award,
+    KeyRound, Lock, Shield, Check, Info
 } from 'lucide-react';
 
 const VEHICLE_TYPES = [
@@ -71,6 +72,19 @@ const AdminFleet = () => {
     const [assignTargetDriver, setAssignTargetDriver] = useState(null);
     const [assignTargetVehicleId, setAssignTargetVehicleId] = useState('');
     const [assignReason, setAssignReason] = useState('Routine Fleet Assignment');
+
+    // Modals - Password Reset & Permissions Matrix
+    const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+    const [targetDriverForReset, setTargetDriverForReset] = useState(null);
+    const [newPasswordValue, setNewPasswordValue] = useState('');
+    const [resettingPassword, setResettingPassword] = useState(false);
+
+    const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+    const [permissionsUsers, setPermissionsUsers] = useState([]);
+    const [allPermissionsList, setAllPermissionsList] = useState([]);
+    const [prohibitedList, setProhibitedList] = useState([]);
+    const [permissionsLoading, setPermissionsLoading] = useState(false);
+    const [updatingPermUserId, setUpdatingPermUserId] = useState(null);
 
     // Notification banner
     const [toastMessage, setToastMessage] = useState(null);
@@ -145,7 +159,10 @@ const AdminFleet = () => {
         emergencyRelation: 'Next of Kin',
         joiningDate: new Date().toISOString().split('T')[0],
         status: 'Active',
-        notes: ''
+        notes: '',
+        email: '',
+        password: '',
+        enablePortalLogin: true
     });
 
     const [projects, setProjects] = useState([]);
@@ -325,7 +342,10 @@ const AdminFleet = () => {
             emergencyRelation: 'Next of Kin',
             joiningDate: new Date().toISOString().split('T')[0],
             status: 'Active',
-            notes: ''
+            notes: '',
+            email: '',
+            password: 'Driver@123',
+            enablePortalLogin: true
         });
         setShowDriverModal(true);
     };
@@ -348,7 +368,10 @@ const AdminFleet = () => {
             emergencyRelation: driver.emergencyContact?.relation || 'Next of Kin',
             joiningDate: driver.joiningDate ? new Date(driver.joiningDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             status: driver.status || 'Active',
-            notes: driver.notes || ''
+            notes: driver.notes || '',
+            email: driver.email || driver.userId?.email || '',
+            password: '',
+            enablePortalLogin: Boolean(driver.userId || driver.email)
         });
         setShowDriverModal(true);
     };
@@ -374,7 +397,10 @@ const AdminFleet = () => {
                 emergencyPhone: driverForm.emergencyPhone,
                 joiningDate: driverForm.joiningDate,
                 status: driverForm.status,
-                notes: driverForm.notes
+                notes: driverForm.notes,
+                email: driverForm.email,
+                password: driverForm.password,
+                enablePortalLogin: driverForm.enablePortalLogin
             };
 
             if (editingDriver) {
@@ -401,6 +427,82 @@ const AdminFleet = () => {
             fetchVehicles();
         } catch (err) {
             showToast(err.response?.data?.message || err.message || 'Failed to save driver', true);
+        }
+    };
+
+    // ─── RESET DRIVER PASSWORD HANDLERS ──────────────────────────────
+    const handleOpenResetPassword = (driver) => {
+        setTargetDriverForReset(driver);
+        setNewPasswordValue('');
+        setShowResetPasswordModal(true);
+    };
+
+    const handleConfirmResetPassword = async (e) => {
+        e.preventDefault();
+        if (!targetDriverForReset) return;
+        if (!newPasswordValue || newPasswordValue.length < 6) {
+            showToast('Password must be at least 6 characters long', true);
+            return;
+        }
+        try {
+            setResettingPassword(true);
+            const res = await api.post(`/drivers/${targetDriverForReset._id}/reset-password`, {
+                newPassword: newPasswordValue
+            });
+            showToast(res.data?.message || `Password for ${targetDriverForReset.name} has been reset successfully.`);
+            setShowResetPasswordModal(false);
+            setTargetDriverForReset(null);
+            setNewPasswordValue('');
+        } catch (err) {
+            showToast(err.response?.data?.message || err.message || 'Failed to reset driver password', true);
+        } finally {
+            setResettingPassword(false);
+        }
+    };
+
+    // ─── DRIVER PERMISSIONS MATRIX HANDLERS ─────────────────────────
+    const handleOpenPermissionsModal = async () => {
+        try {
+            setPermissionsLoading(true);
+            setShowPermissionsModal(true);
+            const res = await api.get('/drivers/permissions/matrix');
+            if (res.data?.success) {
+                setPermissionsUsers(res.data.users || []);
+                setAllPermissionsList(res.data.allPermissions || []);
+                setProhibitedList(res.data.prohibitedForStaff || []);
+            }
+        } catch (err) {
+            showToast(err.response?.data?.message || 'Failed to load permissions matrix', true);
+        } finally {
+            setPermissionsLoading(false);
+        }
+    };
+
+    const handleToggleUserPermission = async (targetUser, permKey) => {
+        const isStaff = targetUser.role === 'staff';
+        if (isStaff && prohibitedList.includes(permKey)) {
+            showToast(`Permission "${permKey}" is strictly prohibited for Staff by ERP security policy.`, true);
+            return;
+        }
+        const currentPerms = targetUser.driverPermissions || [];
+        const hasPerm = currentPerms.includes(permKey);
+        const updatedPerms = hasPerm
+            ? currentPerms.filter(p => p !== permKey)
+            : [...currentPerms, permKey];
+
+        try {
+            setUpdatingPermUserId(targetUser._id);
+            await api.put(`/drivers/permissions/user/${targetUser._id}`, {
+                permissions: updatedPerms
+            });
+            setPermissionsUsers(prev => prev.map(u => 
+                u._id === targetUser._id ? { ...u, driverPermissions: updatedPerms } : u
+            ));
+            showToast(`Driver permissions updated for ${targetUser.name}`);
+        } catch (err) {
+            showToast(err.response?.data?.message || 'Failed to update user permissions', true);
+        } finally {
+            setUpdatingPermUserId(null);
         }
     };
 
@@ -976,6 +1078,16 @@ const AdminFleet = () => {
 
                             <button
                                 type="button"
+                                onClick={handleOpenPermissionsModal}
+                                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+                                title="Manage Driver role permissions for Managers and Staff"
+                            >
+                                <Shield className="w-3.5 h-3.5 text-amber-400" />
+                                Role Permissions
+                            </button>
+
+                            <button
+                                type="button"
                                 onClick={() => handleOpenAddDriver(false)}
                                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-md shadow-indigo-600/20"
                             >
@@ -1116,6 +1228,15 @@ const AdminFleet = () => {
                                             >
                                                 <Truck className="w-3.5 h-3.5" />
                                                 <span>{driver.currentAssignedVehicle?.vehicleId ? 'Reassign' : 'Assign'}</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => handleOpenResetPassword(driver)}
+                                                className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-violet-50 hover:text-violet-600 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition"
+                                                title="Reset Driver Portal Password"
+                                            >
+                                                <KeyRound className="w-3.5 h-3.5 text-violet-500" />
                                             </button>
 
                                             <button
@@ -1633,6 +1754,63 @@ const AdminFleet = () => {
                                 />
                             </div>
 
+                            {/* Driver Portal Authentication Section */}
+                            <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Lock className="w-4 h-4 text-indigo-600" />
+                                        <span className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">
+                                            Driver Portal & Mobile App Access
+                                        </span>
+                                    </div>
+                                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-600 dark:text-slate-300">
+                                        <input
+                                            type="checkbox"
+                                            checked={driverForm.enablePortalLogin}
+                                            onChange={(e) => setDriverForm({ ...driverForm, enablePortalLogin: e.target.checked })}
+                                            className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                        />
+                                        Enable Login
+                                    </label>
+                                </div>
+
+                                {driverForm.enablePortalLogin && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                        <div>
+                                            <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
+                                                Login Email / Username
+                                            </label>
+                                            <input
+                                                type="email"
+                                                placeholder={driverForm.phone ? `${driverForm.phone.replace(/\D/g, '')}@driver.krishna.com` : 'driver@krishna.com'}
+                                                value={driverForm.email}
+                                                onChange={(e) => setDriverForm({ ...driverForm, email: e.target.value })}
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-medium"
+                                            />
+                                            <p className="text-[10px] text-slate-400 mt-1">
+                                                Leave empty to auto-generate using mobile number.
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
+                                                {editingDriver ? 'New Password (Optional)' : 'Initial Password *'}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder={editingDriver ? 'Leave blank to keep unchanged' : 'Minimum 6 chars'}
+                                                value={driverForm.password}
+                                                onChange={(e) => setDriverForm({ ...driverForm, password: e.target.value })}
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-mono font-medium"
+                                            />
+                                            <p className="text-[10px] text-slate-400 mt-1">
+                                                Driver can use mobile or email with this password to log in.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                                 <button
                                     type="button"
@@ -1901,6 +2079,237 @@ const AdminFleet = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ════════════════════════════════════════════════════════════════
+                MODAL: RESET DRIVER PASSWORD
+            ════════════════════════════════════════════════════════════════ */}
+            {showResetPasswordModal && targetDriverForReset && (
+                <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+                        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 bg-violet-100 dark:bg-violet-900/40 text-violet-600 rounded-xl">
+                                    <KeyRound className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900 dark:text-white">
+                                        Reset Driver Password
+                                    </h3>
+                                    <p className="text-[11px] text-slate-400">
+                                        {targetDriverForReset.name} ({targetDriverForReset.phone})
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => { setShowResetPasswordModal(false); setTargetDriverForReset(null); }}
+                                className="text-slate-400 hover:text-slate-600"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleConfirmResetPassword} className="space-y-4 text-xs">
+                            <div>
+                                <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
+                                    New Portal Password *
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="Enter new strong password (min 6 characters)"
+                                    value={newPasswordValue}
+                                    onChange={(e) => setNewPasswordValue(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-mono font-bold"
+                                />
+                                <p className="text-[11px] text-slate-400 mt-1.5">
+                                    This will update the linked credentials immediately. The driver will be able to log in to the driver portal with this new password.
+                                </p>
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowResetPasswordModal(false); setTargetDriverForReset(null); }}
+                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={resettingPassword}
+                                    className="px-5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold shadow-md shadow-violet-600/20 disabled:opacity-50"
+                                >
+                                    {resettingPassword ? 'Updating Password...' : 'Save New Password'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ════════════════════════════════════════════════════════════════
+                MODAL: DRIVER ROLE PERMISSIONS MANAGER (ADMIN ONLY)
+            ════════════════════════════════════════════════════════════════ */}
+            {showPermissionsModal && (
+                <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 my-8 max-h-[90vh] flex flex-col">
+                        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 bg-amber-100 dark:bg-amber-950/40 text-amber-600 rounded-2xl">
+                                    <Shield className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                                        Driver Role Permissions Manager
+                                    </h3>
+                                    <p className="text-[11px] text-slate-400">
+                                        Grant or revoke granular driver management authority for Managers and Staff.
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowPermissionsModal(false)}
+                                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Security notice alert */}
+                        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-3 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2 shrink-0">
+                            <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" />
+                            <div>
+                                <span className="font-bold">ERP Security Enforcement: </span>
+                                Staff members can perform operational tasks (assigning vehicles/trips, viewing reports and documents) but are strictly prohibited from creating, deleting, activating, deactivating, or resetting passwords for drivers.
+                            </div>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="overflow-y-auto space-y-4 pr-1 flex-1">
+                            {permissionsLoading ? (
+                                <div className="text-center py-12">
+                                    <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin mx-auto mb-2" />
+                                    <p className="text-xs text-slate-500 font-bold">Loading users and permissions...</p>
+                                </div>
+                            ) : permissionsUsers.length === 0 ? (
+                                <div className="text-center py-12 text-slate-400">
+                                    <Users className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                                    <p className="text-xs">No Manager or Staff users found in the system.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {permissionsUsers.map(user => {
+                                        const isStaff = user.role === 'staff';
+                                        const userPerms = user.driverPermissions || [];
+                                        const isBusy = updatingPermUserId === user._id;
+
+                                        return (
+                                            <div
+                                                key={user._id}
+                                                className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 p-4 space-y-3"
+                                            >
+                                                <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-200 dark:border-slate-700/60">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 flex items-center justify-center font-black text-xs">
+                                                            {user.name.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <h4 className="font-black text-xs text-slate-900 dark:text-white">
+                                                                    {user.name}
+                                                                </h4>
+                                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                                                    user.role === 'manager'
+                                                                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                                                                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                                                }`}>
+                                                                    {user.role}
+                                                                </span>
+                                                                {user.designation && (
+                                                                    <span className="text-[10px] text-slate-400">
+                                                                        • {user.designation}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-[11px] text-slate-400">{user.email || user.phone}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="text-[11px] font-bold text-slate-500">
+                                                        Active Permissions: <span className="text-indigo-600 font-black">{userPerms.length}</span> / {allPermissionsList.length}
+                                                    </div>
+                                                </div>
+
+                                                {/* Permission Items */}
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                                    {allPermissionsList.map(perm => {
+                                                        const isProhibited = isStaff && prohibitedList.includes(perm.key);
+                                                        const hasPerm = userPerms.includes(perm.key);
+
+                                                        return (
+                                                            <button
+                                                                type="button"
+                                                                key={perm.key}
+                                                                disabled={isProhibited || isBusy}
+                                                                onClick={() => handleToggleUserPermission(user, perm.key)}
+                                                                className={`p-2.5 rounded-xl border text-left transition flex items-start gap-2 select-none ${
+                                                                    isProhibited
+                                                                        ? 'bg-slate-100 dark:bg-slate-900/50 border-dashed border-slate-300 dark:border-slate-700 opacity-60 cursor-not-allowed'
+                                                                        : hasPerm
+                                                                            ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 shadow-xs'
+                                                                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-700 dark:text-slate-300'
+                                                                }`}
+                                                            >
+                                                                <div className="mt-0.5 shrink-0">
+                                                                    {isProhibited ? (
+                                                                        <Lock className="w-3.5 h-3.5 text-rose-500" />
+                                                                    ) : hasPerm ? (
+                                                                        <div className="w-3.5 h-3.5 rounded bg-indigo-600 text-white flex items-center justify-center">
+                                                                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="w-3.5 h-3.5 rounded border border-slate-300 dark:border-slate-600" />
+                                                                    )}
+                                                                </div>
+
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="flex items-center justify-between gap-1">
+                                                                        <span className="text-[11px] font-bold truncate">
+                                                                            {perm.label}
+                                                                        </span>
+                                                                        {isProhibited && (
+                                                                            <span className="text-[9px] font-black text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 px-1 py-0.2 rounded">
+                                                                                PROHIBITED
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
+                                                                        {perm.description}
+                                                                    </p>
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setShowPermissionsModal(false)}
+                                className="px-5 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-xl text-xs font-bold hover:bg-black transition"
+                            >
+                                Done
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

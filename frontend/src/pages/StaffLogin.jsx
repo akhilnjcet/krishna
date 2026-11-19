@@ -17,7 +17,7 @@ const StaffLogin = () => {
 
     useEffect(() => {
         if (isAuthenticated && currentUser) {
-            const rolePath = currentUser.role === 'admin' ? '/admin' : '/staff';
+            const rolePath = currentUser.role === 'admin' ? '/admin' : (currentUser.role === 'driver' ? '/driver' : '/staff');
             navigate(rolePath);
         }
     }, [isAuthenticated, currentUser, navigate]);
@@ -30,7 +30,7 @@ const StaffLogin = () => {
         try {
             const res = await api.post('/auth/login', { username, password });
             login(res.data, res.data.token);
-            navigate(res.data.role === 'admin' ? '/admin' : '/staff');
+            navigate(res.data.role === 'admin' ? '/admin' : (res.data.role === 'driver' ? '/driver' : '/staff'));
         } catch (err) {
             setError(err.response?.data?.message || 'Staff authentication interrupted. Check credentials.');
         } finally {
@@ -46,7 +46,7 @@ const StaffLogin = () => {
             const device = navigator.userAgent;
             const res = await api.post('/auth/verify-face', { descriptor, device });
             login(res.data.user, res.data.user.token);
-            navigate(res.data.user.role === 'admin' ? '/admin' : '/staff');
+            navigate(res.data.user.role === 'admin' ? '/admin' : (res.data.user.role === 'driver' ? '/driver' : '/staff'));
         } catch (err) {
             setError(err.response?.data?.message === 'Face Not Recognized'
                 ? 'Face verification failed. Unauthorized person detected. Please try again with the registered staff member.'
