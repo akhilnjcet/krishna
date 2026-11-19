@@ -120,11 +120,23 @@ exports.updateItem = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Item not found' });
         }
 
-        // Apply permitted fields
+        // Validate unitPrice if provided: must be a valid non-negative number
+        if (updates.unitPrice !== undefined) {
+            const parsedRate = Number(updates.unitPrice);
+            if (isNaN(parsedRate) || parsedRate < 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Unit rate must be a valid non-negative number (0 or greater).'
+                });
+            }
+            item.unitPrice = parsedRate;
+        }
+
+        // Apply permitted fields (note: quantity is strictly excluded to preserve stock levels)
         const allowedFields = [
             'name', 'code', 'category', 'location', 'notes',
             'brand', 'modelNumber', 'serialNumber', 'purchaseCost', 'purchaseDate', 'condition',
-            'unit', 'unitPrice', 'minThreshold'
+            'unit', 'minThreshold'
         ];
 
         allowedFields.forEach(field => {

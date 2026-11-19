@@ -3,7 +3,7 @@ import {
     Wrench, Package, AlertTriangle, CheckCircle2, Clock, User, Plus, 
     Search, Filter, RotateCcw, ArrowRightLeft, DollarSign, ShieldAlert, 
     X, Check, Hammer, Tag, Calendar, ChevronRight, History, Layers,
-    Building2, Truck, QrCode, Scan, Printer, Activity
+    Building2, Truck, QrCode, Scan, Printer, Activity, Pencil, Loader2
 } from 'lucide-react';
 import api from '../../services/api';
 import { formatCurrencyINR } from '../../utils/pdfHelpers';
@@ -47,6 +47,16 @@ const AdminInventory = () => {
 
     const [showStockModal, setShowStockModal] = useState(false);
     const [selectedMaterialForStock, setSelectedMaterialForStock] = useState(null);
+
+    // Edit Material Rate Modal States
+    const [showEditMaterialModal, setShowEditMaterialModal] = useState(false);
+    const [selectedMaterialForEdit, setSelectedMaterialForEdit] = useState(null);
+    const [editMaterialForm, setEditMaterialForm] = useState({
+        unitPrice: '',
+        notes: ''
+    });
+    const [editMaterialError, setEditMaterialError] = useState('');
+    const [savingEditMaterial, setSavingEditMaterial] = useState(false);
 
     const [showRepairModal, setShowRepairModal] = useState(false);
     const [selectedToolForRepair, setSelectedToolForRepair] = useState(null);
@@ -325,6 +335,55 @@ const AdminInventory = () => {
             fetchMaterials();
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to update stock');
+        }
+    };
+
+    // Edit Material Rate Handlers
+    const handleOpenEditMaterial = (material) => {
+        setSelectedMaterialForEdit(material);
+        setEditMaterialForm({
+            unitPrice: material.unitPrice !== undefined && material.unitPrice !== null ? material.unitPrice : 0,
+            notes: material.notes || ''
+        });
+        setEditMaterialError('');
+        setShowEditMaterialModal(true);
+    };
+
+    const handleSaveEditMaterial = async (e) => {
+        e.preventDefault();
+        setEditMaterialError('');
+
+        const rawRate = editMaterialForm.unitPrice;
+        if (rawRate === '' || rawRate === null || rawRate === undefined) {
+            setEditMaterialError('Unit rate is required.');
+            return;
+        }
+
+        const parsedRate = Number(rawRate);
+        if (isNaN(parsedRate) || parsedRate < 0) {
+            setEditMaterialError('Unit rate must be a valid non-negative number (0 or greater).');
+            return;
+        }
+
+        setSavingEditMaterial(true);
+        try {
+            const res = await api.put(`/inventory/items/${selectedMaterialForEdit._id}`, {
+                unitPrice: parsedRate,
+                notes: editMaterialForm.notes
+            });
+            if (res.data?.success) {
+                showToast(`✓ Updated rate for "${selectedMaterialForEdit.name}" to ${formatCurrencyINR(parsedRate)} / ${selectedMaterialForEdit.unit}`);
+                setShowEditMaterialModal(false);
+                setSelectedMaterialForEdit(null);
+                fetchStats();
+                fetchMaterials();
+            } else {
+                setEditMaterialError(res.data?.message || 'Failed to update material rate.');
+            }
+        } catch (err) {
+            setEditMaterialError(err.response?.data?.message || err.message || 'Failed to update material rate.');
+        } finally {
+            setSavingEditMaterial(false);
         }
     };
 
@@ -947,6 +1006,13 @@ const AdminInventory = () => {
 
                                         <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
                                             <button
+                                                onClick={() => handleOpenEditMaterial(mat)}
+                                                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm transition"
+                                                title="Edit Material"
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" /> Edit Material
+                                            </button>
+                                            <button
                                                 onClick={() => handleOpenStock(mat)}
                                                 className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm"
                                             >
@@ -1020,6 +1086,13 @@ const AdminInventory = () => {
                                                 </td>
                                                 <td className="p-4 text-right">
                                                     <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() => handleOpenEditMaterial(mat)}
+                                                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-1 shadow transition"
+                                                            title="Edit Material"
+                                                        >
+                                                            <Pencil className="w-3.5 h-3.5" /> Edit Material
+                                                        </button>
                                                         <button
                                                             onClick={() => handleOpenStock(mat)}
                                                             className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-1 shadow"
@@ -1847,6 +1920,153 @@ const AdminInventory = () => {
                                     className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow font-bold"
                                 >
                                     Save Stock Movement
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ══════════════ MODAL: EDIT MATERIAL RATE ══════════════ */}
+            {showEditMaterialModal && selectedMaterialForEdit && (
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 md:p-8">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                                    <Pencil className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-black uppercase text-slate-900 dark:text-white">Edit Material Rate</h2>
+                                    <p className="text-[11px] text-slate-400 font-bold">Update unit pricing without altering stock quantity</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setShowEditMaterialModal(false)} 
+                                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSaveEditMaterial} className="space-y-4 text-xs font-bold">
+                            {/* Material Summary Card */}
+                            <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-2.5">
+                                <div>
+                                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Material / Product</span>
+                                    <div className="text-sm font-black text-slate-900 dark:text-white mt-0.5">
+                                        {selectedMaterialForEdit.name}
+                                    </div>
+                                    {selectedMaterialForEdit.code && (
+                                        <span className="font-mono text-[11px] text-slate-400 font-bold">
+                                            SKU / Code: {selectedMaterialForEdit.code}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                                    <div>
+                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Category</span>
+                                        <span className="inline-block mt-0.5 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                                            {selectedMaterialForEdit.category || 'Raw Materials'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Unit of Measure</span>
+                                        <span className="font-black text-slate-900 dark:text-white text-xs mt-0.5 block">
+                                            {selectedMaterialForEdit.unit || 'Kg'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                                    <div>
+                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Current Rate</span>
+                                        <div className="font-black text-slate-900 dark:text-white text-xs mt-0.5">
+                                            {formatCurrencyINR(selectedMaterialForEdit.unitPrice)} / {selectedMaterialForEdit.unit}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">In-Stock Quantity</span>
+                                        <div className="font-black text-emerald-600 dark:text-emerald-400 text-xs mt-0.5">
+                                            {selectedMaterialForEdit.quantity} {selectedMaterialForEdit.unit}
+                                        </div>
+                                        <span className="text-[9px] text-slate-400 font-medium">(Preserved)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* New Unit Rate Input */}
+                            <div>
+                                <label className="block text-slate-600 dark:text-slate-300 mb-1">
+                                    New Unit Rate (₹ per {selectedMaterialForEdit.unit}) *
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-sm">₹</span>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        step="any"
+                                        value={editMaterialForm.unitPrice}
+                                        onChange={(e) => {
+                                            setEditMaterialForm({ ...editMaterialForm, unitPrice: e.target.value });
+                                            if (editMaterialError) setEditMaterialError('');
+                                        }}
+                                        placeholder="0.00"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-7 pr-3 py-2.5 text-slate-800 dark:text-slate-200 font-mono text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                    />
+                                </div>
+                                <p className="text-[10px] text-slate-400 mt-1">
+                                    Must be a valid non-negative number (0 or greater). Changing unit rate will not alter stock quantity.
+                                </p>
+                            </div>
+
+                            {/* Optional Revision Notes */}
+                            <div>
+                                <label className="block text-slate-600 dark:text-slate-300 mb-1">Revision Notes (Optional)</label>
+                                <input
+                                    type="text"
+                                    value={editMaterialForm.notes}
+                                    onChange={(e) => setEditMaterialForm({ ...editMaterialForm, notes: e.target.value })}
+                                    placeholder="e.g. Supplier price revision, Market rate update"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200"
+                                />
+                            </div>
+
+                            {/* Error Banner */}
+                            {editMaterialError && (
+                                <div className="p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 rounded-xl text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+                                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+                                    <span>{editMaterialError}</span>
+                                </div>
+                            )}
+
+                            <div className="pt-2 flex flex-col-reverse sm:flex-row justify-end gap-2.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowEditMaterialModal(false)}
+                                    disabled={savingEditMaterial}
+                                    className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold transition disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={savingEditMaterial}
+                                    className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md transition disabled:opacity-50"
+                                >
+                                    {savingEditMaterial ? (
+                                        <>
+                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                            Saving Rate...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check className="w-4 h-4" />
+                                            Save Rate
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>

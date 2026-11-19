@@ -16,7 +16,7 @@ router.get('/', protect, authorize('admin', 'staff'), inventoryController.getIte
 router.get('/items', protect, authorize('admin', 'staff'), inventoryController.getItems);
 router.get('/items/:id', protect, authorize('admin', 'staff'), inventoryController.getItemById);
 router.post('/items', protect, admin, inventoryController.createItem);
-router.put('/items/:id', protect, admin, inventoryController.updateItem);
+router.put('/items/:id', protect, authorize('admin', 'staff'), inventoryController.updateItem);
 router.delete('/items/:id', protect, admin, inventoryController.deleteItem);
 
 // Tool assignment & return
