@@ -7,6 +7,8 @@ const invoiceSchema = new mongoose.Schema({
     materialCost: { type: Number, default: 0 },
     laborCost: { type: Number, default: 0 },
     paymentStatus: { type: String, enum: ['unpaid', 'paid', 'overdue'], default: 'unpaid' },
+    selectedHeadings: [{ type: String }],
+    customHeading: { type: String, default: '' },
     stripePaymentId: { type: String },
     createdAt: { type: Date, default: Date.now }
 });

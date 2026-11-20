@@ -647,8 +647,15 @@ export const generateInvoicePDF = async (invoice) => {
     if (!invoice) return;
     await getBrandingSettings();
     const doc = new jsPDF();
-    const isTax = invoice?.showTax !== false && invoice?.data?.showTax !== false;
-    const headerHeight = addHeader(doc, isTax ? 'Tax Invoice' : 'Invoice');
+    let invoiceTitle = '';
+    const headings = invoice?.selectedHeadings || invoice?.data?.selectedHeadings || invoice?.data?.effectiveHeadings;
+    if (Array.isArray(headings)) {
+        invoiceTitle = headings.length > 0 ? headings.join(' • ') : '';
+    } else {
+        const isTax = invoice?.showTax !== false && invoice?.data?.showTax !== false;
+        invoiceTitle = isTax ? 'Tax Invoice' : 'Invoice';
+    }
+    const headerHeight = addHeader(doc, invoiceTitle);
 
     const startY = headerHeight + 8;
     const invNumber = invoice.documentNumber || invoice.data?.invoiceNumber || (invoice._id ? `INV-${invoice._id.slice(-6).toUpperCase()}` : 'INV-GEN-2026');
