@@ -4,7 +4,7 @@ import {
     Printer, Save, Plus, Trash2, ShieldCheck, DollarSign, Clock, Calendar, 
     Hash, FileText, Palette, CheckCircle2, AlertCircle, Copy, RotateCcw, 
     History, Search, X, User, AlertTriangle, KeyRound, Wrench, ShieldAlert,
-    Sparkles, Check
+    Sparkles, Check, Download
 } from 'lucide-react';
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
@@ -53,6 +53,7 @@ const DEFAULT_RENTAL_TERMS_EN = `1. Pre-delivery Inspection: Equipment is inspec
 const RentalBills = () => {
     // Workflow Mode: 'checkout' (Issue Equipment) | 'return' (Process Return & Settle)
     const [workflowMode, setWorkflowMode] = useState('checkout');
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
     // Bill Number & Dates
     const [billNumber, setBillNumber] = useState(generateRentalBillNumber());
@@ -630,6 +631,78 @@ const RentalBills = () => {
         window.print();
     };
 
+    const handleDownloadPDF = async () => {
+        setIsGeneratingPdf(true);
+        try {
+            await handleSaveToHistory(true);
+            const container = document.getElementById('rental-bill-print-container');
+            if (!container) {
+                window.print();
+                return;
+            }
+
+            const { default: html2canvas } = await import('html2canvas');
+            const { jsPDF } = await import('jspdf');
+
+            const canvas = await html2canvas(container, {
+                scale: 2.5,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                windowWidth: 1200
+            });
+
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const pageWidth = 210;
+            const pageHeight = 297;
+            const marginX = 8;
+            const marginY = 8;
+            const maxContentWidth = pageWidth - (marginX * 2); // 194 mm
+            const maxContentHeight = pageHeight - (marginY * 2); // 281 mm
+
+            const canvasAspect = canvas.height / canvas.width;
+            let renderWidth = maxContentWidth;
+            let renderHeight = renderWidth * canvasAspect;
+
+            const imgData = canvas.toDataURL('image/png');
+
+            if (renderHeight <= maxContentHeight) {
+                const posX = marginX + ((maxContentWidth - renderWidth) / 2);
+                const posY = marginY;
+                pdf.addImage(imgData, 'PNG', posX, posY, renderWidth, renderHeight, undefined, 'FAST');
+            } else {
+                let heightLeft = renderHeight;
+                let position = marginY;
+                let page = 1;
+
+                pdf.addImage(imgData, 'PNG', marginX, position, renderWidth, renderHeight, undefined, 'FAST');
+                heightLeft -= maxContentHeight;
+
+                while (heightLeft > 0) {
+                    position = marginY - (page * maxContentHeight);
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', marginX, position, renderWidth, renderHeight, undefined, 'FAST');
+                    heightLeft -= maxContentHeight;
+                    page++;
+                }
+            }
+
+            const fileName = `${billNumber || 'Rental_Agreement'}.pdf`;
+            pdf.save(fileName);
+        } catch (err) {
+            console.error('Direct PDF export fallback to window.print():', err);
+            window.print();
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-100 dark:bg-slate-950 p-2 sm:p-4 md:p-8 font-sans">
             {/* Auto-Save Crash Recovery Banner */}
@@ -734,6 +807,16 @@ const RentalBills = () => {
                         className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
                     >
                         <Save className="w-4 h-4" /> {savingHistory ? 'Saving...' : 'Save'}
+                    </button>
+
+                    {/* Download PDF Button */}
+                    <button
+                        onClick={handleDownloadPDF}
+                        disabled={isGeneratingPdf}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg transition disabled:opacity-50"
+                        title="Download standard A4 PDF directly"
+                    >
+                        <Download className="w-4 h-4" /> {isGeneratingPdf ? 'Generating...' : 'PDF'}
                     </button>
 
                     {/* Print Button */}
@@ -1359,19 +1442,41 @@ const RentalBills = () => {
                 {/* RIGHT: Live Printable Rental Agreement Preview */}
                 <div className="lg:col-span-7">
                     <div className="sticky top-6">
-                        <div className="no-print flex items-center justify-between bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800">
+                        <div className="no-print flex flex-wrap items-center justify-between gap-3 bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800">
                             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400">
                                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                                 Equipment Rental Agreement ({workflowMode === 'checkout' ? 'Issue Agreement' : 'Return Settlement'})
                             </div>
-                            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{theme}</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <button
+                                    type="button"
+                                    onClick={handleDownloadPDF}
+                                    disabled={isGeneratingPdf}
+                                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow disabled:opacity-50 cursor-pointer"
+                                    title="Download standard A4 PDF directly"
+                                >
+                                    <Download className="w-3.5 h-3.5" /> {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handlePrint}
+                                    className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow cursor-pointer"
+                                    title="Print via Browser"
+                                >
+                                    <Printer className="w-3.5 h-3.5" /> Print
+                                </button>
+                                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{theme}</span>
+                            </div>
                         </div>
 
                         <div 
-                            className="print-document-container bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 xl:p-10 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans"
+                            id="rental-bill-print-container"
+                            className="print-document-container bg-white dark:bg-slate-900 w-full max-w-[210mm] min-h-[297mm] mx-auto p-6 sm:p-8 md:p-10 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans flex flex-col justify-between"
                             style={{ '--theme-color': themeColor }}
                         >
-                            {/* Header */}
+                            {/* TOP DOCUMENT SECTION */}
+                            <div className="flex-1 flex flex-col">
+                                {/* Header */}
                             {theme === 'Modern' ? (
                                 <div className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden" style={{ backgroundColor: themeColor }}>
                                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0">
@@ -1528,8 +1633,11 @@ const RentalBills = () => {
                                     </tbody>
                                 </table>
                             </div>
+                            </div>
 
-                            {/* Settlement & Financial Protection */}
+                            {/* BOTTOM DOCUMENT SECTION (Settlement & Signatures) */}
+                            <div className="mt-auto pt-4 break-inside-avoid">
+                                {/* Settlement & Financial Protection */}
                             <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:flex-row print:justify-between print:gap-4">
                                 <div className="w-full flex-1 min-w-0 space-y-3 text-xs">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">
@@ -1631,6 +1739,7 @@ const RentalBills = () => {
                                         </p>
                                     </div>
                                 )}
+                            </div>
                             </div>
                         </div>
                     </div>

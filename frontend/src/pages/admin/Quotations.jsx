@@ -662,20 +662,32 @@ const Quotations = () => {
             let renderWidth = maxContentWidth;
             let renderHeight = renderWidth * canvasAspect;
 
-            if (renderHeight > maxContentHeight) {
-                renderHeight = maxContentHeight;
-                renderWidth = renderHeight / canvasAspect;
-            }
-
-            const posX = marginX + ((maxContentWidth - renderWidth) / 2);
-            const posY = marginY + ((maxContentHeight - renderHeight) / 2);
-
             const imgData = canvas.toDataURL('image/png');
-            pdf.addImage(imgData, 'PNG', posX, posY, renderWidth, renderHeight, undefined, 'FAST');
+
+            if (renderHeight <= maxContentHeight) {
+                const posX = marginX + ((maxContentWidth - renderWidth) / 2);
+                const posY = marginY;
+                pdf.addImage(imgData, 'PNG', posX, posY, renderWidth, renderHeight, undefined, 'FAST');
+            } else {
+                let heightLeft = renderHeight;
+                let position = marginY;
+                let page = 1;
+
+                pdf.addImage(imgData, 'PNG', marginX, position, renderWidth, renderHeight, undefined, 'FAST');
+                heightLeft -= maxContentHeight;
+
+                while (heightLeft > 0) {
+                    position = marginY - (page * maxContentHeight);
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', marginX, position, renderWidth, renderHeight, undefined, 'FAST');
+                    heightLeft -= maxContentHeight;
+                    page++;
+                }
+            }
 
             const fileName = `${quotationNumber || 'Cost_Estimate'}.pdf`;
             pdf.save(fileName);
-            showToast(`✓ Downloaded ${fileName} (1 Page A4).`, 'saved');
+            showToast(`✓ Downloaded ${fileName}`, 'saved');
         } catch (err) {
             console.error('Direct PDF export fallback to window.print():', err);
             window.print();
@@ -1338,16 +1350,33 @@ const Quotations = () => {
             <div className={`${workspaceViewMode === 'editor' ? 'hidden print:block' : ''} ${workspaceViewMode === 'preview' ? 'col-span-12 max-w-4xl mx-auto' : 'lg:col-span-5 xl:col-span-5'} print:block print:w-full print:max-w-none print:m-0 print:p-0`}>
                 <div className="sticky top-6 print:static print:top-auto print:m-0 print:p-0">
                     {/* Live Badge */}
-                    <div className="no-print flex items-center justify-between bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800">
+                    <div className="no-print flex flex-wrap items-center justify-between gap-3 bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800">
                         <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400">
                             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                             Live Quotation Preview ({theme})
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                                type="button"
+                                onClick={handleDownloadPDF}
+                                disabled={isGeneratingPdf}
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow disabled:opacity-50 cursor-pointer"
+                                title="Download standard A4 PDF directly"
+                            >
+                                <Download className="w-3.5 h-3.5" /> {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handlePrint}
+                                className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow cursor-pointer"
+                                title="Print via Browser"
+                            >
+                                <Printer className="w-3.5 h-3.5" /> Print
+                            </button>
                             <button
                                 type="button"
                                 onClick={() => setWorkspaceViewMode('editor')}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow"
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow cursor-pointer"
                             >
                                 <FileText className="w-3.5 h-3.5" /> Back to Line Items
                             </button>
@@ -1358,10 +1387,16 @@ const Quotations = () => {
                     {/* Proposal Document */}
                     <div 
                         id="quotation-print-container"
-                        className={`print-document-container bg-white dark:bg-slate-900 ${workspaceViewMode === 'preview' ? 'p-4 sm:p-8 md:p-12' : 'p-3.5 sm:p-6'} shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans print:p-3 print:shadow-none print:border-none print:rounded-none print:bg-white print:text-slate-900 print:w-full print:max-w-none`}
+                        className={`print-document-container bg-white dark:bg-slate-900 ${
+                            workspaceViewMode === 'preview' 
+                                ? 'w-full max-w-[210mm] min-h-[297mm] mx-auto p-6 sm:p-10 md:p-12 shadow-2xl rounded-b-3xl' 
+                                : 'p-3.5 sm:p-6 shadow-2xl rounded-b-3xl'
+                        } border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans flex flex-col justify-between`}
                         style={{ '--theme-color': themeColor }}
                     >
-                        {/* Header Rendering */}
+                        {/* TOP DOCUMENT SECTION */}
+                        <div className="flex-1 flex flex-col">
+                            {/* Header Rendering */}
                         {theme === 'Modern' ? (
                             <div 
                                 className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden print:p-3 print:mb-2.5 print:rounded-xl"
@@ -1527,8 +1562,11 @@ const Quotations = () => {
                                 />
                             </table>
                         </div>
+                        </div>
 
-                        {/* Summary & Disclaimers */}
+                        {/* BOTTOM DOCUMENT SECTION (Summary, Terms, Signatures, Footer) */}
+                        <div className="mt-auto pt-4 break-inside-avoid">
+                            {/* Summary & Disclaimers */}
                         <div className={`flex flex-col ${workspaceViewMode === 'preview' ? 'lg:flex-row' : ''} justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:mb-2 print:pb-2 print:gap-4 print:flex-row print:justify-between print:border-slate-200`}>
                             <div className="w-full flex-1 min-w-0 space-y-4 print:space-y-1.5">
                                 {showNotes && timelines && (
@@ -1645,6 +1683,7 @@ const Quotations = () => {
                                 {footerRemarks}
                             </div>
                         )}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -342,98 +342,169 @@ export const generateQuotePDF = async (quote) => {
     await getBrandingSettings();
     const doc = new jsPDF();
     doc.setCharSpace(0);
-    const headerHeight = addHeader(doc, 'Formal Quote / Estimation');
+    const headerHeight = addHeader(doc, 'Formal Quote / Cost Estimation');
 
-    const quoteId = quote._id ? quote._id.slice(-8).toUpperCase() : 'N/A';
-    const createdAt = quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : new Date().toLocaleDateString();
+    const quoteId = quote.documentNumber || quote.data?.quotationNumber || (quote._id ? `QTN-${quote._id.slice(-8).toUpperCase()}` : 'QTN-GEN-2026');
+    const createdAt = quote.data?.quotationDate || (quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : new Date().toLocaleDateString());
 
-    let startY = headerHeight + 12;
+    let startY = headerHeight + 8;
 
     doc.setTextColor(...THEME.textDark);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text(`Reference ID: #${quoteId}`, 15, startY, { charSpace: 0 });
-    doc.text(`Quote Date: ${createdAt}`, 15, startY + 6, { charSpace: 0 });
-    doc.text(`Status: ${(quote.status || 'New').toUpperCase()}`, 130, startY, { charSpace: 0 });
-
-    startY += 14;
-
-    const worksite = quote.worksiteLocation || {};
-    const worksiteAddress = worksite.address || quote.location || 'N/A';
-    const hasCoordinates = worksite.latitude !== null && worksite.latitude !== undefined &&
-        worksite.longitude !== null && worksite.longitude !== undefined;
-
-    let coordsText = 'Not Tagged (Manual Location)';
-    let mapUrl = '';
-    if (hasCoordinates) {
-        const lat = Number(worksite.latitude).toFixed(6);
-        const lng = Number(worksite.longitude).toFixed(6);
-        const sourceLabel = worksite.source === 'gps'
-            ? `(GPS Verified${worksite.accuracy ? ` ±${worksite.accuracy}m` : ''})`
-            : '(Map Pinned)';
-        coordsText = `${lat}° N, ${lng}° E ${sourceLabel}`;
-        mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-    } else if (quote.location) {
-        mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(quote.location)}`;
+    doc.text(`Quote Date: ${createdAt}`, 15, startY + 5, { charSpace: 0 });
+    if (quote.data?.proposalValidityDate || quote.validityDate) {
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Valid Until: ${quote.data?.proposalValidityDate || quote.validityDate}`, 15, startY + 10, { charSpace: 0 });
     }
 
-    const tableBody = [
-        ['CLIENT NAME', (quote.name || 'Valued Client').toUpperCase()],
-        ['CONTACT PHONE', quote.phone || 'N/A'],
-        ['WORKSITE ADDRESS', worksiteAddress.toUpperCase()],
-        ['GPS COORDINATES', coordsText],
-        ['GOOGLE MAPS LINK', mapUrl ? 'Click here to open exact location in Google Maps' : 'N/A'],
-        ['OPERATION TYPE', (quote.serviceType || 'General').toUpperCase()],
-        ['WORK DESCRIPTION', quote.description || 'No description provided.'],
-    ];
+    const clientName = quote.data?.clientName || quote.name || 'Valued Client';
+    const clientAddr = quote.data?.clientAddress || quote.worksiteLocation?.address || quote.location || '';
+    const clientPhone = quote.data?.clientPhone || quote.phone || '';
+    const clientGstin = quote.data?.clientGstin || '';
 
-    autoTable(doc, {
-        startY,
-        margin: { left: 15, right: 15, bottom: 20 },
-        head: [['Project Parameter', 'Specification Details']],
-        body: tableBody,
-        theme: 'grid',
-        showHead: 'everyPage',
-        headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold', fontSize: 9 },
-        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
-        columnStyles: {
-            0: { fontStyle: 'bold', fillColor: [249, 250, 251], width: 55, halign: 'left' },
-            1: { halign: 'left' }
-        },
-        didParseCell: (data) => {
-            if (data.section === 'body' && data.row.index === 4 && data.column.index === 1 && mapUrl) {
-                data.cell.styles.textColor = [37, 99, 235];
-                data.cell.styles.fontStyle = 'bold';
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Proposal Prepared For:`, 120, startY, { charSpace: 0 });
+    doc.setFont('helvetica', 'normal');
+    doc.text(clientName.toUpperCase(), 120, startY + 5, { charSpace: 0 });
+    let buyerOffset = 10;
+    if (clientAddr) {
+        doc.text(clientAddr.substring(0, 42), 120, startY + buyerOffset, { charSpace: 0 });
+        buyerOffset += 5;
+    }
+    if (clientPhone) {
+        doc.text(`Ph: ${clientPhone}`, 120, startY + buyerOffset, { charSpace: 0 });
+        buyerOffset += 5;
+    }
+    if (clientGstin) {
+        doc.text(`GSTIN: ${clientGstin}`, 120, startY + buyerOffset, { charSpace: 0 });
+    }
+
+    const rawItems = (quote.data?.items && Array.isArray(quote.data.items) && quote.data.items.length > 0)
+        ? quote.data.items
+        : (Array.isArray(quote.items) && quote.items.length > 0)
+            ? quote.items
+            : null;
+
+    if (rawItems && rawItems.length > 0) {
+        const tableBody = rawItems.map((item, idx) => {
+            const desc = item.name || item.description || 'Engineering Item';
+            const qtyStr = item.quantity ? `${item.quantity} ${item.unit || 'Kg'}` : '—';
+            const rateStr = item.unitPrice || item.rate ? formatCurrencyINR(item.unitPrice || item.rate) : '—';
+            const totalVal = item.total || (Number(item.quantity || 1) * Number(item.unitPrice || item.rate || 0));
+            return [
+                String(idx + 1).padStart(2, '0'),
+                desc,
+                qtyStr,
+                rateStr,
+                formatCurrencyINR(totalVal)
+            ];
+        });
+
+        autoTable(doc, {
+            startY: startY + 22,
+            margin: { left: 15, right: 15, bottom: 20 },
+            head: [['#', 'Item / Service & Description', 'Qty', 'Unit Rate', 'Total (INR)']],
+            body: tableBody,
+            theme: 'grid',
+            showHead: 'everyPage',
+            headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+            styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 4.5, overflow: 'linebreak' },
+            columnStyles: {
+                0: { halign: 'center', width: 12 },
+                1: { halign: 'left' },
+                2: { halign: 'center', width: 28 },
+                3: { halign: 'right', width: 32 },
+                4: { halign: 'right', width: 36 }
             }
-        },
-        didDrawCell: (data) => {
-            if (data.section === 'body' && data.row.index === 4 && data.column.index === 1 && mapUrl) {
-                doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: mapUrl });
-            }
+        });
+
+        const finalY = doc.lastAutoTable.finalY + 8;
+        const finalAmount = parseFloat(quote.data?.grandTotal || quote.estimatedCost || quote.totalAmount || 0);
+        fitTextIntoBox(doc, 'Total Estimated Cost:', finalAmount, 110, finalY, 85, 18);
+
+        addSignatureAndSeal(doc, finalY + 22);
+        addFooter(doc);
+    } else {
+        const worksite = quote.worksiteLocation || {};
+        const worksiteAddress = worksite.address || quote.location || 'N/A';
+        const hasCoordinates = worksite.latitude !== null && worksite.latitude !== undefined &&
+            worksite.longitude !== null && worksite.longitude !== undefined;
+
+        let coordsText = 'Not Tagged (Manual Location)';
+        let mapUrl = '';
+        if (hasCoordinates) {
+            const lat = Number(worksite.latitude).toFixed(6);
+            const lng = Number(worksite.longitude).toFixed(6);
+            const sourceLabel = worksite.source === 'gps'
+                ? `(GPS Verified${worksite.accuracy ? ` ±${worksite.accuracy}m` : ''})`
+                : '(Map Pinned)';
+            coordsText = `${lat}° N, ${lng}° E ${sourceLabel}`;
+            mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+        } else if (quote.location) {
+            mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(quote.location)}`;
         }
-    });
 
-    const tableFinalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : startY + 70;
+        const tableBody = [
+            ['CLIENT NAME', (quote.name || 'Valued Client').toUpperCase()],
+            ['CONTACT PHONE', quote.phone || 'N/A'],
+            ['WORKSITE ADDRESS', worksiteAddress.toUpperCase()],
+            ['GPS COORDINATES', coordsText],
+            ['GOOGLE MAPS LINK', mapUrl ? 'Click here to open exact location in Google Maps' : 'N/A'],
+            ['OPERATION TYPE', (quote.serviceType || 'General').toUpperCase()],
+            ['WORK DESCRIPTION', quote.description || 'No description provided.'],
+        ];
 
-    if (mapUrl) {
-        doc.setTextColor(37, 99, 235);
-        doc.setFontSize(8.5);
-        doc.setFont('helvetica', 'bold');
-        doc.textWithLink('-> Click here to open exact worksite coordinates in Google Maps', 15, tableFinalY + 6, { url: mapUrl });
+        autoTable(doc, {
+            startY: startY + 22,
+            margin: { left: 15, right: 15, bottom: 20 },
+            head: [['Project Parameter', 'Specification Details']],
+            body: tableBody,
+            theme: 'grid',
+            showHead: 'everyPage',
+            headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+            styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+            columnStyles: {
+                0: { fontStyle: 'bold', fillColor: [249, 250, 251], width: 55, halign: 'left' },
+                1: { halign: 'left' }
+            },
+            didParseCell: (data) => {
+                if (data.section === 'body' && data.row.index === 4 && data.column.index === 1 && mapUrl) {
+                    data.cell.styles.textColor = [37, 99, 235];
+                    data.cell.styles.fontStyle = 'bold';
+                }
+            },
+            didDrawCell: (data) => {
+                if (data.section === 'body' && data.row.index === 4 && data.column.index === 1 && mapUrl) {
+                    doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: mapUrl });
+                }
+            }
+        });
+
+        const tableFinalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : startY + 70;
+
+        if (mapUrl) {
+            doc.setTextColor(37, 99, 235);
+            doc.setFontSize(8.5);
+            doc.setFont('helvetica', 'bold');
+            doc.textWithLink('-> Click here to open exact worksite coordinates in Google Maps', 15, tableFinalY + 6, { url: mapUrl });
+        }
+
+        const finalY = tableFinalY + (mapUrl ? 14 : 10);
+        const finalAmount = parseFloat(quote.estimatedCost || quote.totalAmount || 0);
+        fitTextIntoBox(doc, 'Total Estimated Project Cost (INR):', finalAmount, 15, finalY, 180, 22);
+
+        addSignatureAndSeal(doc, finalY + 25);
+        addFooter(doc);
     }
-
-    const finalY = tableFinalY + (mapUrl ? 14 : 10);
-    fitTextIntoBox(doc, 'Total Estimated Project Cost (INR):', quote.estimatedCost || 0, 15, finalY, 180, 22);
-
-    addSignatureAndSeal(doc, finalY + 25);
-    addFooter(doc);
 
     const historyMetadata = {
         documentType: 'Quotation',
         documentNumber: `Q-${quoteId}`,
         customerId: quote.userId?._id || quote.userId || null,
         projectId: quote.projectId?._id || quote.projectId || null,
-        totalAmount: quote.estimatedCost || 0,
+        totalAmount: quote.data?.grandTotal || quote.estimatedCost || 0,
         status: quote.status || 'new',
         data: quote
     };
