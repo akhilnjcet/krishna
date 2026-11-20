@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Printer, Save, Plus, Trash2, Truck, Users, Calendar, Hash, FileText, 
     Palette, CheckCircle, ShieldCheck, DollarSign, MapPin, Package, Clock,
     Copy, RotateCcw, History, Search, X, UserCheck, Compass, Phone, ArrowRight,
-    Sparkles, Check, Download
+    Sparkles, Check, Download, Bookmark
 } from 'lucide-react';
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
 import { formatCurrencyINR } from '../../utils/pdfHelpers';
 import { CurlyBraceTotal } from '../../components/CombinedBillTable';
 import { computeItemSectionMeta, synchronizeItemSections } from '../../utils/combinedBillHelper';
+import { SpecialClassificationBanner, SpecialClassificationControls, computeSpecialClassifications } from '../../components/SpecialClassificationBanner';
 
 const generateBillNumber = (mode) => {
     const prefix = mode === 'transport' ? 'TR' : mode === 'combined' ? 'LT' : 'LB';
@@ -25,6 +26,14 @@ const LabourBillsTab = () => {
     // Number & Dates
     const [billNumber, setBillNumber] = useState(generateBillNumber('combined'));
     const [billDate, setBillDate] = useState(new Date().toISOString().split('T')[0]);
+
+    // Bill Heading & Special Classification State (Optional)
+    const [selectedClassifications, setSelectedClassifications] = useState([]);
+    const [manualClassification, setManualClassification] = useState('');
+    const specialClassifications = useMemo(() => 
+        computeSpecialClassifications(selectedClassifications, manualClassification), 
+        [selectedClassifications, manualClassification]
+    );
 
     // Client & Site Info
     const [clientName, setClientName] = useState('Apex Structural Infra Ltd');
@@ -312,6 +321,8 @@ const LabourBillsTab = () => {
         setDetentionCharges(0);
         setAdvancePaid(0);
         setDiscountAmount(0);
+        setSelectedClassifications([]);
+        setManualClassification('');
         setSaveMessage('✓ Bill studio reset.');
         setTimeout(() => setSaveMessage(''), 3000);
     };
@@ -374,6 +385,14 @@ const LabourBillsTab = () => {
         if (data.isTaxExempt !== undefined) setIsTaxExempt(data.isTaxExempt);
         if (data.theme) setTheme(data.theme);
         if (data.themeColor) setThemeColor(data.themeColor);
+        if (Array.isArray(data.selectedClassifications)) {
+            setSelectedClassifications(data.selectedClassifications);
+        } else {
+            setSelectedClassifications([]);
+        }
+        if (data.manualClassification !== undefined) {
+            setManualClassification(data.manualClassification || '');
+        }
         setShowHistoryModal(false);
     };
 
@@ -382,6 +401,8 @@ const LabourBillsTab = () => {
         billMode,
         billNumber,
         billDate,
+        selectedClassifications,
+        manualClassification,
         tagline,
         showTagline,
         clientName,
@@ -516,6 +537,7 @@ const LabourBillsTab = () => {
                     vehicleNumber, lrGrNumber, origin, destination, goodsDescription,
                     driverName, driverPhone, loadingDate, unloadingDate, 
                     billNumber, billDate, tagline, showTagline, clientName, clientAddress, clientPhone, clientGstin,
+                    selectedClassifications, manualClassification, specialClassifications,
                     siteLocation, siteSupervisor, labourRows, combinedTotals, showQuantity, showUnitPrice,
                     baseFreightCharges, loadingCharges, unloadingCharges, handlingCharges, packingCharges,
                     overtimeCharges, detentionCharges, advancePaid: numAdvance, discountAmount: numDiscount,
@@ -894,6 +916,14 @@ const LabourBillsTab = () => {
                                 />
                             </div>
                         </div>
+
+                        {/* Special Classification / Heading Banner (Optional) */}
+                        <SpecialClassificationControls
+                            selectedClassifications={selectedClassifications}
+                            setSelectedClassifications={setSelectedClassifications}
+                            manualClassification={manualClassification}
+                            setManualClassification={setManualClassification}
+                        />
                     </div>
 
                     {/* Logistics & Transit Tracking (shown in Transport or Combined mode) */}
@@ -1533,6 +1563,9 @@ const LabourBillsTab = () => {
                                     )}
                                 </div>
                             )}
+
+                            {/* Special Work Classification Banner (e.g. 🔧 Additional Work | ⚠️ Urgent Work) */}
+                            <SpecialClassificationBanner items={specialClassifications} />
 
                             {/* Labour Table */}
                             {(billMode === 'labour' || billMode === 'combined') && (

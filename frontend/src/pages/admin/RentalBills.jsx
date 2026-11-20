@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Printer, Save, Plus, Trash2, ShieldCheck, DollarSign, Clock, Calendar, 
     Hash, FileText, Palette, CheckCircle2, AlertCircle, Copy, RotateCcw, 
     History, Search, X, User, AlertTriangle, KeyRound, Wrench, ShieldAlert,
-    Sparkles, Check, Download
+    Sparkles, Check, Download, Bookmark
 } from 'lucide-react';
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
 import { formatCurrencyINR } from '../../utils/pdfHelpers';
 import { PRECONFIGURED_CATALOG, computeItemSectionMeta, synchronizeItemSections } from '../../utils/combinedBillHelper';
 import { CurlyBraceTotal } from '../../components/CombinedBillTable';
+import { SpecialClassificationBanner, SpecialClassificationControls, computeSpecialClassifications } from '../../components/SpecialClassificationBanner';
 
 const generateRentalBillNumber = () => `RNT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -60,6 +61,14 @@ const RentalBills = () => {
     const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
     const [expectedReturnDate, setExpectedReturnDate] = useState(new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]);
     const [actualReturnDate, setActualReturnDate] = useState(new Date().toISOString().split('T')[0]);
+
+    // Bill Heading & Special Classification State (Optional)
+    const [selectedClassifications, setSelectedClassifications] = useState([]);
+    const [manualClassification, setManualClassification] = useState('');
+    const specialClassifications = useMemo(() => 
+        computeSpecialClassifications(selectedClassifications, manualClassification), 
+        [selectedClassifications, manualClassification]
+    );
 
     // Customer & Hiring Party
     const [customers, setCustomers] = useState([]);
@@ -413,6 +422,8 @@ const RentalBills = () => {
         setSecurityDeposit(10000);
         setDamageCharge(0);
         setLossCharge(0);
+        setSelectedClassifications([]);
+        setManualClassification('');
         setRentedItems([{ id: Date.now(), itemName: '', itemNo: '', rateType: 'Day', rate: 0, quantity: 1, duration: 1, checkoutCondition: 'Good', returnCondition: 'Good', remarks: '' }]);
         setSaveMessage('✓ Rental studio reset.');
         setTimeout(() => setSaveMessage(''), 3000);
@@ -468,6 +479,14 @@ const RentalBills = () => {
         if (data.termsLanguage) setTermsLanguage(data.termsLanguage);
         if (data.theme) setTheme(data.theme);
         if (data.themeColor) setThemeColor(data.themeColor);
+        if (Array.isArray(data.selectedClassifications)) {
+            setSelectedClassifications(data.selectedClassifications);
+        } else {
+            setSelectedClassifications([]);
+        }
+        if (data.manualClassification !== undefined) {
+            setManualClassification(data.manualClassification || '');
+        }
         setShowHistoryModal(false);
     };
 
@@ -478,6 +497,8 @@ const RentalBills = () => {
         issueDate,
         expectedReturnDate,
         actualReturnDate,
+        selectedClassifications,
+        manualClassification,
         tagline,
         showTagline,
         selectedCustomerId,
@@ -596,6 +617,7 @@ const RentalBills = () => {
                 data: {
                     workflowMode,
                     billNumber, issueDate, expectedReturnDate, actualReturnDate,
+                    selectedClassifications, manualClassification, specialClassifications,
                     tagline, showTagline,
                     customerName, customerAddress, customerPhone, customerGstin, siteLocation,
                     rentedItems, combinedTotals, showQuantity, showUnitPrice,
@@ -1008,6 +1030,14 @@ const RentalBills = () => {
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                                 />
                             </div>
+
+                            {/* Bill Heading / Special Classification Controls (Optional) */}
+                            <SpecialClassificationControls
+                                selectedClassifications={selectedClassifications}
+                                setSelectedClassifications={setSelectedClassifications}
+                                manualClassification={manualClassification}
+                                setManualClassification={setManualClassification}
+                            />
                         </div>
                     </div>
 
@@ -1573,6 +1603,9 @@ const RentalBills = () => {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Special Classification Banner (Optional) */}
+                            <SpecialClassificationBanner items={specialClassifications} />
 
                             {/* Equipment Table */}
                             <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">

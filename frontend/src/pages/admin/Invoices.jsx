@@ -13,6 +13,7 @@ import { PRECONFIGURED_CATALOG, computeBillFinancials, computeItemSectionMeta, c
 import { buildUPILink } from '../../utils/upiUtils';
 import CombinedBillTableBody from '../../components/CombinedBillTable';
 import EstimationEntryTable from '../../components/EstimationEntryTable';
+import { SpecialClassificationBanner, SpecialClassificationControls, computeSpecialClassifications } from '../../components/SpecialClassificationBanner';
 
 const STANDARD_BILL_HEADINGS = [
     { id: 'tax_invoice', label: 'Tax Invoice' },
@@ -41,7 +42,15 @@ const Invoices = () => {
     const [netDays, setNetDays] = useState('15');
     const [showNetDays, setShowNetDays] = useState(true);
 
-    // Bill Heading & Special Classification State (Optional)
+    // Bill Heading & Special Classification State (Optional - Reference Image Style)
+    const [selectedClassifications, setSelectedClassifications] = useState([]);
+    const [manualClassification, setManualClassification] = useState('');
+
+    const specialClassifications = useMemo(() => 
+        computeSpecialClassifications(selectedClassifications, manualClassification), 
+        [selectedClassifications, manualClassification]
+    );
+
     const [selectedHeadings, setSelectedHeadings] = useState([]);
     const [hasCustomHeading, setHasCustomHeading] = useState(false);
     const [customHeading, setCustomHeading] = useState('');
@@ -56,15 +65,6 @@ const Invoices = () => {
         }
         return list;
     }, [selectedHeadings, hasCustomHeading, customHeading]);
-
-    const handleToggleHeading = (headingLabel) => {
-        setSelectedHeadings(prev => {
-            const list = Array.isArray(prev) ? prev : [];
-            return list.includes(headingLabel)
-                ? list.filter(h => h !== headingLabel)
-                : [...list, headingLabel];
-        });
-    };
 
     const [tagline, setTagline] = useState('Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication');
     const [showTagline, setShowTagline] = useState(true);
@@ -628,6 +628,8 @@ const Invoices = () => {
         setSelectedHeadings([]);
         setHasCustomHeading(false);
         setCustomHeading('');
+        setSelectedClassifications([]);
+        setManualClassification('');
         setItems([{ id: Date.now(), description: '', price: 0, quantity: 1, unit: 'Units', isCombined: false }]);
         setCombinedTotals({});
         setSaveMessage('✓ Invoice studio reset.');
@@ -701,6 +703,18 @@ const Invoices = () => {
         if (data.invoiceIfscCode !== undefined) setInvoiceIfscCode(data.invoiceIfscCode);
         if (data.invoiceBankBranch !== undefined) setInvoiceBankBranch(data.invoiceBankBranch);
         if (data.showBankDetails !== undefined) setShowBankDetails(data.showBankDetails);
+        if (Array.isArray(data.selectedClassifications)) {
+            setSelectedClassifications(data.selectedClassifications);
+        } else if (Array.isArray(data.selectedHeadings)) {
+            setSelectedClassifications(data.selectedHeadings);
+        } else {
+            setSelectedClassifications([]);
+        }
+        if (data.manualClassification !== undefined) {
+            setManualClassification(data.manualClassification || '');
+        } else if (data.customHeading !== undefined) {
+            setManualClassification(data.customHeading || '');
+        }
         if (Array.isArray(data.selectedHeadings)) {
             setSelectedHeadings(data.selectedHeadings);
         } else {
@@ -723,6 +737,8 @@ const Invoices = () => {
         showDueDate,
         netDays,
         showNetDays,
+        selectedClassifications,
+        manualClassification,
         selectedHeadings,
         hasCustomHeading,
         customHeading,
@@ -863,6 +879,9 @@ const Invoices = () => {
                 showDueDate,
                 netDays,
                 showNetDays,
+                selectedClassifications,
+                manualClassification,
+                specialClassifications,
                 selectedHeadings,
                 hasCustomHeading,
                 customHeading,
@@ -948,11 +967,15 @@ const Invoices = () => {
         }
     };
 
-    const handlePrint = () => {
+    const handlePrint = async () => {
         if (customerName.trim()) {
             saveCustomerToList();
         }
-        handleSaveToHistory(true);
+        await handleSaveToHistory(true);
+        if (workspaceViewMode !== 'preview') {
+            setWorkspaceViewMode('preview');
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
         window.print();
     };
 
@@ -963,6 +986,10 @@ const Invoices = () => {
                 saveCustomerToList();
             }
             await handleSaveToHistory(true);
+            if (workspaceViewMode !== 'preview') {
+                setWorkspaceViewMode('preview');
+                await new Promise(resolve => setTimeout(resolve, 250));
+            }
             const container = document.getElementById('invoice-print-container');
             if (!container) {
                 window.print();
@@ -1378,83 +1405,12 @@ const Invoices = () => {
                         </div>
 
                         {/* Bill Heading / Special Classification (Optional) */}
-                        <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                <div>
-                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                                        <Bookmark className="w-3.5 h-3.5 text-indigo-500" /> Bill Heading / Special Classification (Optional)
-                                    </label>
-                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                        Select optional headings to display clearly on the printed bill / PDF. If no heading is selected, no heading or empty space will appear.
-                                    </p>
-                                </div>
-                                {effectiveHeadings.length > 0 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setSelectedHeadings([]);
-                                            setHasCustomHeading(false);
-                                            setCustomHeading('');
-                                        }}
-                                        className="text-[10px] font-bold text-rose-500 hover:text-rose-600 transition cursor-pointer px-2 py-0.5 rounded bg-rose-50 dark:bg-rose-950/40"
-                                    >
-                                        Clear All ({effectiveHeadings.length})
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                                {STANDARD_BILL_HEADINGS.map(item => {
-                                    const isChecked = selectedHeadings.includes(item.label);
-                                    return (
-                                        <label 
-                                            key={item.id}
-                                            className={`flex items-center gap-2.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition select-none ${
-                                                isChecked 
-                                                    ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700 text-indigo-900 dark:text-indigo-200 shadow-xs' 
-                                                    : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                            }`}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={isChecked}
-                                                onChange={() => handleToggleHeading(item.label)}
-                                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
-                                            />
-                                            <span className="truncate">{item.label}</span>
-                                        </label>
-                                    );
-                                })}
-
-                                <label 
-                                    className={`flex items-center gap-2.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition select-none ${
-                                        hasCustomHeading 
-                                            ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700 text-indigo-900 dark:text-indigo-200 shadow-xs' 
-                                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                    }`}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={hasCustomHeading}
-                                        onChange={(e) => setHasCustomHeading(e.target.checked)}
-                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
-                                    />
-                                    <span className="truncate">Custom Heading</span>
-                                </label>
-                            </div>
-
-                            {hasCustomHeading && (
-                                <div className="pt-1">
-                                    <input
-                                        type="text"
-                                        value={customHeading}
-                                        onChange={(e) => setCustomHeading(e.target.value)}
-                                        placeholder="Enter custom bill heading (e.g. COMMERCIAL INVOICE, SCRAP SALE BILL)..."
-                                        className="w-full bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                            )}
-                        </div>
+                        <SpecialClassificationControls
+                            selectedClassifications={selectedClassifications}
+                            setSelectedClassifications={setSelectedClassifications}
+                            manualClassification={manualClassification}
+                            setManualClassification={setManualClassification}
+                        />
 
                         {/* Partial Payment Amount Input */}
                         {status === 'Partially Paid' && (
@@ -2478,6 +2434,9 @@ const Invoices = () => {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Special Work Classification Banner (e.g. 🔧 Additional Work | ⚠️ Urgent Work) */}
+                            <SpecialClassificationBanner items={specialClassifications} />
 
                             {/* Invoice Table with Curly Brace Combined Billing */}
                             <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">

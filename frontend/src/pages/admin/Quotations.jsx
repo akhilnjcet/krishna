@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Printer, Plus, Trash2, User, Calendar, Hash, FileText, 
     Palette, Clock, CheckCircle, ShieldCheck, DollarSign, Layers,
     Save, History, CheckCircle2, AlertCircle, Copy, RotateCcw, 
     Search, X, Tag, Percent, Eye, EyeOff, FolderPlus, Split, ArrowRight,
-    Columns, Maximize2, Minimize2, Sparkles, Check
+    Columns, Maximize2, Minimize2, Sparkles, Check, Bookmark
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
@@ -14,6 +14,7 @@ import { formatCurrencyINR } from '../../utils/pdfHelpers';
 import { PRECONFIGURED_CATALOG, computeBillFinancials, computeItemSectionMeta, calculateBillTotals, synchronizeItemSections } from '../../utils/combinedBillHelper';
 import CombinedBillTableBody from '../../components/CombinedBillTable';
 import EstimationEntryTable from '../../components/EstimationEntryTable';
+import { SpecialClassificationBanner, SpecialClassificationControls, computeSpecialClassifications } from '../../components/SpecialClassificationBanner';
 
 const generateQuotationNumber = () => `QTN-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -28,6 +29,15 @@ const Quotations = () => {
     const [quotationDate, setQuotationDate] = useState(new Date().toISOString().split('T')[0]);
     const [proposalValidityDate, setProposalValidityDate] = useState(new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]);
     const [showValidityDate, setShowValidityDate] = useState(true);
+
+    // Bill Heading & Special Classification State (Optional)
+    const [selectedClassifications, setSelectedClassifications] = useState([]);
+    const [manualClassification, setManualClassification] = useState('');
+    const specialClassifications = useMemo(() => 
+        computeSpecialClassifications(selectedClassifications, manualClassification), 
+        [selectedClassifications, manualClassification]
+    );
+
     const [tagline, setTagline] = useState('Heavy PEB Structures, Industrial Roofing & High-Tensile Fabrication');
     const [showTagline, setShowTagline] = useState(true);
 
@@ -356,6 +366,8 @@ const Quotations = () => {
         setItems([{ id: Date.now(), type: 'Item', name: '', description: '', rate: 0, quantity: 1, unit: 'Units' }]);
         setDiscountType('none');
         setDiscountValue(0);
+        setSelectedClassifications([]);
+        setManualClassification('');
         showToast('✓ Quotation studio reset.');
     };
 
@@ -412,6 +424,14 @@ const Quotations = () => {
         if (data.timelines) setTimelines(data.timelines);
         if (data.projectNotes) setProjectNotes(data.projectNotes);
         if (data.footerRemarks) setFooterRemarks(data.footerRemarks);
+        if (Array.isArray(data.selectedClassifications)) {
+            setSelectedClassifications(data.selectedClassifications);
+        } else {
+            setSelectedClassifications([]);
+        }
+        if (data.manualClassification !== undefined) {
+            setManualClassification(data.manualClassification || '');
+        }
         setShowHistoryModal(false);
     };
 
@@ -421,6 +441,8 @@ const Quotations = () => {
         quotationDate,
         proposalValidityDate,
         showValidityDate,
+        selectedClassifications,
+        manualClassification,
         tagline,
         showTagline,
         selectedCustomerId,
@@ -555,6 +577,9 @@ const Quotations = () => {
                     quotationDate,
                     proposalValidityDate,
                     showValidityDate,
+                    selectedClassifications,
+                    manualClassification,
+                    specialClassifications,
                     tagline,
                     showTagline,
                     clientName,
@@ -620,6 +645,10 @@ const Quotations = () => {
 
     const handlePrint = async () => {
         await handleSaveToHistory('print');
+        if (workspaceViewMode !== 'preview') {
+            setWorkspaceViewMode('preview');
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
         window.print();
     };
 
@@ -627,6 +656,10 @@ const Quotations = () => {
         setIsGeneratingPdf(true);
         try {
             await handleSaveToHistory('pdf_download');
+            if (workspaceViewMode !== 'preview') {
+                setWorkspaceViewMode('preview');
+                await new Promise(resolve => setTimeout(resolve, 250));
+            }
             const container = document.getElementById('quotation-print-container');
             if (!container) {
                 window.print();
@@ -964,6 +997,14 @@ const Quotations = () => {
                                 }`}
                             />
                         </div>
+
+                        {/* Special Classification / Heading Banner (Optional) */}
+                        <SpecialClassificationControls
+                            selectedClassifications={selectedClassifications}
+                            setSelectedClassifications={setSelectedClassifications}
+                            manualClassification={manualClassification}
+                            setManualClassification={setManualClassification}
+                        />
                     </div>
 
                     {/* Customer Autofill */}
@@ -1544,6 +1585,9 @@ const Quotations = () => {
                                 </div>
                             )}
                         </div>
+
+                        {/* Special Work Classification Banner (e.g. 🔧 Additional Work | ⚠️ Urgent Work) */}
+                        <SpecialClassificationBanner items={specialClassifications} />
 
                         {/* Quotation Table */}
                         <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 print:mb-2.5 print:rounded-lg print:border-slate-300 print:overflow-visible">
