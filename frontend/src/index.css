@@ -251,6 +251,18 @@ button {
   }
 }
 
+/* Dedicated Off-Screen Document Rendering (for direct PDF & print in Editor mode) */
+.print-offscreen-render {
+  position: absolute !important;
+  left: -99999px !important;
+  top: 0 !important;
+  width: 210mm !important;
+  max-width: 210mm !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+  z-index: -9999 !important;
+}
+
 /* Dedicated Browser & PDF Print Optimization */
 @media print {
   @page {
@@ -323,6 +335,22 @@ button {
 
   .md\:ml-\[280px\] {
     margin-left: 0 !important;
+  }
+
+  /* Reset off-screen printable containers for physical print */
+  .print-offscreen-render {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: auto !important;
+    display: block !important;
+    visibility: visible !important;
   }
 
   /* Ensure the printable document container utilizes full A4 proportions with vertical flex distribution */

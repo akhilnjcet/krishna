@@ -920,7 +920,9 @@ const Invoices = () => {
                 allowTaint: true,
                 backgroundColor: '#ffffff',
                 logging: false,
-                windowWidth: 1200
+                windowWidth: 1200,
+                scrollX: 0,
+                scrollY: 0
             });
 
             const pdf = new jsPDF({
@@ -1966,55 +1968,61 @@ const Invoices = () => {
                 </div>
             )}
 
-            {/* RIGHT: Live Tax Invoice Preview */}
-            {workspaceViewMode !== 'editor' && (
-                <div className={workspaceViewMode === 'preview' ? 'col-span-12 max-w-4xl mx-auto w-full' : 'lg:col-span-5 xl:col-span-5'}>
-                    <div className="sticky top-6">
-                        <div className="no-print flex flex-wrap items-center justify-between gap-3 bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800">
-                            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400">
-                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                {showTax ? 'Live Tax Invoice Preview' : 'Live Invoice Preview'} ({theme})
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <button
-                                    type="button"
-                                    onClick={handleDownloadPDF}
-                                    disabled={isGeneratingPdf}
-                                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow disabled:opacity-50 cursor-pointer"
-                                    title="Download standard A4 PDF directly"
-                                >
-                                    <Download className="w-3.5 h-3.5" /> {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handlePrint}
-                                    className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow cursor-pointer"
-                                    title="Print via Browser"
-                                >
-                                    <Printer className="w-3.5 h-3.5" /> Print
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setWorkspaceViewMode('editor')}
-                                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow cursor-pointer"
-                                >
-                                    <FileText className="w-3.5 h-3.5" /> Back to Line Items
-                                </button>
-                                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold hidden sm:inline">
-                                    {showTax ? 'GST Compliant' : 'Commercial Bill'}
-                                </span>
-                            </div>
+            {/* RIGHT: Live Tax Invoice Preview & Print Container */}
+            <div className={`
+                ${workspaceViewMode === 'editor' 
+                    ? 'print-offscreen-render' 
+                    : workspaceViewMode === 'preview' 
+                        ? 'col-span-12 max-w-4xl mx-auto w-full' 
+                        : 'lg:col-span-5 xl:col-span-5'
+                } print:block print:w-full print:max-w-none print:m-0 print:p-0
+            `}>
+                <div className={`${workspaceViewMode === 'editor' ? '' : 'sticky top-6'} print:static print:top-auto print:m-0 print:p-0`}>
+                    <div className={`no-print ${workspaceViewMode === 'editor' ? 'hidden' : 'flex'} flex-wrap items-center justify-between gap-3 bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800`}>
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            {showTax ? 'Live Tax Invoice Preview' : 'Live Invoice Preview'} ({theme})
                         </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                                type="button"
+                                onClick={handleDownloadPDF}
+                                disabled={isGeneratingPdf}
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow disabled:opacity-50 cursor-pointer"
+                                title="Download standard A4 PDF directly"
+                            >
+                                <Download className="w-3.5 h-3.5" /> {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handlePrint}
+                                className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow cursor-pointer"
+                                title="Print via Browser"
+                            >
+                                <Printer className="w-3.5 h-3.5" /> Print
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setWorkspaceViewMode('editor')}
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow cursor-pointer"
+                            >
+                                <FileText className="w-3.5 h-3.5" /> Back to Line Items
+                            </button>
+                            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold hidden sm:inline">
+                                {showTax ? 'GST Compliant' : 'Commercial Bill'}
+                            </span>
+                        </div>
+                    </div>
 
-                        <div 
-                            id="invoice-print-container"
-                            className={`print-document-container bg-white dark:bg-slate-900 ${
-                                workspaceViewMode === 'preview' 
-                                    ? 'w-full max-w-[210mm] min-h-[297mm] mx-auto p-6 sm:p-10 md:p-12 shadow-2xl rounded-b-3xl' 
-                                    : 'p-3.5 sm:p-6 shadow-2xl rounded-b-3xl'
-                            } border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans flex flex-col justify-between`}
-                            style={{ '--theme-color': themeColor }}
-                        >
+                    <div 
+                        id="invoice-print-container"
+                        className={`print-document-container bg-white dark:bg-slate-900 ${
+                            workspaceViewMode !== 'split' 
+                                ? 'w-full max-w-[210mm] min-h-[297mm] mx-auto p-6 sm:p-10 md:p-12 shadow-2xl rounded-b-3xl' 
+                                : 'p-3.5 sm:p-6 shadow-2xl rounded-b-3xl'
+                        } border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans flex flex-col justify-between`}
+                        style={{ '--theme-color': themeColor }}
+                    >
                             {/* TOP DOCUMENT SECTION */}
                             <div className="flex-1 flex flex-col">
                                 {/* Header */}
@@ -2023,7 +2031,7 @@ const Invoices = () => {
                                     className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden"
                                     style={{ backgroundColor: themeColor }}
                                 >
-                                    <div className={`flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0`}>
+                                    <div className={`flex flex-col ${workspaceViewMode !== 'split' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0`}>
                                         <div className="flex items-center gap-4 flex-wrap">
                                             {brandingSettings.company_logo && showLogo && (
                                                 <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white p-1 rounded-xl shadow-md" />
@@ -2111,7 +2119,7 @@ const Invoices = () => {
                                     </div>
                                 </div>
                             ) : theme === 'Minimalist' ? (
-                                <div className={`border-b-2 border-slate-900 pb-6 mb-8 flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start sm:items-end gap-4 sm:gap-0`}>
+                                <div className={`border-b-2 border-slate-900 pb-6 mb-8 flex flex-col ${workspaceViewMode !== 'split' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start sm:items-end gap-4 sm:gap-0`}>
                                     <div className="flex items-center gap-3 flex-wrap">
                                         {brandingSettings.company_logo && showLogo && (
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-10 w-auto object-contain" />
@@ -2187,7 +2195,7 @@ const Invoices = () => {
                                 </div>
                             ) : (
                                 /* Classic Theme */
-                                <div className={`border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0`}>
+                                <div className={`border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col ${workspaceViewMode !== 'split' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0`}>
                                     <div className="flex items-center gap-4 flex-wrap">
                                         {brandingSettings.company_logo && showLogo && (
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900 rounded-xl shadow p-1" />
@@ -2285,7 +2293,7 @@ const Invoices = () => {
                             )}
 
                             {/* Customer / Consignee Block */}
-                            <div className={`bg-slate-50 dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0`}>
+                            <div className={`bg-slate-50 dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 flex flex-col ${workspaceViewMode !== 'split' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0`}>
                                 <div className="min-w-0">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">BILLED TO (BUYER / RECIPIENT):</span>
                                     <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase truncate">{customerName || 'Valued Client'}</h3>
@@ -2339,7 +2347,7 @@ const Invoices = () => {
                             {/* BOTTOM DOCUMENT SECTION (Summary, Totals, QR, Terms, Signatures, Footer) */}
                             <div className="mt-auto pt-4 break-inside-avoid">
                                 {/* Summary & QR Code Block */}
-                            <div className={`flex flex-col ${workspaceViewMode === 'preview' ? 'lg:flex-row' : ''} justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:flex-row print:justify-between print:gap-4`}>
+                            <div className={`flex flex-col ${workspaceViewMode !== 'split' ? 'lg:flex-row' : ''} justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:flex-row print:justify-between print:gap-4`}>
                                 <div className="w-full flex-1 min-w-0 space-y-4">
                                     {showTerms && termsText && (
                                         <div>
@@ -2409,7 +2417,7 @@ const Invoices = () => {
                                     )}
                                 </div>
 
-                                <div className={`w-full ${workspaceViewMode === 'preview' ? 'lg:w-80 lg:shrink-0' : 'max-w-md'} ml-auto space-y-2 text-xs print:w-64`}>
+                                <div className={`w-full ${workspaceViewMode !== 'split' ? 'lg:w-80 lg:shrink-0' : 'max-w-md'} ml-auto space-y-2 text-xs print:w-64`}>
                                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                                         <span className="font-bold text-slate-500">Subtotal:</span>
                                         <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(financials.subtotal)}</span>
@@ -2505,7 +2513,6 @@ const Invoices = () => {
                         </div>
                     </div>
                 </div>
-            )}
             </div>
 
             {/* Catalog Modal */}

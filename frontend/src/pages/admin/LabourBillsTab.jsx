@@ -567,7 +567,9 @@ const LabourBillsTab = () => {
                 allowTaint: true,
                 backgroundColor: '#ffffff',
                 logging: false,
-                windowWidth: 1200
+                windowWidth: 1200,
+                scrollX: 0,
+                scrollY: 0
             });
 
             const pdf = new jsPDF({

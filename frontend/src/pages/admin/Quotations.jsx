@@ -642,7 +642,9 @@ const Quotations = () => {
                 allowTaint: true,
                 backgroundColor: '#ffffff',
                 logging: false,
-                windowWidth: 1200
+                windowWidth: 1200,
+                scrollX: 0,
+                scrollY: 0
             });
 
             const pdf = new jsPDF({
@@ -1347,10 +1349,17 @@ const Quotations = () => {
             )}
 
             {/* RIGHT: Real-time Live Document Preview */}
-            <div className={`${workspaceViewMode === 'editor' ? 'hidden print:block' : ''} ${workspaceViewMode === 'preview' ? 'col-span-12 max-w-4xl mx-auto' : 'lg:col-span-5 xl:col-span-5'} print:block print:w-full print:max-w-none print:m-0 print:p-0`}>
-                <div className="sticky top-6 print:static print:top-auto print:m-0 print:p-0">
+            <div className={`
+                ${workspaceViewMode === 'editor' 
+                    ? 'print-offscreen-render' 
+                    : workspaceViewMode === 'preview' 
+                        ? 'col-span-12 max-w-4xl mx-auto w-full' 
+                        : 'lg:col-span-5 xl:col-span-5'
+                } print:block print:w-full print:max-w-none print:m-0 print:p-0
+            `}>
+                <div className={`${workspaceViewMode === 'editor' ? '' : 'sticky top-6'} print:static print:top-auto print:m-0 print:p-0`}>
                     {/* Live Badge */}
-                    <div className="no-print flex flex-wrap items-center justify-between gap-3 bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800">
+                    <div className={`no-print ${workspaceViewMode === 'editor' ? 'hidden' : 'flex'} flex-wrap items-center justify-between gap-3 bg-slate-900 text-white px-6 py-3 rounded-t-3xl border-b border-slate-800`}>
                         <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400">
                             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                             Live Quotation Preview ({theme})
@@ -1388,7 +1397,7 @@ const Quotations = () => {
                     <div 
                         id="quotation-print-container"
                         className={`print-document-container bg-white dark:bg-slate-900 ${
-                            workspaceViewMode === 'preview' 
+                            workspaceViewMode !== 'split' 
                                 ? 'w-full max-w-[210mm] min-h-[297mm] mx-auto p-6 sm:p-10 md:p-12 shadow-2xl rounded-b-3xl' 
                                 : 'p-3.5 sm:p-6 shadow-2xl rounded-b-3xl'
                         } border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans flex flex-col justify-between`}
@@ -1402,7 +1411,7 @@ const Quotations = () => {
                                 className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden print:p-3 print:mb-2.5 print:rounded-xl"
                                 style={{ backgroundColor: themeColor }}
                             >
-                                <div className={`flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0 print:flex-row print:justify-between print:items-start`}>
+                                <div className={`flex flex-col ${workspaceViewMode !== 'split' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0 print:flex-row print:justify-between print:items-start`}>
                                     <div className="flex items-center gap-4 flex-wrap print:gap-3">
                                         {brandingSettings.company_logo && (
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white p-1 rounded-xl shadow-md print:h-10 print:rounded-lg" />
@@ -1474,7 +1483,7 @@ const Quotations = () => {
                             </div>
                         ) : (
                             /* Classic Theme */
-                            <div className={`border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0 print:pb-2.5 print:mb-2.5 print:flex-row print:justify-between print:items-start print:border-slate-300`}>
+                            <div className={`border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 flex flex-col ${workspaceViewMode !== 'split' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0 print:pb-2.5 print:mb-2.5 print:flex-row print:justify-between print:items-start print:border-slate-300`}>
                                 <div className="flex items-center gap-4 flex-wrap print:gap-3">
                                     {brandingSettings.company_logo && (
                                         <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900 rounded-xl shadow p-1 print:h-10 print:shadow-none" />
@@ -1518,7 +1527,7 @@ const Quotations = () => {
                         )}
 
                         {/* Client Block */}
-                        <div className={`bg-slate-50 dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 flex flex-col ${workspaceViewMode === 'preview' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0 print:p-2.5 print:mb-2.5 print:rounded-xl print:flex-row print:justify-between print:bg-slate-50 print:border-slate-200`}>
+                        <div className={`bg-slate-50 dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 flex flex-col ${workspaceViewMode !== 'split' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0 print:p-2.5 print:mb-2.5 print:rounded-xl print:flex-row print:justify-between print:bg-slate-50 print:border-slate-200`}>
                             <div className="min-w-0">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5 print:text-[9px]">PROPOSAL PREPARED FOR:</span>
                                 <h3 className="font-black text-slate-900 dark:text-white print:text-slate-900 text-sm uppercase truncate print:text-xs">{clientName || 'Valued Client'}</h3>
@@ -1567,7 +1576,7 @@ const Quotations = () => {
                         {/* BOTTOM DOCUMENT SECTION (Summary, Terms, Signatures, Footer) */}
                         <div className="mt-auto pt-4 break-inside-avoid">
                             {/* Summary & Disclaimers */}
-                        <div className={`flex flex-col ${workspaceViewMode === 'preview' ? 'lg:flex-row' : ''} justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:mb-2 print:pb-2 print:gap-4 print:flex-row print:justify-between print:border-slate-200`}>
+                        <div className={`flex flex-col ${workspaceViewMode !== 'split' ? 'lg:flex-row' : ''} justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:mb-2 print:pb-2 print:gap-4 print:flex-row print:justify-between print:border-slate-200`}>
                             <div className="w-full flex-1 min-w-0 space-y-4 print:space-y-1.5">
                                 {showNotes && timelines && (
                                     <div>
@@ -1606,7 +1615,7 @@ const Quotations = () => {
                                 )}
                             </div>
 
-                            <div className={`w-full ${workspaceViewMode === 'preview' ? 'lg:w-80 lg:shrink-0' : 'max-w-md'} ml-auto space-y-2 text-xs print:w-64 print:space-y-1 print:text-[10.5px]`}>
+                            <div className={`w-full ${workspaceViewMode !== 'split' ? 'lg:w-80 lg:shrink-0' : 'max-w-md'} ml-auto space-y-2 text-xs print:w-64 print:space-y-1 print:text-[10.5px]`}>
                                 <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 print:border-slate-200">
                                     <span className="font-bold text-slate-500 dark:text-slate-400 print:text-slate-600">Subtotal:</span>
                                     <span className="font-bold text-slate-900 dark:text-white print:text-slate-900">{formatCurrencyINR(financials.subtotal)}</span>
