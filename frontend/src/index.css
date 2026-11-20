@@ -255,7 +255,7 @@ button {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 0;
+    margin: 8mm 10mm;
   }
 
   *, *:before, *:after {
@@ -325,14 +325,17 @@ button {
     margin-left: 0 !important;
   }
 
-  /* Ensure only the printable document container is rendered */
+  /* Ensure the printable document container utilizes full A4 proportions with vertical flex distribution */
   .print-document-container {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
     position: relative !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-height: 277mm !important;
     margin: 0 auto !important;
-    padding: 4px 0 !important;
+    padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
@@ -341,21 +344,19 @@ button {
     overflow: visible !important;
     transform: none !important;
     zoom: 1 !important;
-    break-after: avoid !important;
-    page-break-after: avoid !important;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
   }
 
   /* Prevent page breaks inside all key components */
   .print-document-container tr,
   .print-document-container table,
-  .print-document-container .break-inside-avoid {
+  .print-document-container .break-inside-avoid,
+  .print-document-container .invoice-summary-block,
+  .print-document-container .invoice-signature-block {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
 
-  /* Compact table row padding in print mode to ensure 1-page fit */
+  /* Balanced table styling in print mode */
   .print-document-container table {
     width: 100% !important;
     border-collapse: collapse !important;
@@ -363,7 +364,9 @@ button {
 
   .print-document-container th,
   .print-document-container td {
-    padding-top: 5px !important;
-    padding-bottom: 5px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
   }
 }

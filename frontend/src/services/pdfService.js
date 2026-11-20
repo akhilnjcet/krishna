@@ -579,52 +579,102 @@ export const generateInvoicePDF = async (invoice) => {
     const isTax = invoice?.showTax !== false && invoice?.data?.showTax !== false;
     const headerHeight = addHeader(doc, isTax ? 'Tax Invoice' : 'Invoice');
 
-    const startY = headerHeight + 10;
-    const invNumber = invoice._id ? `INV-${invoice._id.slice(-6).toUpperCase()}` : 'INV-GEN-2026';
+    const startY = headerHeight + 8;
+    const invNumber = invoice.documentNumber || invoice.data?.invoiceNumber || (invoice._id ? `INV-${invoice._id.slice(-6).toUpperCase()}` : 'INV-GEN-2026');
+    const invDateStr = invoice.data?.invoiceDate || (invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : new Date().toLocaleDateString());
 
     doc.setTextColor(...THEME.textDark);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text(`Invoice ID: ${invNumber}`, 15, startY, { charSpace: 0 });
-    doc.text(`Invoice Date: ${new Date(invoice.createdAt || Date.now()).toLocaleDateString()}`, 15, startY + 6, { charSpace: 0 });
+    doc.text(`Invoice Date: ${invDateStr}`, 15, startY + 5, { charSpace: 0 });
 
-    doc.text(`Billed To:`, 130, startY, { charSpace: 0 });
+    if (invoice.data?.dueDate || invoice.dueDate) {
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Due Date: ${invoice.data?.dueDate || invoice.dueDate}`, 15, startY + 10, { charSpace: 0 });
+    }
+
+    const buyerName = invoice.data?.customerName || invoice.customerId?.name || 'Valued Customer';
+    const buyerAddress = invoice.data?.billingAddress || invoice.customerId?.address || '';
+    const buyerPhone = invoice.data?.phone || invoice.customerId?.phone || '';
+    const buyerGstin = invoice.data?.gstin || invoice.customerId?.gstin || '';
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Billed To (Buyer / Recipient):`, 120, startY, { charSpace: 0 });
     doc.setFont('helvetica', 'normal');
-    doc.text(`${invoice.customerId?.name || 'Valued Customer'}`, 130, startY + 6, { charSpace: 0 });
-    doc.text(`Project: ${invoice.projectId?.title || 'General Structural Work'}`, 130, startY + 11, { charSpace: 0 });
+    doc.text(buyerName.toUpperCase(), 120, startY + 5, { charSpace: 0 });
+    let buyerOffset = 10;
+    if (buyerAddress) {
+        doc.text(buyerAddress.substring(0, 42), 120, startY + buyerOffset, { charSpace: 0 });
+        buyerOffset += 5;
+    }
+    if (buyerPhone) {
+        doc.text(`Ph: ${buyerPhone}`, 120, startY + buyerOffset, { charSpace: 0 });
+        buyerOffset += 5;
+    }
+    if (buyerGstin) {
+        doc.text(`GSTIN: ${buyerGstin}`, 120, startY + buyerOffset, { charSpace: 0 });
+    }
 
-    const amountVal = parseFloat(invoice.amount || 0);
+    const rawItems = (invoice.data?.items && Array.isArray(invoice.data.items) && invoice.data.items.length > 0)
+        ? invoice.data.items
+        : (Array.isArray(invoice.items) && invoice.items.length > 0)
+            ? invoice.items
+            : null;
 
-    autoTable(doc, {
-        startY: startY + 18,
-        margin: { left: 15, right: 15, bottom: 20 },
-        head: [['#', 'Description of Product / Service', 'Project ID', 'Status', 'Total (INR)']],
-        body: [
+    let tableHead = [['#', 'Description of Goods / Services', 'Qty', 'Unit Price', 'Total (INR)']];
+    let tableBody = [];
+
+    if (rawItems && rawItems.length > 0) {
+        tableBody = rawItems.map((item, idx) => {
+            const desc = item.name || item.description || 'Engineering Fabrication / Materials';
+            const qtyStr = item.quantity ? `${item.quantity} ${item.unit || 'Kg'}` : '—';
+            const rateStr = item.unitPrice || item.rate ? formatCurrencyINR(item.unitPrice || item.rate) : '—';
+            const totalVal = item.total || (Number(item.quantity || 1) * Number(item.unitPrice || item.rate || 0));
+            return [
+                String(idx + 1).padStart(2, '0'),
+                desc,
+                qtyStr,
+                rateStr,
+                formatCurrencyINR(totalVal)
+            ];
+        });
+    } else {
+        const amountVal = parseFloat(invoice.amount || invoice.totalAmount || 0);
+        tableBody = [
             [
-                '1',
-                invoice.projectId?.description?.substring(0, 70) || 'Heavy Industrial Fabrication & Services',
-                invoice.projectId?._id?.slice(-8).toUpperCase() || 'N/A',
-                (invoice.paymentStatus || 'unpaid').toUpperCase(),
+                '01',
+                invoice.projectId?.description?.substring(0, 70) || 'Heavy Industrial Fabrication & Engineering Services',
+                '1 Job',
+                formatCurrencyINR(amountVal),
                 formatCurrencyINR(amountVal)
             ]
-        ],
+        ];
+    }
+
+    autoTable(doc, {
+        startY: startY + 22,
+        margin: { left: 15, right: 15, bottom: 20 },
+        head: tableHead,
+        body: tableBody,
         theme: 'grid',
         showHead: 'everyPage',
         headStyles: { fillColor: THEME.accent, textColor: 255, fontStyle: 'bold', fontSize: 9 },
-        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+        styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 4.5, overflow: 'linebreak' },
         columnStyles: {
             0: { halign: 'center', width: 12 },
             1: { halign: 'left' },
-            2: { halign: 'center' },
-            3: { halign: 'center' },
-            4: { halign: 'right' }
+            2: { halign: 'center', width: 28 },
+            3: { halign: 'right', width: 32 },
+            4: { halign: 'right', width: 36 }
         }
     });
 
-    const finalY = doc.lastAutoTable.finalY + 12;
-    fitTextIntoBox(doc, 'Total Amount Payable:', amountVal, 110, finalY, 85, 20);
+    const finalY = doc.lastAutoTable.finalY + 8;
+    const finalAmount = parseFloat(invoice.data?.grandTotal || invoice.totalAmount || invoice.amount || 0);
+    fitTextIntoBox(doc, 'Total Amount Payable:', finalAmount, 110, finalY, 85, 18);
 
-    addSignatureAndSeal(doc, finalY + 25);
+    addSignatureAndSeal(doc, finalY + 22);
     addFooter(doc);
 
     const historyMetadata = {
@@ -632,8 +682,8 @@ export const generateInvoicePDF = async (invoice) => {
         documentNumber: invNumber,
         customerId: invoice.customerId?._id || invoice.customerId || null,
         projectId: invoice.projectId?._id || invoice.projectId || null,
-        totalAmount: invoice.amount || 0,
-        status: invoice.paymentStatus || 'unpaid',
+        totalAmount: finalAmount,
+        status: invoice.paymentStatus || invoice.status || 'unpaid',
         data: invoice
     };
     savePDF(doc, `Invoice_${invNumber}.pdf`, historyMetadata);
