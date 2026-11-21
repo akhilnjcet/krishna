@@ -1551,17 +1551,65 @@ exports.getEmergencyAlerts = async (req, res) => {
     }
 };
 
+const SystemSetting = require('../models/SystemSetting');
+
+const DEFAULT_EMERGENCY_CONTACTS = [
+    { role: 'Fleet Manager', name: 'Fleet Operations Desk', phone: '+91 98450 12345', available: '24/7 Toll Free' },
+    { role: 'Transport Manager', name: 'Central Logistics Control', phone: '+91 98450 67890', available: '24/7 Emergency' },
+    { role: 'Assigned Staff', name: 'Krishna Workshop HQ', phone: '+91 80 2345 6789', available: 'Business Hours' },
+    { role: 'Highway Police / Medical SOS', name: 'National Emergency Helpline', phone: '112', available: 'Instant Emergency' }
+];
+
 exports.getEmergencyContacts = async (req, res) => {
     try {
-        const contacts = [
-            { role: 'Fleet Manager', name: 'Fleet Operations Desk', phone: '+91 98450 12345', available: '24/7 Toll Free' },
-            { role: 'Transport Manager', name: 'Central Logistics Control', phone: '+91 98450 67890', available: '24/7 Emergency' },
-            { role: 'Assigned Staff', name: 'Krishna Workshop HQ', phone: '+91 80 2345 6789', available: 'Business Hours' },
-            { role: 'Highway Police / Medical SOS', name: 'National Emergency Helpline', phone: '112', available: 'Instant Emergency' }
-        ];
+        const setting = await SystemSetting.findOne({ key: 'driver_emergency_contacts' });
+        if (setting && Array.isArray(setting.value) && setting.value.length > 0) {
+            return res.json({ success: true, contacts: setting.value });
+        }
 
-        res.json({ success: true, contacts });
+        res.json({ success: true, contacts: DEFAULT_EMERGENCY_CONTACTS });
     } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.updateEmergencyContacts = async (req, res) => {
+    try {
+        const { contacts } = req.body;
+        if (!Array.isArray(contacts) || contacts.length === 0) {
+            return res.status(400).json({ success: false, message: 'Contacts must be a non-empty array' });
+        }
+
+        const cleanedContacts = contacts.map(c => ({
+            role: (c.role || 'Emergency Contact').trim(),
+            name: (c.name || 'Hotline Desk').trim(),
+            phone: (c.phone || '').trim(),
+            available: (c.available || '24/7 Hotline').trim()
+        })).filter(c => c.name && c.phone);
+
+        if (cleanedContacts.length === 0) {
+            return res.status(400).json({ success: false, message: 'At least one contact with a valid name and phone number is required' });
+        }
+
+        await SystemSetting.findOneAndUpdate(
+            { key: 'driver_emergency_contacts' },
+            {
+                key: 'driver_emergency_contacts',
+                value: cleanedContacts,
+                category: 'fleet',
+                description: 'Driver SOS & Factory Emergency Hotline Contact Numbers',
+                updatedAt: new Date()
+            },
+            { upsert: true, new: true }
+        );
+
+        res.json({
+            success: true,
+            message: 'Emergency SOS hotlines updated successfully',
+            contacts: cleanedContacts
+        });
+    } catch (err) {
+        console.error('updateEmergencyContacts error:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 };

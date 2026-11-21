@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { 
-    getApplications, 
+const {
+    getApplications,
     getApplicationById,
     getApplicationComparison,
     reviewApplication,
-    updateApplicationStatus, 
+    updateApplicationStatus,
     deleteApplication,
     createApplication
 } = require('../controllers/applicationController');

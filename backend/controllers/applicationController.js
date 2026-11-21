@@ -29,7 +29,7 @@ exports.getApplications = async (req, res) => {
         let query = {};
         if (status) query.status = status;
         if (type) query.type = type;
-        
+
         // If staff or driver, only show their own applications
         if (req.user.role === 'staff' || req.user.role === 'driver') {
             query.staffId = req.user.id;
@@ -138,7 +138,7 @@ exports.getApplicationComparison = async (req, res) => {
     try {
         const application = await Application.findById(req.params.id)
             .populate('staffId', 'name email role phone profilePhoto department designation base_salary workingDaysPerMonth standardWorkingHoursPerDay');
-        
+
         if (!application) {
             return res.status(404).json({ message: 'Application not found' });
         }
@@ -288,7 +288,7 @@ exports.reviewApplication = async (req, res) => {
             for (let i = 0; i < application.entries.length; i++) {
                 const entry = application.entries[i];
                 const decision = entryDecisionMap.get(entry._id.toString());
-                
+
                 if (decision) {
                     entry.status = decision.status || entry.status;
                     entry.adminRemark = decision.adminRemark !== undefined ? decision.adminRemark : entry.adminRemark;
@@ -301,8 +301,8 @@ exports.reviewApplication = async (req, res) => {
                         const inTime = entry.approvedCheckIn || entry.requestedIn || '09:00';
                         const outTime = entry.approvedCheckOut || entry.requestedOut || '18:00';
                         const workedHours = calculateHoursBetween(inTime, outTime);
-                        const otHours = entry.approvedOvertimeHours !== undefined 
-                            ? Number(entry.approvedOvertimeHours) 
+                        const otHours = entry.approvedOvertimeHours !== undefined
+                            ? Number(entry.approvedOvertimeHours)
                             : (entry.overtimeHours || 0);
 
                         // 1. Upsert DailyAttendance
@@ -557,7 +557,7 @@ exports.updateApplicationStatus = async (req, res) => {
                 senderUser: req.user.id,
                 link: '/staff/applications'
             });
-        } catch (e) {}
+        } catch (e) { }
 
         res.json({ message: 'Application status updated successfully', application });
     } catch (err) {

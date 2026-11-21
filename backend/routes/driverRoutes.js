@@ -13,6 +13,7 @@ router.post('/issues/report', requireDriverPermission('driver.report_issue'), dr
 router.get('/issues', driverController.getDriverIssues);
 router.post('/emergency/alert', requireDriverPermission('driver.emergency'), driverController.sendEmergencyAlert);
 router.get('/emergency/contacts', driverController.getEmergencyContacts);
+router.put('/emergency/contacts', authorize('admin'), driverController.updateEmergencyContacts);
 
 // ─── DRIVER PERMISSIONS MANAGEMENT (ADMIN ONLY) ───────────────────────
 router.get('/permissions/matrix', authorize('admin'), driverController.getDriverPermissionMatrix);

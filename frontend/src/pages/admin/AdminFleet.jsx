@@ -7,7 +7,7 @@ import {
     Truck, Plus, Search, Filter, Calendar, AlertTriangle, ShieldCheck, 
     Clock, DollarSign, Fuel, Wrench, FileText, CheckCircle2, ChevronRight, 
     X, RefreshCw, Navigation, User, MapPin, Gauge, UserCheck, UserX, 
-    Phone, Edit, Trash2, ArrowRight, Eye, ShieldAlert, Users, Award,
+    Phone, PhoneCall, Edit, Trash2, ArrowRight, Eye, ShieldAlert, Users, Award,
     KeyRound, Lock, Shield, Check, Info, CreditCard
 } from 'lucide-react';
 
@@ -106,6 +106,12 @@ const AdminFleet = () => {
     const [prohibitedList, setProhibitedList] = useState([]);
     const [permissionsLoading, setPermissionsLoading] = useState(false);
     const [updatingPermUserId, setUpdatingPermUserId] = useState(null);
+
+    // Modals - Driver Emergency SOS Hotlines (Editable by Admin)
+    const [showHotlinesModal, setShowHotlinesModal] = useState(false);
+    const [emergencyHotlines, setEmergencyHotlines] = useState([]);
+    const [loadingHotlines, setLoadingHotlines] = useState(false);
+    const [savingHotlines, setSavingHotlines] = useState(false);
 
     // Notification banner
     const [toastMessage, setToastMessage] = useState(null);
@@ -481,6 +487,56 @@ const AdminFleet = () => {
         }
     };
 
+    // ─── DRIVER EMERGENCY SOS HOTLINES HANDLERS ───────────────────────
+    const fetchEmergencyHotlines = async () => {
+        setLoadingHotlines(true);
+        try {
+            const res = await api.get('/drivers/emergency/contacts');
+            if (res.data?.success && Array.isArray(res.data.contacts)) {
+                setEmergencyHotlines(res.data.contacts);
+            }
+        } catch (err) {
+            showToast('Failed to load emergency hotlines: ' + (err.response?.data?.message || err.message), true);
+        } finally {
+            setLoadingHotlines(false);
+        }
+    };
+
+    const handleSaveEmergencyHotlines = async (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        setSavingHotlines(true);
+        try {
+            const res = await api.put('/drivers/emergency/contacts', { contacts: emergencyHotlines });
+            if (res.data?.success) {
+                showToast('Driver Emergency SOS Hotlines updated successfully!');
+                setShowHotlinesModal(false);
+            }
+        } catch (err) {
+            showToast('Failed to save hotlines: ' + (err.response?.data?.message || err.message), true);
+        } finally {
+            setSavingHotlines(false);
+        }
+    };
+
+    const handleAddHotlineRow = () => {
+        setEmergencyHotlines(prev => [
+            ...prev,
+            { role: 'Emergency Helpline', name: 'New Hotline Desk', phone: '+91 ', available: '24/7 Emergency' }
+        ]);
+    };
+
+    const handleRemoveHotlineRow = (index) => {
+        setEmergencyHotlines(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleUpdateHotlineField = (index, field, value) => {
+        setEmergencyHotlines(prev => {
+            const copy = [...prev];
+            copy[index] = { ...copy[index], [field]: value };
+            return copy;
+        });
+    };
+
     // ─── DRIVER PERMISSIONS MATRIX HANDLERS ─────────────────────────
     const handleOpenPermissionsModal = async () => {
         try {
@@ -676,6 +732,18 @@ const AdminFleet = () => {
                     >
                         <Plus className="w-4 h-4" />
                         Register Vehicle
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            fetchEmergencyHotlines();
+                            setShowHotlinesModal(true);
+                        }}
+                        className="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-lg shadow-rose-600/30 transition-all"
+                        title="Edit Driver 24/7 Emergency SOS Hotlines & Phone Numbers"
+                    >
+                        <PhoneCall className="w-4 h-4" />
+                        <span>Emergency Hotlines</span>
                     </button>
                     <button
                         type="button"
@@ -1121,6 +1189,19 @@ const AdminFleet = () => {
                             >
                                 <Shield className="w-3.5 h-3.5 text-amber-400" />
                                 Role Permissions
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    fetchEmergencyHotlines();
+                                    setShowHotlinesModal(true);
+                                }}
+                                className="px-3 py-2 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-rose-200 dark:border-rose-900/50 shadow-xs"
+                                title="Edit Driver 24/7 Emergency SOS Hotlines & Phone Numbers"
+                            >
+                                <PhoneCall className="w-3.5 h-3.5" />
+                                SOS Hotlines
                             </button>
 
                             <button
@@ -2406,6 +2487,165 @@ const AdminFleet = () => {
                             >
                                 Done
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ════════════════════════════════════════════════════════════════
+                MODAL: EMERGENCY SOS HOTLINES & FACTORY CONTACTS (ADMIN EDITABLE)
+            ════════════════════════════════════════════════════════════════ */}
+            {showHotlinesModal && (
+                <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5 my-8 max-h-[92vh] flex flex-col font-sans">
+                        {/* Modal Header */}
+                        <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-4 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-2xl">
+                                    <ShieldAlert className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                                        Driver Emergency SOS Hotlines
+                                    </h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        These 24/7 contact numbers are displayed to drivers on the mobile portal Emergency SOS screen.
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowHotlinesModal(false)}
+                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-xl transition"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body: Editable Contact Rows */}
+                        <div className="flex-1 overflow-y-auto space-y-3.5 pr-1">
+                            {loadingHotlines ? (
+                                <div className="p-10 text-center text-slate-400">
+                                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-rose-600" />
+                                    Loading active emergency hotlines...
+                                </div>
+                            ) : emergencyHotlines.length === 0 ? (
+                                <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-xs text-slate-400 font-bold">
+                                    No emergency hotlines configured. Click below to add one.
+                                </div>
+                            ) : (
+                                emergencyHotlines.map((contact, idx) => (
+                                    <div 
+                                        key={idx} 
+                                        className="bg-slate-50/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-3 relative group"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                                                <PhoneCall className="w-3.5 h-3.5" /> Hotline #{idx + 1}
+                                            </span>
+                                            {emergencyHotlines.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveHotlineRow(idx)}
+                                                    className="text-slate-400 hover:text-rose-600 p-1 rounded-lg transition"
+                                                    title="Remove this contact"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                                    Desk / Contact Name *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={contact.name}
+                                                    onChange={(e) => handleUpdateHotlineField(idx, 'name', e.target.value)}
+                                                    placeholder="e.g. Fleet Operations Desk"
+                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                                    Role / Department
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={contact.role}
+                                                    onChange={(e) => handleUpdateHotlineField(idx, 'role', e.target.value)}
+                                                    placeholder="e.g. Fleet Manager / HQ"
+                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                                    Phone Number (Calling / SOS) *
+                                                </label>
+                                                <input
+                                                    type="tel"
+                                                    value={contact.phone}
+                                                    onChange={(e) => handleUpdateHotlineField(idx, 'phone', e.target.value)}
+                                                    placeholder="e.g. +91 98450 12345 or 112"
+                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                                                    Availability Status
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={contact.available}
+                                                    onChange={(e) => handleUpdateHotlineField(idx, 'available', e.target.value)}
+                                                    placeholder="e.g. 24/7 Emergency or Business Hours"
+                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={handleAddHotlineRow}
+                                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition border border-dashed border-slate-300 dark:border-slate-700"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span>Add Another Emergency Hotline</span>
+                            </button>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-4 shrink-0">
+                            <span className="text-[11px] text-slate-400 font-medium text-center sm:text-left">
+                                Changes take effect immediately across all driver mobile portals.
+                            </span>
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowHotlinesModal(false)}
+                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={savingHotlines}
+                                    onClick={handleSaveEmergencyHotlines}
+                                    className="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/30 flex items-center gap-2 disabled:opacity-50 transition active:scale-95"
+                                >
+                                    <Check className="w-4 h-4" />
+                                    <span>{savingHotlines ? 'Saving...' : 'Save Hotlines'}</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
