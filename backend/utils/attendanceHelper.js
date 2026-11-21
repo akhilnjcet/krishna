@@ -90,8 +90,13 @@ const recalculateHistoricalAttendance = async () => {
     try {
         const todayStr = getISTDate(new Date());
 
-        // 1. Process all DailyAttendance records
-        const allDaily = await DailyAttendance.find({}).populate('staffId');
+        // 1. Process only active or incomplete DailyAttendance records to prevent startup lag
+        const allDaily = await DailyAttendance.find({
+            $or: [
+                { status: { $in: ['In Progress', 'Missing Out'] } },
+                { workedHours: { $in: [0, null] }, checkIn: { $ne: '', $ne: '--' } }
+            ]
+        }).limit(150).populate('staffId');
         let fixedDailyCount = 0;
 
         for (const record of allDaily) {
@@ -217,9 +222,19 @@ const recalculateHistoricalAttendance = async () => {
     }
 };
 
+const lastAbsentRunMap = new Map();
+
 const autoGenerateAbsentLogs = async (monthStr) => {
     try {
         if (!monthStr || !/^\d{4}-\d{2}$/.test(monthStr)) return;
+
+        // In-memory throttle: run at most once every 5 minutes per month to guarantee zero-lag response
+        const now = Date.now();
+        const lastRun = lastAbsentRunMap.get(monthStr) || 0;
+        if (now - lastRun < 5 * 60 * 1000) {
+            return;
+        }
+        lastAbsentRunMap.set(monthStr, now);
 
         // Fetch active staff users
         const staffUsers = await User.find({ role: 'staff', status: 'active' });
@@ -243,7 +258,28 @@ const autoGenerateAbsentLogs = async (monthStr) => {
 
         if (endDay <= 0) return;
 
-        const pOperations = [];
+        // Performance Optimization: Batch fetch existing records in ONE query
+        const [existingDailyRecords, existingBiometrics] = await Promise.all([
+            DailyAttendance.find({ date: { $regex: `^${monthStr}` } }).select('staffId date').lean(),
+            Attendance.find({ date: { $regex: `^${monthStr}` }, status: 'success' }).sort({ login_time: 1 }).lean()
+        ]);
+
+        const existingDailySet = new Set(existingDailyRecords.map(r => `${r.staffId}_${r.date}`));
+        
+        const bioMap = new Map();
+        existingBiometrics.forEach(b => {
+            const key = `${b.staff_id}_${b.date}`;
+            if (!bioMap.has(key)) bioMap.set(key, b);
+        });
+
+        // Pre-resolve shifts in parallel for all staff
+        const staffShiftMap = new Map();
+        await Promise.all(staffUsers.map(async (staff) => {
+            const shift = await resolveEmployeeShift(staff);
+            staffShiftMap.set(staff._id.toString(), shift);
+        }));
+
+        const toInsert = [];
 
         for (let d = 1; d <= endDay; d++) {
             const dateStr = `${monthStr}-${String(d).padStart(2, '0')}`;
@@ -251,81 +287,72 @@ const autoGenerateAbsentLogs = async (monthStr) => {
             const dayName = new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: 'Asia/Kolkata' }).format(dateObj);
 
             for (const staff of staffUsers) {
-                const shift = await resolveEmployeeShift(staff);
+                const key = `${staff._id}_${dateStr}`;
+                if (existingDailySet.has(key)) continue;
+
+                const shift = staffShiftMap.get(staff._id.toString());
                 const isWeeklyOff = Array.isArray(shift.weeklyOffDays) && shift.weeklyOffDays.includes(dayName);
+                const existingBiometric = bioMap.get(key);
 
-                // Check if a record already exists in DailyAttendance
-                const existingDaily = await DailyAttendance.findOne({ staffId: staff._id, date: dateStr });
-                if (!existingDaily) {
-                    // Check if biometric record exists in Attendance
-                    const existingBiometric = await Attendance.findOne({
-                        staff_id: staff._id,
+                if (existingBiometric) {
+                    const inStr = getISTTimeString(existingBiometric.login_time);
+                    const outStr = existingBiometric.check_out ? getISTTimeString(existingBiometric.check_out) : '';
+                    const calc = calculateShiftAttendance({
+                        inTime: existingBiometric.login_time,
+                        outTime: existingBiometric.check_out,
+                        recordDate: dateStr,
+                        shift
+                    });
+
+                    toInsert.push({
+                        staffId: staff._id,
                         date: dateStr,
-                        status: 'success'
-                    }).sort({ login_time: 1 });
-
-                    if (existingBiometric) {
-                        const inStr = getISTTimeString(existingBiometric.login_time);
-                        const outStr = existingBiometric.check_out ? getISTTimeString(existingBiometric.check_out) : '';
-                        const calc = calculateShiftAttendance({
-                            inTime: existingBiometric.login_time,
-                            outTime: existingBiometric.check_out,
-                            recordDate: dateStr,
-                            shift
-                        });
-
-                        pOperations.push(
-                            DailyAttendance.create({
-                                staffId: staff._id,
-                                date: dateStr,
-                                status: calc.status === 'COMPLETED' ? 'Completed' : (outStr ? 'Present' : 'Missing Out'),
-                                checkIn: inStr,
-                                checkOut: outStr,
-                                workedHours: calc.workedHours,
-                                shiftId: shift._id,
-                                shiftName: shift.name,
-                                shiftCode: shift.code,
-                                overtimeHours: calc.overtimeHours,
-                                isApproved: true
-                            })
-                        );
-                    } else if (isWeeklyOff) {
-                        pOperations.push(
-                            DailyAttendance.create({
-                                staffId: staff._id,
-                                date: dateStr,
-                                status: 'Weekly Off',
-                                checkIn: '',
-                                checkOut: '',
-                                workedHours: 0,
-                                shiftId: shift._id,
-                                shiftName: shift.name,
-                                shiftCode: shift.code
-                            })
-                        );
-                    } else {
-                        // Mark Absent
-                        pOperations.push(
-                            DailyAttendance.create({
-                                staffId: staff._id,
-                                date: dateStr,
-                                status: 'Absent',
-                                checkIn: '',
-                                checkOut: '',
-                                workedHours: 0,
-                                shiftId: shift._id,
-                                shiftName: shift.name,
-                                shiftCode: shift.code
-                            })
-                        );
-                    }
+                        status: calc.status === 'COMPLETED' ? 'Completed' : (outStr ? 'Present' : 'Missing Out'),
+                        checkIn: inStr,
+                        checkOut: outStr,
+                        workedHours: calc.workedHours,
+                        shiftId: shift._id,
+                        shiftName: shift.name,
+                        shiftCode: shift.code,
+                        overtimeHours: calc.overtimeHours,
+                        isApproved: true
+                    });
+                } else if (isWeeklyOff) {
+                    toInsert.push({
+                        staffId: staff._id,
+                        date: dateStr,
+                        status: 'Weekly Off',
+                        checkIn: '',
+                        checkOut: '',
+                        workedHours: 0,
+                        shiftId: shift._id,
+                        shiftName: shift.name,
+                        shiftCode: shift.code
+                    });
+                } else {
+                    toInsert.push({
+                        staffId: staff._id,
+                        date: dateStr,
+                        status: 'Absent',
+                        checkIn: '',
+                        checkOut: '',
+                        workedHours: 0,
+                        shiftId: shift._id,
+                        shiftName: shift.name,
+                        shiftCode: shift.code
+                    });
                 }
+                existingDailySet.add(key);
             }
         }
 
-        if (pOperations.length > 0) {
-            await Promise.all(pOperations);
-            console.log(`[system] Synchronized / generated ${pOperations.length} logs for cycle ${monthStr}`);
+        if (toInsert.length > 0) {
+            try {
+                await DailyAttendance.insertMany(toInsert, { ordered: false });
+                console.log(`[system] Fast synchronized ${toInsert.length} attendance logs for ${monthStr}`);
+            } catch (insertErr) {
+                // Ignore duplicate key collision errors
+            }
         }
     } catch (err) {
         console.error("Error in autoGenerateAbsentLogs helper:", err);

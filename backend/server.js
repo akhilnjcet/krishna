@@ -270,14 +270,10 @@ app.get('/api/ping', (req, res) => res.json({ pong: true, timestamp: Date.now() 
 // Connect to Database
 const connectDB = require('./config/database');
 const { seedDefaultShifts, recalculateHistoricalAttendance } = require('./utils/attendanceHelper');
-connectDB().then(async () => {
+connectDB().then(() => {
     console.log('Database synchronization established.');
-    try {
-        await seedDefaultShifts();
-        await recalculateHistoricalAttendance();
-    } catch (shiftInitErr) {
-        console.error('Shift & historical attendance initialization error:', shiftInitErr.message);
-    }
+    seedDefaultShifts().catch(e => console.warn('Shift init error:', e.message));
+    recalculateHistoricalAttendance().catch(e => console.warn('Attendance sync error:', e.message));
 }).catch(err => {
     console.error('Critical Database Failure:', err.message);
 });
