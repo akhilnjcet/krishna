@@ -21,13 +21,14 @@ exports.getBlogById = async (req, res) => {
 
 exports.createBlog = async (req, res) => {
     try {
-        const { title, content, image, category, authorName } = req.body;
+        const { title, content, excerpt, image, category, authorName } = req.body;
         const blog = new BlogPost({
             title,
             content,
+            excerpt: excerpt || (content ? content.slice(0, 160) + '...' : ''),
             image,
-            category: category || 'General',
-            authorName: authorName || 'Staff',
+            category: category || 'Structural',
+            authorName: authorName || 'Chief Engineer',
             author: req.user?._id
         });
         await blog.save();
