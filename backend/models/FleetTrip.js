@@ -134,7 +134,10 @@ const fleetTripSchema = new mongoose.Schema({
 
     deliveryOutcome: {
         type: String,
-        enum: ['Pending', 'Fully Delivered', 'Partially Delivered', 'Returned to Source', 'Delivery Failed', 'Cancelled'],
+        enum: [
+            'Pending', 'Fully Delivered', 'Partially Delivered', 'Returned to Source', 'Delivery Failed', 'Cancelled',
+            'PENDING', 'FULLY DELIVERED', 'PARTIALLY DELIVERED', 'RETURNED TO SOURCE', 'DELIVERY FAILED', 'CANCELLED'
+        ],
         default: 'Pending',
         index: true
     },
@@ -213,7 +216,20 @@ const fleetTripSchema = new mongoose.Schema({
     endReport: {
         odometer: { type: Number, default: 0 },
         distanceKm: { type: Number, default: 0 },
-        fuelConsumption: { type: Number, default: 0 }, // Liters or approximate
+        // Fuel Refill Inputs (replaced direct fuel consumption)
+        fuelRefillAmount: { type: Number, default: 0 }, // Refill cost in ₹
+        fuelRatePerLiter: { type: Number, default: 0 }, // Fuel rate in ₹/L
+        fuelRefillLiters: { type: Number, default: 0 }, // Refill in Liters (Amount / Rate)
+
+        // Estimated Metrics (calculated using previous trip odometer and refill data)
+        previousTripOdometer: { type: Number, default: 0 },
+        kmSincePreviousTrip: { type: Number, default: 0 },
+        estimatedMileageKmPerLiter: { type: Number, default: 0 }, // Estimated km/L
+        estimatedFuelConsumedLiters: { type: Number, default: 0 }, // Estimated fuel used on trip
+        estimatedRemainingFuelLiters: { type: Number, default: 0 }, // Estimated remaining fuel in tank
+        fuelEstimationMethod: { type: String, default: '' },
+
+        fuelConsumption: { type: Number, default: 0 }, // Deprecated legacy field, retained for backward compat
         deliveryTime: { type: Date },
         deliveryConfirmation: { type: String, default: '' },
         deliveryPhotos: [{ type: String }],
@@ -255,6 +271,27 @@ const fleetTripSchema = new mongoose.Schema({
     }]
 }, {
     timestamps: true
+});
+
+fleetTripSchema.pre('validate', function() {
+    if (this.deliveryOutcome) {
+        const s = String(this.deliveryOutcome).trim().toUpperCase();
+        if (s.includes('PARTIAL')) this.deliveryOutcome = 'Partially Delivered';
+        else if (s.includes('RETURN')) this.deliveryOutcome = 'Returned to Source';
+        else if (s.includes('FAIL')) this.deliveryOutcome = 'Delivery Failed';
+        else if (s.includes('CANCEL')) this.deliveryOutcome = 'Cancelled';
+        else if (s.includes('PENDING')) this.deliveryOutcome = 'Pending';
+        else this.deliveryOutcome = 'Fully Delivered';
+    }
+    if (this.endReport && this.endReport.deliveryConfirmation) {
+        const s = String(this.endReport.deliveryConfirmation).trim().toUpperCase();
+        if (s.includes('PARTIAL')) this.endReport.deliveryConfirmation = 'Partially Delivered';
+        else if (s.includes('RETURN')) this.endReport.deliveryConfirmation = 'Returned to Source';
+        else if (s.includes('FAIL')) this.endReport.deliveryConfirmation = 'Delivery Failed';
+        else if (s.includes('CANCEL')) this.endReport.deliveryConfirmation = 'Cancelled';
+        else if (s.includes('PENDING')) this.endReport.deliveryConfirmation = 'Pending';
+        else this.endReport.deliveryConfirmation = 'Fully Delivered';
+    }
 });
 
 fleetTripSchema.index({ createdAt: -1 });

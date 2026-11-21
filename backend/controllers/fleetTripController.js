@@ -680,7 +680,10 @@ exports.completeTrip = async (req, res) => {
         const {
             odometer,
             fuelConsumption = 0,
-            deliveryConfirmation = 'Signed Challan Received',
+            fuelRefillAmount = 0,
+            fuelRatePerLiter = 0,
+            deliveryOutcome = 'Fully Delivered',
+            deliveryConfirmation = 'Fully Delivered',
             deliveryPhotos = [],
             remarks = '',
             location = { lat: null, lng: null, address: '' }
@@ -699,16 +702,78 @@ exports.completeTrip = async (req, res) => {
         const distanceKm = endOdo - startOdo;
         const now = new Date();
 
+        // Normalize delivery outcome
+        const OUTCOME_MAP = {
+            'FULLY DELIVERED': 'Fully Delivered',
+            'PARTIALLY DELIVERED': 'Partially Delivered',
+            'RETURNED TO SOURCE': 'Returned to Source',
+            'DELIVERY FAILED': 'Delivery Failed',
+            'CANCELLED': 'Cancelled',
+            'PENDING': 'Pending'
+        };
+        const normalizedOutcome = OUTCOME_MAP[String(deliveryOutcome || deliveryConfirmation).trim().toUpperCase()] || deliveryOutcome || 'Fully Delivered';
+
+        // Fuel Refill & Estimation Calculations
+        const refillAmount = Math.max(0, parseFloat(fuelRefillAmount) || 0);
+        const fuelRate = Math.max(0, parseFloat(fuelRatePerLiter) || 0);
+        const refillLiters = (refillAmount > 0 && fuelRate > 0) ? parseFloat((refillAmount / fuelRate).toFixed(2)) : 0;
+
+        // Fetch previous completed trip for this vehicle
+        const previousTrip = await FleetTrip.findOne({
+            vehicleId: trip.vehicleId,
+            _id: { $ne: trip._id },
+            status: 'Completed',
+            'endReport.odometer': { $gt: 0 }
+        }).sort({ actualDeliveryDateTime: -1, createdAt: -1 });
+
+        const prevTripOdo = previousTrip ? (previousTrip.endReport?.odometer || startOdo) : startOdo;
+        const kmSincePrevTrip = Math.max(0, endOdo - prevTripOdo);
+
+        const vehicle = await Vehicle.findById(trip.vehicleId);
+        const tankCapacity = vehicle?.tankCapacityLiters || 60;
+        const defaultBenchmarkMileage = vehicle?.vehicleType === 'Pickup' ? 14 : 10;
+
+        let estimatedMileage = defaultBenchmarkMileage;
+        let estimationMethod = 'Fleet Benchmark Standard';
+
+        if (refillLiters > 0 && kmSincePrevTrip > 0) {
+            estimatedMileage = parseFloat((kmSincePrevTrip / refillLiters).toFixed(2));
+            estimationMethod = 'Calculated from Previous Trip Odometer & Refill';
+        } else if (previousTrip?.endReport?.estimatedMileageKmPerLiter > 0) {
+            estimatedMileage = previousTrip.endReport.estimatedMileageKmPerLiter;
+            estimationMethod = 'Carried from Previous Verified Trip';
+        }
+
+        const estimatedConsumed = (distanceKm > 0 && estimatedMileage > 0)
+            ? parseFloat((distanceKm / estimatedMileage).toFixed(2))
+            : 0;
+
+        const prevRemaining = previousTrip?.endReport?.estimatedRemainingFuelLiters != null
+            ? previousTrip.endReport.estimatedRemainingFuelLiters
+            : (tankCapacity * 0.5);
+
+        const estimatedRemaining = parseFloat(Math.min(tankCapacity, Math.max(0, prevRemaining + refillLiters - estimatedConsumed)).toFixed(2));
+
         trip.status = 'Completed';
+        trip.deliveryOutcome = normalizedOutcome;
         trip.actualDeliveryDateTime = now;
         trip.endReport = {
             odometer: endOdo,
             distanceKm,
-            fuelConsumption: parseFloat(fuelConsumption) || 0,
+            fuelRefillAmount: refillAmount,
+            fuelRatePerLiter: fuelRate,
+            fuelRefillLiters: refillLiters,
+            previousTripOdometer: prevTripOdo,
+            kmSincePreviousTrip,
+            estimatedMileageKmPerLiter: estimatedMileage,
+            estimatedFuelConsumedLiters: estimatedConsumed,
+            estimatedRemainingFuelLiters: estimatedRemaining,
+            fuelEstimationMethod: estimationMethod,
+            fuelConsumption: estimatedConsumed, // Backward compat
             deliveryTime: now,
-            deliveryConfirmation,
-            deliveryPhotos: Array.isArray(deliveryPhotos) ? deliveryPhotos : [],
-            remarks,
+            deliveryConfirmation: normalizedOutcome,
+            deliveryPhotos: Array.isArray(deliveryPhotos) && deliveryPhotos.length > 0 ? deliveryPhotos : (trip.proofOfDelivery?.photos || []),
+            remarks: remarks || trip.proofOfDelivery?.remarks || '',
             location: {
                 lat: location?.lat || null,
                 lng: location?.lng || null,
@@ -1021,7 +1086,8 @@ exports.finishTrip = async (req, res) => {
         const {
             deliveryOutcome = 'Fully Delivered',
             odometer,
-            fuelConsumption = 0,
+            fuelRefillAmount = 0,
+            fuelRatePerLiter = 0,
             remarks = '',
             location = { lat: null, lng: null, address: '' }
         } = req.body;
@@ -1038,16 +1104,80 @@ exports.finishTrip = async (req, res) => {
         const distanceKm = endOdo - startOdo;
         const now = new Date();
 
+        // 1. Normalize delivery outcome to Title Case accepted by backend schema
+        const OUTCOME_MAP = {
+            'FULLY DELIVERED': 'Fully Delivered',
+            'PARTIALLY DELIVERED': 'Partially Delivered',
+            'RETURNED TO SOURCE': 'Returned to Source',
+            'DELIVERY FAILED': 'Delivery Failed',
+            'CANCELLED': 'Cancelled',
+            'PENDING': 'Pending'
+        };
+        const normalizedOutcome = OUTCOME_MAP[String(deliveryOutcome).trim().toUpperCase()] || deliveryOutcome;
+
+        // 2. Fuel Refill & Estimation Calculations (Replacing manual fuel consumption)
+        const refillAmount = Math.max(0, parseFloat(fuelRefillAmount) || 0);
+        const fuelRate = Math.max(0, parseFloat(fuelRatePerLiter) || 0);
+        const refillLiters = (refillAmount > 0 && fuelRate > 0) ? parseFloat((refillAmount / fuelRate).toFixed(2)) : 0;
+
+        // Fetch previous completed trip for this vehicle
+        const previousTrip = await FleetTrip.findOne({
+            vehicleId: trip.vehicleId,
+            _id: { $ne: trip._id },
+            status: 'Completed',
+            'endReport.odometer': { $gt: 0 }
+        }).sort({ actualDeliveryDateTime: -1, createdAt: -1 });
+
+        const prevTripOdo = previousTrip ? (previousTrip.endReport?.odometer || startOdo) : startOdo;
+        const kmSincePrevTrip = Math.max(0, endOdo - prevTripOdo);
+
+        const vehicle = await Vehicle.findById(trip.vehicleId);
+        const tankCapacity = vehicle?.tankCapacityLiters || 60;
+        const defaultBenchmarkMileage = vehicle?.vehicleType === 'Pickup' ? 14 : 10;
+
+        // Calculate Estimated Mileage (km/L)
+        let estimatedMileage = defaultBenchmarkMileage;
+        let estimationMethod = 'Fleet Benchmark Standard';
+
+        if (refillLiters > 0 && kmSincePrevTrip > 0) {
+            estimatedMileage = parseFloat((kmSincePrevTrip / refillLiters).toFixed(2));
+            estimationMethod = 'Calculated from Previous Trip Odometer & Refill';
+        } else if (previousTrip?.endReport?.estimatedMileageKmPerLiter > 0) {
+            estimatedMileage = previousTrip.endReport.estimatedMileageKmPerLiter;
+            estimationMethod = 'Carried from Previous Verified Trip';
+        }
+
+        // Estimated fuel consumed during this trip
+        const estimatedConsumed = (distanceKm > 0 && estimatedMileage > 0)
+            ? parseFloat((distanceKm / estimatedMileage).toFixed(2))
+            : 0;
+
+        // Estimated remaining fuel in tank
+        const prevRemaining = previousTrip?.endReport?.estimatedRemainingFuelLiters != null
+            ? previousTrip.endReport.estimatedRemainingFuelLiters
+            : (tankCapacity * 0.5);
+
+        const estimatedRemaining = parseFloat(Math.min(tankCapacity, Math.max(0, prevRemaining + refillLiters - estimatedConsumed)).toFixed(2));
+
         trip.status = 'Completed';
-        trip.deliveryOutcome = deliveryOutcome;
+        trip.deliveryOutcome = normalizedOutcome;
         trip.actualDeliveryDateTime = now;
 
         trip.endReport = {
             odometer: endOdo,
             distanceKm,
-            fuelConsumption: parseFloat(fuelConsumption) || 0,
+            fuelRefillAmount: refillAmount,
+            fuelRatePerLiter: fuelRate,
+            fuelRefillLiters: refillLiters,
+            previousTripOdometer: prevTripOdo,
+            kmSincePreviousTrip,
+            estimatedMileageKmPerLiter: estimatedMileage,
+            estimatedFuelConsumedLiters: estimatedConsumed,
+            estimatedRemainingFuelLiters: estimatedRemaining,
+            fuelEstimationMethod: estimationMethod,
+            fuelConsumption: estimatedConsumed, // Backward compat
             deliveryTime: now,
-            deliveryConfirmation: deliveryOutcome,
+            deliveryConfirmation: normalizedOutcome,
             deliveryPhotos: trip.proofOfDelivery?.photos || [],
             remarks: remarks || trip.proofOfDelivery?.remarks || '',
             location: {
@@ -1059,25 +1189,42 @@ exports.finishTrip = async (req, res) => {
         };
 
         trip.timeline.push({
-            stage: deliveryOutcome === 'Returned to Source' ? 'Trip Completed / Returned' : 'Trip Completed',
+            stage: normalizedOutcome === 'Returned to Source' ? 'Trip Completed / Returned' : 'Trip Completed',
             timestamp: now,
             performedBy: req.user.name || 'Driver',
-            notes: `Outcome: ${deliveryOutcome}. Travelled distance: ${distanceKm} km. Odo: ${endOdo} km.`
+            notes: `Outcome: ${normalizedOutcome}. Distance: ${distanceKm} km. Est. Mileage: ${estimatedMileage} km/L.`
         });
 
         trip.auditTrail.push({
             action: 'Trip Finished',
             performedBy: req.user.name || 'Driver',
             timestamp: now,
-            details: `Trip finished with outcome ${deliveryOutcome}. End Odo: ${endOdo} km. Distance: ${distanceKm} km.`
+            details: `Trip finished with outcome ${normalizedOutcome}. End Odo: ${endOdo} km. Distance: ${distanceKm} km. Refill: ₹${refillAmount} (${refillLiters}L).`
         });
 
         await trip.save();
 
-        // Release vehicle back to Available
-        const vehicle = await Vehicle.findById(trip.vehicleId);
+        // Release vehicle back to Available and log fuel refuels
         if (vehicle) {
             vehicle.status = 'Available';
+            vehicle.assignedDriverId = null;
+            vehicle.assignedDriverName = '';
+            vehicle.currentOdometer = Math.max(vehicle.currentOdometer || 0, endOdo);
+            if (refillAmount > 0 && refillLiters > 0) {
+                vehicle.fuelLogs.push({
+                    date: now,
+                    liters: refillLiters,
+                    costPerLiter: fuelRate,
+                    totalCost: refillAmount,
+                    odometerReading: endOdo,
+                    kmDrivenSinceLastRefuel: kmSincePrevTrip,
+                    fuelEconomyKmPerLiter: estimatedMileage,
+                    fuelStation: 'Trip Refill',
+                    notes: `Refill logged on trip ${trip.tripNumber}`
+                });
+            }
+            await vehicle.save();
+        }
             vehicle.currentOdometer = endOdo;
             await vehicle.save();
         }
