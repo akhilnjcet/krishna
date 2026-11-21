@@ -4,6 +4,59 @@ const DocumentHistory = require('../models/DocumentHistory');
 const AdminNotification = require('../models/AdminNotification');
 const socketUtil = require('../utils/socket');
 
+// Google Drive URL Parser & Embed Preview Helper
+const parseDriveUrl = (url) => {
+    if (!url || typeof url !== 'string') return { id: null, embedUrl: '', viewUrl: '', isDrive: false };
+    const clean = url.trim();
+    if (!clean) return { id: null, embedUrl: '', viewUrl: '', isDrive: false };
+
+    // 1. Google Drive file pattern: /file/d/{id}
+    const fileMatch = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (fileMatch) {
+        return {
+            id: fileMatch[1],
+            embedUrl: `https://drive.google.com/file/d/${fileMatch[1]}/preview`,
+            viewUrl: `https://drive.google.com/file/d/${fileMatch[1]}/view`,
+            isDrive: true
+        };
+    }
+    // 2. id parameter pattern: ?id={id} or &id={id}
+    const idMatch = clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (idMatch) {
+        return {
+            id: idMatch[1],
+            embedUrl: `https://drive.google.com/file/d/${idMatch[1]}/preview`,
+            viewUrl: `https://drive.google.com/file/d/${idMatch[1]}/view`,
+            isDrive: true
+        };
+    }
+    // 3. Google Docs/Sheets/Slides pattern
+    const docMatch = clean.match(/\/(document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]+)/);
+    if (docMatch) {
+        const docType = docMatch[1];
+        const docId = docMatch[2];
+        const embed = docType === 'presentation'
+            ? `https://docs.google.com/presentation/d/${docId}/embed`
+            : `https://docs.google.com/${docType}/d/${docId}/preview`;
+        return {
+            id: docId,
+            embedUrl: embed,
+            viewUrl: clean,
+            isDrive: true
+        };
+    }
+    // If it's a generic URL or drive folder
+    if (clean.includes('drive.google.com') || clean.includes('docs.google.com')) {
+        return {
+            id: null,
+            embedUrl: clean,
+            viewUrl: clean,
+            isDrive: true
+        };
+    }
+    return { id: null, embedUrl: clean, viewUrl: clean, isDrive: false };
+};
+
 // 1. Create a new Fabrication Drawing with initial revision (R0 or custom)
 exports.createDrawing = async (req, res) => {
     try {
@@ -20,6 +73,7 @@ exports.createDrawing = async (req, res) => {
             initialRevisionNumber = 'R0',
             revisionDescription = 'Initial Engineering Release',
             fileUrl,
+            driveUrl,
             fileName,
             fileSize,
             fileType,
@@ -27,10 +81,10 @@ exports.createDrawing = async (req, res) => {
             notes
         } = req.body;
 
-        if (!drawingNumber || !title || !projectId || !fileUrl) {
+        if (!drawingNumber || !title || !projectId || (!fileUrl && !driveUrl)) {
             return res.status(400).json({
                 success: false,
-                message: 'Drawing Number, Title, Project, and File are required.'
+                message: 'Drawing Number, Title, Project, and either a Drawing File or Google Drive link are required.'
             });
         }
 
@@ -46,14 +100,25 @@ exports.createDrawing = async (req, res) => {
             return res.status(400).json({ success: false, message: `Drawing Number "${drawingNumber}" already exists.` });
         }
 
+        const parsedDrive = parseDriveUrl(driveUrl);
+        const resolvedDriveUrl = parsedDrive.viewUrl || (driveUrl ? driveUrl.trim() : '');
+        const resolvedEmbedUrl = parsedDrive.embedUrl || '';
+        const hasFile = Boolean(fileUrl && fileUrl.trim());
+        const hasDrive = Boolean(resolvedDriveUrl);
+        const sourceType = hasFile && hasDrive ? 'both' : hasDrive ? 'drive' : 'upload';
+
         const initialRevision = {
             revisionNumber: initialRevisionNumber.trim().toUpperCase(),
             revisionDate: new Date(),
             description: revisionDescription,
-            fileUrl,
-            fileName: fileName || `${drawingNumber}_${initialRevisionNumber}.pdf`,
+            fileUrl: fileUrl || resolvedDriveUrl,
+            driveUrl: resolvedDriveUrl,
+            driveEmbedUrl: resolvedEmbedUrl,
+            driveFileId: parsedDrive.id || '',
+            sourceType,
+            fileName: fileName || (hasDrive && !hasFile ? `${drawingNumber.trim().toUpperCase()}_${initialRevisionNumber.trim().toUpperCase()}_GoogleDrive.pdf` : `${drawingNumber}_${initialRevisionNumber}.pdf`),
             fileSize: Number(fileSize) || 0,
-            fileType: fileType || 'application/pdf',
+            fileType: fileType || (hasDrive && !hasFile ? 'application/vnd.google-apps.drive-sdk' : 'application/pdf'),
             uploadedBy: req.user.id,
             uploadedByName: req.user.name || 'Engineer',
             status: 'Pending Approval'
@@ -71,6 +136,11 @@ exports.createDrawing = async (req, res) => {
             materialGrade: materialGrade || '',
             tolerance: tolerance || '±0.5mm',
             currentRevision: initialRevisionNumber.trim().toUpperCase(),
+            activeRevisionFileUrl: initialRevision.fileUrl,
+            activeRevisionDriveUrl: resolvedDriveUrl,
+            activeRevisionEmbedUrl: resolvedEmbedUrl,
+            activeRevisionSourceType: sourceType,
+            driveUrl: resolvedDriveUrl,
             status: 'Pending Approval',
             isApprovedForProduction: false,
             revisions: [initialRevision],
@@ -143,15 +213,16 @@ exports.addRevision = async (req, res) => {
             revisionNumber,
             description,
             fileUrl,
+            driveUrl,
             fileName,
             fileSize,
             fileType
         } = req.body;
 
-        if (!revisionNumber || !description || !fileUrl) {
+        if (!revisionNumber || !description || (!fileUrl && !driveUrl)) {
             return res.status(400).json({
                 success: false,
-                message: 'Revision number, description, and drawing file are required.'
+                message: 'Revision number, description, and either a drawing file or Google Drive link are required.'
             });
         }
 
@@ -170,14 +241,25 @@ exports.addRevision = async (req, res) => {
             });
         }
 
+        const parsedDrive = parseDriveUrl(driveUrl);
+        const resolvedDriveUrl = parsedDrive.viewUrl || (driveUrl ? driveUrl.trim() : '');
+        const resolvedEmbedUrl = parsedDrive.embedUrl || '';
+        const hasFile = Boolean(fileUrl && fileUrl.trim());
+        const hasDrive = Boolean(resolvedDriveUrl);
+        const sourceType = hasFile && hasDrive ? 'both' : hasDrive ? 'drive' : 'upload';
+
         const newRevision = {
             revisionNumber: revNum,
             revisionDate: new Date(),
             description: description.trim(),
-            fileUrl,
-            fileName: fileName || `${drawing.drawingNumber}_${revNum}.pdf`,
+            fileUrl: fileUrl || resolvedDriveUrl,
+            driveUrl: resolvedDriveUrl,
+            driveEmbedUrl: resolvedEmbedUrl,
+            driveFileId: parsedDrive.id || '',
+            sourceType,
+            fileName: fileName || (hasDrive && !hasFile ? `${drawing.drawingNumber}_${revNum}_GoogleDrive.pdf` : `${drawing.drawingNumber}_${revNum}.pdf`),
             fileSize: Number(fileSize) || 0,
-            fileType: fileType || 'application/pdf',
+            fileType: fileType || (hasDrive && !hasFile ? 'application/vnd.google-apps.drive-sdk' : 'application/pdf'),
             uploadedBy: req.user.id,
             uploadedByName: req.user.name || 'Engineer',
             status: 'Pending Approval'
@@ -253,6 +335,12 @@ exports.reviewRevision = async (req, res) => {
             // 3. Promote this revision to the active production standard
             drawing.currentRevision = targetRev.revisionNumber;
             drawing.activeRevisionFileUrl = targetRev.fileUrl;
+            drawing.activeRevisionDriveUrl = targetRev.driveUrl || '';
+            drawing.activeRevisionEmbedUrl = targetRev.driveEmbedUrl || '';
+            drawing.activeRevisionSourceType = targetRev.sourceType || 'upload';
+            if (targetRev.driveUrl) {
+                drawing.driveUrl = targetRev.driveUrl;
+            }
             drawing.status = 'Approved';
             drawing.isApprovedForProduction = true;
 

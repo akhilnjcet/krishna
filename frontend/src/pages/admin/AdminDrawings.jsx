@@ -2,10 +2,63 @@ import React, { useState, useEffect } from 'react';
 import { 
     FileText, Plus, Search, Filter, CheckCircle2, XCircle, AlertTriangle, 
     Download, Eye, Clock, Layers, ShieldCheck, ChevronRight, RefreshCw,
-    UploadCloud, Sparkles, Building, ExternalLink, Trash2
+    UploadCloud, Sparkles, Building, ExternalLink, Trash2, Globe, Link2, Maximize2
 } from 'lucide-react';
 import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Google Drive URL Parser & Embed Preview Helper
+const parseDriveUrl = (url) => {
+    if (!url || typeof url !== 'string') return { id: null, embedUrl: '', viewUrl: '', isDrive: false };
+    const clean = url.trim();
+    if (!clean) return { id: null, embedUrl: '', viewUrl: '', isDrive: false };
+
+    // 1. Google Drive file pattern: /file/d/{id}
+    const fileMatch = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (fileMatch) {
+        return {
+            id: fileMatch[1],
+            embedUrl: `https://drive.google.com/file/d/${fileMatch[1]}/preview`,
+            viewUrl: `https://drive.google.com/file/d/${fileMatch[1]}/view`,
+            isDrive: true
+        };
+    }
+    // 2. id parameter pattern: ?id={id} or &id={id}
+    const idMatch = clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (idMatch) {
+        return {
+            id: idMatch[1],
+            embedUrl: `https://drive.google.com/file/d/${idMatch[1]}/preview`,
+            viewUrl: `https://drive.google.com/file/d/${idMatch[1]}/view`,
+            isDrive: true
+        };
+    }
+    // 3. Google Docs/Sheets/Slides pattern
+    const docMatch = clean.match(/\/(document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]+)/);
+    if (docMatch) {
+        const docType = docMatch[1];
+        const docId = docMatch[2];
+        const embed = docType === 'presentation'
+            ? `https://docs.google.com/presentation/d/${docId}/embed`
+            : `https://docs.google.com/${docType}/d/${docId}/preview`;
+        return {
+            id: docId,
+            embedUrl: embed,
+            viewUrl: clean,
+            isDrive: true
+        };
+    }
+    // If it's a generic URL or drive folder
+    if (clean.includes('drive.google.com') || clean.includes('docs.google.com')) {
+        return {
+            id: null,
+            embedUrl: clean,
+            viewUrl: clean,
+            isDrive: true
+        };
+    }
+    return { id: null, embedUrl: clean, viewUrl: clean, isDrive: false };
+};
 
 const CATEGORIES = [
     'All Categories',
@@ -34,6 +87,9 @@ export default function AdminDrawings() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showRevisionModal, setShowRevisionModal] = useState(false);
     const [showReviewModal, setShowReviewModal] = useState(false);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [previewTarget, setPreviewTarget] = useState(null);
+    const [previewSource, setPreviewSource] = useState('drive'); // 'drive' | 'file'
     const [selectedDrawing, setSelectedDrawing] = useState(null);
     const [selectedRevision, setSelectedRevision] = useState(null);
     const [reviewAction, setReviewAction] = useState('approve');
@@ -53,6 +109,7 @@ export default function AdminDrawings() {
         initialRevisionNumber: 'R0',
         revisionDescription: 'Initial Engineering Release',
         fileUrl: '',
+        driveUrl: '',
         fileName: '',
         fileSize: 0,
         tags: ''
@@ -62,6 +119,7 @@ export default function AdminDrawings() {
         revisionNumber: 'R1',
         description: '',
         fileUrl: '',
+        driveUrl: '',
         fileName: '',
         fileSize: 0
     });
@@ -69,6 +127,32 @@ export default function AdminDrawings() {
     const [uploading, setUploading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [actionMsg, setActionMsg] = useState({ type: '', text: '' });
+
+    const openPreview = (item, preferredSource = null) => {
+        if (!item) return;
+        const drive = item.driveUrl || item.activeRevisionDriveUrl || '';
+        const file = item.fileUrl || item.activeRevisionFileUrl || '';
+        const parsed = parseDriveUrl(drive);
+        const embed = item.driveEmbedUrl || item.activeRevisionEmbedUrl || parsed.embedUrl || drive;
+
+        const source = preferredSource 
+            ? preferredSource 
+            : (drive ? 'drive' : 'file');
+
+        setPreviewTarget({
+            title: item.title || 'Engineering Drawing Sheet',
+            drawingNumber: item.drawingNumber || 'DRAFT',
+            revisionNumber: item.revisionNumber || item.currentRevision || 'R0',
+            fileUrl: file,
+            driveUrl: drive,
+            embedUrl: embed,
+            fileName: item.fileName || 'Drawing_Sheet.pdf',
+            category: item.category || 'Structural Fabrication',
+            isDrive: Boolean(drive)
+        });
+        setPreviewSource(source);
+        setShowPreviewModal(true);
+    };
 
     useEffect(() => {
         fetchDrawings();
@@ -145,8 +229,8 @@ export default function AdminDrawings() {
 
     const handleCreateDrawing = async (e) => {
         e.preventDefault();
-        if (!formData.drawingNumber || !formData.title || !formData.projectId || !formData.fileUrl) {
-            setActionMsg({ type: 'error', text: 'Drawing Number, Title, Project, and File are required.' });
+        if (!formData.drawingNumber || !formData.title || !formData.projectId || (!formData.fileUrl && !formData.driveUrl)) {
+            setActionMsg({ type: 'error', text: 'Drawing Number, Title, Project, and either a Drawing File or Google Drive link are required.' });
             return;
         }
         setSubmitting(true);
@@ -168,6 +252,7 @@ export default function AdminDrawings() {
                     initialRevisionNumber: 'R0',
                     revisionDescription: 'Initial Engineering Release',
                     fileUrl: '',
+                    driveUrl: '',
                     fileName: '',
                     fileSize: 0,
                     tags: ''
@@ -183,8 +268,8 @@ export default function AdminDrawings() {
 
     const handleAddRevision = async (e) => {
         e.preventDefault();
-        if (!revisionFormData.revisionNumber || !revisionFormData.description || !revisionFormData.fileUrl) {
-            setActionMsg({ type: 'error', text: 'Revision Number, Description, and File are required.' });
+        if (!revisionFormData.revisionNumber || !revisionFormData.description || (!revisionFormData.fileUrl && !revisionFormData.driveUrl)) {
+            setActionMsg({ type: 'error', text: 'Revision Number, Description, and either a Drawing File or Google Drive link are required.' });
             return;
         }
         setSubmitting(true);
@@ -357,7 +442,12 @@ export default function AdminDrawings() {
                                         <span className="font-black font-mono text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 rounded-lg">
                                             {dwg.drawingNumber}
                                         </span>
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                                            {(dwg.driveUrl || dwg.activeRevisionDriveUrl) && (
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 flex items-center gap-1" title="Google Drive Cloud Sheet">
+                                                    <Globe className="w-2.5 h-2.5" /> Drive
+                                                </span>
+                                            )}
                                             <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                                                 Rev {dwg.currentRevision}
                                             </span>
@@ -448,6 +538,7 @@ export default function AdminDrawings() {
                                                 revisionNumber: nextNum,
                                                 description: `Revision ${nextNum} per fabrication feedback`,
                                                 fileUrl: '',
+                                                driveUrl: dwg.driveUrl || dwg.activeRevisionDriveUrl || '',
                                                 fileName: '',
                                                 fileSize: 0
                                             });
@@ -459,17 +550,14 @@ export default function AdminDrawings() {
                                     </button>
 
                                     <div className="flex items-center gap-1.5">
-                                        {dwg.activeRevisionFileUrl || (dwg.revisions[0]?.fileUrl) ? (
-                                            <a
-                                                href={dwg.activeRevisionFileUrl || dwg.revisions[dwg.revisions.length - 1].fileUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
-                                                title="View Drawing"
-                                            >
-                                                <Eye className="w-4 h-4" />
-                                            </a>
-                                        ) : null}
+                                        <button
+                                            onClick={() => openPreview(dwg)}
+                                            className="px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 transition-colors flex items-center gap-1 text-xs font-bold"
+                                            title="Interactive Drawing Sheet Preview"
+                                        >
+                                            <Eye className="w-3.5 h-3.5" />
+                                            <span>Preview</span>
+                                        </button>
                                         <button
                                             onClick={() => {
                                                 setSelectedDrawing(dwg);
@@ -617,24 +705,81 @@ export default function AdminDrawings() {
                                     </div>
                                 </div>
 
-                                {/* File Upload Box */}
-                                <div>
-                                    <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Drawing File (PDF or High-Res Image) *</label>
-                                    <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-4 text-center hover:border-blue-500 transition-colors">
-                                        <input
-                                            type="file"
-                                            accept=".pdf,.png,.jpg,.jpeg"
-                                            onChange={e => handleFileUpload(e, false)}
-                                            className="hidden"
-                                            id="dwg-file-upload"
-                                        />
-                                        <label htmlFor="dwg-file-upload" className="cursor-pointer flex flex-col items-center">
-                                            <UploadCloud className="w-8 h-8 text-blue-600 mb-1" />
-                                            <span className="font-bold text-slate-800 dark:text-slate-200">
-                                                {uploading ? 'Uploading...' : formData.fileName || 'Click to select PDF / CAD drawing'}
-                                            </span>
-                                            <span className="text-[10px] text-slate-400 mt-0.5">Maximum file size: 10 MB</span>
+                                {/* Drawing Sheet Source: Google Drive Link + Local File Upload */}
+                                <div className="space-y-3 p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80">
+                                    <div className="flex items-center justify-between">
+                                        <label className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
+                                            <FileText className="w-4 h-4 text-blue-600" />
+                                            <span>Drawing Sheet & Blueprint Source *</span>
                                         </label>
+                                        <span className="text-[10px] text-slate-400">Provide Drive link, file upload, or both</span>
+                                    </div>
+
+                                    {/* Google Drive Link Option */}
+                                    <div>
+                                        <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1 text-[11px] flex items-center gap-1.5">
+                                            <Globe className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                            <span>Google Drive Shareable Link (CAD / PDF / Image Cloud Host)</span>
+                                        </label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="url"
+                                                placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
+                                                value={formData.driveUrl}
+                                                onChange={e => setFormData({ ...formData, driveUrl: e.target.value })}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono text-xs text-blue-600 dark:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                            />
+                                            {formData.driveUrl && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openPreview({
+                                                        title: formData.title || 'Draft Drawing',
+                                                        drawingNumber: formData.drawingNumber || 'DWG-DRAFT',
+                                                        revisionNumber: formData.initialRevisionNumber || 'R0',
+                                                        driveUrl: formData.driveUrl
+                                                    }, 'drive')}
+                                                    className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900 dark:text-blue-300 rounded-xl font-bold text-xs flex items-center gap-1.5 shrink-0 border border-blue-200 dark:border-blue-800 transition"
+                                                    title="Live Test & Preview Drive Link"
+                                                >
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                    <span>Preview</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-1">
+                                            Ensure access is set to <strong>"Anyone with the link can view"</strong> for interactive in-app preview.
+                                        </p>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 my-1">
+                                        <div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">AND / OR</span>
+                                        <div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div>
+                                    </div>
+
+                                    {/* Local File Upload Box */}
+                                    <div>
+                                        <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1 text-[11px]">
+                                            Direct File Upload (PDF or High-Res CAD Image)
+                                        </label>
+                                        <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-3.5 text-center hover:border-blue-500 transition-colors bg-white dark:bg-slate-900">
+                                            <input
+                                                type="file"
+                                                accept=".pdf,.png,.jpg,.jpeg"
+                                                onChange={e => handleFileUpload(e, false)}
+                                                className="hidden"
+                                                id="dwg-file-upload"
+                                            />
+                                            <label htmlFor="dwg-file-upload" className="cursor-pointer flex flex-col items-center">
+                                                <UploadCloud className="w-7 h-7 text-blue-600 mb-1" />
+                                                <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">
+                                                    {uploading ? 'Uploading...' : formData.fileName || 'Click to select PDF / CAD drawing'}
+                                                </span>
+                                                <span className="text-[10px] text-slate-400 mt-0.5">
+                                                    Maximum file size: 10 MB. Local upload is optional if Google Drive link is provided.
+                                                </span>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -705,22 +850,75 @@ export default function AdminDrawings() {
                                     />
                                 </div>
 
-                                <div>
-                                    <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Revision File (PDF/Image) *</label>
-                                    <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-4 text-center">
-                                        <input
-                                            type="file"
-                                            accept=".pdf,.png,.jpg,.jpeg"
-                                            onChange={e => handleFileUpload(e, true)}
-                                            className="hidden"
-                                            id="rev-file-upload"
-                                        />
-                                        <label htmlFor="rev-file-upload" className="cursor-pointer flex flex-col items-center">
-                                            <UploadCloud className="w-7 h-7 text-indigo-600 mb-1" />
-                                            <span className="font-bold text-slate-800 dark:text-slate-200">
-                                                {uploading ? 'Uploading...' : revisionFormData.fileName || 'Upload Revised Drawing Sheet'}
-                                            </span>
+                                {/* Revision Source: Google Drive Link + Local File */}
+                                <div className="space-y-3 p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80">
+                                    <div className="flex items-center justify-between">
+                                        <label className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
+                                            <FileText className="w-4 h-4 text-indigo-600" />
+                                            <span>Revised Drawing Source *</span>
                                         </label>
+                                        <span className="text-[10px] text-slate-400">Drive link, file upload, or both</span>
+                                    </div>
+
+                                    {/* Google Drive Link Option */}
+                                    <div>
+                                        <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1 text-[11px] flex items-center gap-1.5">
+                                            <Globe className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                            <span>Google Drive Shareable Link (Optional)</span>
+                                        </label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="url"
+                                                placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
+                                                value={revisionFormData.driveUrl}
+                                                onChange={e => setRevisionFormData({ ...revisionFormData, driveUrl: e.target.value })}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono text-xs text-blue-600 dark:text-blue-400"
+                                            />
+                                            {revisionFormData.driveUrl && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openPreview({
+                                                        title: selectedDrawing?.title || 'Revised Drawing',
+                                                        drawingNumber: selectedDrawing?.drawingNumber || 'REV',
+                                                        revisionNumber: revisionFormData.revisionNumber,
+                                                        driveUrl: revisionFormData.driveUrl
+                                                    }, 'drive')}
+                                                    className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900 dark:text-blue-300 rounded-xl font-bold text-xs flex items-center gap-1.5 shrink-0 border border-blue-200 dark:border-blue-800 transition"
+                                                    title="Live Test & Preview Drive Link"
+                                                >
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                    <span>Preview</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 my-1">
+                                        <div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">AND / OR</span>
+                                        <div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div>
+                                    </div>
+
+                                    {/* Local File Upload Box */}
+                                    <div>
+                                        <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1 text-[11px]">
+                                            Direct File Upload (PDF / Image)
+                                        </label>
+                                        <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-3 text-center bg-white dark:bg-slate-900">
+                                            <input
+                                                type="file"
+                                                accept=".pdf,.png,.jpg,.jpeg"
+                                                onChange={e => handleFileUpload(e, true)}
+                                                className="hidden"
+                                                id="rev-file-upload"
+                                            />
+                                            <label htmlFor="rev-file-upload" className="cursor-pointer flex flex-col items-center">
+                                                <UploadCloud className="w-6 h-6 text-indigo-600 mb-1" />
+                                                <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">
+                                                    {uploading ? 'Uploading...' : revisionFormData.fileName || 'Upload Revised Drawing Sheet'}
+                                                </span>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -810,23 +1008,60 @@ export default function AdminDrawings() {
                                 )}
                             </div>
 
-                            {/* View / Download File Button */}
-                            <div className="mt-4 flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                                <div className="flex items-center gap-2">
-                                    <FileText className="w-5 h-5 text-blue-600" />
-                                    <div>
-                                        <p className="font-bold text-slate-900 dark:text-white">{selectedRevision.fileName}</p>
-                                        <p className="text-[10px] text-slate-400">PDF / CAD Engineering Drawing</p>
+                            {/* View / Download / In-App Preview Controls */}
+                            <div className="mt-4 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 space-y-2.5">
+                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600">
+                                            <FileText className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-slate-900 dark:text-white text-xs">{selectedRevision.fileName}</p>
+                                            <p className="text-[10px] text-slate-400">PDF / CAD Engineering Drawing</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <button
+                                            type="button"
+                                            onClick={() => openPreview({
+                                                ...selectedDrawing,
+                                                ...selectedRevision,
+                                                driveUrl: selectedRevision.driveUrl || selectedDrawing.driveUrl,
+                                                fileUrl: selectedRevision.fileUrl
+                                            })}
+                                            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition"
+                                        >
+                                            <Eye className="w-3.5 h-3.5" /> In-App Preview
+                                        </button>
+                                        {selectedRevision.fileUrl && (
+                                            <a
+                                                href={selectedRevision.fileUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition"
+                                            >
+                                                <ExternalLink className="w-3.5 h-3.5" /> Download
+                                            </a>
+                                        )}
                                     </div>
                                 </div>
-                                <a
-                                    href={selectedRevision.fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg flex items-center gap-1.5 shadow-xs"
-                                >
-                                    <ExternalLink className="w-3.5 h-3.5" /> View / Download
-                                </a>
+
+                                {/* If Revision has Google Drive Link */}
+                                {(selectedRevision.driveUrl || selectedDrawing.driveUrl) && (
+                                    <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
+                                        <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                                            <Globe className="w-3.5 h-3.5" /> Google Drive Cloud Link Available
+                                        </span>
+                                        <a
+                                            href={selectedRevision.driveUrl || selectedDrawing.driveUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 dark:text-blue-400 hover:underline font-bold flex items-center gap-1 text-[11px]"
+                                        >
+                                            Open in Google Drive <ExternalLink className="w-3 h-3" />
+                                        </a>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Approval Action Form (If Pending Approval) */}
@@ -886,6 +1121,145 @@ export default function AdminDrawings() {
                                 >
                                     Close Details
                                 </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Modal 4: Interactive Drawing & Blueprint Preview Modal */}
+            <AnimatePresence>
+                {showPreviewModal && previewTarget && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-xs overflow-hidden">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white dark:bg-slate-900 rounded-3xl max-w-5xl w-full h-[90vh] flex flex-col border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden"
+                        >
+                            {/* Header */}
+                            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 shrink-0">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black shrink-0">
+                                        <FileText className="w-5 h-5" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="font-mono font-black text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded-lg border border-blue-200 dark:border-blue-900">
+                                                {previewTarget.drawingNumber}
+                                            </span>
+                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                                                Rev {previewTarget.revisionNumber}
+                                            </span>
+                                            {previewTarget.isDrive && (
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 flex items-center gap-1">
+                                                    <Globe className="w-2.5 h-2.5" /> Google Drive
+                                                </span>
+                                            )}
+                                        </div>
+                                        <h3 className="font-black text-slate-900 dark:text-white text-sm truncate max-w-md mt-0.5">
+                                            {previewTarget.title}
+                                        </h3>
+                                    </div>
+                                </div>
+
+                                {/* Controls & Close */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                    {/* Switch Source Tabs if both exist */}
+                                    {previewTarget.driveUrl && previewTarget.fileUrl && (
+                                        <div className="hidden sm:flex items-center bg-slate-200 dark:bg-slate-800 p-0.5 rounded-xl text-xs font-bold">
+                                            <button
+                                                type="button"
+                                                onClick={() => setPreviewSource('drive')}
+                                                className={`px-3 py-1 rounded-lg transition ${
+                                                    previewSource === 'drive'
+                                                        ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
+                                                        : 'text-slate-600 dark:text-slate-400'
+                                                }`}
+                                            >
+                                                Google Drive
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setPreviewSource('file')}
+                                                className={`px-3 py-1 rounded-lg transition ${
+                                                    previewSource === 'file'
+                                                        ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
+                                                        : 'text-slate-600 dark:text-slate-400'
+                                                }`}
+                                            >
+                                                Uploaded File
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Open in External Tab */}
+                                    <a
+                                        href={previewSource === 'drive' && previewTarget.driveUrl ? previewTarget.driveUrl : previewTarget.fileUrl || previewTarget.driveUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition flex items-center gap-1 text-xs font-bold"
+                                        title="Open Original in New Tab"
+                                    >
+                                        <ExternalLink className="w-4 h-4" />
+                                        <span className="hidden md:inline">Open Original</span>
+                                    </a>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPreviewModal(false)}
+                                        className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold transition"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Preview Viewport */}
+                            <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-2 overflow-hidden relative flex flex-col">
+                                {previewSource === 'drive' && previewTarget.driveUrl ? (
+                                    <div className="w-full h-full flex flex-col">
+                                        <iframe
+                                            src={previewTarget.embedUrl}
+                                            title={previewTarget.title}
+                                            className="w-full flex-1 rounded-2xl border border-slate-300 dark:border-slate-800 bg-white"
+                                            allow="autoplay; fullscreen"
+                                            allowFullScreen
+                                        />
+                                        <div className="py-2 px-3 flex items-center justify-between text-[11px] text-slate-500 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0 rounded-b-2xl">
+                                            <span>Google Drive Viewer with interactive zoom, navigation, and pan controls.</span>
+                                            <a
+                                                href={previewTarget.driveUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 hover:underline font-bold flex items-center gap-1"
+                                            >
+                                                Open in Drive <ExternalLink className="w-3 h-3" />
+                                            </a>
+                                        </div>
+                                    </div>
+                                ) : previewTarget.fileUrl ? (
+                                    previewTarget.fileUrl.match(/\.(png|jpg|jpeg|svg|webp)($|\?)/i) ? (
+                                        <div className="w-full h-full flex items-center justify-center overflow-auto p-4 bg-slate-900/10 rounded-2xl">
+                                            <img
+                                                src={previewTarget.fileUrl}
+                                                alt={previewTarget.title}
+                                                className="max-w-full max-h-full object-contain rounded-xl shadow-lg"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <iframe
+                                            src={previewTarget.fileUrl}
+                                            title={previewTarget.title}
+                                            className="w-full h-full rounded-2xl border border-slate-300 dark:border-slate-800 bg-white"
+                                        />
+                                    )
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                                        <AlertTriangle className="w-10 h-10 mb-2 opacity-50" />
+                                        <p className="font-bold">No file or Google Drive link available for preview.</p>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     </div>

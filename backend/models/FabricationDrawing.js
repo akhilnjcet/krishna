@@ -17,7 +17,27 @@ const drawingRevisionSchema = new mongoose.Schema({
     },
     fileUrl: {
         type: String,
-        required: true
+        default: ''
+    },
+    driveUrl: {
+        type: String,
+        default: '',
+        trim: true
+    },
+    driveEmbedUrl: {
+        type: String,
+        default: '',
+        trim: true
+    },
+    driveFileId: {
+        type: String,
+        default: '',
+        trim: true
+    },
+    sourceType: {
+        type: String,
+        enum: ['upload', 'drive', 'both'],
+        default: 'upload'
     },
     fileName: {
         type: String,
@@ -142,6 +162,26 @@ const fabricationDrawingSchema = new mongoose.Schema({
     activeRevisionFileUrl: {
         type: String,
         default: ''
+    },
+    driveUrl: {
+        type: String,
+        default: '',
+        trim: true
+    },
+    activeRevisionDriveUrl: {
+        type: String,
+        default: '',
+        trim: true
+    },
+    activeRevisionEmbedUrl: {
+        type: String,
+        default: '',
+        trim: true
+    },
+    activeRevisionSourceType: {
+        type: String,
+        enum: ['upload', 'drive', 'both'],
+        default: 'upload'
     },
     status: {
         type: String,
