@@ -70,32 +70,35 @@ const WorksiteLocationCard = ({
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 border-2 border-brand-950 dark:border-slate-700 p-5 relative shadow-[3px_3px_0_0_#0f172a] dark:shadow-none">
+        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 relative shadow-sm hover:shadow-md transition-all">
             {/* Header Badge & Title */}
-            <div className="flex items-center justify-between mb-3 border-b-2 border-dashed border-slate-200 dark:border-slate-800 pb-2">
+            <div className="flex items-center justify-between mb-3.5 border-b border-slate-100 dark:border-slate-800/80 pb-3">
                 <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 bg-brand-accent rounded-full animate-pulse"></div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-950 dark:text-brand-accent">
-                        WORKSITE LOCATION
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-800 dark:text-slate-200">
+                        Worksite Location
                     </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                     {source === 'gps' && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 border border-emerald-300 dark:border-emerald-700">
-                            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                        <span className="inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800/60">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                             GPS Verified {accuracy ? `(±${accuracy}m)` : ''}
                         </span>
                     )}
                     {source === 'manual' && hasCoordinates && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950/70 text-indigo-800 dark:text-indigo-300 px-2 py-0.5 border border-indigo-300 dark:border-indigo-700">
-                            <MapPin className="w-3 h-3 text-indigo-600" />
+                        <span className="inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800/60">
+                            <MapPin className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                             Map Pinned
                         </span>
                     )}
                     {source === 'search' && hasCoordinates && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 px-2 py-0.5 border border-blue-300 dark:border-blue-700">
-                            <Compass className="w-3 h-3 text-blue-600" />
+                        <span className="inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-800/60">
+                            <Compass className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                             Search Verified
                         </span>
                     )}
@@ -110,7 +113,7 @@ const WorksiteLocationCard = ({
                                 });
                                 setIsEditing(true);
                             }}
-                            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-brand-950 dark:hover:text-white transition"
+                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition"
                             title="Edit or Tag Location"
                         >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -121,22 +124,22 @@ const WorksiteLocationCard = ({
 
             {/* Editing Mode */}
             {isEditing ? (
-                <div className="space-y-4 pt-2">
+                <div className="space-y-4 pt-1">
                     <WorksiteLocationPicker
                         value={editLocation}
                         onChange={setEditLocation}
                     />
 
                     {saveError && (
-                        <p className="text-xs text-red-600 font-bold">{saveError}</p>
+                        <p className="text-xs text-rose-600 font-bold">{saveError}</p>
                     )}
 
-                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                         <button
                             type="button"
                             onClick={() => setIsEditing(false)}
                             disabled={saving}
-                            className="px-4 py-2 border-2 border-slate-300 dark:border-slate-700 text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                         >
                             Cancel
                         </button>
@@ -144,7 +147,7 @@ const WorksiteLocationCard = ({
                             type="button"
                             onClick={handleSaveLocation}
                             disabled={saving}
-                            className="px-5 py-2 bg-brand-950 dark:bg-brand-accent text-white dark:text-brand-950 text-xs font-black uppercase tracking-wider hover:bg-brand-800 transition flex items-center gap-1.5"
+                            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black uppercase tracking-wider transition shadow-sm flex items-center gap-1.5"
                         >
                             {saving ? 'Saving...' : 'Save Location'}
                         </button>
@@ -154,32 +157,32 @@ const WorksiteLocationCard = ({
                 /* View Mode */
                 <div className="space-y-3">
                     {/* Address readout */}
-                    <div className="flex items-start gap-3">
-                        <div className="p-2 bg-brand-50 dark:bg-slate-800 border border-brand-200 dark:border-slate-700 flex-shrink-0 mt-0.5">
-                            <MapPin className="w-4 h-4 text-brand-950 dark:text-brand-accent" />
+                    <div className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <div className="p-2 rounded-lg bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5">
+                            <MapPin className="w-4 h-4" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">
+                            <p className="text-[9px] font-bold uppercase text-slate-400 tracking-wider mb-0.5">
                                 Worksite Address
                             </p>
-                            <p className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-snug break-words">
+                            <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-snug break-words">
                                 {address}
                             </p>
                         </div>
                     </div>
 
                     {/* Coordinates readout */}
-                    <div className="bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="bg-slate-50/80 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                         <div>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
                                 GPS Coordinates (Lat, Long)
                             </span>
                             {hasCoordinates ? (
-                                <span className="font-mono text-xs font-black text-brand-950 dark:text-emerald-400 tracking-wide">
+                                <span className="font-mono text-xs font-bold text-slate-900 dark:text-emerald-400 tracking-wide">
                                     {lat?.toFixed(6)}° N, {lng?.toFixed(6)}° E
                                 </span>
                             ) : (
-                                <span className="text-xs font-semibold text-slate-400 italic">
+                                <span className="text-xs font-medium text-slate-400 italic">
                                     No GPS coordinates attached to this quote yet
                                 </span>
                             )}
@@ -191,7 +194,7 @@ const WorksiteLocationCard = ({
                                 <button
                                     type="button"
                                     onClick={handleCopy}
-                                    className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-brand-950 text-slate-800 dark:text-slate-200 font-bold text-[10px] uppercase tracking-wider transition flex items-center gap-1 shadow-sm active:scale-95"
+                                    className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-slate-400 text-slate-700 dark:text-slate-200 font-bold text-[10px] uppercase tracking-wider rounded-lg transition flex items-center gap-1.5 shadow-sm active:scale-95"
                                 >
                                     {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                                     <span>{copied ? 'Copied' : 'Copy Coordinates'}</span>
@@ -201,7 +204,7 @@ const WorksiteLocationCard = ({
                             <button
                                 type="button"
                                 onClick={handleOpenMap}
-                                className="px-3 py-1.5 bg-brand-950 hover:bg-brand-800 text-white font-bold text-[10px] uppercase tracking-wider transition flex items-center gap-1 shadow-sm active:scale-95"
+                                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-slate-950 font-bold text-[10px] uppercase tracking-wider rounded-lg transition flex items-center gap-1.5 shadow-sm active:scale-95"
                             >
                                 <ExternalLink className="w-3.5 h-3.5" />
                                 <span>View on Map</span>
