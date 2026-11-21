@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, UserCheck, Wallet, CalendarDays, Users,
     MessageSquare, CheckSquare, LogOut, Menu, X, Bell, User, ChevronLeft,
-    ClipboardList, Sparkles, Truck
+    ClipboardList, Sparkles, Truck, Search, ChevronRight
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { getSocket } from '../utils/socket';
@@ -17,63 +17,277 @@ import { preloadFaceModels } from '../utils/faceApiLoader';
 const SIDEBAR_W = 'w-64 max-w-[85vw]';
 
 const navItems = [
-    { name: 'Staff Dashboard',  path: '/staff',              icon: LayoutDashboard },
-    { name: 'Scan Attendance',  path: '/staff/attendance',   icon: UserCheck },
-    { name: 'Attendance',       path: '/staff/attendance-hub', icon: CalendarDays },
-    { name: 'My Timesheets',    path: '/staff/timesheets',   icon: CalendarDays },
-    { name: 'Task Board',       path: '/staff/tasks',        icon: CheckSquare },
-    { name: 'Project Delay / Stop', path: '/staff/progress',     icon: ClipboardList },
-    { name: 'Payout Hub',       path: '/staff/salary',       icon: Wallet },
-    { name: 'Leave Tracker',    path: '/staff/leave',        icon: CalendarDays },
-    { name: 'Track Requests',   path: '/staff/applications', icon: CheckSquare },
-    { name: 'Field Contacts',   path: '/staff/contacts',     icon: Users },
-    { name: 'Driver Management', path: '/staff/drivers',     icon: Truck },
-    { name: 'AI ERP Copilot',   path: '/staff/ai-assistant', icon: Sparkles },
-    { name: 'Support Channel',  path: '/staff/chat',         icon: MessageSquare },
+    { name: 'Staff Dashboard',  path: '/staff',              icon: LayoutDashboard, keywords: ['overview', 'home', 'summary'] },
+    { name: 'Scan Attendance',  path: '/staff/attendance',   icon: UserCheck, keywords: ['face', 'face attendance', 'biometric', 'camera', 'check-in', 'clock-in', 'scan'] },
+    { name: 'Attendance',       path: '/staff/attendance-hub', icon: CalendarDays, keywords: ['calendar', 'logs', 'history', 'face', 'records'] },
+    { name: 'My Timesheets',    path: '/staff/timesheets',   icon: CalendarDays, keywords: ['hours', 'overtime', 'shifts', 'work hours'] },
+    { name: 'Task Board',       path: '/staff/tasks',        icon: CheckSquare, keywords: ['todo', 'assignments', 'status', 'duties'] },
+    { name: 'Project Delay / Stop', path: '/staff/progress',     icon: ClipboardList, keywords: ['milestone', 'blocker', 'issue', 'timeline'] },
+    { name: 'Payout Hub',       path: '/staff/salary',       icon: Wallet, keywords: ['salary', 'wage', 'advance', 'payment', 'payout'] },
+    { name: 'Leave Tracker',    path: '/staff/leave',        icon: CalendarDays, keywords: ['vacation', 'holiday', 'request', 'time off'] },
+    { name: 'Track Requests',   path: '/staff/applications', icon: CheckSquare, keywords: ['forms', 'approvals', 'applications'] },
+    { name: 'Field Contacts',   path: '/staff/contacts',     icon: Users, keywords: ['team', 'phonebook', 'directory', 'staff'] },
+    { name: 'Driver Management', path: '/staff/drivers',     icon: Truck, keywords: ['fleet', 'vehicles', 'trips', 'delivery'] },
+    { name: 'AI ERP Copilot',   path: '/staff/ai-assistant', icon: Sparkles, keywords: ['groq', 'assistant', 'chatbot', 'smart query'] },
+    { name: 'Support Channel',  path: '/staff/chat',         icon: MessageSquare, keywords: ['messages', 'help', 'admin chat', 'support'] },
 ];
 
-/* ── Shared Sidebar Content ─────────────────────────────────────── */
-const SidebarContent = ({ location, user, onNavClick, onLogout, onClose }) => (
-    <div className="flex flex-col h-full h-[100dvh] max-h-[100dvh] bg-white dark:bg-slate-900 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800">
-        {/* Header */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50 gap-3 flex-shrink-0">
-            <Link to="/" onClick={onNavClick} className="flex items-center gap-3 group min-w-0">
-                <img src="/logo512.png" alt="Staff" className="w-9 h-9 rounded-xl object-contain shadow-lg group-hover:scale-105 transition-transform flex-shrink-0" />
-                <div className="flex flex-col min-w-0">
-                    <span className="text-base font-black text-slate-900 dark:text-white font-poppins tracking-tight leading-none truncate">Krishna Staff</span>
-                    <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400 mt-0.5 truncate">Field Logistics</span>
-                </div>
-            </Link>
-            {onClose && (
-                <button 
-                    onClick={onClose} 
-                    className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white bg-slate-100/80 hover:bg-slate-200 dark:bg-slate-800 rounded-xl transition-all md:hidden flex-shrink-0"
-                    title="Close Menu"
-                >
-                    <X className="w-5 h-5" />
-                </button>
-            )}
-        </div>
+const highlightMatch = (text, query) => {
+    if (!query || !query.trim()) return text;
+    const q = query.trim().toLowerCase();
+    const str = String(text || '');
+    const idx = str.toLowerCase().indexOf(q);
+    if (idx === -1) return text;
+    const before = str.slice(0, idx);
+    const matched = str.slice(idx, idx + q.length);
+    const after = str.slice(idx + q.length);
+    return (
+        <span>
+            {before}
+            <span className="text-blue-600 dark:text-blue-400 font-black underline decoration-blue-500/50">{matched}</span>
+            {after}
+        </span>
+    );
+};
 
-        {/* Nav */}
-        <nav className="flex-1 min-h-0 px-3 py-4 space-y-1 overflow-y-auto">
-            {navItems.map(item => {
-                const active = location.pathname === item.path;
-                return (
-                    <Link
-                        key={item.name}
-                        to={item.path}
-                        onClick={onNavClick}
-                        className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all ${
-                            active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 hover:text-slate-900 dark:text-white dark:hover:bg-slate-900 dark:hover:text-white'
-                        }`}
+/* ── Shared Sidebar Content ─────────────────────────────────────── */
+const SidebarContent = ({ location, user, onNavClick, onLogout, onClose }) => {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeIndex, setActiveIndex] = useState(0);
+    const searchInputRef = useRef(null);
+    const itemRefs = useRef([]);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        setActiveIndex(0);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        if (searchQuery.trim() && itemRefs.current[activeIndex]) {
+            itemRefs.current[activeIndex]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }, [activeIndex, searchQuery]);
+
+    const matchingItems = useMemo(() => {
+        const q = (searchQuery || '').trim().toLowerCase();
+        if (!q) return [];
+
+        return navItems
+            .filter(item => {
+                const nameLower = (item.name || '').toLowerCase();
+                const pathLower = (item.path || '').toLowerCase();
+                const keywords = Array.isArray(item.keywords) ? item.keywords : [];
+
+                if (nameLower.includes(q)) return true;
+                if (pathLower.includes(q)) return true;
+                return keywords.some(k => (k || '').toLowerCase().includes(q));
+            })
+            .filter((item, idx, arr) => arr.findIndex(i => i.path === item.path) === idx)
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    }, [searchQuery]);
+
+    const handleSelectModule = (item) => {
+        setSearchQuery('');
+        navigate(item.path);
+        if (onNavClick) onNavClick();
+    };
+
+    const handleSearchKeyDown = (e) => {
+        if (matchingItems.length === 0) {
+            if (e.key === 'Escape') {
+                setSearchQuery('');
+                searchInputRef.current?.blur();
+            }
+            return;
+        }
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex(prev => (prev + 1) % matchingItems.length);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex(prev => (prev - 1 + matchingItems.length) % matchingItems.length);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const target = matchingItems[activeIndex] || matchingItems[0];
+            if (target) {
+                handleSelectModule(target);
+            }
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            setSearchQuery('');
+            searchInputRef.current?.blur();
+        }
+    };
+
+    const isSearching = searchQuery.trim().length > 0;
+
+    return (
+        <div className="flex flex-col h-full h-[100dvh] max-h-[100dvh] bg-white dark:bg-slate-900 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700 dark:border-slate-800">
+            {/* Header */}
+            <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50 gap-3 flex-shrink-0">
+                <Link to="/" onClick={onNavClick} className="flex items-center gap-3 group min-w-0">
+                    <img src="/logo512.png" alt="Staff" className="w-9 h-9 rounded-xl object-contain shadow-lg group-hover:scale-105 transition-transform flex-shrink-0" />
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-base font-black text-slate-900 dark:text-white font-poppins tracking-tight leading-none truncate">Krishna Staff</span>
+                        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400 mt-0.5 truncate">Field Logistics</span>
+                    </div>
+                </Link>
+                {onClose && (
+                    <button 
+                        onClick={onClose} 
+                        className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white bg-slate-100/80 hover:bg-slate-200 dark:bg-slate-800 rounded-xl transition-all md:hidden flex-shrink-0"
+                        title="Close Menu"
                     >
-                        <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`} />
-                        <span className="truncate">{item.name}</span>
-                    </Link>
-                );
-            })}
-        </nav>
+                        <X className="w-5 h-5" />
+                    </button>
+                )}
+            </div>
+
+            {/* Real-time Module Search Bar */}
+            <div className="px-3 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex-shrink-0">
+                <div className="relative flex items-center group">
+                    <Search className="w-4 h-4 absolute left-3 text-slate-400 dark:text-slate-500 pointer-events-none transition-colors group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400" />
+                    <input
+                        ref={searchInputRef}
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={handleSearchKeyDown}
+                        placeholder="Search staff pages..."
+                        className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100/80 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 border border-slate-200 dark:border-slate-700/80 focus:border-blue-500 dark:focus:border-blue-500 rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all shadow-sm focus:ring-2 focus:ring-blue-500/20"
+                        autoComplete="off"
+                        spellCheck="false"
+                        aria-label="Search accessible staff modules"
+                    />
+                    {searchQuery ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSearchQuery('');
+                                searchInputRef.current?.focus();
+                            }}
+                            title="Clear search (Esc)"
+                            className="absolute right-2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 rounded-lg transition-colors"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    ) : (
+                        <div className="absolute right-2.5 hidden sm:flex items-center pointer-events-none">
+                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400 border border-slate-300/60 dark:border-slate-600/60">
+                                /
+                            </span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Suggestions Header when searching */}
+            {isSearching && (
+                <div className="px-4 py-2 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 flex-shrink-0">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">
+                            Suggestions (A → Z)
+                        </span>
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+                            {matchingItems.length}
+                        </span>
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                        Alphabetical
+                    </span>
+                </div>
+            )}
+
+            {/* Nav */}
+            <nav className="flex-1 min-h-0 px-3 py-3 space-y-1 overflow-y-auto">
+                {isSearching ? (
+                    matchingItems.length > 0 ? (
+                        matchingItems.map((item, index) => {
+                            const active = location.pathname === item.path;
+                            const isKeyFocused = index === activeIndex;
+                            const queryLower = searchQuery.trim().toLowerCase();
+                            const matchedKeyword = !item.name.toLowerCase().includes(queryLower) && Array.isArray(item.keywords)
+                                ? item.keywords.find(k => k.toLowerCase().includes(queryLower))
+                                : null;
+
+                            return (
+                                <div
+                                    key={item.path}
+                                    ref={el => (itemRefs.current[index] = el)}
+                                    onClick={() => handleSelectModule(item)}
+                                    onMouseEnter={() => setActiveIndex(index)}
+                                    className={`group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer text-sm font-semibold transition-all select-none ${
+                                        isKeyFocused
+                                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-1 ring-blue-500/40 shadow-sm'
+                                            : active 
+                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' 
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 hover:text-slate-900 dark:text-white dark:hover:bg-slate-900 dark:hover:text-white'
+                                    }`}
+                                    role="option"
+                                    aria-selected={isKeyFocused}
+                                >
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <item.icon className={`w-4 h-4 flex-shrink-0 ${
+                                            active ? 'text-white' : isKeyFocused ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'
+                                        }`} />
+                                        <div className="flex flex-col min-w-0 flex-1">
+                                            <span className="truncate">
+                                                {highlightMatch(item.name, searchQuery)}
+                                            </span>
+                                            {matchedKeyword && (
+                                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal truncate mt-0.5">
+                                                    Matches: <span className="text-blue-600 dark:text-blue-400 font-medium">{matchedKeyword}</span>
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${
+                                        isKeyFocused ? 'text-blue-600 dark:text-blue-400 translate-x-0.5' : 'text-slate-300 dark:text-slate-600 opacity-60'
+                                    }`} />
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="py-8 px-4 text-center flex flex-col items-center justify-center">
+                            <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 mb-2 border border-slate-200/60 dark:border-slate-700/60">
+                                <Search className="w-4 h-4 opacity-60" />
+                            </div>
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200">No matching pages</p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 max-w-[200px] leading-relaxed">
+                                No staff pages match <span className="font-bold text-slate-700 dark:text-slate-300">"{searchQuery}"</span>
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    searchInputRef.current?.focus();
+                                }}
+                                className="mt-3 px-3 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold transition-all border border-blue-200/50 dark:border-blue-800/50"
+                            >
+                                Clear Filter
+                            </button>
+                        </div>
+                    )
+                ) : (
+                    navItems.map(item => {
+                        const active = location.pathname === item.path;
+                        return (
+                            <Link
+                                key={item.name}
+                                to={item.path}
+                                onClick={onNavClick}
+                                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all ${
+                                    active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 hover:text-slate-900 dark:text-white dark:hover:bg-slate-900 dark:hover:text-white'
+                                }`}
+                            >
+                                <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`} />
+                                <span className="truncate">{item.name}</span>
+                            </Link>
+                        );
+                    })
+                )}
+            </nav>
 
         {/* Footer */}
         <div className="p-4 pb-6 border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50 space-y-3 flex-shrink-0">
@@ -94,7 +308,8 @@ const SidebarContent = ({ location, user, onNavClick, onLogout, onClose }) => (
             </button>
         </div>
     </div>
-);
+    );
+};
 
 const StaffLayout = () => {
     const { user, isAuthenticated, logout } = useAuthStore();

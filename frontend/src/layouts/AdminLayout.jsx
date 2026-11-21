@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
     LayoutDashboard, Layers, Image as ImageIcon, FileText, BookOpen,
@@ -24,46 +24,46 @@ const STORAGE_KEY_ORDER = 'kew_admin_sidebar_order_v1';
 const STORAGE_KEY_LOCKED = 'kew_admin_sidebar_locked_v1';
 
 const SIDEBAR_ITEMS = [
-    { name: 'Core Dashboard',  path: '/admin',              icon: LayoutDashboard },
-    { name: 'User Management',  path: '/admin/users',        icon: User },
-    { name: 'Staff Management', path: '/admin/staff',        icon: Users },
-    { name: 'Attendance Hub',  path: '/admin/logs',         icon: Clock },
-    { name: 'Shift Control',   path: '/admin/shifts',       icon: Clock },
-    { name: 'Leave Requests',  path: '/admin/leave',        icon: ClipboardList },
-    { name: 'Projects Hub',    path: '/admin/projects',     icon: Layers },
-    { name: 'Production Plans', path: '/admin/production-planning', icon: Calendar },
-    { name: 'Fabrication Drawings', path: '/admin/drawings', icon: FileText },
-    { name: 'Scrap & Wastage', path: '/admin/scrap-waste',   icon: Trash2 },
-    { name: 'Task Assignment Hub', path: '/admin/tasks',    icon: CheckSquare },
-    { name: 'Rework & Defects', path: '/admin/defects',     icon: AlertTriangle },
-    { name: 'Warranty & Service', path: '/admin/warranty-service', icon: ShieldCheck },
-    { name: 'CRM Pipeline',    path: '/admin/crm',          icon: Users },
-    { name: 'Fleet Logistics',  path: '/admin/fleet',        icon: Truck },
-    { name: 'Live Field Tracking', path: '/admin/live-tracking', icon: Navigation },
-    { name: 'AI ERP Copilot',  path: '/admin/ai-assistant', icon: Sparkles },
-    { name: 'Notification Center', path: '/admin/notifications', icon: Bell },
-    { name: 'Visual Portfolio', path: '/admin/portfolio',    icon: ImageIcon },
-    { name: 'Formal Quotes',   path: '/admin/quotes',       icon: Receipt },
-    { name: 'Quotation Studio', path: '/admin/quotations-studio', icon: FileText },
-    { name: 'Financial Hub',   path: '/admin/finance',      icon: BadgeIndianRupee },
-    { name: 'Invoice Studio',  path: '/admin/invoices-studio', icon: Receipt },
-    { name: 'Labour & Freight Bills', path: '/admin/labour-bills', icon: Truck },
-    { name: 'Equipment Rental Studio', path: '/admin/rental-bills', icon: KeyRound },
-    { name: 'Lodge Manager',   path: '/admin/lodge-manager', icon: Building2 },
-    { name: 'Inventory & Tools', path: '/admin/inventory',    icon: Package },
-    { name: 'BOM & Costing',   path: '/admin/bom-costing',  icon: Layers },
-    { name: 'Document History', path: '/admin/document-history', icon: FileText },
-    { name: 'Digital Letter Pad', path: '/admin/letter-pad', icon: PenTool },
-    { name: 'Project Timeline', path: '/admin/progress',     icon: Activity },
-    { name: 'Intelligence Feed', path: '/admin/blog',        icon: BookOpen },
-    { name: 'Technical Chat',  path: '/admin/live-chat',    icon: MessageSquare },
-    { name: 'AI Command Center', path: '/admin/ai-chat',     icon: Calculator },
-    { name: 'Careers & Notices', path: '/admin/careers', icon: Briefcase },
-    { name: 'Applications',    path: '/admin/applications', icon: LayoutGrid },
-    { name: 'Analytics Hub',   path: '/admin/analytics',    icon: BarChart3 },
-    { name: 'WhatsApp Relay',  path: '/admin/whatsapp',     icon: Radio },
-    { name: 'Legal & Privacy',  path: '/admin/legal-policies', icon: ShieldCheck },
-    { name: 'System Core',     path: '/admin/settings',     icon: Settings },
+    { name: 'Core Dashboard',  path: '/admin',              icon: LayoutDashboard, keywords: ['overview', 'analytics', 'kpi', 'metrics', 'home'] },
+    { name: 'User Management',  path: '/admin/users',        icon: User, keywords: ['accounts', 'roles', 'permissions', 'access', 'passwords', 'security'] },
+    { name: 'Staff Management', path: '/admin/staff',        icon: Users, keywords: ['employees', 'workers', 'labour', 'hr', 'salaries', 'team'] },
+    { name: 'Attendance Hub',  path: '/admin/logs',         icon: Clock, keywords: ['face', 'face attendance', 'face verification', 'biometric', 'check-in', 'clock-in', 'logs', 'punch'] },
+    { name: 'Shift Control',   path: '/admin/shifts',       icon: Clock, keywords: ['timing', 'schedule', 'roster', 'working hours', 'shifts'] },
+    { name: 'Leave Requests',  path: '/admin/leave',        icon: ClipboardList, keywords: ['vacation', 'time off', 'sick leave', 'approval', 'holidays'] },
+    { name: 'Projects Hub',    path: '/admin/projects',     icon: Layers, keywords: ['jobs', 'orders', 'sites', 'contracts', 'client projects'] },
+    { name: 'Production Plans', path: '/admin/production-planning', icon: Calendar, keywords: ['manufacturing', 'assembly', 'planning', 'fabrication schedule', 'factory'] },
+    { name: 'Fabrication Drawings', path: '/admin/drawings', icon: FileText, keywords: ['cad', 'blueprints', 'engineering drawings', 'pdf', 'diagrams', 'specs', 'iso'] },
+    { name: 'Scrap & Wastage', path: '/admin/scrap-waste',   icon: Trash2, keywords: ['metal scrap', 'disposal', 'recycled', 'waste materials', 'offcuts'] },
+    { name: 'Task Assignment Hub', path: '/admin/tasks',    icon: CheckSquare, keywords: ['todo', 'assignments', 'workflow', 'staff tasks', 'duties'] },
+    { name: 'Rework & Defects', path: '/admin/defects',     icon: AlertTriangle, keywords: ['quality control', 'qc', 'rejections', 'repairs', 'defects', 'damage'] },
+    { name: 'Warranty & Service', path: '/admin/warranty-service', icon: ShieldCheck, keywords: ['guarantee', 'amc', 'after sales', 'service requests', 'warranty card'] },
+    { name: 'CRM Pipeline',    path: '/admin/crm',          icon: Users, keywords: ['leads', 'sales pipeline', 'enquiries', 'opportunities', 'deals', 'funnel'] },
+    { name: 'Fleet Logistics',  path: '/admin/fleet',        icon: Truck, keywords: ['vehicles', 'trucks', 'drivers', 'trips', 'fuel tracking', 'odometer', 'transport'] },
+    { name: 'Live Field Tracking', path: '/admin/live-tracking', icon: Navigation, keywords: ['gps', 'realtime map', 'driver location', 'fleet tracking', 'routes'] },
+    { name: 'AI ERP Copilot',  path: '/admin/ai-assistant', icon: Sparkles, keywords: ['groq', 'assistant', 'smart search', 'chatbot', 'ai query', 'questions'] },
+    { name: 'Notification Center', path: '/admin/notifications', icon: Bell, keywords: ['alerts', 'bell', 'system messages', 'announcements', 'updates'] },
+    { name: 'Visual Portfolio', path: '/admin/portfolio',    icon: ImageIcon, keywords: ['photos', 'gallery', 'showcase', 'work samples', 'images'] },
+    { name: 'Formal Quotes',   path: '/admin/quotes',       icon: Receipt, keywords: ['estimates', 'proposals', 'client bids', 'pricing quotes'] },
+    { name: 'Quotation Studio', path: '/admin/quotations-studio', icon: FileText, keywords: ['quote builder', 'custom quote', 'bom estimate', 'margin calculator'] },
+    { name: 'Financial Hub',   path: '/admin/finance',      icon: BadgeIndianRupee, keywords: ['finance', 'accounting', 'ledger', 'cashflow', 'revenue', 'expenses', 'profit'] },
+    { name: 'Invoice Studio',  path: '/admin/invoices-studio', icon: Receipt, keywords: ['tax invoices', 'gst billing', 'client invoices', 'receipts'] },
+    { name: 'Labour & Freight Bills', path: '/admin/labour-bills', icon: Truck, keywords: ['freight', 'transport bills', 'lorry hire', 'contractor payments', 'wages'] },
+    { name: 'Equipment Rental Studio', path: '/admin/rental-bills', icon: KeyRound, keywords: ['machinery hire', 'generators', 'welding sets', 'rental agreement', 'tools rent'] },
+    { name: 'Lodge Manager',   path: '/admin/lodge-manager', icon: Building2, keywords: ['rooms', 'guest house', 'accommodation', 'workers stay', 'lodging'] },
+    { name: 'Inventory & Tools', path: '/admin/inventory',    icon: Package, keywords: ['stock', 'raw materials', 'steel', 'plates', 'consumables', 'warehouse'] },
+    { name: 'BOM & Costing',   path: '/admin/bom-costing',  icon: Layers, keywords: ['bill of materials', 'cost estimation', 'material takeoff', 'weight calculator'] },
+    { name: 'Document History', path: '/admin/document-history', icon: FileText, keywords: ['archives', 'audit trail', 'generated pdfs', 'print records'] },
+    { name: 'Digital Letter Pad', path: '/admin/letter-pad', icon: PenTool, keywords: ['official letter', 'pad', 'stationery', 'formal letterhead'] },
+    { name: 'Project Timeline', path: '/admin/progress',     icon: Activity, keywords: ['gantt', 'milestones', 'stop reasons', 'delay logs', 'tracker'] },
+    { name: 'Intelligence Feed', path: '/admin/blog',        icon: BookOpen, keywords: ['news', 'field reports', 'bulletin', 'updates', 'articles'] },
+    { name: 'Technical Chat',  path: '/admin/live-chat',    icon: MessageSquare, keywords: ['internal messaging', 'direct chat', 'team channel'] },
+    { name: 'AI Command Center', path: '/admin/ai-chat',     icon: Calculator, keywords: ['ai console', 'engineering calculator', 'ai diagnostics'] },
+    { name: 'Careers & Notices', path: '/admin/careers', icon: Briefcase, keywords: ['job postings', 'hiring', 'recruitment', 'vacancies'] },
+    { name: 'Applications',    path: '/admin/applications', icon: LayoutGrid, keywords: ['resumes', 'candidate submissions', 'job applicants'] },
+    { name: 'Analytics Hub',   path: '/admin/analytics',    icon: BarChart3, keywords: ['reports', 'charts', 'performance', 'executive metrics', 'stats'] },
+    { name: 'WhatsApp Relay',  path: '/admin/whatsapp',     icon: Radio, keywords: ['wa messages', 'broadcasts', 'instant alerts', 'meta api'] },
+    { name: 'Legal & Privacy',  path: '/admin/legal-policies', icon: ShieldCheck, keywords: ['terms', 'compliance', 'privacy policy', 'disclaimer'] },
+    { name: 'System Core',     path: '/admin/settings',     icon: Settings, keywords: ['configuration', 'database', 'system preferences', 'admin tools'] },
 ];
 
 const getSavedSidebarItems = () => {
@@ -95,6 +95,24 @@ const getSavedSidebarItems = () => {
 };
 
 /* ── Shared Sidebar Content ─────────────────────────────────────── */
+const highlightMatch = (text, query) => {
+    if (!query || !query.trim()) return text;
+    const q = query.trim().toLowerCase();
+    const str = String(text || '');
+    const idx = str.toLowerCase().indexOf(q);
+    if (idx === -1) return text;
+    const before = str.slice(0, idx);
+    const matched = str.slice(idx, idx + q.length);
+    const after = str.slice(idx + q.length);
+    return (
+        <span>
+            {before}
+            <span className="text-blue-600 dark:text-blue-400 font-black underline decoration-blue-500/50">{matched}</span>
+            {after}
+        </span>
+    );
+};
+
 const SidebarContent = ({ 
     location, 
     user, 
@@ -112,170 +130,392 @@ const SidebarContent = ({
     onDrop,
     draggedIndex,
     dragOverIndex
-}) => (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
-        {/* Logo Section */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col items-center gap-3 flex-shrink-0">
-            <Link to="/" onClick={onNavClick} className="flex flex-col items-center gap-3 group">
-                <div className="bg-white dark:bg-slate-800 p-2 rounded-2xl shadow-lg group-hover:scale-105 transition-transform border border-slate-100 dark:border-slate-700">
-                    <p className="text-blue-600 dark:text-blue-400 font-black text-xl">K</p>
-                </div>
-                <div className="text-center">
-                    <p className="text-lg font-black text-slate-900 dark:text-white font-poppins tracking-tighter">KRISHNA ENGG</p>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-400 mt-1 opacity-80 italic">Admin Terminal</p>
-                </div>
-            </Link>
-        </div>
+}) => {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeIndex, setActiveIndex] = useState(0);
+    const searchInputRef = useRef(null);
+    const itemRefs = useRef([]);
+    const navigate = useNavigate();
 
-        {/* Reordering Header with Lock/Unlock Controls */}
-        <div className="px-4 pt-4 pb-2 flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 flex-shrink-0">
-            <div className="flex items-center gap-1.5">
-                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">
-                    Enterprise Control
-                </p>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                    {items.length}
-                </span>
+    // Reset keyboard selection index when query changes
+    useEffect(() => {
+        setActiveIndex(0);
+    }, [searchQuery]);
+
+    // Global keyboard listener to focus search on '/' or 'Ctrl+K' / 'Cmd+K'
+    useEffect(() => {
+        const handleGlobalKeyDown = (e) => {
+            const isMac = typeof window !== 'undefined' && navigator.platform?.toUpperCase().indexOf('MAC') >= 0;
+            const isMod = isMac ? e.metaKey : e.ctrlKey;
+            const tag = document.activeElement?.tagName?.toLowerCase();
+            const isInput = tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable;
+
+            if (isMod && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+                searchInputRef.current?.select();
+            } else if (e.key === '/' && !isInput) {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+                searchInputRef.current?.select();
+            }
+        };
+        window.addEventListener('keydown', handleGlobalKeyDown);
+        return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    }, []);
+
+    // Scroll active item into view during keyboard navigation
+    useEffect(() => {
+        if (searchQuery.trim() && itemRefs.current[activeIndex]) {
+            itemRefs.current[activeIndex]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }, [activeIndex, searchQuery]);
+
+    // Live search suggestions filtered strictly to accessible items and sorted alphabetically
+    const matchingItems = useMemo(() => {
+        const q = (searchQuery || '').trim().toLowerCase();
+        if (!q) return [];
+
+        return items
+            .filter(item => {
+                const nameLower = (item.name || '').toLowerCase();
+                const pathLower = (item.path || '').toLowerCase();
+                const keywords = Array.isArray(item.keywords) ? item.keywords : [];
+
+                if (nameLower.includes(q)) return true;
+                if (pathLower.includes(q)) return true;
+                return keywords.some(k => (k || '').toLowerCase().includes(q));
+            })
+            // Remove duplicates by path
+            .filter((item, idx, arr) => arr.findIndex(i => i.path === item.path) === idx)
+            // Strict alphabetical sorting A to Z by item name
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    }, [items, searchQuery]);
+
+    const handleSelectModule = (item) => {
+        setSearchQuery('');
+        navigate(item.path);
+        if (onNavClick) onNavClick();
+    };
+
+    const handleSearchKeyDown = (e) => {
+        if (matchingItems.length === 0) {
+            if (e.key === 'Escape') {
+                setSearchQuery('');
+                searchInputRef.current?.blur();
+            }
+            return;
+        }
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex(prev => (prev + 1) % matchingItems.length);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex(prev => (prev - 1 + matchingItems.length) % matchingItems.length);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const target = matchingItems[activeIndex] || matchingItems[0];
+            if (target) {
+                handleSelectModule(target);
+            }
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            setSearchQuery('');
+            searchInputRef.current?.blur();
+        }
+    };
+
+    const isSearching = searchQuery.trim().length > 0;
+
+    return (
+        <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+            {/* Logo Section */}
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col items-center gap-2.5 flex-shrink-0">
+                <Link to="/" onClick={onNavClick} className="flex flex-col items-center gap-2.5 group">
+                    <div className="bg-white dark:bg-slate-800 p-2 rounded-2xl shadow-lg group-hover:scale-105 transition-transform border border-slate-100 dark:border-slate-700">
+                        <p className="text-blue-600 dark:text-blue-400 font-black text-xl leading-none">K</p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-lg font-black text-slate-900 dark:text-white font-poppins tracking-tighter">KRISHNA ENGG</p>
+                        <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-400 mt-1 opacity-80 italic">Admin Terminal</p>
+                    </div>
+                </Link>
             </div>
 
-            <div className="flex items-center gap-1">
-                {!isLocked && (
-                    <button
-                        type="button"
-                        onClick={onResetOrder}
-                        title="Reset to default module order"
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1"
-                    >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span className="text-[9px] font-black uppercase tracking-wider">Reset</span>
-                    </button>
-                )}
-
-                <button
-                    type="button"
-                    onClick={onToggleLock}
-                    title={isLocked ? "Click to unlock and rearrange sidebar modules" : "Click to lock current sidebar order"}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all shadow-sm ${
-                        isLocked
-                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200 dark:border-slate-700'
-                            : 'bg-amber-500 text-white shadow-amber-500/30 hover:bg-amber-600 border border-amber-600 animate-pulse'
-                    }`}
-                >
-                    {isLocked ? (
-                        <>
-                            <Lock className="w-3 h-3 text-slate-500 dark:text-slate-400" />
-                            <span className="text-[9px] uppercase tracking-wider">Locked</span>
-                        </>
+            {/* Real-time Module Search Bar */}
+            <div className="px-3 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex-shrink-0">
+                <div className="relative flex items-center group">
+                    <Search className="w-4 h-4 absolute left-3 text-slate-400 dark:text-slate-500 pointer-events-none transition-colors group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400" />
+                    <input
+                        ref={searchInputRef}
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={handleSearchKeyDown}
+                        placeholder="Search modules (e.g. Attendance, Finance)..."
+                        className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100/80 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 border border-slate-200 dark:border-slate-700/80 focus:border-blue-500 dark:focus:border-blue-500 rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all shadow-sm focus:ring-2 focus:ring-blue-500/20"
+                        autoComplete="off"
+                        spellCheck="false"
+                        aria-label="Search accessible ERP modules"
+                    />
+                    {searchQuery ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSearchQuery('');
+                                searchInputRef.current?.focus();
+                            }}
+                            title="Clear search (Esc)"
+                            className="absolute right-2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 rounded-lg transition-colors"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
                     ) : (
-                        <>
-                            <Unlock className="w-3 h-3 text-white" />
-                            <span className="text-[9px] uppercase tracking-wider">Unlocked</span>
-                        </>
+                        <div className="absolute right-2.5 hidden sm:flex items-center pointer-events-none">
+                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400 border border-slate-300/60 dark:border-slate-600/60">
+                                /
+                            </span>
+                        </div>
                     )}
-                </button>
-            </div>
-        </div>
-
-        {/* Reordering helper banner when unlocked */}
-        {!isLocked && (
-            <div className="mx-3 mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl text-[10px] text-amber-800 dark:text-amber-200 flex items-center justify-between gap-2 flex-shrink-0">
-                <div className="flex items-center gap-1.5 min-w-0">
-                    <Unlock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    <span className="font-semibold leading-tight truncate">Drag or use ↑ ↓ to rearrange</span>
                 </div>
-                <button
-                    type="button"
-                    onClick={onToggleLock}
-                    className="px-2 py-0.5 bg-amber-600 text-white rounded-md text-[9px] font-black uppercase tracking-wider hover:bg-amber-700 shrink-0"
-                >
-                    Done
-                </button>
             </div>
-        )}
 
-        {/* Navigation Section */}
-        <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto scrollbar-hide">
-            {items.map((item, index) => {
-                const active = location.pathname === item.path || (item.path !== '/admin' && location.pathname.startsWith(item.path));
-                const isDragged = draggedIndex === index;
-                const isOver = dragOverIndex === index;
+            {/* Header: Live Suggestions when searching vs Enterprise Control when browsing */}
+            {isSearching ? (
+                <div className="px-4 py-2.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 flex-shrink-0">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">
+                            Suggestions (A → Z)
+                        </span>
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+                            {matchingItems.length}
+                        </span>
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                        Alphabetical
+                    </span>
+                </div>
+            ) : (
+                <div className="px-4 pt-3.5 pb-2 flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 flex-shrink-0">
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">
+                            Enterprise Control
+                        </p>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                            {items.length}
+                        </span>
+                    </div>
 
-                return (
-                    <div
-                        key={item.path}
-                        draggable={!isLocked}
-                        onDragStart={(e) => onDragStart && onDragStart(e, index)}
-                        onDragOver={(e) => onDragOver && onDragOver(e, index)}
-                        onDragEnd={onDragEnd}
-                        onDrop={(e) => onDrop && onDrop(e, index)}
-                        className={`group relative flex items-center rounded-xl transition-all ${
-                            isDragged ? 'opacity-35 scale-95' : 'opacity-100'
-                        } ${
-                            isOver && !isDragged ? 'ring-2 ring-blue-500 ring-dashed bg-blue-50/60 dark:bg-blue-900/30' : ''
-                        }`}
-                    >
+                    <div className="flex items-center gap-1">
                         {!isLocked && (
-                            <div
-                                className="p-2 cursor-grab active:cursor-grabbing text-slate-400 hover:text-amber-600 dark:text-slate-500 dark:hover:text-amber-400 flex-shrink-0 select-none"
-                                title="Drag to reorder"
+                            <button
+                                type="button"
+                                onClick={onResetOrder}
+                                title="Reset to default module order"
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1"
                             >
-                                <GripVertical className="w-4 h-4" />
-                            </div>
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span className="text-[9px] font-black uppercase tracking-wider">Reset</span>
+                            </button>
                         )}
 
-                        <Link
-                            to={item.path}
-                            onClick={onNavClick}
-                            className={`flex-1 flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all min-w-0 ${
-                                active 
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                        <button
+                            type="button"
+                            onClick={onToggleLock}
+                            title={isLocked ? "Click to unlock and rearrange sidebar modules" : "Click to lock current sidebar order"}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all shadow-sm ${
+                                isLocked
+                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200 dark:border-slate-700'
+                                    : 'bg-amber-500 text-white shadow-amber-500/30 hover:bg-amber-600 border border-amber-600 animate-pulse'
                             }`}
                         >
-                            <item.icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
-                            <span className="truncate">{item.name}</span>
-                        </Link>
-
-                        {!isLocked && (
-                            <div className="flex flex-col items-center gap-0.5 pr-1 pl-0.5 flex-shrink-0">
-                                <button
-                                    type="button"
-                                    disabled={index === 0}
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        onMoveUp && onMoveUp(index);
-                                    }}
-                                    title="Move Up"
-                                    className={`p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors ${
-                                        index === 0 ? 'opacity-20 cursor-not-allowed text-slate-400' : 'text-slate-600 dark:text-slate-300 hover:text-blue-600'
-                                    }`}
-                                >
-                                    <ChevronUp className="w-3 h-3" />
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={index === items.length - 1}
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        onMoveDown && onMoveDown(index);
-                                    }}
-                                    title="Move Down"
-                                    className={`p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors ${
-                                        index === items.length - 1 ? 'opacity-20 cursor-not-allowed text-slate-400' : 'text-slate-600 dark:text-slate-300 hover:text-blue-600'
-                                    }`}
-                                >
-                                    <ChevronDown className="w-3 h-3" />
-                                </button>
-                            </div>
-                        )}
+                            {isLocked ? (
+                                <>
+                                    <Lock className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+                                    <span className="text-[9px] uppercase tracking-wider">Locked</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Unlock className="w-3 h-3 text-white" />
+                                    <span className="text-[9px] uppercase tracking-wider">Unlocked</span>
+                                </>
+                            )}
+                        </button>
                     </div>
-                );
-            })}
-        </nav>
+                </div>
+            )}
 
-        {/* Footer / Account Section */}
+            {/* Reordering helper banner when unlocked and not searching */}
+            {!isLocked && !isSearching && (
+                <div className="mx-3 mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl text-[10px] text-amber-800 dark:text-amber-200 flex items-center justify-between gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <Unlock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span className="font-semibold leading-tight truncate">Drag or use ↑ ↓ to rearrange</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onToggleLock}
+                        className="px-2 py-0.5 bg-amber-600 text-white rounded-md text-[9px] font-black uppercase tracking-wider hover:bg-amber-700 shrink-0"
+                    >
+                        Done
+                    </button>
+                </div>
+            )}
+
+            {/* Navigation Section */}
+            <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto scrollbar-hide">
+                {isSearching ? (
+                    matchingItems.length > 0 ? (
+                        matchingItems.map((item, index) => {
+                            const active = location.pathname === item.path || (item.path !== '/admin' && location.pathname.startsWith(item.path));
+                            const isKeyFocused = index === activeIndex;
+                            const queryLower = searchQuery.trim().toLowerCase();
+                            const matchedKeyword = !item.name.toLowerCase().includes(queryLower) && Array.isArray(item.keywords)
+                                ? item.keywords.find(k => k.toLowerCase().includes(queryLower))
+                                : null;
+
+                            return (
+                                <div
+                                    key={item.path}
+                                    ref={el => (itemRefs.current[index] = el)}
+                                    onClick={() => handleSelectModule(item)}
+                                    onMouseEnter={() => setActiveIndex(index)}
+                                    className={`group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer text-[13px] font-semibold transition-all select-none ${
+                                        isKeyFocused
+                                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-1 ring-blue-500/40 shadow-sm'
+                                            : active 
+                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
+                                    }`}
+                                    role="option"
+                                    aria-selected={isKeyFocused}
+                                >
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <item.icon className={`w-4 h-4 flex-shrink-0 ${
+                                            active ? 'text-white' : isKeyFocused ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300'
+                                        }`} />
+                                        <div className="flex flex-col min-w-0 flex-1">
+                                            <span className="truncate">
+                                                {highlightMatch(item.name, searchQuery)}
+                                            </span>
+                                            {matchedKeyword && (
+                                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal truncate mt-0.5">
+                                                    Matches: <span className="text-blue-600 dark:text-blue-400 font-medium">{matchedKeyword}</span>
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${
+                                        isKeyFocused ? 'text-blue-600 dark:text-blue-400 translate-x-0.5' : 'text-slate-300 dark:text-slate-600 opacity-60 group-hover:opacity-100'
+                                    }`} />
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="py-10 px-4 text-center flex flex-col items-center justify-center">
+                            <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 mb-3 border border-slate-200/60 dark:border-slate-700/60">
+                                <Search className="w-5 h-5 opacity-60" />
+                            </div>
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200">No matching modules</p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 max-w-[210px] leading-relaxed">
+                                No accessible ERP modules match <span className="font-bold text-slate-700 dark:text-slate-300">"{searchQuery}"</span>
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    searchInputRef.current?.focus();
+                                }}
+                                className="mt-4 px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-xl text-[11px] font-bold transition-all border border-blue-200/50 dark:border-blue-800/50 shadow-sm"
+                            >
+                                Clear Filter
+                            </button>
+                        </div>
+                    )
+                ) : (
+                    items.map((item, index) => {
+                        const active = location.pathname === item.path || (item.path !== '/admin' && location.pathname.startsWith(item.path));
+                        const isDragged = draggedIndex === index;
+                        const isOver = dragOverIndex === index;
+
+                        return (
+                            <div
+                                key={item.path}
+                                draggable={!isLocked}
+                                onDragStart={(e) => onDragStart && onDragStart(e, index)}
+                                onDragOver={(e) => onDragOver && onDragOver(e, index)}
+                                onDragEnd={onDragEnd}
+                                onDrop={(e) => onDrop && onDrop(e, index)}
+                                className={`group relative flex items-center rounded-xl transition-all ${
+                                    isDragged ? 'opacity-35 scale-95' : 'opacity-100'
+                                } ${
+                                    isOver && !isDragged ? 'ring-2 ring-blue-500 ring-dashed bg-blue-50/60 dark:bg-blue-900/30' : ''
+                                }`}
+                            >
+                                {!isLocked && (
+                                    <div
+                                        className="p-2 cursor-grab active:cursor-grabbing text-slate-400 hover:text-amber-600 dark:text-slate-500 dark:hover:text-amber-400 flex-shrink-0 select-none"
+                                        title="Drag to reorder"
+                                    >
+                                        <GripVertical className="w-4 h-4" />
+                                    </div>
+                                )}
+
+                                <Link
+                                    to={item.path}
+                                    onClick={onNavClick}
+                                    className={`flex-1 flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all min-w-0 ${
+                                        active 
+                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                                    }`}
+                                >
+                                    <item.icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
+                                    <span className="truncate">{item.name}</span>
+                                </Link>
+
+                                {!isLocked && (
+                                    <div className="flex flex-col items-center gap-0.5 pr-1 pl-0.5 flex-shrink-0">
+                                        <button
+                                            type="button"
+                                            disabled={index === 0}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                onMoveUp && onMoveUp(index);
+                                            }}
+                                            title="Move Up"
+                                            className={`p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors ${
+                                                index === 0 ? 'opacity-20 cursor-not-allowed text-slate-400' : 'text-slate-600 dark:text-slate-300 hover:text-blue-600'
+                                            }`}
+                                        >
+                                            <ChevronUp className="w-3 h-3" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={index === items.length - 1}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                onMoveDown && onMoveDown(index);
+                                            }}
+                                            title="Move Down"
+                                            className={`p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors ${
+                                                index === items.length - 1 ? 'opacity-20 cursor-not-allowed text-slate-400' : 'text-slate-600 dark:text-slate-300 hover:text-blue-600'
+                                            }`}
+                                        >
+                                            <ChevronDown className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
+                )}
+            </nav>
+
+            {/* Footer / Account Section */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 space-y-3 flex-shrink-0">
             <Link 
                 to="/admin/profile" 
@@ -315,7 +555,8 @@ const SidebarContent = ({
             </div>
         </div>
     </div>
-);
+    );
+};
 
 let audioCtx = null;
 
