@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
     Truck, Navigation, AlertOctagon, User, LogOut, PhoneCall, 
     ShieldAlert, AlertTriangle, CheckCircle2, FileText, ChevronRight,
-    MapPin, Bell, Clock, Home, ChevronLeft, ArrowLeft
+    MapPin, Bell, Clock, Home, ChevronLeft, ArrowLeft, UserCheck
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import ThemeToggle from '../components/ThemeToggle';
@@ -88,6 +88,7 @@ const DriverLayout = () => {
 
     const navTabs = [
         { name: 'Trips & Tasks', path: '/driver', icon: Truck },
+        { name: 'Attendance', path: '/driver/attendance', icon: UserCheck },
         { name: 'Report Issues', path: '/driver/issues', icon: AlertOctagon },
         { name: 'My Profile', path: '/driver/profile', icon: User },
         { name: 'ERP Home', path: '/', icon: Home }

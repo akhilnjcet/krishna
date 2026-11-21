@@ -5,12 +5,14 @@ import {
     Truck, MapPin, Calendar, Clock, Navigation, CheckCircle2, 
     AlertTriangle, ShieldAlert, ArrowRight, FileText, ChevronRight,
     Fuel, Gauge, ShieldCheck, AlertCircle, RefreshCw, Eye, Package, Scale, Phone,
-    Home, ArrowLeft
+    Home, ArrowLeft, UserCheck, Scan
 } from 'lucide-react';
+import { openGoogleMapsNavigation } from '../../utils/mapsUtil';
 
 const DriverDashboard = () => {
     const navigate = useNavigate();
     const [portalData, setPortalData] = useState(null);
+    const [todayAttendance, setTodayAttendance] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [tripFilter, setTripFilter] = useState('all'); // 'all' | 'in_transit' | 'scheduled' | 'completed'
@@ -22,9 +24,22 @@ const DriverDashboard = () => {
     const fetchDashboardData = async () => {
         try {
             setRefreshing(true);
-            const res = await api.get('/drivers/portal/me');
-            if (res.data?.success) {
-                setPortalData(res.data);
+            const [portalRes, attendanceRes] = await Promise.allSettled([
+                api.get('/drivers/portal/me'),
+                api.get('/attendance/my-logs')
+            ]);
+
+            if (portalRes.status === 'fulfilled' && portalRes.value.data?.success) {
+                setPortalData(portalRes.value.data);
+            }
+
+            if (attendanceRes.status === 'fulfilled' && attendanceRes.value.data?.success) {
+                const sheets = attendanceRes.value.data.timesheets || [];
+                const todayStr = new Date().toISOString().slice(0, 10);
+                const match = sheets.find(s => s.date === todayStr);
+                if (match) {
+                    setTodayAttendance(match);
+                }
             }
         } catch (err) {
             console.error('Error fetching driver portal data:', err);
@@ -123,6 +138,50 @@ const DriverDashboard = () => {
                 </button>
             </div>
 
+            {/* Driver Face Attendance & Shift Status Card */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
+                        <UserCheck className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white">
+                                Staff & Driver Face Attendance
+                            </h3>
+                            <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                                todayAttendance?.check_out 
+                                    ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300'
+                                    : todayAttendance?.login_time 
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 animate-pulse'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300'
+                            }`}>
+                                {todayAttendance?.check_out ? 'Shift Completed' :
+                                 todayAttendance?.login_time ? 'Shift Active (Checked In)' : 'Not Punched Today'}
+                            </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            {todayAttendance?.check_out 
+                                ? `Shift punch logged: In at ${todayAttendance.login_time} • Out at ${todayAttendance.check_out}`
+                                : todayAttendance?.login_time 
+                                ? `Active shift checked in at ${todayAttendance.login_time}. Punch out at end of shift.`
+                                : 'Face recognition check-in with GPS verification for shift duties'}
+                        </p>
+                    </div>
+                </div>
+
+                <Link
+                    to="/driver/attendance"
+                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 active:scale-95 transition shrink-0"
+                >
+                    <Scan className="w-4 h-4" />
+                    <span>
+                        {todayAttendance?.login_time && !todayAttendance?.check_out ? 'Face Check-Out' : 'Scan Face Attendance'}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+            </div>
+
             {/* Active Ongoing Trip Banner */}
             {activeTrip && (
                 <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 text-white shadow-xl shadow-blue-900/30 relative overflow-hidden">
@@ -146,12 +205,22 @@ const DriverDashboard = () => {
                                 <Truck className="w-3.5 h-3.5" /> Vehicle: {activeTrip.vehicleRegistration} • Start Odo: {activeTrip.startReport?.odometer || 0} km
                             </p>
                         </div>
-                        <Link
-                            to={`/driver/trip/${activeTrip._id}`}
-                            className="bg-white text-blue-900 hover:bg-blue-50 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg active:scale-95 transition self-start sm:self-auto"
-                        >
-                            <Navigation className="w-4 h-4 text-blue-600" /> Open Trip Console
-                        </Link>
+                        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+                            <button
+                                type="button"
+                                onClick={() => openGoogleMapsNavigation(activeTrip)}
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition"
+                                title="Open Destination in Google Maps"
+                            >
+                                <MapPin className="w-4 h-4 text-emerald-100" /> Map
+                            </button>
+                            <Link
+                                to={`/driver/trip/${activeTrip._id}`}
+                                className="bg-white text-blue-900 hover:bg-blue-50 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"
+                            >
+                                <Navigation className="w-4 h-4 text-blue-600" /> Open Trip Console
+                            </Link>
+                        </div>
                     </div>
                 </div>
             )}
@@ -369,16 +438,27 @@ const DriverDashboard = () => {
                                 )}
 
                                 {/* Action Console Link */}
-                                <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/40 flex items-center justify-between">
+                                <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/40 flex items-center justify-between gap-2 flex-wrap">
                                     <span className="text-[10px] text-slate-400 font-medium">
                                         Driver: {tr.driverName}
                                     </span>
-                                    <Link
-                                        to={`/driver/trip/${tr._id}`}
-                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md active:scale-95 transition"
-                                    >
-                                        <Navigation className="w-3.5 h-3.5" /> Open Trip Actions <ChevronRight className="w-3.5 h-3.5" />
-                                    </Link>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => openGoogleMapsNavigation(tr)}
+                                            className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl font-bold text-xs flex items-center gap-1.5 active:scale-95 transition"
+                                            title="Open Trip Destination in Google Maps"
+                                        >
+                                            <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                            <span>Map</span>
+                                        </button>
+                                        <Link
+                                            to={`/driver/trip/${tr._id}`}
+                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md active:scale-95 transition"
+                                        >
+                                            <Navigation className="w-3.5 h-3.5" /> Open Trip Actions <ChevronRight className="w-3.5 h-3.5" />
+                                        </Link>
+                                    </div>
                                 </div>
                             </div>
                         ))}

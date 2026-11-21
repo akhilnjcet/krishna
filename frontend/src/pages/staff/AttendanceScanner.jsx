@@ -5,9 +5,9 @@ import {
     Loader2, UserCheck, Fingerprint, Scan,
     ArrowRight, Info, RefreshCw, MapPin, Eye,
     Send, HelpCircle, ShieldAlert, WifiOff, Check,
-    Clock, Building, User, LogIn, ChevronRight, Phone
+    Clock, Building, User, LogIn, ChevronRight, Phone, Truck
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import hapticService from '../../services/hapticService';
 import useAuthStore from '../../stores/authStore';
@@ -19,6 +19,8 @@ const OFFLINE_QUEUE_KEY = 'krishna_offline_attendance_queue';
 
 const AttendanceScanner = () => {
     const { user } = useAuthStore();
+    const location = useLocation();
+    const isDriver = user?.role === 'driver' || location.pathname.startsWith('/driver');
 
     // Workflow steps: 'consent' | 'idle' | 'scanning' | 'verifying' | 'success' | 'error'
     const [step, setStep] = useState('consent');
@@ -523,33 +525,48 @@ const AttendanceScanner = () => {
                 {/* Top Header Card: User Account Badge */}
                 <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-black text-lg">
-                            {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-6 h-6" />}
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg border ${
+                            isDriver 
+                                ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-400'
+                                : 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400'
+                        }`}>
+                            {user?.name ? user.name.charAt(0).toUpperCase() : (isDriver ? <Truck className="w-6 h-6" /> : <User className="w-6 h-6" />)}
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <span className="text-xs font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                                    Signed in Staff Account
+                                <span className={`text-xs font-black uppercase tracking-wider ${
+                                    isDriver ? 'text-blue-600 dark:text-blue-400' : 'text-indigo-600 dark:text-indigo-400'
+                                }`}>
+                                    {isDriver ? 'Signed in Driver Account' : 'Signed in Staff Account'}
                                 </span>
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                             </div>
                             <h2 className="text-lg font-black text-slate-900 dark:text-white">
-                                {user?.name || 'Staff Member'}
+                                {user?.name || (isDriver ? 'Driver' : 'Staff Member')}
                             </h2>
                             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                ID: {user?.staff_id || user?._id || 'STF-KEW'} • {user?.designation || user?.department || 'Operations'}
+                                ID: {user?.staff_id || user?.employeeId || user?._id || 'KEW-EMP'} • {isDriver ? 'Fleet Driver' : (user?.designation || user?.department || 'Operations')}
                             </p>
                         </div>
                     </div>
 
-                    {/* Quick navigation to personal logs */}
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <Link 
-                            to="/staff/attendance-hub"
-                            className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
-                        >
-                            <Clock className="w-3.5 h-3.5 text-indigo-500" /> Attendance History
-                        </Link>
+                    {/* Quick navigation buttons */}
+                    <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+                        {isDriver ? (
+                            <Link 
+                                to="/driver"
+                                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                            >
+                                <Truck className="w-3.5 h-3.5 text-blue-500" /> Driver Console
+                            </Link>
+                        ) : (
+                            <Link 
+                                to="/staff/attendance-hub"
+                                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                            >
+                                <Clock className="w-3.5 h-3.5 text-indigo-500" /> Attendance History
+                            </Link>
+                        )}
                     </div>
                 </div>
 
@@ -834,12 +851,21 @@ const AttendanceScanner = () => {
                             >
                                 Record Another Scan
                             </button>
-                            <Link
-                                to="/staff/attendance-hub"
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg transition inline-flex items-center justify-center gap-1.5"
-                            >
-                                View My Attendance Records <ChevronRight className="w-4 h-4" />
-                            </Link>
+                            {isDriver ? (
+                                <Link
+                                    to="/driver"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg transition inline-flex items-center justify-center gap-1.5"
+                                >
+                                    <Truck className="w-4 h-4" /> Return to Driver Dashboard
+                                </Link>
+                            ) : (
+                                <Link
+                                    to="/staff/attendance-hub"
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg transition inline-flex items-center justify-center gap-1.5"
+                                >
+                                    View My Attendance Records <ChevronRight className="w-4 h-4" />
+                                </Link>
+                            )}
                         </div>
                     </motion.div>
                 )}

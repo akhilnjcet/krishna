@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
 import TripManagementTab from '../../components/fleet/TripManagementTab';
 import StaffIdCardModal from '../../components/StaffIdCardModal';
+import { openGoogleMapsNavigation } from '../../utils/mapsUtil';
 import { 
     Truck, Plus, Search, Filter, Calendar, AlertTriangle, ShieldCheck, 
     Clock, DollarSign, Fuel, Wrench, FileText, CheckCircle2, ChevronRight, 
@@ -2015,7 +2016,17 @@ const AdminFleet = () => {
                                                         <tr key={idx}>
                                                             <td className="px-3 py-1.5 text-slate-400">{new Date(t.date || t.completedAt).toLocaleDateString()}</td>
                                                             <td className="px-3 py-1.5 font-mono font-bold">{t.vehicleRegistration}</td>
-                                                            <td className="px-3 py-1.5 font-semibold">{t.destination}</td>
+                                                            <td className="px-3 py-1.5 font-semibold">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openGoogleMapsNavigation(t)}
+                                                                    className="text-blue-600 hover:text-blue-800 dark:hover:text-blue-400 hover:underline inline-flex items-center gap-1 text-left font-bold"
+                                                                    title="Open Destination in Google Maps"
+                                                                >
+                                                                    <MapPin className="w-3 h-3 text-emerald-500 shrink-0" />
+                                                                    <span>{t.destination}</span>
+                                                                </button>
+                                                            </td>
                                                             <td className="px-3 py-1.5 text-center font-bold text-slate-900 dark:text-white font-mono">{t.distanceKm || 0} km</td>
                                                             <td className="px-3 py-1.5 text-slate-500">{t.purpose}</td>
                                                             <td className="px-3 py-1.5">

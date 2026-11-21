@@ -7,6 +7,7 @@ import {
     Fuel, Gauge, ShieldCheck, Eye, Download, Play, Pause, 
     CheckSquare, Camera, RefreshCw, X, Check, Phone, Scale, Package
 } from 'lucide-react';
+import { openGoogleMapsNavigation } from '../../utils/mapsUtil';
 
 const ISSUE_CATEGORIES = [
     'Vehicle Breakdown',
@@ -311,12 +312,23 @@ const DriverTripDetail = () => {
                         )}
                     </div>
 
-                    <div className="text-right text-xs">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase block">Vehicle</span>
-                        <span className="font-mono font-black text-slate-800 dark:text-slate-200 text-sm">
-                            {trip.vehicleRegistration}
-                        </span>
-                        <span className="text-[10px] text-slate-400 block">{trip.vehicleName || trip.vehicleType}</span>
+                    <div className="flex items-center gap-3 self-end sm:self-center">
+                        <button
+                            type="button"
+                            onClick={() => openGoogleMapsNavigation(trip)}
+                            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95 transition"
+                            title="Open Trip Destination in Google Maps"
+                        >
+                            <MapPin className="w-4 h-4 text-emerald-100" />
+                            <span>Navigate in Maps</span>
+                        </button>
+                        <div className="text-right text-xs">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase block">Vehicle</span>
+                            <span className="font-mono font-black text-slate-800 dark:text-slate-200 text-sm">
+                                {trip.vehicleRegistration}
+                            </span>
+                            <span className="text-[10px] text-slate-400 block">{trip.vehicleName || trip.vehicleType}</span>
+                        </div>
                     </div>
                 </div>
 

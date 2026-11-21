@@ -6,6 +6,7 @@ import {
     Search, Filter, Plus, Eye, Check, ChevronRight, Navigation,
     RotateCcw, ShieldCheck, Scale, Package
 } from 'lucide-react';
+import { openGoogleMapsNavigation } from '../../utils/mapsUtil';
 
 const TripManagementTab = () => {
     const [trips, setTrips] = useState([]);
@@ -524,6 +525,15 @@ const TripManagementTab = () => {
 
                                     {/* Action Buttons */}
                                     <div className="flex items-center gap-2 flex-wrap">
+                                        <button
+                                            type="button"
+                                            onClick={() => openGoogleMapsNavigation(tr)}
+                                            className="px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center gap-1 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
+                                            title="Open Trip Destination in Google Maps"
+                                        >
+                                            <MapPin className="w-3.5 h-3.5 text-emerald-500" /> Map
+                                        </button>
+
                                         <button
                                             onClick={() => {
                                                 setSelectedTrip(tr);

@@ -657,6 +657,7 @@ const App = () => {
             {/* Driver Portal Routes */}
             <Route path="/driver" element={<DriverLayout />}>
               <Route index element={<DriverDashboard />} />
+              <Route path="attendance" element={<AttendanceScanner />} />
               <Route path="trip/:id" element={<DriverTripDetail />} />
               <Route path="issues" element={<DriverIssues />} />
               <Route path="profile" element={<DriverProfile />} />
