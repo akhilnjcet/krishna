@@ -112,8 +112,8 @@ const DriverLayout = () => {
             <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm px-3 sm:px-4 py-2.5">
                 <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
                     {/* Left: Back Button, Home Button & Brand */}
-                    <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
-                        {/* Back Going Navigation Button */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        {/* Back Navigation Button */}
                         <button
                             onClick={() => {
                                 if (window.history.state && window.history.state.idx > 0) {
@@ -124,63 +124,65 @@ const DriverLayout = () => {
                                     navigate('/');
                                 }
                             }}
-                            className="p-2 sm:px-3 sm:py-2 bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 text-slate-700 dark:text-slate-200 rounded-xl transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 text-xs font-bold shrink-0 active:scale-95"
+                            className="p-2 sm:px-2.5 sm:py-2 bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 text-slate-700 dark:text-slate-200 rounded-xl transition flex items-center gap-1 border border-slate-200 dark:border-slate-700 text-xs font-bold shrink-0 active:scale-95"
                             title="Go Back"
                         >
-                            <ChevronLeft className="w-4 h-4 sm:w-4 sm:h-4 stroke-[2.5]" />
-                            <span className="inline">Back</span>
+                            <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+                            <span className="hidden md:inline">Back</span>
                         </button>
 
                         {/* Home Page Navigation Button */}
                         <Link
                             to="/"
-                            className="p-2 sm:px-3 sm:py-2 bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 text-slate-700 dark:text-slate-200 rounded-xl transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 text-xs font-bold shrink-0 active:scale-95"
+                            className="p-2 sm:px-2.5 sm:py-2 bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 text-slate-700 dark:text-slate-200 rounded-xl transition flex items-center gap-1 border border-slate-200 dark:border-slate-700 text-xs font-bold shrink-0 active:scale-95"
                             title="ERP Home Page"
                         >
                             <Home className="w-4 h-4 stroke-[2.5]" />
-                            <span className="inline">Home</span>
+                            <span className="hidden md:inline">Home</span>
                         </Link>
 
                         {/* Brand Logo & Details */}
-                        <Link to="/driver" className="flex items-center gap-2 sm:gap-2.5 min-w-0 group ml-0.5 sm:ml-1">
+                        <Link to="/driver" className="flex items-center gap-2 shrink-0 group ml-0.5">
                             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 flex-shrink-0 group-hover:scale-105 transition-transform">
                                 <Truck className="w-5 h-5" />
                             </div>
-                            <div className="min-w-0 hidden xs:block sm:block">
-                                <div className="flex items-center gap-1.5 sm:gap-2">
-                                    <h1 className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white leading-none">
+                            <div className="hidden sm:block shrink-0">
+                                <div className="flex items-center gap-1.5">
+                                    <h1 className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white leading-none whitespace-nowrap">
                                         Krishna Fleet
                                     </h1>
-                                    <span className="text-[9px] sm:text-[10px] bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-black px-1.5 sm:px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+                                    <span className="text-[9px] bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">
                                         Driver
                                     </span>
                                 </div>
-                                <p className="text-[11px] text-slate-500 truncate max-w-[120px] sm:max-w-xs mt-0.5">
+                                <p className="text-[10px] text-slate-500 max-w-[130px] lg:max-w-[160px] truncate mt-0.5">
                                     {driverInfo?.name || user?.name || 'Driver'} • {driverInfo?.licenseNumber || 'Verified'}
                                 </p>
                             </div>
                         </Link>
                     </div>
 
-                    {/* Desktop Navigation Tabs (Scrollable & Responsive) */}
-                    <nav className="hidden lg:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-inner overflow-x-auto max-w-2xl">
-                        {primaryNavTabs.map(tab => {
-                            const active = location.pathname === tab.path;
-                            return (
-                                <Link
-                                    key={tab.name}
-                                    to={tab.path}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                                        active
-                                            ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
-                                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                                    }`}
-                                >
-                                    <tab.icon className={`w-3.5 h-3.5 ${active ? 'stroke-[2.5]' : ''}`} />
-                                    <span>{tab.name}</span>
-                                </Link>
-                            );
-                        })}
+                    {/* Desktop Navigation Tabs (Scrollable & Zero Overlap) */}
+                    <nav className="hidden lg:flex flex-1 min-w-0 mx-2 items-center justify-center">
+                        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-inner overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden max-w-2xl">
+                            {primaryNavTabs.map(tab => {
+                                const active = location.pathname === tab.path;
+                                return (
+                                    <Link
+                                        key={tab.name}
+                                        to={tab.path}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
+                                            active
+                                                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
+                                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        <tab.icon className={`w-3.5 h-3.5 ${active ? 'stroke-[2.5]' : ''}`} />
+                                        <span>{tab.name}</span>
+                                    </Link>
+                                );
+                            })}
+                        </div>
                     </nav>
 
                     {/* Quick Actions & SOS */}

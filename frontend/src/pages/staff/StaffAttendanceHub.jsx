@@ -70,9 +70,6 @@ const StaffAttendanceHub = () => {
                 api.get(`/overtime?month=${selectedMonth}&staffId=${staffId}`)
             ]);
 
-            if (summaryRes.data && summaryRes.data.summary) {
-                setSummary(summaryRes.data.summary);
-            }
             const rawDaily = Array.isArray(dailyRes.data) ? dailyRes.data : [];
             const sortedDaily = [...rawDaily].sort((a, b) => {
                 const timeA = a.date ? new Date(a.date).getTime() : 0;
@@ -81,6 +78,55 @@ const StaffAttendanceHub = () => {
             });
             setAttendanceLogs(sortedDaily);
             setOvertimeLogs(Array.isArray(otRes.data) ? otRes.data : []);
+
+            // Client-side dynamic summary calculation to guarantee 100% sync
+            let presentCount = 0;
+            let absentCount = 0;
+            let halfDayCount = 0;
+            let leaveCount = 0;
+            let holidayCount = 0;
+            let weeklyOffCount = 0;
+
+            sortedDaily.forEach(r => {
+                const s = (r.status || '').trim().toUpperCase();
+                if (['PRESENT', 'COMPLETED', 'ON TIME', 'LATE', 'IN PROGRESS'].includes(s) || (r.workedHours > 0 && s !== 'HALF DAY')) {
+                    presentCount++;
+                } else if (s === 'HALF DAY' || s === 'HALF-DAY') {
+                    halfDayCount++;
+                } else if (s.includes('LEAVE')) {
+                    leaveCount++;
+                } else if (s.includes('HOLIDAY')) {
+                    holidayCount++;
+                } else if (s === 'WEEKLY OFF' || s === 'WEEKEND') {
+                    weeklyOffCount++;
+                } else if (s === 'ABSENT' || s === 'MISSING OUT') {
+                    absentCount++;
+                } else if (r.checkIn && r.checkIn !== '--') {
+                    presentCount++;
+                } else {
+                    absentCount++;
+                }
+            });
+
+            const total = sortedDaily.length;
+            const countable = total - holidayCount - weeklyOffCount;
+            const active = presentCount + (halfDayCount * 0.5);
+            const calculatedPercentage = countable > 0 ? Math.min(100, Math.round((active / countable) * 100)) : (total > 0 && presentCount > 0 ? 100 : 0);
+
+            if (sortedDaily.length > 0) {
+                setSummary({
+                    present: presentCount,
+                    absent: absentCount,
+                    halfDay: halfDayCount,
+                    leave: leaveCount,
+                    holiday: holidayCount,
+                    weeklyOff: weeklyOffCount,
+                    totalDays: total,
+                    percentage: calculatedPercentage
+                });
+            } else if (summaryRes.data && summaryRes.data.summary) {
+                setSummary(summaryRes.data.summary);
+            }
         } catch (err) {
             console.error("Failed to load staff attendance data:", err);
         } finally {
@@ -464,7 +510,7 @@ const StaffAttendanceHub = () => {
                 </div>
 
                 {/* Desktop View: Table */}
-                <div className="hidden sm:block overflow-x-auto">
+                <div className="hidden sm:block overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
                     <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
                             <tr className="bg-slate-50 dark:bg-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">

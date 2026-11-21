@@ -386,25 +386,41 @@ exports.getStaffDailyAttendanceSummary = async (req, res) => {
             halfDay: 0,
             leave: 0,
             holiday: 0,
+            weeklyOff: 0,
             totalDays: reconciledRecords.length,
             percentage: 0
         };
 
         reconciledRecords.forEach(r => {
-            if (r.status === 'Present') summary.present++;
-            else if (r.status === 'Absent') summary.absent++;
-            else if (r.status === 'Half Day') summary.halfDay++;
-            else if (r.status === 'Leave') summary.leave++;
-            else if (r.status === 'Holiday') summary.holiday++;
+            const rawStatus = (r.status || '').trim();
+            const s = rawStatus.toUpperCase();
+
+            if (['PRESENT', 'COMPLETED', 'ON TIME', 'LATE', 'IN PROGRESS'].includes(s) || (r.workedHours > 0 && s !== 'HALF DAY')) {
+                summary.present++;
+            } else if (s === 'HALF DAY' || s === 'HALF-DAY') {
+                summary.halfDay++;
+            } else if (s === 'LEAVE' || s.includes('LEAVE')) {
+                summary.leave++;
+            } else if (s === 'HOLIDAY' || s.includes('HOLIDAY')) {
+                summary.holiday++;
+            } else if (s === 'WEEKLY OFF' || s === 'WEEKEND') {
+                summary.weeklyOff++;
+            } else if (s === 'ABSENT' || s === 'MISSING OUT') {
+                summary.absent++;
+            } else if (r.checkIn && r.checkIn !== '--') {
+                summary.present++;
+            } else {
+                summary.absent++;
+            }
         });
 
-        // Attendance Percentage Calculation: (Present + 0.5 * HalfDay) / (Total Days - Holidays) * 100
+        // Attendance Percentage Calculation: (Present + 0.5 * HalfDay) / (Total Days - Holidays - WeeklyOff) * 100
         const activeDaysCount = summary.present + (summary.halfDay * 0.5);
-        const countableDays = summary.totalDays - summary.holiday;
+        const countableDays = summary.totalDays - summary.holiday - summary.weeklyOff;
         if (countableDays > 0) {
-            summary.percentage = Math.round((activeDaysCount / countableDays) * 100);
+            summary.percentage = Math.min(100, Math.round((activeDaysCount / countableDays) * 100));
         } else if (summary.totalDays > 0) {
-            summary.percentage = 100; // All holidays
+            summary.percentage = summary.present > 0 ? 100 : 0;
         }
 
         res.json({ staffId: targetStaffId, month, summary, records: reconciledRecords });
