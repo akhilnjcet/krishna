@@ -1057,6 +1057,23 @@ exports.resetDriverPassword = async (req, res) => {
     }
 };
 
+// Metadata descriptors for driver permissions
+const DRIVER_PERMISSION_METADATA = {
+    'driver.view': { label: 'View Drivers', description: 'Browse driver directory, profiles, and licenses' },
+    'driver.create': { label: 'Register Drivers', description: 'Create and register new driver profiles' },
+    'driver.edit': { label: 'Edit Driver Details', description: 'Modify contact numbers, license details, and status' },
+    'driver.delete': { label: 'Delete Drivers', description: 'Permanently remove driver accounts' },
+    'driver.activate': { label: 'Activate Drivers', description: 'Mark driver as available for dispatch' },
+    'driver.deactivate': { label: 'Suspend / Deactivate', description: 'Temporarily suspend driver accounts' },
+    'driver.password_reset': { label: 'Reset Password', description: 'Change driver portal login password' },
+    'driver.assign_vehicle': { label: 'Assign Vehicles', description: 'Allocate or reassign company transport assets' },
+    'driver.assign_trip': { label: 'Assign & Dispatch Trips', description: 'Schedule and dispatch delivery routes' },
+    'driver.view_reports': { label: 'View Reports & Logs', description: 'Access trip distance and fuel logs' },
+    'driver.manage_issues': { label: 'Manage Issues', description: 'Review and resolve vehicle defect tickets' },
+    'driver.view_location': { label: 'Track Live Location', description: 'Monitor real-time GPS coordinates' },
+    'driver.manage_documents': { label: 'Manage Documents', description: 'Upload and verify permits and PUC' }
+};
+
 // ─── 13. DRIVER PERMISSIONS MANAGEMENT MATRIX (ADMIN ONLY) ────────────
 exports.getDriverPermissionMatrix = async (req, res) => {
     try {
@@ -1065,11 +1082,25 @@ exports.getDriverPermissionMatrix = async (req, res) => {
             status: 'active'
         }).select('name email role permissions department designation staff_id phone').sort({ role: 1, name: 1 });
 
+        const enrichedUsers = users.map(u => {
+            const uObj = u.toObject();
+            if (uObj.role === 'admin') {
+                uObj.permissions = ALL_DRIVER_PERMISSIONS;
+            }
+            return uObj;
+        });
+
+        const allPermissions = ALL_DRIVER_PERMISSIONS.map(key => ({
+            key,
+            label: DRIVER_PERMISSION_METADATA[key]?.label || key,
+            description: DRIVER_PERMISSION_METADATA[key]?.description || ''
+        }));
+
         res.json({
             success: true,
-            allPermissions: ALL_DRIVER_PERMISSIONS,
+            allPermissions,
             prohibitedForStaff: STAFF_PROHIBITED_PERMISSIONS,
-            users
+            users: enrichedUsers
         });
     } catch (err) {
         console.error('getDriverPermissionMatrix error:', err);

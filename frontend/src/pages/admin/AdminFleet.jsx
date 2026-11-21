@@ -33,6 +33,22 @@ const LICENSE_TYPES = [
     'Other'
 ];
 
+const FALLBACK_DRIVER_PERMISSIONS = {
+    'driver.view': { label: 'View Drivers', description: 'Browse driver directory, profiles, and licenses' },
+    'driver.create': { label: 'Register Drivers', description: 'Create and register new driver profiles' },
+    'driver.edit': { label: 'Edit Driver Details', description: 'Modify contact numbers, license details, and status' },
+    'driver.delete': { label: 'Delete Drivers', description: 'Permanently remove driver accounts' },
+    'driver.activate': { label: 'Activate Drivers', description: 'Mark driver as available for dispatch' },
+    'driver.deactivate': { label: 'Suspend / Deactivate', description: 'Temporarily suspend driver accounts' },
+    'driver.password_reset': { label: 'Reset Password', description: 'Change driver portal login password' },
+    'driver.assign_vehicle': { label: 'Assign Vehicles', description: 'Allocate or reassign company transport assets' },
+    'driver.assign_trip': { label: 'Assign & Dispatch Trips', description: 'Schedule and dispatch delivery routes' },
+    'driver.view_reports': { label: 'View Reports & Logs', description: 'Access trip distance and fuel logs' },
+    'driver.manage_issues': { label: 'Manage Issues', description: 'Review and resolve vehicle defect tickets' },
+    'driver.view_location': { label: 'Track Live Location', description: 'Monitor real-time GPS coordinates' },
+    'driver.manage_documents': { label: 'Manage Documents', description: 'Upload and verify permits and PUC' }
+};
+
 const AdminFleet = () => {
     // Navigation Tab
     const [activeTab, setActiveTab] = useState('fleet'); // 'fleet' | 'drivers' | 'assignments'
@@ -484,12 +500,16 @@ const AdminFleet = () => {
     };
 
     const handleToggleUserPermission = async (targetUser, permKey) => {
+        if (targetUser.role === 'admin') {
+            showToast('Administrators inherently possess full, unrestricted permissions.', true);
+            return;
+        }
         const isStaff = targetUser.role === 'staff';
         if (isStaff && prohibitedList.includes(permKey)) {
             showToast(`Permission "${permKey}" is strictly prohibited for Staff by ERP security policy.`, true);
             return;
         }
-        const currentPerms = targetUser.driverPermissions || [];
+        const currentPerms = targetUser.permissions || targetUser.driverPermissions || [];
         const hasPerm = currentPerms.includes(permKey);
         const updatedPerms = hasPerm
             ? currentPerms.filter(p => p !== permKey)
@@ -501,7 +521,7 @@ const AdminFleet = () => {
                 permissions: updatedPerms
             });
             setPermissionsUsers(prev => prev.map(u => 
-                u._id === targetUser._id ? { ...u, driverPermissions: updatedPerms } : u
+                u._id === targetUser._id ? { ...u, permissions: updatedPerms, driverPermissions: updatedPerms } : u
             ));
             showToast(`Driver permissions updated for ${targetUser.name}`);
         } catch (err) {
@@ -2257,8 +2277,11 @@ const AdminFleet = () => {
                             ) : (
                                 <div className="space-y-4">
                                     {permissionsUsers.map(user => {
+                                        const isAdmin = user.role === 'admin';
                                         const isStaff = user.role === 'staff';
-                                        const userPerms = user.driverPermissions || [];
+                                        const userPerms = isAdmin
+                                            ? allPermissionsList.map(p => typeof p === 'string' ? p : p.key)
+                                            : (user.permissions || user.driverPermissions || []);
                                         const isBusy = updatingPermUserId === user._id;
 
                                         return (
@@ -2277,7 +2300,9 @@ const AdminFleet = () => {
                                                                     {user.name}
                                                                 </h4>
                                                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                                                    user.role === 'manager'
+                                                                    user.role === 'admin'
+                                                                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                                                                        : user.role === 'manager'
                                                                         ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
                                                                         : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
                                                                 }`}>
@@ -2294,28 +2319,44 @@ const AdminFleet = () => {
                                                     </div>
 
                                                     <div className="text-[11px] font-bold text-slate-500">
-                                                        Active Permissions: <span className="text-indigo-600 font-black">{userPerms.length}</span> / {allPermissionsList.length}
+                                                        {isAdmin ? (
+                                                            <span className="text-purple-700 dark:text-purple-300 font-bold bg-purple-50 dark:bg-purple-950/50 px-2.5 py-0.5 rounded-lg border border-purple-200 dark:border-purple-800">
+                                                                Full Administrator Authority (All Permissions Active)
+                                                            </span>
+                                                        ) : (
+                                                            <>
+                                                                Active Permissions: <span className="text-indigo-600 font-black">{userPerms.length}</span> / {allPermissionsList.length}
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
 
                                                 {/* Permission Items */}
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                                                     {allPermissionsList.map(perm => {
-                                                        const isProhibited = isStaff && prohibitedList.includes(perm.key);
-                                                        const hasPerm = userPerms.includes(perm.key);
+                                                        const permKey = typeof perm === 'string' ? perm : perm.key;
+                                                        const meta = FALLBACK_DRIVER_PERMISSIONS[permKey] || {};
+                                                        const permLabel = perm?.label || meta.label || permKey;
+                                                        const permDesc = perm?.description || meta.description || '';
+
+                                                        const isProhibited = isStaff && prohibitedList.includes(permKey);
+                                                        const hasPerm = isAdmin || userPerms.includes(permKey);
+                                                        const isCardDisabled = isAdmin || isProhibited || isBusy;
 
                                                         return (
                                                             <button
                                                                 type="button"
-                                                                key={perm.key}
-                                                                disabled={isProhibited || isBusy}
-                                                                onClick={() => handleToggleUserPermission(user, perm.key)}
+                                                                key={permKey}
+                                                                disabled={isCardDisabled}
+                                                                onClick={() => handleToggleUserPermission(user, permKey)}
                                                                 className={`p-2.5 rounded-xl border text-left transition flex items-start gap-2 select-none ${
-                                                                    isProhibited
+                                                                    isAdmin
+                                                                        ? 'bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/60 text-slate-800 dark:text-slate-200 cursor-default'
+                                                                        : isProhibited
                                                                         ? 'bg-slate-100 dark:bg-slate-900/50 border-dashed border-slate-300 dark:border-slate-700 opacity-60 cursor-not-allowed'
                                                                         : hasPerm
-                                                                            ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 shadow-xs'
-                                                                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-700 dark:text-slate-300'
+                                                                        ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 shadow-xs cursor-pointer'
+                                                                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-700 dark:text-slate-300 cursor-pointer'
                                                                 }`}
                                                             >
                                                                 <div className="mt-0.5 shrink-0">
@@ -2332,8 +2373,8 @@ const AdminFleet = () => {
 
                                                                 <div className="min-w-0 flex-1">
                                                                     <div className="flex items-center justify-between gap-1">
-                                                                        <span className="text-[11px] font-bold truncate">
-                                                                            {perm.label}
+                                                                        <span className="text-[11px] font-bold truncate text-slate-800 dark:text-slate-200">
+                                                                            {permLabel}
                                                                         </span>
                                                                         {isProhibited && (
                                                                             <span className="text-[9px] font-black text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 px-1 py-0.2 rounded">
@@ -2342,7 +2383,7 @@ const AdminFleet = () => {
                                                                         )}
                                                                     </div>
                                                                     <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
-                                                                        {perm.description}
+                                                                        {permDesc}
                                                                     </p>
                                                                 </div>
                                                             </button>
