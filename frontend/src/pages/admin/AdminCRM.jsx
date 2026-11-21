@@ -3,7 +3,7 @@ import api from '../../services/api';
 import { 
     Users, Plus, Search, Filter, Phone, Mail, MapPin, 
     Calendar, ArrowRight, CheckCircle2, Clock, DollarSign, 
-    AlertTriangle, X, RefreshCw, MessageSquare, ChevronRight, UserPlus, Briefcase
+    AlertTriangle, X, RefreshCw, MessageSquare, ChevronLeft, ChevronRight, UserPlus, Briefcase
 } from 'lucide-react';
 
 const PIPELINE_STAGES = [
@@ -38,6 +38,8 @@ const AdminCRM = () => {
     const [selectedStage, setSelectedStage] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [overdueOnly, setOverdueOnly] = useState(false);
+    const [draggedLeadId, setDraggedLeadId] = useState(null);
+    const [dragOverStage, setDragOverStage] = useState(null);
 
     // Modals
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -106,11 +108,18 @@ const AdminCRM = () => {
     };
 
     const handleStageAdvance = async (leadId, newStage) => {
+        if (!leadId || !newStage) return;
+        // Optimistic update so cards move smoothly and instantly
+        setLeads(prev => prev.map(l => l._id === leadId ? { ...l, pipelineStage: newStage } : l));
         try {
-            await api.put(`/leads/${leadId}`, { pipelineStage: newStage });
-            fetchLeads();
+            const res = await api.put(`/leads/${leadId}`, { pipelineStage: newStage });
+            if (res.data?.success) {
+                fetchLeads();
+            }
         } catch (err) {
+            console.error('Failed to update stage:', err);
             alert(err.response?.data?.message || 'Failed to update stage');
+            fetchLeads();
         }
     };
 
@@ -281,7 +290,24 @@ const AdminCRM = () => {
                         return (
                             <div 
                                 key={stage} 
-                                className={`w-72 flex-shrink-0 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border-t-4 border border-slate-200 dark:border-slate-800 p-3 shadow-xs ${STAGE_COLORS[stage]}`}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = 'move';
+                                    if (dragOverStage !== stage) setDragOverStage(stage);
+                                }}
+                                onDragLeave={(e) => {
+                                    if (e.currentTarget.contains(e.relatedTarget)) return;
+                                    if (dragOverStage === stage) setDragOverStage(null);
+                                }}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    setDragOverStage(null);
+                                    const leadId = e.dataTransfer.getData('text/plain');
+                                    if (leadId) {
+                                        handleStageAdvance(leadId, stage);
+                                    }
+                                }}
+                                className={`w-72 flex-shrink-0 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border-t-4 border border-slate-200 dark:border-slate-800 p-3 shadow-xs transition-colors ${STAGE_COLORS[stage]} ${dragOverStage === stage ? 'ring-2 ring-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/30' : ''}`}
                             >
                                 <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-200 dark:border-slate-700">
                                     <h3 className="font-black text-xs text-slate-900 dark:text-white uppercase tracking-tight">
@@ -295,11 +321,24 @@ const AdminCRM = () => {
                                 <div className="space-y-3">
                                     {stageLeads.map(lead => {
                                         const isOverdue = lead.nextFollowUpDate && new Date(lead.nextFollowUpDate) < new Date() && !['Won', 'Lost'].includes(lead.pipelineStage);
+                                        const currentStageIdx = PIPELINE_STAGES.indexOf(lead.pipelineStage);
+                                        const canShiftPrev = currentStageIdx > 0;
+                                        const canShiftNext = currentStageIdx < PIPELINE_STAGES.length - 1;
 
                                         return (
                                             <div 
                                                 key={lead._id}
-                                                className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs hover:border-indigo-400 transition space-y-2 text-xs"
+                                                draggable
+                                                onDragStart={(e) => {
+                                                    e.dataTransfer.setData('text/plain', lead._id);
+                                                    e.dataTransfer.effectAllowed = 'move';
+                                                    setDraggedLeadId(lead._id);
+                                                }}
+                                                onDragEnd={() => {
+                                                    setDraggedLeadId(null);
+                                                    setDragOverStage(null);
+                                                }}
+                                                className={`bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs hover:border-indigo-400 transition space-y-2 text-xs cursor-grab active:cursor-grabbing ${draggedLeadId === lead._id ? 'opacity-40 ring-2 ring-indigo-400' : ''}`}
                                             >
                                                 <div className="flex justify-between items-start">
                                                     <h4 className="font-bold text-slate-900 dark:text-white truncate">{lead.name}</h4>
@@ -327,43 +366,97 @@ const AdminCRM = () => {
                                                     </div>
                                                 )}
 
+                                                {/* Pipeline Stage Selector & Quick Step Controls */}
+                                                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                                                    <div className="flex items-center justify-between gap-1 bg-slate-50 dark:bg-slate-800/80 p-1.5 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider shrink-0">Stage</span>
+                                                        <select
+                                                            value={lead.pipelineStage}
+                                                            onChange={(e) => {
+                                                                e.stopPropagation();
+                                                                handleStageAdvance(lead._id, e.target.value);
+                                                            }}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="text-[10px] font-bold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer min-w-0 flex-1 truncate"
+                                                        >
+                                                            {PIPELINE_STAGES.map(s => (
+                                                                <option key={s} value={s}>{s}</option>
+                                                            ))}
+                                                        </select>
+
+                                                        {/* Quick shift left / right buttons */}
+                                                        <div className="flex items-center gap-0.5 shrink-0">
+                                                            <button
+                                                                type="button"
+                                                                disabled={!canShiftPrev}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (canShiftPrev) handleStageAdvance(lead._id, PIPELINE_STAGES[currentStageIdx - 1]);
+                                                                }}
+                                                                title={canShiftPrev ? `Move back to: ${PIPELINE_STAGES[currentStageIdx - 1]}` : 'First stage'}
+                                                                className="p-1 rounded text-slate-500 hover:text-indigo-600 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-20 disabled:hover:bg-transparent transition cursor-pointer disabled:cursor-not-allowed"
+                                                            >
+                                                                <ChevronLeft className="w-3.5 h-3.5" />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                disabled={!canShiftNext}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (canShiftNext) handleStageAdvance(lead._id, PIPELINE_STAGES[currentStageIdx + 1]);
+                                                                }}
+                                                                title={canShiftNext ? `Advance to: ${PIPELINE_STAGES[currentStageIdx + 1]}` : 'Final stage'}
+                                                                className="p-1 rounded text-slate-500 hover:text-indigo-600 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-20 disabled:hover:bg-transparent transition cursor-pointer disabled:cursor-not-allowed"
+                                                            >
+                                                                <ChevronRight className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                                 {/* Action Toolbar */}
-                                                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-1">
+                                                <div className="flex items-center justify-between gap-1 pt-1">
                                                     <button
                                                         onClick={() => {
-                                                            setSelectedLead(lead);
-                                                            setFollowUpForm({
-                                                                scheduledDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-                                                                followUpType: 'Call',
-                                                                notes: '',
-                                                                ownerName: 'Sales Staff'
-                                                            });
-                                                            setShowFollowUpModal(true);
-                                                        }}
-                                                        className="text-[10px] text-indigo-600 font-bold hover:underline"
-                                                    >
-                                                        + Follow Up
-                                                    </button>
+                                                             setSelectedLead(lead);
+                                                             setFollowUpForm({
+                                                                 scheduledDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+                                                                 followUpType: 'Call',
+                                                                 notes: '',
+                                                                 ownerName: 'Sales Staff'
+                                                             });
+                                                             setShowFollowUpModal(true);
+                                                         }}
+                                                         className="text-[10px] text-indigo-600 font-bold hover:underline"
+                                                     >
+                                                         + Follow Up
+                                                     </button>
 
-                                                    {lead.pipelineStage !== 'Won' ? (
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedLead(lead);
-                                                                setShowConvertModal(true);
-                                                            }}
-                                                            className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-black hover:bg-emerald-100"
-                                                        >
-                                                            Convert →
-                                                        </button>
-                                                    ) : (
-                                                        <span className="text-[9px] font-black text-emerald-600">Converted ✓</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                                                     {lead.pipelineStage !== 'Won' ? (
+                                                         <button
+                                                             onClick={() => {
+                                                                 setSelectedLead(lead);
+                                                                 setShowConvertModal(true);
+                                                             }}
+                                                             className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-black hover:bg-emerald-100"
+                                                         >
+                                                             Convert →
+                                                         </button>
+                                                     ) : (
+                                                         <span className="text-[9px] font-black text-emerald-600">Converted ✓</span>
+                                                     )}
+                                                 </div>
+                                             </div>
+                                         );
+                                     })}
+
+                                     {stageLeads.length === 0 && (
+                                         <div className={`p-4 border-2 border-dashed border-slate-200 dark:border-slate-700/60 rounded-xl text-center text-[10px] text-slate-400 font-medium ${dragOverStage === stage ? 'border-indigo-400 bg-indigo-50/20 text-indigo-500 font-bold' : ''}`}>
+                                             Drag & drop leads here
+                                         </div>
+                                     )}
+                                 </div>
+                             </div>
                         );
                     })}
                 </div>
