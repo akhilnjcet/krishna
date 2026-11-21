@@ -165,7 +165,7 @@ const Login = () => {
                             Welcome back
                         </h1>
                         <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
-                            Sign in to your workspace
+                            Unified Sign-in for Admin, Staff, Drivers & Clients
                         </p>
                     </div>
 
@@ -184,7 +184,7 @@ const Login = () => {
                                     : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                             }`}
                         >
-                            ADMIN ID
+                            ACCOUNT ID / PASS
                         </button>
                         <button
                             type="button"
@@ -226,7 +226,7 @@ const Login = () => {
                                     transition={{ duration: 0.18 }}
                                     className="space-y-3.5"
                                 >
-                                    {/* Admin User ID */}
+                                    {/* User / Staff / Driver ID */}
                                     <div className="bg-[#f8fafc] dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl px-4 py-3 flex items-center gap-3 focus-within:border-[#2563EB] focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
                                         <User className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
                                         <input
@@ -237,7 +237,7 @@ const Login = () => {
                                             autoComplete="username"
                                             value={identifier}
                                             onChange={(e) => setIdentifier(e.target.value)}
-                                            placeholder="Admin User ID"
+                                            placeholder="Username, Email, Phone, or Staff/Driver ID"
                                             className="w-full bg-transparent border-0 p-0 text-sm font-semibold text-[#0f172a] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-0"
                                         />
                                     </div>
@@ -253,7 +253,7 @@ const Login = () => {
                                             autoComplete="current-password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            placeholder="Security Key"
+                                            placeholder="Password / Security Key"
                                             className="w-full bg-transparent border-0 p-0 text-sm font-semibold text-[#0f172a] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-0"
                                         />
                                         <button

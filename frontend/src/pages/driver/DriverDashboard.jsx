@@ -4,7 +4,8 @@ import api from '../../services/api';
 import { 
     Truck, MapPin, Calendar, Clock, Navigation, CheckCircle2, 
     AlertTriangle, ShieldAlert, ArrowRight, FileText, ChevronRight,
-    Fuel, Gauge, ShieldCheck, AlertCircle, RefreshCw, Eye, Package, Scale, Phone
+    Fuel, Gauge, ShieldCheck, AlertCircle, RefreshCw, Eye, Package, Scale, Phone,
+    Home, ArrowLeft
 } from 'lucide-react';
 
 const DriverDashboard = () => {
@@ -74,6 +75,37 @@ const DriverDashboard = () => {
 
     return (
         <div className="space-y-5">
+            {/* Navigation & Breadcrumb Bar */}
+            <div className="flex items-center justify-between gap-3 pb-1">
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => {
+                            if (window.history.length > 1) {
+                                navigate(-1);
+                            } else {
+                                navigate('/');
+                            }
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs transition shadow-sm active:scale-95"
+                        title="Go Back"
+                    >
+                        <ArrowLeft className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>Back</span>
+                    </button>
+                    <Link
+                        to="/"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs transition shadow-sm active:scale-95"
+                        title="Go to ERP Home"
+                    >
+                        <Home className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>ERP Home</span>
+                    </Link>
+                </div>
+                <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 hidden sm:block">
+                    Portal Active · Driver Console
+                </div>
+            </div>
+
             {/* Top Welcome & Quick Refresh */}
             <div className="flex items-center justify-between">
                 <div>

@@ -152,12 +152,38 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: 'Username or email and password are required.' });
         }
 
-        const identifier = (username || email || "").trim().toLowerCase();
+        const rawIdentifier = (username || email || "").trim();
+        const identifierLower = rawIdentifier.toLowerCase();
+        const identifier = identifierLower;
 
-        // Strict query: find user by normalized username or email
-        const user = await User.findOne({ 
-            $or: [{ username: identifier }, { email: identifier }] 
+        // Strict query: find user by normalized username, email, phone, or staff_id
+        let user = await User.findOne({ 
+            $or: [
+                { username: identifierLower }, 
+                { email: identifierLower },
+                { phone: rawIdentifier },
+                { phoneNumber: rawIdentifier },
+                { staff_id: rawIdentifier }
+            ] 
         });
+
+        // Fallback for drivers logging in via license number or driver phone
+        if (!user) {
+            try {
+                const Driver = require('../models/Driver');
+                const linkedDriver = await Driver.findOne({
+                    $or: [
+                        { licenseNumber: { $regex: new RegExp(`^${rawIdentifier}$`, 'i') } },
+                        { phone: rawIdentifier }
+                    ]
+                });
+                if (linkedDriver && linkedDriver.userId) {
+                    user = await User.findById(linkedDriver.userId);
+                }
+            } catch (driverFindErr) {
+                // Ignore fallback lookup error
+            }
+        }
 
         if (!user) {
             logAuthFailure(req, { identifier, reason: 'Invalid credentials - account not found', statusCode: 401 });

@@ -39,7 +39,7 @@ const lazy = (factory) =>
       throw error;
     }
   });
-import { HashRouter as Router, Routes, Route, useLocation, useNavigate, Link } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation, useNavigate, Link, Navigate } from 'react-router-dom';
 import { AlertTriangle, WifiOff } from 'lucide-react';
 import api from './services/api';
 import Navbar from './components/Navbar';
@@ -570,7 +570,7 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/staff-login" element={<StaffLogin />} />
-            <Route path="/driver-login" element={<DriverLogin />} />
+            <Route path="/driver-login" element={<Navigate to="/login" replace />} />
             <Route path="/terms-of-service" element={<PolicyViewer defaultType="terms" />} />
             <Route path="/privacy-policy" element={<PolicyViewer defaultType="privacy" />} />
             <Route path="/terms" element={<PolicyViewer defaultType="terms" />} />

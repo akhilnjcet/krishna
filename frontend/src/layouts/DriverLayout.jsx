@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
     Truck, Navigation, AlertOctagon, User, LogOut, PhoneCall, 
     ShieldAlert, AlertTriangle, CheckCircle2, FileText, ChevronRight,
-    MapPin, Bell, Clock
+    MapPin, Bell, Clock, Home, ChevronLeft, ArrowLeft
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import ThemeToggle from '../components/ThemeToggle';
@@ -89,32 +89,62 @@ const DriverLayout = () => {
     const navTabs = [
         { name: 'Trips & Tasks', path: '/driver', icon: Truck },
         { name: 'Report Issues', path: '/driver/issues', icon: AlertOctagon },
-        { name: 'My Profile', path: '/driver/profile', icon: User }
+        { name: 'My Profile', path: '/driver/profile', icon: User },
+        { name: 'ERP Home', path: '/', icon: Home }
     ];
 
     return (
         <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans pb-20 md:pb-6">
             {/* Top Driver App Bar */}
-            <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm px-4 py-3">
-                <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
-                    {/* Brand */}
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 flex-shrink-0">
-                            <Truck className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white leading-none">
-                                    Krishna Fleet
-                                </h1>
-                                <span className="text-[10px] bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                    Driver Portal
-                                </span>
+            <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm px-3 sm:px-4 py-2.5">
+                <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+                    {/* Left: Back Button, Home Button & Brand */}
+                    <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+                        {/* Back Going Navigation Button */}
+                        <button
+                            onClick={() => {
+                                if (location.pathname !== '/driver') {
+                                    navigate('/driver');
+                                } else {
+                                    navigate('/');
+                                }
+                            }}
+                            className="p-2 sm:px-3 sm:py-2 bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 text-slate-700 dark:text-slate-200 rounded-xl transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 text-xs font-bold shrink-0 active:scale-95"
+                            title="Go Back"
+                        >
+                            <ChevronLeft className="w-4 h-4 sm:w-4 sm:h-4 stroke-[2.5]" />
+                            <span className="hidden sm:inline">Back</span>
+                        </button>
+
+                        {/* Home Page Navigation Button */}
+                        <Link
+                            to="/"
+                            className="p-2 sm:px-3 sm:py-2 bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 text-slate-700 dark:text-slate-200 rounded-xl transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 text-xs font-bold shrink-0 active:scale-95"
+                            title="ERP Home Page"
+                        >
+                            <Home className="w-4 h-4 stroke-[2.5]" />
+                            <span className="hidden sm:inline">Home</span>
+                        </Link>
+
+                        {/* Brand Logo & Details */}
+                        <Link to="/driver" className="flex items-center gap-2 sm:gap-2.5 min-w-0 group ml-0.5 sm:ml-1">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 flex-shrink-0 group-hover:scale-105 transition-transform">
+                                <Truck className="w-5 h-5" />
                             </div>
-                            <p className="text-xs text-slate-500 truncate max-w-[180px] sm:max-w-xs mt-0.5">
-                                {driverInfo?.name || user?.name || 'Driver'} • {driverInfo?.licenseNumber || 'Verified'}
-                            </p>
-                        </div>
+                            <div className="min-w-0 hidden xs:block sm:block">
+                                <div className="flex items-center gap-1.5 sm:gap-2">
+                                    <h1 className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white leading-none">
+                                        Krishna Fleet
+                                    </h1>
+                                    <span className="text-[9px] sm:text-[10px] bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-black px-1.5 sm:px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+                                        Driver
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 truncate max-w-[120px] sm:max-w-xs mt-0.5">
+                                    {driverInfo?.name || user?.name || 'Driver'} • {driverInfo?.licenseNumber || 'Verified'}
+                                </p>
+                            </div>
+                        </Link>
                     </div>
 
                     {/* Desktop Navigation Tabs */}
@@ -139,11 +169,11 @@ const DriverLayout = () => {
                     </nav>
 
                     {/* Quick Actions & SOS */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         {/* Emergency SOS Button */}
                         <button
                             onClick={() => setShowEmergencyModal(true)}
-                            className="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-2 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-rose-600/30 active:scale-95 transition"
+                            className="bg-rose-600 hover:bg-rose-500 text-white px-3 sm:px-3.5 py-2 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-rose-600/30 active:scale-95 transition shrink-0"
                             title="Emergency SOS"
                         >
                             <ShieldAlert className="w-4 h-4 animate-pulse" />
@@ -155,9 +185,9 @@ const DriverLayout = () => {
                         <button
                             onClick={() => {
                                 logout();
-                                navigate('/driver-login', { replace: true });
+                                navigate('/login', { replace: true });
                             }}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition border border-slate-200 dark:border-slate-800"
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition border border-slate-200 dark:border-slate-800 shrink-0"
                             title="Sign Out"
                         >
                             <LogOut className="w-4 h-4" />
@@ -173,17 +203,17 @@ const DriverLayout = () => {
             </main>
 
             {/* Bottom Navigation Bar for Mobile */}
-            <nav className="fixed bottom-0 inset-x-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 z-30 md:hidden px-3 py-2 flex items-center justify-around shadow-xl">
+            <nav className="fixed bottom-0 inset-x-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 z-30 md:hidden px-2 py-2 flex items-center justify-around shadow-xl">
                 {navTabs.map(tab => {
                     const active = location.pathname === tab.path;
                     return (
                         <Link
                             key={tab.name}
                             to={tab.path}
-                            className={`flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition ${
+                            className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition ${
                                 active
                                     ? 'text-blue-600 dark:text-blue-400 font-black scale-105'
-                                    : 'text-slate-500 dark:text-slate-400 font-semibold'
+                                    : 'text-slate-500 dark:text-slate-400 font-semibold hover:text-slate-900 dark:hover:text-white'
                             }`}
                         >
                             <tab.icon className={`w-5 h-5 ${active ? 'stroke-[2.5]' : ''}`} />

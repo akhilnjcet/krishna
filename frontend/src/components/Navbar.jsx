@@ -12,6 +12,7 @@ const Navbar = () => {
     const { user, isAuthenticated } = useAuthStore();
 
     const dashboardPath = user?.role === 'admin' ? '/admin' : 
+                         user?.role === 'driver' ? '/driver' :
                          user?.role === 'staff' ? '/staff' : '/customer';
 
     const navLinks = [
