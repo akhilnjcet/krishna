@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { 
     Calendar, CheckCircle2, AlertCircle, Loader2, FileText, Download,
@@ -549,7 +550,7 @@ const StaffFinance = () => {
                 <div className="space-y-6">
                     {/* Controls & Metrics */}
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-wrap gap-4 items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                             <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Inspect Month:</span>
                             <input 
                                 type="month" 
@@ -557,6 +558,12 @@ const StaffFinance = () => {
                                 onChange={(e) => setSelectedMonth(e.target.value)}
                                 className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl outline-none font-bold text-slate-700 dark:text-slate-300 focus:border-indigo-500"
                             />
+                            <Link 
+                                to="/staff/applications?type=attendance_issue&action=new"
+                                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition shadow-sm active:scale-95"
+                            >
+                                <AlertCircle className="w-3.5 h-3.5" /> Report Attendance Issue
+                            </Link>
                         </div>
 
                         {attendanceSummary && (
@@ -625,7 +632,7 @@ const StaffFinance = () => {
             {activeTab === 'overtime' && (
                 <div className="space-y-6">
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-wrap gap-4 items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                             <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Inspect Month:</span>
                             <input 
                                 type="month" 
@@ -633,6 +640,12 @@ const StaffFinance = () => {
                                 onChange={(e) => setSelectedMonth(e.target.value)}
                                 className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl outline-none font-bold text-slate-700 dark:text-slate-300 focus:border-indigo-500"
                             />
+                            <Link 
+                                to="/staff/applications?type=unlogged_overtime&action=new"
+                                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition shadow-sm active:scale-95"
+                            >
+                                <Clock className="w-3.5 h-3.5" /> Request Unlogged Overtime
+                            </Link>
                         </div>
                     </div>
 

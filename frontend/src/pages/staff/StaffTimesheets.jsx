@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import {
     History, Calendar, Loader2, Download,
@@ -171,6 +172,14 @@ const StaffTimesheets = () => {
                     >
                         <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                     </button>
+
+                    {/* Request Correction */}
+                    <Link
+                        to="/staff/applications?type=attendance_issue&action=new"
+                        className="flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-indigo-600/20 transition-all active:scale-95"
+                    >
+                        <AlertCircle className="w-3.5 h-3.5" /> Request Correction
+                    </Link>
 
                     {/* Export CSV */}
                     <button
