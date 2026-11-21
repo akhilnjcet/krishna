@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Calendar, User, Tag, ArrowRight, Loader2, 
-    AlertCircle, Search, Radio, Terminal, RefreshCw, AlertTriangle
+    AlertCircle, Search, Radio, Terminal, RefreshCw, AlertTriangle,
+    X, Check, Share2, BookOpen, Flame, ShieldCheck, Layers, Clock, 
+    Sparkles, Send, ExternalLink
 } from 'lucide-react';
 import api from '../services/api';
 import { getDirectImageUrl } from '../utils/imageUtils';
@@ -11,40 +13,110 @@ const FALLBACK_POSTS = [
     {
         _id: 'fb1',
         title: 'Advances in Industrial Structural Steel Fabrication',
-        category: 'Engineering',
+        category: 'Steel Fabrication',
         authorName: 'KEW Technical Team',
         createdAt: '2026-03-15',
         excerpt: 'Exploring the shift toward high-tensile steel in heavy fabrication and the impact on structural longevity in extreme climates.',
-        image: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=800&q=80',
-        content: 'Structural steel fabrication has evolved beyond simple welding. Today, we utilize computer-aided design (CAD) integrated with automated plasma cutting to ensure sub-millimeter precision. This technical report explores how Krishna Engineering Works leverages these advances for modern warehousing...'
+        image: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=1200&q=80',
+        content: 'Structural steel fabrication has evolved beyond simple welding. Today, we utilize computer-aided design (CAD) integrated with automated plasma cutting to ensure sub-millimeter precision.\n\nThis technical report explores how Krishna Engineering Works leverages these advances for modern warehousing, high-tolerance industrial sheds, and automated heavy logistics facilities across South India.'
     },
     {
         _id: 'fb2',
         title: 'Safety Protocols in High-Pressure Pipeline Welding',
-        category: 'Safety',
-        authorName: 'Operations Lead',
+        category: 'Welding Eng.',
+        authorName: 'Chief Welding Inspector',
         createdAt: '2026-03-22',
-        excerpt: 'Standard operating procedures for maintaining weld integrity under high-pressure environments and X-Ray verification techniques.',
-        image: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800&q=80',
-        content: 'Integrity is paramount in pressure systems. Our team adheres to strict ISO and ISI standards, utilizing multi-pass TIG welding followed by comprehensive dye-penetrant and radiographic testing. This bulletin outlines our latest safety checkpoints...'
+        excerpt: 'Standard operating procedures for maintaining weld integrity under high-pressure environments and X-Ray radiographic verification techniques.',
+        image: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=1200&q=80',
+        content: 'Integrity is paramount in pressure systems. Our team adheres to strict ISO and ISI standards, utilizing multi-pass TIG welding followed by comprehensive dye-penetrant and radiographic testing.\n\nThis bulletin outlines our latest safety checkpoints, argon gas purity benchmarks, and electrode selection matrices for severe service environments.'
     },
     {
         _id: 'fb3',
         title: 'Modernizing Kerala’s Industrial Infrastructure',
-        category: 'Industry',
+        category: 'Infrastructure',
         authorName: 'Managing Director',
         createdAt: '2026-04-01',
         excerpt: 'A 25-year perspective on the evolution of metal roofing and truss systems in Kerala’s rapidly expanding commercial sector.',
-        image: 'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=800&q=80',
-        content: 'From small workshops to multi-acre manufacturing plants, the landscape of Kerala industry is shifting. Krishna Engineering Works has pioneered the use of modular truss systems that provide larger spans without sacrificing stability...'
+        image: 'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=1200&q=80',
+        content: 'From small workshops to multi-acre manufacturing plants, the landscape of Kerala industry is shifting rapidly. Krishna Engineering Works has pioneered the use of modular truss systems that provide larger spans without sacrificing structural stability or roof drainage in monsoonal conditions.'
+    },
+    {
+        _id: 'fb4',
+        title: 'Heavy Crane Runway Girder Deflection & Fatigue Audits',
+        category: 'Structural Audits',
+        authorName: 'Lead Structural Engineer',
+        createdAt: '2026-04-18',
+        excerpt: 'Comprehensive field analysis methods for inspecting crane gantry girders subjected to high-cycle cyclic loading and vibration.',
+        image: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=1200&q=80',
+        content: 'Crane runway girders experience dynamic wheel loads that can induce localized fatigue cracks at web-flange junctions. In this field bulletin, we detail ultrasonic weld testing procedures, rail alignment tolerance limits, and retrofit bracket engineering deployed during routine shut-downs.'
     }
 ];
+
+const CATEGORY_FALLBACK_IMAGES = {
+    'welding': 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=1200&q=80',
+    'steel': 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=1200&q=80',
+    'fabrication': 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=1200&q=80',
+    'safety': 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=1200&q=80',
+    'audit': 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=1200&q=80',
+    'default': 'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=1200&q=80'
+};
+
+const getCategoryFallbackImage = (category) => {
+    const cat = (category || '').toLowerCase();
+    for (const [key, url] of Object.entries(CATEGORY_FALLBACK_IMAGES)) {
+        if (cat.includes(key)) return url;
+    }
+    return CATEGORY_FALLBACK_IMAGES.default;
+};
+
+// Safe Image Component that avoids broken image icons or bleeding alt text
+const IntelImage = ({ src, alt, category, className }) => {
+    const [imgSrc, setImgSrc] = useState(() => {
+        const direct = getDirectImageUrl(src);
+        return direct || getCategoryFallbackImage(category);
+    });
+    const [hasError, setHasError] = useState(false);
+
+    useEffect(() => {
+        const direct = getDirectImageUrl(src);
+        setImgSrc(direct || getCategoryFallbackImage(category));
+        setHasError(false);
+    }, [src, category]);
+
+    const handleError = () => {
+        if (!hasError) {
+            setHasError(true);
+            setImgSrc(getCategoryFallbackImage(category));
+        }
+    };
+
+    return (
+        <div className="relative w-full h-full overflow-hidden bg-slate-900 flex items-center justify-center">
+            <img 
+                src={imgSrc} 
+                alt="" 
+                onError={handleError}
+                className={className || "w-full h-full object-cover transition-all duration-700"} 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+        </div>
+    );
+};
 
 const Blog = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('ALL');
     const [fetchError, setFetchError] = useState(null);
+
+    // Full Reading Modal State
+    const [selectedArticle, setSelectedArticle] = useState(null);
+    const [copiedLink, setCopiedLink] = useState(false);
+
+    // Newsletter Uplink State
+    const [uplinkEmail, setUplinkEmail] = useState('');
+    const [uplinkSuccess, setUplinkSuccess] = useState(false);
 
     const fetchPosts = useCallback(async () => {
         setLoading(true);
@@ -54,12 +126,10 @@ const Blog = () => {
             if (Array.isArray(res.data) && res.data.length > 0) {
                setPosts(res.data);
             } else {
-               // Silently use fallbacks if API is empty for better AdSense crawling
                setPosts(FALLBACK_POSTS);
             }
         } catch (err) {
             console.error("Archive fetch failure:", err);
-            // Show fallback even on network error so site doesn't look empty to bot
             setPosts(FALLBACK_POSTS);
         } finally {
             setLoading(false);
@@ -70,124 +140,240 @@ const Blog = () => {
         fetchPosts();
     }, [fetchPosts]);
 
-    const filteredPosts = posts.filter(p => 
-        (p.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.category || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Unique Categories for Pills & Matrix
+    const availableCategories = useMemo(() => {
+        const set = new Set();
+        posts.forEach(p => {
+            if (p.category) set.add(p.category.trim());
+        });
+        // Default standard industrial categories
+        ['Welding Eng.', 'Steel Fabrication', 'Structural Audits', 'Safety Protocols'].forEach(c => set.add(c));
+        return Array.from(set);
+    }, [posts]);
+
+    // Filtered Posts
+    const filteredPosts = useMemo(() => {
+        return posts.filter(p => {
+            const matchesSearch = !searchTerm.trim() || 
+                (p.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (p.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (p.content || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+            const matchesCategory = selectedCategory === 'ALL' || 
+                (p.category || '').toLowerCase().trim() === selectedCategory.toLowerCase().trim() ||
+                (p.category || '').toLowerCase().includes(selectedCategory.toLowerCase());
+
+            return matchesSearch && matchesCategory;
+        });
+    }, [posts, searchTerm, selectedCategory]);
+
+    const handleCopyArticleLink = () => {
+        if (!selectedArticle) return;
+        const url = `${window.location.origin}/blog#${selectedArticle._id}`;
+        navigator.clipboard.writeText(url);
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+    };
+
+    const handleSubscribeUplink = (e) => {
+        e.preventDefault();
+        if (!uplinkEmail || !uplinkEmail.includes('@')) return;
+        setUplinkSuccess(true);
+        setTimeout(() => {
+            setUplinkSuccess(false);
+            setUplinkEmail('');
+        }, 3500);
+    };
 
     return (
-        <div className="bg-[#050505] min-h-screen pb-32 font-sans text-white">
+        <div className="bg-[#050505] min-h-screen pb-32 font-sans text-white relative selection:bg-amber-500 selection:text-black">
 
-            {/* CINEMATIC HEADER */}
-            <div className="relative pt-32 pb-24 px-4 overflow-hidden border-b-[1px] border-white/5">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]"></div>
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-accent/5 blur-[120px] rounded-full"></div>
+            {/* ════════════════════════════════════════════════════════════════
+                HERO SECTION (TIGHTENED VERTICAL PADDING, ZERO DEAD VOID)
+            ════════════════════════════════════════════════════════════════ */}
+            <div className="relative pt-16 sm:pt-20 pb-10 sm:pb-14 px-4 overflow-hidden border-b border-white/5">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] pointer-events-none"></div>
+                <div className="absolute top-0 right-1/4 w-[450px] h-[450px] bg-amber-500/5 blur-[120px] rounded-full pointer-events-none"></div>
 
-                <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-center">
+                <div className="max-w-6xl mx-auto relative z-10 flex flex-col items-center text-center">
                     <motion.div
-                        initial={{ opacity: 0, y: -20 }}
+                        initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-3 text-brand-accent font-black text-[10px] uppercase tracking-[0.4em] mb-6"
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[10px] font-bold uppercase tracking-[0.3em] mb-4"
                     >
-                        <Radio className="w-4 h-4" /> Intel Matrix Deployment
+                        <Radio className="w-3.5 h-3.5 animate-pulse" />
+                        <span>Intel Matrix Deployment</span>
                     </motion.div>
-                    <h1 className="text-6xl md:text-8xl font-black text-white uppercase tracking-tighter mb-8 text-center italic">
-                        FIELD <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-white">REPORTS.</span>
+
+                    <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white uppercase tracking-tighter mb-4 italic">
+                        FIELD <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-500 to-amber-200">REPORTS.</span>
                     </h1>
-                    <p className="text-lg text-gray-500 max-w-2xl mx-auto font-bold text-center uppercase tracking-tight">
-                        Technical bulletins and industrial intelligence.
+
+                    <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto font-medium uppercase tracking-wider mb-8">
+                        Technical bulletins, metallurgical updates & industrial structural intelligence.
                     </p>
                     
-                    <div className="mt-12 relative w-full max-w-xl">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-700" />
+                    {/* Live Search & Filter Bar */}
+                    <div className="relative w-full max-w-xl">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                         <input 
                             type="text" 
                             placeholder="FILTER INTELLIGENCE ARCHIVES..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-white/[0.03] dark:bg-white/[0.03] border border-white/10 rounded-2xl py-6 pl-16 pr-8 text-[11px] font-black uppercase tracking-[0.3em] focus:border-brand-accent outline-none backdrop-blur-3xl transition-all shadow-2xl"
+                            className="w-full bg-white/[0.04] border border-white/10 rounded-2xl py-3.5 pl-11 pr-10 text-xs font-mono font-bold uppercase tracking-wider text-white placeholder:text-slate-600 focus:border-amber-400/80 focus:ring-2 focus:ring-amber-500/20 outline-none backdrop-blur-2xl transition-all shadow-xl"
                         />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchTerm('')}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white transition"
+                                title="Clear Search"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Quick Category Filter Pills */}
+                    <div className="flex items-center justify-center flex-wrap gap-2 mt-6 max-w-3xl">
+                        <button
+                            type="button"
+                            onClick={() => setSelectedCategory('ALL')}
+                            className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                                selectedCategory === 'ALL'
+                                    ? 'bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-400/20'
+                                    : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/5'
+                            }`}
+                        >
+                            All Bulletins ({posts.length})
+                        </button>
+                        {availableCategories.map(cat => {
+                            const count = posts.filter(p => (p.category || '').toLowerCase().includes(cat.toLowerCase())).length;
+                            return (
+                                <button
+                                    key={cat}
+                                    type="button"
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                                        selectedCategory === cat
+                                            ? 'bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-400/20'
+                                            : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/5'
+                                    }`}
+                                >
+                                    {cat} {count > 0 && `(${count})`}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-24">
+            {/* ════════════════════════════════════════════════════════════════
+                MAIN CONTENT GRID (REFINED SPACING, ATTRACTIVE CARDS)
+            ════════════════════════════════════════════════════════════════ */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10 sm:mt-12">
                 
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-40">
-                        <Loader2 className="w-16 h-16 text-brand-accent animate-spin mb-8" />
-                        <p className="font-black uppercase tracking-[0.5em] text-[10px] text-gray-600">Retrieving Secure Archives...</p>
+                    <div className="flex flex-col items-center justify-center py-28">
+                        <Loader2 className="w-12 h-12 text-amber-400 animate-spin mb-4" />
+                        <p className="font-mono text-xs uppercase tracking-widest text-slate-500">Retrieving Secure Archives...</p>
                     </div>
                 ) : fetchError ? (
-                    <div className="text-center py-40 bg-red-600/[0.02] rounded-[4rem] border-2 border-dashed border-red-600/10">
-                        <AlertTriangle className="w-20 h-20 text-red-600/20 mx-auto mb-8" />
-                        <h3 className="text-white font-black uppercase tracking-widest text-lg mb-4 italic">Archival Protocol Mismatch</h3>
-                        <p className="text-gray-600 font-bold uppercase tracking-[0.2em] mb-12 max-w-sm mx-auto leading-relaxed">
-                            {fetchError === 'EMPTY_ARCHIVE' ? 'Intelligence database is currently offline or empty. Please deploy initial reports.' : `System Failure: ${fetchError}`}
+                    <div className="text-center py-24 bg-red-600/[0.03] rounded-3xl border border-dashed border-red-600/20 p-8 max-w-xl mx-auto">
+                        <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+                        <h3 className="text-white font-black uppercase tracking-wider text-base mb-2">Archival Protocol Mismatch</h3>
+                        <p className="text-slate-400 text-xs font-medium mb-6 leading-relaxed">
+                            {fetchError === 'EMPTY_ARCHIVE' ? 'Intelligence database is currently offline or empty.' : `System Notice: ${fetchError}`}
                         </p>
                         <button 
                             onClick={fetchPosts}
-                            className="inline-flex items-center gap-4 bg-brand-accent text-brand-950 px-10 py-5 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 shadow-2xl"
+                            className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-slate-950 px-6 py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs transition shadow-lg shadow-amber-400/20"
                         >
-                            <RefreshCw className="w-4 h-4" /> Force Sync Matrix
+                            <RefreshCw className="w-4 h-4" /> Sync Matrix
                         </button>
                     </div>
                 ) : filteredPosts.length === 0 ? (
-                    <div className="text-center py-40 bg-white/[0.01] dark:bg-white/[0.01] rounded-[4rem] border-2 border-dashed border-white/5">
-                        <AlertCircle className="w-20 h-20 text-white/5 mx-auto mb-8" />
-                        <p className="text-gray-600 font-black uppercase tracking-[0.4em]">No matching intel logs found in current sector</p>
+                    <div className="text-center py-24 bg-white/[0.02] rounded-3xl border border-dashed border-white/10 p-8 max-w-xl mx-auto">
+                        <AlertCircle className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                        <h4 className="text-white font-black uppercase tracking-wider text-sm mb-1">No Matching Intel Found</h4>
+                        <p className="text-slate-500 text-xs">No records matched your search or category filters.</p>
+                        <button
+                            type="button"
+                            onClick={() => { setSearchTerm(''); setSelectedCategory('ALL'); }}
+                            className="mt-4 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition"
+                        >
+                            Reset All Filters
+                        </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                        {/* Main Feed */}
-                        <div className="lg:col-span-8 space-y-12">
-                            <AnimatePresence>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+                        {/* ── MAIN REPORTS FEED ── */}
+                        <div className="lg:col-span-8 space-y-8">
+                            <AnimatePresence mode="popLayout">
                                 {filteredPosts.map((post, i) => (
                                     <motion.div
                                         key={post._id}
-                                        initial={{ opacity: 0, y: 50 }}
-                                        whileInView={{ opacity: 1, y: 0 }}
-                                        viewport={{ once: true, margin: "-100px" }}
-                                        transition={{ duration: 0.8, delay: i * 0.1 }}
-                                        className="bg-white/[0.02] dark:bg-white/[0.02] border border-white/5 rounded-[3rem] overflow-hidden backdrop-blur-3xl flex flex-col md:flex-row group hover:border-brand-accent/30 transition-all duration-500 shadow-2xl"
+                                        layout
+                                        initial={{ opacity: 0, y: 30 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4, delay: i * 0.05 }}
+                                        className="bg-white/[0.03] border border-white/10 hover:border-amber-400/40 rounded-3xl overflow-hidden backdrop-blur-xl flex flex-col md:flex-row group transition-all duration-300 shadow-xl"
                                     >
-                                        <div className="w-full md:w-[40%] h-80 md:h-auto relative overflow-hidden bg-gray-900 flex items-center justify-center">
-                                            <div className="text-[10px] font-black uppercase text-brand-accent/10 opacity-50 relative z-0">Loading Media...</div>
-                                            <img 
-                                                src={getDirectImageUrl(post.image)} 
+                                        {/* Image Section with Reliable Safe Fallback */}
+                                        <div className="w-full md:w-[42%] min-h-[220px] md:min-h-[280px] relative overflow-hidden bg-slate-900 shrink-0">
+                                            <IntelImage 
+                                                src={post.image} 
                                                 alt={post.title} 
-                                                className="absolute inset-0 w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000 z-10" 
+                                                category={post.category} 
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                                             />
-                                            <div className="absolute top-8 left-8 bg-brand-accent text-brand-950 font-black px-4 py-1.5 text-[9px] uppercase tracking-widest rounded-full shadow-2xl z-20">
-                                                {post.category}
+                                            {/* Category Pill Tag */}
+                                            <div className="absolute top-4 left-4 bg-amber-400/90 backdrop-blur-md text-slate-950 font-black px-3 py-1 text-[9px] uppercase tracking-wider rounded-full shadow-lg z-20">
+                                                {post.category || 'Engineering'}
                                             </div>
                                         </div>
-                                        <div className="w-full md:w-[60%] p-10 lg:p-16 flex flex-col justify-center relative bg-[#0a0a0c]">
-                                            <div className="absolute top-0 right-0 p-10 text-white/[0.01] pointer-events-none">
-                                                <Terminal className="w-40 h-40" />
+
+                                        {/* Content Section */}
+                                        <div className="w-full md:w-[58%] p-6 sm:p-8 flex flex-col justify-between bg-[#0a0a0c]/80 relative">
+                                            <div>
+                                                {/* Meta Row: Date & Author */}
+                                                <div className="flex items-center gap-4 text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-3">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Calendar className="w-3.5 h-3.5 text-amber-400" /> 
+                                                        <span>{new Date(post.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                    </div>
+                                                    <span className="text-slate-600">•</span>
+                                                    <div className="flex items-center gap-1.5 truncate">
+                                                        <User className="w-3.5 h-3.5 text-amber-400" /> 
+                                                        <span className="truncate">{post.authorName || 'KEW Lead Inspector'}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Title */}
+                                                <h2 className="text-xl sm:text-2xl font-black text-white mb-3 uppercase tracking-tight leading-snug group-hover:text-amber-400 transition-colors">
+                                                    {post.title}
+                                                </h2>
+                                                
+                                                {/* Excerpt */}
+                                                <p className="text-slate-400 text-xs font-medium leading-relaxed line-clamp-3 mb-6">
+                                                    {post.excerpt || (post.content || '').substring(0, 160) + '...'}
+                                                </p>
                                             </div>
 
-                                            <div className="flex items-center gap-6 text-[9px] font-black text-gray-600 uppercase tracking-[0.4em] mb-6">
-                                                <div className="flex items-center gap-2">
-                                                    <Calendar className="w-3.5 h-3.5 text-brand-accent" /> 
-                                                    {new Date(post.createdAt || Date.now()).toLocaleDateString()}
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <User className="w-3.5 h-3.5 text-brand-accent" /> 
-                                                    {post.authorName || 'Field Op'}
-                                                </div>
-                                            </div>
+                                            {/* Action Button: Opens Full Intel Reading Modal */}
+                                            <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                                                <span className="text-[10px] font-mono text-slate-500 uppercase flex items-center gap-1">
+                                                    <Clock className="w-3 h-3 text-slate-500" /> ~3 min read
+                                                </span>
 
-                                            <h2 className="text-3xl lg:text-4xl font-black text-white mb-6 uppercase tracking-tighter leading-tight group-hover:text-brand-accent transition-colors italic">
-                                                {post.title}
-                                            </h2>
-                                            
-                                            <p className="text-gray-500 mb-10 font-bold uppercase tracking-tight text-sm leading-relaxed line-clamp-3">
-                                                {post.excerpt || (post.content || '').substring(0, 150) + '...'}
-                                            </p>                                             <div className="mt-auto">
-                                                <button className="group/btn relative inline-flex items-center gap-4 bg-white/5 dark:bg-white/5 text-white px-8 py-4 rounded-xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-brand-accent hover:text-black transition-all active:scale-95 overflow-hidden shadow-xl border border-white/5">
-                                                    <div className="absolute inset-x-0 bottom-0 h-1 bg-brand-accent translate-y-full group-hover/btn:translate-y-0 transition-transform"></div>
-                                                    Access Full Intel <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform text-brand-accent" />
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setSelectedArticle(post)}
+                                                    className="inline-flex items-center gap-2 bg-white/10 hover:bg-amber-400 hover:text-slate-950 text-white px-4 py-2 rounded-xl font-bold uppercase tracking-wider text-[11px] transition-all active:scale-95 shadow-md"
+                                                >
+                                                    <span>Access Full Intel</span>
+                                                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                                                 </button>
                                             </div>
                                         </div>
@@ -196,28 +382,80 @@ const Blog = () => {
                             </AnimatePresence>
                         </div>
 
-                        {/* Sidebar */}
-                        <div className="lg:col-span-4 space-y-12">
-                            <div className="p-10 bg-white/[0.02] dark:bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl sticky top-32 shadow-2xl">
-                                <h3 className="text-brand-accent font-black text-[10px] uppercase tracking-[0.4em] mb-10 flex items-center gap-4">
-                                    <Tag className="w-4 h-4" /> Operations Matrix
+                        {/* ── SIDEBAR: OPERATIONS MATRIX & UPLINK ── */}
+                        <div className="lg:col-span-4 space-y-6">
+                            {/* Operations Matrix Filter Card */}
+                            <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-xl sticky top-28">
+                                <h3 className="text-amber-400 font-mono font-bold text-xs uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                    <Tag className="w-4 h-4 text-amber-400" /> 
+                                    <span>Operations Matrix</span>
                                 </h3>
                                 
-                                <div className="space-y-4 font-black">
-                                    {['Welding Eng.', 'Steel Fabrication', 'Structural Audits', 'Safety Protocols'].map((cat, idx) => (
-                                        <div key={idx} className="group cursor-pointer flex justify-between items-center p-5 bg-black/40 rounded-2xl border border-white/5 hover:border-brand-accent/40 transition-all">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover:text-brand-accent transition-colors italic">&gt; {cat}</span>
-                                            <div className="w-2 h-2 rounded-full bg-brand-accent animate-pulse"></div>
-                                        </div>
-                                    ))}
+                                <p className="text-[11px] text-slate-400 mb-4 font-medium leading-relaxed">
+                                    Select an engineering category to isolate technical reports and specifications:
+                                </p>
+
+                                <div className="space-y-2">
+                                    {availableCategories.map((cat, idx) => {
+                                        const isSelected = selectedCategory === cat;
+                                        const count = posts.filter(p => (p.category || '').toLowerCase().includes(cat.toLowerCase())).length;
+
+                                        return (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => setSelectedCategory(isSelected ? 'ALL' : cat)}
+                                                className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all text-left ${
+                                                    isSelected
+                                                        ? 'bg-amber-400/10 border-amber-400 text-amber-300 font-bold'
+                                                        : 'bg-black/30 border-white/5 hover:border-amber-400/30 text-slate-400 hover:text-white'
+                                                }`}
+                                            >
+                                                <span className="text-xs font-mono tracking-wide">&gt; {cat}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] text-slate-500 font-mono">{count}</span>
+                                                    <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-amber-400' : 'bg-slate-600'}`}></div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
 
-                                <div className="mt-20 p-8 bg-brand-accent text-brand-950 rounded-[2rem] relative overflow-hidden shadow-2xl transform skew-x-[-2deg]">
-                                    <h3 className="text-2xl font-black uppercase tracking-tighter italic leading-none mb-4">INTEL UPLINK</h3>
-                                    <p className="text-[9px] font-black uppercase tracking-widest leading-tight mb-8 opacity-60">Subscriber-only structural bulletins deployed weekly.</p>
-                                    <div className="space-y-3">
-                                        <input type="email" placeholder="UPLINK EMAIL..." className="w-full bg-white/20 dark:bg-white/20 border-2 border-transparent focus:border-brand-950 placeholder:text-brand-950/40 p-5 rounded-xl text-[10px] font-black outline-none italic" />
-                                        <button className="w-full bg-brand-950 text-brand-accent font-black uppercase tracking-[0.4em] py-5 rounded-xl text-[10px] hover:bg-white hover:text-black transition-all">Initiate Uplink</button>
+                                {/* Newsletter Intel Uplink Form */}
+                                <div className="mt-8 p-6 bg-gradient-to-br from-amber-400 to-amber-500 text-slate-950 rounded-2xl relative overflow-hidden shadow-xl">
+                                    <div className="relative z-10">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Sparkles className="w-4 h-4 text-slate-950" />
+                                            <h4 className="text-base font-black uppercase tracking-tight">Intel Uplink</h4>
+                                        </div>
+                                        <p className="text-[11px] font-bold leading-relaxed mb-4 text-slate-900/80">
+                                            Receive verified metallurgical and fabrication field reports directly in your inbox.
+                                        </p>
+
+                                        {uplinkSuccess ? (
+                                            <div className="p-3 bg-slate-950 text-white rounded-xl text-center flex items-center justify-center gap-2 text-xs font-bold shadow-md">
+                                                <Check className="w-4 h-4 text-emerald-400" />
+                                                <span>Uplink Frequency Confirmed!</span>
+                                            </div>
+                                        ) : (
+                                            <form onSubmit={handleSubscribeUplink} className="space-y-2">
+                                                <input 
+                                                    type="email" 
+                                                    placeholder="Enter engineer email..." 
+                                                    value={uplinkEmail}
+                                                    onChange={(e) => setUplinkEmail(e.target.value)}
+                                                    required
+                                                    className="w-full bg-white/90 focus:bg-white text-slate-950 placeholder:text-slate-500 p-3 rounded-xl text-xs font-bold outline-none border border-black/10 focus:ring-2 focus:ring-slate-950" 
+                                                />
+                                                <button 
+                                                    type="submit"
+                                                    className="w-full bg-slate-950 hover:bg-slate-900 text-amber-400 font-bold uppercase tracking-wider py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition active:scale-95"
+                                                >
+                                                    <Send className="w-3.5 h-3.5" />
+                                                    <span>Initiate Uplink</span>
+                                                </button>
+                                            </form>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -225,6 +463,120 @@ const Blog = () => {
                     </div>
                 )}
             </div>
+
+            {/* ════════════════════════════════════════════════════════════════
+                FULL INTEL ARTICLE MODAL (NO DEAD BUTTONS)
+            ════════════════════════════════════════════════════════════════ */}
+            <AnimatePresence>
+                {selectedArticle && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-[#0e0e12] border border-white/15 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl relative my-auto"
+                        >
+                            {/* Modal Header */}
+                            <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-slate-950/60">
+                                <div className="flex items-center gap-2">
+                                    <span className="px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider">
+                                        {selectedArticle.category || 'Technical Report'}
+                                    </span>
+                                    <span className="text-[10px] font-mono text-slate-400">
+                                        SEC-ID: {selectedArticle._id.slice(-6).toUpperCase()}
+                                    </span>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedArticle(null)}
+                                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Modal Scrollable Body */}
+                            <div className="p-6 sm:p-8 overflow-y-auto space-y-6">
+                                {/* Title */}
+                                <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight leading-snug">
+                                    {selectedArticle.title}
+                                </h2>
+
+                                {/* Metadata Info */}
+                                <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-400 py-3 border-y border-white/5">
+                                    <div className="flex items-center gap-1.5">
+                                        <Calendar className="w-4 h-4 text-amber-400" />
+                                        <span>{new Date(selectedArticle.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                                    </div>
+                                    <span>•</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <User className="w-4 h-4 text-amber-400" />
+                                        <span>{selectedArticle.authorName || 'KEW Chief Inspector'}</span>
+                                    </div>
+                                    <span>•</span>
+                                    <div className="flex items-center gap-1.5 text-emerald-400">
+                                        <ShieldCheck className="w-4 h-4" />
+                                        <span>Verified Technical Bulletin</span>
+                                    </div>
+                                </div>
+
+                                {/* Banner Image */}
+                                <div className="w-full h-64 sm:h-80 rounded-2xl overflow-hidden relative shadow-lg">
+                                    <IntelImage 
+                                        src={selectedArticle.image} 
+                                        alt={selectedArticle.title} 
+                                        category={selectedArticle.category} 
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+
+                                {/* Excerpt Callout */}
+                                {selectedArticle.excerpt && (
+                                    <div className="p-4 rounded-2xl bg-amber-500/10 border-l-4 border-amber-400 text-amber-200 text-xs font-semibold leading-relaxed">
+                                        {selectedArticle.excerpt}
+                                    </div>
+                                )}
+
+                                {/* Main Article Content */}
+                                <div className="space-y-4 text-slate-300 text-sm leading-relaxed whitespace-pre-line font-normal">
+                                    {selectedArticle.content || selectedArticle.excerpt || 'Full operational intelligence log contents pending archival publication.'}
+                                </div>
+
+                                {/* Key Technical Takeaways Box */}
+                                <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2">
+                                    <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold block">
+                                        Industrial Verification Standard:
+                                    </span>
+                                    <p className="text-xs text-slate-400 leading-relaxed">
+                                        All welding and structural fabrication procedures referenced in this bulletin comply with IS 800:2007 (General Construction in Steel), AWS D1.1 Structural Welding standards, and certified Krishna Engineering Quality Assurance Protocols.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="p-5 border-t border-white/10 flex items-center justify-between shrink-0 bg-slate-950/60">
+                                <button
+                                    type="button"
+                                    onClick={handleCopyArticleLink}
+                                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-2 transition"
+                                >
+                                    {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+                                    <span>{copiedLink ? 'Link Copied' : 'Share Report'}</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedArticle(null)}
+                                    className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black uppercase tracking-wider transition"
+                                >
+                                    Close Bulletin
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
