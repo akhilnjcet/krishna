@@ -1514,7 +1514,12 @@ const Quotations = () => {
                                     </div>
                                 </div>
                                 <div className="text-left sm:text-right print:text-right">
-                                    <h2 className="text-2xl font-black uppercase tracking-tighter print:text-lg" style={{ color: themeColor }}>QUOTATION</h2>
+                                    <span 
+                                        className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm print:px-3 print:py-1 print:mb-1 print:text-[10.5px]"
+                                        style={{ backgroundColor: themeColor || '#4f46e5' }}
+                                    >
+                                        QUOTATION
+                                    </span>
                                     <p className="text-xs font-bold text-slate-700 dark:text-slate-300 print:text-[11px]">{quotationNumber}</p>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 print:text-[10px]">Date: {quotationDate}</p>
                                     {showValidityDate && proposalValidityDate && (
@@ -1554,9 +1559,9 @@ const Quotations = () => {
                                 <div className="text-left sm:text-right print:text-right">
                                     <span 
                                         className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm cost-badge print:px-3 print:py-1 print:mb-1 print:text-[10.5px]"
-                                        style={{ backgroundColor: themeColor }}
+                                        style={{ backgroundColor: themeColor || '#4f46e5' }}
                                     >
-                                        COST ESTIMATE
+                                        QUOTATION
                                     </span>
                                     <p className="text-xs font-black text-slate-900 dark:text-white print:text-[11px] print:text-slate-900">{quotationNumber}</p>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 print:text-[10px] print:text-slate-600">Date: {quotationDate}</p>

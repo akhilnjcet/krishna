@@ -2191,12 +2191,15 @@ const Invoices = () => {
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
+                                            <span className="bg-white/20 backdrop-blur px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest inline-block mb-2 text-white border border-white/20 shadow-xs">
+                                                {showTax ? 'TAX INVOICE' : 'INVOICE'}
+                                            </span>
                                             {effectiveHeadings.length > 0 && (
                                                 <div className="flex flex-wrap gap-1.5 justify-start sm:justify-end mb-1.5">
                                                     {effectiveHeadings.map((hdg, hIdx) => (
                                                         <span 
                                                             key={hIdx} 
-                                                            className="bg-white/20 backdrop-blur px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider inline-block text-white border border-white/20 shadow-xs"
+                                                            className="bg-white/20 backdrop-blur px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider inline-block text-white border border-white/20 shadow-xs"
                                                         >
                                                             {hdg}
                                                         </span>
@@ -2285,12 +2288,18 @@ const Invoices = () => {
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right">
+                                        <span 
+                                            className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm"
+                                            style={{ backgroundColor: themeColor || '#4f46e5' }}
+                                        >
+                                            {showTax ? 'TAX INVOICE' : 'INVOICE'}
+                                        </span>
                                         {effectiveHeadings.length > 0 && (
                                             <div className="flex flex-wrap gap-1.5 justify-start sm:justify-end mb-1.5">
                                                 {effectiveHeadings.map((hdg, hIdx) => (
                                                     <span 
                                                         key={hIdx} 
-                                                        className="px-2.5 py-0.5 rounded-md text-[11px] font-black uppercase tracking-wider inline-block border"
+                                                        className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider inline-block border"
                                                         style={{ borderColor: themeColor, color: themeColor }}
                                                     >
                                                         {hdg}
@@ -2380,13 +2389,18 @@ const Invoices = () => {
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right">
+                                        <span 
+                                            className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm"
+                                            style={{ backgroundColor: themeColor || '#4f46e5' }}
+                                        >
+                                            {showTax ? 'TAX INVOICE' : 'INVOICE'}
+                                        </span>
                                         {effectiveHeadings.length > 0 && (
                                             <div className="flex flex-wrap gap-1.5 justify-start sm:justify-end mb-2">
                                                 {effectiveHeadings.map((hdg, hIdx) => (
                                                     <span 
                                                         key={hIdx} 
-                                                        className="px-3 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider text-white inline-block shadow-xs"
-                                                        style={{ backgroundColor: themeColor }}
+                                                        className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 inline-block shadow-xs"
                                                     >
                                                         {hdg}
                                                     </span>
