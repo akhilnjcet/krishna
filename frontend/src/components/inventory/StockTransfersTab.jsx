@@ -3,19 +3,25 @@ import api from '../../services/api';
 import { 
     Truck, Plus, ArrowRight, AlertTriangle, CheckCircle2, 
     X, RefreshCw, Clock, FileText, User, ShieldCheck, MapPin, Building,
-    Scale, Package
+    Scale, Package, Calendar, Phone, Check, Eye
 } from 'lucide-react';
 
 const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouses }) => {
     const [transfers, setTransfers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [companyVehicles, setCompanyVehicles] = useState([]);
-    const [loadingVehicles, setLoadingVehicles] = useState(false);
+    const [companyDrivers, setCompanyDrivers] = useState([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showReceiveModal, setShowReceiveModal] = useState(false);
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [showTimelineModal, setShowTimelineModal] = useState(false);
     const [selectedTransfer, setSelectedTransfer] = useState(null);
+    const [submittingAction, setSubmittingAction] = useState(false);
 
     // Form state for creating transfer
+    const [previewTransferId, setPreviewTransferId] = useState('');
+    const [transferDate, setTransferDate] = useState(new Date().toISOString().slice(0, 10));
+    const [plannedDispatchDate, setPlannedDispatchDate] = useState(new Date().toISOString().slice(0, 16));
     const [sourceMode, setSourceMode] = useState('saved'); // 'saved' | 'manual'
     const [sourceW, setSourceW] = useState('');
     const [sourceManualName, setSourceManualName] = useState('');
@@ -31,31 +37,43 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
     const [itemsList, setItemsList] = useState([
         { isManualItem: false, inventoryItemId: '', itemName: '', itemCode: '', unit: 'Pcs', requestedQuantity: 1, weight: '', weightUnit: 'Kg' }
     ]);
+    const [packageCount, setPackageCount] = useState(1);
+    const [loadingSupervisor, setLoadingSupervisor] = useState('');
+    const [handlingInstructions, setHandlingInstructions] = useState('');
+    const [attachmentUrl, setAttachmentUrl] = useState('');
+
     const [transportMethod, setTransportMethod] = useState('Internal Vehicle');
     const [vehicleMode, setVehicleMode] = useState('saved'); // 'saved' | 'manual'
     const [selectedVehicleId, setSelectedVehicleId] = useState('');
     const [vehicleNumber, setVehicleNumber] = useState('');
     const [vehicleName, setVehicleName] = useState('');
+    const [selectedDriverId, setSelectedDriverId] = useState('');
     const [driverName, setDriverName] = useState('');
     const [driverPhone, setDriverPhone] = useState('');
     const [totalWeight, setTotalWeight] = useState('');
     const [weightUnit, setWeightUnit] = useState('Kg');
     const [notes, setNotes] = useState('');
 
-    // State for receiving transfer
+    // State for assigning trip modal
+    const [assignDriverId, setAssignDriverId] = useState('');
+    const [assignVehicleId, setAssignVehicleId] = useState('');
+    const [assignPickupTime, setAssignPickupTime] = useState(new Date().toISOString().slice(0, 16));
+    const [assignInstructions, setAssignInstructions] = useState('');
+
+    // State for receiving & verifying transfer
     const [receivedItems, setReceivedItems] = useState([]);
 
     useEffect(() => {
         fetchTransfers();
-        fetchCompanyVehicles();
+        fetchFleetData();
     }, []);
 
     const fetchTransfers = async () => {
         setLoading(true);
         try {
             const res = await api.get('/stock-transfers');
-            if (res.data.success) {
-                setTransfers(res.data.transfers);
+            if (res.data?.success) {
+                setTransfers(res.data.transfers || []);
             }
         } catch (err) {
             console.error('Error fetching transfers:', err);
@@ -64,18 +82,33 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
         }
     };
 
-    const fetchCompanyVehicles = async () => {
-        setLoadingVehicles(true);
+    const fetchFleetData = async () => {
         try {
-            const res = await api.get('/vehicles');
-            if (res.data?.success && Array.isArray(res.data.vehicles)) {
-                setCompanyVehicles(res.data.vehicles);
+            const [vehsRes, driversRes] = await Promise.all([
+                api.get('/vehicles'),
+                api.get('/drivers')
+            ]);
+            if (vehsRes.data?.success && Array.isArray(vehsRes.data.vehicles)) {
+                setCompanyVehicles(vehsRes.data.vehicles);
+            }
+            if (driversRes.data?.success && Array.isArray(driversRes.data.drivers)) {
+                setCompanyDrivers(driversRes.data.drivers);
             }
         } catch (err) {
-            console.warn('Could not load company fleet vehicles:', err);
-        } finally {
-            setLoadingVehicles(false);
+            console.warn('Could not load company fleet:', err);
         }
+    };
+
+    // Calculate available stock for item in selected source warehouse
+    const getItemAvailableStock = (itemId) => {
+        if (!itemId) return 0;
+        const item = materials.find(m => m._id === itemId);
+        if (!item) return 0;
+        if (sourceMode === 'saved' && sourceW && Array.isArray(item.locationStock) && item.locationStock.length > 0) {
+            const found = item.locationStock.find(ls => ls.warehouseId === sourceW || (ls.warehouseId?._id && ls.warehouseId._id === sourceW));
+            if (found) return Number(found.quantity) || 0;
+        }
+        return Number(item.quantity) || 0;
     };
 
     const handleSelectCompanyVehicle = (vehId) => {
@@ -89,16 +122,36 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
         if (v) {
             setVehicleNumber(v.registrationNumber || '');
             setVehicleName(v.vehicleName || v.vehicleType || '');
-            if (v.assignedDriverName || v.assignedDriverId?.name) {
-                setDriverName(v.assignedDriverName || v.assignedDriverId?.name || '');
-            }
-            if (v.assignedDriverId?.phone) {
-                setDriverPhone(v.assignedDriverId.phone);
+            if (v.assignedDriverId?._id || v.assignedDriverId) {
+                const dId = v.assignedDriverId?._id || v.assignedDriverId;
+                setSelectedDriverId(dId);
+                const d = companyDrivers.find(drv => drv._id === dId);
+                if (d) {
+                    setDriverName(d.name || '');
+                    setDriverPhone(d.phone || '');
+                }
             }
         }
     };
 
+    const handleSelectDriver = (dId) => {
+        setSelectedDriverId(dId);
+        const d = companyDrivers.find(drv => drv._id === dId);
+        if (d) {
+            setDriverName(d.name || '');
+            setDriverPhone(d.phone || '');
+        }
+    };
+
     const handleOpenCreateModal = () => {
+        setPreviewTransferId(`ST-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`);
+        setTransferDate(new Date().toISOString().slice(0, 10));
+        setPlannedDispatchDate(new Date().toISOString().slice(0, 16));
+        setPackageCount(1);
+        setLoadingSupervisor('');
+        setHandlingInstructions('');
+        setAttachmentUrl('');
+
         if (warehouses && warehouses.length >= 2) {
             setSourceMode('saved');
             setSourceW(warehouses[0]._id);
@@ -110,7 +163,6 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
             setDestMode('manual');
             setDestW('');
         } else {
-            // 0 warehouses saved - allow direct manual entry without requiring warehouses
             setSourceMode('manual');
             setSourceW('');
             setDestMode('manual');
@@ -130,11 +182,19 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
             setSelectedVehicleId(firstV._id);
             setVehicleNumber(firstV.registrationNumber || '');
             setVehicleName(firstV.vehicleName || firstV.vehicleType || '');
-            setDriverName(firstV.assignedDriverName || firstV.assignedDriverId?.name || '');
-            setDriverPhone(firstV.assignedDriverId?.phone || '');
+            if (firstV.assignedDriverId?._id || firstV.assignedDriverId) {
+                const dId = firstV.assignedDriverId?._id || firstV.assignedDriverId;
+                setSelectedDriverId(dId);
+                const d = companyDrivers.find(drv => drv._id === dId);
+                if (d) {
+                    setDriverName(d.name || '');
+                    setDriverPhone(d.phone || '');
+                }
+            }
         } else {
             setVehicleMode('manual');
             setSelectedVehicleId('');
+            setSelectedDriverId('');
             setVehicleNumber('');
             setVehicleName('');
             setDriverName('');
@@ -186,8 +246,9 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
         setItemsList(updated);
     };
 
-    const handleCreateTransferSubmit = async (e) => {
-        e.preventDefault();
+    // Generic submit supporting Draft, Schedule, or Dispatch
+    const handleCreateTransferSubmit = async (e, actionType = 'schedule') => {
+        if (e && e.preventDefault) e.preventDefault();
 
         // Source validation
         const effectiveSourceName = sourceMode === 'saved'
@@ -209,7 +270,6 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
             return;
         }
 
-        // Prevent choosing identical source and destination
         if (sourceMode === 'saved' && destMode === 'saved' && sourceW === destW) {
             alert('Source and destination locations cannot be identical.');
             return;
@@ -234,6 +294,20 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
             return;
         }
 
+        // Stock availability check for catalog materials
+        if (actionType !== 'draft') {
+            for (const it of validItems) {
+                if (!it.isManualItem && it.inventoryItemId) {
+                    const avail = getItemAvailableStock(it.inventoryItemId);
+                    if (Number(it.requestedQuantity) > avail) {
+                        alert(`Requested quantity (${it.requestedQuantity}) for "${it.itemName}" exceeds available stock (${avail}) at ${effectiveSourceName}. Please adjust.`);
+                        return;
+                    }
+                }
+            }
+        }
+
+        setSubmittingAction(true);
         try {
             const payload = {
                 sourceWarehouseId: sourceMode === 'saved' ? sourceW : null,
@@ -269,15 +343,22 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                 vehicleNumber: (vehicleNumber || '').trim().toUpperCase(),
                 vehicleName: (vehicleName || '').trim(),
                 isManualVehicle: vehicleMode === 'manual',
+                driverId: selectedDriverId || null,
                 driverName: (driverName || '').trim(),
                 driverPhone: (driverPhone || '').trim(),
+                plannedDispatchDate: plannedDispatchDate || null,
+                packageCount: Number(packageCount) || 1,
+                loadingSupervisor: (loadingSupervisor || '').trim(),
+                handlingInstructions: (handlingInstructions || '').trim(),
+                attachments: attachmentUrl ? [{ name: 'Challan / Bill', fileUrl: attachmentUrl }] : [],
                 totalWeight: totalWeight !== '' && totalWeight !== null ? Number(totalWeight) : null,
                 weightUnit: weightUnit || 'Kg',
-                notes
+                notes,
+                actionType // 'draft' | 'schedule' | 'dispatch'
             };
 
             const res = await api.post('/stock-transfers', payload);
-            if (res.data.success) {
+            if (res.data?.success) {
                 setShowCreateModal(false);
                 if (saveSourceLoc || saveDestLoc) {
                     if (typeof onRefreshWarehouses === 'function') {
@@ -285,9 +366,45 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                     }
                 }
                 fetchTransfers();
+                alert(`Stock transfer ${res.data.transfer?.transferNumber || ''} created successfully (${actionType.toUpperCase()}).`);
             }
         } catch (err) {
             alert(err.response?.data?.message || 'Error creating transfer request');
+        } finally {
+            setSubmittingAction(false);
+        }
+    };
+
+    // Assign Trip Modal Open
+    const handleOpenAssignModal = (transfer) => {
+        setSelectedTransfer(transfer);
+        setAssignDriverId(transfer.driverId || (companyDrivers[0]?._id || ''));
+        setAssignVehicleId(transfer.vehicleId || (companyVehicles[0]?._id || ''));
+        setAssignPickupTime(transfer.plannedDispatchDate ? new Date(transfer.plannedDispatchDate).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16));
+        setAssignInstructions(transfer.handlingInstructions || transfer.notes || '');
+        setShowAssignModal(true);
+    };
+
+    const handleAssignTripSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedTransfer) return;
+        setSubmittingAction(true);
+        try {
+            const res = await api.put(`/stock-transfers/${selectedTransfer._id}/assign-trip`, {
+                driverId: assignDriverId,
+                vehicleId: assignVehicleId,
+                pickupDateTime: assignPickupTime,
+                specialInstructions: assignInstructions
+            });
+            if (res.data?.success) {
+                setShowAssignModal(false);
+                fetchTransfers();
+                alert(`Driver and vehicle assigned! Linked to ${res.data.trip?.tripNumber || 'Trip'}.`);
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to assign trip.');
+        } finally {
+            setSubmittingAction(false);
         }
     };
 
@@ -295,14 +412,16 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
         if (!window.confirm('Dispatch goods now? Stock will be deducted from source location and marked In Transit.')) return;
         try {
             const res = await api.put(`/stock-transfers/${transferId}/dispatch`);
-            if (res.data.success) {
+            if (res.data?.success) {
                 fetchTransfers();
+                alert('Transfer dispatched successfully and stock deducted from origin warehouse.');
             }
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to dispatch transfer');
+            alert(err.response?.data?.message || 'Error dispatching transfer');
         }
     };
 
+    // Open Receive Modal
     const handleOpenReceive = (transfer) => {
         setSelectedTransfer(transfer);
         setReceivedItems(transfer.items.map(it => ({
@@ -310,8 +429,8 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
             inventoryItemId: it.inventoryItemId,
             itemName: it.itemName,
             unit: it.unit,
-            dispatchedQuantity: it.dispatchedQuantity,
-            receivedQuantity: it.dispatchedQuantity,
+            dispatchedQuantity: it.dispatchedQuantity || it.requestedQuantity,
+            receivedQuantity: it.dispatchedQuantity || it.requestedQuantity,
             damagedQuantity: 0,
             missingQuantity: 0,
             conditionOnArrival: 'Good',
@@ -326,27 +445,26 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
             const res = await api.put(`/stock-transfers/${selectedTransfer._id}/receive`, {
                 receivedItems
             });
-            if (res.data.success) {
+            if (res.data?.success) {
                 setShowReceiveModal(false);
                 fetchTransfers();
+                alert('Stock received and credited to destination warehouse.');
             }
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to receive transfer');
+            alert(err.response?.data?.message || 'Error receiving transfer');
         }
     };
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case 'Requested':
-                return 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200';
-            case 'In Transit':
-                return 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200';
-            case 'Received':
-                return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200';
-            case 'Discrepancy Reported':
-                return 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200';
-            default:
-                return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300';
+            case 'Draft': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300';
+            case 'Requested': return 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300';
+            case 'Approved': return 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-300';
+            case 'In Transit': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-300 animate-pulse';
+            case 'Received': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300';
+            case 'Discrepancy Reported': return 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-300';
+            case 'Reconciled': return 'bg-emerald-50 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-200 border-emerald-400 font-black';
+            default: return 'bg-slate-100 text-slate-800';
         }
     };
 
@@ -394,19 +512,46 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                 ) : (
                     <div className="space-y-4">
                         {transfers.map(tr => (
-                            <div key={tr._id} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 transition bg-slate-50/50 dark:bg-slate-800/30">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-                                    <div className="flex items-center gap-2.5">
+                            <div key={tr._id} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 transition bg-slate-50/50 dark:bg-slate-800/30 space-y-3">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                                    <div className="flex items-center gap-2.5 flex-wrap">
                                         <span className="font-mono font-black text-xs text-slate-900 dark:text-white">
                                             {tr.transferNumber}
                                         </span>
-                                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${getStatusBadge(tr.status)}`}>
+                                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${getStatusBadge(tr.status)}`}>
                                             {tr.status}
                                         </span>
+                                        {tr.tripNumber && (
+                                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                                Linked Trip: {tr.tripNumber}
+                                            </span>
+                                        )}
                                     </div>
 
-                                    <div className="flex items-center gap-2 text-xs">
-                                        {tr.status === 'Requested' && (
+                                    {/* Action Buttons */}
+                                    <div className="flex items-center gap-2 text-xs flex-wrap">
+                                        {tr.tripNumber && (
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedTransfer(tr);
+                                                    setShowTimelineModal(true);
+                                                }}
+                                                className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 flex items-center gap-1"
+                                            >
+                                                <Clock className="w-3.5 h-3.5 text-blue-500" /> Timeline
+                                            </button>
+                                        )}
+
+                                        {(tr.status === 'Draft' || tr.status === 'Requested') && (
+                                            <button
+                                                onClick={() => handleOpenAssignModal(tr)}
+                                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold text-xs flex items-center gap-1 shadow-sm"
+                                            >
+                                                <User className="w-3.5 h-3.5" /> Assign Driver & Vehicle
+                                            </button>
+                                        )}
+
+                                        {(tr.status === 'Requested' || tr.status === 'Approved') && (
                                             <button
                                                 onClick={() => handleDispatch(tr._id)}
                                                 className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-xs flex items-center gap-1 shadow-sm"
@@ -414,7 +559,8 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                                                 <Truck className="w-3.5 h-3.5" /> Approve & Dispatch
                                             </button>
                                         )}
-                                        {tr.status === 'In Transit' && (
+
+                                        {(tr.status === 'In Transit' || tr.status === 'Discrepancy Reported') && (
                                             <button
                                                 onClick={() => handleOpenReceive(tr)}
                                                 className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs flex items-center gap-1 shadow-sm"
@@ -425,80 +571,46 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mb-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase">Route:</span>
                                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 flex-wrap">
                                             <span>{tr.sourceWarehouseName}</span>
-                                            {tr.isManualSource && (
-                                                <span className="text-[9px] px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md font-normal" title={tr.sourceAddress || 'Manual location'}>
-                                                    Manual
-                                                </span>
-                                            )}
                                             <ArrowRight className="w-3 h-3 text-slate-400" />
                                             <span>{tr.destinationWarehouseName}</span>
-                                            {tr.isManualDestination && (
-                                                <span className="text-[9px] px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md font-normal" title={tr.destinationAddress || 'Manual location'}>
-                                                    Manual
-                                                </span>
-                                            )}
                                         </span>
                                     </div>
                                     <div>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Vehicle:</span>{' '}
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Transport:</span>{' '}
                                         <span className="font-medium text-slate-700 dark:text-slate-300">
-                                            {tr.vehicleNumber ? `${tr.vehicleNumber}${tr.vehicleName ? ` (${tr.vehicleName})` : ''} · ${tr.driverName || 'Driver'}` : tr.transportMethod}
+                                            {tr.vehicleNumber ? `${tr.vehicleNumber} · ${tr.driverName || 'Driver'}` : tr.transportMethod}
                                         </span>
                                     </div>
                                     <div>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Requested:</span>{' '}
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Packages & Weight:</span>{' '}
                                         <span className="font-medium text-slate-700 dark:text-slate-300">
-                                            {new Date(tr.createdAt).toLocaleDateString()} by {tr.requestedByName}
+                                            {tr.packageCount || 1} Pkgs {tr.totalWeight ? `(${tr.totalWeight} ${tr.weightUnit || 'Kg'})` : ''}
                                         </span>
                                     </div>
                                 </div>
 
-                                {/* Items table */}
-                                <div className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-100 dark:border-slate-800">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-[10px] font-black uppercase text-slate-400">Transferred Line Items:</span>
-                                        {tr.totalWeight && (
-                                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                                <Scale className="w-3 h-3" /> Cargo Wt: {tr.totalWeight} {tr.weightUnit || 'Kg'}
-                                            </span>
-                                        )}
+                                {/* Items list preview */}
+                                <div className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-100 dark:border-slate-800 space-y-1.5 text-xs">
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-400">
+                                        <span>Line Items ({tr.items?.length || 0}):</span>
+                                        {tr.loadingSupervisor && <span>Supervisor: {tr.loadingSupervisor}</span>}
                                     </div>
-                                    <div className="space-y-1.5">
-                                        {tr.items.map((it, idx) => (
-                                            <div key={idx} className="flex justify-between items-center text-xs flex-wrap gap-2">
-                                                <div className="flex items-center gap-1.5 flex-wrap">
-                                                    <span className="font-medium text-slate-800 dark:text-slate-200">{it.itemName}</span>
-                                                    {it.isManualItem && (
-                                                        <span className="text-[9px] px-1.5 py-0.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded font-medium border border-amber-200 dark:border-amber-800">
-                                                            Manual / Unlisted
-                                                        </span>
-                                                    )}
-                                                    {it.weight && (
-                                                        <span className="text-[10px] text-slate-400 font-mono">
-                                                            ({it.weight} {it.weightUnit || 'Kg'})
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-slate-500">Requested: {it.requestedQuantity} {it.unit}</span>
-                                                    {it.dispatchedQuantity > 0 && (
-                                                        <span className="text-blue-600 font-bold">Dispatched: {it.dispatchedQuantity}</span>
-                                                    )}
-                                                    {it.receivedQuantity > 0 && (
-                                                        <span className="text-emerald-600 font-black">Received: {it.receivedQuantity}</span>
-                                                    )}
-                                                    {it.damagedQuantity > 0 && (
-                                                        <span className="text-rose-600 font-bold">Damaged: {it.damagedQuantity}</span>
-                                                    )}
-                                                </div>
+                                    {tr.items?.map((it, idx) => (
+                                        <div key={idx} className="flex justify-between items-center">
+                                            <span className="font-medium text-slate-800 dark:text-slate-200">{it.itemName}</span>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-slate-500">Req: {it.requestedQuantity} {it.unit}</span>
+                                                {it.dispatchedQuantity > 0 && <span className="text-blue-600 font-bold">Disp: {it.dispatchedQuantity}</span>}
+                                                {it.receivedQuantity > 0 && <span className="text-emerald-600 font-black">Recv: {it.receivedQuantity}</span>}
+                                                {it.damagedQuantity > 0 && <span className="text-rose-600 font-bold">Dam: {it.damagedQuantity}</span>}
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         ))}
@@ -506,343 +618,140 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                 )}
             </div>
 
-            {/* Modal: Create Transfer Request */}
+            {/* MODAL 1: CREATE STOCK TRANSFER (WITH DRAFT / SCHEDULE / DISPATCH ACTIONS) */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
-                            <h2 className="text-base font-black uppercase text-slate-900 dark:text-white">
-                                Create Stock Transfer Request
-                            </h2>
+                            <div>
+                                <h2 className="text-base font-black uppercase text-slate-900 dark:text-white flex items-center gap-2">
+                                    <Truck className="w-5 h-5 text-blue-600" /> New Stock Transfer Request
+                                </h2>
+                                <p className="text-xs text-slate-500">
+                                    Transfer ID: <span className="font-mono font-bold text-blue-600">{previewTransferId}</span>
+                                </p>
+                            </div>
                             <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleCreateTransferSubmit} className="space-y-4 text-xs">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700">
-                                {/* Source Location */}
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center">
-                                        <label className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                                            <Building className="w-3.5 h-3.5 text-blue-500" /> Source Location *
-                                        </label>
-                                        {warehouses.length > 0 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    if (sourceMode === 'saved') {
-                                                        setSourceMode('manual');
-                                                    } else {
-                                                        setSourceMode('saved');
-                                                        if (!sourceW && warehouses.length > 0) setSourceW(warehouses[0]._id);
-                                                    }
-                                                }}
-                                                className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
-                                            >
-                                                {sourceMode === 'saved' ? '✏️ Enter manually' : '📁 Choose saved'}
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {sourceMode === 'saved' && warehouses.length > 0 ? (
-                                        <div>
-                                            <select
-                                                required
-                                                value={sourceW}
-                                                onChange={(e) => {
-                                                    if (e.target.value === '__MANUAL__') {
-                                                        setSourceMode('manual');
-                                                        setSourceW('');
-                                                    } else {
-                                                        setSourceW(e.target.value);
-                                                    }
-                                                }}
-                                                className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-medium"
-                                            >
-                                                <option value="">Select Origin Location...</option>
-                                                {warehouses.map(w => (
-                                                    <option key={w._id} value={w._id}>{w.name} ({w.code})</option>
-                                                ))}
-                                                <option value="__MANUAL__">✏️ Enter location manually...</option>
-                                            </select>
-                                            {sourceW && (
-                                                <p className="text-[10px] text-slate-400 mt-1 truncate">
-                                                    {warehouses.find(w => w._id === sourceW)?.address || 'Saved warehouse'}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            <div>
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    placeholder="Location name (e.g. Site A / Main Yard) *"
-                                                    value={sourceManualName}
-                                                    onChange={(e) => setSourceManualName(e.target.value)}
-                                                    className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-medium"
-                                                />
-                                            </div>
-                                            <div>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Location address / landmark (optional)"
-                                                    value={sourceManualAddress}
-                                                    onChange={(e) => setSourceManualAddress(e.target.value)}
-                                                    className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-700 dark:text-slate-200 text-xs"
-                                                />
-                                            </div>
-                                            <label className="flex items-center gap-2 cursor-pointer pt-0.5 text-[11px] text-slate-600 dark:text-slate-400 select-none">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={saveSourceLoc}
-                                                    onChange={(e) => setSaveSourceLoc(e.target.checked)}
-                                                    className="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
-                                                />
-                                                <span>Save this location for future reuse</span>
-                                            </label>
-                                        </div>
-                                    )}
+                        <form onSubmit={(e) => handleCreateTransferSubmit(e, 'schedule')} className="space-y-4 text-xs">
+                            {/* Transfer Date & Planned Dispatch */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/60 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Transfer Date</label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={transferDate}
+                                        onChange={(e) => setTransferDate(e.target.value)}
+                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
+                                    />
                                 </div>
-
-                                {/* Destination Location */}
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center">
-                                        <label className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                                            <MapPin className="w-3.5 h-3.5 text-emerald-500" /> Destination Location *
-                                        </label>
-                                        {warehouses.length > 0 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    if (destMode === 'saved') {
-                                                        setDestMode('manual');
-                                                    } else {
-                                                        setDestMode('saved');
-                                                        const fallback = warehouses.find(w => w._id !== sourceW) || warehouses[0];
-                                                        if (!destW && fallback) setDestW(fallback._id);
-                                                    }
-                                                }}
-                                                className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
-                                            >
-                                                {destMode === 'saved' ? '✏️ Enter manually' : '📁 Choose saved'}
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {destMode === 'saved' && warehouses.length > 0 ? (
-                                        <div>
-                                            <select
-                                                required
-                                                value={destW}
-                                                onChange={(e) => {
-                                                    if (e.target.value === '__MANUAL__') {
-                                                        setDestMode('manual');
-                                                        setDestW('');
-                                                    } else {
-                                                        setDestMode('saved');
-                                                        setDestW(e.target.value);
-                                                    }
-                                                }}
-                                                className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-medium"
-                                            >
-                                                <option value="">Select Destination...</option>
-                                                {warehouses.filter(w => sourceMode !== 'saved' || w._id !== sourceW).map(w => (
-                                                    <option key={w._id} value={w._id}>{w.name} ({w.code})</option>
-                                                ))}
-                                                <option value="__MANUAL__">✏️ Enter location manually...</option>
-                                            </select>
-                                            {destW && (
-                                                <p className="text-[10px] text-slate-400 mt-1 truncate">
-                                                    {warehouses.find(w => w._id === destW)?.address || 'Saved warehouse'}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            <div>
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    placeholder="Location name (e.g. Site B / Client Premise) *"
-                                                    value={destManualName}
-                                                    onChange={(e) => setDestManualName(e.target.value)}
-                                                    className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-medium"
-                                                />
-                                            </div>
-                                            <div>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Location address / landmark (optional)"
-                                                    value={destManualAddress}
-                                                    onChange={(e) => setDestManualAddress(e.target.value)}
-                                                    className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-700 dark:text-slate-200 text-xs"
-                                                />
-                                            </div>
-                                            <label className="flex items-center gap-2 cursor-pointer pt-0.5 text-[11px] text-slate-600 dark:text-slate-400 select-none">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={saveDestLoc}
-                                                    onChange={(e) => setSaveDestLoc(e.target.checked)}
-                                                    className="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
-                                                />
-                                                <span>Save this location for future reuse</span>
-                                            </label>
-                                        </div>
-                                    )}
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Planned Dispatch Date & Time</label>
+                                    <input
+                                        type="datetime-local"
+                                        required
+                                        value={plannedDispatchDate}
+                                        onChange={(e) => setPlannedDispatchDate(e.target.value)}
+                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
+                                    />
                                 </div>
                             </div>
 
-                            {/* Item Rows */}
+                            {/* Source and Destination */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Origin / Source Warehouse *</label>
+                                    <select
+                                        value={sourceW}
+                                        onChange={(e) => setSourceW(e.target.value)}
+                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold"
+                                    >
+                                        <option value="">Select Origin...</option>
+                                        {warehouses.map(w => (
+                                            <option key={w._id} value={w._id}>{w.name} ({w.code})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Destination Location / Site *</label>
+                                    <select
+                                        value={destW}
+                                        onChange={(e) => setDestW(e.target.value)}
+                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold"
+                                    >
+                                        <option value="">Select Destination...</option>
+                                        {warehouses.filter(w => w._id !== sourceW).map(w => (
+                                            <option key={w._id} value={w._id}>{w.name} ({w.code})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Line items with available stock validation */}
                             <div className="space-y-2.5">
                                 <div className="flex justify-between items-center">
-                                    <label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1.5">
-                                        <Package className="w-3.5 h-3.5 text-blue-500" /> Materials to Transfer *
-                                    </label>
+                                    <label className="text-[10px] font-black uppercase text-slate-500">Materials to Transfer *</label>
                                     <button
                                         type="button"
                                         onClick={handleAddItemRow}
-                                        className="text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1 text-xs"
+                                        className="text-blue-600 font-bold hover:underline flex items-center gap-1 text-xs"
                                     >
                                         <Plus className="w-3.5 h-3.5" /> Add Material Line
                                     </button>
                                 </div>
 
-                                {itemsList.map((row, idx) => (
-                                    <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-2">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <span className="text-[10px] font-black uppercase text-slate-500">
-                                                Line #{idx + 1} &middot; {row.isManualItem ? 'Custom / Unlisted Material' : 'Inventory Catalog Material'}
-                                            </span>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const updated = [...itemsList];
-                                                        const nextIsManual = !row.isManualItem;
-                                                        updated[idx].isManualItem = nextIsManual;
-                                                        if (nextIsManual) {
-                                                            updated[idx].inventoryItemId = '';
-                                                            if (!updated[idx].unit) updated[idx].unit = 'Pcs';
-                                                        } else {
-                                                            const fallback = materials[0];
-                                                            updated[idx].inventoryItemId = fallback?._id || '';
-                                                            updated[idx].itemName = fallback?.name || '';
-                                                            updated[idx].itemCode = fallback?.code || '';
-                                                            updated[idx].unit = fallback?.unit || 'Pcs';
-                                                        }
-                                                        setItemsList(updated);
-                                                    }}
-                                                    className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                                                >
-                                                    {row.isManualItem ? '📦 Select from inventory' : '✏️ Enter material manually'}
-                                                </button>
+                                {itemsList.map((row, idx) => {
+                                    const availStock = getItemAvailableStock(row.inventoryItemId);
+                                    const isExceeded = !row.isManualItem && Number(row.requestedQuantity) > availStock;
+
+                                    return (
+                                        <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-[10px] font-black uppercase text-slate-500">
+                                                    Line #{idx + 1}
+                                                </span>
                                                 {itemsList.length > 1 && (
                                                     <button
                                                         type="button"
                                                         onClick={() => handleRemoveItemRow(idx)}
-                                                        className="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                                                        title="Remove item line"
+                                                        className="text-rose-500 p-1 hover:bg-rose-50 rounded"
                                                     >
                                                         <X className="w-3.5 h-3.5" />
                                                     </button>
                                                 )}
                                             </div>
-                                        </div>
 
-                                        {row.isManualItem ? (
-                                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
                                                 <div className="sm:col-span-6">
-                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Material Name *</label>
-                                                    <input
-                                                        type="text"
-                                                        required
-                                                        placeholder="e.g. MS Angle 50x50x6 / Custom Flange"
-                                                        value={row.itemName || ''}
-                                                        onChange={(e) => handleItemChange(idx, 'itemName', e.target.value)}
-                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-800 dark:text-slate-100 text-xs font-medium"
-                                                    />
-                                                </div>
-                                                <div className="sm:col-span-2">
-                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Quantity *</label>
-                                                    <input
-                                                        type="number"
-                                                        min="0.01"
-                                                        step="any"
-                                                        required
-                                                        placeholder="Qty"
-                                                        value={row.requestedQuantity}
-                                                        onChange={(e) => handleItemChange(idx, 'requestedQuantity', e.target.value)}
-                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-right font-bold outline-none text-slate-800 dark:text-slate-100 text-xs"
-                                                    />
-                                                </div>
-                                                <div className="sm:col-span-2">
-                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Unit</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Pcs, Kg, Mtr"
-                                                        value={row.unit || 'Pcs'}
-                                                        onChange={(e) => handleItemChange(idx, 'unit', e.target.value)}
-                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-800 dark:text-slate-100 text-xs text-center"
-                                                    />
-                                                </div>
-                                                <div className="sm:col-span-2">
-                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5" title="Optional weight">
-                                                        Weight (Kg) <span className="text-[8px] font-normal lowercase">(opt)</span>
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        step="any"
-                                                        placeholder="Optional"
-                                                        value={row.weight || ''}
-                                                        onChange={(e) => handleItemChange(idx, 'weight', e.target.value)}
-                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-right outline-none text-slate-700 dark:text-slate-300 text-xs"
-                                                        title="Optional weight in Kg (leave blank if unavailable)"
-                                                    />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                                                <div className="sm:col-span-6">
-                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Select Catalog Material *</label>
                                                     <select
-                                                        required
                                                         value={row.inventoryItemId}
                                                         onChange={(e) => {
-                                                            if (e.target.value === '__MANUAL__') {
-                                                                const updated = [...itemsList];
-                                                                updated[idx].isManualItem = true;
-                                                                updated[idx].inventoryItemId = '';
-                                                                updated[idx].itemName = '';
-                                                                updated[idx].unit = 'Pcs';
-                                                                setItemsList(updated);
-                                                            } else {
-                                                                const selMat = materials.find(m => m._id === e.target.value);
-                                                                const updated = [...itemsList];
-                                                                updated[idx].inventoryItemId = e.target.value;
-                                                                if (selMat) {
-                                                                    updated[idx].itemName = selMat.name;
-                                                                    updated[idx].itemCode = selMat.code || '';
-                                                                    updated[idx].unit = selMat.unit || 'Pcs';
-                                                                }
-                                                                setItemsList(updated);
+                                                            const selMat = materials.find(m => m._id === e.target.value);
+                                                            const copy = [...itemsList];
+                                                            copy[idx].inventoryItemId = e.target.value;
+                                                            if (selMat) {
+                                                                copy[idx].itemName = selMat.name;
+                                                                copy[idx].itemCode = selMat.code || '';
+                                                                copy[idx].unit = selMat.unit || 'Pcs';
                                                             }
+                                                            setItemsList(copy);
                                                         }}
-                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-800 dark:text-slate-100 text-xs font-medium"
+                                                        className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
                                                     >
-                                                        <option value="">Select Material / Item...</option>
+                                                        <option value="">Select Catalog Material...</option>
                                                         {materials.map(m => (
                                                             <option key={m._id} value={m._id}>
-                                                                {m.name} ({m.quantity} {m.unit} in stock){m.location ? ` - ${m.location}` : ''}
+                                                                {m.name} ({m.quantity} {m.unit} total)
                                                             </option>
                                                         ))}
-                                                        <option value="__MANUAL__">✏️ Enter material manually (not listed)...</option>
                                                     </select>
                                                 </div>
+
                                                 <div className="sm:col-span-3">
-                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Quantity ({row.unit || 'Pcs'}) *</label>
                                                     <input
                                                         type="number"
                                                         min="0.01"
@@ -851,175 +760,123 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                                                         placeholder="Qty"
                                                         value={row.requestedQuantity}
                                                         onChange={(e) => handleItemChange(idx, 'requestedQuantity', e.target.value)}
-                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-right font-bold outline-none text-slate-800 dark:text-slate-100 text-xs"
+                                                        className={`w-full p-2 bg-white dark:bg-slate-900 border rounded-lg text-xs text-right font-bold ${
+                                                            isExceeded ? 'border-rose-500 text-rose-600' : 'border-slate-200 dark:border-slate-700'
+                                                        }`}
                                                     />
                                                 </div>
-                                                <div className="sm:col-span-3">
-                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5" title="Optional weight">
-                                                        Weight (Kg) <span className="text-[8px] font-normal lowercase">(opt)</span>
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        step="any"
-                                                        placeholder="Optional"
-                                                        value={row.weight || ''}
-                                                        onChange={(e) => handleItemChange(idx, 'weight', e.target.value)}
-                                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-right outline-none text-slate-700 dark:text-slate-300 text-xs"
-                                                        title="Optional weight in Kg (leave blank if unavailable)"
-                                                    />
+
+                                                <div className="sm:col-span-3 text-right">
+                                                    <span className="text-[10px] text-slate-400 block">Unit: {row.unit}</span>
+                                                    {!row.isManualItem && row.inventoryItemId && (
+                                                        <span className={`text-[10px] font-bold block ${isExceeded ? 'text-rose-500' : 'text-slate-500'}`}>
+                                                            Avail: {availStock} {row.unit}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
-                                ))}
+                                            {isExceeded && (
+                                                <p className="text-[10px] text-rose-500 font-bold">
+                                                    ⚠️ Warning: Requested quantity exceeds current available stock at origin location.
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
 
-                            {/* Transport Vehicle & Dispatch Details */}
-                            <div className="space-y-3 bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700">
-                                <div className="flex justify-between items-center">
-                                    <label className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                                        <Truck className="w-3.5 h-3.5 text-blue-500" /> Transport Vehicle & Dispatch Details
-                                    </label>
-                                    {companyVehicles.length > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                if (vehicleMode === 'saved') {
-                                                    setVehicleMode('manual');
-                                                    setSelectedVehicleId('');
-                                                } else {
-                                                    setVehicleMode('saved');
-                                                    if (companyVehicles.length > 0) {
-                                                        handleSelectCompanyVehicle(companyVehicles[0]._id);
-                                                    }
-                                                }
-                                            }}
-                                            className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
-                                        >
-                                            {vehicleMode === 'saved' ? '✏️ Enter vehicle manually' : '🚛 Select company vehicle'}
-                                        </button>
-                                    )}
+                            {/* Loading Details */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Number of Packages / Bundles</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={packageCount}
+                                        onChange={(e) => setPackageCount(e.target.value)}
+                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
+                                    />
                                 </div>
-
-                                {vehicleMode === 'saved' && companyVehicles.length > 0 ? (
-                                    <div className="space-y-2">
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-slate-500 mb-1">Company Fleet Vehicle</label>
-                                            <select
-                                                value={selectedVehicleId}
-                                                onChange={(e) => handleSelectCompanyVehicle(e.target.value)}
-                                                className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-medium text-xs"
-                                            >
-                                                <option value="">Select Company Vehicle...</option>
-                                                {companyVehicles.map(v => (
-                                                    <option key={v._id} value={v._id}>
-                                                        {v.registrationNumber} &middot; {v.vehicleName || v.vehicleType || 'Vehicle'} {v.assignedDriverName ? `(Driver: ${v.assignedDriverName})` : ''}
-                                                    </option>
-                                                ))}
-                                                <option value="__MANUAL__">✏️ Enter vehicle details manually...</option>
-                                            </select>
-                                        </div>
-                                        {selectedVehicleId && (
-                                            <div className="text-[11px] text-slate-500 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                                                <span>
-                                                    Selected: <strong className="text-slate-800 dark:text-slate-200 font-mono">{vehicleNumber}</strong> {vehicleName ? `(${vehicleName})` : ''}
-                                                </span>
-                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 font-bold">
-                                                    Fleet Verified
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-slate-500 mb-1">Vehicle Registration / No</label>
-                                            <input
-                                                type="text"
-                                                placeholder="e.g. KL-07-CD-1234 / External Truck"
-                                                value={vehicleNumber}
-                                                onChange={(e) => setVehicleNumber(e.target.value)}
-                                                className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs font-mono"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-slate-500 mb-1">Vehicle Model / Description (Optional)</label>
-                                            <input
-                                                type="text"
-                                                placeholder="e.g. Tata 407 / Mahindra Bolero / 3rd Party Truck"
-                                                value={vehicleName}
-                                                onChange={(e) => setVehicleName(e.target.value)}
-                                                className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Transport Method, Driver Name & Phone, Optional Consignment Weight */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1">
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Transport Method</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. Internal Vehicle, Courier"
-                                            value={transportMethod}
-                                            onChange={(e) => setTransportMethod(e.target.value)}
-                                            className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Driver Name</label>
-                                        <input
-                                            type="text"
-                                            placeholder="Driver full name"
-                                            value={driverName}
-                                            onChange={(e) => setDriverName(e.target.value)}
-                                            className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Driver Contact Phone</label>
-                                        <input
-                                            type="text"
-                                            placeholder="+91 9876543210"
-                                            value={driverPhone}
-                                            onChange={(e) => setDriverPhone(e.target.value)}
-                                            className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1 flex items-center gap-1">
-                                            <Scale className="w-3 h-3 text-amber-500" />
-                                            <span>Consignment Wt</span>
-                                            <span className="text-slate-400 font-normal lowercase">(opt)</span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="any"
-                                            placeholder="e.g. 500 Kg"
-                                            value={totalWeight}
-                                            onChange={(e) => setTotalWeight(e.target.value)}
-                                            className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs text-right"
-                                            title="Consignment cargo weight in Kg (optional - leave blank if not weighed)"
-                                        />
-                                    </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Approx Load Weight (Kg)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        placeholder="e.g. 500"
+                                        value={totalWeight}
+                                        onChange={(e) => setTotalWeight(e.target.value)}
+                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-right font-bold"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Loading Supervisor</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Supervisor name"
+                                        value={loadingSupervisor}
+                                        onChange={(e) => setLoadingSupervisor(e.target.value)}
+                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
+                                    />
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Transfer Purpose / Notes</label>
-                                <textarea
-                                    rows="2"
-                                    placeholder="Purpose of transfer, site urgency, handling instructions..."
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100"
-                                />
+                            {/* Driver and Vehicle Assignment (Optional at creation) */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Assign Driver (Optional)</label>
+                                    <select
+                                        value={selectedDriverId}
+                                        onChange={(e) => handleSelectDriver(e.target.value)}
+                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold"
+                                    >
+                                        <option value="">Assign Later or Select Driver...</option>
+                                        {companyDrivers.map(d => (
+                                            <option key={d._id} value={d._id}>{d.name} ({d.phone || 'No phone'})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Assign Vehicle (Optional)</label>
+                                    <select
+                                        value={selectedVehicleId}
+                                        onChange={(e) => handleSelectCompanyVehicle(e.target.value)}
+                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold"
+                                    >
+                                        <option value="">Assign Later or Select Vehicle...</option>
+                                        {companyVehicles.map(v => (
+                                            <option key={v._id} value={v._id}>{v.registrationNumber} &middot; {v.vehicleName || v.vehicleType}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
-                            <div className="pt-3 flex justify-end gap-2">
+                            {/* Special instructions & attachments */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Special Handling Instructions</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Handle with care, keep dry, crane required..."
+                                        value={handlingInstructions}
+                                        onChange={(e) => setHandlingInstructions(e.target.value)}
+                                        className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Attachment / Challan Image URL</label>
+                                    <input
+                                        type="text"
+                                        placeholder="https://... document or challan link"
+                                        value={attachmentUrl}
+                                        onChange={(e) => setAttachmentUrl(e.target.value)}
+                                        className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* ACTION BUTTONS: Draft, Assign, Schedule, Dispatch */}
+                            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-end gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setShowCreateModal(false)}
@@ -1028,10 +885,28 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                                     Cancel
                                 </button>
                                 <button
-                                    type="submit"
-                                    className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-md"
+                                    type="button"
+                                    disabled={submittingAction}
+                                    onClick={(e) => handleCreateTransferSubmit(e, 'draft')}
+                                    className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100"
                                 >
-                                    Submit Request
+                                    Save as Draft
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={submittingAction}
+                                    onClick={(e) => handleCreateTransferSubmit(e, 'schedule')}
+                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-md"
+                                >
+                                    Schedule Trip
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={submittingAction}
+                                    onClick={(e) => handleCreateTransferSubmit(e, 'dispatch')}
+                                    className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-md flex items-center gap-1.5"
+                                >
+                                    <Truck className="w-4 h-4" /> Dispatch Stock
                                 </button>
                             </div>
                         </form>
@@ -1039,7 +914,96 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                 </div>
             )}
 
-            {/* Modal: Receive & Reconcile Transfer */}
+            {/* MODAL 2: ASSIGN DRIVER & VEHICLE */}
+            {showAssignModal && selectedTransfer && (
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto text-xs">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h2 className="text-base font-black uppercase text-slate-900 dark:text-white flex items-center gap-2">
+                                    <User className="w-5 h-5 text-indigo-600" /> Assign Driver & Vehicle to Transfer
+                                </h2>
+                                <p className="text-xs text-slate-500 font-mono">{selectedTransfer.transferNumber}</p>
+                            </div>
+                            <button onClick={() => setShowAssignModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleAssignTripSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Select Driver *</label>
+                                <select
+                                    required
+                                    value={assignDriverId}
+                                    onChange={(e) => setAssignDriverId(e.target.value)}
+                                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold"
+                                >
+                                    <option value="">Select active driver...</option>
+                                    {companyDrivers.map(d => (
+                                        <option key={d._id} value={d._id}>{d.name} ({d.phone || 'No phone'})</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Select Company Vehicle *</label>
+                                <select
+                                    required
+                                    value={assignVehicleId}
+                                    onChange={(e) => setAssignVehicleId(e.target.value)}
+                                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold"
+                                >
+                                    <option value="">Select fleet vehicle...</option>
+                                    {companyVehicles.map(v => (
+                                        <option key={v._id} value={v._id}>{v.registrationNumber} &middot; {v.vehicleName || v.vehicleType}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Planned Pickup / Departure Time</label>
+                                <input
+                                    type="datetime-local"
+                                    value={assignPickupTime}
+                                    onChange={(e) => setAssignPickupTime(e.target.value)}
+                                    className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Special Driver Instructions</label>
+                                <textarea
+                                    rows="2"
+                                    placeholder="Route instructions or site handover rules..."
+                                    value={assignInstructions}
+                                    onChange={(e) => setAssignInstructions(e.target.value)}
+                                    className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
+                                />
+                            </div>
+
+                            <div className="pt-3 flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAssignModal(false)}
+                                    className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-600"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submittingAction}
+                                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-md"
+                                >
+                                    {submittingAction ? 'Assigning...' : 'Schedule Trip & Assign'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 3: RECEIVE & RECONCILE TRANSFER */}
             {showReceiveModal && selectedTransfer && (
                 <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
                     <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
@@ -1115,19 +1079,6 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                                                 />
                                             </div>
                                         </div>
-                                        <div>
-                                            <input
-                                                type="text"
-                                                placeholder="Remarks or discrepancy explanation..."
-                                                value={it.discrepancyNotes}
-                                                onChange={(e) => {
-                                                    const updated = [...receivedItems];
-                                                    updated[idx].discrepancyNotes = e.target.value;
-                                                    setReceivedItems(updated);
-                                                }}
-                                                className="w-full p-1.5 text-[11px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg"
-                                            />
-                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -1148,6 +1099,49 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 4: 10-STAGE TIMELINE MODAL */}
+            {showTimelineModal && selectedTransfer && (
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto text-xs">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h3 className="text-base font-black uppercase text-slate-900 dark:text-white">
+                                    Transfer Chain-of-Custody Timeline
+                                </h3>
+                                <p className="text-xs text-blue-600 font-mono font-bold">
+                                    {selectedTransfer.transferNumber} {selectedTransfer.tripNumber ? `• Trip: ${selectedTransfer.tripNumber}` : ''}
+                                </p>
+                            </div>
+                            <button onClick={() => setShowTimelineModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-3">
+                            {(selectedTransfer.auditTrail || []).map((au, i) => (
+                                <div key={i} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 space-y-1">
+                                    <div className="flex items-center justify-between font-bold">
+                                        <span className="text-blue-600 dark:text-blue-400">{au.action}</span>
+                                        <span className="text-[10px] text-slate-400">{new Date(au.timestamp).toLocaleString()}</span>
+                                    </div>
+                                    <p className="text-slate-700 dark:text-slate-300 text-[11px]">{au.details}</p>
+                                    <p className="text-[10px] text-slate-400">By: {au.performedBy}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="pt-2 flex justify-end">
+                            <button
+                                onClick={() => setShowTimelineModal(false)}
+                                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold"
+                            >
+                                Close
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

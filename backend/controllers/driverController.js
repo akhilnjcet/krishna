@@ -1174,8 +1174,8 @@ exports.getDriverPortalData = async (req, res) => {
             return pDate > endOfToday && (t.status === 'Assigned' || t.status === 'Confirmed');
         });
 
-        const activeTrip = allTrips.find(t => t.status === 'Started' || t.status === 'Paused');
-        const completedTrips = allTrips.filter(t => t.status === 'Completed');
+        const activeTrip = allTrips.find(t => t.status === 'Started' || t.status === 'In Transit' || t.status === 'Paused');
+        const completedTrips = allTrips.filter(t => t.status === 'Completed' || t.status === 'Closed');
 
         // Active issues reported by this driver
         const driverIssues = await DriverIssue.find({ driverId: driver._id }).sort({ createdAt: -1 });
@@ -1202,7 +1202,8 @@ exports.getDriverPortalData = async (req, res) => {
             todayTrips,
             upcomingTrips,
             activeTrip: activeTrip || null,
-            recentTrips: allTrips.slice(0, 5),
+            allTrips,
+            recentTrips: allTrips.slice(0, 10),
             issues: {
                 total: driverIssues.length,
                 open: openIssues.length,

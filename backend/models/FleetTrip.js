@@ -94,9 +94,100 @@ const fleetTripSchema = new mongoose.Schema({
     cargoDetails: { type: String, default: '' },
     specialInstructions: { type: String, default: '' },
 
+    // Stock Transfer Linking & Load Details
+    stockTransferId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'StockTransfer',
+        default: null,
+        index: true
+    },
+    stockTransferNumber: { type: String, default: '', trim: true },
+    isStockTransferTrip: { type: Boolean, default: false, index: true },
+
+    items: [{
+        inventoryItemId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'InventoryItem',
+            default: null
+        },
+        itemName: { type: String, required: true },
+        itemCode: { type: String, default: '' },
+        unit: { type: String, default: 'Pcs' },
+        dispatchedQuantity: { type: Number, default: 0 },
+        deliveredQuantity: { type: Number, default: 0 },
+        damagedQuantity: { type: Number, default: 0 },
+        missingQuantity: { type: Number, default: 0 },
+        returnedQuantity: { type: Number, default: 0 },
+        condition: { type: String, default: 'Good' },
+        remarks: { type: String, default: '' }
+    }],
+
+    loadingDetails: {
+        packages: { type: Number, default: 0 },
+        weight: { type: Number, default: 0 },
+        weightUnit: { type: String, default: 'Kg' },
+        supervisor: { type: String, default: '' },
+        specialInstructions: { type: String, default: '' }
+    },
+
+    deliveryOutcome: {
+        type: String,
+        enum: ['Pending', 'Fully Delivered', 'Partially Delivered', 'Returned to Source', 'Delivery Failed', 'Cancelled'],
+        default: 'Pending',
+        index: true
+    },
+
+    proofOfDelivery: {
+        receiverName: { type: String, default: '' },
+        receiverPhone: { type: String, default: '' },
+        signatureUrl: { type: String, default: '' },
+        photos: [{ type: String }],
+        remarks: { type: String, default: '' },
+        submittedAt: { type: Date }
+    },
+
+    reportedIssues: [{
+        issueType: {
+            type: String,
+            enum: ['Vehicle Breakdown', 'Traffic Delay', 'Accident', 'Material Damage', 'Quantity Mismatch', 'Delivery Location Issue', 'Other'],
+            required: true
+        },
+        description: { type: String, required: true },
+        photos: [{ type: String }],
+        location: {
+            lat: { type: Number, default: null },
+            lng: { type: Number, default: null },
+            address: { type: String, default: '' }
+        },
+        reportedAt: { type: Date, default: Date.now },
+        status: { type: String, enum: ['Open', 'Acknowledged', 'Resolved'], default: 'Open' },
+        resolvedAt: { type: Date },
+        adminNotes: { type: String, default: '' }
+    }],
+
+    timeline: [{
+        stage: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+        performedBy: { type: String, default: 'System' },
+        notes: { type: String, default: '' }
+    }],
+
+    isVerifiedByAdmin: { type: Boolean, default: false, index: true },
+    adminVerification: {
+        verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+        verifiedByName: { type: String, default: '' },
+        verifiedAt: { type: Date },
+        reconciliationStatus: {
+            type: String,
+            enum: ['Pending', 'Approved', 'Discrepancy Reconciled', 'Rejected'],
+            default: 'Pending'
+        },
+        adminRemarks: { type: String, default: '' }
+    },
+
     status: {
         type: String,
-        enum: ['Assigned', 'Confirmed', 'Started', 'Paused', 'Completed', 'Cancelled'],
+        enum: ['Assigned', 'Confirmed', 'Started', 'In Transit', 'Paused', 'Completed', 'Cancelled'],
         default: 'Assigned',
         index: true
     },

@@ -155,11 +155,78 @@ const stockTransferSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    driverId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Driver',
+        default: null
+    },
     driverName: {
         type: String,
         default: ''
     },
     driverPhone: {
+        type: String,
+        default: ''
+    },
+    tripId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'FleetTrip',
+        default: null
+    },
+    tripNumber: {
+        type: String,
+        default: ''
+    },
+    plannedDispatchDate: {
+        type: Date,
+        default: null
+    },
+    packageCount: {
+        type: Number,
+        default: 0
+    },
+    loadingSupervisor: {
+        type: String,
+        default: ''
+    },
+    handlingInstructions: {
+        type: String,
+        default: ''
+    },
+    attachments: [{
+        name: { type: String, default: '' },
+        fileUrl: { type: String, required: true },
+        uploadedAt: { type: Date, default: Date.now }
+    }],
+    deliveryOutcome: {
+        type: String,
+        enum: ['Pending', 'Fully Delivered', 'Partially Delivered', 'Returned to Source', 'Delivery Failed', 'Cancelled'],
+        default: 'Pending'
+    },
+    receiverName: {
+        type: String,
+        default: ''
+    },
+    receiverSignature: {
+        type: String,
+        default: ''
+    },
+    deliveryPhotos: [{
+        type: String
+    }],
+    deliveryRemarks: {
+        type: String,
+        default: ''
+    },
+    verifiedByAdmin: {
+        type: Boolean,
+        default: false
+    },
+    verifiedAt: {
+        type: Date,
+        default: null
+    },
+    verifiedByName: {
         type: String,
         default: ''
     },

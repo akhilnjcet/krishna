@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 const Warehouse = require('../models/Warehouse');
 const StockTransfer = require('../models/StockTransfer');
 const InventoryItem = require('../models/InventoryItem');
+const FleetTrip = require('../models/FleetTrip');
+const Vehicle = require('../models/Vehicle');
+const Driver = require('../models/Driver');
+const Notification = require('../models/Notification');
+const socketUtil = require('../utils/socket');
 
 // ─── WAREHOUSE LOCATION MANAGEMENT ───
 
@@ -236,11 +241,20 @@ exports.createStockTransfer = async (req, res) => {
             vehicleNumber,
             vehicleName,
             isManualVehicle,
+            driverId,
             driverName, 
             driverPhone, 
             totalWeight,
             weightUnit,
-            notes 
+            notes,
+            status: reqStatus,
+            actionType, // 'draft' | 'assign' | 'schedule' | 'dispatch'
+            transferDate,
+            plannedDispatchDate,
+            packageCount,
+            loadingSupervisor,
+            handlingInstructions,
+            attachments
         } = req.body;
 
         if (!items || !items.length) {
@@ -443,7 +457,61 @@ exports.createStockTransfer = async (req, res) => {
             }
         }
 
+        // Driver and Vehicle collision checks if assigning trip
+        let assignedDriver = null;
+        let assignedVehicle = null;
+
+        if (driverId) {
+            assignedDriver = await Driver.findById(driverId);
+            if (!assignedDriver) {
+                return res.status(404).json({ success: false, message: 'Selected driver not found' });
+            }
+            if (assignedDriver.status !== 'Active') {
+                return res.status(400).json({ success: false, message: `Driver ${assignedDriver.name} is ${assignedDriver.status}. Only active drivers can be assigned.` });
+            }
+            const activeDriverTrip = await FleetTrip.findOne({
+                driverId: assignedDriver._id,
+                status: { $in: ['Started', 'In Transit', 'Paused'] }
+            });
+            if (activeDriverTrip) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Driver ${assignedDriver.name} is currently in-transit on trip ${activeDriverTrip.tripNumber}. Overlapping assignments are prevented.`
+                });
+            }
+        }
+
+        if (vehicleId) {
+            assignedVehicle = await Vehicle.findById(vehicleId);
+            if (!assignedVehicle) {
+                return res.status(404).json({ success: false, message: 'Selected vehicle not found' });
+            }
+            if (assignedVehicle.status === 'In Maintenance' || assignedVehicle.status === 'Out of Service') {
+                return res.status(400).json({ success: false, message: `Vehicle ${assignedVehicle.registrationNumber} is ${assignedVehicle.status}.` });
+            }
+            const activeVehTrip = await FleetTrip.findOne({
+                vehicleId: assignedVehicle._id,
+                status: { $in: ['Started', 'In Transit', 'Paused'] }
+            });
+            if (activeVehTrip) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Vehicle ${assignedVehicle.registrationNumber} is currently assigned to active trip ${activeVehTrip.tripNumber}.`
+                });
+            }
+        }
+
         const transferNumber = `ST-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+        const now = new Date();
+
+        let initialStatus = 'Requested';
+        if (actionType === 'draft' || reqStatus === 'Draft') {
+            initialStatus = 'Draft';
+        } else if (actionType === 'dispatch') {
+            initialStatus = 'In Transit';
+        } else if (assignedDriver && assignedVehicle) {
+            initialStatus = 'Approved';
+        }
 
         const transfer = await StockTransfer.create({
             transferNumber,
@@ -458,26 +526,176 @@ exports.createStockTransfer = async (req, res) => {
             projectId: projectId || null,
             projectTitle: projectTitle || '',
             items: formattedItems,
-            status: 'Requested',
+            status: initialStatus,
             transportMethod: transportMethod || 'Internal Vehicle',
-            vehicleId: vehicleId || null,
-            vehicleNumber: (vehicleNumber || '').trim().toUpperCase(),
-            vehicleName: (vehicleName || '').trim(),
+            vehicleId: assignedVehicle?._id || (vehicleId || null),
+            vehicleNumber: assignedVehicle ? assignedVehicle.registrationNumber : (vehicleNumber || '').trim().toUpperCase(),
+            vehicleName: assignedVehicle ? (assignedVehicle.vehicleName || assignedVehicle.vehicleType) : (vehicleName || '').trim(),
             isManualVehicle: Boolean(isManualVehicle),
-            driverName: (driverName || '').trim(),
-            driverPhone: (driverPhone || '').trim(),
+            driverId: assignedDriver?._id || (driverId || null),
+            driverName: assignedDriver ? assignedDriver.name : (driverName || '').trim(),
+            driverPhone: assignedDriver ? assignedDriver.phone : (driverPhone || '').trim(),
+            plannedDispatchDate: plannedDispatchDate ? new Date(plannedDispatchDate) : null,
+            packageCount: packageCount !== undefined && packageCount !== null && packageCount !== '' ? Number(packageCount) : 0,
+            loadingSupervisor: (loadingSupervisor || '').trim(),
+            handlingInstructions: (handlingInstructions || '').trim(),
+            attachments: Array.isArray(attachments) ? attachments : [],
             totalWeight: totalWeight !== undefined && totalWeight !== null && totalWeight !== '' ? Number(totalWeight) : null,
             weightUnit: weightUnit || 'Kg',
             notes: notes || '',
             requestedBy: req.user ? req.user._id : null,
             requestedByName: req.user ? req.user.name : 'Store Staff',
             auditTrail: [{
-                action: 'REQUESTED',
+                action: initialStatus.toUpperCase(),
                 performedBy: req.user ? req.user.name : 'Store Staff',
-                timestamp: new Date(),
-                details: `Transfer request created from ${finalSourceName} to ${finalDestName} for ${formattedItems.length} line items.`
+                timestamp: now,
+                details: `Transfer ${transferNumber} created in status ${initialStatus} from ${finalSourceName} to ${finalDestName} for ${formattedItems.length} line items.`
             }]
         });
+
+        // If driver and vehicle assigned, spawn the linked FleetTrip
+        if (assignedDriver && assignedVehicle && initialStatus !== 'Draft') {
+            const tripNumber = `TRIP-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+            const initialTimeline = [
+                {
+                    stage: 'Stock Transfer Created',
+                    timestamp: now,
+                    performedBy: req.user?.name || 'Store Staff',
+                    notes: `Transfer ${transferNumber} created`
+                },
+                {
+                    stage: 'Driver Assigned',
+                    timestamp: now,
+                    performedBy: req.user?.name || 'Store Staff',
+                    notes: `Driver: ${assignedDriver.name} (${assignedDriver.phone || ''})`
+                },
+                {
+                    stage: 'Vehicle Assigned',
+                    timestamp: now,
+                    performedBy: req.user?.name || 'Store Staff',
+                    notes: `Vehicle: ${assignedVehicle.registrationNumber}`
+                },
+                {
+                    stage: 'Load Prepared',
+                    timestamp: now,
+                    performedBy: req.user?.name || 'Store Staff',
+                    notes: `Prepared ${formattedItems.length} items (${packageCount || 0} packages)`
+                }
+            ];
+
+            if (initialStatus === 'In Transit') {
+                initialTimeline.push({
+                    stage: 'Trip Started',
+                    timestamp: now,
+                    performedBy: req.user?.name || 'Store Staff',
+                    notes: 'Trip dispatched directly by Admin'
+                });
+                initialTimeline.push({
+                    stage: 'In Transit',
+                    timestamp: now,
+                    performedBy: req.user?.name || 'Store Staff',
+                    notes: 'Goods in transit to destination'
+                });
+            }
+
+            const trip = await FleetTrip.create({
+                tripNumber,
+                driverId: assignedDriver._id,
+                driverUserId: assignedDriver.userId || null,
+                driverName: assignedDriver.name,
+                driverPhone: assignedDriver.phone,
+                driverLicenseNumber: assignedDriver.licenseNumber,
+                vehicleId: assignedVehicle._id,
+                vehicleRegistration: assignedVehicle.registrationNumber,
+                vehicleName: assignedVehicle.vehicleName,
+                vehicleType: assignedVehicle.vehicleType,
+                projectId: projectId || null,
+                projectTitle: projectTitle || '',
+                startLocation: finalSourceName,
+                startAddress: finalSourceAddress || '',
+                destination: finalDestName,
+                destinationAddress: finalDestAddress || '',
+                pickupDateTime: plannedDispatchDate ? new Date(plannedDispatchDate) : now,
+                deliveryExpectedDateTime: null,
+                purpose: `Stock Transfer ${transferNumber}`,
+                cargoDetails: formattedItems.map(i => `${i.itemName} (${i.requestedQuantity} ${i.unit})`).join(', '),
+                specialInstructions: handlingInstructions || notes || '',
+                stockTransferId: transfer._id,
+                stockTransferNumber: transfer.transferNumber,
+                isStockTransferTrip: true,
+                items: formattedItems.map(it => ({
+                    inventoryItemId: it.inventoryItemId || null,
+                    itemName: it.itemName,
+                    itemCode: it.itemCode || '',
+                    unit: it.unit || 'Pcs',
+                    dispatchedQuantity: Number(it.requestedQuantity) || 0,
+                    deliveredQuantity: 0,
+                    damagedQuantity: 0,
+                    missingQuantity: 0,
+                    returnedQuantity: 0,
+                    condition: 'Good',
+                    remarks: ''
+                })),
+                loadingDetails: {
+                    packages: Number(packageCount) || 0,
+                    weight: Number(totalWeight) || 0,
+                    weightUnit: weightUnit || 'Kg',
+                    supervisor: loadingSupervisor || (req.user?.name || ''),
+                    specialInstructions: handlingInstructions || notes || ''
+                },
+                timeline: initialTimeline,
+                status: initialStatus === 'In Transit' ? 'In Transit' : 'Assigned',
+                deliveryOutcome: 'Pending',
+                assignedBy: req.user?._id || null,
+                assignedByName: req.user?.name || 'Store Staff',
+                assignedAt: now
+            });
+
+            transfer.tripId = trip._id;
+            transfer.tripNumber = trip.tripNumber;
+            await transfer.save();
+
+            // Emit real-time notification
+            if (socketUtil && socketUtil.getIO()) {
+                socketUtil.getIO().emit('trip:created', { tripId: trip._id, tripNumber: trip.tripNumber });
+            }
+        }
+
+        // If actionType is dispatch, also deduct stock atomically from source
+        if (actionType === 'dispatch') {
+            const sourceLocId = transfer.sourceWarehouseId ? transfer.sourceWarehouseId.toString() : null;
+            for (const it of transfer.items) {
+                if (!it.inventoryItemId) continue;
+                const inv = await InventoryItem.findById(it.inventoryItemId);
+                if (!inv) continue;
+
+                const qty = Number(it.requestedQuantity);
+                it.dispatchedQuantity = qty;
+
+                if (sourceLocId && Array.isArray(inv.locationStock)) {
+                    let found = inv.locationStock.find(ls => ls.warehouseId && ls.warehouseId.toString() === sourceLocId);
+                    if (found) {
+                        found.quantity = Math.max(0, (Number(found.quantity) || 0) - qty);
+                    }
+                }
+                if (!transfer.destinationWarehouseId) {
+                    inv.quantity = Math.max(0, (Number(inv.quantity) || 0) - qty);
+                }
+                inv.stockMovements.push({
+                    type: 'OUT',
+                    quantity: qty,
+                    reference: transfer.transferNumber,
+                    reason: `Transfer dispatched directly from ${transfer.sourceWarehouseName} to ${transfer.destinationWarehouseName}`,
+                    performedBy: req.user ? req.user.name : 'Store Staff',
+                    date: now
+                });
+                await inv.save();
+            }
+            transfer.dispatchedBy = req.user ? req.user._id : null;
+            transfer.dispatchedByName = req.user ? req.user.name : 'Store Staff';
+            transfer.dispatchedAt = now;
+            await transfer.save();
+        }
 
         res.status(201).json({ success: true, transfer });
     } catch (err) {
@@ -555,9 +773,200 @@ exports.dispatchStockTransfer = async (req, res) => {
         });
 
         await transfer.save();
+
+        // If transfer has a linked trip, sync trip status to In Transit
+        if (transfer.tripId) {
+            const trip = await FleetTrip.findById(transfer.tripId);
+            if (trip && trip.status !== 'In Transit' && trip.status !== 'Completed') {
+                trip.status = 'In Transit';
+                trip.timeline.push({
+                    stage: 'In Transit',
+                    timestamp: new Date(),
+                    performedBy: req.user ? req.user.name : 'Warehouse Admin',
+                    notes: `Dispatched by admin from ${transfer.sourceWarehouseName}`
+                });
+                await trip.save();
+                if (socketUtil && socketUtil.getIO()) {
+                    socketUtil.getIO().emit('trip:started', { tripId: trip._id, tripNumber: trip.tripNumber });
+                }
+            }
+        }
+
         res.json({ success: true, message: 'Transfer dispatched successfully', transfer });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// @desc Assign / Schedule Driver & Vehicle to existing Stock Transfer
+// @route PUT /api/stock-transfers/:id/assign-trip
+exports.assignTripToTransfer = async (req, res) => {
+    try {
+        const transfer = await StockTransfer.findById(req.params.id);
+        if (!transfer) {
+            return res.status(404).json({ success: false, message: 'Stock transfer not found' });
+        }
+
+        const {
+            driverId,
+            vehicleId,
+            pickupDateTime,
+            deliveryExpectedDateTime,
+            specialInstructions
+        } = req.body;
+
+        if (!driverId || !vehicleId) {
+            return res.status(400).json({ success: false, message: 'Driver and Vehicle must be selected' });
+        }
+
+        const driver = await Driver.findById(driverId);
+        if (!driver) return res.status(404).json({ success: false, message: 'Driver not found' });
+        if (driver.status !== 'Active') {
+            return res.status(400).json({ success: false, message: `Driver ${driver.name} is ${driver.status}.` });
+        }
+
+        const vehicle = await Vehicle.findById(vehicleId);
+        if (!vehicle) return res.status(404).json({ success: false, message: 'Vehicle not found' });
+
+        // Overlap checks
+        const activeDriverTrip = await FleetTrip.findOne({
+            driverId: driver._id,
+            status: { $in: ['Started', 'In Transit', 'Paused'] }
+        });
+        if (activeDriverTrip && (!transfer.tripId || activeDriverTrip._id.toString() !== transfer.tripId.toString())) {
+            return res.status(400).json({
+                success: false,
+                message: `Driver ${driver.name} is currently in-transit on trip ${activeDriverTrip.tripNumber}.`
+            });
+        }
+
+        const activeVehTrip = await FleetTrip.findOne({
+            vehicleId: vehicle._id,
+            status: { $in: ['Started', 'In Transit', 'Paused'] }
+        });
+        if (activeVehTrip && (!transfer.tripId || activeVehTrip._id.toString() !== transfer.tripId.toString())) {
+            return res.status(400).json({
+                success: false,
+                message: `Vehicle ${vehicle.registrationNumber} is currently assigned to trip ${activeVehTrip.tripNumber}.`
+            });
+        }
+
+        const now = new Date();
+        let trip = null;
+        if (transfer.tripId) {
+            trip = await FleetTrip.findById(transfer.tripId);
+        }
+
+        if (!trip) {
+            const tripNumber = `TRIP-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+            trip = new FleetTrip({
+                tripNumber,
+                driverId: driver._id,
+                driverUserId: driver.userId || null,
+                driverName: driver.name,
+                driverPhone: driver.phone,
+                driverLicenseNumber: driver.licenseNumber,
+                vehicleId: vehicle._id,
+                vehicleRegistration: vehicle.registrationNumber,
+                vehicleName: vehicle.vehicleName,
+                vehicleType: vehicle.vehicleType,
+                projectId: transfer.projectId || null,
+                projectTitle: transfer.projectTitle || '',
+                startLocation: transfer.sourceWarehouseName,
+                startAddress: transfer.sourceAddress || '',
+                destination: transfer.destinationWarehouseName,
+                destinationAddress: transfer.destinationAddress || '',
+                pickupDateTime: pickupDateTime ? new Date(pickupDateTime) : now,
+                deliveryExpectedDateTime: deliveryExpectedDateTime ? new Date(deliveryExpectedDateTime) : null,
+                purpose: `Stock Transfer ${transfer.transferNumber}`,
+                cargoDetails: transfer.items.map(i => `${i.itemName} (${i.requestedQuantity} ${i.unit})`).join(', '),
+                specialInstructions: specialInstructions || transfer.handlingInstructions || transfer.notes || '',
+                stockTransferId: transfer._id,
+                stockTransferNumber: transfer.transferNumber,
+                isStockTransferTrip: true,
+                items: transfer.items.map(it => ({
+                    inventoryItemId: it.inventoryItemId || null,
+                    itemName: it.itemName,
+                    itemCode: it.itemCode || '',
+                    unit: it.unit || 'Pcs',
+                    dispatchedQuantity: Number(it.requestedQuantity) || 0,
+                    deliveredQuantity: 0,
+                    damagedQuantity: 0,
+                    missingQuantity: 0,
+                    returnedQuantity: 0,
+                    condition: 'Good',
+                    remarks: ''
+                })),
+                loadingDetails: {
+                    packages: transfer.packageCount || 0,
+                    weight: transfer.totalWeight || 0,
+                    weightUnit: transfer.weightUnit || 'Kg',
+                    supervisor: transfer.loadingSupervisor || (req.user?.name || ''),
+                    specialInstructions: specialInstructions || transfer.handlingInstructions || transfer.notes || ''
+                },
+                timeline: [
+                    { stage: 'Stock Transfer Created', timestamp: transfer.createdAt || now, performedBy: transfer.requestedByName || 'Staff', notes: `Created ${transfer.transferNumber}` },
+                    { stage: 'Driver Assigned', timestamp: now, performedBy: req.user?.name || 'Admin', notes: `Driver: ${driver.name}` },
+                    { stage: 'Vehicle Assigned', timestamp: now, performedBy: req.user?.name || 'Admin', notes: `Vehicle: ${vehicle.registrationNumber}` },
+                    { stage: 'Load Prepared', timestamp: now, performedBy: req.user?.name || 'Admin', notes: `Prepared ${transfer.items.length} items` }
+                ],
+                status: 'Assigned',
+                deliveryOutcome: 'Pending',
+                assignedBy: req.user?._id || null,
+                assignedByName: req.user?.name || 'Admin',
+                assignedAt: now
+            });
+            await trip.save();
+        } else {
+            trip.driverId = driver._id;
+            trip.driverUserId = driver.userId || null;
+            trip.driverName = driver.name;
+            trip.driverPhone = driver.phone;
+            trip.driverLicenseNumber = driver.licenseNumber;
+            trip.vehicleId = vehicle._id;
+            trip.vehicleRegistration = vehicle.registrationNumber;
+            trip.vehicleName = vehicle.vehicleName;
+            trip.vehicleType = vehicle.vehicleType;
+            if (pickupDateTime) trip.pickupDateTime = new Date(pickupDateTime);
+            if (deliveryExpectedDateTime) trip.deliveryExpectedDateTime = new Date(deliveryExpectedDateTime);
+            trip.timeline.push({
+                stage: 'Driver Assigned',
+                timestamp: now,
+                performedBy: req.user?.name || 'Admin',
+                notes: `Reassigned driver to ${driver.name} & vehicle ${vehicle.registrationNumber}`
+            });
+            await trip.save();
+        }
+
+        transfer.driverId = driver._id;
+        transfer.driverName = driver.name;
+        transfer.driverPhone = driver.phone;
+        transfer.vehicleId = vehicle._id;
+        transfer.vehicleNumber = vehicle.registrationNumber;
+        transfer.vehicleName = vehicle.vehicleName;
+        transfer.tripId = trip._id;
+        transfer.tripNumber = trip.tripNumber;
+        if (transfer.status === 'Draft' || transfer.status === 'Requested') {
+            transfer.status = 'Approved';
+        }
+        transfer.auditTrail.push({
+            action: 'TRIP_ASSIGNED',
+            performedBy: req.user?.name || 'Admin',
+            timestamp: now,
+            details: `Trip ${trip.tripNumber} linked with Driver ${driver.name} and Vehicle ${vehicle.registrationNumber}.`
+        });
+        await transfer.save();
+
+        if (socketUtil && socketUtil.getIO()) {
+            socketUtil.getIO().emit('trip:assigned', { tripId: trip._id, tripNumber: trip.tripNumber, driverId: driver._id });
+        }
+
+        res.json({ success: true, message: 'Trip successfully scheduled and linked with transfer', transfer, trip });
+    } catch (err) {
+        console.error('assignTripToTransfer error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
     }
 };
 

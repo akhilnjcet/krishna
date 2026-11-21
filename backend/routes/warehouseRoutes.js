@@ -13,6 +13,7 @@ router.get('/warehouses/stock-overview', protect, warehouseController.getLocatio
 // Stock Transfers
 router.get('/stock-transfers', protect, warehouseController.getAllStockTransfers);
 router.post('/stock-transfers', protect, authorize('admin', 'manager', 'staff'), warehouseController.createStockTransfer);
+router.put('/stock-transfers/:id/assign-trip', protect, authorize('admin', 'manager', 'staff'), warehouseController.assignTripToTransfer);
 router.put('/stock-transfers/:id/dispatch', protect, authorize('admin', 'manager'), warehouseController.dispatchStockTransfer);
 router.put('/stock-transfers/:id/receive', protect, authorize('admin', 'manager', 'staff'), warehouseController.receiveStockTransfer);
 

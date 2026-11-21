@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
+import TripManagementTab from '../../components/fleet/TripManagementTab';
 import { 
     Truck, Plus, Search, Filter, Calendar, AlertTriangle, ShieldCheck, 
     Clock, DollarSign, Fuel, Wrench, FileText, CheckCircle2, ChevronRight, 
@@ -704,6 +705,18 @@ const AdminFleet = () => {
                 >
                     <UserCheck className="w-4 h-4" />
                     <span>Driver Assignments Hub</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('trips')}
+                    className={`px-4 py-2.5 rounded-xl font-black flex items-center gap-2 transition ${
+                        activeTab === 'trips'
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                >
+                    <Navigation className="w-4 h-4" />
+                    <span>Trip Management & Real-Time Monitoring</span>
                 </button>
             </div>
 
@@ -1413,6 +1426,15 @@ const AdminFleet = () => {
                             </table>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* ════════════════════════════════════════════════════════════════
+                TAB 4: TRIP MANAGEMENT & REAL-TIME MONITORING
+            ════════════════════════════════════════════════════════════════ */}
+            {activeTab === 'trips' && (
+                <div className="space-y-6">
+                    <TripManagementTab />
                 </div>
             )}
 
