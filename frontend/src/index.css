@@ -277,7 +277,10 @@ button {
   }
 
   html,
-  body {
+  body,
+  #root,
+  #root > div,
+  main {
     width: 100% !important;
     height: auto !important;
     min-height: 0 !important;
@@ -286,9 +289,11 @@ button {
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
   }
 
-  /* Hide navigation, sidebars, controls, forms, footers, modals, floating buttons */
+  /* Hide navigation, sidebars, controls, forms, footers, toasts, floating buttons */
   aside,
   nav,
   header,
@@ -299,10 +304,6 @@ button {
   input,
   select,
   textarea,
-  .modal-responsive,
-  [role="dialog"],
-  [role="alert"],
-  .fixed,
   .toast {
     display: none !important;
   }

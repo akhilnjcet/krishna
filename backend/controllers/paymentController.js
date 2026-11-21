@@ -907,7 +907,7 @@ exports.cashfreeWebhook = async (req, res) => {
         const timestamp = req.headers['x-webhook-timestamp'];
         const rawBodyStr = req.rawBody ? req.rawBody.toString('utf-8') : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
 
-        // Verify webhook signature if present
+        // Verify webhook signature (enforced if signature headers or production secret are present)
         if (signature && timestamp) {
             try {
                 const isValid = await cashfreeService.verifyWebhookSignature(signature, rawBodyStr, timestamp);
@@ -919,6 +919,9 @@ exports.cashfreeWebhook = async (req, res) => {
                 console.error('[Cashfree Webhook] Signature verification error:', sigErr.message);
                 return res.status(400).send('Invalid signature');
             }
+        } else if (process.env.NODE_ENV === 'production' && process.env.CASHFREE_SECRET_KEY) {
+            console.error('[Cashfree Webhook] Missing required webhook signature headers in production.');
+            return res.status(400).send('Missing signature headers');
         }
 
         const payload = req.body || {};

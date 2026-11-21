@@ -83,13 +83,17 @@ exports.register = async (req, res) => {
         const verificationHash = hashToken(verificationOtp);
         const verificationExpires = new Date(Date.now() + 15 * 60 * 1000);
 
+        // Security hardening: Public registration must ALWAYS be assigned role 'customer' to prevent privilege escalation.
+        // Administrative or elevated accounts must only be created via the protected admin endpoints.
+        const assignedRole = (req.user && req.user.role === 'admin' && role) ? role : 'customer';
+
         const user = await User.create({
             staff_id, 
             name: (name || normalizedUsername).trim(), 
             email: normalizedEmail, 
             username: normalizedUsername, 
             password: hashedPassword, 
-            role: role || 'customer', 
+            role: assignedRole, 
             department, 
             designation, 
             phone,

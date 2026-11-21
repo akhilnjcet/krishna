@@ -185,15 +185,27 @@ class CashfreeService {
 
     /**
      * Verify Webhook Signature (HMAC-SHA256)
+     * Hardened against timing attacks using crypto.timingSafeEqual
      */
     async verifyWebhookSignature(signature, rawBody, timestamp) {
+        if (!signature || !rawBody || !timestamp) return false;
         const crypto = require('crypto');
         const creds = await this.getCredentials();
+        if (!creds.secretKey) return false;
+
         const expectedSig = crypto
             .createHmac('sha256', creds.secretKey)
             .update(timestamp + rawBody)
             .digest('base64');
-        return expectedSig === signature;
+
+        try {
+            const sigBuf = Buffer.from(signature, 'utf8');
+            const expBuf = Buffer.from(expectedSig, 'utf8');
+            if (sigBuf.length !== expBuf.length) return false;
+            return crypto.timingSafeEqual(sigBuf, expBuf);
+        } catch {
+            return false;
+        }
     }
 
     /**

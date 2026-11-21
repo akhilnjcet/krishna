@@ -429,7 +429,10 @@ app.get('/api/health/whatsapp', serverProtect, serverAdmin, async (req, res) => 
             timestamp: new Date().toISOString()
         });
     } catch (err) {
-        res.status(500).json({ error: err.message, stack: err.stack });
+        res.status(500).json({ 
+            error: err.message, 
+            stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined 
+        });
     }
 });
 

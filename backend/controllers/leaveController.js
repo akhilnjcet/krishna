@@ -4,11 +4,25 @@ const { sendStatusUpdateEmail } = require('../services/emailService');
 exports.applyLeave = async (req, res) => {
     try {
         const { reason, startDate, endDate } = req.body;
+
+        if (!reason || typeof reason !== 'string' || !reason.trim()) {
+            return res.status(400).json({ message: 'A valid reason for leave is required.' });
+        }
+        if (!startDate || isNaN(new Date(startDate).getTime())) {
+            return res.status(400).json({ message: 'A valid start date is required.' });
+        }
+        if (!endDate || isNaN(new Date(endDate).getTime())) {
+            return res.status(400).json({ message: 'A valid end date is required.' });
+        }
+        if (new Date(endDate) < new Date(startDate)) {
+            return res.status(400).json({ message: 'End date cannot be earlier than start date.' });
+        }
+
         const leave = await Leave.create({
             staffId: req.user.id,
-            reason,
-            startDate,
-            endDate
+            reason: reason.trim(),
+            startDate: new Date(startDate),
+            endDate: new Date(endDate)
         });
 
         try {
@@ -36,7 +50,7 @@ exports.getLeaves = async (req, res) => {
         if (req.user.role === 'staff') {
             filter.staffId = req.user.id;
         }
-        const leaves = await Leave.find(filter).populate('staffId', 'name email');
+        const leaves = await Leave.find(filter).populate('staffId', 'name email').sort({ createdAt: -1 });
         res.json(leaves);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -45,10 +59,19 @@ exports.getLeaves = async (req, res) => {
 
 exports.updateLeaveStatus = async (req, res) => {
     try {
+        const rawStatus = (req.body.status || '').toLowerCase().trim();
+        const validStatuses = ['pending', 'approved', 'rejected'];
+
+        if (!validStatuses.includes(rawStatus)) {
+            return res.status(400).json({ 
+                message: `Invalid status "${req.body.status}". Allowed values: pending, approved, rejected.` 
+            });
+        }
+
         const leave = await Leave.findByIdAndUpdate(
             req.params.id,
-            { status: req.body.status },
-            { new: true }
+            { status: rawStatus },
+            { new: true, runValidators: true }
         ).populate('staffId', 'name email');
         
         if (!leave) return res.status(404).json({ message: 'Leave not found' });
@@ -59,20 +82,20 @@ exports.updateLeaveStatus = async (req, res) => {
             const { dispatchNotification } = require('../services/notificationDispatcher');
             const targetStaffId = leave.staffId?._id || leave.staffId;
             dispatchNotification({
-                title: `Leave Request ${req.body.status}`,
-                message: `Your leave request has been marked as ${req.body.status}.`,
+                title: `Leave Request ${rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1)}`,
+                message: `Your leave request has been marked as ${rawStatus}.`,
                 category: 'leave',
-                priority: req.body.status === 'Approved' ? 'medium' : 'high',
+                priority: rawStatus === 'approved' ? 'medium' : 'high',
                 recipientRole: 'staff',
                 recipientUser: targetStaffId,
                 link: '/staff/leave',
-                metadata: { leaveId: leave._id, status: req.body.status }
+                metadata: { leaveId: leave._id, status: rawStatus }
             }).catch(() => {});
         } catch (e) {}
 
         // Notify Staff
-        if (req.body.status && leave.staffId?.email) {
-            sendStatusUpdateEmail(leave.staffId.email, leave.staffId.name, 'Leave Request', req.body.status).catch(console.error);
+        if (rawStatus && leave.staffId?.email) {
+            sendStatusUpdateEmail(leave.staffId.email, leave.staffId.name, 'Leave Request', rawStatus).catch(console.error);
         }
     } catch (error) {
         res.status(500).json({ message: error.message });

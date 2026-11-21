@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Universal PDF & Currency Utilities
  * Strictly enforces Indian numbering format without unicode spacing corruption,
  * right-alignment, charSpace=0, and auto font scaling.
