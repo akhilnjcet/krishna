@@ -70,7 +70,7 @@ const getCategoryFallbackImage = (category) => {
 };
 
 // Safe Image Component that avoids broken image icons or bleeding alt text
-const IntelImage = ({ src, alt, category, className }) => {
+const ArticleImage = ({ src, alt, category, className }) => {
     const [imgSrc, setImgSrc] = useState(() => {
         const direct = getDirectImageUrl(src);
         return direct || getCategoryFallbackImage(category);
@@ -140,7 +140,7 @@ const Blog = () => {
         fetchPosts();
     }, [fetchPosts]);
 
-    // Unique Categories for Pills & Matrix
+    // Unique Categories for Pills & Category Filter
     const availableCategories = useMemo(() => {
         const set = new Set();
         posts.forEach(p => {
@@ -199,29 +199,29 @@ const Blog = () => {
                     <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[10px] font-bold uppercase tracking-[0.3em] mb-4"
+                        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-bold uppercase tracking-wider mb-4"
                     >
-                        <Radio className="w-3.5 h-3.5 animate-pulse" />
-                        <span>Intel Matrix Deployment</span>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Krishna Engineering Publications</span>
                     </motion.div>
 
-                    <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white uppercase tracking-tighter mb-4 italic">
-                        FIELD <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-500 to-amber-200">REPORTS.</span>
+                    <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white uppercase tracking-tight mb-4">
+                        TECHNICAL <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-500 to-amber-200">JOURNAL.</span>
                     </h1>
 
-                    <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto font-medium uppercase tracking-wider mb-8">
-                        Technical bulletins, metallurgical updates & industrial structural intelligence.
+                    <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto font-medium leading-relaxed mb-8">
+                        Practical welding guides, fabrication case studies, structural engineering insights, and workshop standards.
                     </p>
                     
                     {/* Live Search & Filter Bar */}
                     <div className="relative w-full max-w-xl">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input 
                             type="text" 
-                            placeholder="FILTER INTELLIGENCE ARCHIVES..."
+                            placeholder="Search articles, topics, or materials..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-white/[0.04] border border-white/10 rounded-2xl py-3.5 pl-11 pr-10 text-xs font-mono font-bold uppercase tracking-wider text-white placeholder:text-slate-600 focus:border-amber-400/80 focus:ring-2 focus:ring-amber-500/20 outline-none backdrop-blur-2xl transition-all shadow-xl"
+                            className="w-full bg-white/[0.06] border border-white/10 rounded-2xl py-3.5 pl-11 pr-10 text-xs font-semibold tracking-wide text-white placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 outline-none backdrop-blur-2xl transition-all shadow-xl"
                         />
                         {searchTerm && (
                             <button
@@ -246,7 +246,7 @@ const Blog = () => {
                                     : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/5'
                             }`}
                         >
-                            All Bulletins ({posts.length})
+                            All Articles ({posts.length})
                         </button>
                         {availableCategories.map(cat => {
                             const count = posts.filter(p => (p.category || '').toLowerCase().includes(cat.toLowerCase())).length;
@@ -277,27 +277,27 @@ const Blog = () => {
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-28">
                         <Loader2 className="w-12 h-12 text-amber-400 animate-spin mb-4" />
-                        <p className="font-mono text-xs uppercase tracking-widest text-slate-500">Retrieving Secure Archives...</p>
+                        <p className="font-mono text-xs uppercase tracking-widest text-slate-400">Loading Engineering Articles...</p>
                     </div>
                 ) : fetchError ? (
                     <div className="text-center py-24 bg-red-600/[0.03] rounded-3xl border border-dashed border-red-600/20 p-8 max-w-xl mx-auto">
                         <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-                        <h3 className="text-white font-black uppercase tracking-wider text-base mb-2">Archival Protocol Mismatch</h3>
+                        <h3 className="text-white font-black uppercase tracking-wider text-base mb-2">Unable to Load Articles</h3>
                         <p className="text-slate-400 text-xs font-medium mb-6 leading-relaxed">
-                            {fetchError === 'EMPTY_ARCHIVE' ? 'Intelligence database is currently offline or empty.' : `System Notice: ${fetchError}`}
+                            {fetchError === 'EMPTY_ARCHIVE' ? 'No articles currently published in this category.' : `System Notice: ${fetchError}`}
                         </p>
                         <button 
                             onClick={fetchPosts}
                             className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-slate-950 px-6 py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs transition shadow-lg shadow-amber-400/20"
                         >
-                            <RefreshCw className="w-4 h-4" /> Sync Matrix
+                            <RefreshCw className="w-4 h-4" /> Refresh Feed
                         </button>
                     </div>
                 ) : filteredPosts.length === 0 ? (
                     <div className="text-center py-24 bg-white/[0.02] rounded-3xl border border-dashed border-white/10 p-8 max-w-xl mx-auto">
                         <AlertCircle className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                        <h4 className="text-white font-black uppercase tracking-wider text-sm mb-1">No Matching Intel Found</h4>
-                        <p className="text-slate-500 text-xs">No records matched your search or category filters.</p>
+                        <h4 className="text-white font-black uppercase tracking-wider text-sm mb-1">No Matching Articles Found</h4>
+                        <p className="text-slate-400 text-xs">No records matched your search or category filters.</p>
                         <button
                             type="button"
                             onClick={() => { setSearchTerm(''); setSelectedCategory('ALL'); }}
@@ -322,7 +322,7 @@ const Blog = () => {
                                     >
                                         {/* Image Section with Reliable Safe Fallback */}
                                         <div className="w-full md:w-[42%] min-h-[220px] md:min-h-[280px] relative overflow-hidden bg-slate-900 shrink-0">
-                                            <IntelImage 
+                                            <ArticleImage 
                                                 src={post.image} 
                                                 alt={post.title} 
                                                 category={post.category} 
@@ -338,15 +338,15 @@ const Blog = () => {
                                         <div className="w-full md:w-[58%] p-6 sm:p-8 flex flex-col justify-between bg-[#0a0a0c]/80 relative">
                                             <div>
                                                 {/* Meta Row: Date & Author */}
-                                                <div className="flex items-center gap-4 text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-3">
-                                                    <div className="flex items-center gap-1.5">
+                                                <div className="flex items-center gap-4 text-[10px] text-slate-400 uppercase tracking-wider mb-3">
+                                                    <div className="flex items-center gap-1.5 font-medium">
                                                         <Calendar className="w-3.5 h-3.5 text-amber-400" /> 
                                                         <span>{new Date(post.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                                     </div>
                                                     <span className="text-slate-600">•</span>
-                                                    <div className="flex items-center gap-1.5 truncate">
+                                                    <div className="flex items-center gap-1.5 truncate font-medium">
                                                         <User className="w-3.5 h-3.5 text-amber-400" /> 
-                                                        <span className="truncate">{post.authorName || 'KEW Lead Inspector'}</span>
+                                                        <span className="truncate">{post.authorName || 'KEW Lead Engineer'}</span>
                                                     </div>
                                                 </div>
 
@@ -361,10 +361,10 @@ const Blog = () => {
                                                 </p>
                                             </div>
 
-                                            {/* Action Button: Opens Full Intel Reading Modal */}
+                                            {/* Action Button: Opens Full Reading Modal */}
                                             <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                                                <span className="text-[10px] font-mono text-slate-500 uppercase flex items-center gap-1">
-                                                    <Clock className="w-3 h-3 text-slate-500" /> ~3 min read
+                                                <span className="text-[10px] text-slate-400 font-medium uppercase flex items-center gap-1">
+                                                    <Clock className="w-3 h-3 text-amber-400/80" /> ~3 min read
                                                 </span>
 
                                                 <button 
@@ -372,7 +372,7 @@ const Blog = () => {
                                                     onClick={() => setSelectedArticle(post)}
                                                     className="inline-flex items-center gap-2 bg-white/10 hover:bg-amber-400 hover:text-slate-950 text-white px-4 py-2 rounded-xl font-bold uppercase tracking-wider text-[11px] transition-all active:scale-95 shadow-md"
                                                 >
-                                                    <span>Access Full Intel</span>
+                                                    <span>Read Full Article</span>
                                                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                                                 </button>
                                             </div>
@@ -382,17 +382,17 @@ const Blog = () => {
                             </AnimatePresence>
                         </div>
 
-                        {/* ── SIDEBAR: OPERATIONS MATRIX & UPLINK ── */}
+                        {/* ── SIDEBAR: CATEGORIES & NEWSLETTER ── */}
                         <div className="lg:col-span-4 space-y-6">
-                            {/* Operations Matrix Filter Card */}
+                            {/* Categories Filter Card */}
                             <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-xl sticky top-28">
-                                <h3 className="text-amber-400 font-mono font-bold text-xs uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <h3 className="text-amber-400 font-bold text-xs uppercase tracking-wider mb-2 flex items-center gap-2">
                                     <Tag className="w-4 h-4 text-amber-400" /> 
-                                    <span>Operations Matrix</span>
+                                    <span>Article Categories</span>
                                 </h3>
                                 
                                 <p className="text-[11px] text-slate-400 mb-4 font-medium leading-relaxed">
-                                    Select an engineering category to isolate technical reports and specifications:
+                                    Browse technical guides and project case studies by engineering specialty:
                                 </p>
 
                                 <div className="space-y-2">
@@ -411,9 +411,9 @@ const Blog = () => {
                                                         : 'bg-black/30 border-white/5 hover:border-amber-400/30 text-slate-400 hover:text-white'
                                                 }`}
                                             >
-                                                <span className="text-xs font-mono tracking-wide">&gt; {cat}</span>
+                                                <span className="text-xs font-semibold tracking-wide">{cat}</span>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] text-slate-500 font-mono">{count}</span>
+                                                    <span className="text-[10px] text-slate-400 font-medium">{count}</span>
                                                     <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-amber-400' : 'bg-slate-600'}`}></div>
                                                 </div>
                                             </button>
@@ -421,27 +421,27 @@ const Blog = () => {
                                     })}
                                 </div>
 
-                                {/* Newsletter Intel Uplink Form */}
+                                {/* Newsletter Form */}
                                 <div className="mt-8 p-6 bg-gradient-to-br from-amber-400 to-amber-500 text-slate-950 rounded-2xl relative overflow-hidden shadow-xl">
                                     <div className="relative z-10">
                                         <div className="flex items-center gap-2 mb-2">
                                             <Sparkles className="w-4 h-4 text-slate-950" />
-                                            <h4 className="text-base font-black uppercase tracking-tight">Intel Uplink</h4>
+                                            <h4 className="text-base font-black uppercase tracking-tight">Engineering Newsletter</h4>
                                         </div>
                                         <p className="text-[11px] font-bold leading-relaxed mb-4 text-slate-900/80">
-                                            Receive verified metallurgical and fabrication field reports directly in your inbox.
+                                            Receive verified metallurgical standards, fabrication tips, and structural engineering bulletins.
                                         </p>
 
                                         {uplinkSuccess ? (
                                             <div className="p-3 bg-slate-950 text-white rounded-xl text-center flex items-center justify-center gap-2 text-xs font-bold shadow-md">
                                                 <Check className="w-4 h-4 text-emerald-400" />
-                                                <span>Uplink Frequency Confirmed!</span>
+                                                <span>Subscribed Successfully!</span>
                                             </div>
                                         ) : (
                                             <form onSubmit={handleSubscribeUplink} className="space-y-2">
                                                 <input 
                                                     type="email" 
-                                                    placeholder="Enter engineer email..." 
+                                                    placeholder="Enter your email address..." 
                                                     value={uplinkEmail}
                                                     onChange={(e) => setUplinkEmail(e.target.value)}
                                                     required
@@ -452,7 +452,7 @@ const Blog = () => {
                                                     className="w-full bg-slate-950 hover:bg-slate-900 text-amber-400 font-bold uppercase tracking-wider py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition active:scale-95"
                                                 >
                                                     <Send className="w-3.5 h-3.5" />
-                                                    <span>Initiate Uplink</span>
+                                                    <span>Subscribe to Newsletter</span>
                                                 </button>
                                             </form>
                                         )}
@@ -465,7 +465,7 @@ const Blog = () => {
             </div>
 
             {/* ════════════════════════════════════════════════════════════════
-                FULL INTEL ARTICLE MODAL (NO DEAD BUTTONS)
+                FULL ARTICLE MODAL
             ════════════════════════════════════════════════════════════════ */}
             <AnimatePresence>
                 {selectedArticle && (
@@ -480,10 +480,10 @@ const Blog = () => {
                             <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-slate-950/60">
                                 <div className="flex items-center gap-2">
                                     <span className="px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider">
-                                        {selectedArticle.category || 'Technical Report'}
+                                        {selectedArticle.category || 'Engineering Article'}
                                     </span>
-                                    <span className="text-[10px] font-mono text-slate-400">
-                                        SEC-ID: {selectedArticle._id.slice(-6).toUpperCase()}
+                                    <span className="text-[10px] text-slate-400 font-mono">
+                                        Doc #{selectedArticle._id.slice(-6).toUpperCase()}
                                     </span>
                                 </div>
 
@@ -504,26 +504,26 @@ const Blog = () => {
                                 </h2>
 
                                 {/* Metadata Info */}
-                                <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-400 py-3 border-y border-white/5">
-                                    <div className="flex items-center gap-1.5">
+                                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 py-3 border-y border-white/5">
+                                    <div className="flex items-center gap-1.5 font-medium">
                                         <Calendar className="w-4 h-4 text-amber-400" />
                                         <span>{new Date(selectedArticle.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                                     </div>
                                     <span>•</span>
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1.5 font-medium">
                                         <User className="w-4 h-4 text-amber-400" />
-                                        <span>{selectedArticle.authorName || 'KEW Chief Inspector'}</span>
+                                        <span>{selectedArticle.authorName || 'KEW Chief Engineer'}</span>
                                     </div>
                                     <span>•</span>
-                                    <div className="flex items-center gap-1.5 text-emerald-400">
+                                    <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
                                         <ShieldCheck className="w-4 h-4" />
-                                        <span>Verified Technical Bulletin</span>
+                                        <span>Verified Technical Guide</span>
                                     </div>
                                 </div>
 
                                 {/* Banner Image */}
                                 <div className="w-full h-64 sm:h-80 rounded-2xl overflow-hidden relative shadow-lg">
-                                    <IntelImage 
+                                    <ArticleImage 
                                         src={selectedArticle.image} 
                                         alt={selectedArticle.title} 
                                         category={selectedArticle.category} 
@@ -540,16 +540,16 @@ const Blog = () => {
 
                                 {/* Main Article Content */}
                                 <div className="space-y-4 text-slate-300 text-sm leading-relaxed whitespace-pre-line font-normal">
-                                    {selectedArticle.content || selectedArticle.excerpt || 'Full operational intelligence log contents pending archival publication.'}
+                                    {selectedArticle.content || selectedArticle.excerpt || 'Technical article contents are being compiled by our engineering team.'}
                                 </div>
 
                                 {/* Key Technical Takeaways Box */}
                                 <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2">
-                                    <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold block">
-                                        Industrial Verification Standard:
+                                    <span className="text-[10px] uppercase tracking-wider text-amber-400 font-bold block">
+                                        Quality & Engineering Compliance:
                                     </span>
-                                    <p className="text-xs text-slate-400 leading-relaxed">
-                                        All welding and structural fabrication procedures referenced in this bulletin comply with IS 800:2007 (General Construction in Steel), AWS D1.1 Structural Welding standards, and certified Krishna Engineering Quality Assurance Protocols.
+                                    <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                                        All welding and structural fabrication procedures referenced in this article comply with IS 800:2007 (General Construction in Steel), AWS D1.1 Structural Welding standards, and certified Krishna Engineering Quality Assurance Protocols.
                                     </p>
                                 </div>
                             </div>
@@ -562,7 +562,7 @@ const Blog = () => {
                                     className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-2 transition"
                                 >
                                     {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
-                                    <span>{copiedLink ? 'Link Copied' : 'Share Report'}</span>
+                                    <span>{copiedLink ? 'Link Copied' : 'Share Article'}</span>
                                 </button>
 
                                 <button
@@ -570,7 +570,7 @@ const Blog = () => {
                                     onClick={() => setSelectedArticle(null)}
                                     className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black uppercase tracking-wider transition"
                                 >
-                                    Close Bulletin
+                                    Close Article
                                 </button>
                             </div>
                         </motion.div>
