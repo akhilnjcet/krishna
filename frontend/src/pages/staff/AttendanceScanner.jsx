@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Camera, ShieldCheck, CheckCircle2, AlertCircle, 
+import {
+    Camera, ShieldCheck, CheckCircle2, AlertCircle,
     Loader2, UserCheck, Fingerprint, Scan,
     ArrowRight, Info, RefreshCw, MapPin, Eye,
     Send, HelpCircle, ShieldAlert, WifiOff, Check,
@@ -149,8 +149,8 @@ const AttendanceScanner = () => {
                 },
                 (err) => {
                     console.warn('Geolocation acquisition error:', err.message);
-                    const errorMsg = err.code === 1 
-                        ? 'Location permission denied by user' 
+                    const errorMsg = err.code === 1
+                        ? 'Location permission denied by user'
                         : 'Unable to acquire accurate GPS position';
                     const fallback = { latitude: null, longitude: null, accuracy: null, address: 'Location unavailable', loading: false, error: errorMsg };
                     setLocationData(fallback);
@@ -278,12 +278,12 @@ const AttendanceScanner = () => {
 
                         // Trigger verification when ready
                         const isReady = (blinkDetected && bestDescriptor && highestScore >= 0.65) ||
-                                        (steadyFrames >= 6 && (bestDescriptor || result.descriptor));
+                            (steadyFrames >= 6 && (bestDescriptor || result.descriptor));
 
                         if (isReady) {
                             scanActiveRef.current = false;
                             setStats(prev => ({ ...prev, livenessVerified: true, livenessProgress: 100 }));
-                            
+
                             // Capture snapshot for authorized administrative verification
                             const snapshot = captureSnapshot();
                             submitAttendance(bestDescriptor || result.descriptor, snapshot);
@@ -505,8 +505,8 @@ const AttendanceScanner = () => {
 
                 {/* Offline Banner Indicator */}
                 {!isOnline && (
-                    <motion.div 
-                        initial={{ opacity: 0, y: -10 }} 
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 p-4 rounded-2xl flex items-center justify-between text-amber-900 dark:text-amber-200 text-xs font-bold shadow-sm"
                     >
@@ -572,7 +572,7 @@ const AttendanceScanner = () => {
 
                 {/* STEP 1: Pre-Scan Privacy Notice & Consent Card */}
                 {step === 'consent' && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl space-y-6"
@@ -637,22 +637,20 @@ const AttendanceScanner = () => {
                                 <button
                                     type="button"
                                     onClick={() => setAction('Check in')}
-                                    className={`py-3 sm:py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border transition flex items-center justify-center gap-2 ${
-                                        action === 'Check in'
-                                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
-                                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-500'
-                                    }`}
+                                    className={`py-3 sm:py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border transition flex items-center justify-center gap-2 ${action === 'Check in'
+                                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
+                                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-500'
+                                        }`}
                                 >
                                     <CheckCircle2 className="w-4 h-4 shrink-0" /> Check in (Shift Start)
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setAction('Check out')}
-                                    className={`py-3 sm:py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border transition flex items-center justify-center gap-2 ${
-                                        action === 'Check out'
-                                            ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-500/20'
-                                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-500'
-                                    }`}
+                                    className={`py-3 sm:py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border transition flex items-center justify-center gap-2 ${action === 'Check out'
+                                        ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-500/20'
+                                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-500'
+                                        }`}
                                 >
                                     <Clock className="w-4 h-4 shrink-0" /> Check out (Shift End)
                                 </button>
@@ -671,16 +669,15 @@ const AttendanceScanner = () => {
 
                 {/* STEP 2: Live Scanning & Biometric Verification */}
                 {(step === 'scanning' || step === 'verifying') && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl space-y-6"
                     >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
                             <div>
-                                <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${
-                                    action === 'Check in' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                                }`}>
+                                <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${action === 'Check in' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                                    }`}>
                                     Target Action: {action}
                                 </span>
                                 <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1">
@@ -713,13 +710,12 @@ const AttendanceScanner = () => {
 
                             {/* Circular / Rounded Face Perimeter Outline */}
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className={`w-56 h-72 rounded-[45%] border-2 transition-all duration-300 ${
-                                    stats.livenessVerified 
-                                        ? 'border-emerald-400 shadow-[0_0_30px_rgba(52,211,153,0.4)]'
-                                        : stats.quality > 50
+                                <div className={`w-56 h-72 rounded-[45%] border-2 transition-all duration-300 ${stats.livenessVerified
+                                    ? 'border-emerald-400 shadow-[0_0_30px_rgba(52,211,153,0.4)]'
+                                    : stats.quality > 50
                                         ? 'border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.3)] animate-pulse'
                                         : 'border-white/30 border-dashed'
-                                }`} />
+                                    }`} />
                             </div>
 
                             {/* Top HUD: Status Message */}
@@ -737,10 +733,9 @@ const AttendanceScanner = () => {
                                     <span>{stats.livenessProgress}%</span>
                                 </div>
                                 <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
-                                    <div 
-                                        className={`h-full transition-all duration-200 ${
-                                            stats.livenessVerified ? 'bg-emerald-400' : 'bg-indigo-400'
-                                        }`}
+                                    <div
+                                        className={`h-full transition-all duration-200 ${stats.livenessVerified ? 'bg-emerald-400' : 'bg-indigo-400'
+                                            }`}
                                         style={{ width: `${stats.livenessProgress}%` }}
                                     />
                                 </div>
@@ -752,8 +747,8 @@ const AttendanceScanner = () => {
                             <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                                 <MapPin className="w-4 h-4 text-indigo-500 shrink-0" />
                                 <span className="font-medium truncate max-w-sm">
-                                    {locationData.loading 
-                                        ? 'Acquiring GPS location...' 
+                                    {locationData.loading
+                                        ? 'Acquiring GPS location...'
                                         : locationData.address || 'Location ready'}
                                 </span>
                             </div>
@@ -789,7 +784,7 @@ const AttendanceScanner = () => {
 
                 {/* STEP 3: Success Confirmation Screen */}
                 {step === 'success' && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl space-y-6 text-center"
@@ -822,7 +817,7 @@ const AttendanceScanner = () => {
                             <div className="flex justify-between text-xs">
                                 <span className="text-slate-400 font-bold uppercase">Verification Result</span>
                                 <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                    <ShieldCheck className="w-3.5 h-3.5" /> 
+                                    <ShieldCheck className="w-3.5 h-3.5" />
                                     Biometric Match {confirmedRecord?.face_match_confidence ? `(${confirmedRecord.face_match_confidence}%)` : ''}
                                 </span>
                             </div>
@@ -872,7 +867,7 @@ const AttendanceScanner = () => {
 
                 {/* STEP 4: Error / Mismatch Screen */}
                 {step === 'error' && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-rose-200 dark:border-rose-900/40 shadow-xl space-y-6 text-center"
@@ -886,7 +881,7 @@ const AttendanceScanner = () => {
                                 Verification Unsuccessful
                             </h3>
                             <p className="text-xs text-rose-600 dark:text-rose-400 font-bold max-w-md mx-auto">
-                                {typeof errorMessage === 'object' ? (errorMessage?.message || JSON.stringify(errorMessage)) : String(errorMessage || '')}
+                                {errorMessage}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
                                 Don't worry — no automated disciplinary decisions are made from technical or recognition mismatches. You can retry or submit a manual attendance correction for administrator approval.
@@ -928,7 +923,7 @@ const AttendanceScanner = () => {
                 <AnimatePresence>
                     {showCorrectionModal && (
                         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}

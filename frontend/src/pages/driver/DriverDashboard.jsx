@@ -8,6 +8,7 @@ import {
     Home, ArrowLeft, UserCheck, Scan
 } from 'lucide-react';
 import { openGoogleMapsNavigation } from '../../utils/mapsUtil';
+import LocationSharingCard from '../../components/location/LocationSharingCard';
 
 const DriverDashboard = () => {
     const navigate = useNavigate();
@@ -181,6 +182,9 @@ const DriverDashboard = () => {
                     <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
             </div>
+
+            {/* Live Field & Route Location Sharing */}
+            <LocationSharingCard userRole="driver" />
 
             {/* Active Ongoing Trip Banner */}
             {activeTrip && (

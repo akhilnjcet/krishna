@@ -362,6 +362,7 @@ app.use('/api/ai-erp', require('./routes/aiErpRoutes'));
 app.use('/api/drawings', require('./routes/drawingRoutes'));
 app.use('/api/scrap', require('./routes/scrapRoutes'));
 app.use('/api/handover', require('./routes/handoverRoutes'));
+app.use('/api/location', require('./routes/locationRoutes'));
 
 // Direct alias for /api/admin/users for seamless customer/staff lookup across admin portals
 const { protect: apiProtect, authorize: apiAuthorize } = require('./middleware/authMiddleware');

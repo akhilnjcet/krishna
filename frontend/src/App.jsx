@@ -101,6 +101,7 @@ const AdminBOMCosting = lazy(() => import('./pages/admin/AdminBOMCosting'));
 const DigitalLetterPad = lazy(() => import('./pages/admin/DigitalLetterPad'));
 const AdminProductionPlanning = lazy(() => import('./pages/admin/AdminProductionPlanning'));
 const AdminFleet = lazy(() => import('./pages/admin/AdminFleet'));
+const AdminLiveTracking = lazy(() => import('./pages/admin/AdminLiveTracking'));
 const AdminAIErpAssistant = lazy(() => import('./pages/admin/AdminAIErpAssistant'));
 const AdminCRM = lazy(() => import('./pages/admin/AdminCRM'));
 const AdminDefectsRework = lazy(() => import('./pages/admin/AdminDefectsRework'));
@@ -626,6 +627,7 @@ const App = () => {
               <Route path="letterpad" element={<DigitalLetterPad />} />
               <Route path="production-planning" element={<AdminProductionPlanning />} />
               <Route path="fleet" element={<AdminFleet />} />
+              <Route path="live-tracking" element={<AdminLiveTracking />} />
               <Route path="ai-assistant" element={<AdminAIErpAssistant />} />
               <Route path="crm" element={<AdminCRM />} />
               <Route path="defects" element={<AdminDefectsRework />} />

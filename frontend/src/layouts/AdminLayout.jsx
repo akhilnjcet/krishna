@@ -7,7 +7,7 @@ import {
     Search, HelpCircle, ChevronRight, User, Filter, LayoutGrid, Activity,
     Clock, AlertCircle, Radio, MessageCircle, ChevronLeft, CheckSquare, Truck,
     ShieldCheck, KeyRound, Package, Building2, Briefcase, PenTool, Sparkles,
-    AlertTriangle, Calendar, Bot, Trash2,
+    AlertTriangle, Calendar, Bot, Trash2, Navigation,
     Lock, Unlock, GripVertical, ChevronUp, ChevronDown, RotateCcw
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
@@ -38,6 +38,7 @@ const SIDEBAR_ITEMS = [
     { name: 'Warranty & Service', path: '/admin/warranty-service', icon: ShieldCheck },
     { name: 'CRM Pipeline',    path: '/admin/crm',          icon: Users },
     { name: 'Fleet Logistics',  path: '/admin/fleet',        icon: Truck },
+    { name: 'Live Field Tracking', path: '/admin/live-tracking', icon: Navigation },
     { name: 'AI ERP Copilot',  path: '/admin/ai-assistant', icon: Sparkles },
     { name: 'Notification Center', path: '/admin/notifications', icon: Bell },
     { name: 'Visual Portfolio', path: '/admin/portfolio',    icon: ImageIcon },

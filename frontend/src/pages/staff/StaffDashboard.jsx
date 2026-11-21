@@ -19,6 +19,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 import ReportHeader from '../../components/ReportHeader';
+import LocationSharingCard from '../../components/location/LocationSharingCard';
 
 const StaffDashboard = () => {
     const { user } = useAuthStore();
@@ -80,6 +81,9 @@ const StaffDashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Live Field Location Sharing Control */}
+            <LocationSharingCard userRole="staff" />
 
             {/* Performance High-Visibility Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
