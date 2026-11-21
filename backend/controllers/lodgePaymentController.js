@@ -79,6 +79,7 @@ exports.submitPayment = async (req, res) => {
     }
 
     // Enforce ownership: verify tenant owns the booking if bookingId provided
+    let targetRoomId = roomId;
     if (bookingId) {
       const bookingCheck = await BookingLodge.findById(bookingId);
       if (!bookingCheck) {
@@ -87,6 +88,9 @@ exports.submitPayment = async (req, res) => {
       const bookingOwnerId = (bookingCheck.userId?._id || bookingCheck.userId || '').toString();
       if (req.user.role !== 'admin' && bookingOwnerId !== customerId.toString()) {
         return res.status(403).json({ message: 'Access denied: You do not own this booking.' });
+      }
+      if (!targetRoomId && bookingCheck.roomId) {
+        targetRoomId = bookingCheck.roomId;
       }
     }
 
@@ -102,7 +106,7 @@ exports.submitPayment = async (req, res) => {
       transactionReference: referenceId || `TXN-${Date.now()}`,
       status: 'WAITING_FOR_VERIFICATION',
       bookingId: bookingId || undefined,
-      roomId: roomId || undefined,
+      roomId: targetRoomId || undefined,
       billId: billId || undefined,
       invoiceNumber: invoiceNumber || (billId ? `INV-${billId.toString().slice(-6)}` : undefined),
       paymentType,
@@ -259,8 +263,7 @@ exports.verifyPayment = async (req, res) => {
         const verifiedPayments = await Payment.find({
           $or: [
             { billId: bill._id },
-            { roomId: payment.roomId, paymentType: 'Rent' },
-            { bookingId: payment.bookingId, paymentType: 'Rent' }
+            ...(payment.bookingId ? [{ bookingId: payment.bookingId, paymentType: 'Rent' }] : [])
           ],
           status: { $in: ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'] }
         });
@@ -459,11 +462,15 @@ exports.getBookingFinancials = async (req, res) => {
       return res.status(403).json({ message: 'Access denied: You are not authorized to view financials for this booking.' });
     }
 
-    // Rent
-    const rentDue = parseFloat(booking.roomId?.price || booking.totalAmount || 0);
+    // Rent: prioritize exact totalAmount set on this booking, fallback to room price
+    const rentDue = (booking.totalAmount !== undefined && booking.totalAmount !== null && !isNaN(parseFloat(booking.totalAmount)) && parseFloat(booking.totalAmount) > 0)
+      ? parseFloat(booking.totalAmount)
+      : parseFloat(booking.roomId?.price || 0);
 
-    // Security Deposit
-    const originalDeposit = parseFloat(booking.securityDeposit || booking.roomId?.securityDeposit || 0);
+    // Security Deposit: prioritize exact securityDeposit set on this booking
+    const originalDeposit = (booking.securityDeposit !== undefined && booking.securityDeposit !== null && !isNaN(parseFloat(booking.securityDeposit)))
+      ? parseFloat(booking.securityDeposit)
+      : parseFloat(booking.roomId?.securityDeposit || 0);
 
     // Deposit Adjustments already recorded
     const depositAdjustments = Array.isArray(booking.depositAdjustments) ? booking.depositAdjustments : [];
@@ -472,19 +479,31 @@ exports.getBookingFinancials = async (req, res) => {
     // Extra Charges
     const extraCharges = Array.isArray(booking.extraCharges) ? booking.extraCharges : [];
 
-    // Fetch payments for this booking or payments made by this tenant for this room/rent
+    // STRICT BOOKING-LEVEL ISOLATION
+    // ONLY fetch payments that strictly belong to this booking.
+    // Legacy unlinked fallback: ONLY payments that have NO bookingId at all, matching this room and tenant,
+    // created during or after this booking was initialized. NEVER fetch payments from other bookings!
     const bookingUserId = booking.userId?._id || booking.userId;
     const bookingRoomId = booking.roomId?._id || booking.roomId;
+    const bookingCreatedAt = booking.createdAt ? new Date(booking.createdAt) : new Date(0);
+
     const paymentQuery = {
       $or: [
         { bookingId: booking._id },
-        ...(bookingRoomId && bookingUserId ? [{ roomId: bookingRoomId, customerId: bookingUserId }] : []),
-        ...(bookingUserId ? [{ customerId: bookingUserId, paymentType: { $in: ['Rent', 'Deposit', 'Security Deposit', 'rent', 'deposit', 'Additional Charge'] } }] : [])
+        ...(bookingRoomId && bookingUserId ? [{
+          bookingId: { $in: [null, undefined] },
+          roomId: bookingRoomId,
+          customerId: bookingUserId,
+          createdAt: { $gte: new Date(bookingCreatedAt.getTime() - 2 * 60 * 60 * 1000) }
+        }] : [])
       ]
     };
     let payments = await Payment.find(paymentQuery).sort({ createdAt: -1 });
 
-    // Auto-heal unlinked records: backfill bookingId and roomId
+    // Strict booking boundary check: filter out any payment that carries a different bookingId
+    payments = payments.filter(p => !p.bookingId || p.bookingId.toString() === booking._id.toString());
+
+    // Auto-heal strictly unlinked legacy records for THIS booking only
     for (const p of payments) {
       let modified = false;
       if (!p.bookingId) {
@@ -614,17 +633,18 @@ exports.getBookingFinancials = async (req, res) => {
     const effectiveRentSettled = netRentPaid + totalDepositAdjusted;
     const remainingRent = Math.max(0, rentDue - effectiveRentSettled);
 
-    // Available surplus from combined settlement and overpaid rent (if rentPaid exceeds rentDue)
-    let availableSurplus = combinedSettlementPaid + Math.max(0, effectiveRentSettled - rentDue);
+    // Only explicit combined settlement funds can cover general extra charges
+    let availableSurplus = Math.max(0, combinedSettlementPaid);
 
     // Available deposit held after adjustments and refunds
     const availableDeposit = Math.max(0, originalDeposit - totalDepositAdjusted - depositRefunded);
     const remainingDeposit = Math.max(0, originalDeposit - netDepositPaid);
 
-    // Calculate extra charges items with waterfall surplus allocation
+    // Calculate extra charges items strictly from verified payment records
     const extraChargesList = extraCharges.map(ec => {
       const amt = parseFloat(ec.amount) || 0;
-      let paid = parseFloat(ec.paidAmount || extraChargesPaidMap[ec.name] || 0);
+      // Calculate strictly from verified payment records for this specific charge
+      let paid = parseFloat(extraChargesPaidMap[ec.name] || 0);
 
       // Check case-insensitive map match
       for (const [k, v] of Object.entries(extraChargesPaidMap)) {
@@ -633,7 +653,7 @@ exports.getBookingFinancials = async (req, res) => {
         }
       }
 
-      // Apply available surplus if charge is still unpaid
+      // Apply available combined settlement surplus if charge is still unpaid
       const remBeforeSurplus = Math.max(0, amt - paid);
       if (remBeforeSurplus > 0 && availableSurplus > 0) {
         const cover = Math.min(remBeforeSurplus, availableSurplus);

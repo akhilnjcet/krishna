@@ -644,6 +644,7 @@ export default function LodgeCustomerDashboard() {
 
             {/* Tenant Payment Modal */}
             <LodgeTenantPaymentModal
+                key={payModalState.booking?._id || 'tenant-pay-modal'}
                 isOpen={payModalState.show}
                 onClose={() => setPayModalState({ show: false, booking: null, isPayMore: false, initialTarget: 'ALL', initialTab: 'PAY' })}
                 booking={payModalState.booking}

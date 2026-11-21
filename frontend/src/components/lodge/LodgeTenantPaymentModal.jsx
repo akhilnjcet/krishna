@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import useAuthStore from '../../stores/authStore';
 import useLodgeStore from '../../stores/lodgeStore';
@@ -133,66 +133,101 @@ export default function LodgeTenantPaymentModal({
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
   const [lastPaymentReceipt, setLastPaymentReceipt] = useState(null);
 
-  // Load Financials for this Booking
-  const fetchBookingFinancials = useCallback(async () => {
-    if (!booking?._id) return;
+  const activeBookingIdRef = useRef(booking?._id);
+
+  // Load Financials for this Booking with Strict Async Guard
+  const fetchBookingFinancials = useCallback(async (targetBookingId) => {
+    const bId = targetBookingId || booking?._id;
+    if (!bId) return;
     setLoadingFinancials(true);
     try {
-      const res = await api.get(`/lodge-payments/booking-financials/${booking._id}`);
-      if (res.data) {
+      const res = await api.get(`/lodge-payments/booking-financials/${bId}`);
+      if (activeBookingIdRef.current === bId && res.data) {
         setFinancials(res.data);
       }
     } catch (err) {
       console.warn('Failed to load live booking financials:', err.message);
-      // Fallback local calculation
-      const rentDue = parseFloat(booking.totalAmount || room.price || 0);
-      const depositDue = parseFloat(booking.securityDeposit || room.securityDeposit || 0);
-      setFinancials({
-        booking: {
-          _id: booking._id,
-          agreementNumber: booking.agreementNumber,
-          tenantName: booking.tenantName || 'Valued Tenant',
-          roomNumber: room.roomNumber || '101',
-          roomType: room.type || 'Suite',
-          lodgeName: lodge.name || 'Krishna Lodge'
-        },
-        lineItems: {
-          rent: { due: rentDue, paid: 0, adjusted: 0, effectiveSettled: 0, remaining: rentDue, status: 'Payment Due' },
-          securityDeposit: { original: depositDue, due: depositDue, paid: 0, usedForRent: 0, available: depositDue, remaining: depositDue, status: 'Payment Due' },
-          extraCharges: [],
-          extraChargesSummary: { due: 0, paid: 0, remaining: 0, status: 'None' }
-        },
-        overall: {
-          totalDue: rentDue + depositDue,
-          totalPaid: 0,
-          totalAdjusted: 0,
-          totalRemaining: rentDue + depositDue,
-          status: 'Payment Due'
-        },
-        adjustments: [],
-        payments: []
-      });
+      if (activeBookingIdRef.current === bId) {
+        // Fallback local calculation strictly for THIS booking
+        const rentDue = parseFloat(booking.totalAmount || room.price || 0);
+        const depositDue = parseFloat(booking.securityDeposit || room.securityDeposit || 0);
+        setFinancials({
+          booking: {
+            _id: booking._id,
+            agreementNumber: booking.agreementNumber,
+            tenantName: booking.tenantName || 'Valued Tenant',
+            roomNumber: room.roomNumber || '101',
+            roomType: room.type || 'Suite',
+            lodgeName: lodge.name || 'Krishna Lodge'
+          },
+          lineItems: {
+            rent: { due: rentDue, paid: 0, adjusted: 0, effectiveSettled: 0, remaining: rentDue, status: 'Payment Due' },
+            securityDeposit: { original: depositDue, due: depositDue, paid: 0, usedForRent: 0, available: depositDue, remaining: depositDue, status: 'Payment Due' },
+            extraCharges: [],
+            extraChargesSummary: { due: 0, paid: 0, remaining: 0, status: 'None' }
+          },
+          overall: {
+            totalDue: rentDue + depositDue,
+            totalPaid: 0,
+            totalAdjusted: 0,
+            totalRemaining: rentDue + depositDue,
+            status: 'Payment Due'
+          },
+          adjustments: [],
+          payments: []
+        });
+      }
     } finally {
-      setLoadingFinancials(false);
+      if (activeBookingIdRef.current === bId) {
+        setLoadingFinancials(false);
+      }
     }
-  }, [booking, room, lodge]);
+  }, [booking?._id, booking?.totalAmount, booking?.securityDeposit, booking?.agreementNumber, booking?.tenantName, room.price, room.securityDeposit, room.roomNumber, room.type, lodge.name]);
 
+  // Strict Booking-Level State Reset & Data Fetching
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && booking?._id) {
+      activeBookingIdRef.current = booking._id;
+
+      // Immediately purge any stale previous booking data to prevent cross-contamination
+      setFinancials(null);
+      setLoadingFinancials(true);
+      setCustomPayInput('');
+      setDepositAmountInput('');
+      setDepositNotesInput('');
+      setAdjustAmountInput('');
+      setAdjustReasonInput('');
+      setNewChargeAmount('');
+      setNewChargeCustomName('');
+      setNewChargeNotes('');
+      setReferenceId('');
+      setRemarks('');
+      setProofFile(null);
+      setProofPreview('');
+      setRefundAmount('');
+      setRefundReference('');
+      setRefundReason('');
+      setRefundNotes('');
+      setCorrectingPayment(null);
+      setDepositSuccessMsg('');
+      setAdjustmentSuccessMsg('');
+      setRefundSuccessMsg('');
+      setSubmittedSuccess(false);
+      setLastPaymentReceipt(null);
+
       if (initialTab) setActiveTab(initialTab);
       if (initialTarget) {
         setPaymentTarget(initialTarget);
         setPaymentMode('FULL');
       }
-      setDepositSuccessMsg('');
-      setAdjustmentSuccessMsg('');
-      setRefundSuccessMsg('');
-      fetchBookingFinancials();
+
       // Pre-fill suggested rent period
       const now = new Date();
       setAdjustPeriodInput(now.toLocaleString('default', { month: 'long', year: 'numeric' }));
+
+      fetchBookingFinancials(booking._id);
     }
-  }, [isOpen, initialTab, initialTarget, fetchBookingFinancials]);
+  }, [isOpen, booking?._id, initialTab, initialTarget, fetchBookingFinancials]);
 
   // Check URL query parameters for Cashfree return redirect (e.g. ?order_id=... or ?cf_order_id=...)
   useEffect(() => {

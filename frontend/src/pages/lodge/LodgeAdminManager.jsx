@@ -2599,6 +2599,7 @@ export default function LodgeAdminManager() {
       {/* Security Deposit & Settlement Hub Modal */}
       {settlementModalData && (
         <LodgeTenantPaymentModal
+          key={settlementModalData.booking?._id || 'settlement-modal'}
           isOpen={Boolean(settlementModalData)}
           onClose={() => setSettlementModalData(null)}
           booking={settlementModalData.booking}

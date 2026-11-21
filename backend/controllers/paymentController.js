@@ -155,8 +155,7 @@ exports.verifyPayment = async (req, res) => {
                 const verifiedPayments = await Payment.find({
                     $or: [
                         { billId: bill._id },
-                        { roomId: payment.roomId, paymentType: 'Rent' },
-                        { bookingId: payment.bookingId, paymentType: 'Rent' }
+                        ...(payment.bookingId ? [{ bookingId: payment.bookingId, paymentType: 'Rent' }] : [])
                     ],
                     status: { $in: ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'] }
                 });
@@ -311,24 +310,40 @@ exports.createCashfreeOrder = async (req, res) => {
             }
         }
 
-        if (!resolvedBookingId && validCustId) {
+        // Strict Booking-Level Isolation for Cashfree Order
+        if (resolvedBookingId) {
+            const specifiedBooking = await BookingLodge.findById(resolvedBookingId);
+            if (specifiedBooking && specifiedBooking.roomId && !resolvedRoomId) {
+                resolvedRoomId = specifiedBooking.roomId;
+            }
+        } else if (resolvedRoomId && validCustId) {
+            // Find active booking for this specific room and tenant
             const activeBooking = await BookingLodge.findOne({
                 userId: validCustId,
-                status: { $nin: ['cancelled', 'checked_out'] }
+                roomId: resolvedRoomId,
+                status: { $nin: ['cancelled', 'checked_out', 'completed'] }
+            }).sort({ createdAt: -1 });
+            if (activeBooking) {
+                resolvedBookingId = activeBooking._id;
+            }
+        } else if (resolvedRoomId) {
+            const activeBooking = await BookingLodge.findOne({
+                roomId: resolvedRoomId,
+                status: { $nin: ['cancelled', 'checked_out', 'completed'] }
+            }).sort({ createdAt: -1 });
+            if (activeBooking) {
+                resolvedBookingId = activeBooking._id;
+            }
+        } else if (validCustId) {
+            const activeBooking = await BookingLodge.findOne({
+                userId: validCustId,
+                status: { $nin: ['cancelled', 'checked_out', 'completed'] }
             }).sort({ createdAt: -1 });
             if (activeBooking) {
                 resolvedBookingId = activeBooking._id;
                 if (!resolvedRoomId && activeBooking.roomId) {
                     resolvedRoomId = activeBooking.roomId;
                 }
-            }
-        } else if (!resolvedBookingId && resolvedRoomId) {
-            const activeBooking = await BookingLodge.findOne({
-                roomId: resolvedRoomId,
-                status: { $nin: ['cancelled', 'checked_out'] }
-            }).sort({ createdAt: -1 });
-            if (activeBooking) {
-                resolvedBookingId = activeBooking._id;
             }
         }
 
@@ -567,10 +582,7 @@ async function processConfirmedCashfreeOrder(orderData, successfulPaymentInput =
 
         const VERIFIED_STATUSES = ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'];
         const verifiedPayments = await Payment.find({
-            $or: [
-                { bookingId: targetBooking._id },
-                { roomId: targetBooking.roomId?._id, customerId: targetBooking.userId?._id || targetBooking.userId }
-            ],
+            bookingId: targetBooking._id,
             status: { $in: VERIFIED_STATUSES }
         });
 
@@ -701,8 +713,7 @@ async function processConfirmedCashfreeOrder(orderData, successfulPaymentInput =
         const verifiedBillPayments = await Payment.find({
             $or: [
                 { billId: bill._id },
-                { bookingId: payment.bookingId, paymentType: 'Rent' },
-                { roomId: payment.roomId, paymentType: 'Rent' }
+                ...(payment.bookingId ? [{ bookingId: payment.bookingId, paymentType: 'Rent' }] : [])
             ],
             status: { $in: ['Completed', 'VERIFIED', 'PAID', 'Paid', 'APPROVED', 'verified', 'completed'] }
         });
