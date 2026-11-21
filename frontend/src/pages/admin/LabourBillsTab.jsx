@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
-import { formatCurrencyINR } from '../../utils/pdfHelpers';
+import { formatCurrencyINR, exportCleanDocumentPDF } from '../../utils/pdfHelpers';
 import { CurlyBraceTotal } from '../../components/CombinedBillTable';
 import { computeItemSectionMeta, synchronizeItemSections } from '../../utils/combinedBillHelper';
 import { SpecialClassificationBanner, SpecialClassificationControls, computeSpecialClassifications } from '../../components/SpecialClassificationBanner';
@@ -574,68 +574,8 @@ const LabourBillsTab = () => {
         setIsGeneratingPdf(true);
         try {
             await handleSaveToHistory(true);
-            const container = document.getElementById('labour-bill-print-container');
-            if (!container) {
-                window.print();
-                return;
-            }
-
-            const { default: html2canvas } = await import('html2canvas');
-            const { jsPDF } = await import('jspdf');
-
-            const canvas = await html2canvas(container, {
-                scale: 2.5,
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: '#ffffff',
-                logging: false,
-                windowWidth: 1200,
-                scrollX: 0,
-                scrollY: 0
-            });
-
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            });
-
-            const pageWidth = 210;
-            const pageHeight = 297;
-            const marginX = 8;
-            const marginY = 8;
-            const maxContentWidth = pageWidth - (marginX * 2); // 194 mm
-            const maxContentHeight = pageHeight - (marginY * 2); // 281 mm
-
-            const canvasAspect = canvas.height / canvas.width;
-            let renderWidth = maxContentWidth;
-            let renderHeight = renderWidth * canvasAspect;
-
-            const imgData = canvas.toDataURL('image/png');
-
-            if (renderHeight <= maxContentHeight) {
-                const posX = marginX + ((maxContentWidth - renderWidth) / 2);
-                const posY = marginY;
-                pdf.addImage(imgData, 'PNG', posX, posY, renderWidth, renderHeight, undefined, 'FAST');
-            } else {
-                let heightLeft = renderHeight;
-                let position = marginY;
-                let page = 1;
-
-                pdf.addImage(imgData, 'PNG', marginX, position, renderWidth, renderHeight, undefined, 'FAST');
-                heightLeft -= maxContentHeight;
-
-                while (heightLeft > 0) {
-                    position = marginY - (page * maxContentHeight);
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', marginX, position, renderWidth, renderHeight, undefined, 'FAST');
-                    heightLeft -= maxContentHeight;
-                    page++;
-                }
-            }
-
             const fileName = `${billNumber || 'Labour_Transport_Bill'}.pdf`;
-            pdf.save(fileName);
+            await exportCleanDocumentPDF('labour-bill-print-container', fileName);
         } catch (err) {
             console.error('Direct PDF export fallback to window.print():', err);
             window.print();

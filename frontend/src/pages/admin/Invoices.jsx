@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
-import { formatCurrencyINR } from '../../utils/pdfHelpers';
+import { formatCurrencyINR, exportCleanDocumentPDF } from '../../utils/pdfHelpers';
 import { PRECONFIGURED_CATALOG, computeBillFinancials, computeItemSectionMeta, calculateBillTotals, synchronizeItemSections } from '../../utils/combinedBillHelper';
 import { buildUPILink } from '../../utils/upiUtils';
 import CombinedBillTableBody from '../../components/CombinedBillTable';
@@ -990,68 +990,8 @@ const Invoices = () => {
                 setWorkspaceViewMode('preview');
                 await new Promise(resolve => setTimeout(resolve, 250));
             }
-            const container = document.getElementById('invoice-print-container');
-            if (!container) {
-                window.print();
-                return;
-            }
-
-            const { default: html2canvas } = await import('html2canvas');
-            const { jsPDF } = await import('jspdf');
-
-            const canvas = await html2canvas(container, {
-                scale: 2.5,
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: '#ffffff',
-                logging: false,
-                windowWidth: 1200,
-                scrollX: 0,
-                scrollY: 0
-            });
-
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            });
-
-            const pageWidth = 210;
-            const pageHeight = 297;
-            const marginX = 8;
-            const marginY = 8;
-            const maxContentWidth = pageWidth - (marginX * 2); // 194 mm
-            const maxContentHeight = pageHeight - (marginY * 2); // 281 mm
-
-            const canvasAspect = canvas.height / canvas.width;
-            let renderWidth = maxContentWidth;
-            let renderHeight = renderWidth * canvasAspect;
-
-            const imgData = canvas.toDataURL('image/png');
-
-            if (renderHeight <= maxContentHeight) {
-                const posX = marginX + ((maxContentWidth - renderWidth) / 2);
-                const posY = marginY;
-                pdf.addImage(imgData, 'PNG', posX, posY, renderWidth, renderHeight, undefined, 'FAST');
-            } else {
-                let heightLeft = renderHeight;
-                let position = marginY;
-                let page = 1;
-
-                pdf.addImage(imgData, 'PNG', marginX, position, renderWidth, renderHeight, undefined, 'FAST');
-                heightLeft -= maxContentHeight;
-
-                while (heightLeft > 0) {
-                    position = marginY - (page * maxContentHeight);
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', marginX, position, renderWidth, renderHeight, undefined, 'FAST');
-                    heightLeft -= maxContentHeight;
-                    page++;
-                }
-            }
-
             const fileName = `${invoiceNumber || 'Invoice'}.pdf`;
-            pdf.save(fileName);
+            await exportCleanDocumentPDF('invoice-print-container', fileName);
             setSaveMessage(`✓ Downloaded ${fileName}`);
             setTimeout(() => setSaveMessage(''), 3000);
         } catch (err) {
@@ -2429,7 +2369,7 @@ const Invoices = () => {
                             <div className={`bg-slate-50 dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8 flex flex-col ${workspaceViewMode !== 'split' ? 'sm:flex-row' : 'xl:flex-row'} justify-between items-start gap-4 sm:gap-0`}>
                                 <div className="min-w-0">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">BILLED TO (BUYER / RECIPIENT):</span>
-                                    <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase truncate">{customerName || 'Valued Client'}</h3>
+                                    <h3 className="font-bold text-slate-900 dark:text-white text-sm uppercase break-words leading-tight">{customerName || 'Valued Client'}</h3>
                                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-line">{billingAddress || 'Site Location'}</p>
                                     {phone && <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Ph: {phone}</p>}
                                     {gstin && <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mt-1">GSTIN: {gstin} ({customerState})</p>}
@@ -2592,8 +2532,8 @@ const Invoices = () => {
                                         </>
                                     )}
 
-                                    <div className="flex justify-between py-2 text-base font-black text-slate-900 dark:text-white border-t-2 border-slate-900 dark:border-slate-100 pt-2">
-                                        <span>Invoice Total:</span>
+                                    <div className="flex justify-between py-2 text-base font-bold text-slate-900 dark:text-white border-t-2 border-slate-900 dark:border-slate-100 pt-2 tracking-normal">
+                                        <span className="font-bold">Invoice Total:</span>
                                         <span style={{ color: themeColor }}>{formatCurrencyINR(financials.grandTotal)}</span>
                                     </div>
 
