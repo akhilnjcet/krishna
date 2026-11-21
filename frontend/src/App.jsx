@@ -256,12 +256,14 @@ const Layout = ({ children }) => {
   const isDashboard = location.pathname.startsWith('/admin') || 
                       location.pathname.startsWith('/staff') || 
                       location.pathname.startsWith('/customer') ||
+                      location.pathname.startsWith('/driver') ||
                       location.pathname.startsWith('/lodge');
 
   const isAuthPage = location.pathname === '/login' || 
                      location.pathname === '/register' || 
                      location.pathname === '/forgot-password' || 
-                     location.pathname === '/staff-login';
+                     location.pathname === '/staff-login' ||
+                     location.pathname === '/driver-login';
 
   const hidePublicChrome = isDashboard || isAuthPage;
 
