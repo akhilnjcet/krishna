@@ -1612,74 +1612,109 @@ const RentalBills = () => {
 
                             {/* BOTTOM DOCUMENT SECTION (Settlement & Signatures) */}
                             <div className="mt-auto pt-4 break-inside-avoid">
-                                {/* Settlement & Financial Protection */}
-                            <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:flex-row print:justify-between print:gap-4">
-                                <div className="w-full flex-1 min-w-0 space-y-3 text-xs">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">
-                                        STATUTORY RENTAL CONTRACT TERMS & CONDITIONS (SEC. 73 INDIAN CONTRACT ACT):
-                                    </span>
-                                    {(termsLanguage === 'en' || termsLanguage === 'both') && (
-                                        <div className="text-[11px] text-slate-600 dark:text-slate-400 whitespace-pre-line leading-relaxed border-l-2 border-indigo-400 pl-3 py-1">
-                                            {legalTermsEn}
+                                {/* Financial Settlement Summary (Compact Right-Aligned under equipment items) */}
+                                <div className="flex justify-end mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">
+                                    <div className="w-full sm:w-80 max-w-md space-y-1.5 text-xs print:w-72">
+                                        <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                                            <span className="font-bold text-slate-500">Rental Hire Charges:</span>
+                                            <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(rentalSubtotal)}</span>
                                         </div>
-                                    )}
-                                    {(termsLanguage === 'ml' || termsLanguage === 'both') && (
-                                        <div className="text-[11px] text-indigo-950 dark:text-indigo-200 bg-indigo-50/70 dark:bg-indigo-950/40 p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-900/60 leading-relaxed font-medium whitespace-pre-line">
-                                            <p className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1.5">
+
+                                        {computedLateFees > 0 && (
+                                            <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-rose-600 font-bold">
+                                                <span>Late Fee ({daysOverdue} days):</span>
+                                                <span>+{formatCurrencyINR(computedLateFees)}</span>
+                                            </div>
+                                        )}
+
+                                        {damageCharge > 0 && (
+                                            <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-rose-600 font-bold">
+                                                <span>Damage Surcharges:</span>
+                                                <span>+{formatCurrencyINR(damageCharge)}</span>
+                                            </div>
+                                        )}
+
+                                        {lossCharge > 0 && (
+                                            <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-rose-600 font-bold">
+                                                <span>Missing Parts Charge:</span>
+                                                <span>+{formatCurrencyINR(lossCharge)}</span>
+                                            </div>
+                                        )}
+
+                                        <div className="flex justify-between py-1.5 text-sm font-black text-slate-900 dark:text-white border-t-2 border-slate-900 dark:border-slate-100 pt-1.5">
+                                            <span>Total Hire Charges:</span>
+                                            <span style={{ color: themeColor }}>{formatCurrencyINR(totalCharges)}</span>
+                                        </div>
+
+                                        <div className="flex justify-between py-1 text-indigo-600 font-bold border-b border-slate-100 dark:border-slate-800">
+                                            <span>Security Deposit Collected:</span>
+                                            <span>{formatCurrencyINR(securityDeposit)}</span>
+                                        </div>
+
+                                        {workflowMode === 'return' && (
+                                            <div className={`flex justify-between py-1.5 text-xs font-black p-2 rounded-xl ${
+                                                balanceSettlement > 0 ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'
+                                            }`}>
+                                                <span>{balanceSettlement > 0 ? 'Balance Payable by Hirer:' : 'Refundable Security Balance:'}</span>
+                                                <span>{formatCurrencyINR(Math.abs(balanceSettlement))}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Full Width Statutory Rental Contract Terms & Conditions (Full Space Utilization, Zero Wasted Paper) */}
+                                <div className="w-full space-y-2 mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                            STATUTORY RENTAL CONTRACT TERMS & CONDITIONS (SEC. 73 INDIAN CONTRACT ACT):
+                                        </span>
+                                        <span className="text-[9px] font-bold text-slate-400">
+                                            {termsLanguage === 'both' ? 'Bilingual Agreement (English & Malayalam)' : termsLanguage === 'ml' ? 'Malayalam' : 'English'}
+                                        </span>
+                                    </div>
+
+                                    {termsLanguage === 'both' ? (
+                                        /* Bilingual Side-by-Side: English in Left Column, Malayalam in Right Column */
+                                        <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-4">
+                                            <div className="text-[9px] leading-relaxed text-slate-600 dark:text-slate-400 border-l-2 border-indigo-400 pl-2.5 space-y-0.5">
+                                                <span className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 block mb-1">
+                                                    English Contract Terms:
+                                                </span>
+                                                {legalTermsEn.split('\n').filter(Boolean).map((term, idx) => (
+                                                    <p key={idx} className="break-inside-avoid leading-tight">{term}</p>
+                                                ))}
+                                            </div>
+
+                                            <div className="text-[9px] leading-relaxed text-indigo-950 dark:text-indigo-200 bg-indigo-50/50 dark:bg-indigo-950/30 p-2.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 space-y-0.5">
+                                                <span className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 block mb-1">
+                                                    വാടക നിബന്ധനകളും വ്യവസ്ഥകളും:
+                                                </span>
+                                                {legalTermsMl.split('\n').filter(Boolean).map((term, idx) => (
+                                                    <p key={idx} className="break-inside-avoid leading-tight">{term}</p>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : termsLanguage === 'en' ? (
+                                        /* English 2-Column Full Width Grid */
+                                        <div className="w-full grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-x-6 gap-y-1 text-[9.5px] leading-tight text-slate-600 dark:text-slate-400 border-l-2 border-indigo-400 pl-3 py-1">
+                                            {legalTermsEn.split('\n').filter(Boolean).map((term, idx) => (
+                                                <p key={idx} className="break-inside-avoid py-0.5">{term}</p>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        /* Malayalam 2-Column Full Width Grid */
+                                        <div className="w-full bg-indigo-50/50 dark:bg-indigo-950/30 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
+                                            <p className="text-[9px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1.5">
                                                 വാടക നിബന്ധനകളും വ്യവസ്ഥകളും:
                                             </p>
-                                            {legalTermsMl}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-x-6 gap-y-1 text-[9.5px] leading-tight text-indigo-950 dark:text-indigo-200">
+                                                {legalTermsMl.split('\n').filter(Boolean).map((term, idx) => (
+                                                    <p key={idx} className="break-inside-avoid py-0.5">{term}</p>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
-
-                                <div className="w-full lg:w-80 lg:shrink-0 max-w-md ml-auto space-y-2 text-xs print:w-64">
-                                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                                        <span className="font-bold text-slate-500">Rental Hire Charges:</span>
-                                        <span className="font-bold text-slate-900 dark:text-white">{formatCurrencyINR(rentalSubtotal)}</span>
-                                    </div>
-
-                                    {computedLateFees > 0 && (
-                                        <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-rose-600 font-bold">
-                                            <span>Late Fee ({daysOverdue} days):</span>
-                                            <span>+{formatCurrencyINR(computedLateFees)}</span>
-                                        </div>
-                                    )}
-
-                                    {damageCharge > 0 && (
-                                        <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-rose-600 font-bold">
-                                            <span>Damage Surcharges:</span>
-                                            <span>+{formatCurrencyINR(damageCharge)}</span>
-                                        </div>
-                                    )}
-
-                                    {lossCharge > 0 && (
-                                        <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 text-rose-600 font-bold">
-                                            <span>Missing Parts Charge:</span>
-                                            <span>+{formatCurrencyINR(lossCharge)}</span>
-                                        </div>
-                                    )}
-
-                                    <div className="flex justify-between py-1.5 text-sm font-black text-slate-900 dark:text-white border-t border-slate-900 dark:border-slate-100 pt-2">
-                                        <span>Total Hire Charges:</span>
-                                        <span style={{ color: themeColor }}>{formatCurrencyINR(totalCharges)}</span>
-                                    </div>
-
-                                    <div className="flex justify-between py-1 text-indigo-600 font-bold border-b border-slate-100 dark:border-slate-800">
-                                        <span>Security Deposit Collected:</span>
-                                        <span>{formatCurrencyINR(securityDeposit)}</span>
-                                    </div>
-
-                                    {workflowMode === 'return' && (
-                                        <div className={`flex justify-between py-2 text-sm font-black p-2.5 rounded-xl ${
-                                            balanceSettlement > 0 ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'
-                                        }`}>
-                                            <span>{balanceSettlement > 0 ? 'Balance Payable by Hirer:' : 'Refundable Security Balance:'}</span>
-                                            <span>{formatCurrencyINR(Math.abs(balanceSettlement))}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
 
                             {/* Multi-Signatures Handover Block */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 text-xs">
