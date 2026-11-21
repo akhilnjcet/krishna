@@ -69,6 +69,12 @@ const driverSchema = new mongoose.Schema({
         default: '',
         trim: true
     },
+    staffClassification: {
+        type: String,
+        enum: ['Staff', 'Non-Staff'],
+        default: 'Staff',
+        index: true
+    },
     phone: {
         type: String,
         required: [true, 'Driver phone / mobile number is required'],

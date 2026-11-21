@@ -1,8 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { getStaff, addStaff, updateStaff, deleteStaff, registerFace, getStaffById, deleteFaceData, cleanupBiometrics, resetAllBiometrics } = require('../controllers/staffController');
+const { 
+    getStaff, addStaff, updateStaff, deleteStaff, registerFace, 
+    getStaffById, deleteFaceData, cleanupBiometrics, resetAllBiometrics,
+    verifyStaffCredential 
+} = require('../controllers/staffController');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { validateObjectIdParam } = require('../utils/validateInputs');
+
+// Public Verification Endpoint for Physical / Digital Staff & Driver ID Cards
+router.get('/verify/:identifier', verifyStaffCredential);
 
 router.param('id', validateObjectIdParam('id'));
 

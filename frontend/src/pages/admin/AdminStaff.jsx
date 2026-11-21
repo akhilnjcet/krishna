@@ -5,7 +5,7 @@ import StaffIdCardModal from '../../components/StaffIdCardModal';
 import { 
   Users, UserPlus, Search, Filter, Mail, Phone, Briefcase, 
   Trash2, Edit, Edit3, Camera, X, Check, Loader2, AlertCircle, ChevronRight,
-  Banknote, BadgeIndianRupee, Download, CreditCard, RefreshCw
+  Banknote, BadgeIndianRupee, Download, CreditCard, RefreshCw, Truck, Shield
 } from 'lucide-react';
 import { generateGeneralReportPDF } from '../../services/pdfService';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,6 +27,8 @@ const AdminStaff = () => {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterDept, setFilterDept] = useState('');
+    const [filterClassification, setFilterClassification] = useState('staff'); // 'staff' | 'non-staff' | 'all'
+    const [filterRole, setFilterRole] = useState('all'); // 'all' | 'staff' | 'driver'
     const [payAmount, setPayAmount] = useState('');
     const [attendanceSummary, setAttendanceSummary] = useState({ totalMinutes: 0, shifts: 0, estimatedSalary: 0 });
     const [payAdjustment, setPayAdjustment] = useState(0); 
@@ -39,13 +41,14 @@ const AdminStaff = () => {
 
     const handleDownloadRoster = () => {
         if (!staff || staff.length === 0) return alert("No staff data to export.");
-        const columns = ['Emp ID', 'Full Name', 'Department', 'Designation', 'Contact'];
+        const columns = ['Emp ID', 'Full Name', 'Department', 'Designation', 'Contact', 'Classification'];
         const data = (Array.isArray(staff) ? staff : []).map(s => [
             s.staff_id,
             s.name.toUpperCase(),
             s.department,
             s.designation,
-            s.phone
+            s.phone,
+            s.staffClassification || 'Staff'
         ]);
         generateGeneralReportPDF(data, 'Enterprise Resource Report', columns);
     };
@@ -60,6 +63,7 @@ const AdminStaff = () => {
         username: '',
         password: '',
         role: 'staff',
+        staffClassification: 'Staff',
         status: 'active',
         upi_id: '',
         bank_name: '',
@@ -81,14 +85,20 @@ const AdminStaff = () => {
     const fetchStaff = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await api.get(`/staff?search=${searchQuery}&department=${filterDept}`);
+            const params = {};
+            if (searchQuery) params.search = searchQuery;
+            if (filterDept) params.department = filterDept;
+            if (filterClassification) params.classification = filterClassification;
+            if (filterRole && filterRole !== 'all') params.role = filterRole;
+
+            const res = await api.get('/staff', { params });
             setStaff(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error("Failed to fetch staff data:", err);
         } finally {
             setLoading(false);
         }
-    }, [searchQuery, filterDept]);
+    }, [searchQuery, filterDept, filterClassification, filterRole]);
 
     useEffect(() => {
         fetchStaff();
@@ -230,7 +240,7 @@ const AdminStaff = () => {
         setFormData({
             staff_id: '', name: '', phone: '', email: '', 
             department: '', designation: '', username: '', password: '', 
-            role: 'staff', status: 'active',
+            role: 'staff', staffClassification: 'Staff', status: 'active',
             upi_id: '', bank_name: '', account_number: '', 
             ifsc_code: '', base_salary: '',
             joiningDate: new Date().toISOString().split('T')[0],
@@ -459,7 +469,7 @@ const AdminStaff = () => {
             </div>
 
             {/* Filter Bar */}
-            <div className="flex flex-col md:flex-row gap-4 bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="flex flex-col lg:flex-row gap-3 bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 <div className="flex-1 relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input 
@@ -467,19 +477,50 @@ const AdminStaff = () => {
                         placeholder="Search by name, ID or email..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition"
+                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition text-xs font-medium"
                     />
                 </div>
-                <div className="md:w-64 relative">
-                    <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <select 
-                        value={filterDept}
-                        onChange={(e) => setFilterDept(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl appearance-none focus:ring-2 focus:ring-indigo-500/20 outline-none transition"
-                    >
-                        <option value="">All Departments</option>
-                        {departments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
-                    </select>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full lg:w-auto">
+                    {/* Classification Filter */}
+                    <div className="relative">
+                        <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        <select 
+                            value={filterClassification}
+                            onChange={(e) => setFilterClassification(e.target.value)}
+                            className="w-full pl-9 pr-8 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl appearance-none focus:ring-2 focus:ring-indigo-500/20 outline-none transition text-xs font-bold cursor-pointer"
+                        >
+                            <option value="staff">Staff Only (Default)</option>
+                            <option value="non-staff">Non-Staff Records</option>
+                            <option value="all">All Classifications</option>
+                        </select>
+                    </div>
+
+                    {/* Role Filter */}
+                    <div className="relative">
+                        <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        <select 
+                            value={filterRole}
+                            onChange={(e) => setFilterRole(e.target.value)}
+                            className="w-full pl-9 pr-8 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl appearance-none focus:ring-2 focus:ring-indigo-500/20 outline-none transition text-xs font-bold cursor-pointer"
+                        >
+                            <option value="all">All Roles (Staff & Drivers)</option>
+                            <option value="staff">Standard Staff</option>
+                            <option value="driver">Drivers Only 🚚</option>
+                        </select>
+                    </div>
+
+                    {/* Department Filter */}
+                    <div className="relative">
+                        <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        <select 
+                            value={filterDept}
+                            onChange={(e) => setFilterDept(e.target.value)}
+                            className="w-full pl-9 pr-8 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl appearance-none focus:ring-2 focus:ring-indigo-500/20 outline-none transition text-xs font-bold cursor-pointer"
+                        >
+                            <option value="">All Departments</option>
+                            {departments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -517,9 +558,21 @@ const AdminStaff = () => {
                                         )}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-xs font-mono text-indigo-600 font-bold">{member.staff_id}</p>
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                            <p className="text-xs font-mono text-indigo-600 font-bold">{member.staff_id}</p>
+                                            {member.role === 'driver' && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">
+                                                    <Truck className="w-2.5 h-2.5" /> Driver
+                                                </span>
+                                            )}
+                                            {member.staffClassification === 'Non-Staff' && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                                                    <AlertCircle className="w-2.5 h-2.5" /> NON-STAFF
+                                                </span>
+                                            )}
+                                        </div>
                                         <h4 className="text-base font-bold text-slate-900 dark:text-white capitalize truncate">{member.name}</h4>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{member.designation} • {member.department}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{member.designation || (member.role === 'driver' ? 'Driver' : 'Staff')} • {member.department || (member.role === 'driver' ? 'Logistics & Fleet' : 'General')}</p>
                                     </div>
                                     <div className="shrink-0 flex flex-col items-end gap-1">
                                         <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase whitespace-nowrap ${
@@ -586,6 +639,8 @@ const AdminStaff = () => {
                                             setFormData({
                                                 ...member,
                                                 password: '',
+                                                role: member.role || 'staff',
+                                                staffClassification: member.staffClassification || (member.role === 'customer' ? 'Non-Staff' : 'Staff'),
                                                 upi_id: member.upi_id || '',
                                                 bank_name: member.bank_name || '',
                                                 account_number: member.account_number || '',
@@ -664,7 +719,19 @@ const AdminStaff = () => {
                                                 )}
                                             </div>
                                             <div>
-                                                <p className="text-sm font-mono text-indigo-600 font-bold">{member.staff_id}</p>
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <p className="text-sm font-mono text-indigo-600 font-bold">{member.staff_id}</p>
+                                                    {member.role === 'driver' && (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">
+                                                            <Truck className="w-2.5 h-2.5" /> Driver
+                                                        </span>
+                                                    )}
+                                                    {member.staffClassification === 'Non-Staff' && (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                                                            <AlertCircle className="w-2.5 h-2.5" /> NON-STAFF
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p className="text-base font-bold text-slate-900 dark:text-white capitalize leading-tight mt-0.5">{member.name}</p>
                                             </div>
                                         </div>
@@ -672,10 +739,10 @@ const AdminStaff = () => {
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col">
                                             <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-semibold">
-                                                <Briefcase className="w-4 h-4 text-slate-400" />
-                                                {member.designation}
+                                                {member.role === 'driver' ? <Truck className="w-4 h-4 text-cyan-500" /> : <Briefcase className="w-4 h-4 text-slate-400" />}
+                                                {member.designation || (member.role === 'driver' ? 'Driver' : 'Staff Member')}
                                             </span>
-                                            <span className="text-sm text-slate-500 dark:text-slate-400">{member.department}</span>
+                                            <span className="text-sm text-slate-500 dark:text-slate-400">{member.department || (member.role === 'driver' ? 'Logistics & Fleet' : 'Operations')}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm font-medium">
@@ -752,6 +819,8 @@ const AdminStaff = () => {
                                                     setFormData({
                                                         ...member,
                                                         password: '',
+                                                        role: member.role || 'staff',
+                                                        staffClassification: member.staffClassification || (member.role === 'customer' ? 'Non-Staff' : 'Staff'),
                                                         upi_id: member.upi_id || '',
                                                         bank_name: member.bank_name || '',
                                                         account_number: member.account_number || '',
@@ -844,12 +913,67 @@ const AdminStaff = () => {
                                         required 
                                         className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition font-bold" 
                                         value={formData.role} 
-                                        onChange={e => setFormData({...formData, role: e.target.value})}
+                                        onChange={e => {
+                                            const nextRole = e.target.value;
+                                            const update = { ...formData, role: nextRole };
+                                            if (nextRole === 'driver') {
+                                                if (!formData.designation) update.designation = 'Driver';
+                                                if (!formData.department) update.department = 'Logistics & Fleet';
+                                            }
+                                            setFormData(update);
+                                        }}
                                     >
                                         <option value="staff">Staff Operator</option>
-                                        <option value="customer">Customer / Project Owner</option>
+                                        <option value="driver">Driver (Logistics & Fleet) 🚚</option>
+                                        <option value="customer">Customer / External Account</option>
                                     </select>
                                 </div>
+
+                                {/* Classification Radio Selector */}
+                                <div className="md:col-span-2 space-y-2 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-2">
+                                        Account Classification *
+                                    </label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <label className={`cursor-pointer flex items-center gap-3 p-3 rounded-xl border-2 transition ${
+                                            formData.staffClassification === 'Staff' 
+                                                ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-500 text-indigo-900 dark:text-indigo-100' 
+                                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                                        }`}>
+                                            <input 
+                                                type="radio" 
+                                                name="staffClass" 
+                                                checked={formData.staffClassification === 'Staff'} 
+                                                onChange={() => setFormData({ ...formData, staffClassification: 'Staff' })} 
+                                            />
+                                            <div>
+                                                <span className="font-extrabold text-xs uppercase flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
+                                                    <Shield className="w-3.5 h-3.5" /> Staff Account
+                                                </span>
+                                                <p className="text-[10px] text-slate-500 dark:text-slate-400">Normal staff member eligible for ID card and records</p>
+                                            </div>
+                                        </label>
+                                        <label className={`cursor-pointer flex items-center gap-3 p-3 rounded-xl border-2 transition ${
+                                            formData.staffClassification === 'Non-Staff' 
+                                                ? 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-500 text-amber-900 dark:text-amber-100' 
+                                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                                        }`}>
+                                            <input 
+                                                type="radio" 
+                                                name="staffClass" 
+                                                checked={formData.staffClassification === 'Non-Staff'} 
+                                                onChange={() => setFormData({ ...formData, staffClassification: 'Non-Staff' })} 
+                                            />
+                                            <div>
+                                                <span className="font-extrabold text-xs uppercase flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                                                    <AlertCircle className="w-3.5 h-3.5" /> Non-Staff Account
+                                                </span>
+                                                <p className="text-[10px] text-slate-500 dark:text-slate-400">Labeled NON-STAFF and excluded from normal lists</p>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
                                 {showEditModal && (
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-slate-600 dark:text-slate-400 ml-1 uppercase tracking-wider">Account Status*</label>

@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     X, Printer, Download, QrCode, ShieldCheck, 
-    Building2, Phone, Mail, User, Calendar, MapPin, AlertCircle 
+    Building2, Phone, Mail, User, Calendar, MapPin, AlertCircle, Truck
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { getDirectImageUrl } from '../utils/imageUtils';
@@ -13,7 +13,13 @@ const StaffIdCardModal = ({ staff, onClose }) => {
 
     if (!staff) return null;
 
-    const verificationUrl = `${window.location.origin}/verify-staff/${staff._id || staff.staff_id}`;
+    const isDriver = staff.role === 'driver' || (staff.designation && staff.designation.toLowerCase().includes('driver'));
+    const displayDesignation = staff.designation || (isDriver ? 'Driver' : 'Staff Member');
+    const displayDept = staff.department || (isDriver ? 'Logistics & Fleet' : 'Operations');
+    const displayId = staff.staff_id || (isDriver ? `DRV-${String(staff._id || '').slice(-4).toUpperCase()}` : 'KEW-000');
+    const photoSrc = getDirectImageUrl(staff.profilePhoto || staff.photoUrl) || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200';
+
+    const verificationUrl = `${window.location.origin}/#/verify-staff/${staff._id || staff.staff_id}`;
 
     const handlePrint = () => {
         const printWindow = window.open('', '_blank');
@@ -25,23 +31,25 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                     <img src="${window.location.origin}/logo512.png" class="logo" />
                     <div>
                         <div class="company-name">KRISHNA ENGINEERING WORKS</div>
+                        <div class="card-subtitle">${isDriver ? 'AUTHORIZED DRIVER IDENTITY' : 'OFFICIAL EMPLOYEE IDENTITY'}</div>
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="photo-container">
-                        <img src="${getDirectImageUrl(staff.profilePhoto) || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200'}" class="photo" />
+                        <img src="${photoSrc}" class="photo" />
                     </div>
                     <div class="details">
                         <div class="name">${(staff.name || 'EMPLOYEE NAME').toUpperCase()}</div>
-                        <div class="designation">${staff.designation || 'Staff Member'}</div>
-                        <div class="emp-id">ID: ${staff.staff_id || 'KEW-000'}</div>
-                        <div class="info-row"><span>Dept:</span> <strong>${staff.department || 'Operations'}</strong></div>
-                        <div class="info-row"><span>Phone:</span> <strong>${staff.phone || 'N/A'}</strong></div>
+                        <div class="designation">${displayDesignation.toUpperCase()}</div>
+                        <div class="emp-id">ID: ${displayId}</div>
+                        <div class="info-row"><span>Dept:</span> <strong>${displayDept}</strong></div>
+                        <div class="info-row"><span>Phone:</span> <strong>${staff.phone || staff.phoneNumber || 'N/A'}</strong></div>
                         <div class="info-row"><span>Joining:</span> <strong>${staff.joiningDate ? new Date(staff.joiningDate).toLocaleDateString() : 'Active'}</strong></div>
+                        ${staff.bloodGroup ? `<div class="info-row"><span>Blood Group:</span> <strong>${staff.bloodGroup}</strong></div>` : ''}
                     </div>
                 </div>
                 <div class="card-footer">
-                    <div class="status-badge">ACTIVE STAFF</div>
+                    <div class="status-badge ${isDriver ? 'driver-badge' : ''}">${isDriver ? 'AUTHORIZED DRIVER' : 'ACTIVE STAFF'}</div>
                     <div class="qr-code">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(verificationUrl)}" width="45" height="45" />
                     </div>
@@ -52,28 +60,34 @@ const StaffIdCardModal = ({ staff, onClose }) => {
         const backHtml = `
             <div class="id-card back-card">
                 <div class="back-header">
-                    <h3>EMPLOYEE IDENTIFICATION CARD</h3>
+                    <h3>${isDriver ? 'DRIVER IDENTIFICATION CARD' : 'EMPLOYEE IDENTIFICATION CARD'}</h3>
                     <p>Property of Krishna Engineering Works</p>
                 </div>
                 <div class="back-body">
                     <div class="info-block">
                         <strong>EMERGENCY CONTACT:</strong>
-                        <p>${staff.emergencyContact || staff.phone || '+91 98765 43210'}</p>
+                        <p>${staff.emergencyContact || staff.emergencyPhone || staff.phone || '+91 98765 43210'}</p>
                     </div>
                     <div class="info-block">
                         <strong>BLOOD GROUP:</strong>
                         <p>${staff.bloodGroup || 'O+ Positive'}</p>
                     </div>
+                    ${isDriver && staff.licenseNumber ? `
+                    <div class="info-block">
+                        <strong>DRIVING LICENCE:</strong>
+                        <p>${staff.licenseNumber} (${staff.licenseType || 'Commercial'})</p>
+                    </div>
+                    ` : ''}
                     <div class="info-block">
                         <strong>OFFICE ADDRESS:</strong>
-                        <p>Industrial Development Area, Kanjikode, Palakkad, Kerala</p>
+                        <p>Industrial Development Area, Kanjikode, Palakkad, Kerala - 678621</p>
                     </div>
                     <div class="disclaimer">
-                        If found, please return to the nearest Krishna Engineering Works office or contact administrator.
+                        This card remains the property of Krishna Engineering Works. If found, please return to the nearest company office or contact administrator.
                     </div>
                 </div>
                 <div class="back-footer">
-                    <span>www.krishnaengineering.com</span>
+                    <span>www.krishnaengineering.com • Verification Enabled</span>
                 </div>
             </div>
         `;
@@ -82,22 +96,24 @@ const StaffIdCardModal = ({ staff, onClose }) => {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Staff ID Card - ${staff.name}</title>
+                <title>${isDriver ? 'Driver ID Card' : 'Staff ID Card'} - ${staff.name}</title>
                 <style>
                     body { font-family: 'Segoe UI', Arial, sans-serif; display: flex; gap: 20px; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f8fafc; }
                     .id-card { width: 335px; height: 535px; background: #ffffff; color: #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; position: relative; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
                     .card-header { display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #0f172a; padding-bottom: 12px; }
                     .logo { width: 42px; height: 42px; border-radius: 8px; border: 1px solid #e2e8f0; }
                     .company-name { font-size: 13px; font-weight: 800; tracking-widest: 0.5px; color: #0f172a; text-transform: uppercase; }
+                    .card-subtitle { font-size: 8px; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 2px; }
                     .card-body { text-align: center; margin-top: 15px; }
                     .photo-container { width: 110px; height: 110px; margin: 0 auto 12px; border-radius: 50%; border: 3px solid #0f172a; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
                     .photo { width: 100%; height: 100%; object-fit: cover; }
                     .name { font-size: 16px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px; }
-                    .designation { font-size: 11px; color: #64748b; font-weight: 600; margin-bottom: 12px; text-transform: uppercase; }
+                    .designation { font-size: 11px; color: #2563eb; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
                     .emp-id { display: inline-block; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 14px; border-radius: 12px; font-size: 11px; font-weight: 700; color: #334155; margin-bottom: 12px; }
                     .info-row { font-size: 11px; color: #475569; display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; }
                     .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
                     .status-badge { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+                    .driver-badge { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
                     .back-card { background: #ffffff; text-align: left; }
                     .back-header h3 { font-size: 12px; color: #0f172a; margin: 0; font-weight: 800; }
                     .back-header p { font-size: 9px; color: #64748b; margin: 2px 0 15px; }
@@ -133,11 +149,13 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                     <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-800">
                         <div className="flex items-center gap-3">
                             <div className="p-2.5 bg-blue-600/20 text-blue-400 rounded-xl">
-                                <ShieldCheck className="w-6 h-6" />
+                                {isDriver ? <Truck className="w-6 h-6 text-cyan-400" /> : <ShieldCheck className="w-6 h-6 text-blue-400" />}
                             </div>
                             <div>
-                                <h3 className="font-bold text-lg text-white">Dynamic Employee ID Card</h3>
-                                <p className="text-xs text-slate-400">Verifiable Biometric Credentials</p>
+                                <h3 className="font-bold text-lg text-white">
+                                    {isDriver ? 'Official Driver Identity Card' : 'Official Staff Identity Card'}
+                                </h3>
+                                <p className="text-xs text-slate-400">Verifiable Biometric Credentials with QR Verification</p>
                             </div>
                         </div>
                         <button 
@@ -167,14 +185,15 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                     {/* ID Card Rendering Container */}
                     <div className="flex justify-center py-4">
                         {cardSide === 'front' && (
-                            <div className="w-[300px] h-[480px] bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col justify-between relative overflow-hidden text-slate-800 dark:text-slate-200">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-100 dark:bg-slate-800 rounded-full blur-3xl pointer-events-none" />
+                            <div className="w-[300px] h-[480px] bg-white rounded-3xl p-5 border border-slate-200 shadow-2xl flex flex-col justify-between relative overflow-hidden text-slate-800">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl pointer-events-none" />
                                 
                                 {/* Front Header */}
-                                <div className="flex items-center gap-3 border-b border-slate-950 pb-3">
-                                    <img src="/logo512.png" alt="Logo" className="w-9 h-9 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700" />
+                                <div className="flex items-center gap-3 border-b-2 border-slate-950 pb-3">
+                                    <img src="/logo512.png" alt="Logo" className="w-9 h-9 rounded-lg shadow-sm border border-slate-200" />
                                     <div>
-                                        <h4 className="font-extrabold text-[11px] tracking-wider text-slate-950 uppercase">KRISHNA ENGINEERING WORKS</h4>
+                                        <h4 className="font-black text-[11px] tracking-wider text-slate-950 uppercase">KRISHNA ENGINEERING WORKS</h4>
+                                        <p className="text-[8px] font-bold text-slate-500 uppercase">{isDriver ? 'OFFICIAL DRIVER ID' : 'EMPLOYEE ID'}</p>
                                     </div>
                                 </div>
 
@@ -182,7 +201,7 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                                 <div className="text-center my-auto">
                                     <div className="relative w-24 h-24 mx-auto mb-3 rounded-full border-2 border-slate-950 p-1 shadow-md">
                                         <img 
-                                            src={getDirectImageUrl(staff.profilePhoto) || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200'} 
+                                            src={photoSrc} 
                                             alt={staff.name}
                                             className="w-full h-full object-cover rounded-full"
                                             onError={(e) => {
@@ -192,43 +211,52 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                                         />
                                     </div>
                                     <h3 className="font-extrabold text-sm text-slate-950 uppercase tracking-tight">{staff.name}</h3>
-                                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">{staff.designation || 'Staff Member'}</p>
+                                    <p className="text-[10px] font-black text-blue-600 mb-2 uppercase tracking-wide">{displayDesignation}</p>
                                     
-                                    <span className="inline-block px-3 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-[9px] font-mono text-slate-700 dark:text-slate-300 font-bold mb-4">
-                                        ID: {staff.staff_id || 'KEW-000'}
+                                    <span className="inline-block px-3 py-0.5 bg-slate-100 border border-slate-200 rounded-full text-[9px] font-mono text-slate-700 font-bold mb-3">
+                                        ID: {displayId}
                                     </span>
 
-                                    <div className="space-y-1 text-[10px] text-slate-600 dark:text-slate-400 text-left bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                        <div className="flex justify-between"><span className="text-slate-400 font-semibold">Department:</span> <strong className="text-slate-900 dark:text-white">{staff.department || 'Operations'}</strong></div>
-                                        <div className="flex justify-between"><span className="text-slate-400 font-semibold">Phone:</span> <strong className="text-slate-900 dark:text-white">{staff.phone || 'N/A'}</strong></div>
-                                        <div className="flex justify-between"><span className="text-slate-400 font-semibold">Email:</span> <strong className="text-slate-900 dark:text-white truncate max-w-[140px]">{staff.email || 'N/A'}</strong></div>
+                                    <div className="space-y-1 text-[10px] text-slate-600 text-left bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                        <div className="flex justify-between"><span className="text-slate-400 font-semibold">Department:</span> <strong className="text-slate-900">{displayDept}</strong></div>
+                                        <div className="flex justify-between"><span className="text-slate-400 font-semibold">Phone:</span> <strong className="text-slate-900">{staff.phone || staff.phoneNumber || 'N/A'}</strong></div>
+                                        {staff.bloodGroup && (
+                                            <div className="flex justify-between"><span className="text-slate-400 font-semibold">Blood Group:</span> <strong className="text-rose-600">🩸 {staff.bloodGroup}</strong></div>
+                                        )}
+                                        <div className="flex justify-between"><span className="text-slate-400 font-semibold">Status:</span> <strong className="text-emerald-700 uppercase font-black">{staff.status || 'Active'}</strong></div>
                                     </div>
                                 </div>
 
                                 {/* Front Footer */}
-                                <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
-                                    <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-extrabold rounded-full uppercase">
-                                        {staff.status || 'ACTIVE'}
+                                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                                    <span className={`px-2.5 py-0.5 text-[9px] font-black rounded-full uppercase border ${
+                                        isDriver 
+                                            ? 'bg-cyan-50 text-cyan-800 border-cyan-200' 
+                                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    }`}>
+                                        {isDriver ? 'AUTHORIZED DRIVER' : 'VERIFIED STAFF'}
                                     </span>
-                                    <div className="bg-white dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                                        <QRCodeSVG value={verificationUrl} size={36} />
+                                    <div className="bg-white p-0.5 rounded-lg border border-slate-200 shadow-xs" title="Scan to Verify ID">
+                                        <QRCodeSVG value={verificationUrl} size={38} />
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         {cardSide === 'back' && (
-                            <div className="w-[300px] h-[480px] bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col justify-between text-left text-slate-800 dark:text-slate-200">
+                            <div className="w-[300px] h-[480px] bg-white rounded-3xl p-5 border border-slate-200 shadow-2xl flex flex-col justify-between text-left text-slate-800">
                                 <div>
-                                    <div className="border-b border-slate-200 dark:border-slate-700 pb-3 mb-4">
-                                        <h4 className="font-extrabold text-[11px] text-slate-950 uppercase tracking-wider">EMPLOYEE CREDENTIALS</h4>
+                                    <div className="border-b border-slate-200 pb-3 mb-4">
+                                        <h4 className="font-extrabold text-[11px] text-slate-950 uppercase tracking-wider">
+                                            {isDriver ? 'DRIVER CREDENTIALS' : 'EMPLOYEE CREDENTIALS'}
+                                        </h4>
                                         <p className="text-[9px] text-slate-400">Krishna Engineering Works Official Identification</p>
                                     </div>
 
                                     <div className="space-y-3 text-[10px]">
                                         <div>
                                             <span className="text-slate-400 font-bold block text-[8px] uppercase tracking-wider">Emergency Contact</span>
-                                            <p className="text-slate-950 font-semibold">{staff.emergencyContact || staff.phone || '+91 98765 43210'}</p>
+                                            <p className="text-slate-950 font-semibold">{staff.emergencyContact || staff.emergencyPhone || staff.phone || '+91 98765 43210'}</p>
                                         </div>
 
                                         <div>
@@ -236,18 +264,25 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                                             <p className="text-slate-950 font-semibold">{staff.bloodGroup || 'O+ Positive'}</p>
                                         </div>
 
+                                        {isDriver && (
+                                            <div>
+                                                <span className="text-slate-400 font-bold block text-[8px] uppercase tracking-wider">Designation</span>
+                                                <p className="text-slate-950 font-semibold">Official Company Driver</p>
+                                            </div>
+                                        )}
+
                                         <div>
                                             <span className="text-slate-400 font-bold block text-[8px] uppercase tracking-wider">Office Address</span>
-                                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Industrial Development Area, Kanjikode, Palakkad, Kerala - 678621</p>
+                                            <p className="text-slate-600 leading-relaxed">Industrial Development Area, Kanjikode, Palakkad, Kerala - 678621</p>
                                         </div>
 
-                                        <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 text-[9px] text-slate-400 italic">
+                                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-[9px] text-slate-400 italic">
                                             This card remains the property of Krishna Engineering Works. If found, please return to office address.
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="text-center border-t border-slate-200 dark:border-slate-700 pt-3">
+                                <div className="text-center border-t border-slate-200 pt-3">
                                     <p className="text-[9px] font-bold text-slate-950">www.krishnaengineering.com</p>
                                 </div>
                             </div>
@@ -260,7 +295,7 @@ const StaffIdCardModal = ({ staff, onClose }) => {
                             onClick={handlePrint}
                             className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all active:scale-95"
                         >
-                            <Printer className="w-4 h-4" /> Print / Download PDF
+                            <Printer className="w-4 h-4" /> Print / Download ID Card
                         </button>
                     </div>
                 </motion.div>

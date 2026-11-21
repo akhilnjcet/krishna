@@ -18,14 +18,20 @@ exports.getShifts = async (req, res) => {
         const shiftsWithCounts = await Promise.all(shifts.map(async (shift) => {
             const shiftObj = shift.toObject();
             
-            // Count staff assigned via assignedShift or department
-            const directCount = await User.countDocuments({ assignedShift: shift._id, role: 'staff', status: 'active' });
+            // Count staff assigned via assignedShift or department (including drivers)
+            const directCount = await User.countDocuments({ 
+                assignedShift: shift._id, 
+                role: { $in: ['staff', 'driver'] }, 
+                staffClassification: { $ne: 'Non-Staff' },
+                status: 'active' 
+            });
             let deptCount = 0;
             if (shift.applicableDepartments && shift.applicableDepartments.length > 0) {
                 deptCount = await User.countDocuments({
                     department: { $in: shift.applicableDepartments },
                     assignedShift: { $exists: false },
-                    role: 'staff',
+                    role: { $in: ['staff', 'driver'] },
+                    staffClassification: { $ne: 'Non-Staff' },
                     status: 'active'
                 });
             }
@@ -293,7 +299,7 @@ exports.assignStaffToShift = async (req, res) => {
 
         if (Array.isArray(staffIds) && staffIds.length > 0) {
             await User.updateMany(
-                { _id: { $in: staffIds }, role: 'staff' },
+                { _id: { $in: staffIds } },
                 { $set: { assignedShift: shift._id } }
             );
         }
@@ -320,8 +326,12 @@ exports.getTodayShiftRoster = async (req, res) => {
     try {
         const todayDate = req.query.date || getISTDate(new Date());
 
-        // 1. Fetch all active staff
-        const allStaff = await User.find({ role: 'staff', status: 'active' })
+        // 1. Fetch all active staff and drivers
+        const allStaff = await User.find({ 
+            role: { $in: ['staff', 'driver'] }, 
+            staffClassification: { $ne: 'Non-Staff' }, 
+            status: 'active' 
+        })
             .select('name staff_id department designation email phone profilePhoto assignedShift')
             .populate('assignedShift');
 

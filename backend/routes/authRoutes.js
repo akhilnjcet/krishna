@@ -19,7 +19,8 @@ const {
     adminGetAllUsers, 
     adminCreateUser, 
     adminUpdateUser, 
-    adminDeleteUser 
+    adminDeleteUser,
+    toggleStaffClassification
 } = require('../controllers/authController');
 const { protect, admin, authorize, optionalProtect } = require('../middleware/authMiddleware');
 const { honeypotProtection } = require('../middleware/abuseProtection');
@@ -40,6 +41,7 @@ router.put('/:id/admin-edit', protect, admin, adminEditUser);
 router.get('/admin/users', protect, admin, adminGetAllUsers);
 router.post('/admin/users', protect, admin, adminCreateUser);
 router.put('/admin/users/:id', protect, admin, adminUpdateUser);
+router.put('/admin/users/:id/classification', protect, admin, toggleStaffClassification);
 router.delete('/admin/users/:id', protect, admin, adminDeleteUser);
 
 // Password Reset Flow

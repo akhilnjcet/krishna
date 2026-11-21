@@ -13,8 +13,11 @@ exports.markDailyAttendance = async (req, res) => {
             return res.status(400).json({ message: "Staff ID, date, and status are required." });
         }
 
-        // Verify staff user exists
-        const staff = await User.findOne({ _id: staffId, role: 'staff' });
+        // Verify staff user exists (supports staff and drivers)
+        const staff = await User.findOne({ 
+            _id: staffId, 
+            $or: [{ role: 'staff' }, { role: 'driver' }, { staffClassification: 'Staff' }, { isStaff: true }] 
+        });
         if (!staff) {
             return res.status(404).json({ message: "Staff member not found." });
         }

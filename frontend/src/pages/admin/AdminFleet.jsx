@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
 import TripManagementTab from '../../components/fleet/TripManagementTab';
+import StaffIdCardModal from '../../components/StaffIdCardModal';
 import { 
     Truck, Plus, Search, Filter, Calendar, AlertTriangle, ShieldCheck, 
     Clock, DollarSign, Fuel, Wrench, FileText, CheckCircle2, ChevronRight, 
     X, RefreshCw, Navigation, User, MapPin, Gauge, UserCheck, UserX, 
     Phone, Edit, Trash2, ArrowRight, Eye, ShieldAlert, Users, Award,
-    KeyRound, Lock, Shield, Check, Info
+    KeyRound, Lock, Shield, Check, Info, CreditCard
 } from 'lucide-react';
 
 const VEHICLE_TYPES = [
@@ -68,6 +69,8 @@ const AdminFleet = () => {
     const [isFromVehicleForm, setIsFromVehicleForm] = useState(false);
     const [showDriverProfileModal, setShowDriverProfileModal] = useState(false);
     const [selectedDriverProfile, setSelectedDriverProfile] = useState(null);
+    const [showIdCardModal, setShowIdCardModal] = useState(false);
+    const [selectedDriverForIdCard, setSelectedDriverForIdCard] = useState(null);
     const [profileLoading, setProfileLoading] = useState(false);
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [assignTargetDriver, setAssignTargetDriver] = useState(null);
@@ -1231,6 +1234,25 @@ const AdminFleet = () => {
                                             >
                                                 <Eye className="w-3.5 h-3.5" />
                                                 <span>Profile</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedDriverForIdCard({
+                                                        ...driver,
+                                                        role: 'driver',
+                                                        designation: 'Driver',
+                                                        department: 'Logistics & Fleet',
+                                                        staff_id: driver.staff_id || `DRV-${String(driver._id || '').slice(-4).toUpperCase()}`,
+                                                        profilePhoto: driver.photoUrl || ''
+                                                    });
+                                                    setShowIdCardModal(true);
+                                                }}
+                                                className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition"
+                                                title="Generate / Print Official Driver ID Card"
+                                            >
+                                                <CreditCard className="w-3.5 h-3.5 text-blue-500" />
                                             </button>
 
                                             <button
@@ -2776,6 +2798,16 @@ const AdminFleet = () => {
                         </form>
                     </div>
                 </div>
+            )}
+            {/* Official Driver ID Card Modal */}
+            {showIdCardModal && selectedDriverForIdCard && (
+                <StaffIdCardModal
+                    staff={selectedDriverForIdCard}
+                    onClose={() => {
+                        setShowIdCardModal(false);
+                        setSelectedDriverForIdCard(null);
+                    }}
+                />
             )}
         </div>
     );

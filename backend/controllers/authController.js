@@ -897,7 +897,7 @@ exports.verifyEmail = async (req, res) => {
 // 7. Admin User Management
 exports.adminGetAllUsers = async (req, res) => {
     try {
-        const { search, role, status } = req.query;
+        const { search, role, status, classification } = req.query;
         let query = {};
 
         if (search) {
@@ -909,10 +909,20 @@ exports.adminGetAllUsers = async (req, res) => {
             ];
         }
 
-        if (role) query.role = role;
-        if (status) query.status = status;
+        if (role && role !== 'all') query.role = role;
+        if (status && status !== 'all') query.status = status;
+        
+        if (classification && classification !== 'all') {
+            if (classification.toLowerCase() === 'staff') {
+                query.staffClassification = { $ne: 'Non-Staff' };
+            } else if (classification.toLowerCase() === 'non-staff') {
+                query.staffClassification = 'Non-Staff';
+            }
+        }
 
-        const users = await User.find(query).select('-password -faceDescriptor -resetPasswordHash -emailVerificationHash').sort({ createdAt: -1 });
+        const users = await User.find(query)
+            .select('-password -faceDescriptor -resetPasswordHash -emailVerificationHash')
+            .sort({ createdAt: -1 });
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -923,7 +933,8 @@ exports.adminCreateUser = async (req, res) => {
     try {
         const { 
             name, email, username, password, role, phone, 
-            staff_id, department, designation, status, base_salary, bloodGroup 
+            staff_id, department, designation, status, base_salary, bloodGroup,
+            staffClassification
         } = req.body;
 
         if (!name || !email || !password || !role) {
@@ -950,6 +961,10 @@ exports.adminCreateUser = async (req, res) => {
         const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        // Determine staffClassification: explicitly passed, or default to Staff unless customer
+        const finalClassification = staffClassification || (role === 'customer' ? 'Non-Staff' : 'Staff');
+        const isStaffAccount = finalClassification === 'Staff';
+
         const newUser = await User.create({
             name: name.trim(),
             email: normalizedEmail,
@@ -958,12 +973,14 @@ exports.adminCreateUser = async (req, res) => {
             role,
             phone,
             phoneNumber: phone,
-            staff_id,
-            department,
-            designation,
+            staff_id: staff_id || (role === 'driver' ? `DRV-${Date.now().toString().slice(-4)}` : undefined),
+            department: department || (role === 'driver' ? 'Logistics & Fleet' : undefined),
+            designation: designation || (role === 'driver' ? 'Driver' : undefined),
             status: status || 'active',
             bloodGroup: bloodGroup ? bloodGroup.trim() : '',
             base_salary: parseFloat(base_salary) || 0,
+            staffClassification: finalClassification,
+            isStaff: isStaffAccount,
             isEmailVerified: true // Admin created users are pre-verified
         });
 
@@ -989,25 +1006,26 @@ exports.adminUpdateUser = async (req, res) => {
 
         const { 
             name, email, username, password, role, phone, 
-            staff_id, department, designation, status, base_salary, bloodGroup 
+            staff_id, department, designation, status, base_salary, bloodGroup,
+            staffClassification
         } = req.body;
 
         if (email && email !== user.email) {
             const normalizedEmail = email.trim().toLowerCase();
-            const emailDup = await User.findOne({ email: normalizedEmail });
+            const emailDup = await User.findOne({ email: normalizedEmail, _id: { $ne: userId } });
             if (emailDup) return res.status(400).json({ message: 'Email already registered' });
             user.email = normalizedEmail;
         }
 
         if (username && username !== user.username) {
             const normalizedUsername = username.trim().toLowerCase();
-            const usernameDup = await User.findOne({ username: normalizedUsername });
+            const usernameDup = await User.findOne({ username: normalizedUsername, _id: { $ne: userId } });
             if (usernameDup) return res.status(400).json({ message: 'Username already in use' });
             user.username = normalizedUsername;
         }
 
         if (staff_id && staff_id !== user.staff_id) {
-            const staffIdDup = await User.findOne({ staff_id });
+            const staffIdDup = await User.findOne({ staff_id, _id: { $ne: userId } });
             if (staffIdDup) return res.status(400).json({ message: 'Staff ID already in use' });
             user.staff_id = staff_id;
         }
@@ -1015,6 +1033,21 @@ exports.adminUpdateUser = async (req, res) => {
         if (name) user.name = name.trim();
         if (role) user.role = role;
         if (status) user.status = status;
+        
+        if (staffClassification !== undefined) {
+            user.staffClassification = staffClassification === 'Non-Staff' ? 'Non-Staff' : 'Staff';
+            user.isStaff = user.staffClassification === 'Staff';
+            // Sync with Driver collection if linked
+            try {
+                const Driver = require('../models/Driver');
+                await Driver.updateMany(
+                    { $or: [{ userId: user._id }, { employeeId: user._id }, { _id: user.driverRef }] },
+                    { $set: { staffClassification: user.staffClassification } }
+                );
+            } catch (dErr) {
+                console.warn('Driver classification sync notice:', dErr.message);
+            }
+        }
         
         if (phone !== undefined) {
             user.phone = phone.trim();
@@ -1028,13 +1061,16 @@ exports.adminUpdateUser = async (req, res) => {
             user.password = await bcrypt.hash(password, salt);
         }
 
-        if (role === 'staff') {
+        // Support staff details for staff, driver, and any staff-classified account
+        const isStaffLike = user.role === 'staff' || user.role === 'driver' || user.staffClassification === 'Staff';
+        if (isStaffLike) {
             if (department !== undefined) user.department = department;
             if (designation !== undefined) user.designation = designation;
             if (base_salary !== undefined) user.base_salary = parseFloat(base_salary) || 0;
             if (staff_id) user.staff_id = staff_id;
             if (bloodGroup !== undefined) user.bloodGroup = bloodGroup.trim();
-        } else {
+        } else if (user.role === 'customer' && user.staffClassification === 'Non-Staff') {
+            // Only clean up if purely a customer with Non-Staff classification
             user.department = undefined;
             user.designation = undefined;
             user.staff_id = undefined;
@@ -1045,6 +1081,41 @@ exports.adminUpdateUser = async (req, res) => {
         const userObj = user.toObject();
         delete userObj.password;
         res.json({ message: 'User updated successfully', user: userObj });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.toggleStaffClassification = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const newClassification = req.body.staffClassification || (user.staffClassification === 'Staff' ? 'Non-Staff' : 'Staff');
+        user.staffClassification = newClassification;
+        user.isStaff = newClassification === 'Staff';
+
+        // Keep Driver model in sync if linked
+        try {
+            const Driver = require('../models/Driver');
+            await Driver.updateMany(
+                { $or: [{ userId: user._id }, { employeeId: user._id }, { _id: user.driverRef }] },
+                { $set: { staffClassification: newClassification } }
+            );
+        } catch (dErr) {
+            console.warn('Driver classification sync notice:', dErr.message);
+        }
+
+        await user.save();
+        res.json({ 
+            success: true, 
+            message: `Account classification updated to ${newClassification}`,
+            staffClassification: newClassification,
+            isStaff: user.isStaff
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

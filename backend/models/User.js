@@ -9,6 +9,19 @@ const userSchema = new mongoose.Schema({
     permissions: [{ type: String, trim: true }],
     driverRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver', default: null },
     
+    // Staff Classification & Status
+    staffClassification: { 
+        type: String, 
+        enum: ['Staff', 'Non-Staff'], 
+        default: 'Staff', 
+        index: true 
+    },
+    isStaff: { 
+        type: Boolean, 
+        default: true, 
+        index: true 
+    },
+    
     // Staff specific fields
     staff_id: { type: String, unique: true, sparse: true },
     phone: { type: String },

@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
@@ -54,19 +55,38 @@ const processProfilePhoto = async (photo) => {
 
 exports.getStaff = async (req, res) => {
     try {
-        const { search, department, status } = req.query;
-        let query = { role: 'staff' };
+        const { search, department, status, classification, role } = req.query;
+        let query = {};
 
-        if (search) {
-            query.$and = [
-                { role: 'staff' },
-                {
-                    $or: [
-                        { name: { $regex: search, $options: 'i' } },
-                        { staff_id: { $regex: search, $options: 'i' } },
-                        { email: { $regex: search, $options: 'i' } }
-                    ]
-                }
+        // Role filter: default to staff, driver, admin, manager
+        if (role && role !== 'all') {
+            query.role = role;
+        } else {
+            query.role = { $in: ['staff', 'driver', 'manager', 'admin'] };
+        }
+
+        // Staff / Non-Staff Classification filter:
+        // - 'staff' or default: show only accounts with staffClassification !== 'Non-Staff'
+        // - 'non-staff': show accounts with staffClassification === 'Non-Staff'
+        // - 'all': show both staff and non-staff
+        if (classification === 'all') {
+            // no classification filter
+        } else if (classification === 'non-staff') {
+            query.staffClassification = 'Non-Staff';
+        } else {
+            // default to staff records
+            query.staffClassification = { $ne: 'Non-Staff' };
+        }
+
+        if (search && search.trim()) {
+            const searchRegex = { $regex: search.trim(), $options: 'i' };
+            query.$or = [
+                { name: searchRegex },
+                { staff_id: searchRegex },
+                { email: searchRegex },
+                { phone: searchRegex },
+                { phoneNumber: searchRegex },
+                { designation: searchRegex }
             ];
         }
 
@@ -82,7 +102,7 @@ exports.getStaff = async (req, res) => {
 
 exports.getStaffById = async (req, res) => {
     try {
-        const staff = await User.findOne({ _id: req.params.id, role: 'staff' }).select('-password');
+        const staff = await User.findById(req.params.id).select('-password');
         if (!staff) return res.status(404).json({ message: 'Staff member not found' });
         res.json(staff);
     } catch (error) {
@@ -99,7 +119,7 @@ exports.addStaff = async (req, res) => {
             joiningDate, address, emergencyContact, bloodGroup, salaryType, overtimeRate,
             bonusAmount, advanceAmount, deductionAmount,
             standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired,
-            profilePhoto
+            profilePhoto, staffClassification
         } = req.body;
 
         const userExists = await User.findOne({ $or: [{ email }, { username }, { staff_id }] });
@@ -112,17 +132,24 @@ exports.addStaff = async (req, res) => {
 
         const processedPhoto = await processProfilePhoto(profilePhoto);
 
+        const assignedRole = role || 'staff';
+        const finalClassification = staffClassification || (assignedRole === 'customer' ? 'Non-Staff' : 'Staff');
+        const defaultDesignation = designation || (assignedRole === 'driver' ? 'Driver' : 'Staff Member');
+        const defaultDepartment = department || (assignedRole === 'driver' ? 'Logistics & Fleet' : 'Operations');
+
         const staff = await User.create({
             staff_id,
             name: name || full_name,
             phone: phone || phone_number,
             phoneNumber: phone || phone_number,
             email,
-            department,
-            designation,
+            department: defaultDepartment,
+            designation: defaultDesignation,
             username: username || email,
             password: hashedPassword,
-            role: role || 'staff',
+            role: assignedRole,
+            staffClassification: finalClassification,
+            isStaff: finalClassification === 'Staff',
             status: status || 'active',
             upi_id,
             bank_name,
@@ -144,6 +171,51 @@ exports.addStaff = async (req, res) => {
             otApprovalRequired: otApprovalRequired !== undefined ? (otApprovalRequired === true || otApprovalRequired === 'true') : true,
             profilePhoto: processedPhoto
         });
+
+        // If registered as Driver, ensure Driver document is created or linked seamlessly
+        if (assignedRole === 'driver') {
+            try {
+                const Driver = require('../models/Driver');
+                const existingDriver = await Driver.findOne({
+                    $or: [
+                        { userId: staff._id },
+                        { phone: staff.phone }
+                    ]
+                });
+                if (!existingDriver) {
+                    const fallbackLicense = `DL-${Date.now().toString().slice(-6)}`;
+                    const oneYearLater = new Date();
+                    oneYearLater.setFullYear(oneYearLater.getFullYear() + 3);
+
+                    const newDriver = await Driver.create({
+                        name: staff.name,
+                        phone: staff.phone,
+                        email: staff.email,
+                        userId: staff._id,
+                        employeeId: staff._id,
+                        staff_id: staff.staff_id,
+                        photoUrl: staff.profilePhoto,
+                        licenseNumber: fallbackLicense,
+                        licenseType: 'LMV-Commercial / Transport',
+                        licenseExpiryDate: oneYearLater,
+                        status: 'Active',
+                        staffClassification: finalClassification,
+                        address: staff.address || ''
+                    });
+                    staff.driverRef = newDriver._id;
+                    await staff.save();
+                } else {
+                    existingDriver.userId = staff._id;
+                    existingDriver.employeeId = staff._id;
+                    existingDriver.staffClassification = finalClassification;
+                    await existingDriver.save();
+                    staff.driverRef = existingDriver._id;
+                    await staff.save();
+                }
+            } catch (driverSyncErr) {
+                console.warn('Driver record linking warning:', driverSyncErr.message);
+            }
+        }
 
         // Send Welcome Message via WhatsApp
         const { sendWhatsAppMessage } = require('../services/whatsappService');
@@ -171,7 +243,7 @@ exports.updateStaff = async (req, res) => {
             joiningDate, address, emergencyContact, bloodGroup, salaryType, overtimeRate,
             bonusAmount, advanceAmount, deductionAmount,
             standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired,
-            profilePhoto, password
+            profilePhoto, password, staffClassification
         } = req.body;
 
         // Verify and prevent email collision
@@ -220,6 +292,21 @@ exports.updateStaff = async (req, res) => {
         if (designation) staff.designation = designation.trim();
         if (status) staff.status = status;
         if (role) staff.role = role;
+
+        if (staffClassification !== undefined) {
+            staff.staffClassification = staffClassification === 'Non-Staff' ? 'Non-Staff' : 'Staff';
+            staff.isStaff = staff.staffClassification === 'Staff';
+            // Sync with Driver collection if linked
+            try {
+                const Driver = require('../models/Driver');
+                await Driver.updateMany(
+                    { $or: [{ userId: staff._id }, { employeeId: staff._id }, { _id: staff.driverRef }] },
+                    { $set: { staffClassification: staff.staffClassification } }
+                );
+            } catch (dErr) {
+                console.warn('Driver classification sync notice:', dErr.message);
+            }
+        }
 
         staff.upi_id = upi_id !== undefined ? upi_id : staff.upi_id;
         staff.bank_name = bank_name !== undefined ? bank_name : staff.bank_name;
@@ -276,7 +363,7 @@ exports.updateStaff = async (req, res) => {
 
 exports.deleteStaff = async (req, res) => {
     try {
-        const staff = await User.findOne({ _id: req.params.id, role: 'staff' });
+        const staff = await User.findById(req.params.id);
         if (!staff) return res.status(404).json({ message: 'Staff member not found' });
 
         // Clean up face biometrics associated with this staff
@@ -309,7 +396,7 @@ exports.registerFace = async (req, res) => {
             return res.status(400).json({ message: 'Invalid face descriptor format. Must be a 128-dimensional embedding vector.' });
         }
 
-        const staff = await User.findOne({ _id: userId, role: 'staff' });
+        const staff = await User.findById(userId);
         if (!staff) return res.status(404).json({ message: 'Staff member not found' });
 
         // 1. Fetch all valid existing users to verify ownership and purge orphaned biometric records
@@ -450,6 +537,77 @@ exports.resetAllBiometrics = async (req, res) => {
         res.json({ success: true, message: 'All biometric face registrations have been completely reset.' });
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * Public Verification Endpoint for Physical / Digital Employee ID Cards
+ * Can verify staff or driver by Mongo _id or staff_id
+ */
+exports.verifyStaffCredential = async (req, res) => {
+    try {
+        const identifier = req.params.id;
+        let staff = null;
+        if (mongoose.Types.ObjectId.isValid(identifier)) {
+            staff = await User.findById(identifier).select('-password -faceDescriptor -resetPasswordHash -emailVerificationHash');
+        }
+        if (!staff) {
+            staff = await User.findOne({ staff_id: identifier }).select('-password -faceDescriptor -resetPasswordHash -emailVerificationHash');
+        }
+        if (!staff) {
+            // Also check Driver model if identifier is a driver ID or license
+            const Driver = require('../models/Driver');
+            let driver = null;
+            if (mongoose.Types.ObjectId.isValid(identifier)) {
+                driver = await Driver.findById(identifier);
+            }
+            if (!driver) {
+                driver = await Driver.findOne({ $or: [{ staff_id: identifier }, { licenseNumber: identifier.toUpperCase() }] });
+            }
+            if (driver) {
+                return res.json({
+                    valid: true,
+                    _id: driver._id,
+                    name: driver.name,
+                    staff_id: driver.staff_id || `DRV-${driver._id.toString().slice(-4).toUpperCase()}`,
+                    role: 'driver',
+                    designation: 'Driver',
+                    department: 'Logistics & Fleet',
+                    status: (driver.status || 'Active').toLowerCase(),
+                    staffClassification: driver.staffClassification || 'Staff',
+                    profilePhoto: driver.photoUrl || '',
+                    licenseNumber: driver.licenseNumber,
+                    licenseType: driver.licenseType,
+                    joiningDate: driver.joiningDate,
+                    organization: 'Krishna Engineering Works',
+                    officialContact: '+91 98765 43210',
+                    verifiedAt: new Date().toISOString()
+                });
+            }
+            return res.status(404).json({ valid: false, message: 'Official staff credential not found or revoked.' });
+        }
+
+        const isDriver = staff.role === 'driver';
+        res.json({
+            valid: true,
+            _id: staff._id,
+            name: staff.name,
+            staff_id: staff.staff_id || (isDriver ? `DRV-${staff._id.toString().slice(-4).toUpperCase()}` : 'KEW-000'),
+            role: staff.role,
+            designation: staff.designation || (isDriver ? 'Driver' : 'Staff Member'),
+            department: staff.department || (isDriver ? 'Logistics & Fleet' : 'Operations'),
+            status: staff.status || 'active',
+            staffClassification: staff.staffClassification || 'Staff',
+            profilePhoto: staff.profilePhoto || '',
+            joiningDate: staff.joiningDate,
+            bloodGroup: staff.bloodGroup || '',
+            emergencyContact: staff.emergencyContact || '',
+            organization: 'Krishna Engineering Works',
+            officialContact: '+91 98765 43210',
+            verifiedAt: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({ valid: false, message: error.message });
     }
 };
 

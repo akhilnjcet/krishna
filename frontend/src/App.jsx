@@ -62,6 +62,7 @@ const Careers = lazy(() => import('./pages/Careers'));
 const AdminCareers = lazy(() => import('./pages/admin/AdminCareers'));
 const AdminLegalPolicies = lazy(() => import('./pages/admin/AdminLegalPolicies'));
 const ReviewsPage = lazy(() => import('./pages/ReviewsPage'));
+const StaffVerify = lazy(() => import('./pages/StaffVerify'));
 
 // Layouts (Lazy loaded on demand)
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
@@ -583,6 +584,7 @@ const App = () => {
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/rate-us" element={<ReviewsPage />} />
             <Route path="/google-reviews" element={<ReviewsPage />} />
+            <Route path="/verify-staff/:id" element={<StaffVerify />} />
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
