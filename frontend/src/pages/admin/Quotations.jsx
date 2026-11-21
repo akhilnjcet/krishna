@@ -5,7 +5,7 @@ import {
     Palette, Clock, CheckCircle, ShieldCheck, DollarSign, Layers,
     Save, History, CheckCircle2, AlertCircle, Copy, RotateCcw, 
     Search, X, Tag, Percent, Eye, EyeOff, FolderPlus, Split, ArrowRight,
-    Columns, Maximize2, Minimize2, Sparkles, Check, Bookmark
+    Columns, Maximize2, Minimize2, Sparkles, Check, Bookmark, Download
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
