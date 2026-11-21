@@ -928,13 +928,29 @@ const DriverTripDetail = () => {
                             const refillAmt = Math.max(0, parseFloat(fuelRefillAmount) || 0);
                             const fuelRate = Math.max(0, parseFloat(fuelRatePerLiter) || 0);
                             const calculatedRefillLiters = (refillAmt > 0 && fuelRate > 0) ? (refillAmt / fuelRate) : 0;
-                            const prevTripOdo = trip.endReport?.previousTripOdometer || tripStartOdo;
+
+                            const isFirstTrip = trip.isFirstTrip || !trip.previousTripOdometer;
+                            const prevTripOdo = trip.previousTripOdometer || tripStartOdo;
                             const kmSincePrev = Math.max(0, currentEndOdo - prevTripOdo);
                             const benchmarkMileage = trip.vehicleId?.vehicleType === 'Pickup' ? 14 : 10;
+
                             let liveEstimatedMileage = benchmarkMileage;
-                            if (calculatedRefillLiters > 0 && kmSincePrev > 0) {
-                                liveEstimatedMileage = (kmSincePrev / calculatedRefillLiters);
+                            let methodBadge = isFirstTrip ? '1st Trip Baseline' : 'Benchmark Standard';
+
+                            if (!isFirstTrip && calculatedRefillLiters > 0 && kmSincePrev > 0) {
+                                const rawMileage = kmSincePrev / calculatedRefillLiters;
+                                if (rawMileage >= 4.0 && rawMileage <= 25.0) {
+                                    liveEstimatedMileage = rawMileage;
+                                    methodBadge = 'Calculated from Refill';
+                                } else {
+                                    liveEstimatedMileage = trip.previousVerifiedMileage || benchmarkMileage;
+                                    methodBadge = 'Partial Refill / Benchmark';
+                                }
+                            } else if (!isFirstTrip && trip.previousVerifiedMileage > 0) {
+                                liveEstimatedMileage = trip.previousVerifiedMileage;
+                                methodBadge = 'Carried from Last Trip';
                             }
+
                             const liveEstimatedConsumed = liveEstimatedMileage > 0 ? (currentTripDistance / liveEstimatedMileage) : 0;
 
                             return (
@@ -1020,7 +1036,7 @@ const DriverTripDetail = () => {
                                                 <span className="text-xs font-black font-mono text-slate-800 dark:text-slate-200 block mt-0.5">
                                                     ~{liveEstimatedMileage.toFixed(1)} km/L
                                                 </span>
-                                                <span className="text-[8px] font-bold text-emerald-600 uppercase block">(Estimated)</span>
+                                                <span className="text-[8px] font-bold text-emerald-600 uppercase block">({methodBadge})</span>
                                             </div>
                                             <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
                                                 <span className="text-[9px] font-bold uppercase text-slate-400 block">Est. Consumed</span>
@@ -1031,7 +1047,9 @@ const DriverTripDetail = () => {
                                             </div>
                                         </div>
                                         <p className="text-[9px] text-slate-500 dark:text-slate-400 leading-tight">
-                                            ℹ️ Mileage and fuel consumed are automatically estimated from odometer distance and refill records.
+                                            {isFirstTrip
+                                                ? 'ℹ️ 1st Trip Baseline: Mileage is estimated using fleet benchmark standards. Fuel refill logs initial vehicle fuel records.'
+                                                : 'ℹ️ Mileage and fuel consumed are automatically estimated from odometer distance and refill records.'}
                                         </p>
                                     </div>
 

@@ -366,7 +366,19 @@ exports.getTripById = async (req, res) => {
             }
         }
 
-        res.json({ success: true, trip });
+        const previousTrip = await FleetTrip.findOne({
+            vehicleId: trip.vehicleId?._id || trip.vehicleId,
+            _id: { $ne: trip._id },
+            status: 'Completed',
+            'endReport.odometer': { $gt: 0 }
+        }).sort({ actualDeliveryDateTime: -1, createdAt: -1 });
+
+        const tripObj = trip.toObject();
+        tripObj.isFirstTrip = !previousTrip;
+        tripObj.previousTripOdometer = previousTrip ? (previousTrip.endReport?.odometer || 0) : null;
+        tripObj.previousVerifiedMileage = previousTrip?.endReport?.estimatedMileageKmPerLiter || null;
+
+        res.json({ success: true, trip: tripObj });
     } catch (err) {
         console.error('getTripById error:', err);
         res.status(500).json({ success: false, message: err.message });
@@ -726,20 +738,31 @@ exports.completeTrip = async (req, res) => {
             'endReport.odometer': { $gt: 0 }
         }).sort({ actualDeliveryDateTime: -1, createdAt: -1 });
 
+        const isFirstTrip = !previousTrip;
         const prevTripOdo = previousTrip ? (previousTrip.endReport?.odometer || startOdo) : startOdo;
-        const kmSincePrevTrip = Math.max(0, endOdo - prevTripOdo);
+        const kmSincePreviousTrip = Math.max(0, endOdo - prevTripOdo);
+        const kmSincePrevTrip = kmSincePreviousTrip;
 
         const vehicle = await Vehicle.findById(trip.vehicleId);
         const tankCapacity = vehicle?.tankCapacityLiters || 60;
         const defaultBenchmarkMileage = vehicle?.vehicleType === 'Pickup' ? 14 : 10;
 
         let estimatedMileage = defaultBenchmarkMileage;
-        let estimationMethod = 'Fleet Benchmark Standard';
+        let estimationMethod = isFirstTrip ? 'Fleet Benchmark (1st Trip Baseline)' : 'Fleet Benchmark Standard';
 
-        if (refillLiters > 0 && kmSincePrevTrip > 0) {
-            estimatedMileage = parseFloat((kmSincePrevTrip / refillLiters).toFixed(2));
-            estimationMethod = 'Calculated from Previous Trip Odometer & Refill';
-        } else if (previousTrip?.endReport?.estimatedMileageKmPerLiter > 0) {
+        if (!isFirstTrip && refillLiters > 0 && kmSincePreviousTrip > 0) {
+            const rawMileage = parseFloat((kmSincePreviousTrip / refillLiters).toFixed(2));
+            if (rawMileage >= 4.0 && rawMileage <= 25.0) {
+                estimatedMileage = rawMileage;
+                estimationMethod = 'Calculated from Previous Trip Odometer & Refill';
+            } else if (previousTrip?.endReport?.estimatedMileageKmPerLiter > 0) {
+                estimatedMileage = previousTrip.endReport.estimatedMileageKmPerLiter;
+                estimationMethod = 'Carried from Previous Verified Trip (Partial Refill)';
+            } else {
+                estimatedMileage = defaultBenchmarkMileage;
+                estimationMethod = 'Fleet Benchmark Standard (Partial Refill)';
+            }
+        } else if (!isFirstTrip && previousTrip?.endReport?.estimatedMileageKmPerLiter > 0) {
             estimatedMileage = previousTrip.endReport.estimatedMileageKmPerLiter;
             estimationMethod = 'Carried from Previous Verified Trip';
         }
@@ -764,7 +787,7 @@ exports.completeTrip = async (req, res) => {
             fuelRatePerLiter: fuelRate,
             fuelRefillLiters: refillLiters,
             previousTripOdometer: prevTripOdo,
-            kmSincePreviousTrip,
+            kmSincePreviousTrip: kmSincePreviousTrip,
             estimatedMileageKmPerLiter: estimatedMileage,
             estimatedFuelConsumedLiters: estimatedConsumed,
             estimatedRemainingFuelLiters: estimatedRemaining,
@@ -1127,8 +1150,10 @@ exports.finishTrip = async (req, res) => {
             'endReport.odometer': { $gt: 0 }
         }).sort({ actualDeliveryDateTime: -1, createdAt: -1 });
 
+        const isFirstTrip = !previousTrip;
         const prevTripOdo = previousTrip ? (previousTrip.endReport?.odometer || startOdo) : startOdo;
-        const kmSincePrevTrip = Math.max(0, endOdo - prevTripOdo);
+        const kmSincePreviousTrip = Math.max(0, endOdo - prevTripOdo);
+        const kmSincePrevTrip = kmSincePreviousTrip;
 
         const vehicle = await Vehicle.findById(trip.vehicleId);
         const tankCapacity = vehicle?.tankCapacityLiters || 60;
@@ -1136,12 +1161,21 @@ exports.finishTrip = async (req, res) => {
 
         // Calculate Estimated Mileage (km/L)
         let estimatedMileage = defaultBenchmarkMileage;
-        let estimationMethod = 'Fleet Benchmark Standard';
+        let estimationMethod = isFirstTrip ? 'Fleet Benchmark (1st Trip Baseline)' : 'Fleet Benchmark Standard';
 
-        if (refillLiters > 0 && kmSincePrevTrip > 0) {
-            estimatedMileage = parseFloat((kmSincePrevTrip / refillLiters).toFixed(2));
-            estimationMethod = 'Calculated from Previous Trip Odometer & Refill';
-        } else if (previousTrip?.endReport?.estimatedMileageKmPerLiter > 0) {
+        if (!isFirstTrip && refillLiters > 0 && kmSincePreviousTrip > 0) {
+            const rawMileage = parseFloat((kmSincePreviousTrip / refillLiters).toFixed(2));
+            if (rawMileage >= 4.0 && rawMileage <= 25.0) {
+                estimatedMileage = rawMileage;
+                estimationMethod = 'Calculated from Previous Trip Odometer & Refill';
+            } else if (previousTrip?.endReport?.estimatedMileageKmPerLiter > 0) {
+                estimatedMileage = previousTrip.endReport.estimatedMileageKmPerLiter;
+                estimationMethod = 'Carried from Previous Verified Trip (Partial Refill)';
+            } else {
+                estimatedMileage = defaultBenchmarkMileage;
+                estimationMethod = 'Fleet Benchmark Standard (Partial Refill)';
+            }
+        } else if (!isFirstTrip && previousTrip?.endReport?.estimatedMileageKmPerLiter > 0) {
             estimatedMileage = previousTrip.endReport.estimatedMileageKmPerLiter;
             estimationMethod = 'Carried from Previous Verified Trip';
         }
@@ -1169,7 +1203,7 @@ exports.finishTrip = async (req, res) => {
             fuelRatePerLiter: fuelRate,
             fuelRefillLiters: refillLiters,
             previousTripOdometer: prevTripOdo,
-            kmSincePreviousTrip,
+            kmSincePreviousTrip: kmSincePreviousTrip,
             estimatedMileageKmPerLiter: estimatedMileage,
             estimatedFuelConsumedLiters: estimatedConsumed,
             estimatedRemainingFuelLiters: estimatedRemaining,
