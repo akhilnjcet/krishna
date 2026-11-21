@@ -660,6 +660,11 @@ const App = () => {
             <Route path="/driver" element={<DriverLayout />}>
               <Route index element={<DriverDashboard />} />
               <Route path="attendance" element={<AttendanceScanner />} />
+              <Route path="attendance-hub" element={<StaffAttendanceHub />} />
+              <Route path="timesheets" element={<StaffTimesheets />} />
+              <Route path="leave" element={<StaffLeave />} />
+              <Route path="salary" element={<StaffFinance />} />
+              <Route path="applications" element={<StaffApplications />} />
               <Route path="trip/:id" element={<DriverTripDetail />} />
               <Route path="issues" element={<DriverIssues />} />
               <Route path="profile" element={<DriverProfile />} />

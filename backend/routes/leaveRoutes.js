@@ -7,8 +7,8 @@ const { validateObjectIdParam } = require('../utils/validateInputs');
 router.param('id', validateObjectIdParam('id'));
 
 router.route('/')
-    .post(protect, authorize('staff'), applyLeave)
-    .get(protect, authorize('admin', 'staff'), getLeaves);
+    .post(protect, authorize('staff', 'driver'), applyLeave)
+    .get(protect, authorize('admin', 'staff', 'driver'), getLeaves);
 
 router.route('/:id/status')
     .put(protect, authorize('admin'), updateLeaveStatus);

@@ -14,7 +14,7 @@ router.param('id', validateObjectIdParam('id'));
 
 router.route('/')
     .post(protect, authorize('admin', 'manager'), addOvertime)
-    .get(protect, authorize('admin', 'manager', 'staff'), getOvertimeLogs);
+    .get(protect, authorize('admin', 'manager', 'staff', 'driver'), getOvertimeLogs);
 
 router.route('/:id')
     .put(protect, authorize('admin', 'manager'), editOvertime)

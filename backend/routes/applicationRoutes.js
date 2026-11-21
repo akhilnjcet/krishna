@@ -14,10 +14,10 @@ const { validateObjectIdParam } = require('../utils/validateInputs');
 
 router.param('id', validateObjectIdParam('id'));
 
-router.get('/', protect, authorize('admin', 'staff'), getApplications);
-router.get('/:id', protect, authorize('admin', 'staff'), getApplicationById);
-router.get('/:id/comparison', protect, authorize('admin', 'staff'), getApplicationComparison);
-router.post('/', protect, authorize('staff'), createApplication);
+router.get('/', protect, authorize('admin', 'staff', 'driver'), getApplications);
+router.get('/:id', protect, authorize('admin', 'staff', 'driver'), getApplicationById);
+router.get('/:id/comparison', protect, authorize('admin', 'staff', 'driver'), getApplicationComparison);
+router.post('/', protect, authorize('staff', 'driver'), createApplication);
 router.put('/:id/review', protect, authorize('admin'), reviewApplication);
 router.put('/:id/status', protect, authorize('admin'), updateApplicationStatus);
 router.delete('/:id', protect, authorize('admin'), deleteApplication);

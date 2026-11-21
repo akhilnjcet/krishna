@@ -9,8 +9,8 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.route('/')
     .post(protect, authorize('admin', 'manager'), markDailyAttendance)
-    .get(protect, authorize('admin', 'manager', 'staff'), getDailyAttendance);
+    .get(protect, authorize('admin', 'manager', 'staff', 'driver'), getDailyAttendance);
 
-router.get('/summary', protect, authorize('admin', 'manager', 'staff'), getStaffDailyAttendanceSummary);
+router.get('/summary', protect, authorize('admin', 'manager', 'staff', 'driver'), getStaffDailyAttendanceSummary);
 
 module.exports = router;

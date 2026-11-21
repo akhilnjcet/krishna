@@ -144,8 +144,8 @@ exports.getOvertimeLogs = async (req, res) => {
         const { staffId, month, date } = req.query;
         let query = {};
 
-        // Enforce role isolation: staff can ONLY query their own overtime logs
-        if (req.user.role === 'staff') {
+        // Enforce role isolation: staff and drivers can ONLY query their own overtime logs
+        if (req.user.role === 'staff' || req.user.role === 'driver') {
             query.staffId = req.user.id;
         } else if (staffId) {
             query.staffId = staffId;

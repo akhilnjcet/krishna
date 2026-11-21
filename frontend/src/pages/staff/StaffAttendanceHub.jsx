@@ -224,7 +224,7 @@ const StaffAttendanceHub = () => {
                 {/* Toolbar Controls */}
                 <div className="flex items-center gap-3 flex-wrap">
                     <Link
-                        to="/staff/attendance"
+                        to={user?.role === 'driver' ? '/driver/attendance' : '/staff/attendance'}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition"
                     >
                         <UserCheck className="w-4 h-4" /> Scan Attendance

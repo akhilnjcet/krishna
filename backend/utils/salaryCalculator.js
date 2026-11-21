@@ -9,8 +9,8 @@ const Salary = require('../models/Salary');
 async function recalculateSalary(staffId, month) {
     try {
         const staff = await User.findById(staffId);
-        if (!staff || staff.role !== 'staff') {
-            throw new Error('Staff member not found');
+        if (!staff || (staff.role !== 'staff' && staff.role !== 'driver')) {
+            throw new Error('Staff or driver member not found');
         }
 
         // 1. Fetch attendance records for this month

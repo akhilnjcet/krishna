@@ -5,7 +5,7 @@ import {
     Truck, MapPin, Calendar, Clock, Navigation, CheckCircle2, 
     AlertTriangle, ShieldAlert, ArrowRight, FileText, ChevronRight,
     Fuel, Gauge, ShieldCheck, AlertCircle, RefreshCw, Eye, Package, Scale, Phone,
-    Home, ArrowLeft, UserCheck, Scan
+    Home, ArrowLeft, UserCheck, Scan, Wallet
 } from 'lucide-react';
 import { openGoogleMapsNavigation } from '../../utils/mapsUtil';
 import LocationSharingCard from '../../components/location/LocationSharingCard';
@@ -189,6 +189,130 @@ const DriverDashboard = () => {
                     </span>
                     <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
+            </div>
+
+            {/* Driver Staff-Style Self-Service Suite */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block">
+                            Driver Self-Service Portal
+                        </span>
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                            Workplace, Attendance & Payout Services
+                        </h3>
+                    </div>
+                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        Driver Self-Service
+                    </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {/* Attendance Calendar & Scores */}
+                    <Link
+                        to="/driver/attendance-hub"
+                        className="p-3.5 bg-slate-50 hover:bg-indigo-50/60 dark:bg-slate-800/60 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-2xl transition group flex flex-col justify-between space-y-3"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl shadow-xs text-indigo-600">
+                                <Calendar className="w-4 h-4" />
+                            </div>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">
+                                Attendance Hub
+                            </h4>
+                            <p className="text-[10px] text-slate-400 font-medium line-clamp-1 mt-0.5">
+                                Monthly calendar & scores
+                            </p>
+                        </div>
+                    </Link>
+
+                    {/* My Timesheets */}
+                    <Link
+                        to="/driver/timesheets"
+                        className="p-3.5 bg-slate-50 hover:bg-blue-50/60 dark:bg-slate-800/60 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-2xl transition group flex flex-col justify-between space-y-3"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl shadow-xs text-blue-600">
+                                <Clock className="w-4 h-4" />
+                            </div>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                                My Timesheets
+                            </h4>
+                            <p className="text-[10px] text-slate-400 font-medium line-clamp-1 mt-0.5">
+                                Shift logs & overtime hours
+                            </p>
+                        </div>
+                    </Link>
+
+                    {/* Leave Tracker */}
+                    <Link
+                        to="/driver/leave"
+                        className="p-3.5 bg-slate-50 hover:bg-emerald-50/60 dark:bg-slate-800/60 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-2xl transition group flex flex-col justify-between space-y-3"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl shadow-xs text-emerald-600">
+                                <UserCheck className="w-4 h-4" />
+                            </div>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors">
+                                Leave Tracker
+                            </h4>
+                            <p className="text-[10px] text-slate-400 font-medium line-clamp-1 mt-0.5">
+                                Apply & check balances
+                            </p>
+                        </div>
+                    </Link>
+
+                    {/* Payout Hub */}
+                    <Link
+                        to="/driver/salary"
+                        className="p-3.5 bg-slate-50 hover:bg-amber-50/60 dark:bg-slate-800/60 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-2xl transition group flex flex-col justify-between space-y-3"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl shadow-xs text-amber-600">
+                                <Wallet className="w-4 h-4" />
+                            </div>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white group-hover:text-amber-600 transition-colors">
+                                Payout Hub
+                            </h4>
+                            <p className="text-[10px] text-slate-400 font-medium line-clamp-1 mt-0.5">
+                                Salary slips & OT earnings
+                            </p>
+                        </div>
+                    </Link>
+
+                    {/* Track Requests */}
+                    <Link
+                        to="/driver/applications"
+                        className="p-3.5 bg-slate-50 hover:bg-purple-50/60 dark:bg-slate-800/60 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-2xl transition group flex flex-col justify-between space-y-3 col-span-2 sm:col-span-1"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl shadow-xs text-purple-600">
+                                <FileText className="w-4 h-4" />
+                            </div>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors">
+                                Track Requests
+                            </h4>
+                            <p className="text-[10px] text-slate-400 font-medium line-clamp-1 mt-0.5">
+                                OT claims & corrections
+                            </p>
+                        </div>
+                    </Link>
+                </div>
             </div>
 
             {/* Live Field & Route Location Sharing */}

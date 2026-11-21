@@ -30,8 +30,8 @@ exports.getApplications = async (req, res) => {
         if (status) query.status = status;
         if (type) query.type = type;
         
-        // If staff, only show their own applications
-        if (req.user.role === 'staff') {
+        // If staff or driver, only show their own applications
+        if (req.user.role === 'staff' || req.user.role === 'driver') {
             query.staffId = req.user.id;
         }
 
@@ -53,7 +53,8 @@ exports.getApplicationById = async (req, res) => {
         if (!application) {
             return res.status(404).json({ message: 'Application not found' });
         }
-        if (req.user.role === 'staff' && application.staffId._id.toString() !== req.user.id.toString()) {
+
+        if ((req.user.role === 'staff' || req.user.role === 'driver') && application.staffId._id.toString() !== req.user.id.toString()) {
             return res.status(403).json({ message: 'Access denied' });
         }
         res.json(application);
@@ -140,6 +141,10 @@ exports.getApplicationComparison = async (req, res) => {
         
         if (!application) {
             return res.status(404).json({ message: 'Application not found' });
+        }
+
+        if ((req.user.role === 'staff' || req.user.role === 'driver') && application.staffId._id.toString() !== req.user.id.toString()) {
+            return res.status(403).json({ message: 'Access denied' });
         }
 
         const staffId = application.staffId._id || application.staffId;

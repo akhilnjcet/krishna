@@ -47,7 +47,7 @@ exports.applyLeave = async (req, res) => {
 exports.getLeaves = async (req, res) => {
     try {
         let filter = {};
-        if (req.user.role === 'staff') {
+        if (req.user.role === 'staff' || req.user.role === 'driver') {
             filter.staffId = req.user.id;
         }
         const leaves = await Leave.find(filter).populate('staffId', 'name email').sort({ createdAt: -1 });

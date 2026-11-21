@@ -3,7 +3,8 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
     Truck, Navigation, AlertOctagon, User, LogOut, PhoneCall, 
     ShieldAlert, AlertTriangle, CheckCircle2, FileText, ChevronRight,
-    MapPin, Bell, Clock, Home, ChevronLeft, ArrowLeft, UserCheck
+    MapPin, Bell, Clock, Home, ChevronLeft, ArrowLeft, UserCheck,
+    Calendar, Wallet, MoreHorizontal, X, Scan, Award, HelpCircle
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import ThemeToggle from '../components/ThemeToggle';
@@ -20,6 +21,7 @@ const DriverLayout = () => {
     const [emergencyDesc, setEmergencyDesc] = useState('');
     const [sendingAlert, setSendingAlert] = useState(false);
     const [sosSuccess, setSosSuccess] = useState(false);
+    const [showMobileMore, setShowMobileMore] = useState(false);
 
     useEffect(() => {
         fetchPortalHeaderData();
@@ -61,7 +63,6 @@ const DriverLayout = () => {
                     coords.lng = pos.coords.longitude;
                     coords.address = `GPS: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
                 } catch (e) {
-                    // Graceful fallback
                     coords.address = 'Location not accessible or permission denied';
                 }
             }
@@ -86,19 +87,30 @@ const DriverLayout = () => {
         }
     };
 
-    const navTabs = [
-        { name: 'Trips & Tasks', path: '/driver', icon: Truck },
-        { name: 'Attendance', path: '/driver/attendance', icon: UserCheck },
-        { name: 'Report Issues', path: '/driver/issues', icon: AlertOctagon },
-        { name: 'My Profile', path: '/driver/profile', icon: User },
-        { name: 'ERP Home', path: '/', icon: Home }
+    const primaryNavTabs = [
+        { name: 'Trips', path: '/driver', icon: Truck },
+        { name: 'Attendance', path: '/driver/attendance-hub', icon: Calendar },
+        { name: 'Timesheets', path: '/driver/timesheets', icon: Clock },
+        { name: 'Leave', path: '/driver/leave', icon: UserCheck },
+        { name: 'Payout Hub', path: '/driver/salary', icon: Wallet },
+        { name: 'Requests', path: '/driver/applications', icon: FileText },
+        { name: 'Issues', path: '/driver/issues', icon: AlertOctagon },
+        { name: 'Profile', path: '/driver/profile', icon: User }
+    ];
+
+    const mobileBottomTabs = [
+        { name: 'Trips', path: '/driver', icon: Truck },
+        { name: 'Attendance', path: '/driver/attendance-hub', icon: Calendar },
+        { name: 'Timesheets', path: '/driver/timesheets', icon: Clock },
+        { name: 'Payouts', path: '/driver/salary', icon: Wallet },
+        { name: 'Requests', path: '/driver/applications', icon: FileText }
     ];
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans pb-20 md:pb-6">
+        <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans pb-24 md:pb-6">
             {/* Top Driver App Bar */}
             <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm px-3 sm:px-4 py-2.5">
-                <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+                <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
                     {/* Left: Back Button, Home Button & Brand */}
                     <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
                         {/* Back Going Navigation Button */}
@@ -150,15 +162,15 @@ const DriverLayout = () => {
                         </Link>
                     </div>
 
-                    {/* Desktop Navigation Tabs */}
-                    <nav className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-inner">
-                        {navTabs.map(tab => {
+                    {/* Desktop Navigation Tabs (Scrollable & Responsive) */}
+                    <nav className="hidden lg:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-inner overflow-x-auto max-w-2xl">
+                        {primaryNavTabs.map(tab => {
                             const active = location.pathname === tab.path;
                             return (
                                 <Link
                                     key={tab.name}
                                     to={tab.path}
-                                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                                         active
                                             ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
                                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -173,6 +185,16 @@ const DriverLayout = () => {
 
                     {/* Quick Actions & SOS */}
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        {/* Scan Attendance Quick Button */}
+                        <Link
+                            to="/driver/attendance"
+                            className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 rounded-xl font-black text-xs uppercase tracking-wider transition border border-indigo-100 dark:border-indigo-900"
+                            title="Scan Face Attendance"
+                        >
+                            <Scan className="w-3.5 h-3.5" />
+                            <span>Scan Face</span>
+                        </Link>
+
                         {/* Emergency SOS Button */}
                         <button
                             onClick={() => setShowEmergencyModal(true)}
@@ -201,30 +223,93 @@ const DriverLayout = () => {
             </header>
 
             {/* Main Content View */}
-            <main className="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-5">
+            <main className="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-5">
                 <Outlet />
             </main>
 
             {/* Bottom Navigation Bar for Mobile */}
-            <nav className="fixed bottom-0 inset-x-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 z-30 md:hidden px-2 py-2 flex items-center justify-around shadow-xl">
-                {navTabs.map(tab => {
+            <nav className="fixed bottom-0 inset-x-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 z-30 lg:hidden px-2 py-1.5 flex items-center justify-around shadow-2xl">
+                {mobileBottomTabs.map(tab => {
                     const active = location.pathname === tab.path;
                     return (
                         <Link
                             key={tab.name}
                             to={tab.path}
-                            className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition ${
+                            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition ${
                                 active
                                     ? 'text-blue-600 dark:text-blue-400 font-black scale-105'
                                     : 'text-slate-500 dark:text-slate-400 font-semibold hover:text-slate-900 dark:hover:text-white'
                             }`}
                         >
                             <tab.icon className={`w-5 h-5 ${active ? 'stroke-[2.5]' : ''}`} />
-                            <span className="text-[10px] uppercase tracking-wider">{tab.name}</span>
+                            <span className="text-[9px] uppercase tracking-wider">{tab.name}</span>
                         </Link>
                     );
                 })}
+
+                {/* More Drawer Button for Mobile */}
+                <button
+                    onClick={() => setShowMobileMore(!showMobileMore)}
+                    className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition ${
+                        showMobileMore
+                            ? 'text-indigo-600 dark:text-indigo-400 font-black'
+                            : 'text-slate-500 dark:text-slate-400 font-semibold'
+                    }`}
+                >
+                    <MoreHorizontal className="w-5 h-5" />
+                    <span className="text-[9px] uppercase tracking-wider">More</span>
+                </button>
             </nav>
+
+            {/* Mobile "More" Drawer Modal */}
+            {showMobileMore && (
+                <div 
+                    className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden flex flex-col justify-end"
+                    onClick={() => setShowMobileMore(false)}
+                >
+                    <div 
+                        className="bg-white dark:bg-slate-900 rounded-t-3xl p-5 border-t border-slate-200 dark:border-slate-800 space-y-4 shadow-2xl"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                            <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Driver Services</span>
+                            <button onClick={() => setShowMobileMore(false)} className="p-1 text-slate-400">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                            <Link
+                                to="/driver/attendance"
+                                onClick={() => setShowMobileMore(false)}
+                                className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200"
+                            >
+                                <Scan className="w-4 h-4 text-blue-600" /> Scan Face
+                            </Link>
+                            <Link
+                                to="/driver/leave"
+                                onClick={() => setShowMobileMore(false)}
+                                className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200"
+                            >
+                                <Calendar className="w-4 h-4 text-emerald-600" /> Leave Tracker
+                            </Link>
+                            <Link
+                                to="/driver/issues"
+                                onClick={() => setShowMobileMore(false)}
+                                className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200"
+                            >
+                                <AlertOctagon className="w-4 h-4 text-amber-600" /> Report Issues
+                            </Link>
+                            <Link
+                                to="/driver/profile"
+                                onClick={() => setShowMobileMore(false)}
+                                className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200"
+                            >
+                                <User className="w-4 h-4 text-indigo-600" /> Driver Profile
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Emergency SOS Modal */}
             {showEmergencyModal && (
@@ -248,67 +333,68 @@ const DriverLayout = () => {
                                 <h3 className="font-black text-sm text-emerald-800 dark:text-emerald-300 uppercase">
                                     SOS Broadcasted Successfully!
                                 </h3>
-                                <p className="text-xs text-slate-600 dark:text-slate-400">
-                                    Fleet Control and assigned logistics staff have received your emergency alert and coordinates. Stand by for contact.
+                                <p className="text-xs text-slate-500">
+                                    The operations team and nearby logistics units have received your coordinates.
                                 </p>
                             </div>
                         ) : (
-                            <div className="space-y-4 text-xs">
-                                <div>
-                                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">
-                                        Describe Emergency (Optional)
+                            <>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase text-slate-400">
+                                        Describe Situation (Optional)
                                     </label>
                                     <textarea
-                                        rows="2"
-                                        placeholder="Accident, severe breakdown, highway harassment, medical issue..."
+                                        rows={2}
                                         value={emergencyDesc}
-                                        onChange={(e) => setEmergencyDesc(e.target.value)}
-                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 text-xs"
+                                        onChange={e => setEmergencyDesc(e.target.value)}
+                                        placeholder="Accident, breakdown, robbery, medical emergency..."
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-xs outline-none focus:border-rose-500"
                                     />
-                                    <p className="text-[10px] text-slate-400 mt-1">
-                                        * Current GPS coordinates will be attached automatically if permission is granted.
-                                    </p>
                                 </div>
 
-                                <button
-                                    onClick={handleSendSos}
-                                    disabled={sendingAlert}
-                                    className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-rose-600/30 transition disabled:opacity-50"
-                                >
-                                    <AlertTriangle className="w-4 h-4" />
-                                    {sendingAlert ? 'Broadcasting Alert...' : 'Broadcast Immediate SOS'}
-                                </button>
-
-                                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                                    <p className="text-[10px] font-black uppercase text-slate-400 mb-2">Direct Emergency Call Contacts:</p>
-                                    <div className="space-y-2">
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-black uppercase text-slate-400">
+                                        Factory & Emergency Hotlines
+                                    </h4>
+                                    <div className="space-y-1.5 max-h-36 overflow-y-auto">
                                         {emergencyContacts.map((c, i) => (
                                             <a
                                                 key={i}
                                                 href={`tel:${c.phone}`}
-                                                className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl border border-slate-200 dark:border-slate-700 transition"
+                                                className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl hover:bg-slate-100 border border-slate-200 dark:border-slate-700/60 transition text-xs"
                                             >
                                                 <div>
-                                                    <p className="font-black text-slate-800 dark:text-slate-200">{c.role} ({c.name})</p>
-                                                    <p className="text-[10px] text-slate-400">{c.available}</p>
+                                                    <p className="font-bold text-slate-800 dark:text-slate-200">{c.name}</p>
+                                                    <p className="text-[10px] text-slate-400">{c.role || 'Contact'}</p>
                                                 </div>
-                                                <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold font-mono">
-                                                    <PhoneCall className="w-4 h-4" /> {c.phone}
+                                                <div className="flex items-center gap-1.5 text-blue-600 font-bold">
+                                                    <PhoneCall className="w-3.5 h-3.5" />
+                                                    <span>{c.phone}</span>
                                                 </div>
                                             </a>
                                         ))}
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end pt-2">
+                                <div className="flex items-center gap-2 pt-2">
                                     <button
+                                        type="button"
                                         onClick={() => setShowEmergencyModal(false)}
-                                        className="px-4 py-2 text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+                                        className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 font-black text-xs uppercase"
                                     >
-                                        Close
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={sendingAlert}
+                                        onClick={handleSendSos}
+                                        className="flex-[2] py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-rose-600/30"
+                                    >
+                                        <ShieldAlert className="w-4 h-4" />
+                                        <span>{sendingAlert ? 'Broadcasting...' : 'Broadcast SOS Now'}</span>
                                     </button>
                                 </div>
-                            </div>
+                            </>
                         )}
                     </div>
                 </div>

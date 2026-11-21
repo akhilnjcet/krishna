@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import useAuthStore from '../../stores/authStore';
 import {
     History, Calendar, Loader2, Download,
     ArrowUpDown, RefreshCw, Clock, CheckCircle2,
@@ -13,6 +14,7 @@ import {
 } from '../../utils/dateTimeUtil';
 
 const StaffTimesheets = () => {
+    const { user } = useAuthStore();
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -175,7 +177,7 @@ const StaffTimesheets = () => {
 
                     {/* Request Correction */}
                     <Link
-                        to="/staff/applications?type=attendance_issue&action=new"
+                        to={user?.role === 'driver' ? '/driver/applications?type=attendance_issue&action=new' : '/staff/applications?type=attendance_issue&action=new'}
                         className="flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-indigo-600/20 transition-all active:scale-95"
                     >
                         <AlertCircle className="w-3.5 h-3.5" /> Request Correction
