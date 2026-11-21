@@ -967,8 +967,6 @@ exports.assignTripToTransfer = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-    }
-};
 
 // @desc Receive Stock Transfer at destination (Credits destination stock, handles discrepancies)
 // @route PUT /api/stock-transfers/:id/receive

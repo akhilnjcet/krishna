@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { 
-    getStaff, addStaff, updateStaff, deleteStaff, registerFace, 
+const {
+    getStaff, addStaff, updateStaff, deleteStaff, registerFace,
     getStaffById, deleteFaceData, cleanupBiometrics, resetAllBiometrics,
-    verifyStaffCredential 
+    verifyStaffCredential
 } = require('../controllers/staffController');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { validateObjectIdParam } = require('../utils/validateInputs');
