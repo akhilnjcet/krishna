@@ -3,8 +3,11 @@ const mongoose = require('mongoose');
 // Services
 const { normalizeErpQuery } = require('../services/aiErp/manglishNormalizer');
 const { resolveContextualIntent } = require('../services/aiErp/conversationContext');
-const { checkModuleAccess, MODULE_REGISTRY } = require('../services/aiErp/erpModuleRegistry');
+const { checkModuleAccess } = require('../services/aiErp/erpModuleRegistry');
 const resolvers = require('../services/aiErp/queryResolvers');
+const { generateGroqResponse } = require('../services/aiErp/groqService');
+const { performWebSearch, isExternalQuery } = require('../services/aiErp/webSearchService');
+const { collectLiveErpData } = require('../services/aiErp/erpDataCollector');
 
 // In-memory query audit log (last 100 queries)
 const aiQueryAuditLogs = [];
@@ -114,102 +117,85 @@ exports.askAiAssistant = async (req, res) => {
         // 2. Resolve Contextual Intent if follow-up
         normalized = resolveContextualIntent(normalized, conversationHistory);
 
-        // 3. Check Role-Based Access Control before retrieving data
-        const access = checkModuleAccess(normalized.intent, user);
-        if (!access.allowed) {
+        // 3. Collect Live ERP Ground-Truth Data & enforce Role-Based Access
+        const erpResult = await collectLiveErpData(normalized, user, rawQuery);
+        if (erpResult.authorized === false) {
             return res.json({
                 success: true,
                 intent: normalized.intent,
                 language: normalized.language,
-                response: access.reason,
+                response: erpResult.reason,
                 generatedAt: new Date()
             });
         }
 
+        // 4. Check if external information / web search is needed
+        let searchResults = [];
+        const needsExternalSearch = isExternalQuery(rawQuery, normalized.intent);
+        if (needsExternalSearch) {
+            try {
+                searchResults = await performWebSearch(rawQuery);
+            } catch (searchErr) {
+                console.warn('Web search attempt failed:', searchErr.message);
+            }
+        }
+
         let responseText = null;
+        let sources = [];
+        let modelUsed = 'Rule-based Native Grounding';
 
-        // 4. Route to specific Resolver
-        switch (normalized.intent) {
-            case 'HR_LEAVE':
-                responseText = await resolvers.resolveLeave(normalized, user);
-                break;
+        // 5. Query Groq Engine if configured
+        if (process.env.GROQ_API_KEY) {
+            try {
+                const groqResult = await generateGroqResponse({
+                    query: rawQuery,
+                    liveData: erpResult.data,
+                    searchResults,
+                    conversationHistory,
+                    user,
+                    language: normalized.language
+                });
 
-            case 'HR_ATTENDANCE':
-                responseText = await resolvers.resolveAttendance(normalized, user);
-                break;
-
-            case 'DRIVERS':
-                responseText = await resolvers.resolveDrivers(normalized, user);
-                break;
-
-            case 'VEHICLES_FLEET':
-                responseText = await resolvers.resolveVehicles(normalized, user);
-                break;
-
-            case 'FLEET_TRIPS':
-                responseText = await resolvers.resolveFleetTrips(normalized, user);
-                break;
-
-            case 'TRANSPORT_COSTS':
-                responseText = await resolvers.resolveTransportCosts(normalized, user);
-                break;
-
-            case 'EWAY_BILLS':
-                responseText = await resolvers.resolveEWayBills(normalized, user);
-                break;
-
-            case 'PROJECTS':
-                responseText = await resolvers.resolveProjects(normalized, user);
-                break;
-
-            case 'INVENTORY':
-                responseText = await resolvers.resolveInventory(normalized, user);
-                break;
-
-            case 'FINANCES':
-                responseText = await resolvers.resolveFinances(normalized, user);
-                break;
-
-            case 'PRODUCTION':
-                responseText = await resolvers.resolveProduction(normalized, user);
-                break;
-
-            case 'MACHINERY':
-                responseText = await resolvers.resolveMachinery(normalized, user);
-                break;
-
-            case 'MY_VEHICLE':
-                responseText = await resolvers.resolveMyVehicle(normalized, user);
-                break;
-
-            case 'MY_TRIPS':
-                responseText = await resolvers.resolveFleetTrips(normalized, user);
-                break;
-
-            case 'EXECUTIVE_SUMMARY':
-                responseText = await resolvers.resolveExecutiveSummary(normalized, user);
-                break;
-
-            case 'GREETING':
-                responseText = handleGreeting(user, normalized.language);
-                break;
-
-            case 'UNKNOWN':
-            default:
-                // Attempt direct entity search
-                responseText = await searchEntityDirectly(rawQuery, user);
-                if (!responseText) {
-                    responseText = handleUnknownIntent(rawQuery, normalized.language);
+                if (groqResult?.content) {
+                    responseText = groqResult.content;
+                    sources = groqResult.sources || [];
+                    modelUsed = groqResult.modelUsed || 'Groq AI';
                 }
-                break;
+            } catch (groqErr) {
+                console.warn('Groq generation fallback triggered:', groqErr.message);
+            }
         }
 
-        // 5. Prepend bilingual header if user queried in Malayalam/Manglish
-        if ((normalized.language === 'malayalam' || normalized.language === 'manglish') && normalized.intent !== 'GREETING' && normalized.intent !== 'UNKNOWN') {
-            responseText = `> 🌐 **ലൈവ് വിവരങ്ങൾ (Live ERP Data Synchronized)**\n\n` + responseText;
+        // 6. Resilient Fallback: If Groq was not available or failed, use authoritative native resolvers
+        if (!responseText) {
+            if (erpResult.data) {
+                if (typeof erpResult.data === 'string') {
+                    responseText = erpResult.data;
+                } else {
+                    responseText = `### 📋 Live ERP Records Found\n\n\`\`\`json\n${JSON.stringify(erpResult.data, null, 2)}\n\`\`\``;
+                }
+            } else if (searchResults.length > 0) {
+                responseText = `### 🌐 External Web Search Findings\n\n`;
+                searchResults.forEach((sr, idx) => {
+                    responseText += `${idx + 1}. **[${sr.title}](${sr.url})**\n   ${sr.snippet}\n\n`;
+                });
+                sources = searchResults.map(s => ({ title: s.title, url: s.url, source: s.source }));
+            } else if (normalized.intent === 'GREETING') {
+                responseText = handleGreeting(user, normalized.language);
+            } else {
+                responseText = handleUnknownIntent(rawQuery, normalized.language);
+            }
         }
 
-        // 6. Generate Data Snapshot for Dashboard Widget
+        // 7. Bilingual header if user queried in Malayalam/Manglish and header not already included
+        if ((normalized.language === 'malayalam' || normalized.language === 'manglish') && 
+            normalized.intent !== 'GREETING' && 
+            normalized.intent !== 'UNKNOWN' &&
+            !responseText.includes('ലൈവ് വിവരങ്ങൾ')) {
+            responseText = `> 🌐 **ലൈവ് വിവരങ്ങൾ (Live ERP Data Grounded)**\n\n` + responseText;
+        }
+
+        // 8. Generate Data Snapshot for Dashboard Widget
         const Project = mongoose.model('Project');
         const InventoryItem = mongoose.model('InventoryItem');
         const Vehicle = mongoose.model('Vehicle');
@@ -228,15 +214,20 @@ exports.askAiAssistant = async (req, res) => {
             totalVehicles
         };
 
-        // 7. Audit log entry
+        // 9. Sanitized Audit log entry (strip passwords, tokens)
+        const sanitizedQuery = rawQuery
+            .replace(/\b(password|secret|token|pin)\s*[:=]\s*\S+/gi, '$1=***')
+            .slice(0, 500);
+
         aiQueryAuditLogs.unshift({
             timestamp: new Date(),
-            query: rawQuery,
+            query: sanitizedQuery,
             intent: normalized.intent,
             language: normalized.language,
             userId: user._id || 'system',
             userName: user.name || 'User',
-            userRole: user.role || 'staff'
+            userRole: user.role || 'staff',
+            modelUsed
         });
         if (aiQueryAuditLogs.length > 100) aiQueryAuditLogs.pop();
 
@@ -245,6 +236,8 @@ exports.askAiAssistant = async (req, res) => {
             response: responseText,
             intent: normalized.intent,
             language: normalized.language,
+            modelUsed,
+            sources,
             dataSnapshot,
             generatedAt: new Date()
         });

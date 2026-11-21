@@ -5,7 +5,7 @@ import {
     Bot, Send, Sparkles, AlertTriangle, CheckCircle2, Clock, 
     FileText, Download, Copy, Check, ShieldCheck, RefreshCw, 
     Layers, Activity, DollarSign, Package, ChevronRight, History,
-    Truck, X
+    Truck, X, Globe
 } from 'lucide-react';
 
 const SUGGESTED_QUERIES = [
@@ -34,19 +34,41 @@ const SUGGESTED_QUERIES = [
 const SafeMarkdownRenderer = ({ content }) => {
     if (!content) return null;
 
-    // Helper: Safely renders inline elements (bold, italic, code, plain text)
+    // Helper: Safely renders inline elements (links, bold, code, plain text)
     // and strips any raw HTML tags (e.g. <strong style="...">, <span>, etc.)
     const renderInline = (rawText) => {
         if (!rawText) return null;
 
-        // Strip any HTML markup so raw tags are never shown as text
+        // Strip any dangerous HTML markup so raw tags are never shown as text
         const text = rawText.replace(/<[^>]*>/g, '');
 
-        // Tokenize for **bold** and `code`
-        const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+        // Tokenize for [links](url), **bold**, and `code`
+        const parts = text.split(/(\[[^\]]+\]\([^\)]+\)|\*\*[^*]+\*\*|`[^`]+`)/g);
 
         return parts.map((part, idx) => {
             if (!part) return null;
+
+            // 1. Markdown Links [text](url)
+            if (part.startsWith('[') && part.includes('](') && part.endsWith(')')) {
+                const match = part.match(/^\[([^\]]+)\]\(([^\)]+)\)$/);
+                if (match) {
+                    const linkText = match[1];
+                    const linkUrl = match[2];
+                    return (
+                        <a
+                            key={idx}
+                            href={linkUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 dark:text-indigo-400 font-bold underline hover:text-indigo-500 inline-flex items-center gap-0.5 break-all"
+                        >
+                            {linkText} ↗
+                        </a>
+                    );
+                }
+            }
+
+            // 2. Bold text **text**
             if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
                 const inner = part.slice(2, -2).trim();
                 return (
@@ -55,6 +77,8 @@ const SafeMarkdownRenderer = ({ content }) => {
                     </strong>
                 );
             }
+
+            // 3. Inline code `text`
             if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
                 const codeInner = part.slice(1, -1);
                 return (
@@ -63,6 +87,7 @@ const SafeMarkdownRenderer = ({ content }) => {
                     </code>
                 );
             }
+
             return part;
         });
     };
@@ -327,6 +352,8 @@ const AdminAIErpAssistant = () => {
                 id: (Date.now() + 1).toString(),
                 sender: 'ai',
                 text: res.data?.response || 'No information could be derived from live ERP records.',
+                sources: res.data?.sources || [],
+                modelUsed: res.data?.modelUsed,
                 timestamp: new Date(res.data?.generatedAt || Date.now())
             };
             setMessages(prev => [...prev, aiReply]);
@@ -472,11 +499,40 @@ const AdminAIErpAssistant = () => {
                                 {msg.sender === 'user' ? (
                                     <div className="font-medium whitespace-pre-wrap">{msg.text}</div>
                                 ) : (
-                                    <SafeMarkdownRenderer content={msg.text} />
+                                    <>
+                                        <SafeMarkdownRenderer content={msg.text} />
+                                        {msg.sources && msg.sources.length > 0 && (
+                                            <div className="mt-2.5 pt-2 border-t border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                                                <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                                                    <Globe className="w-3 h-3" /> Web Sources & Citations:
+                                                </span>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {msg.sources.map((src, sIdx) => (
+                                                        <a
+                                                            key={sIdx}
+                                                            href={src.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 transition max-w-xs truncate"
+                                                        >
+                                                            <span className="truncate">{src.title}</span> ↗
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
 
                                 <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-200/50 dark:border-slate-700/50 text-[10px] opacity-75">
-                                    <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        {msg.modelUsed && (
+                                            <span className="px-1.5 py-0.2 rounded bg-slate-200/60 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 font-mono text-[9px]">
+                                                {msg.modelUsed}
+                                            </span>
+                                        )}
+                                    </div>
                                     {msg.sender === 'ai' && !msg.isError && (
                                         <div className="flex items-center gap-2">
                                             <button

@@ -29,14 +29,14 @@ const connectDB = async () => {
     const isVercel = process.env.VERCEL === '1';
     const connectionOptions = {
         serverSelectionTimeoutMS: isVercel ? 4000 : 8000,
-        retryWrites: true,
-        w: 'majority',
         autoIndex: !isProduction // Disable heavy automatic index creation at runtime in production
     };
 
-    // Enforce TLS encryption for remote MongoDB clusters
+    // Enforce TLS encryption and replica set write concern for remote clusters
     if (isRemote) {
         connectionOptions.tls = true;
+        connectionOptions.retryWrites = true;
+        connectionOptions.w = 'majority';
     }
 
     try {
