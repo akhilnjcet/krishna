@@ -13,4 +13,9 @@ const invoiceSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+// Performance optimization indexes
+invoiceSchema.index({ customerId: 1, createdAt: -1 });
+invoiceSchema.index({ projectId: 1 });
+invoiceSchema.index({ paymentStatus: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Invoice', invoiceSchema);

@@ -189,10 +189,7 @@ exports.markDailyAttendance = async (req, res) => {
             }
 
             if (dispatchTasks.length > 0) {
-                await Promise.race([
-                    Promise.allSettled(dispatchTasks),
-                    new Promise(resolve => setTimeout(resolve, 3500))
-                ]);
+                Promise.allSettled(dispatchTasks).catch(err => console.warn('Daily attendance notification error:', err.message));
             }
         } catch (notifyErr) {
             console.warn('Daily attendance notification dispatch notice:', notifyErr.message);

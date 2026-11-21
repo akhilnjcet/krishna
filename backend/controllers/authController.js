@@ -252,10 +252,8 @@ exports.login = async (req, res) => {
             }
 
             if (dispatchTasks.length > 0) {
-                await Promise.race([
-                    Promise.allSettled(dispatchTasks),
-                    new Promise(resolve => setTimeout(resolve, 3500))
-                ]);
+                // Non-blocking async dispatch: send alerts in background without delaying user response
+                Promise.allSettled(dispatchTasks).catch(e => console.warn('Background login notification error:', e.message));
             }
         } catch (secErr) {
             console.warn('Security dispatch notice:', secErr.message);
@@ -469,10 +467,7 @@ exports.verifyFace = async (req, res) => {
                     );
                 }
                 if (dispatchTasks.length > 0) {
-                    await Promise.race([
-                        Promise.allSettled(dispatchTasks),
-                        new Promise(resolve => setTimeout(resolve, 3500))
-                    ]);
+                    Promise.allSettled(dispatchTasks).catch(err => console.warn('Background face login notify error:', err.message));
                 }
             } catch (notifyErr) {
                 console.warn('Face login notify notice:', notifyErr.message);
@@ -818,10 +813,8 @@ exports.loginWithOTP = async (req, res) => {
             }
 
             if (dispatchTasks.length > 0) {
-                await Promise.race([
-                    Promise.allSettled(dispatchTasks),
-                    new Promise(resolve => setTimeout(resolve, 3500))
-                ]);
+                // Non-blocking async dispatch: send alerts in background without delaying user response
+                Promise.allSettled(dispatchTasks).catch(e => console.warn('Background login notification error:', e.message));
             }
         } catch (secErr) {
             console.warn('Security dispatch notice:', secErr.message);

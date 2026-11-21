@@ -140,4 +140,9 @@ const projectSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+// Performance optimization indexes
+projectSchema.index({ customerId: 1, createdAt: -1 });
+projectSchema.index({ status: 1, createdAt: -1 });
+projectSchema.index({ assignedStaff: 1 });
+
 module.exports = mongoose.model('Project', projectSchema);

@@ -648,8 +648,8 @@ const RentalBills = () => {
         }
     };
 
-    const handlePrint = () => {
-        handleSaveToHistory(true);
+    const handlePrint = async () => {
+        await handleSaveToHistory(true);
         window.print();
     };
 

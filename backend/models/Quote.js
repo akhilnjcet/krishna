@@ -21,4 +21,8 @@ const quoteSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+// Performance optimization indexes
+quoteSchema.index({ userId: 1, createdAt: -1 });
+quoteSchema.index({ status: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Quote', quoteSchema);
