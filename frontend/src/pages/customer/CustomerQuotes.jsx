@@ -6,7 +6,8 @@ import {
     XCircle, Loader2, AlertCircle, Phone, MapPin,
     ShieldCheck, Sparkles, Search, Check, Copy,
     Filter, ArrowUpRight, Lock, Eye, CheckCircle,
-    ChevronRight, Layers, FileCheck, Cpu, ShieldAlert
+    ChevronRight, Layers, FileCheck, Cpu, ShieldAlert,
+    Activity
 } from 'lucide-react';
 import { generateQuotePDF } from '../../services/pdfService';
 import WorksiteLocationCard from '../../components/WorksiteLocationCard';
