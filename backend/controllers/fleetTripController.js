@@ -795,8 +795,7 @@ exports.completeTrip = async (req, res) => {
 
         await trip.save();
 
-        // Sync Vehicle model
-        const vehicle = await Vehicle.findById(trip.vehicleId);
+        // Sync Vehicle model (vehicle already retrieved above)
         if (vehicle) {
             vehicle.status = 'Available';
             vehicle.currentOdometer = endOdo;
@@ -1223,9 +1222,6 @@ exports.finishTrip = async (req, res) => {
                     notes: `Refill logged on trip ${trip.tripNumber}`
                 });
             }
-            await vehicle.save();
-        }
-            vehicle.currentOdometer = endOdo;
             await vehicle.save();
         }
 

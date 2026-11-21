@@ -91,12 +91,12 @@ const Login = () => {
             const status = err.response?.status;
             const raw = err.response?.data;
             const rawMsg = typeof raw === 'object' ? (raw?.message || raw?.error) : (typeof raw === 'string' ? raw : null);
-            const isVercelCrash = typeof rawMsg === 'string' && (
-                rawMsg.includes('FUNCTION_INVOCATION_FAILED') ||
-                rawMsg.includes('server error has occurred') ||
-                rawMsg.includes('<!DOCTYPE') ||
-                rawMsg.includes('bom1::')
-            );
+            const rawLower = typeof rawMsg === 'string' ? rawMsg.toLowerCase() : '';
+            const isVercelCrash = rawLower.includes('function_invocation_failed') ||
+                rawLower.includes('server error') ||
+                rawLower.includes('internal server error') ||
+                rawLower.includes('<!doctype') ||
+                rawLower.includes('bom1::');
 
             if (status === 401) {
                 setError(rawMsg && !isVercelCrash ? rawMsg : 'Invalid email/username or password. Please verify your credentials.');
