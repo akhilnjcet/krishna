@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { generateWarrantyCertificatePDF } from '../../services/pdfService';
 import { 
     ShieldCheck, Plus, Search, Filter, Phone, Mail, 
     Calendar, CheckCircle2, Clock, Wrench, AlertTriangle, 
-    X, RefreshCw, Star, User, FileText, ChevronRight, Loader2
+    X, RefreshCw, Star, User, FileText, ChevronRight, Loader2,
+    Download, Eye, Printer, Award, Check, FileCheck
 } from 'lucide-react';
 
 const AdminWarrantyService = () => {
@@ -27,6 +29,9 @@ const AdminWarrantyService = () => {
     const [showRepairModal, setShowRepairModal] = useState(false);
     const [showSignOffModal, setShowSignOffModal] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [previewWarranty, setPreviewWarranty] = useState(null);
+    const [downloadingId, setDownloadingId] = useState(null);
 
     // Form states
     const [warrantyForm, setWarrantyForm] = useState({
@@ -253,6 +258,38 @@ const AdminWarrantyService = () => {
         }
     };
 
+    const handleDownloadWarranty = async (w) => {
+        if (!w) return;
+        setDownloadingId(w._id);
+        try {
+            await generateWarrantyCertificatePDF(w);
+        } catch (err) {
+            console.error('Failed to generate warranty PDF:', err);
+            alert('Failed to generate warranty PDF certificate. Please check console for details.');
+        } finally {
+            setDownloadingId(null);
+        }
+    };
+
+    const handlePreviewWarranty = (w) => {
+        setPreviewWarranty(w);
+        setShowPreviewModal(true);
+    };
+
+    const filteredWarranties = warranties.filter(w => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+            (w.warrantyNumber && w.warrantyNumber.toLowerCase().includes(q)) ||
+            (w.customerName && w.customerName.toLowerCase().includes(q)) ||
+            (w.customerPhone && w.customerPhone.toLowerCase().includes(q)) ||
+            (w.projectTitle && w.projectTitle.toLowerCase().includes(q)) ||
+            (w.deliveredItem && w.deliveredItem.toLowerCase().includes(q)) ||
+            (w.category && w.category.toLowerCase().includes(q)) ||
+            (w.serialNumber && w.serialNumber.toLowerCase().includes(q))
+        );
+    });
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -390,36 +427,72 @@ const AdminWarrantyService = () => {
                                     <th className="p-3">Start Date</th>
                                     <th className="p-3">Expiry Date</th>
                                     <th className="p-3 text-center">Status</th>
+                                    <th className="p-3 text-right">Warranty Card & PDF</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {warranties.map(w => (
-                                    <tr key={w._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                                        <td className="p-3 font-mono font-black text-slate-900 dark:text-white">{w.warrantyNumber}</td>
-                                        <td className="p-3 font-bold text-slate-800 dark:text-slate-200">
-                                            {w.customerName}
-                                            <span className="block text-[10px] text-slate-400 font-normal">{w.customerPhone}</span>
-                                        </td>
-                                        <td className="p-3">
-                                            <span className="font-bold text-slate-900 dark:text-white block">{w.deliveredItem}</span>
-                                            <span className="text-[10px] text-slate-400">{w.projectTitle}</span>
-                                        </td>
-                                        <td className="p-3 text-slate-500">{w.category}</td>
-                                        <td className="p-3 text-slate-500">{new Date(w.startDate).toLocaleDateString()}</td>
-                                        <td className="p-3 font-bold text-slate-900 dark:text-white">
-                                            {new Date(w.expiryDate).toLocaleDateString()} ({w.durationMonths}m)
-                                        </td>
-                                        <td className="p-3 text-center">
-                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                                                w.status === 'Active' 
-                                                    ? 'bg-emerald-100 text-emerald-800' 
-                                                    : 'bg-slate-100 text-slate-600'
-                                            }`}>
-                                                {w.status}
-                                            </span>
+                                {filteredWarranties.length > 0 ? (
+                                    filteredWarranties.map(w => (
+                                        <tr key={w._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                            <td className="p-3 font-mono font-black text-slate-900 dark:text-white">{w.warrantyNumber}</td>
+                                            <td className="p-3 font-bold text-slate-800 dark:text-slate-200">
+                                                {w.customerName}
+                                                <span className="block text-[10px] text-slate-400 font-normal">{w.customerPhone}</span>
+                                            </td>
+                                            <td className="p-3">
+                                                <span className="font-bold text-slate-900 dark:text-white block">{w.deliveredItem}</span>
+                                                <span className="text-[10px] text-slate-400">{w.projectTitle}</span>
+                                            </td>
+                                            <td className="p-3 text-slate-500">{w.category}</td>
+                                            <td className="p-3 text-slate-500">{new Date(w.startDate).toLocaleDateString()}</td>
+                                            <td className="p-3 font-bold text-slate-900 dark:text-white">
+                                                {new Date(w.expiryDate).toLocaleDateString()} ({w.durationMonths}m)
+                                            </td>
+                                            <td className="p-3 text-center">
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                                    w.status === 'Active' 
+                                                        ? 'bg-emerald-100 text-emerald-800' 
+                                                        : 'bg-slate-100 text-slate-600'
+                                                }`}>
+                                                    {w.status}
+                                                </span>
+                                            </td>
+                                            <td className="p-3 text-right">
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handlePreviewWarranty(w)}
+                                                        className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold flex items-center gap-1 transition shadow-xs cursor-pointer"
+                                                        title="Preview Warranty Card"
+                                                    >
+                                                        <Eye className="w-3.5 h-3.5 text-indigo-500" />
+                                                        <span className="hidden sm:inline">Preview</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDownloadWarranty(w)}
+                                                        disabled={downloadingId === w._id}
+                                                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1.5 transition shadow-sm active:scale-95 disabled:opacity-50 cursor-pointer"
+                                                        title="Download Official PDF Certificate"
+                                                    >
+                                                        {downloadingId === w._id ? (
+                                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                        ) : (
+                                                            <Download className="w-3.5 h-3.5" />
+                                                        )}
+                                                        <span>Download PDF</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="8" className="p-8 text-center text-slate-400">
+                                            No warranties found matching your criteria.
                                         </td>
                                     </tr>
-                                ))}
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -958,6 +1031,184 @@ const AdminWarrantyService = () => {
                                 <button type="submit" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-md">Close Service Ticket</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal: Warranty Certificate & Acknowledgement Preview */}
+            {showPreviewModal && previewWarranty && (
+                <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-auto">
+                        {/* Header bar */}
+                        <div className="p-4 sm:p-5 bg-slate-900 text-white flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                                <div>
+                                    <h2 className="text-sm font-black uppercase tracking-wider">Official Warranty Certificate</h2>
+                                    <p className="text-[10px] text-slate-400 font-mono">ID: {previewWarranty.warrantyNumber}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => handleDownloadWarranty(previewWarranty)}
+                                    disabled={downloadingId === previewWarranty._id}
+                                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm active:scale-95 disabled:opacity-50"
+                                >
+                                    {downloadingId === previewWarranty._id ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                        <Download className="w-3.5 h-3.5" />
+                                    )}
+                                    <span>Download PDF</span>
+                                </button>
+                                <button
+                                    onClick={() => setShowPreviewModal(false)}
+                                    className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Interactive Certificate Card Body */}
+                        <div className="p-5 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+                            {/* Certificate Banner */}
+                            <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800/60 relative overflow-hidden">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider mb-2">
+                                            <Award className="w-3 h-3" /> Certified Guarantee
+                                        </div>
+                                        <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                            Krishna Engineering Works
+                                        </h3>
+                                        <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
+                                            Structural Fabrication & Industrial Engineering Warranty Card
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-[10px] text-slate-400 font-bold block uppercase">Status</span>
+                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase inline-block ${
+                                            previewWarranty.status === 'Active' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300' : 'bg-slate-100 text-slate-700'
+                                        }`}>
+                                            {previewWarranty.status}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Details Grid */}
+                            <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                                <div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Customer / Client</span>
+                                    <p className="font-black text-slate-900 dark:text-white">{previewWarranty.customerName}</p>
+                                    <p className="text-[11px] text-slate-500 font-mono">{previewWarranty.customerPhone || '—'}</p>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Project Reference</span>
+                                    <p className="font-bold text-slate-800 dark:text-slate-200">{previewWarranty.projectTitle || '—'}</p>
+                                    <span className="text-[10px] text-slate-400">Category: {previewWarranty.category}</span>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Delivered Equipment / Item</span>
+                                    <p className="font-bold text-slate-800 dark:text-slate-200">{previewWarranty.deliveredItem}</p>
+                                    {previewWarranty.serialNumber && (
+                                        <p className="text-[10px] text-slate-500 font-mono">Serial: {previewWarranty.serialNumber}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Warranty Period</span>
+                                    <p className="font-bold text-slate-800 dark:text-slate-200">
+                                        {new Date(previewWarranty.startDate).toLocaleDateString()} to {new Date(previewWarranty.expiryDate).toLocaleDateString()}
+                                    </p>
+                                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                                        {previewWarranty.durationMonths} Months Duration
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Standard Coverage Scope Checklist */}
+                            <div className="space-y-2 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 bg-white dark:bg-slate-900">
+                                <h4 className="font-bold text-[11px] text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                                    <FileCheck className="w-3.5 h-3.5 text-emerald-600" /> Certified Coverage Scope
+                                </h4>
+                                <div className="grid sm:grid-cols-2 gap-2 text-[11px]">
+                                    <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                        <span>Structural weld seams & joint integrity</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                        <span>Certified steel grade compliance</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                        <span>Deflection & dimensional tolerance (±0.5mm)</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                        <span>Free on-site diagnostic service visits</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Terms & Exclusions */}
+                            <div className="space-y-2 text-[11px]">
+                                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+                                    <span className="font-bold text-slate-800 dark:text-slate-200 block text-[10px] uppercase text-emerald-700 dark:text-emerald-400">Coverage Terms:</span>
+                                    <p className="text-slate-600 dark:text-slate-400 mt-0.5">{previewWarranty.coverageTerms || 'Full structural weld integrity, anti-sag alignment, and primary installation warranty against manufacturing defects.'}</p>
+                                </div>
+                                <div className="p-3 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40">
+                                    <span className="font-bold block text-[10px] uppercase text-rose-600 dark:text-rose-400">Exclusions:</span>
+                                    <p className="text-slate-600 dark:text-slate-400 mt-0.5">{previewWarranty.exclusions || 'Damage caused by natural disasters, intentional impact, external mechanical abuse, unapproved third-party alterations, or acid/chemical exposure.'}</p>
+                                </div>
+                            </div>
+
+                            {/* Dual Signatures Preview */}
+                            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
+                                <div>
+                                    <div className="w-32 border-b border-slate-300 dark:border-slate-700 pb-1 mb-1 font-bold text-slate-800 dark:text-slate-200">
+                                        Krishna Engg Quality
+                                    </div>
+                                    <span>Authorized Quality Head</span>
+                                </div>
+                                <div className="text-right">
+                                    <div className="w-32 border-b border-slate-300 dark:border-slate-700 pb-1 mb-1 font-bold text-slate-800 dark:text-slate-200">
+                                        {previewWarranty.customerName}
+                                    </div>
+                                    <span>Customer Acknowledgement</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer bar */}
+                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <span className="text-[10px] text-slate-400">
+                                Krishna Engineering Works • Official Document Generator
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPreviewModal(false)}
+                                    className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                                >
+                                    Close
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleDownloadWarranty(previewWarranty)}
+                                    disabled={downloadingId === previewWarranty._id}
+                                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
+                                >
+                                    {downloadingId === previewWarranty._id ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                        <Download className="w-3.5 h-3.5" />
+                                    )}
+                                    <span>Download PDF Certificate</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

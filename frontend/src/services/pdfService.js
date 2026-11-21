@@ -1245,3 +1245,208 @@ export const generateScrapReportPDF = async (records = [], summary = {}) => {
 
     savePDF(doc, `Scrap_Wastage_Report_${Date.now()}.pdf`);
 };
+
+// ─── WARRANTY CERTIFICATE & ACKNOWLEDGEMENT CARD ──────────────────────
+export const generateWarrantyCertificatePDF = async (warranty, options = {}) => {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const branding = await getBrandingSettings();
+    const companyName = branding.company_name || COMPANY_DETAILS.name;
+    const companyTagline = branding.company_tagline || COMPANY_DETAILS.tagline;
+    const companyAddress = branding.company_address || COMPANY_DETAILS.address;
+    const companyContact = branding.company_phone ? `Phone: ${branding.company_phone} | Email: ${branding.company_email || 'contact@krishnaengg.com'}` : COMPANY_DETAILS.contact;
+    const gstin = branding.company_gstin || COMPANY_DETAILS.gstin;
+
+    const certNum = warranty.warrantyNumber || `WAR-${Math.floor(100000 + Math.random() * 900000)}`;
+    const issueDate = warranty.startDate ? new Date(warranty.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-IN');
+    const expiryDate = warranty.expiryDate ? new Date(warranty.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+    const durationMonths = warranty.durationMonths || 12;
+    const customerName = warranty.customerName || 'Valued Customer';
+    const customerPhone = warranty.customerPhone || '—';
+    const projectTitle = warranty.projectTitle || '—';
+    const deliveredItem = warranty.deliveredItem || 'Fabricated Metal Assembly';
+    const category = warranty.category || 'Structural Steel';
+    const serialNumber = warranty.serialNumber || 'N/A';
+    const status = (warranty.status || 'Active').toUpperCase();
+
+    // 1. Double Border - Emerald & Navy Slate
+    doc.setDrawColor(15, 23, 42); // Slate 900
+    doc.setLineWidth(1.2);
+    doc.rect(7, 7, 196, 283);
+    doc.setDrawColor(5, 150, 105); // Emerald 600
+    doc.setLineWidth(0.4);
+    doc.rect(9, 9, 192, 279);
+
+    // 2. Official Header
+    doc.setFillColor(15, 23, 42);
+    doc.rect(10, 10, 190, 28, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text(companyName, 105, 19, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(167, 243, 208); // Emerald 200
+    doc.text(companyTagline, 105, 25, { align: 'center' });
+    doc.setFontSize(7.5);
+    doc.setTextColor(226, 232, 240);
+    doc.text(`${companyAddress} | ${companyContact} | ${gstin}`, 105, 31, { align: 'center' });
+
+    // 3. Warranty Title Banner
+    doc.setFillColor(5, 150, 105); // Emerald 600
+    doc.rect(25, 43, 160, 10, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text('OFFICIAL WARRANTY CERTIFICATE & ACKNOWLEDGEMENT CARD', 105, 49.5, { align: 'center' });
+
+    // Certificate Meta Row
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(5, 150, 105);
+    doc.text(`Certificate No: ${certNum}`, 14, 60);
+
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Status: ${status}`, 105, 60, { align: 'center' });
+    doc.text(`Period: ${durationMonths} Months (${issueDate} to ${expiryDate})`, 196, 60, { align: 'right' });
+
+    // 4. Salutation & Official Guarantee Declaration
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(15, 23, 42);
+    const declaration = `Krishna Engineering Works hereby issues this Certificate of Product & Structural Warranty to the registered customer named herein. This certifies that the delivered engineering items and fabricated assemblies have been manufactured under strict quality standards and are guaranteed against material defects, weld seam failures, and fabrication flaws during the certified warranty period.`;
+    doc.text(doc.splitTextToSize(declaration, 182), 14, 67);
+
+    // 5. Warranty Details Table
+    autoTable(doc, {
+        startY: 77,
+        margin: { left: 14, right: 14 },
+        body: [
+            ['Customer / Client Name:', customerName, 'Contact Phone / Email:', `${customerPhone} ${warranty.customerEmail ? ' / ' + warranty.customerEmail : ''}`],
+            ['Project Reference:', projectTitle, 'Item / Equipment Name:', deliveredItem],
+            ['Fabrication Category:', category, 'Serial / Tag ID:', serialNumber],
+            ['Warranty Commencement:', issueDate, 'Warranty Expiration:', `${expiryDate} (${durationMonths} Months)`]
+        ],
+        theme: 'grid',
+        styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 2.8 },
+        columnStyles: {
+            0: { fontStyle: 'bold', fillColor: [241, 245, 249], width: 44 },
+            1: { width: 51 },
+            2: { fontStyle: 'bold', fillColor: [241, 245, 249], width: 44 },
+            3: { width: 51 }
+        }
+    });
+
+    // 6. Quality & Coverage Standards Table
+    const scopeData = [
+        ['1', 'Structural Weld Seams & Joint Integrity', 'COVERED', 'Full coverage for structural welds against cracking, detachment, or joint failure'],
+        ['2', 'Material Specification & Grade Compliance', 'COVERED', 'Guaranteed compliance with ordered steel grade & certified yield strength'],
+        ['3', 'Dimensional Tolerance & Anti-Sag Alignment', 'COVERED', 'Precision fabrication within standard engineering deflection tolerances'],
+        ['4', 'Protective Surface Coating (Adhesion)', 'COVERED', 'Primer and initial protective coat against peeling under standard conditions'],
+        ['5', 'Complimentary Technical Service & Inspection', 'COVERED', 'Free on-site diagnostic and corrective repair during active warranty window']
+    ];
+
+    autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 5,
+        margin: { left: 14, right: 14 },
+        head: [['#', 'Certified Warranty Scope Item', 'Coverage', 'Engineering Standards & Protection Benchmarks']],
+        body: scopeData,
+        theme: 'striped',
+        headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold', fontSize: 8.5 },
+        styles: { font: 'helvetica', fontSize: 8, cellPadding: 2.4 },
+        columnStyles: {
+            0: { halign: 'center', width: 10 },
+            1: { fontStyle: 'bold', width: 66 },
+            2: { fontStyle: 'bold', halign: 'center', width: 26, textColor: [5, 150, 105] },
+            3: { width: 88 }
+        }
+    });
+
+    let currentY = doc.lastAutoTable.finalY + 5;
+
+    // 7. Terms & Exclusions Box
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(14, currentY, 182, 34, 2, 2, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(5, 150, 105);
+    doc.text('COVERAGE SCOPE & SPECIAL CONDITIONS:', 18, currentY + 5.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(51, 65, 85);
+    const coverageText = warranty.coverageTerms || 'Full structural weld integrity, anti-sag alignment, and primary installation warranty against manufacturing defects.';
+    doc.text(doc.splitTextToSize(coverageText, 174), 18, currentY + 10.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(225, 29, 72); // Rose 600
+    doc.text('EXCLUSIONS & LIMITATIONS:', 18, currentY + 20);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(51, 65, 85);
+    const exclusionsText = warranty.exclusions || 'Damage caused by natural disasters, intentional impact, external mechanical abuse, unapproved third-party alterations, or acid/chemical exposure.';
+    doc.text(doc.splitTextToSize(exclusionsText, 174), 18, currentY + 25);
+
+    currentY += 38;
+
+    // 8. Service Claim Procedure
+    doc.setFillColor(236, 253, 245); // Emerald 50
+    doc.setDrawColor(167, 243, 208); // Emerald 200
+    doc.roundedRect(14, currentY, 182, 17, 2, 2, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(6, 95, 70); // Emerald 800
+    doc.text('HOW TO CLAIM SERVICE UNDER THIS WARRANTY:', 18, currentY + 5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(6, 95, 70);
+    doc.text('• To book a service or maintenance visit, log in to Krishna ERP or contact our Customer Support Helpline.', 18, currentY + 9.5);
+    doc.text(`• Reference Certificate No: ${certNum} for expedited priority dispatch within 24-48 business hours.`, 18, currentY + 13.5);
+
+    currentY += 22;
+
+    // 9. Dual Signature & Official Seals Block
+    doc.setDrawColor(203, 213, 225);
+    doc.line(18, currentY + 16, 80, currentY + 16);
+    doc.line(130, currentY + 16, 192, currentY + 16);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text('AUTHORIZED QUALITY HEAD & SEAL', 18, currentY + 20);
+    doc.text('CUSTOMER ACCEPTANCE SIGNATURE', 130, currentY + 20);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`${companyName} | Quality Assurance`, 18, currentY + 24);
+    doc.text(`${customerName} | Received & Acknowledged`, 130, currentY + 24);
+
+    // 10. Verification Hash Footnote
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Security Verification Hash: SHA256-${certNum.replace(/[^A-Za-z0-9]/g, '')}-WARRANTY-CARD | Krishna Industrial ERP`, 105, 280, { align: 'center' });
+
+    if (options.returnDocOnly) {
+        return doc;
+    }
+
+    // Save & Record in DocumentHistory
+    const historyMetadata = {
+        documentType: 'Warranty Certificate',
+        documentNumber: certNum,
+        customerId: warranty.customerId?._id || warranty.customerId || null,
+        projectId: warranty.projectId?._id || warranty.projectId || null,
+        status: status,
+        data: { warrantyNumber: certNum, customerName, deliveredItem, expiryDate }
+    };
+    await savePDF(doc, `Warranty_Certificate_${certNum}.pdf`, historyMetadata);
+    return doc;
+};
