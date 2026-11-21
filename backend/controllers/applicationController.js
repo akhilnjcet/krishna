@@ -54,7 +54,8 @@ exports.getApplicationById = async (req, res) => {
             return res.status(404).json({ message: 'Application not found' });
         }
 
-        if ((req.user.role === 'staff' || req.user.role === 'driver') && application.staffId._id.toString() !== req.user.id.toString()) {
+        const appStaffId = application.staffId?._id?.toString() || application.staffId?.toString() || '';
+        if ((req.user.role === 'staff' || req.user.role === 'driver') && appStaffId !== req.user.id.toString()) {
             return res.status(403).json({ message: 'Access denied' });
         }
         res.json(application);
@@ -143,7 +144,8 @@ exports.getApplicationComparison = async (req, res) => {
             return res.status(404).json({ message: 'Application not found' });
         }
 
-        if ((req.user.role === 'staff' || req.user.role === 'driver') && application.staffId._id.toString() !== req.user.id.toString()) {
+        const appStaffId = application.staffId?._id?.toString() || application.staffId?.toString() || '';
+        if ((req.user.role === 'staff' || req.user.role === 'driver') && appStaffId !== req.user.id.toString()) {
             return res.status(403).json({ message: 'Access denied' });
         }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -37,13 +37,19 @@ const AdminApplications = () => {
     const [showAuditModal, setShowAuditModal] = useState(false);
     const [auditApp, setAuditApp] = useState(null);
 
+    const formatLabel = (val) => {
+        if (!val || typeof val !== 'string') return 'General';
+        return val.replace(/_/g, ' ');
+    };
+
     const fetchApplications = useCallback(async () => {
         setLoading(true);
         try {
             const res = await api.get(`/applications?status=${filterStatus}&type=${filterType}`);
-            setApplications(res.data);
+            setApplications(Array.isArray(res.data) ? res.data : (res.data?.applications || []));
         } catch (err) {
             console.error("Failed to fetch applications:", err);
+            setApplications([]);
         } finally {
             setLoading(false);
         }
@@ -88,16 +94,16 @@ const AdminApplications = () => {
             setReconcileData(res.data);
 
             // Initialize entry decisions based on requested values
-            const initialDecisions = (res.data.comparisons || []).map(c => ({
-                entryId: c.entry._id,
-                date: c.entry.date,
-                status: c.entry.status === 'rejected' ? 'rejected' : 'approved',
-                approvedCheckIn: c.entry.approvedCheckIn || c.entry.requestedIn || '09:00',
-                approvedCheckOut: c.entry.approvedCheckOut || c.entry.requestedOut || '18:00',
-                approvedOvertimeHours: c.entry.approvedOvertimeHours !== undefined 
-                    ? c.entry.approvedOvertimeHours 
-                    : (c.entry.overtimeHours || 0),
-                adminRemark: c.entry.adminRemark || ''
+            const initialDecisions = (res.data?.comparisons || []).map((c, idx) => ({
+                entryId: c?.entry?._id || `entry-${idx}`,
+                date: c?.entry?.date || '',
+                status: c?.entry?.status === 'rejected' ? 'rejected' : 'approved',
+                approvedCheckIn: c?.entry?.approvedCheckIn || c?.entry?.requestedIn || '09:00',
+                approvedCheckOut: c?.entry?.approvedCheckOut || c?.entry?.requestedOut || '18:00',
+                approvedOvertimeHours: c?.entry?.approvedOvertimeHours !== undefined 
+                    ? c?.entry?.approvedOvertimeHours 
+                    : (c?.entry?.overtimeHours || 0),
+                adminRemark: c?.entry?.adminRemark || ''
             }));
             setEntryDecisions(initialDecisions);
         } catch (err) {
@@ -155,7 +161,7 @@ const AdminApplications = () => {
     };
 
     const getStatusColor = (status) => {
-        switch(status?.toLowerCase()) {
+        switch((status || '').toLowerCase()) {
             case 'approved': return 'bg-emerald-100 text-emerald-800 border-emerald-300';
             case 'partially_approved': return 'bg-cyan-100 text-cyan-800 border-cyan-300';
             case 'rejected': return 'bg-red-100 text-red-800 border-red-300';
@@ -164,15 +170,23 @@ const AdminApplications = () => {
         }
     };
 
-    // Filter applications by search
-    const filteredApplications = applications.filter(app => {
-        if (!searchQuery) return true;
+    // Filter applications by search safely
+    const filteredApplications = useMemo(() => {
+        const list = Array.isArray(applications) ? applications : [];
+        if (!searchQuery.trim()) return list;
         const q = searchQuery.toLowerCase();
-        return (app.staffId?.name && app.staffId.name.toLowerCase().includes(q)) ||
-               (app.title && app.title.toLowerCase().includes(q)) ||
-               (app.description && app.description.toLowerCase().includes(q)) ||
-               (app.reason && app.reason.toLowerCase().includes(q));
-    });
+        return list.filter(app => {
+            if (!app) return false;
+            const staffName = (typeof app.staffId === 'object' ? app.staffId?.name : '') || app.senderName || '';
+            const title = app.title || '';
+            const description = app.description || '';
+            const reason = app.reason || '';
+            return staffName.toLowerCase().includes(q) ||
+                   title.toLowerCase().includes(q) ||
+                   description.toLowerCase().includes(q) ||
+                   reason.toLowerCase().includes(q);
+        });
+    }, [applications, searchQuery]);
 
     // Check if any comparison item has a locked payroll month
     const anyLockedMonth = reconcileData?.comparisons?.some(c => c.payrollLocked);
@@ -272,78 +286,86 @@ const AdminApplications = () => {
                             No matching applications found.
                         </div>
                     ) : (
-                        filteredApplications.map((app) => (
-                            <div key={`m-app-${app._id}`} className="p-4 bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-3">
-                                <div className="flex items-start justify-between gap-2">
-                                    <div className="flex items-center gap-2.5 min-w-0">
-                                        <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/60 rounded-xl flex items-center justify-center font-black text-indigo-600 text-sm uppercase shrink-0">
-                                            {app.staffId?.name?.charAt(0) || 'S'}
+                        filteredApplications.map((app) => {
+                            const staffName = (typeof app.staffId === 'object' ? app.staffId?.name : '') || app.senderName || 'Staff Member';
+                            const staffInitial = staffName.charAt(0).toUpperCase() || 'S';
+                            const deptName = (typeof app.staffId === 'object' ? app.staffId?.department : '') || 'Staff Registry';
+                            const entriesList = Array.isArray(app.entries) ? app.entries : [];
+                            const totalOt = entriesList.reduce((acc, e) => acc + (Number(e?.overtimeHours) || 0), 0);
+
+                            return (
+                                <div key={`m-app-${app._id}`} className="p-4 bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-3">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/60 rounded-xl flex items-center justify-center font-black text-indigo-600 text-sm uppercase shrink-0">
+                                                {staffInitial}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h4 className="font-black text-slate-900 dark:text-white text-sm uppercase tracking-tight truncate">{staffName}</h4>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{formatLabel(app.type)}</p>
+                                            </div>
                                         </div>
-                                        <div className="min-w-0">
-                                            <h4 className="font-black text-slate-900 dark:text-white text-sm uppercase tracking-tight truncate">{app.staffId?.name}</h4>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{app.type.replace(/_/g, ' ')}</p>
-                                        </div>
+                                        <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border shrink-0 whitespace-nowrap ${getStatusColor(app.status)}`}>
+                                            {formatLabel(app.status)}
+                                        </span>
                                     </div>
-                                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border shrink-0 whitespace-nowrap ${getStatusColor(app.status)}`}>
-                                        {app.status.replace(/_/g, ' ')}
-                                    </span>
-                                </div>
 
-                                <div className="text-xs bg-white dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5">
-                                    <p className="font-black text-slate-900 dark:text-white text-xs">{app.title}</p>
-                                    {app.reason && (
-                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">"{app.reason}"</p>
-                                    )}
+                                    <div className="text-xs bg-white dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5">
+                                        <p className="font-black text-slate-900 dark:text-white text-xs">{app.title || 'Untitled Request'}</p>
+                                        {app.reason && (
+                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">"{app.reason}"</p>
+                                        )}
 
-                                    {app.entries && app.entries.length > 0 && (
-                                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                                            <span className="text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-900">
-                                                📅 {app.entries.length} Dates
-                                            </span>
-                                            {app.type === 'unlogged_overtime' && (
-                                                <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-900">
-                                                    ⏱️ {app.entries.reduce((acc, e) => acc + (e.overtimeHours || 0), 0)} hrs OT
+                                        {entriesList.length > 0 && (
+                                            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                                <span className="text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-900">
+                                                    📅 {entriesList.length} Dates
                                                 </span>
-                                            )}
-                                        </div>
-                                    )}
+                                                {app.type === 'unlogged_overtime' && (
+                                                    <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-900">
+                                                        ⏱️ {totalOt} hrs OT
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
 
-                                    {app.adminRemark && (
-                                        <div className="text-[10px] text-indigo-600 dark:text-indigo-400 italic pt-1 border-t border-slate-100 dark:border-slate-800">
-                                            Remark: "{app.adminRemark}"
-                                        </div>
-                                    )}
-                                </div>
+                                        {app.adminRemark && (
+                                            <div className="text-[10px] text-indigo-600 dark:text-indigo-400 italic pt-1 border-t border-slate-100 dark:border-slate-800">
+                                                Remark: "{app.adminRemark}"
+                                            </div>
+                                        )}
+                                    </div>
 
-                                <div className="flex items-center gap-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
-                                    {['unlogged_overtime', 'attendance_issue'].includes(app.type) || (app.entries && app.entries.length > 0) ? (
-                                        <button
-                                            onClick={() => handleOpenReconcile(app)}
-                                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-xl transition text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/20"
-                                        >
-                                            <Clock className="w-3.5 h-3.5" /> Side-by-Side Review ({app.entries?.length || 1} Dates)
-                                        </button>
-                                    ) : (
-                                        (app.status === 'pending' || app.status === 'reviewed') && (
-                                            <>
-                                                <button 
-                                                    onClick={() => { setSelectedApp(app); setPendingAction('approved'); setShowRemarkModal(true); }}
-                                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-2 rounded-xl transition text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm"
-                                                >
-                                                    <BadgeCheck className="w-3.5 h-3.5" /> Approve
-                                                </button>
-                                                <button 
-                                                    onClick={() => { setSelectedApp(app); setPendingAction('rejected'); setShowRemarkModal(true); }}
-                                                    className="flex-1 bg-slate-900 hover:bg-red-600 text-white py-2 px-2 rounded-xl transition text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1"
-                                                >
-                                                    <XCircle className="w-3.5 h-3.5" /> Reject
-                                                </button>
-                                            </>
-                                        )
-                                    )}
+                                    <div className="flex items-center gap-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                                        {['unlogged_overtime', 'attendance_issue'].includes(app.type) || entriesList.length > 0 ? (
+                                            <button
+                                                onClick={() => handleOpenReconcile(app)}
+                                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-xl transition text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/20"
+                                            >
+                                                <Clock className="w-3.5 h-3.5" /> Side-by-Side Review ({entriesList.length || 1} Dates)
+                                            </button>
+                                        ) : (
+                                            (app.status === 'pending' || app.status === 'reviewed') && (
+                                                <>
+                                                    <button 
+                                                        onClick={() => { setSelectedApp(app); setPendingAction('approved'); setShowRemarkModal(true); }}
+                                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-2 rounded-xl transition text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm"
+                                                    >
+                                                        <BadgeCheck className="w-3.5 h-3.5" /> Approve
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => { setSelectedApp(app); setPendingAction('rejected'); setShowRemarkModal(true); }}
+                                                        className="flex-1 bg-slate-900 hover:bg-red-600 text-white py-2 px-2 rounded-xl transition text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1"
+                                                    >
+                                                        <XCircle className="w-3.5 h-3.5" /> Reject
+                                                    </button>
+                                                </>
+                                            )
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
 
@@ -373,19 +395,26 @@ const AdminApplications = () => {
                                         No authorized applications found in this sector.
                                     </td>
                                 </tr>
-                            ) : filteredApplications.map((app, i) => (
+                            ) : filteredApplications.map((app) => {
+                                const staffName = (typeof app.staffId === 'object' ? app.staffId?.name : '') || app.senderName || 'Staff Member';
+                                const staffInitial = staffName.charAt(0).toUpperCase() || 'S';
+                                const deptName = (typeof app.staffId === 'object' ? app.staffId?.department : '') || 'Staff Registry';
+                                const entriesList = Array.isArray(app.entries) ? app.entries : [];
+                                const totalOt = entriesList.reduce((acc, e) => acc + (Number(e?.overtimeHours) || 0), 0);
+
+                                return (
                                 <tr key={app._id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group">
                                     <td className="p-6">
                                         <div className="flex items-center gap-3">
                                             <div className="w-11 h-11 bg-indigo-50 dark:bg-indigo-950/60 rounded-2xl flex items-center justify-center font-black text-indigo-600 border border-indigo-100 dark:border-indigo-900 uppercase text-sm">
-                                                {app.staffId?.name?.charAt(0) || 'S'}
+                                                {staffInitial}
                                             </div>
                                             <div>
                                                 <div className="font-black text-slate-900 dark:text-white leading-tight text-sm uppercase tracking-tight">
-                                                    {app.staffId?.name}
+                                                    {staffName}
                                                 </div>
                                                 <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
-                                                    {app.staffId?.department || 'Staff Registry'}
+                                                    {deptName}
                                                 </div>
                                             </div>
                                         </div>
@@ -396,34 +425,34 @@ const AdminApplications = () => {
                                                 {getTypeIcon(app.type)}
                                             </div>
                                             <span className="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wider">
-                                                {app.type.replace(/_/g, ' ')}
+                                                {formatLabel(app.type)}
                                             </span>
                                         </div>
                                     </td>
                                     <td className="p-6">
                                         <div className="max-w-sm space-y-1">
-                                            <p className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">{app.title}</p>
+                                            <p className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">{app.title || 'Untitled Request'}</p>
                                             {app.reason && (
                                                 <p className="text-[11px] font-medium text-slate-400 italic line-clamp-1">"{app.reason}"</p>
                                             )}
                                             
                                             {/* Multi-date rows indicator */}
-                                            {app.entries && app.entries.length > 0 ? (
+                                            {entriesList.length > 0 ? (
                                                 <div className="flex flex-wrap items-center gap-1.5 pt-1">
                                                     <span className="text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-0.5 rounded-lg border border-indigo-100 dark:border-indigo-900">
-                                                        📅 {app.entries.length} Date{app.entries.length > 1 ? 's' : ''}
+                                                        📅 {entriesList.length} Date{entriesList.length > 1 ? 's' : ''}
                                                     </span>
                                                     {app.type === 'unlogged_overtime' && (
                                                         <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-0.5 rounded-lg border border-emerald-100 dark:border-emerald-900">
-                                                            ⏱️ {app.entries.reduce((acc, e) => acc + (e.overtimeHours || 0), 0)} hrs OT
+                                                            ⏱️ {totalOt} hrs OT
                                                         </span>
                                                     )}
                                                     <span className="text-[10px] text-slate-400 font-mono">
-                                                        ({app.entries.slice(0, 2).map(e => e.date).join(', ')}{app.entries.length > 2 ? '...' : ''})
+                                                        ({entriesList.slice(0, 2).map(e => e?.date || 'N/A').join(', ')}{entriesList.length > 2 ? '...' : ''})
                                                     </span>
                                                 </div>
                                             ) : app.amount > 0 ? (
-                                                <span className="text-xs font-black text-emerald-600">₹{app.amount.toLocaleString()}</span>
+                                                <span className="text-xs font-black text-emerald-600">₹{Number(app.amount).toLocaleString()}</span>
                                             ) : app.startDate ? (
                                                 <span className="text-[10px] font-bold text-slate-400">
                                                     {new Date(app.startDate).toLocaleDateString()} - {new Date(app.endDate).toLocaleDateString()}
@@ -434,7 +463,7 @@ const AdminApplications = () => {
                                     <td className="p-6">
                                         <div className="flex flex-col gap-1">
                                             <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border w-fit ${getStatusColor(app.status)}`}>
-                                                {app.status.replace(/_/g, ' ')}
+                                                {formatLabel(app.status)}
                                             </span>
                                             {app.adminRemark && (
                                                 <span className="text-[10px] font-medium text-slate-400 italic line-clamp-1">
@@ -484,7 +513,8 @@ const AdminApplications = () => {
                                         )}
                                     </td>
                                 </tr>
-                            ))}
+                            );
+                        })}
                         </tbody>
                     </table>
                 </div>
@@ -507,10 +537,10 @@ const AdminApplications = () => {
                                         <Clock className="w-3.5 h-3.5" /> Attendance & Overtime Reconciliation Engine
                                     </div>
                                     <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                                        {selectedApp.title}
+                                        {selectedApp.title || 'Staff Request'}
                                     </h3>
                                     <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                                        Staff: <span className="text-slate-800 dark:text-slate-200">{selectedApp.staffId?.name}</span> | Type: <span className="text-indigo-600">{selectedApp.type.replace(/_/g, ' ')}</span>
+                                        Staff: <span className="text-slate-800 dark:text-slate-200">{(typeof selectedApp.staffId === 'object' ? selectedApp.staffId?.name : '') || selectedApp.senderName || 'Staff Member'}</span> | Type: <span className="text-indigo-600">{formatLabel(selectedApp.type)}</span>
                                     </p>
                                 </div>
                                 <button 
@@ -576,7 +606,7 @@ const AdminApplications = () => {
                                             const decision = entryDecisions[idx] || {};
                                             return (
                                                 <div 
-                                                    key={item.entry._id || idx}
+                                                    key={item?.entry?._id || idx}
                                                     className={`p-4 rounded-3xl border transition-all ${
                                                         decision.status === 'approved' 
                                                         ? 'bg-white dark:bg-slate-900 border-indigo-100 dark:border-indigo-900/60 shadow-sm' 
@@ -587,12 +617,12 @@ const AdminApplications = () => {
                                                     <div className="flex flex-wrap items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800 gap-2">
                                                         <div className="flex items-center gap-2">
                                                             <span className="font-black text-slate-900 dark:text-white text-sm">
-                                                                📅 {item.entry.date}
+                                                                📅 {item?.entry?.date || 'N/A'}
                                                             </span>
                                                             <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md">
-                                                                {item.entry.issueType?.replace(/_/g, ' ')}
+                                                                {formatLabel(item?.entry?.issueType)}
                                                             </span>
-                                                            {item.payrollLocked && (
+                                                            {item?.payrollLocked && (
                                                                 <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-rose-100 text-rose-700 rounded-md flex items-center gap-1">
                                                                     <ShieldAlert className="w-3 h-3" /> Payroll Finalized (PAID)
                                                                 </span>
@@ -630,16 +660,16 @@ const AdminApplications = () => {
                                                                 <User className="w-3 h-3" /> Staff Requested
                                                             </div>
                                                             <div className="font-bold text-slate-800 dark:text-slate-200">
-                                                                In: <span className="font-mono text-indigo-600">{item.entry.requestedIn || '--'}</span> | Out: <span className="font-mono text-indigo-600">{item.entry.requestedOut || '--'}</span>
+                                                                In: <span className="font-mono text-indigo-600">{item?.entry?.requestedIn || '--'}</span> | Out: <span className="font-mono text-indigo-600">{item?.entry?.requestedOut || '--'}</span>
                                                             </div>
-                                                            {item.entry.overtimeHours > 0 && (
+                                                            {Number(item?.entry?.overtimeHours) > 0 && (
                                                                 <div className="font-black text-emerald-600">
-                                                                    Claimed OT: {item.entry.overtimeHours} hrs
+                                                                    Claimed OT: {item?.entry?.overtimeHours} hrs
                                                                 </div>
                                                             )}
-                                                            {item.entry.explanation && (
+                                                            {item?.entry?.explanation && (
                                                                 <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">
-                                                                    "{item.entry.explanation}"
+                                                                    "{item?.entry?.explanation}"
                                                                 </p>
                                                             )}
                                                         </div>
@@ -818,7 +848,7 @@ const AdminApplications = () => {
                         >
                             <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-1 italic">Official Decision</h3>
                             <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px] mb-6">
-                                Application: {selectedApp.title} | Action: <span className={pendingAction === 'approved' ? 'text-emerald-500' : 'text-rose-500'}>{pendingAction}</span>
+                                Application: {selectedApp.title || 'Staff Request'} | Action: <span className={pendingAction === 'approved' ? 'text-emerald-500' : 'text-rose-500'}>{pendingAction}</span>
                             </p>
                             
                             <div className="space-y-4">

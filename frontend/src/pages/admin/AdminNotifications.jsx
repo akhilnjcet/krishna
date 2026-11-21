@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
     Bell, Check, Eye, Filter, Trash2, Calendar, 
     User, Activity, Search, RefreshCw, AlertTriangle,
@@ -554,12 +555,12 @@ const AdminNotifications = () => {
                                         {/* Actions */}
                                         <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                                             {item.link && (
-                                                <a
-                                                    href={item.link}
+                                                <Link
+                                                    to={item.link}
                                                     className="px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg flex items-center gap-1 transition-colors"
                                                 >
                                                     View <ChevronRight className="w-3.5 h-3.5" />
-                                                </a>
+                                                </Link>
                                             )}
                                             <button
                                                 type="button"
