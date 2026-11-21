@@ -10,6 +10,7 @@ import {
 import { generateGeneralReportPDF } from '../../services/pdfService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getDirectImageUrl } from '../../utils/imageUtils';
+import { ERP_ACCESS_AREAS, ALL_ACCESS_AREA_IDS, SUGGESTED_ROLE_AREAS } from '../../constants/accessAreas';
 
 const AdminStaff = () => {
     const [staff, setStaff] = useState([]);
@@ -79,6 +80,7 @@ const AdminStaff = () => {
         bonusAmount: 0,
         advanceAmount: 0,
         deductionAmount: 0,
+        accessAreas: [],
         profilePhoto: ''
     });
 
@@ -246,6 +248,7 @@ const AdminStaff = () => {
             joiningDate: new Date().toISOString().split('T')[0],
             address: '', emergencyContact: '', bloodGroup: '', salaryType: 'Monthly',
             overtimeRate: 0, bonusAmount: 0, advanceAmount: 0, deductionAmount: 0,
+            accessAreas: [],
             profilePhoto: ''
         });
         setSelectedStaff(null);
@@ -503,8 +506,10 @@ const AdminStaff = () => {
                             onChange={(e) => setFilterRole(e.target.value)}
                             className="w-full pl-9 pr-8 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl appearance-none focus:ring-2 focus:ring-indigo-500/20 outline-none transition text-xs font-bold cursor-pointer"
                         >
-                            <option value="all">All Roles (Staff & Drivers)</option>
+                            <option value="all">All Roles</option>
                             <option value="staff">Standard Staff</option>
+                            <option value="manager">Managers 👔</option>
+                            <option value="finance_admin">Finance Admins 💼</option>
                             <option value="driver">Drivers Only 🚚</option>
                         </select>
                     </div>
@@ -563,6 +568,16 @@ const AdminStaff = () => {
                                             {member.role === 'driver' && (
                                                 <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">
                                                     <Truck className="w-2.5 h-2.5" /> Driver
+                                                </span>
+                                            )}
+                                            {member.role === 'manager' && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                                    <Shield className="w-2.5 h-2.5" /> Manager
+                                                </span>
+                                            )}
+                                            {member.role === 'finance_admin' && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                                    <BadgeIndianRupee className="w-2.5 h-2.5" /> Finance Admin
                                                 </span>
                                             )}
                                             {member.staffClassification === 'Non-Staff' && (
@@ -656,6 +671,7 @@ const AdminStaff = () => {
                                                 advanceAmount: member.advanceAmount || 0,
                                                 deductionAmount: member.deductionAmount || 0,
                                                 leavesAllowed: member.leavesAllowed || 2,
+                                                accessAreas: member.accessAreas || member.permissions || [],
                                                 profilePhoto: member.profilePhoto || ''
                                             });
                                             setShowEditModal(true); 
@@ -724,6 +740,16 @@ const AdminStaff = () => {
                                                     {member.role === 'driver' && (
                                                         <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">
                                                             <Truck className="w-2.5 h-2.5" /> Driver
+                                                        </span>
+                                                    )}
+                                                    {member.role === 'manager' && (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                                            <Shield className="w-2.5 h-2.5" /> Manager
+                                                        </span>
+                                                    )}
+                                                    {member.role === 'finance_admin' && (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                                            <BadgeIndianRupee className="w-2.5 h-2.5" /> Finance Admin
                                                         </span>
                                                     )}
                                                     {member.staffClassification === 'Non-Staff' && (
@@ -835,6 +861,7 @@ const AdminStaff = () => {
                                                         bonusAmount: member.bonusAmount || 0,
                                                         advanceAmount: member.advanceAmount || 0,
                                                         deductionAmount: member.deductionAmount || 0,
+                                                        accessAreas: member.accessAreas || member.permissions || [],
                                                         profilePhoto: member.profilePhoto || ''
                                                     });
                                                     setShowEditModal(true); 
@@ -917,13 +944,30 @@ const AdminStaff = () => {
                                             const nextRole = e.target.value;
                                             const update = { ...formData, role: nextRole };
                                             if (nextRole === 'driver') {
-                                                if (!formData.designation) update.designation = 'Driver';
-                                                if (!formData.department) update.department = 'Logistics & Fleet';
+                                                if (!formData.designation || formData.designation === 'Operations Manager' || formData.designation === 'Finance Administrator') update.designation = 'Driver';
+                                                if (!formData.department || formData.department === 'Operations & Plant' || formData.department === 'Finance & Accounts') update.department = 'Logistics & Fleet';
+                                                update.accessAreas = [];
+                                            } else if (nextRole === 'manager') {
+                                                if (!formData.designation || formData.designation === 'Staff Member' || formData.designation === 'Driver') update.designation = 'Operations Manager';
+                                                if (!formData.department || formData.department === 'Logistics & Fleet') update.department = 'Operations & Plant';
+                                                if (!Array.isArray(formData.accessAreas) || formData.accessAreas.length === 0) {
+                                                    update.accessAreas = [...SUGGESTED_ROLE_AREAS.manager];
+                                                }
+                                            } else if (nextRole === 'finance_admin') {
+                                                if (!formData.designation || formData.designation === 'Staff Member' || formData.designation === 'Driver') update.designation = 'Finance Administrator';
+                                                if (!formData.department || formData.department === 'Logistics & Fleet') update.department = 'Finance & Accounts';
+                                                if (!Array.isArray(formData.accessAreas) || formData.accessAreas.length === 0) {
+                                                    update.accessAreas = [...SUGGESTED_ROLE_AREAS.finance_admin];
+                                                }
+                                            } else {
+                                                update.accessAreas = [];
                                             }
                                             setFormData(update);
                                         }}
                                     >
                                         <option value="staff">Staff Operator</option>
+                                        <option value="manager">Manager 👔</option>
+                                        <option value="finance_admin">Finance Admin 💼</option>
                                         <option value="driver">Driver (Logistics & Fleet) 🚚</option>
                                         <option value="customer">Customer / External Account</option>
                                     </select>
@@ -985,6 +1029,148 @@ const AdminStaff = () => {
                                             <option value="active">Active</option>
                                             <option value="inactive">Inactive / Suspended</option>
                                         </select>
+                                    </div>
+                                )}
+
+                                {/* Selectable Access Areas (Manager & Finance Admin) */}
+                                {(formData.role === 'manager' || formData.role === 'finance_admin') && (
+                                    <div className="md:col-span-2 space-y-4 bg-indigo-50/40 dark:bg-slate-800/80 p-5 rounded-3xl border border-indigo-200 dark:border-indigo-900/50 shadow-xs">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-indigo-100 dark:border-indigo-900/40">
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="p-1.5 bg-indigo-600 text-white rounded-xl">
+                                                        <Shield className="w-4 h-4" />
+                                                    </span>
+                                                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                                                        Permitted Access Areas & Modules
+                                                    </h3>
+                                                </div>
+                                                <p className="text-xs text-slate-500 mt-1">
+                                                    Select which ERP sections this {formData.role === 'finance_admin' ? 'Finance Admin' : 'Manager'} is authorized to access and operate.
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-xs font-black px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
+                                                    {(formData.accessAreas || []).length} / {ALL_ACCESS_AREA_IDS.length} Granted
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const suggested = SUGGESTED_ROLE_AREAS[formData.role] || [];
+                                                        setFormData({ ...formData, accessAreas: [...suggested] });
+                                                    }}
+                                                    className="px-2.5 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 text-slate-700 dark:text-slate-200 rounded-lg text-[10px] font-bold uppercase transition"
+                                                >
+                                                    Suggested
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, accessAreas: [...ALL_ACCESS_AREA_IDS] })}
+                                                    className="px-2.5 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 text-slate-700 dark:text-slate-200 rounded-lg text-[10px] font-bold uppercase transition"
+                                                >
+                                                    Select All
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, accessAreas: [] })}
+                                                    className="px-2.5 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 text-rose-600 dark:text-rose-400 rounded-lg text-[10px] font-bold uppercase transition"
+                                                >
+                                                    Clear All
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Grouped Categories */}
+                                        <div className="space-y-4">
+                                            {ERP_ACCESS_AREAS.map((cat) => {
+                                                const catItemIds = cat.items.map(i => i.id);
+                                                const allCatSelected = catItemIds.every(id => (formData.accessAreas || []).includes(id));
+
+                                                const toggleCategory = () => {
+                                                    const current = formData.accessAreas || [];
+                                                    if (allCatSelected) {
+                                                        setFormData({
+                                                            ...formData,
+                                                            accessAreas: current.filter(id => !catItemIds.includes(id))
+                                                        });
+                                                    } else {
+                                                        const combined = Array.from(new Set([...current, ...catItemIds]));
+                                                        setFormData({ ...formData, accessAreas: combined });
+                                                    }
+                                                };
+
+                                                return (
+                                                    <div key={cat.category} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 space-y-3">
+                                                        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                                                            <div>
+                                                                <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                                                                    {cat.category}
+                                                                </h4>
+                                                                <p className="text-[10px] text-slate-400">{cat.description}</p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={toggleCategory}
+                                                                className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                                                            >
+                                                                {allCatSelected ? 'Deselect Category' : 'Select Category'}
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                                            {cat.items.map(item => {
+                                                                const isChecked = (formData.accessAreas || []).includes(item.id);
+                                                                const toggleItem = (e) => {
+                                                                    e.preventDefault();
+                                                                    const current = formData.accessAreas || [];
+                                                                    const next = isChecked
+                                                                        ? current.filter(id => id !== item.id)
+                                                                        : [...current, item.id];
+                                                                    setFormData({ ...formData, accessAreas: next });
+                                                                };
+
+                                                                return (
+                                                                    <div
+                                                                        key={item.id}
+                                                                        onClick={toggleItem}
+                                                                        className={`cursor-pointer p-2.5 rounded-xl border text-left transition flex items-start gap-2.5 select-none ${
+                                                                            isChecked
+                                                                                ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-400 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 shadow-xs'
+                                                                                : 'bg-slate-50/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/80 hover:border-slate-300 text-slate-700 dark:text-slate-300'
+                                                                        }`}
+                                                                    >
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={isChecked}
+                                                                            readOnly
+                                                                            className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 shrink-0 pointer-events-none"
+                                                                        />
+                                                                        <div className="min-w-0 flex-1">
+                                                                            <span className="text-xs font-bold truncate block">
+                                                                                {item.name}
+                                                                            </span>
+                                                                            <span className="text-[10px] text-slate-400 dark:text-slate-500 block truncate">
+                                                                                {item.desc}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Warning when 0 areas are selected */}
+                                        {(formData.accessAreas || []).length === 0 && (
+                                            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
+                                                <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                                                <span>
+                                                    <strong>Zero Areas Selected:</strong> This account will have no access to ERP modules until at least one area is assigned.
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 

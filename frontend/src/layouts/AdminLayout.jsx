@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
     LayoutDashboard, Layers, Image as ImageIcon, FileText, BookOpen,
@@ -17,6 +17,7 @@ import api from '../services/api';
 import ThemeToggle from '../components/ThemeToggle';
 import NotificationBellDropdown from '../components/NotificationBellDropdown';
 import { playNotificationSound, unlockAudio } from '../utils/soundService';
+import { hasUserAccessToArea } from '../constants/accessAreas';
 
 const SIDEBAR_W = 'w-[280px] max-w-[85vw]';
 const STORAGE_KEY_ORDER = 'kew_admin_sidebar_order_v1';
@@ -286,7 +287,13 @@ const SidebarContent = ({
                 </div>
                 <div className="min-w-0">
                     <p className="text-sm font-bold text-slate-900 dark:text-white truncate leading-none mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{user?.name || "Administrator"}</p>
-                    <p className="text-[10px] text-blue-600 dark:text-blue-400 font-black uppercase tracking-widest leading-none">System Root</p>
+                    <p className="text-[10px] text-blue-600 dark:text-blue-400 font-black uppercase tracking-widest leading-none">
+                        {((user?.role || user?.user?.role || '').toLowerCase() === 'manager') 
+                            ? 'Operations Manager' 
+                            : ((user?.role || user?.user?.role || '').toLowerCase() === 'finance_admin') 
+                            ? 'Finance Administrator' 
+                            : 'System Root'}
+                    </p>
                 </div>
             </Link>
             
@@ -744,10 +751,16 @@ const AdminLayout = () => {
         return () => clearInterval(sirenInterval);
     }, [criticalAlerts, isMuted]);
 
-    const role = user?.role || user?.user?.role;
+    const userRole = (user?.role || user?.user?.role || '').toLowerCase();
+    const isAllowedAdminPortal = ['admin', 'manager', 'finance_admin'].includes(userRole);
 
-    if (!isAuthenticated || role !== 'admin') {
-        const msg = `AUTH REJECT: auth=${isAuthenticated}, role=${role}`;
+    const visibleSidebarItems = useMemo(() => {
+        if (userRole === 'admin') return sidebarItems;
+        return sidebarItems.filter(item => hasUserAccessToArea(user, item.path));
+    }, [sidebarItems, userRole, user]);
+
+    if (!isAuthenticated || !isAllowedAdminPortal) {
+        const msg = `AUTH REJECT: auth=${isAuthenticated}, role=${userRole}`;
         console.warn(msg);
         
         // If we think we are in, but the role check is failing, show visible diagnostics
@@ -767,7 +780,7 @@ const AdminLayout = () => {
                       </div>
                       <div className="flex justify-between border-b border-slate-700 pb-3">
                          <span className="text-xs uppercase tracking-widest text-[#2563EB] font-bold">Detected Role</span>
-                         <span className="text-xs font-bold uppercase text-rose-400">{role || "NULL / UNDEFINED"}</span>
+                         <span className="text-xs font-bold uppercase text-rose-400">{userRole || "NULL / UNDEFINED"}</span>
                       </div>
                       <div className="flex justify-between">
                          <span className="text-xs uppercase tracking-widest text-[#2563EB] font-bold">Identity Name</span>
@@ -798,7 +811,7 @@ const AdminLayout = () => {
                         user={user} 
                         onNavClick={() => { }} 
                         onLogout={handleLogout}
-                        items={sidebarItems}
+                        items={visibleSidebarItems}
                         isLocked={isSidebarLocked}
                         onToggleLock={toggleSidebarLock}
                         onResetOrder={handleResetSidebarOrder}
@@ -829,7 +842,7 @@ const AdminLayout = () => {
                             user={user} 
                             onNavClick={closeMobile} 
                             onLogout={handleLogout}
-                            items={sidebarItems}
+                            items={visibleSidebarItems}
                             isLocked={isSidebarLocked}
                             onToggleLock={toggleSidebarLock}
                             onResetOrder={handleResetSidebarOrder}
@@ -886,7 +899,47 @@ const AdminLayout = () => {
 
                 <main className="flex-1 p-2 sm:p-4 md:p-8 pb-8 overflow-x-hidden min-w-0 w-full print:p-0 print:m-0 print:overflow-visible">
                     <div className="max-w-[1500px] mx-auto min-w-0 w-full print:max-w-none print:m-0 print:p-0">
-                        <Outlet />
+                        {(() => {
+                            const currentPath = location.pathname;
+                            const isProfile = currentPath === '/admin/profile' || currentPath === '/admin/profile/';
+                            const hasRouteAccess = userRole === 'admin' || isProfile || hasUserAccessToArea(user, currentPath);
+
+                            if (hasRouteAccess) {
+                                return <Outlet />;
+                            }
+
+                            return (
+                                <div className="p-8 my-8 max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-3xl border border-rose-200 dark:border-rose-900/50 shadow-xl text-center space-y-4">
+                                    <div className="w-16 h-16 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
+                                        <Lock className="w-8 h-8" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                            Module Access Restricted
+                                        </h2>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-md mx-auto">
+                                            Your account ({userRole === 'finance_admin' ? 'Finance Admin' : userRole === 'manager' ? 'Operations Manager' : userRole}) has not been granted permission to access this ERP module. Please contact your System Administrator.
+                                        </p>
+                                    </div>
+                                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+                                        {visibleSidebarItems.length > 0 && (
+                                            <button
+                                                onClick={() => navigate(visibleSidebarItems[0].path)}
+                                                className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-500/20"
+                                            >
+                                                Go to {visibleSidebarItems[0].name}
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => navigate('/admin/profile')}
+                                            className="w-full sm:w-auto px-5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition"
+                                        >
+                                            View My Profile
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
                 </main>
 

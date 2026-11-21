@@ -171,9 +171,10 @@ exports.login = async (req, res) => {
         if (!user) {
             try {
                 const Driver = require('../models/Driver');
+                const escaped = rawIdentifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const linkedDriver = await Driver.findOne({
                     $or: [
-                        { licenseNumber: { $regex: new RegExp(`^${rawIdentifier}$`, 'i') } },
+                        { licenseNumber: { $regex: new RegExp(`^${escaped}$`, 'i') } },
                         { phone: rawIdentifier }
                     ]
                 });
@@ -269,7 +270,8 @@ exports.login = async (req, res) => {
             name: user.name, 
             email: user.email,
             role: role, 
-            permissions: user.permissions || [],
+            accessAreas: user.accessAreas || user.permissions || [],
+            permissions: user.permissions || user.accessAreas || [],
             driverRef: user.driverRef || null,
             token: token,
             isEmailVerified: user.isEmailVerified
@@ -966,7 +968,7 @@ exports.adminCreateUser = async (req, res) => {
         const { 
             name, email, username, password, role, phone, 
             staff_id, department, designation, status, base_salary, bloodGroup,
-            staffClassification
+            staffClassification, accessAreas, permissions
         } = req.body;
 
         if (!name || !email || !password || !role) {
@@ -997,17 +999,27 @@ exports.adminCreateUser = async (req, res) => {
         const finalClassification = staffClassification || (role === 'customer' ? 'Non-Staff' : 'Staff');
         const isStaffAccount = finalClassification === 'Staff';
 
+        const cleanAreas = Array.isArray(accessAreas)
+            ? accessAreas.map(a => String(a).trim()).filter(Boolean)
+            : Array.isArray(permissions)
+            ? permissions.map(a => String(a).trim()).filter(Boolean)
+            : [];
+
+        const normalizedRole = (role || 'staff').toLowerCase().replace(/\s+/g, '_');
+
         const newUser = await User.create({
             name: name.trim(),
             email: normalizedEmail,
             username: normalizedUsername,
             password: hashedPassword,
-            role,
+            role: normalizedRole,
+            accessAreas: cleanAreas,
+            permissions: cleanAreas,
             phone,
             phoneNumber: phone,
-            staff_id: staff_id || (role === 'driver' ? `DRV-${Date.now().toString().slice(-4)}` : undefined),
-            department: department || (role === 'driver' ? 'Logistics & Fleet' : undefined),
-            designation: designation || (role === 'driver' ? 'Driver' : undefined),
+            staff_id: staff_id || (normalizedRole === 'driver' ? `DRV-${Date.now().toString().slice(-4)}` : undefined),
+            department: department || (normalizedRole === 'driver' ? 'Logistics & Fleet' : normalizedRole === 'finance_admin' ? 'Finance & Accounts' : normalizedRole === 'manager' ? 'Operations & Plant' : undefined),
+            designation: designation || (normalizedRole === 'driver' ? 'Driver' : normalizedRole === 'manager' ? 'Operations Manager' : normalizedRole === 'finance_admin' ? 'Finance Administrator' : undefined),
             status: status || 'active',
             bloodGroup: bloodGroup ? bloodGroup.trim() : '',
             base_salary: parseFloat(base_salary) || 0,
@@ -1039,7 +1051,7 @@ exports.adminUpdateUser = async (req, res) => {
         const { 
             name, email, username, password, role, phone, 
             staff_id, department, designation, status, base_salary, bloodGroup,
-            staffClassification
+            staffClassification, accessAreas, permissions
         } = req.body;
 
         if (email && email !== user.email) {
@@ -1063,8 +1075,17 @@ exports.adminUpdateUser = async (req, res) => {
         }
 
         if (name) user.name = name.trim();
-        if (role) user.role = role;
+        if (role) user.role = role.toLowerCase().replace(/\s+/g, '_');
         if (status) user.status = status;
+
+        if (accessAreas !== undefined || permissions !== undefined) {
+            const rawAreas = accessAreas !== undefined ? accessAreas : permissions;
+            const cleanAreas = Array.isArray(rawAreas)
+                ? rawAreas.map(a => String(a).trim()).filter(Boolean)
+                : [];
+            user.accessAreas = cleanAreas;
+            user.permissions = cleanAreas;
+        }
         
         if (staffClassification !== undefined) {
             user.staffClassification = staffClassification === 'Non-Staff' ? 'Non-Staff' : 'Staff';

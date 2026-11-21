@@ -1078,7 +1078,7 @@ const DRIVER_PERMISSION_METADATA = {
 exports.getDriverPermissionMatrix = async (req, res) => {
     try {
         const users = await User.find({
-            role: { $in: ['admin', 'manager', 'staff'] },
+            role: { $in: ['admin', 'manager', 'finance_admin', 'staff'] },
             status: 'active'
         }).select('name email role permissions department designation staff_id phone').sort({ role: 1, name: 1 });
 

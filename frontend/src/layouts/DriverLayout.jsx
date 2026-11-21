@@ -104,7 +104,9 @@ const DriverLayout = () => {
                         {/* Back Going Navigation Button */}
                         <button
                             onClick={() => {
-                                if (location.pathname !== '/driver') {
+                                if (window.history.state && window.history.state.idx > 0) {
+                                    navigate(-1);
+                                } else if (location.pathname !== '/driver') {
                                     navigate('/driver');
                                 } else {
                                     navigate('/');
@@ -114,7 +116,7 @@ const DriverLayout = () => {
                             title="Go Back"
                         >
                             <ChevronLeft className="w-4 h-4 sm:w-4 sm:h-4 stroke-[2.5]" />
-                            <span className="hidden sm:inline">Back</span>
+                            <span className="inline">Back</span>
                         </button>
 
                         {/* Home Page Navigation Button */}
@@ -124,7 +126,7 @@ const DriverLayout = () => {
                             title="ERP Home Page"
                         >
                             <Home className="w-4 h-4 stroke-[2.5]" />
-                            <span className="hidden sm:inline">Home</span>
+                            <span className="inline">Home</span>
                         </Link>
 
                         {/* Brand Logo & Details */}

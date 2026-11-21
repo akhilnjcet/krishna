@@ -5,7 +5,8 @@ const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ['admin', 'manager', 'staff', 'driver', 'customer'], default: 'customer' },
+    role: { type: String, enum: ['admin', 'manager', 'finance_admin', 'staff', 'driver', 'customer'], default: 'customer' },
+    accessAreas: [{ type: String, trim: true }],
     permissions: [{ type: String, trim: true }],
     driverRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver', default: null },
     

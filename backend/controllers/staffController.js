@@ -58,11 +58,11 @@ exports.getStaff = async (req, res) => {
         const { search, department, status, classification, role } = req.query;
         let query = {};
 
-        // Role filter: default to staff, driver, admin, manager
+        // Role filter: default to staff, driver, admin, manager, finance_admin
         if (role && role !== 'all') {
             query.role = role;
         } else {
-            query.role = { $in: ['staff', 'driver', 'manager', 'admin'] };
+            query.role = { $in: ['staff', 'driver', 'manager', 'finance_admin', 'admin'] };
         }
 
         // Staff / Non-Staff Classification filter:
@@ -119,7 +119,7 @@ exports.addStaff = async (req, res) => {
             joiningDate, address, emergencyContact, bloodGroup, salaryType, overtimeRate,
             bonusAmount, advanceAmount, deductionAmount,
             standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired,
-            profilePhoto, staffClassification
+            profilePhoto, staffClassification, accessAreas, permissions
         } = req.body;
 
         const userExists = await User.findOne({ $or: [{ email }, { username }, { staff_id }] });
@@ -132,10 +132,16 @@ exports.addStaff = async (req, res) => {
 
         const processedPhoto = await processProfilePhoto(profilePhoto);
 
-        const assignedRole = role || 'staff';
+        const assignedRole = (role || 'staff').toLowerCase().replace(/\s+/g, '_');
         const finalClassification = staffClassification || (assignedRole === 'customer' ? 'Non-Staff' : 'Staff');
-        const defaultDesignation = designation || (assignedRole === 'driver' ? 'Driver' : 'Staff Member');
-        const defaultDepartment = department || (assignedRole === 'driver' ? 'Logistics & Fleet' : 'Operations');
+        const defaultDesignation = designation || (assignedRole === 'driver' ? 'Driver' : assignedRole === 'manager' ? 'Operations Manager' : assignedRole === 'finance_admin' ? 'Finance Administrator' : 'Staff Member');
+        const defaultDepartment = department || (assignedRole === 'driver' ? 'Logistics & Fleet' : assignedRole === 'finance_admin' ? 'Finance & Accounts' : assignedRole === 'manager' ? 'Operations & Plant' : 'Operations');
+
+        const cleanAreas = Array.isArray(accessAreas)
+            ? accessAreas.map(a => String(a).trim()).filter(Boolean)
+            : Array.isArray(permissions)
+            ? permissions.map(a => String(a).trim()).filter(Boolean)
+            : [];
 
         const staff = await User.create({
             staff_id,
@@ -148,6 +154,8 @@ exports.addStaff = async (req, res) => {
             username: username || email,
             password: hashedPassword,
             role: assignedRole,
+            accessAreas: cleanAreas,
+            permissions: cleanAreas,
             staffClassification: finalClassification,
             isStaff: finalClassification === 'Staff',
             status: status || 'active',
@@ -243,7 +251,7 @@ exports.updateStaff = async (req, res) => {
             joiningDate, address, emergencyContact, bloodGroup, salaryType, overtimeRate,
             bonusAmount, advanceAmount, deductionAmount,
             standardWorkingHoursPerDay, workingDaysPerMonth, autoSalaryCalculation, otApprovalRequired,
-            profilePhoto, password, staffClassification
+            profilePhoto, password, staffClassification, accessAreas, permissions
         } = req.body;
 
         // Verify and prevent email collision
@@ -291,7 +299,16 @@ exports.updateStaff = async (req, res) => {
         if (department) staff.department = department.trim();
         if (designation) staff.designation = designation.trim();
         if (status) staff.status = status;
-        if (role) staff.role = role;
+        if (role) staff.role = role.toLowerCase().replace(/\s+/g, '_');
+
+        if (accessAreas !== undefined || permissions !== undefined) {
+            const rawAreas = accessAreas !== undefined ? accessAreas : permissions;
+            const cleanAreas = Array.isArray(rawAreas)
+                ? rawAreas.map(a => String(a).trim()).filter(Boolean)
+                : [];
+            staff.accessAreas = cleanAreas;
+            staff.permissions = cleanAreas;
+        }
 
         if (staffClassification !== undefined) {
             staff.staffClassification = staffClassification === 'Non-Staff' ? 'Non-Staff' : 'Staff';

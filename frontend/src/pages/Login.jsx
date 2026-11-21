@@ -26,10 +26,10 @@ const Login = () => {
 
     useEffect(() => {
         if (isAuthenticated && user) {
-            const role = user.role || user.user?.role;
-            const path = role === 'admin' ? '/admin' : 
+            const role = (user.role || user.user?.role || '').toLowerCase();
+            const path = ['admin', 'manager', 'finance_admin'].includes(role) ? '/admin' : 
                          role === 'driver' ? '/driver' :
-                         (role === 'staff' || role === 'manager') ? '/staff' : '/customer';
+                         role === 'staff' ? '/staff' : '/customer';
             if (location.pathname === '/login' || location.pathname === '/') {
                 navigate(path, { replace: true });
             }
@@ -53,12 +53,12 @@ const Login = () => {
                 const userObj = rawData.user || rawData;
                 login(userObj, token);
                 
-                const role = userObj.role || userObj.user?.role;
-                if (role === 'admin') {
+                const role = (userObj.role || userObj.user?.role || '').toLowerCase();
+                if (['admin', 'manager', 'finance_admin'].includes(role)) {
                     navigate('/admin');
                 } else if (role === 'driver') {
                     navigate('/driver');
-                } else if (role === 'staff' || role === 'manager') {
+                } else if (role === 'staff') {
                     navigate('/staff');
                 } else {
                     navigate('/customer');
@@ -75,12 +75,12 @@ const Login = () => {
                     const userObj = rawData.user || rawData;
                     login(userObj, token);
                     
-                    const role = userObj.role || userObj.user?.role;
-                    if (role === 'admin') {
+                    const role = (userObj.role || userObj.user?.role || '').toLowerCase();
+                    if (['admin', 'manager', 'finance_admin'].includes(role)) {
                         navigate('/admin');
                     } else if (role === 'driver') {
                         navigate('/driver');
-                    } else if (role === 'staff' || role === 'manager') {
+                    } else if (role === 'staff') {
                         navigate('/staff');
                     } else {
                         navigate('/customer');

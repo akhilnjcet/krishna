@@ -10,7 +10,7 @@ const liveLocationSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['admin', 'manager', 'staff', 'driver', 'customer'],
+        enum: ['admin', 'manager', 'finance_admin', 'staff', 'driver', 'customer'],
         required: true,
         index: true
     },
