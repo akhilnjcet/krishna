@@ -33,6 +33,8 @@ const TripManagementTab = () => {
     const [newVehicleId, setNewVehicleId] = useState('');
     const [newPickupDate, setNewPickupDate] = useState('');
     const [newDeliveryExpectedDate, setNewDeliveryExpectedDate] = useState('');
+    const [newMapLink, setNewMapLink] = useState('');
+    const [newDropPoint, setNewDropPoint] = useState('');
     const [reassignNotes, setReassignNotes] = useState('');
     const [modalSubmitting, setModalSubmitting] = useState(false);
 
@@ -49,6 +51,8 @@ const TripManagementTab = () => {
         startAddress: '',
         destination: '',
         destinationAddress: '',
+        mapLink: '',
+        dropPoint: '',
         pickupDateTime: new Date().toISOString().slice(0, 16),
         deliveryExpectedDateTime: '',
         purpose: 'Material / Site Cargo Delivery',
@@ -122,6 +126,8 @@ const TripManagementTab = () => {
         setNewVehicleId(trip.vehicleId?._id || trip.vehicleId || '');
         setNewPickupDate(trip.pickupDateTime ? new Date(trip.pickupDateTime).toISOString().slice(0, 16) : '');
         setNewDeliveryExpectedDate(trip.deliveryExpectedDateTime ? new Date(trip.deliveryExpectedDateTime).toISOString().slice(0, 16) : '');
+        setNewMapLink(trip.mapLink || '');
+        setNewDropPoint(trip.dropPoint || '');
         setReassignNotes('');
         setShowReassignModal(true);
     };
@@ -136,6 +142,8 @@ const TripManagementTab = () => {
                 vehicleId: newVehicleId,
                 pickupDateTime: newPickupDate || null,
                 deliveryExpectedDateTime: newDeliveryExpectedDate || null,
+                mapLink: newMapLink.trim(),
+                dropPoint: newDropPoint.trim(),
                 notes: reassignNotes
             });
             if (res.data?.success) {
@@ -244,6 +252,8 @@ const TripManagementTab = () => {
                 startAddress: manualTripForm.startAddress,
                 destination: manualTripForm.destination,
                 destinationAddress: manualTripForm.destinationAddress,
+                mapLink: manualTripForm.mapLink?.trim() || '',
+                dropPoint: manualTripForm.dropPoint?.trim() || '',
                 pickupDateTime: manualTripForm.pickupDateTime,
                 deliveryExpectedDateTime: manualTripForm.deliveryExpectedDateTime || null,
                 purpose: manualTripForm.purpose,
@@ -272,6 +282,8 @@ const TripManagementTab = () => {
                     startAddress: '',
                     destination: '',
                     destinationAddress: '',
+                    mapLink: '',
+                    dropPoint: '',
                     pickupDateTime: new Date().toISOString().slice(0, 16),
                     deliveryExpectedDateTime: '',
                     purpose: 'Material / Site Cargo Delivery',
@@ -594,6 +606,25 @@ const TripManagementTab = () => {
                                             <ArrowRight className="w-3 h-3 text-slate-400 flex-shrink-0" />
                                             <span className="text-emerald-600 dark:text-emerald-400">{tr.destination}</span>
                                         </div>
+                                        {(tr.dropPoint || tr.mapLink) && (
+                                            <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                                                {tr.dropPoint && (
+                                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/60 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                        📍 {tr.dropPoint}
+                                                    </span>
+                                                )}
+                                                {tr.mapLink && (
+                                                    <a
+                                                        href={tr.mapLink}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded flex items-center gap-1 hover:underline"
+                                                    >
+                                                        🗺️ Map Link
+                                                    </a>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-1">
@@ -857,6 +888,35 @@ const TripManagementTab = () => {
                                 </div>
                             </div>
 
+                            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-2">
+                                <span className="text-[10px] font-black uppercase text-slate-500 flex items-center justify-between">
+                                    <span>Navigation & Drop Point (Optional)</span>
+                                    <span className="text-[9px] text-slate-400 font-normal">Optional</span>
+                                </span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Drop Point / Landmark</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Unloading Bay 2"
+                                            value={newDropPoint}
+                                            onChange={(e) => setNewDropPoint(e.target.value)}
+                                            className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Google Maps Link</label>
+                                        <input
+                                            type="url"
+                                            placeholder="https://maps.app.goo.gl/..."
+                                            value={newMapLink}
+                                            onChange={(e) => setNewMapLink(e.target.value)}
+                                            className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div>
                                 <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Reason / Instructions</label>
                                 <textarea
@@ -1102,6 +1162,46 @@ const TripManagementTab = () => {
                                         onChange={(e) => setManualTripForm({ ...manualTripForm, destination: e.target.value })}
                                         className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
                                     />
+                                </div>
+                            </div>
+
+                            {/* Optional Drop Point & Map Link */}
+                            <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-2xl space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-[11px] font-black uppercase text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                                        <MapPin className="w-3.5 h-3.5 text-blue-600" /> Optional Drop Point & Map Navigation Link
+                                    </label>
+                                    <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">
+                                        Optional
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                            Drop Point / Landmark Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Gate 3 Material Bay or Pillar 42"
+                                            value={manualTripForm.dropPoint}
+                                            onChange={(e) => setManualTripForm({ ...manualTripForm, dropPoint: e.target.value })}
+                                            className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs"
+                                        />
+                                        <p className="text-[10px] text-slate-400 mt-1">Specific site entrance, unloading bay, or landmark for the driver.</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                            Google Maps Link / URL
+                                        </label>
+                                        <input
+                                            type="url"
+                                            placeholder="https://maps.app.goo.gl/... or https://google.com/maps/..."
+                                            value={manualTripForm.mapLink}
+                                            onChange={(e) => setManualTripForm({ ...manualTripForm, mapLink: e.target.value })}
+                                            className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs"
+                                        />
+                                        <p className="text-[10px] text-slate-400 mt-1">Google Maps pin URL. Driver will open directly upon tapping Map.</p>
+                                    </div>
                                 </div>
                             </div>
 

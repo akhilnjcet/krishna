@@ -37,6 +37,9 @@ exports.createTrip = async (req, res) => {
             startAddress,
             destination,
             destinationAddress,
+            mapLink,
+            dropPoint,
+            destinationCoords,
             pickupDateTime,
             deliveryExpectedDateTime,
             routeDetails,
@@ -182,6 +185,9 @@ exports.createTrip = async (req, res) => {
             startAddress: startAddress ? startAddress.trim() : (linkedStockTransfer?.sourceAddress || ''),
             destination: destination.trim(),
             destinationAddress: destinationAddress ? destinationAddress.trim() : (linkedStockTransfer?.destinationAddress || ''),
+            mapLink: mapLink ? mapLink.trim() : (linkedStockTransfer?.mapLink || ''),
+            dropPoint: dropPoint ? dropPoint.trim() : (linkedStockTransfer?.dropPoint || ''),
+            destinationCoords: destinationCoords || { lat: null, lng: null },
             pickupDateTime: pickupDateTime ? new Date(pickupDateTime) : new Date(),
             deliveryExpectedDateTime: deliveryExpectedDateTime ? new Date(deliveryExpectedDateTime) : null,
             routeDetails: routeDetails || '',
@@ -1424,6 +1430,8 @@ exports.reassignTrip = async (req, res) => {
 
         if (pickupDateTime) trip.pickupDateTime = new Date(pickupDateTime);
         if (deliveryExpectedDateTime) trip.deliveryExpectedDateTime = new Date(deliveryExpectedDateTime);
+        if (req.body.mapLink !== undefined) trip.mapLink = req.body.mapLink ? String(req.body.mapLink).trim() : '';
+        if (req.body.dropPoint !== undefined) trip.dropPoint = req.body.dropPoint ? String(req.body.dropPoint).trim() : '';
 
         trip.auditTrail.push({
             action: 'Trip Reassigned / Rescheduled',

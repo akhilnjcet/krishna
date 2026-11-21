@@ -310,6 +310,21 @@ const DriverTripDetail = () => {
                                 <MapPin className="w-3.5 h-3.5 text-slate-400" /> {trip.destinationAddress}
                             </p>
                         )}
+                        {trip.dropPoint && (
+                            <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mt-1 flex items-center gap-1">
+                                <MapPin className="w-3.5 h-3.5 text-indigo-500" /> Drop Point: {trip.dropPoint}
+                            </p>
+                        )}
+                        {trip.mapLink && (
+                            <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
+                                🗺️ Verified Navigation Link Configured
+                            </p>
+                        )}
+                        {!trip.mapLink && !trip.dropPoint && !trip.destinationCoords?.lat && (
+                            <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" /> Map location was not added. Please confirm destination before navigating.
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-3 self-end sm:self-center">

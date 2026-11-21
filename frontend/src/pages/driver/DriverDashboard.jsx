@@ -216,6 +216,11 @@ const DriverDashboard = () => {
                             <p className="text-xs opacity-80 flex items-center gap-1.5">
                                 <Truck className="w-3.5 h-3.5" /> Vehicle: {activeTrip.vehicleRegistration} • Start Odo: {activeTrip.startReport?.odometer || 0} km
                             </p>
+                            {activeTrip.dropPoint && (
+                                <p className="text-xs text-white/95 flex items-center gap-1 font-semibold mt-1">
+                                    <MapPin className="w-3.5 h-3.5 text-amber-300" /> Drop Point: {activeTrip.dropPoint}
+                                </p>
+                            )}
                         </div>
                         <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
                             <button
@@ -446,6 +451,14 @@ const DriverDashboard = () => {
                                 {tr.specialInstructions && (
                                     <div className="p-2 bg-amber-50/60 dark:bg-amber-950/30 rounded-xl border border-amber-100 dark:border-amber-900/40 text-[11px] text-amber-800 dark:text-amber-300">
                                         <strong>Admin Instructions:</strong> {tr.specialInstructions}
+                                    </div>
+                                )}
+
+                                {/* Drop Point if present */}
+                                {tr.dropPoint && (
+                                    <div className="text-[11px] text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40 p-2 rounded-xl border border-indigo-100 dark:border-indigo-900/40 flex items-center gap-1.5 font-medium">
+                                        <MapPin className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                                        <span><strong>Drop Point:</strong> {tr.dropPoint}</span>
                                     </div>
                                 )}
 

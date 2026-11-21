@@ -84,6 +84,8 @@ const fleetTripSchema = new mongoose.Schema({
         lat: { type: Number, default: null },
         lng: { type: Number, default: null }
     },
+    mapLink: { type: String, default: '', trim: true },
+    dropPoint: { type: String, default: '', trim: true },
 
     pickupDateTime: { type: Date, default: Date.now },
     deliveryExpectedDateTime: { type: Date },

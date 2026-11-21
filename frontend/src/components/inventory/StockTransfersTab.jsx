@@ -53,12 +53,16 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
     const [totalWeight, setTotalWeight] = useState('');
     const [weightUnit, setWeightUnit] = useState('Kg');
     const [notes, setNotes] = useState('');
+    const [transferMapLink, setTransferMapLink] = useState('');
+    const [transferDropPoint, setTransferDropPoint] = useState('');
 
     // State for assigning trip modal
     const [assignDriverId, setAssignDriverId] = useState('');
     const [assignVehicleId, setAssignVehicleId] = useState('');
     const [assignPickupTime, setAssignPickupTime] = useState(new Date().toISOString().slice(0, 16));
     const [assignInstructions, setAssignInstructions] = useState('');
+    const [assignMapLink, setAssignMapLink] = useState('');
+    const [assignDropPoint, setAssignDropPoint] = useState('');
 
     // State for receiving & verifying transfer
     const [receivedItems, setReceivedItems] = useState([]);
@@ -216,6 +220,8 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
         setTotalWeight('');
         setWeightUnit('Kg');
         setNotes('');
+        setTransferMapLink('');
+        setTransferDropPoint('');
         setShowCreateModal(true);
     };
 
@@ -354,6 +360,8 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                 totalWeight: totalWeight !== '' && totalWeight !== null ? Number(totalWeight) : null,
                 weightUnit: weightUnit || 'Kg',
                 notes,
+                mapLink: (transferMapLink || '').trim(),
+                dropPoint: (transferDropPoint || '').trim(),
                 actionType // 'draft' | 'schedule' | 'dispatch'
             };
 
@@ -382,6 +390,8 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
         setAssignVehicleId(transfer.vehicleId || (companyVehicles[0]?._id || ''));
         setAssignPickupTime(transfer.plannedDispatchDate ? new Date(transfer.plannedDispatchDate).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16));
         setAssignInstructions(transfer.handlingInstructions || transfer.notes || '');
+        setAssignMapLink(transfer.mapLink || '');
+        setAssignDropPoint(transfer.dropPoint || '');
         setShowAssignModal(true);
     };
 
@@ -394,6 +404,8 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                 driverId: assignDriverId,
                 vehicleId: assignVehicleId,
                 pickupDateTime: assignPickupTime,
+                mapLink: assignMapLink.trim(),
+                dropPoint: assignDropPoint.trim(),
                 specialInstructions: assignInstructions
             });
             if (res.data?.success) {
@@ -851,6 +863,46 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                                 </div>
                             </div>
 
+                            {/* Optional Navigation & Drop Point */}
+                            <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-2xl space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-[11px] font-black uppercase text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                                        <MapPin className="w-3.5 h-3.5 text-blue-600" /> Optional Drop Point & Map Navigation Link
+                                    </label>
+                                    <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">
+                                        Optional
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                            Drop Point / Landmark Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Unloading Bay 1 or Material Yard Gate"
+                                            value={transferDropPoint}
+                                            onChange={(e) => setTransferDropPoint(e.target.value)}
+                                            className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs"
+                                        />
+                                        <p className="text-[10px] text-slate-400 mt-1">Specific site entrance, unloading bay, or landmark for the driver.</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                            Google Maps Link / URL
+                                        </label>
+                                        <input
+                                            type="url"
+                                            placeholder="https://maps.app.goo.gl/... or https://google.com/maps/..."
+                                            value={transferMapLink}
+                                            onChange={(e) => setTransferMapLink(e.target.value)}
+                                            className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs"
+                                        />
+                                        <p className="text-[10px] text-slate-400 mt-1">Google Maps pin URL. Driver will open directly upon tapping Map.</p>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Special instructions & attachments */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
@@ -969,6 +1021,35 @@ const StockTransfersTab = ({ materials = [], warehouses = [], onRefreshWarehouse
                                     onChange={(e) => setAssignPickupTime(e.target.value)}
                                     className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
                                 />
+                            </div>
+
+                            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-2">
+                                <span className="text-[10px] font-black uppercase text-slate-500 flex items-center justify-between">
+                                    <span>Navigation & Drop Point (Optional)</span>
+                                    <span className="text-[9px] text-slate-400 font-normal">Optional</span>
+                                </span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Drop Point / Landmark</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Unloading Bay 1"
+                                            value={assignDropPoint}
+                                            onChange={(e) => setAssignDropPoint(e.target.value)}
+                                            className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Google Maps Link</label>
+                                        <input
+                                            type="url"
+                                            placeholder="https://maps.app.goo.gl/..."
+                                            value={assignMapLink}
+                                            onChange={(e) => setAssignMapLink(e.target.value)}
+                                            className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <div>

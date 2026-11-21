@@ -107,6 +107,16 @@ const stockTransferSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    mapLink: {
+        type: String,
+        default: '',
+        trim: true
+    },
+    dropPoint: {
+        type: String,
+        default: '',
+        trim: true
+    },
     projectId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Project',

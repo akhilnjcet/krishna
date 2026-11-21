@@ -500,11 +500,11 @@ const AdminFleet = () => {
     };
 
     const handleToggleUserPermission = async (targetUser, permKey) => {
-        if (targetUser.role === 'admin') {
+        if ((targetUser.role || '').toLowerCase() === 'admin') {
             showToast('Administrators inherently possess full, unrestricted permissions.', true);
             return;
         }
-        const isStaff = targetUser.role === 'staff';
+        const isStaff = (targetUser.role || '').toLowerCase() === 'staff';
         if (isStaff && prohibitedList.includes(permKey)) {
             showToast(`Permission "${permKey}" is strictly prohibited for Staff by ERP security policy.`, true);
             return;
@@ -2277,8 +2277,9 @@ const AdminFleet = () => {
                             ) : (
                                 <div className="space-y-4">
                                     {permissionsUsers.map(user => {
-                                        const isAdmin = user.role === 'admin';
-                                        const isStaff = user.role === 'staff';
+                                        const userRoleNorm = (user.role || '').toLowerCase();
+                                        const isAdmin = userRoleNorm === 'admin';
+                                        const isStaff = userRoleNorm === 'staff';
                                         const userPerms = isAdmin
                                             ? allPermissionsList.map(p => typeof p === 'string' ? p : p.key)
                                             : (user.permissions || user.driverPermissions || []);
@@ -2300,9 +2301,9 @@ const AdminFleet = () => {
                                                                     {user.name}
                                                                 </h4>
                                                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                                                    user.role === 'admin'
+                                                                    isAdmin
                                                                         ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
-                                                                        : user.role === 'manager'
+                                                                        : userRoleNorm === 'manager'
                                                                         ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
                                                                         : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
                                                                 }`}>
