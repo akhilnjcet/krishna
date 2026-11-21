@@ -47,7 +47,7 @@ const FALLBACK_POSTS = [
         authorName: 'Lead Structural Engineer',
         createdAt: '2026-04-18',
         excerpt: 'Comprehensive field analysis methods for inspecting crane gantry girders subjected to high-cycle cyclic loading and vibration.',
-        image: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=1200&q=80',
+        image: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=1200&q=80',
         content: 'Crane runway girders experience dynamic wheel loads that can induce localized fatigue cracks at web-flange junctions. In this field bulletin, we detail ultrasonic weld testing procedures, rail alignment tolerance limits, and retrofit bracket engineering deployed during routine shut-downs.'
     }
 ];
@@ -55,9 +55,9 @@ const FALLBACK_POSTS = [
 const CATEGORY_FALLBACK_IMAGES = {
     'welding': 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=1200&q=80',
     'steel': 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=1200&q=80',
-    'fabrication': 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=1200&q=80',
+    'fabrication': 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=1200&q=80',
     'safety': 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=1200&q=80',
-    'audit': 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=1200&q=80',
+    'audit': 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=1200&q=80',
     'default': 'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=1200&q=80'
 };
 

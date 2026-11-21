@@ -20,12 +20,58 @@ const CATEGORIES = [
     { name: 'Quality Control', value: 'Quality Control', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800' }
 ];
 
+const CATEGORY_FALLBACK_IMAGES = {
+    welding: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=1200&q=80',
+    structural: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+    fabrication: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=1200&q=80',
+    crane: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
+    maintenance: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200&q=80',
+    safety: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200&q=80',
+    quality: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=1200&q=80',
+    default: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=1200&q=80'
+};
+
+const getCategoryFallbackImage = (category) => {
+    const cat = (category || '').toLowerCase();
+    for (const [key, url] of Object.entries(CATEGORY_FALLBACK_IMAGES)) {
+        if (cat.includes(key)) return url;
+    }
+    return CATEGORY_FALLBACK_IMAGES.default;
+};
+
+// Safe Image component that gracefully recovers from broken or 404 image URLs
+const BlogCardImage = ({ src, alt, category, className }) => {
+    const fallback = getCategoryFallbackImage(category);
+    const [imgSrc, setImgSrc] = useState(() => {
+        const direct = getDirectImageUrl(src);
+        return direct || fallback;
+    });
+
+    useEffect(() => {
+        const direct = getDirectImageUrl(src);
+        setImgSrc(direct || fallback);
+    }, [src, category, fallback]);
+
+    return (
+        <img 
+            src={imgSrc} 
+            alt={alt || "Report Cover"}
+            onError={() => {
+                if (imgSrc !== fallback) {
+                    setImgSrc(fallback);
+                }
+            }}
+            className={className || "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"}
+        />
+    );
+};
+
 const SAMPLE_REPORTS = [
     {
         title: 'Precision TIG Welding Protocol for Heavy Crane Girders',
         category: 'Welding',
         authorName: 'Chief Welding Inspector',
-        image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+        image: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=1200&q=80',
         excerpt: 'Standard operating parameters and non-destructive testing requirements for 25mm structural plates under cyclic loading.',
         content: `Standard Operating Procedure (SOP-WLD-402) for GTAW/TIG welding on structural gantry joints.
 
@@ -416,21 +462,12 @@ const AdminBlog = () => {
                         >
                             {/* Card Cover Image */}
                             <div className="relative h-48 bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                                {blog.image ? (
-                                    <img 
-                                        src={getDirectImageUrl(blog.image)} 
-                                        alt={blog.title}
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                            e.currentTarget.parentElement.classList.add('flex', 'items-center', 'justify-center');
-                                        }}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center text-slate-400">
-                                        <BookOpen className="w-12 h-12 opacity-40 text-blue-600 dark:text-blue-400" />
-                                    </div>
-                                )}
+                                <BlogCardImage 
+                                    src={blog.image} 
+                                    alt={blog.title}
+                                    category={blog.category}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
                                 
                                 <div className="absolute top-4 left-4">
                                     <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border shadow-sm backdrop-blur-md ${getCategoryBadgeClass(blog.category)}`}>
@@ -522,11 +559,12 @@ const AdminBlog = () => {
                                         <td className="py-3 px-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 shrink-0 overflow-hidden flex items-center justify-center">
-                                                    {blog.image ? (
-                                                        <img src={getDirectImageUrl(blog.image)} alt="" className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <BookOpen className="w-4 h-4 text-slate-400" />
-                                                    )}
+                                                    <BlogCardImage 
+                                                        src={blog.image} 
+                                                        alt="" 
+                                                        category={blog.category}
+                                                        className="w-full h-full object-cover" 
+                                                    />
                                                 </div>
                                                 <div>
                                                     <span 
@@ -683,11 +721,11 @@ const AdminBlog = () => {
                                     />
                                     {formData.image && (
                                         <div className="mt-2 h-28 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 relative">
-                                            <img 
-                                                src={getDirectImageUrl(formData.image)} 
+                                            <BlogCardImage 
+                                                src={formData.image} 
                                                 alt="Preview" 
+                                                category={formData.category}
                                                 className="w-full h-full object-cover" 
-                                                onError={(e) => e.currentTarget.style.display = 'none'}
                                             />
                                             <span className="absolute bottom-1 right-2 text-[9px] bg-black/60 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
                                                 Image Preview
@@ -766,11 +804,11 @@ const AdminBlog = () => {
                         >
                             {selectedBlog.image && (
                                 <div className="relative h-60 sm:h-72 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                                    <img 
-                                        src={getDirectImageUrl(selectedBlog.image)} 
+                                    <BlogCardImage 
+                                        src={selectedBlog.image} 
                                         alt={selectedBlog.title}
+                                        category={selectedBlog.category}
                                         className="w-full h-full object-cover"
-                                        onError={(e) => e.currentTarget.style.display = 'none'}
                                     />
                                     <button 
                                         onClick={() => setPreviewModalOpen(false)}
