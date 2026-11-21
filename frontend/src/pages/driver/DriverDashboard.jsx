@@ -150,19 +150,27 @@ const DriverDashboard = () => {
                             <h3 className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white">
                                 Staff & Driver Face Attendance
                             </h3>
-                            <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
-                                todayAttendance?.check_out 
-                                    ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300'
-                                    : todayAttendance?.login_time 
-                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 animate-pulse'
-                                    : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300'
-                            }`}>
-                                {todayAttendance?.check_out ? 'Shift Completed' :
-                                 todayAttendance?.login_time ? 'Shift Active (Checked In)' : 'Not Punched Today'}
-                            </span>
+                            {driver?.hasFaceEnrolled === false ? (
+                                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300">
+                                    Face Not Enrolled
+                                </span>
+                            ) : (
+                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                                    todayAttendance?.check_out 
+                                        ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300'
+                                        : todayAttendance?.login_time 
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 animate-pulse'
+                                        : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300'
+                                }`}>
+                                    {todayAttendance?.check_out ? 'Shift Completed' :
+                                     todayAttendance?.login_time ? 'Shift Active (Checked In)' : 'Ready for Check-In'}
+                                </span>
+                            )}
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            {todayAttendance?.check_out 
+                            {driver?.hasFaceEnrolled === false
+                                ? 'Biometric template not registered. Please ask an admin to enroll your face in Staff Management.'
+                                : todayAttendance?.check_out 
                                 ? `Shift punch logged: In at ${todayAttendance.login_time} • Out at ${todayAttendance.check_out}`
                                 : todayAttendance?.login_time 
                                 ? `Active shift checked in at ${todayAttendance.login_time}. Punch out at end of shift.`

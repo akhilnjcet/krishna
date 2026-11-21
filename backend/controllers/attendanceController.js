@@ -101,7 +101,16 @@ exports.recordAttendance = async (req, res) => {
             }
         }
 
-        // Retrieve registered face template for this staff member
+        // Validate facial biometric descriptor format
+        if (!descriptor || !Array.isArray(descriptor) || descriptor.length !== 128) {
+            return res.status(400).json({
+                success: false,
+                message: 'No valid facial biometric descriptor captured. Please ensure your face is well lit and properly framed.',
+                can_request_correction: true
+            });
+        }
+
+        // Retrieve registered face template strictly for this authenticated user
         let registeredDescriptor = staffUser.faceDescriptor && staffUser.faceDescriptor.length === 128
             ? staffUser.faceDescriptor
             : null;
@@ -113,51 +122,77 @@ exports.recordAttendance = async (req, res) => {
             }
         }
 
-        let isFaceMatched = false;
-        let matchDistance = 1.0;
-        let confidenceScore = 0;
-        let verificationReason = 'Biometric Face Match';
-        let verificationResult = 'success';
+        // PREVENT AUTO-ENROLLMENT DURING ATTENDANCE:
+        // A driver or staff member must have an enrolled face BEFORE recording attendance.
+        // If no face is enrolled, reject attendance immediately. Never auto-enroll on scan.
+        if (!registeredDescriptor) {
+            const roleLabel = staffUser.role === 'driver' ? 'Driver' : 'Staff Member';
+            return res.status(403).json({
+                success: false,
+                face_not_registered: true,
+                message: `Face not registered for ${roleLabel} "${staffUser.name}". Biometric attendance requires official enrollment. Please contact an administrator or fleet supervisor to complete your facial enrollment.`,
+                can_request_correction: true
+            });
+        }
 
-        // Face comparison if descriptor provided
-        if (descriptor && Array.isArray(descriptor) && descriptor.length === 128) {
-            if (registeredDescriptor) {
-                matchDistance = getEuclideanDistance(descriptor, registeredDescriptor);
-                confidenceScore = getConfidenceScore(matchDistance);
-                // Threshold 0.52 (industry standard for face-api 128d)
-                if (matchDistance <= 0.52) {
-                    isFaceMatched = true;
-                    verificationResult = 'success';
-                } else {
-                    isFaceMatched = false;
-                    verificationResult = 'mismatch';
-                    verificationReason = `Face mismatch (Distance: ${matchDistance.toFixed(2)}, required <= 0.52)`;
-                }
-            } else {
-                // First-time enrollment on scan with acknowledged consent
-                if (consent_acknowledged) {
-                    staffUser.faceDescriptor = descriptor;
-                    await staffUser.save();
-                    await FaceData.findOneAndUpdate(
-                        { userId: staffUser._id },
-                        { faceEmbedding: descriptor },
-                        { upsert: true }
-                    );
-                    isFaceMatched = true;
-                    confidenceScore = 95;
-                    verificationReason = 'Initial biometric template enrollment and verification';
-                    verificationResult = 'success';
-                } else {
-                    isFaceMatched = false;
-                    verificationResult = 'mismatch';
-                    verificationReason = 'No registered face template found. Consent required before enrollment.';
+        // Strict 1-to-1 Biometric Matching against authenticated user's registered template
+        const matchDistance = getEuclideanDistance(descriptor, registeredDescriptor);
+        const confidenceScore = getConfidenceScore(matchDistance);
+
+        // Biometric threshold: 0.52 (industry standard for face-api 128-d Euclidean distance)
+        if (matchDistance > 0.52) {
+            // Check if the presented face belongs to ANOTHER registered user (impersonation/proxy attempt)
+            let matchedOtherUser = null;
+            const otherFaceRecords = await FaceData.find({ userId: { $ne: staffUser._id } }).populate('userId', 'name role staff_id email');
+            for (const f of otherFaceRecords) {
+                if (f.userId && f.faceEmbedding && f.faceEmbedding.length === 128) {
+                    const dist = getEuclideanDistance(descriptor, f.faceEmbedding);
+                    if (dist <= 0.52) {
+                        matchedOtherUser = f.userId;
+                        break;
+                    }
                 }
             }
-        } else {
-            isFaceMatched = false;
-            verificationResult = 'fail';
-            verificationReason = 'No valid facial biometric descriptor captured';
+
+            if (!matchedOtherUser) {
+                const otherUsersWithFace = await User.find({
+                    _id: { $ne: staffUser._id },
+                    faceDescriptor: { $exists: true, $not: { $size: 0 } }
+                }).select('name role staff_id email faceDescriptor');
+
+                for (const u of otherUsersWithFace) {
+                    if (u.faceDescriptor && u.faceDescriptor.length === 128) {
+                        const dist = getEuclideanDistance(descriptor, u.faceDescriptor);
+                        if (dist <= 0.52) {
+                            matchedOtherUser = u;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (matchedOtherUser) {
+                const conflictRole = matchedOtherUser.role === 'driver' ? 'Driver' : matchedOtherUser.role === 'admin' ? 'Administrator' : 'Staff Member';
+                return res.status(422).json({
+                    success: false,
+                    face_mismatch: true,
+                    impersonation_detected: true,
+                    message: `Biometric Identity Mismatch: The scanned face belongs to ${conflictRole} "${matchedOtherUser.name}". Attendance for "${staffUser.name}" can only be recorded using their own registered face.`,
+                    can_request_correction: true
+                });
+            }
+
+            return res.status(422).json({
+                success: false,
+                face_mismatch: true,
+                message: `Biometric verification failed: The scanned face does not match the registered face template for "${staffUser.name}" (Distance: ${matchDistance.toFixed(2)}, required <= 0.52).`,
+                can_request_correction: true
+            });
         }
+
+        const isFaceMatched = true;
+        const verificationResult = 'success';
+        const verificationReason = `Biometric Face Match (Confidence: ${confidenceScore}%)`;
 
         // Validate location coordinates if present
         const validatedLocation = {
@@ -1075,6 +1110,35 @@ exports.enrollFaceTemplate = async (req, res) => {
         }
 
         const userId = req.user._id || req.user.id;
+
+        // Check if this biometric face already belongs to another registered user
+        const otherFaces = await FaceData.find({ userId: { $ne: userId } }).populate('userId', 'name role');
+        for (const record of otherFaces) {
+            if (record.userId && record.faceEmbedding && record.faceEmbedding.length === 128) {
+                const dist = getEuclideanDistance(descriptor, record.faceEmbedding);
+                if (dist <= 0.45) {
+                    return res.status(400).json({
+                        message: `Cannot enroll: This facial template matches registered ${record.userId.role || 'user'} "${record.userId.name}". Each user must have a unique facial template.`
+                    });
+                }
+            }
+        }
+
+        const otherUsersWithFace = await User.find({
+            _id: { $ne: userId },
+            faceDescriptor: { $exists: true, $not: { $size: 0 } }
+        }).select('name role faceDescriptor');
+        for (const u of otherUsersWithFace) {
+            if (u.faceDescriptor && u.faceDescriptor.length === 128) {
+                const dist = getEuclideanDistance(descriptor, u.faceDescriptor);
+                if (dist <= 0.45) {
+                    return res.status(400).json({
+                        message: `Cannot enroll: This facial template matches registered ${u.role || 'user'} "${u.name}". Each user must have a unique facial template.`
+                    });
+                }
+            }
+        }
+
         await User.findByIdAndUpdate(userId, { faceDescriptor: descriptor });
         await FaceData.findOneAndUpdate(
             { userId },

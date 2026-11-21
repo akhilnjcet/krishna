@@ -27,6 +27,7 @@ const AttendanceScanner = () => {
     const [action, setAction] = useState('Check in'); // 'Check in' | 'Check out'
     const [statusMessage, setStatusMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+    const [errorType, setErrorType] = useState('general'); // 'not_registered' | 'impersonation' | 'mismatch' | 'general'
 
     // Biometric & Camera refs
     const videoRef = useRef(null);
@@ -405,8 +406,11 @@ const AttendanceScanner = () => {
                 return;
             }
 
+            const isNotRegistered = !!err.response?.data?.face_not_registered || err.response?.status === 403;
+            const isImpersonation = !!err.response?.data?.impersonation_detected;
             const errorText = err.response?.data?.message || 'Face verification failed or face not registered.';
             setStep('error');
+            setErrorType(isNotRegistered ? 'not_registered' : isImpersonation ? 'impersonation' : 'mismatch');
             setErrorMessage(errorText);
         } finally {
             isSubmittingRef.current = false;
@@ -870,40 +874,89 @@ const AttendanceScanner = () => {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-rose-200 dark:border-rose-900/40 shadow-xl space-y-6 text-center"
+                        className={`bg-white dark:bg-slate-900 p-8 rounded-3xl border shadow-xl space-y-6 text-center ${
+                            errorType === 'impersonation'
+                                ? 'border-rose-400 dark:border-rose-700/60'
+                                : errorType === 'not_registered'
+                                ? 'border-amber-300 dark:border-amber-700/60'
+                                : 'border-rose-200 dark:border-rose-900/40'
+                        }`}
                     >
-                        <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-md">
-                            <AlertCircle className="w-8 h-8" />
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-md ${
+                            errorType === 'not_registered'
+                                ? 'bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400'
+                                : 'bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400'
+                        }`}>
+                            {errorType === 'not_registered' ? (
+                                <Fingerprint className="w-8 h-8" />
+                            ) : errorType === 'impersonation' ? (
+                                <ShieldAlert className="w-8 h-8" />
+                            ) : (
+                                <AlertCircle className="w-8 h-8" />
+                            )}
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-                                Verification Unsuccessful
+                                {errorType === 'not_registered'
+                                    ? 'Biometric Enrollment Required'
+                                    : errorType === 'impersonation'
+                                    ? 'Identity Mismatch Detected'
+                                    : 'Verification Unsuccessful'}
                             </h3>
+
+                            {errorType === 'impersonation' && (
+                                <div className="p-3 bg-rose-50 dark:bg-rose-950/60 rounded-xl border border-rose-200 dark:border-rose-900/60 text-xs text-rose-700 dark:text-rose-300 font-semibold max-w-md mx-auto">
+                                    <ShieldAlert className="w-4 h-4 inline-block mr-1.5 text-rose-600" />
+                                    Proxy Attendance Rejected: Face matches another registered staff member.
+                                </div>
+                            )}
+
+                            {errorType === 'not_registered' && (
+                                <div className="p-3 bg-amber-50 dark:bg-amber-950/60 rounded-xl border border-amber-200 dark:border-amber-900/60 text-xs text-amber-800 dark:text-amber-300 font-semibold max-w-md mx-auto">
+                                    <Info className="w-4 h-4 inline-block mr-1.5 text-amber-600" />
+                                    Account Not Enrolled: An administrator must register your facial biometric template before attendance can be recorded.
+                                </div>
+                            )}
+
                             <p className="text-xs text-rose-600 dark:text-rose-400 font-bold max-w-md mx-auto">
                                 {errorMessage}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                                Don't worry — no automated disciplinary decisions are made from technical or recognition mismatches. You can retry or submit a manual attendance correction for administrator approval.
+                                {errorType === 'not_registered'
+                                    ? 'Please reach out to your administrator, branch manager, or fleet supervisor to complete your facial enrollment in Staff Management.'
+                                    : errorType === 'impersonation'
+                                    ? 'Attendance is personal and can only be recorded when the authenticated user presents their own face to the camera.'
+                                    : 'Ensure your face is clearly visible, well-lit, and directly facing the camera without glare or obstructions.'}
                             </p>
                         </div>
 
                         {/* Buttons to retry or request manual correction */}
                         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-                            <button
-                                type="button"
-                                onClick={startAttendanceScan}
-                                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2"
-                            >
-                                <RefreshCw className="w-4 h-4" /> Retry Scan
-                            </button>
+                            {errorType !== 'not_registered' && (
+                                <button
+                                    type="button"
+                                    onClick={startAttendanceScan}
+                                    className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                    <RefreshCw className="w-4 h-4" /> Retry Scan
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 onClick={() => setShowCorrectionModal(true)}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg transition flex items-center justify-center gap-2"
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 <Send className="w-4 h-4" /> Request Manual Attendance Correction
                             </button>
+                            {isDriver && (
+                                <Link
+                                    to="/driver"
+                                    className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2"
+                                >
+                                    <Truck className="w-4 h-4" /> Back to Dashboard
+                                </Link>
+                            )}
                         </div>
 
                         {/* Safe Contact Admin fallback */}

@@ -1181,6 +1181,16 @@ exports.getDriverPortalData = async (req, res) => {
         const driverIssues = await DriverIssue.find({ driverId: driver._id }).sort({ createdAt: -1 });
         const openIssues = driverIssues.filter(i => i.status !== 'Closed' && i.status !== 'Resolved');
 
+        const FaceData = require('../models/FaceData');
+        const userRecord = await User.findById(req.user._id || req.user.id).select('faceDescriptor');
+        let hasFaceEnrolled = Boolean(userRecord?.faceDescriptor && userRecord.faceDescriptor.length === 128);
+        if (!hasFaceEnrolled) {
+            const fd = await FaceData.findOne({ userId: req.user._id });
+            if (fd && fd.faceEmbedding && fd.faceEmbedding.length === 128) {
+                hasFaceEnrolled = true;
+            }
+        }
+
         res.json({
             success: true,
             driver: {
@@ -1196,7 +1206,8 @@ exports.getDriverPortalData = async (req, res) => {
                 status: driver.status,
                 emergencyContact: driver.emergencyContact,
                 emergencyPhone: driver.emergencyPhone,
-                address: driver.address
+                address: driver.address,
+                hasFaceEnrolled
             },
             assignedVehicle,
             todayTrips,

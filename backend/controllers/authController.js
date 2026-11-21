@@ -499,11 +499,24 @@ exports.verifyFace = async (req, res) => {
 // 3. User Profile / Session Check
 exports.getMe = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id || req.user.id).select('-password -faceDescriptor -resetPasswordHash -emailVerificationHash');
+        const user = await User.findById(req.user._id || req.user.id);
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
         }
-        res.json(user);
+        let hasFace = Boolean(user.faceDescriptor && user.faceDescriptor.length === 128);
+        if (!hasFace) {
+            const fd = await FaceData.findOne({ userId: user._id });
+            if (fd && fd.faceEmbedding && fd.faceEmbedding.length === 128) {
+                hasFace = true;
+            }
+        }
+        const userObj = user.toObject();
+        delete userObj.password;
+        delete userObj.faceDescriptor;
+        delete userObj.resetPasswordHash;
+        delete userObj.emailVerificationHash;
+        userObj.hasFaceEnrolled = hasFace;
+        res.json(userObj);
     } catch (error) { 
         res.status(500).json({ message: error.message }); 
     }
