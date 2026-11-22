@@ -115,6 +115,22 @@ exports.addExpense = async (req, res) => {
     }
 };
 
+// @desc    Delete an expense or income entry
+// @route   DELETE /api/finance/expenses/:id
+exports.deleteExpense = async (req, res) => {
+    try {
+        const expense = await Expense.findById(req.params.id);
+        if (!expense) {
+            return res.status(404).json({ message: 'Transaction record not found' });
+        }
+        await Expense.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Transaction record deleted successfully' });
+    } catch (err) {
+        console.error("Expense deletion failed:", err.message);
+        res.status(500).json({ message: err.message });
+    }
+};
+
 exports.addSalary = async (req, res) => {
     try {
         const { staffId, month, salaryAmount, paymentStatus } = req.body;

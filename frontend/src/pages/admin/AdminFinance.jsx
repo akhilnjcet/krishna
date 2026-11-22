@@ -3,7 +3,8 @@ import api from '../../services/api';
 import { 
   TrendingUp, TrendingDown, DollarSign, Plus, Trash2, Loader2, 
   AlertCircle, PieChart, Activity, Download, Banknote, Edit, Check, X,
-  Briefcase, Landmark, CreditCard, Wallet, Calendar, UserCheck, RefreshCw
+  Briefcase, Landmark, CreditCard, Wallet, Calendar, UserCheck, RefreshCw,
+  Clock, Truck, Receipt, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReportHeader from '../../components/ReportHeader';
@@ -339,6 +340,21 @@ const AdminFinance = () => {
         }
     };
 
+    // Delete Expense / Income Action
+    const handleDeleteExpense = async (id, title) => {
+        if (!window.confirm(`Are you sure you want to delete "${title || 'this entry'}"?`)) return;
+        setActionLoading(true);
+        try {
+            await api.delete(`/finance/expenses/${id}`);
+            await fetchExpenses();
+        } catch (err) {
+            console.error('Failed to delete transaction:', err);
+            alert(err.response?.data?.message || 'Failed to delete transaction.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     // Calculate Drafts for Roster
     const handleGenerateDrafts = async () => {
         setGeneratingDrafts(true);
@@ -561,30 +577,50 @@ const AdminFinance = () => {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex flex-wrap sm:flex-nowrap gap-1.5 bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-2xl w-full sm:w-fit border border-slate-200 dark:border-slate-700 overflow-x-auto">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2 bg-slate-200/60 dark:bg-slate-800/60 p-1.5 rounded-2xl w-full sm:w-fit border border-slate-200 dark:border-slate-700 overflow-x-auto">
                 <button 
                     onClick={() => setActiveTab('expenses')}
-                    className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap text-center ${activeTab === 'expenses' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap ${
+                        activeTab === 'expenses' 
+                            ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
                 >
-                    📈 Expense Ledger
+                    <Receipt className="w-4 h-4" />
+                    Expense Ledger
                 </button>
                 <button 
                     onClick={() => setActiveTab('payroll')}
-                    className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap text-center ${activeTab === 'payroll' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap ${
+                        activeTab === 'payroll' 
+                            ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
                 >
-                    💰 Salary & Payroll
+                    <Wallet className="w-4 h-4" />
+                    Salary & Payroll
                 </button>
                 <button 
                     onClick={() => setActiveTab('overtime')}
-                    className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap text-center ${activeTab === 'overtime' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap ${
+                        activeTab === 'overtime' 
+                            ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
                 >
-                    ⏱️ Overtime
+                    <Clock className="w-4 h-4" />
+                    Overtime
                 </button>
                 <button 
                     onClick={() => setActiveTab('labour-bills')}
-                    className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap text-center ${activeTab === 'labour-bills' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'}`}
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap ${
+                        activeTab === 'labour-bills' 
+                            ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
                 >
-                    🚚 Labour & Transport
+                    <Truck className="w-4 h-4" />
+                    Labour & Transport
                 </button>
             </div>
 
@@ -597,27 +633,76 @@ const AdminFinance = () => {
             {activeTab === 'expenses' && (
                 <div className="space-y-8">
                     {/* FINANCIAL OVERVIEW GRID */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="bg-slate-900 border-b-8 border-indigo-500 p-8 text-white rounded-[2rem] shadow-2xl relative overflow-hidden">
-                            <TrendingUp className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-2">Authenticated Income</p>
-                            <h2 className="text-4xl font-black italic">₹ {summary?.totalIncome?.toLocaleString() || 0}</h2>
-                            <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 mt-4 uppercase tracking-widest leading-none">Net Revenue from Paid Units</p>
-                        </div>
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-8 rounded-[2rem] shadow-xl relative overflow-hidden group">
-                            <TrendingDown className="absolute -right-4 -bottom-4 w-32 h-32 opacity-5 text-rose-500 group-hover:scale-110 transition-transform" />
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-2">Total Expenditure</p>
-                            <h2 className="text-4xl font-black italic text-slate-900 dark:text-white">₹ {summary?.totalExpense?.toLocaleString() || 0}</h2>
-                            <div className="mt-4 flex gap-4">
-                                <span className="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded italic uppercase">Salaries: {summary?.expenseBreakdown?.staff?.toLocaleString() || 0}</span>
-                                <span className="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded italic uppercase">Ops: {summary?.expenseBreakdown?.others?.toLocaleString() || 0}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+                        {/* 1. AUTHENTICATED INCOME */}
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-6 sm:p-8 rounded-[2rem] shadow-xl relative overflow-hidden flex flex-col justify-between group">
+                            <TrendingUp className="absolute -right-4 -bottom-4 w-32 h-32 opacity-5 text-emerald-600 group-hover:scale-105 transition-transform" />
+                            <div>
+                                <div className="flex items-center justify-between gap-3 mb-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-600 dark:text-emerald-400">Authenticated Income</p>
+                                    <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-xs">
+                                        <TrendingUp className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <h2 className="text-3xl md:text-4xl font-black italic text-emerald-600 dark:text-emerald-400 tracking-tight">
+                                    ₹ {summary?.totalIncome?.toLocaleString('en-IN') || 0}
+                                </h2>
+                            </div>
+                            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-relaxed">
+                                    Net Revenue from Paid Units & Inflows
+                                </p>
                             </div>
                         </div>
-                        <div className="bg-indigo-600 border-b-8 border-white p-8 text-white rounded-[2rem] shadow-2xl relative overflow-hidden">
-                            <Activity className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-200 mb-2">Liquid Profit</p>
-                            <h2 className="text-4xl font-black italic">₹ {summary?.netProfit?.toLocaleString() || 0}</h2>
-                            <p className="text-[9px] font-bold text-indigo-300 mt-4 uppercase tracking-widest leading-none">Net Yield AFTER Ops Deductions</p>
+
+                        {/* 2. TOTAL EXPENDITURE */}
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-6 sm:p-8 rounded-[2rem] shadow-xl relative overflow-hidden flex flex-col justify-between group">
+                            <TrendingDown className="absolute -right-4 -bottom-4 w-32 h-32 opacity-5 text-rose-500 group-hover:scale-105 transition-transform" />
+                            <div>
+                                <div className="flex items-center justify-between gap-3 mb-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-rose-500 dark:text-rose-400">Total Expenditure</p>
+                                    <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-100 dark:border-rose-800/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-xs">
+                                        <TrendingDown className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <h2 className="text-3xl md:text-4xl font-black italic text-slate-900 dark:text-white tracking-tight">
+                                    ₹ {summary?.totalExpense?.toLocaleString('en-IN') || 0}
+                                </h2>
+                            </div>
+                            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-2">
+                                <span className="text-[9px] font-black bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50 px-2.5 py-1 rounded-lg uppercase">
+                                    Salaries: ₹{summary?.expenseBreakdown?.staff?.toLocaleString('en-IN') || 0}
+                                </span>
+                                <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg uppercase">
+                                    Ops: ₹{summary?.expenseBreakdown?.others?.toLocaleString('en-IN') || 0}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* 3. LIQUID PROFIT */}
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-6 sm:p-8 rounded-[2rem] shadow-xl relative overflow-hidden flex flex-col justify-between group">
+                            <Activity className="absolute -right-4 -bottom-4 w-32 h-32 opacity-5 text-indigo-600 group-hover:scale-105 transition-transform" />
+                            <div>
+                                <div className="flex items-center justify-between gap-3 mb-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-indigo-600 dark:text-indigo-400">Liquid Operating Profit</p>
+                                    <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-800/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-xs">
+                                        <Activity className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <h2 className={`text-3xl md:text-4xl font-black italic tracking-tight ${(summary?.netProfit ?? 0) >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                    ₹ {summary?.netProfit?.toLocaleString('en-IN') || 0}
+                                </h2>
+                            </div>
+                            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                    Net Yield After Ops Deductions
+                                </span>
+                                {(summary?.totalIncome ?? 0) > 0 && (
+                                    <span className="text-[9px] font-black bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 px-2 py-0.5 rounded-md uppercase">
+                                        {Math.round(((summary?.netProfit ?? 0) / summary.totalIncome) * 100)}% Margin
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -632,13 +717,13 @@ const AdminFinance = () => {
                                         setTransactionType('expense');
                                         setNewExpense(prev => ({ ...prev, category: 'others' }));
                                     }}
-                                    className={`flex-1 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
+                                    className={`flex-1 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 ${
                                         transactionType === 'expense' 
                                             ? 'bg-rose-600 text-white shadow-md' 
                                             : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'
                                     }`}
                                 >
-                                    🔴 Log Expense
+                                    <TrendingDown className="w-3.5 h-3.5" /> Log Expense
                                 </button>
                                 <button
                                     type="button"
@@ -646,13 +731,13 @@ const AdminFinance = () => {
                                         setTransactionType('income');
                                         setNewExpense(prev => ({ ...prev, category: 'client_payment' }));
                                     }}
-                                    className={`flex-1 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
+                                    className={`flex-1 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 ${
                                         transactionType === 'income' 
                                             ? 'bg-emerald-600 text-white shadow-md' 
                                             : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'
                                     }`}
                                 >
-                                    🟢 Log Income
+                                    <TrendingUp className="w-3.5 h-3.5" /> Log Income
                                 </button>
                             </div>
 
@@ -739,7 +824,7 @@ const AdminFinance = () => {
                                             ledgerFilter === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'
                                         }`}
                                     >
-                                        All
+                                        All ({expenses.length})
                                     </button>
                                     <button
                                         onClick={() => setLedgerFilter('expense')}
@@ -747,7 +832,7 @@ const AdminFinance = () => {
                                             ledgerFilter === 'expense' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'
                                         }`}
                                     >
-                                        Expenses
+                                        Expenses ({expenses.filter(e => e.type !== 'income').length})
                                     </button>
                                     <button
                                         onClick={() => setLedgerFilter('income')}
@@ -755,7 +840,7 @@ const AdminFinance = () => {
                                             ledgerFilter === 'income' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white'
                                         }`}
                                     >
-                                        Income
+                                        Income ({expenses.filter(e => e.type === 'income').length})
                                     </button>
                                 </div>
                             </div>
@@ -775,30 +860,38 @@ const AdminFinance = () => {
                                     const isIncome = exp.type === 'income';
                                     return (
                                         <div key={exp._id} className={`p-4 rounded-2xl border transition flex items-center justify-between group ${
-                                            isIncome ? 'bg-emerald-50/40 border-emerald-100 hover:bg-emerald-50' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-800 hover:bg-indigo-50/50'
+                                            isIncome ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30' : 'bg-slate-50 dark:bg-slate-800/60 border-slate-100 dark:border-slate-800 hover:bg-indigo-50/40 dark:hover:bg-slate-800'
                                         }`}>
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black shadow-sm uppercase text-[9px] ${
-                                                    isIncome ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-indigo-600'
+                                            <div className="flex items-center gap-4 min-w-0">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black shadow-xs uppercase text-[9px] shrink-0 ${
+                                                    isIncome ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-indigo-600 dark:text-indigo-400'
                                                 }`}>
                                                     {exp.category?.slice(0, 3) || (isIncome ? 'INC' : 'EXP')}
                                                 </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
                                                         <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${
-                                                            isIncome ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                                                            isIncome ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300' : 'bg-rose-100 dark:bg-rose-900/50 text-rose-800 dark:text-rose-300'
                                                         }`}>
                                                             {isIncome ? 'INCOME' : 'EXPENSE'}
                                                         </span>
-                                                        <p className="font-extrabold text-slate-950 text-sm uppercase">{exp.title}</p>
+                                                        <p className="font-extrabold text-slate-900 dark:text-white text-sm uppercase truncate">{exp.title}</p>
                                                     </div>
                                                     <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{new Date(exp.date).toLocaleDateString()}</p>
                                                 </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className={`font-black italic text-sm ${isIncome ? 'text-emerald-600' : 'text-rose-500'}`}>
-                                                    {isIncome ? '+' : '-'} ₹ {exp.amount.toLocaleString()}
+                                            <div className="flex items-center gap-3 shrink-0 ml-4">
+                                                <p className={`font-black italic text-sm ${isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                                    {isIncome ? '+' : '-'} ₹ {exp.amount.toLocaleString('en-IN')}
                                                 </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteExpense(exp._id, exp.title)}
+                                                    title="Delete transaction"
+                                                    className="opacity-60 hover:opacity-100 p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
                                             </div>
                                         </div>
                                     );
@@ -814,7 +907,7 @@ const AdminFinance = () => {
                 <div className="space-y-6">
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap gap-4 items-center justify-between">
                         <div>
-                            <h3 className="text-xl font-black uppercase tracking-tight text-slate-950">Staff Payroll Registry</h3>
+                            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Staff Payroll Registry</h3>
                             <p className="text-xs text-slate-400 font-medium">Verify draft sheets, configure modifer fields, lock salaries, and download professional salary slips.</p>
                         </div>
                         <button 
@@ -1158,7 +1251,7 @@ const AdminFinance = () => {
                 <div className="space-y-6">
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap gap-4 items-center justify-between">
                         <div>
-                            <h3 className="text-xl font-black uppercase tracking-tight text-slate-950">Overtime Logbook</h3>
+                            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Overtime Logbook</h3>
                             <p className="text-xs text-slate-400 font-medium">Log staff overtime hours, edit remarks, and verify historical work cycles.</p>
                         </div>
                         <button 

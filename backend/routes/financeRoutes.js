@@ -6,6 +6,7 @@ const {
     getCustomerDues, 
     getExpenses, 
     addExpense,
+    deleteExpense,
     addSalary,
     getCashFlowForecast,
     addCashFlowAdjustment,
@@ -23,6 +24,7 @@ router.post('/salaries', protect, authorize('admin'), addSalary);
 router.route('/expenses')
     .get(protect, authorize('admin'), getExpenses)
     .post(protect, authorize('admin', 'staff'), addExpense);
+router.delete('/expenses/:id', protect, authorize('admin'), deleteExpense);
 
 // Cash Flow Forecasting
 router.get('/cash-flow-forecast', protect, authorize('admin', 'accountant'), getCashFlowForecast);
